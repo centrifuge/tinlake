@@ -1,4 +1,8 @@
 # Tinlake Contracts
+Tinlake is a set of smart contracts that mints an ERC20 token for each unit of value of a group of NFTs it holds in escrow. 
+
+This is a very rough prototype and is not ready for production use.
+
 ## Deploy
 
 ### Pre-deploy:
