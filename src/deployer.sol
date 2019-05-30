@@ -132,17 +132,13 @@ contract Deployer {
         address shelf_ = address(shelf);
         pile.rely(shelf_);
 
-        // LenderFab deploys a lender with the defined collateral and currency
-        address lender_ = LenderFabLike(lenderfab_).deploy(currency_, address(collateral));
-        LenderLike(lender_).rely(god);
-
         valve = new Valve(address(collateral), shelf_);
         valve.rely(god); 
         address valve_ = address(valve);
         collateral.rely(valve_);
                
         // LenderFab deploys a lender with the defined collateral and currency
-        address lender_ = LenderFabLike(lenderfab_).deploy(currency_, collateral_);
+        address lender_ = LenderFabLike(lenderfab_).deploy(currency_, address(collateral));
 
         lender = LenderLike(lender_);
         lender.rely(god);
@@ -150,7 +146,7 @@ contract Deployer {
         //set lender in pile
         pile.setLender(lender_);
         
-        desk = new Desk(pile_, lender_, valve_, collateral_, lightswitch_);
+        desk = new Desk(pile_, lender_, valve_, address(collateral), address(lightswitch));
         desk.rely(god);
         address desk_ = address(desk);
         pile.rely(desk_);
