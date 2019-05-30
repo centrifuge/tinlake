@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -ex
+
+ADDRESS_DIR=${ADDRESS_DIR:-$PWD/out/address}
+mkdir -p $ADDRESS_DIR 
+
+export ETH_GAS=${ETH_GAS:-"7000000"}
+export ETH_FROM=${ETH_FROM:-$(seth rpc eth_coinbase)}
+export SOLC_FLAGS="--optimize"
+
+test -z "$SKIP_BUILD" && dapp build
+
+# Set god address to 0 if not defined
+test -z "$GOD_ADDR" && GOD_ADDR=$(seth --to-address "0x00000000000000000000") 
+
+LENDER_FAB=$(dapp create test/LenderFabMock)
+
+cat > "$ADDRESS_DIR/load-lender-$(seth chain)" << EOF
+#!/bin/bash
+# lender fab deployment on $(seth chain) from $(git rev-parse HEAD)
+# $(date)
+export LENDER_FAB=$LENDER_FAB
+EOF
+

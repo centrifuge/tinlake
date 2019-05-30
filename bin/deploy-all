@@ -1,0 +1,46 @@
+#! /usr/bin/env bash
+
+set -e
+
+BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
+ADDRESS_DIR=${ADDRESS_DIR:-$PWD/out/address}
+
+message() {
+    echo
+    echo ----------------------------------------------
+    echo "$@"
+    echo ----------------------------------------------
+    echo
+}
+
+message CHECKING OUT DEPENDENCIES
+
+dapp update
+
+message BUILDING SOURCE
+
+test -z "$SKIP_BUILD" && dapp build 
+export SKIP_BUILD=1
+
+message DEPLOYING APPRAISER
+
+"$BIN_DIR/deploy-appraiser"
+# shellcheck source=/dev/null
+source "$ADDRESS_DIR/load-appraiser-$(seth chain)"
+
+message DEPLOYING NFT AND CURRENCY
+
+"$BIN_DIR/deploy-mocks"
+source "$ADDRESS_DIR/load-mocks-$(seth chain)"
+
+message DEPLOYING LENDERFAB
+
+"$BIN_DIR/deploy-lender"
+source "$ADDRESS_DIR/load-lender-$(seth chain)"
+
+message DEPLOYING CORE
+
+"$BIN_DIR/deploy-core"
+
+message DONE
+

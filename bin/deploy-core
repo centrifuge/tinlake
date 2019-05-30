@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -ex
+
+ADDRESS_DIR=${ADDRESS_DIR:-$PWD/out/address}
+mkdir -p $ADDRESS_DIR 
+
+export ETH_GAS=${ETH_GAS:-"7000000"}
+export ETH_FROM=${ETH_FROM:-$(seth rpc eth_coinbase)}
+export SOLC_FLAGS="--optimize"
+
+test -z "$SKIP_BUILD" && dapp build
+
+
+# Ensure dependencies are present
+{ test -z "$CURRENCY" || test -z "$LENDER_FAB"  || test -z "$APPRAISER"; } && exit 1
+
+# Set god address to 0 if not defined
+test -z "$GOD_ADDR" && GOD_ADDR=$(seth --to-address "0x00000000000000000000") 
+
+# Fabs
+TITLE_FAB=$(dapp create TitleFab)
+LIGHTSWITCH_FAB=$(dapp create LightSwitchFab)
+PILE_FAB=$(dapp create PileFab)
+SHELF_FAB=$(dapp create ShelfFab)
+COLLATERAL_FAB=$(dapp create CollateralFab)
+
+# Deploy
+DEPLOYER=$(dapp create Deployer $GOD_ADDR $TITLE_FAB $LIGHTSWITCH_FAB $PILE_FAB $SHELF_FAB $COLLATERAL_FAB) 
+$(seth send $DEPLOYER 'deployTitle(string memory, string memory)' "Tinlake Loan" "TLNT")
+$(seth send $DEPLOYER 'deployLightSwitch()')
+$(seth send $DEPLOYER 'deployCollateral()')
+$(seth send $DEPLOYER 'deploy(address,address,address)' $CURRENCY $LENDER_FAB $APPRAISER)
+TITLE=$(seth call $DEPLOYER 'title()(address)')
+LIGHTSWITCH=$(seth call $DEPLOYER 'lightswitch()(address)')
+PILE=$(seth call $DEPLOYER 'pile()(address)')
+SHELF=$(seth call $DEPLOYER 'shelf()(address)')
+COLLATERAL=$(seth call $DEPLOYER 'collateral()(address)')
+VALVE=$(seth call $DEPLOYER 'valve()(address)')
+RECEPTION=$(seth call $DEPLOYER 'reception()(address)')
+DESK=$(seth call $DEPLOYER 'desk()(address)')
+ADMIT=$(seth call $DEPLOYER 'admitt()(address)')
+
+cat > "$ADDRESS_DIR/load-tinlake-$(seth chain)" << EOF
+#!/bin/bash
+# tinlake deployment on $(seth chain) from $(git rev-parse HEAD)
+# $(date)
+export APPRAISER=$APPRAISER
+export DEPLOY=$DEPLOY
+export TITLE=$TITLE
+export LIGHTSWITCH=$LIGHTSWITCH
+export PILE=$PILE
+export SHELF=$SHELF
+export COLLATERAL=$COLLATERAL
+export VALVE=$VALVE
+export RECEPTION=$RECEPTION
+export DESK=$DESK
+export ADMIT=$ADMIT
+EOF

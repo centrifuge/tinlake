@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -ex
+
+ADDRESS_DIR=${ADDRESS_DIR:-$PWD/out/address}
+mkdir -p $ADDRESS_DIR 
+
+export ETH_GAS=${ETH_GAS:-"7000000"}
+export ETH_FROM=${ETH_FROM:-$(seth rpc eth_coinbase)}
+export SOLC_FLAGS="--optimize"
+
+test -z "$SKIP_BUILD" && dapp build
+
+# Set god address to 0 if not defined
+test -z "$GOD_ADDR" && GOD_ADDR=$(seth --to-address "0x00000000000000000000") 
+
+# Defaults
+test -z "$TKN_SYMBOL" && TKN_SYMBOL="DTKN"
+test -z "$TKN_NAME" && TKN_NAME="Dummy Currency"
+test -z "$TKN_VERSION" && TKN_VERSION="a"
+test -z "$TKN_CHAINID" && TKN_CHAINID=1
+
+# Deploy NFT & Collateral
+NFT_COLLATERAL=$(dapp create test/SimpleNFT)
+CURRENCY=$(seth send --create out/test/SimpleToken.bin 'SimpleToken(string memory,string memory,string memory, uint)' "$TKN_SYMBOL" "$TKN_NAME" "$TKN_VERSION" $(seth --to-uint256 $TKN_CHAINID))
+
+cat > "$ADDRESS_DIR/load-mocks-$(seth chain)" << EOF
+#!/bin/bash
+# externals deployment on $(seth chain) from $(git rev-parse HEAD)
+# $(date)
+export NFT_COLLATERAL=$NFT_COLLATERAL
+export CURRENCY=$CURRENCY
+EOF
+
