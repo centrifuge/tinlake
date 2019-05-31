@@ -37,11 +37,11 @@ contract LightSwitchTest is DSTest {
     }
 
     function testSwitchedPass() public {
-        lightswitch.set(true);
+        lightswitch.set(1);
         switched.pass();
     }
     function testFailSwitchPass() public {
-        lightswitch.set(false);
+        lightswitch.set(0);
         switched.pass();
     }
 }

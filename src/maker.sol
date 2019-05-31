@@ -12,8 +12,8 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 pragma solidity >=0.4.24;
+pragma experimental ABIEncoderV2;
 
 import "ds-note/note.sol";
 
@@ -23,11 +23,23 @@ contract TokenLike {
     function transferFrom(address,address,uint) public;
 }
 
+contract VatLike {
+    struct Urn {
+        uint256 ink;
+        uint256 art;
+    }
+    function urns(bytes32,address) public returns (Urn memory);
+}
+
 contract ProxyLike {
     function open(address, bytes32) public returns (uint);
     function wipeAndFreeGem(address, address, address, uint, uint, uint) public;
     function lockGemAndDraw(address, address, address, uint, uint, uint) public;
     function freeGem(address, address, uint, uint) public;
+}
+
+contract LightSwitchLike {
+    function set(uint) public;
 }
 
 // MakerAdapter
@@ -46,24 +58,27 @@ contract MakerAdapter is DSNote {
     // --- Data ---
     TokenLike           public tkn;
     TokenLike           public collateral;
-    
+    LightSwitchLike     public lightswitch;
+
     ProxyLike           public proxy;
+    VatLike             public vat;
     address             public manager;
     address             public daiJoin;
     address             public gemJoin;
 
     uint                public cdp;
     bytes32             public ilk;
-   
+    address             public pile;
     uint                public gem;
 
-    constructor(address tkn_, address collateral_, address proxy_, address manager_, address gemJoin_, address daiJoin_) public {
+    constructor(address tkn_, address collateral_, address proxy_, address manager_, address gemJoin_, address daiJoin_, address vat_, address lightswitch_) public {
         wards[msg.sender] = 1;
         tkn = TokenLike(tkn_); 
         collateral = TokenLike(collateral_);
-        
+        lightswitch = LightSwitchLike(lightswitch_);
         // Maker specific stuff
-        proxy = ProxyLike(proxy_); 
+        proxy = ProxyLike(proxy_);
+        vat = VatLike(vat_);
         manager = manager_;
         gemJoin = gemJoin_;
         daiJoin = daiJoin_;
@@ -91,20 +106,21 @@ contract MakerAdapter is DSNote {
         freeGem(usr, wad);
     }
 
-    function poke() public note {
-        // sub(gem, vat) 
-    }
-    
-
     // --- Maker CDP Interaction ---
+    // poke shuts off any lending if the CDP has been bitten. 
+    function poke() public note {
+        require(vat.urns(ilk, address(this)).ink >= gem, "cdp-not-bitten"); 
+        lightswitch.set(0); 
+    }
+
+
     // Below methods are a bit repetitive with the above but split out to make sure we can later on abstract the Maker interaction away.
     function open() public auth {
         require(cdp == 0, "already-open"); 
         cdp = proxy.open(manager, ilk); 
     }
 
-    function lock(address usrC, address usrT, uint wadC, uint wadT) public auth {
-        collateral.transferFrom(usrC, address(this), wadC);
+    function lock(address usrC, address usrT, uint wadC, uint wadT) public auth { collateral.transferFrom(usrC, address(this), wadC);
         proxy.lockGemAndDraw(manager, gemJoin, daiJoin, cdp, wadC, wadT);
         gem = add(gem, wadC);
         tkn.transferFrom(address(this), usrT, wadT);

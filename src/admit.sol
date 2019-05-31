@@ -35,6 +35,8 @@ contract Admit {
     TitleLike title;
     ShelfLike shelf;
 
+    event Created(uint loan); 
+
     constructor (address title_, address shelf_) public {
         wards[msg.sender] = 1;
         title = TitleLike(title_);
@@ -42,9 +44,10 @@ contract Admit {
     }
     
     // --- Admit ---
-    function admit (address registry, uint nft, uint principal, address usr) public auth returns (uint){
+    function admit (address registry, uint nft, uint principal, address usr) public auth returns (uint) {
         uint loan = title.issue(usr);
         shelf.file(loan, registry, nft, principal); 
+        emit Created(loan);
         return loan;
     }
 }

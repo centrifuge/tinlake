@@ -16,7 +16,7 @@
 pragma solidity >=0.4.24;
 
 contract SwitchLike {
-    function on() public returns (bool);
+    function on() public returns (uint);
 }
 
 contract Switchable {
@@ -27,7 +27,7 @@ contract Switchable {
         lightswitch = SwitchLike(lightswitch_);
     }
     // --- Switchable ---
-    modifier switchable { require(lightswitch.on() == true); _; }
+    modifier switchable { require(lightswitch.on() == 1); _; }
 }
 
 contract LightSwitch {
@@ -38,15 +38,16 @@ contract LightSwitch {
     modifier auth { require(wards[msg.sender] == 1); _; }
 
     // --- Data ---
-    bool public on;
+    uint public on;
 
     constructor () public {
         wards[msg.sender] = 1;
-        on = true;
+        on = 1;
     }
 
     // --- LightSwitch ---
-    function set(bool on_) public auth {
+    function set(uint on_) public auth {
+        require(on_ < 2);
         on = on_;
     }
 }

@@ -14,15 +14,12 @@ This is a very rough prototype and is not ready for production use.
 
 You can use `. bin/setup-env.sh` to help you set up these variables.
 
-
 ## TODOs
 Features:
-* Add method to Maker adapter that triggers lightswitch if Gem was reduced by MKR 
-* Aggregate interest by bucket and add total debt number [Lucas]
+* Test Maker.peek method to Maker adapter that triggers lightswitch if Gem was reduced by MKR 
 * LightSwitch should disable other contract methods, build Switchable into contracts
-* Interest Chi manipulation contract needs to limit accumulation by day  
 * Extract: Contract to remove an asset that is overdue
-* Siphon should allow to take DAI out of the Bank
+* Siphon: should allow to take DAI out of the pile only if debt to lender is 0
 
 Refactor/Cleanup/Scaling:
 * Go through code and add DS-Note and add note to all auth calls
