@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -ex
+
+function load_address() {
+  echo $(cat $MCD_ADDRESS_FILE | jq ".[\"$1\"]" |  tr -d '"')
+}
+
+test -z "$MCD_ADDRESS_FILE" && echo "MCD_ADDRESS_FILE needs to be set" 
+
+MCD_DEPLOY=$(load address "MCD_DEPLOY")
+MCD_PROXY=$(load_address "PROXY_ACTIONS")
+CDP_MANAGER=$(load_address "CDP_MANAGER")
+MCD_JOIN_DAI=0x$(seth call "$MCD_DEPLOY" "daiJoin()(address)")
+MCD_VAT=0x$(seth call "$MCD_DEPLOY" "vat()(address)")
+MCD_DAI=0x$(seth call "$MCD_DEPLOY" "dai()(address)")
+

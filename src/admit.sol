@@ -46,7 +46,7 @@ contract Admit {
     // --- Admit ---
     function admit (address registry, uint nft, uint principal, address usr) public auth returns (uint) {
         uint loan = title.issue(usr);
-        shelf.file(loan, registry, nft, principal); 
+        shelf.file(loan, registry, nft, principal);
         emit Created(loan);
         return loan;
     }

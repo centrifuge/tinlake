@@ -70,7 +70,6 @@ contract LenderFabMock {
 }
 
 contract BorrowerUser {
-
     TokenLike tkn;
     Reception reception;
     constructor (address reception_, address tkn_) public {
@@ -175,8 +174,8 @@ contract SystemTest is DSTest {
         assertEq(tkn.balanceOf(address(deployer.lender())), tLender);
         assertEq(deployer.collateral().balanceOf(address(deployer.desk())), 0);
         assertEq(deployer.collateral().totalSupply(), cTotal);
-
     }
+
     // Tests
     function testBorrowTransaction() public {
         uint tokenId = 1;

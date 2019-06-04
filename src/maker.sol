@@ -42,6 +42,36 @@ contract LightSwitchLike {
     function set(uint) public;
 }
 
+contract MCDDeployLike {
+    function daiJoin() public returns (address);
+    function vat() public returns (address);
+}
+
+contract MakerLenderFab {
+    MCDDeployLike mcddeploy;
+    MakerAdapter public maker;
+    address proxy;
+    address manager;
+        
+    constructor (address deploy_, address proxy_, address manager_) public {
+        mcddeploy = MCDDeployLike(deploy_);
+        proxy = proxy_;
+        manager = manager_;
+    }
+
+    function lender() public returns (address) {
+        return address(maker);
+    }
+
+    function deploy(address tkn_, address collateral_, address light) public returns (address) {
+        maker = new MakerAdapter(tkn_, collateral_, proxy, manager, mcddeploy.daiJoin(), mcddeploy.vat(), light);
+        maker.rely(msg.sender);
+        return address(maker);
+    }
+
+}
+
+
 // MakerAdapter
 // Operates a CDP and pushes collateral value tokens into it and draws dai or vice versa. It tries to borrow
 // enough Dai to make the Dai balance of the pile reflect pile.totalBalance (which is the total Dai people 
@@ -71,7 +101,7 @@ contract MakerAdapter is DSNote {
     address             public pile;
     uint                public gem;
 
-    constructor(address tkn_, address collateral_, address proxy_, address manager_, address gemJoin_, address daiJoin_, address vat_, address lightswitch_) public {
+    constructor(address tkn_, address collateral_, address proxy_, address manager_, address daiJoin_, address vat_, address lightswitch_) public {
         wards[msg.sender] = 1;
         tkn = TokenLike(tkn_); 
         collateral = TokenLike(collateral_);
@@ -80,9 +110,12 @@ contract MakerAdapter is DSNote {
         proxy = ProxyLike(proxy_);
         vat = VatLike(vat_);
         manager = manager_;
-        gemJoin = gemJoin_;
         daiJoin = daiJoin_;
     } 
+
+    function file(bytes32 what, address data) public note auth {
+         if (what == "gemJoin") { gemJoin = data; }
+    }
 
     // --- Math ---
     function add(uint x, uint y) internal pure returns (uint z) {

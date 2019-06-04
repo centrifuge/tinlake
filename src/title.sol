@@ -27,6 +27,8 @@ contract Title is ERC721Metadata {
     // --- Data ---
     uint public count;
     string public uri;
+    
+
 
     constructor (string memory name, string memory symbol) ERC721Metadata(name, symbol) public {
         wards[msg.sender] = 1;
