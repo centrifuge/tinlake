@@ -5,6 +5,9 @@ This is a very rough prototype and is not ready for production use.
 
 ## Deploy
 
+### Testnet
+The easiest way to run these scripts is with `dapp testnet`. Use this command to start a geth devserver.
+
 ### Pre-deploy:
 
 - `export ETH_FROM=DEPLOYMENT_ACCOUNT`
@@ -12,7 +15,7 @@ This is a very rough prototype and is not ready for production use.
 - `export ETH_KEYSTORE=KEYSTORE_PATH`
 - `export ETH_RPC_URL=TESTNET_RPC_NODE_URL`
 
-You can use `. bin/setup-env.sh` to help you set up these variables.
+You can use `. bin/setup-env` to help you set up these variables.
 
 ### Deployment with Maker testchain-dss-deployment-scripts
 To deploy Tinlake with Maker follow these steps:
