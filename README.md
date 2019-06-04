@@ -14,6 +14,13 @@ This is a very rough prototype and is not ready for production use.
 
 You can use `. bin/setup-env.sh` to help you set up these variables.
 
+### Deployment with Maker testchain-dss-deployment-scripts
+To deploy Tinlake with Maker follow these steps:
+
+1) Deploy Maker with `step-4` described in github.com/makerdao/testchain-dss-deployment-scripts
+2) export MCD_ADDRESS_FILE='... path to testchain-dss-deployment-scripts/out/addresses.json...'
+3) Run `./bin/deploy-all-maker`
+
 ## TODOs
 Features:
 * Test Maker.peek method to Maker adapter that triggers lightswitch if Gem was reduced by MKR 
