@@ -11,7 +11,7 @@ export SOLC_FLAGS="--optimize"
 test -z "$SKIP_BUILD" && dapp build
 
 # Set god address to 0 if not defined
-test -z "$GOD_ADDR" && GOD_ADDR=$(seth --to-address "0x00000000000000000000") 
+test -z "$GOD_ADDR" && GOD_ADDR="0x00000000000000000000" 
 
 # Defaults
 test -z "$TKN_SYMBOL" && TKN_SYMBOL="DTKN"
@@ -21,7 +21,7 @@ test -z "$TKN_CHAINID" && TKN_CHAINID=1
 
 # Deploy NFT & Collateral
 NFT_COLLATERAL=$(dapp create test/SimpleNFT)
-CURRENCY=$(seth send --create out/test/SimpleToken.bin 'SimpleToken(string memory,string memory,string memory, uint)' "$TKN_SYMBOL" "$TKN_NAME" "$TKN_VERSION" $(seth --to-uint256 $TKN_CHAINID))
+test -z $SKIP_CURRENCY && CURRENCY=$(seth send --create out/test/SimpleToken.bin 'SimpleToken(string memory,string memory,string memory, uint)' "$TKN_SYMBOL" "$TKN_NAME" "$TKN_VERSION" $(seth --to-uint256 $TKN_CHAINID))
 
 cat > "$ADDRESS_DIR/load-mocks-$(seth chain)" << EOF
 #!/bin/bash

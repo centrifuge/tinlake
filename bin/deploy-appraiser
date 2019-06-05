@@ -11,7 +11,7 @@ export SOLC_FLAGS="--optimize"
 test -z "$SKIP_BUILD" && dapp build
 
 # Set god address to 0 if not defined
-test -z "$GOD_ADDR" && GOD_ADDR=$(seth --to-address "0x00000000000000000000") 
+test -z "$GOD_ADDR" && GOD_ADDR="0x00000000000000000000"
 
 APPRAISER=$(dapp create Appraiser)
 

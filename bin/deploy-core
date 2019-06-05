@@ -10,7 +10,6 @@ export SOLC_FLAGS="--optimize"
 
 test -z "$SKIP_BUILD" && dapp build
 
-
 # Ensure dependencies are present
 { test -z "$CURRENCY" || test -z "$LENDER_FAB"  || test -z "$APPRAISER"; } && exit 1
 

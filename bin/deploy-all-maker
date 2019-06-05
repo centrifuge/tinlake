@@ -13,8 +13,6 @@ message() {
     echo
 }
 
-
-
 message CHECKING OUT DEPENDENCIES
 
 dapp update
@@ -24,12 +22,22 @@ message BUILDING SOURCE
 test -z "$SKIP_BUILD" && dapp build 
 export SKIP_BUILD=1
 
+message LOADING MAKER CONTRACTS
+
+source "$BIN_DIR/lib/load-maker-addresses"
+export CURRENCY=$MCD_DAI
+
+message DEPLOYING NFT
+
+export SKIP_CURRENCY=1
+"$BIN_DIR/deploy-mocks"
+
 message DEPLOYING APPRAISER
 
 "$BIN_DIR/deploy-appraiser"
 source "$ADDRESS_DIR/load-appraiser-$(seth chain)"
 
-message DEPLOYING LENDERFAB
+message DEPLOYING MAKER LENDERFAB
 
 "$BIN_DIR/deploy-maker-lender"
 source "$ADDRESS_DIR/load-maker-lender-$(seth chain)"
