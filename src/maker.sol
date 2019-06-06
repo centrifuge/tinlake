@@ -63,8 +63,8 @@ contract MakerLenderFab {
         return address(maker);
     }
 
-    function deploy(address tkn_, address collateral_, address light) public returns (address) {
-        maker = new MakerAdapter(tkn_, collateral_, proxy, manager, mcddeploy.daiJoin(), mcddeploy.vat(), light);
+    function deploy(address tkn_, address collateral_, address light_) public returns (address) {
+        maker = new MakerAdapter(tkn_, collateral_, proxy, manager, mcddeploy.daiJoin(), mcddeploy.vat(), light_);
         maker.rely(msg.sender);
         return address(maker);
     }
