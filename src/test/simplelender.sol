@@ -8,13 +8,13 @@ contract LenderTokenLike {
 
 contract LenderFabMock {
     function deploy(address tkn_, address collateral_) public returns (address) {
-        LenderMock lender = new LenderMock(tkn_, collateral_);
+        SimpleLender lender = new SimpleLender(tkn_, collateral_);
         lender.rely(msg.sender);
         return address(lender);
     }
 }
 
-contract LenderMock {
+contract SimpleLender {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth { wards[usr] = 1; }

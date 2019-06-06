@@ -21,7 +21,6 @@ contract DeskTest is DSTest {
     address self;
 
     function setUp() public {
-
         self = address(this);
 
         pile = new PileMock();
