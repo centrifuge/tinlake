@@ -31,14 +31,12 @@ contract DeskTest is DSTest {
         lightswitch = new LightSwitchMock();
 
         desk = new Desk(address(pile), address(lender), address(valve), address(collateral), address(lightswitch));
-
     }
 
-    function testProvideCollateral() public {
-        int wantTkn = 80;
-        int wantCollatoral = 100;
-        pile.setWantReturn(wantTkn);
-        valve.setWantReturn(wantCollatoral);
+
+    function provideCollateral(int wadT, int wadC) public {
+        pile.setWantReturn(wadT);
+        valve.setWantReturn(wadC);
 
         desk.balance();
 
@@ -48,15 +46,14 @@ contract DeskTest is DSTest {
         assertEq(lender.provideCalls(), 1);
         assertEq(lender.usrC(),address(desk));
         assertEq(lender.usrT(),address(pile));
-        assertEq(lender.wadT(),uint(wantTkn));
-        assertEq(lender.wadC(),uint(wantCollatoral));
-    }
+        assertEq(lender.wadT(),uint(wadT));
+        assertEq(lender.wadC(),uint(wadC));
 
-    function testReleaseCollateral() public {
-        int wantTkn = -80;
-        int wantCollatoral = -100;
-        pile.setWantReturn(wantTkn);
-        valve.setWantReturn(wantCollatoral);
+    }
+    
+    function releaseCollateral(int wadT, int wadC) public {
+        pile.setWantReturn(wadT);
+        valve.setWantReturn(wadC);
 
         desk.balance();
 
@@ -70,7 +67,43 @@ contract DeskTest is DSTest {
         assertEq(lender.releaseCalls(), 1);
         assertEq(lender.usrC(),address(desk));
         assertEq(lender.usrT(),address(pile));
-        assertEq(lender.wadT(),uint(wantTkn*-1));
-        assertEq(lender.wadC(),uint(wantCollatoral*-1));
+        assertEq(lender.wadT(),uint(wadT*-1));
+        assertEq(lender.wadC(),uint(wadC*-1));
+    }
+    
+    // tests
+    function testProvideCollateral() public {
+        int wadT = 80;
+        int wadC = 100;
+
+        provideCollateral(wadT, wadC);
+    }
+
+    function testReleaseCollateral() public {
+        int wadT = -80;
+        int wadC = -100;
+
+        releaseCollateral(wadT, wadC);
+        releaseCollateral(0, 0);
+    }
+
+    function testFailNegativeCollateral() public {
+        int wadT = 80;
+        int wadC = -100;
+        pile.setWantReturn(wadT);
+        valve.setWantReturn(wadC);
+
+        desk.balance();
+
+    }
+
+    function testFailNegativeTkn() public {
+        int wadT = -80;
+        int wadC = 100;
+        pile.setWantReturn(wadT);
+        valve.setWantReturn(wadC);
+
+        desk.balance();
+
     }
 }
