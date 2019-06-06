@@ -84,6 +84,9 @@ contract DeskTest is DSTest {
         int wadC = -100;
 
         releaseCollateral(wadT, wadC);
+    }
+
+    function testReleaseZero() public {
         releaseCollateral(0, 0);
     }
 
@@ -94,7 +97,6 @@ contract DeskTest is DSTest {
         valve.setWantReturn(wadC);
 
         desk.balance();
-
     }
 
     function testFailNegativeTkn() public {
@@ -104,6 +106,5 @@ contract DeskTest is DSTest {
         valve.setWantReturn(wadC);
 
         desk.balance();
-
     }
 }

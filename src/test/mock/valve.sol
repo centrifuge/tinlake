@@ -1,20 +1,6 @@
 pragma solidity >=0.4.24;
 
-
 import "./token.sol";
-
-contract TknMock {
-    uint public approveCalls;
-
-    address public usr;
-    uint public wad;
-    function approve(address usr_, uint wad_) public {
-        approveCalls++;
-        usr = usr_;
-        wad = wad_;
-    }
-}
-
 
 contract ValveMock {
     TokenMock public tkn;
@@ -38,9 +24,8 @@ contract ValveMock {
 
     // --- Valve ---
     function balance(address usr_) public  {
-        balanceCalls++;
         usr = usr_;
-
+        balanceCalls++;
     }
 
     function want() public returns (int) {
@@ -49,18 +34,18 @@ contract ValveMock {
     }
 
     function mint(address usr_, uint wad_) public  {
-        mintCalls++;
         usr = usr_;
         wad = wad_;
+        mintCalls++;
     }
 
     function mintMax(address usr_) public  {
-        mintMaxCalls++;
         usr = usr_;
+        mintMaxCalls++;
     }
 
     function burnMax(address usr_) public  {
-        burnMaxCalls++;
         usr = usr_;
+        burnMaxCalls++;
     }
 }
