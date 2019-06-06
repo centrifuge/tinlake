@@ -32,6 +32,7 @@ contract PileTest is DSTest {
     }
 
     function testSetupPrecondition() public {
+        tkn.setBalanceOfReturn(0);
         assertEq(pile.want(),0);
     }
 }

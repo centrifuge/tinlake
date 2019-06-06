@@ -19,54 +19,14 @@ import "ds-test/test.sol";
 
 import "../deployer.sol";
 import "../appraiser.sol";
-import "./simplenft.sol";
-import "./simpletoken.sol";
+import "./simple/nft.sol";
+import "./simple/token.sol";
+import "./simple/lender.sol";
 
 contract TokenLike {
     function transferFrom(address, address, uint) public;
     function mint(address, uint) public;
     function approve(address usr, uint wad) public returns (bool);
-}
-
-contract LenderMock {
-    // --- Auth ---
-    mapping (address => uint) public wards;
-    function rely(address usr) public auth { wards[usr] = 1; }
-    function deny(address usr) public auth { wards[usr] = 0; }
-    modifier auth { require(wards[msg.sender] == 1); _; }
-
-    // --- Data ---
-    TokenLike public tkn;
-    TokenLike public collateral;
-
-    constructor (address tkn_, address collateral_) public {
-        wards[msg.sender] = 1;
-        tkn = TokenLike(tkn_);
-        collateral = TokenLike(collateral_);
-    }
-
-    // --- Lender Methods ---
-    function provide(address usrC, address usrT, uint wadC, uint wadT) public {
-        collateral.transferFrom(usrC, address(this), wadC);
-        tkn.mint(usrT, wadT); 
-    }
-
-    function release(address usrC, address usrT, uint wadC, uint wadT) public {
-        tkn.transferFrom(usrT,address(this), wadT);
-        collateral.transferFrom(address(this), usrC, wadC);
-    }
-
-    function free(address usr, uint wad) public { 
-        revert();
-    }
-}
-
-contract LenderFabMock {
-    function deploy(address tkn_, address collateral_) public returns (address) {
-        LenderMock lender = new LenderMock(tkn_, collateral_);
-        lender.rely(msg.sender);
-        return address(lender);
-    }
 }
 
 contract BorrowerUser {
