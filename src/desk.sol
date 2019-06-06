@@ -83,7 +83,7 @@ contract Desk is Switchable {
         int wadC = valve.want();
         if (wadC > 0) {
             require(wadT > 0);
-            valve.mintMax(address(this));
+            valve.mintMax(self);
             // give collateral, want token
             lender.provide(self, address(pile), uint(wadC),uint(wadT));
 

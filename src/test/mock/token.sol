@@ -16,6 +16,7 @@ contract TokenMock {
     uint public wad;
     address public dst;
     address public src;
+    address public usr;
 
     uint public totalSupply;
 
@@ -38,10 +39,14 @@ contract TokenMock {
     }
     function burn(address addr_, uint wad_) public {
         addr=addr_;
+        wad = wad_;
         burnCalls;
     }
 
-    function approve(address usr, uint wad) public returns (bool) {
+    function approve(address usr_, uint wad_) public returns (bool) {
+        usr = usr_;
+        wad = wad_;
+        approveCalls++;
         return approveReturn;
     }
 

@@ -3,10 +3,10 @@ pragma solidity >=0.4.24;
 contract LenderMock {
 
     // calls
-    uint public providerCalls;
+    uint public provideCalls;
     uint public releaseCalls;
     uint public freeCalls;
-    
+
     // variables
     address public usrC;
     address public usrT;
@@ -22,7 +22,7 @@ contract LenderMock {
         usrT = usrT_;
         wadC = wadC_;
         wadT = wadT_;
-        providerCalls++;
+        provideCalls++;
     }
 
     function release(address usrC_, address usrT_, uint wadC_, uint wadT_) public {

@@ -1,6 +1,26 @@
 pragma solidity >=0.4.24;
 
+
+import "./token.sol";
+
+contract TknMock {
+    uint public approveCalls;
+
+    address public usr;
+    uint public wad;
+    function approve(address usr_, uint wad_) public {
+        approveCalls++;
+        usr = usr_;
+        wad = wad_;
+    }
+}
+
+
 contract ValveMock {
+    TokenMock public tkn;
+    constructor () public {
+        tkn = new TokenMock();
+    }
 
     // calls
     uint public balanceCalls;
@@ -14,7 +34,7 @@ contract ValveMock {
     uint public wad;
 
     // returns
-    int public wantReturn; function setWantReturn(int wantReturn_) public {wantReturn = wantReturn;}
+    int public wantReturn; function setWantReturn(int wantReturn_) public {wantReturn = wantReturn_;}
 
     // --- Valve ---
     function balance(address usr_) public  {
