@@ -6,8 +6,8 @@ contract LenderTokenLike {
     function approve(address usr, uint wad) public returns (bool);
 }
 
-contract LenderFabMock {
-    function deploy(address tkn_, address collateral_) public returns (address) {
+contract SimpleLenderFab {
+    function deploy(address tkn_, address collateral_, address lightswitch_) public returns (address) {
         SimpleLender lender = new SimpleLender(tkn_, collateral_);
         lender.rely(msg.sender);
         return address(lender);

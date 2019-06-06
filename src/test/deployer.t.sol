@@ -55,7 +55,7 @@ contract LenderMock {
 }
 
 contract LenderFabMock {
-    function deploy(address tkn_, address collateral_) public returns (address) {
+    function deploy(address tkn_, address collateral_, address lightswitch_) public returns (address) {
         LenderMock lender = new LenderMock(tkn_, collateral_);
         lender.rely(msg.sender);
         return address(lender);
@@ -90,6 +90,9 @@ contract DeployerTest is DSTest {
         deployer.deployTitle("Test", "TEST");
         deployer.deployLightSwitch();
         deployer.deployCollateral();
-        deployer.deploy(address(dai), address(lenderfab), address(appraiser));
+        deployer.deployPile(address(dai));
+        deployer.deployShelf(address(appraiser));
+        deployer.deployValve();
+        deployer.deploy(address(dai), address(lenderfab));
     }
 }

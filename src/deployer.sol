@@ -26,7 +26,7 @@ import { Valve } from "./valve.sol";
 import { Admit } from "./admit.sol";
 
 contract LenderFabLike {
-    function deploy(address,address) public returns (address);
+    function deploy(address,address,address) public returns (address);
 }
 
 contract LenderLike {
@@ -121,24 +121,27 @@ contract Deployer {
         collateral.rely(address(this));
         collateral.rely(god);
     }
-
-    function deploy(address currency_, address lenderfab_, address appraiser_) public {
+    function deployPile(address currency_) public {
         pile = pilefab.newPile(currency_);
         pile.rely(god);
-        address pile_ = address(pile);
-        
-        shelf = shelffab.newShelf(pile_, appraiser_);
+    }
+    function deployShelf(address appraiser_) public {
+        shelf = shelffab.newShelf(address(pile), appraiser_);
         shelf.rely(god);
-        address shelf_ = address(shelf);
-        pile.rely(shelf_);
-
-        valve = new Valve(address(collateral), shelf_);
+        pile.rely(address(shelf));
+    }
+    function deployValve() public {
+        valve = new Valve(address(collateral), address(shelf));
         valve.rely(god); 
+        collateral.rely(address(valve));
+    } 
+    function deploy(address currency_, address lenderfab_) public {
+        address pile_ = address(pile);
+        address shelf_ = address(shelf);
         address valve_ = address(valve);
-        collateral.rely(valve_);
-               
+
         // LenderFab deploys a lender with the defined collateral and currency
-        address lender_ = LenderFabLike(lenderfab_).deploy(currency_, address(collateral));
+        address lender_ = LenderFabLike(lenderfab_).deploy(currency_, address(collateral), address(lightswitch));
 
         lender = LenderLike(lender_);
         lender.rely(god);

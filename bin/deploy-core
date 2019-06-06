@@ -28,7 +28,10 @@ DEPLOYER=$(dapp create Deployer $GOD_ADDR $TITLE_FAB $LIGHTSWITCH_FAB $PILE_FAB 
 $(seth send $DEPLOYER 'deployTitle(string memory, string memory)' "Tinlake Loan" "TLNT")
 $(seth send $DEPLOYER 'deployLightSwitch()')
 $(seth send $DEPLOYER 'deployCollateral()')
-$(seth send $DEPLOYER 'deploy(address,address,address)' $CURRENCY $LENDER_FAB $APPRAISER)
+$(seth send $DEPLOYER 'deployPile(address)' $CURRENCY)
+$(seth send $DEPLOYER 'deployShelf(address)' $APPRAISER)
+$(seth send $DEPLOYER 'deployValve()')
+$(seth send $DEPLOYER 'deploy(address,address)' $CURRENCY $LENDER_FAB)
 
 cat > "$ADDRESS_DIR/load-tinlake-$(seth chain)" << EOF
 #!/bin/bash
