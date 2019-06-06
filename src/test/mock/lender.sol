@@ -1,48 +1,41 @@
 pragma solidity >=0.4.24;
 
-contract LenderTokenLike {
-    function transferFrom(address, address, uint) public;
-    function mint(address, uint) public;
-    function approve(address usr, uint wad) public returns (bool);
-}
-
-contract LenderFabMock {
-    function deploy(address tkn_, address collateral_) public returns (address) {
-        LenderMock lender = new LenderMock(tkn_, collateral_);
-        lender.rely(msg.sender);
-        return address(lender);
-    }
-}
-
 contract LenderMock {
-    // --- Auth ---
-    mapping (address => uint) public wards;
-    function rely(address usr) public auth { wards[usr] = 1; }
-    function deny(address usr) public auth { wards[usr] = 0; }
-    modifier auth { require(wards[msg.sender] == 1); _; }
 
-    // --- Data ---
-    LenderTokenLike public tkn;
-    LenderTokenLike public collateral;
+    // calls
+    uint public providerCalls;
+    uint public releaseCalls;
+    uint public freeCalls;
+    
+    // variables
+    address public usrC;
+    address public usrT;
+    uint public wadC;
+    uint public wadT;
 
-    constructor (address tkn_, address collateral_) public {
-        wards[msg.sender] = 1;
-        tkn = LenderTokenLike(tkn_);
-        collateral = LenderTokenLike(collateral_);
-    }
+    address public usr;
+    uint public wad;
 
     // --- Lender Methods ---
-    function provide(address usrC, address usrT, uint wadC, uint wadT) public {
-        collateral.transferFrom(usrC, address(this), wadC);
-        tkn.mint(usrT, wadT);
+    function provide(address usrC_, address usrT_, uint wadC_, uint wadT_) public {
+        usrC = usrC_;
+        usrT = usrT_;
+        wadC = wadC_;
+        wadT = wadT_;
+        providerCalls++;
     }
 
-    function release(address usrC, address usrT, uint wadC, uint wadT) public {
-        tkn.transferFrom(usrT,address(this), wadT);
-        collateral.transferFrom(address(this), usrC, wadC);
+    function release(address usrC_, address usrT_, uint wadC_, uint wadT_) public {
+        usrC = usrC_;
+        usrT = usrT_;
+        wadC = wadC_;
+        wadT = wadT_;
+        releaseCalls++;
     }
 
-    function free(address usr, uint wad) public {
-        revert();
+    function free(address usr_, uint wad_) public {
+        usr = usr_;
+        wad = wad_;
+        freeCalls++;
     }
 }

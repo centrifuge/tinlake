@@ -6,20 +6,31 @@ import "../desk.sol";
 import "./mock/pile.sol";
 import "./mock/lender.sol";
 import "./mock/token.sol";
+import "./mock/valve.sol";
+import "./mock/lightswitch.sol";
 
 contract DeskTest is DSTest {
-
     Desk desk;
-    // --- Data ---
 
     PileMock pile;
     LenderMock lender;
-  //  ValveMock valve;
+    ValveMock valve;
     TokenMock collateral;
-  //  LightswitchMock lightswitch;
+    LightSwitchMock lightswitch;
 
+    address self;
 
     function setUp() public {
+
+        self = address(this);
+
+        pile = new PileMock();
+        lender = new LenderMock();
+        valve = new ValveMock();
+        collateral = new TokenMock();
+        lightswitch = new LightSwitchMock();
+
+        desk = new Desk(address(pile), address(lender), address(valve), address(collateral), address(lightswitch));
 
     }
 
