@@ -19,9 +19,9 @@ import "ds-test/test.sol";
 
 import "../deployer.sol";
 import "../appraiser.sol";
-import "./simplenft.sol";
-import "./simpletoken.sol";
-import "./simplelender.sol";
+import "./simple/nft.sol";
+import "./simple/token.sol";
+import "./simple/lender.sol";
 
 contract TokenLike {
     function transferFrom(address, address, uint) public;

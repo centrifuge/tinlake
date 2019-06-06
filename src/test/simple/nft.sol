@@ -1,6 +1,6 @@
 pragma solidity >=0.4.24;
 
-import { ERC721  } from "../openzeppelin-solidity/token/ERC721/ERC721.sol";
+import { ERC721  } from "../../openzeppelin-solidity/token/ERC721/ERC721.sol";
 import "ds-test/test.sol";
 
 // This contract allows anyone to mint an NFT. Used for testing Tinlake

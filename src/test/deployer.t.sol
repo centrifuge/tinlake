@@ -19,8 +19,8 @@ import "ds-test/test.sol";
 
 import "../deployer.sol";
 import "../appraiser.sol";
-import { SimpleNFT } from "./simplenft.sol";
-import { SimpleToken } from "./simpletoken.sol";
+import { SimpleNFT } from "./simple/nft.sol";
+import { SimpleToken } from "./simple/token.sol";
 import "../collateral.sol";
 
 contract LenderMock {
