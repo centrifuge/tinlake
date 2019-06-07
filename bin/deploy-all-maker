@@ -41,5 +41,16 @@ message DEPLOYING CORE
 
 "$BIN_DIR/deploy-core"
 
+message DEPLOYING MAKER SPELL
+
+"$BIN_DIR/deploy-maker-spell"
+source "$ADDRESS_DIR/load-maker-spell-$(seth chain)"
+
+message DEPLOYING MAKER LENDER
+
+"$BIN_DIR/deploy-maker-lender"
+source "$ADDRESS_DIR/load-maker-lender-$(seth chain)"
+
+
 message DONE
 

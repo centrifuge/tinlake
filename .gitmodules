@@ -4,3 +4,12 @@
 [submodule "lib/ds-note"]
 	path = lib/ds-note
 	url = https://github.com/dapphub/ds-note
+[submodule "lib/ds-value"]
+	path = lib/ds-value
+	url = https://github.com/dapphub/ds-value
+[submodule "lib/dss"]
+	path = lib/dss
+	url = https://github.com/makerdao/dss
+[submodule "lib/dss-add-ilk-spell"]
+	path = lib/dss-add-ilk-spell
+	url = https://github.com/makerdao/dss-add-ilk-spell
