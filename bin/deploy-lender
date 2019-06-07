@@ -14,6 +14,7 @@ test -z "$SKIP_BUILD" && dapp build
 test -z "$GOD_ADDR" && GOD_ADDR=$(seth --to-address "0x00000000000000000000") 
 
 LENDER_FAB=$(dapp create test/LenderFabMock)
+$(seth send $DEPLOYER 'deployLender(address,address)' $CURRENCY $LENDER_FAB)
 
 cat > "$ADDRESS_DIR/load-lender-$(seth chain)" << EOF
 #!/bin/bash

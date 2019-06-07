@@ -29,7 +29,8 @@ contract DeskTest is DSTest {
         collateral = new TokenMock();
         lightswitch = new LightSwitchMock();
 
-        desk = new Desk(address(pile), address(lender), address(valve), address(collateral), address(lightswitch));
+        desk = new Desk(address(pile), address(valve), address(collateral), address(lightswitch));
+        desk.file("lender", address(lender));
     }
 
 

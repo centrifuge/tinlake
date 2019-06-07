@@ -64,8 +64,8 @@ contract Pile is DSNote {
 
     }
 
-    function setLender(address lender_) public auth {
-        lender = lender_;
+    function file (bytes32 what, address data) public auth {
+        if (what == "lender") { lender = data; }
     }
 
     function file(uint loan, uint fee_, uint balance_) public auth note {

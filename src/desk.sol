@@ -61,14 +61,17 @@ contract Desk is Switchable {
     ValveLike public valve;
     CollateralLike public collateral;
 
-    constructor (address pile_, address lender_, address valve_, address collateral_, address lightswitch_) Switchable(lightswitch_) public {
+    constructor (address pile_, address valve_, address collateral_, address lightswitch_) Switchable(lightswitch_) public {
         wards[msg.sender] = 1;
 
         pile = PileLike(pile_);
-        lender = LenderLike(lender_);
         valve = ValveLike(valve_);
         collateral = CollateralLike(collateral_);
 
+    }
+
+    function file(bytes32 what, address data) public auth {
+        if (what == "lender") { lender = LenderLike(data); }
     }
 
     function approve(address usr, uint wad) public auth {

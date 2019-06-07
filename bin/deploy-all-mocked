@@ -33,14 +33,15 @@ message DEPLOYING NFT AND CURRENCY
 "$BIN_DIR/deploy-mocks"
 source "$ADDRESS_DIR/load-mocks-$(seth chain)"
 
+message DEPLOYING CORE
+
+"$BIN_DIR/deploy-core"
+source "$ADDRESS_DIR/load-core-$(seth chain)"
+
 message DEPLOYING LENDERFAB
 
 "$BIN_DIR/deploy-lender"
 source "$ADDRESS_DIR/load-lender-$(seth chain)"
-
-message DEPLOYING CORE
-
-"$BIN_DIR/deploy-core"
 
 message DONE
 

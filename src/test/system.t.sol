@@ -112,13 +112,13 @@ contract SystemTest is DSTest {
         deployer.deployPile(tkn_);
         deployer.deployShelf(address(appraiser));
         deployer.deployValve();
-        deployer.deploy(tkn_, lenderfab);
+        deployer.deploy();
+        deployer.deployLender(tkn_, lenderfab);
 
         borrower = new BorrowerUser(address(deployer.reception()),tkn_);
         borrower_ = address(borrower);
 
         manager.file(deployer);
-
     }
 
     // Checks

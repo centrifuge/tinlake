@@ -93,6 +93,7 @@ contract DeployerTest is DSTest {
         deployer.deployPile(address(dai));
         deployer.deployShelf(address(appraiser));
         deployer.deployValve();
-        deployer.deploy(address(dai), address(lenderfab));
+        deployer.deploy();
+        deployer.deployLender(address(dai), address(lenderfab));
     }
 }

@@ -135,27 +135,16 @@ contract Deployer {
         valve.rely(god); 
         collateral.rely(address(valve));
     } 
-    function deploy(address currency_, address lenderfab_) public {
+    function deploy() public {
         address pile_ = address(pile);
         address shelf_ = address(shelf);
         address valve_ = address(valve);
-
-        // LenderFab deploys a lender with the defined collateral and currency
-        address lender_ = LenderFabLike(lenderfab_).deploy(currency_, address(collateral), address(lightswitch));
-
-        lender = LenderLike(lender_);
-        lender.rely(god);
-
-        //set lender in pile
-        pile.setLender(lender_);
-        
-        desk = new Desk(pile_, lender_, valve_, address(collateral), address(lightswitch));
+        desk = new Desk(pile_, valve_, address(collateral), address(lightswitch));
         desk.rely(god);
         address desk_ = address(desk);
         pile.rely(desk_);
         valve.rely(desk_);
-        desk.approve(lender_, uint(-1));
-
+        
         admit = new Admit(address(title), shelf_);
         admit.rely(god);
         address admit_ = address(admit);
@@ -168,7 +157,17 @@ contract Deployer {
         shelf.rely(reception_);
         pile.rely(reception_);
         desk.rely(reception_);
-
+    }
+    function deployLender(address currency_, address lenderfab_) public {
+        // LenderFab deploys a lender with the defined collateral and currency
+        address lender_ = LenderFabLike(lenderfab_).deploy(currency_, address(collateral), address(lightswitch));
+        
+        lender = LenderLike(lender_);
+        lender.rely(god);
+        
+        desk.approve(lender_, uint(-1));
+        pile.file("lender", lender_);
+        desk.file("lender", lender_);
     }
 }
 

@@ -11,7 +11,7 @@ export SOLC_FLAGS="--optimize"
 test -z "$SKIP_BUILD" && dapp build
 
 # Ensure dependencies are present
-{ test -z "$CURRENCY" || test -z "$LENDER_FAB"  || test -z "$APPRAISER"; } && exit 1
+{ test -z "$CURRENCY" || test -z "$APPRAISER"; } && exit 1
 
 # Set god address to 0 if not defined
 test -z "$GOD_ADDR" && GOD_ADDR=$(seth --to-address "0x00000000000000000000") 
@@ -31,14 +31,14 @@ $(seth send $DEPLOYER 'deployCollateral()')
 $(seth send $DEPLOYER 'deployPile(address)' $CURRENCY)
 $(seth send $DEPLOYER 'deployShelf(address)' $APPRAISER)
 $(seth send $DEPLOYER 'deployValve()')
-$(seth send $DEPLOYER 'deploy(address,address)' $CURRENCY $LENDER_FAB)
+$(seth send $DEPLOYER 'deploy()')
 
-cat > "$ADDRESS_DIR/load-tinlake-$(seth chain)" << EOF
+cat > "$ADDRESS_DIR/load-core-$(seth chain)" << EOF
 #!/bin/bash
 # tinlake deployment on $(seth chain) from $(git rev-parse HEAD)
 # $(date)
 export APPRAISER=$APPRAISER
-export DEPLOYER=0x$DEPLOYER
+export DEPLOYER=$DEPLOYER
 export TITLE=0x$(seth call $DEPLOYER 'title()(address)')
 export LIGHTSWITCH=0x$(seth call $DEPLOYER 'lightswitch()(address)')
 export PILE=0x$(seth call $DEPLOYER 'pile()(address)')

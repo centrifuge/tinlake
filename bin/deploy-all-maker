@@ -37,11 +37,6 @@ message DEPLOYING APPRAISER
 "$BIN_DIR/deploy-appraiser"
 source "$ADDRESS_DIR/load-appraiser-$(seth chain)"
 
-message DEPLOYING MAKER LENDERFAB
-
-"$BIN_DIR/deploy-maker-lender"
-source "$ADDRESS_DIR/load-maker-lender-$(seth chain)"
-
 message DEPLOYING CORE
 
 "$BIN_DIR/deploy-core"
