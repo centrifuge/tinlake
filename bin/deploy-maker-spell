@@ -68,8 +68,6 @@ SPELL=$(seth send --create lib/dss-add-ilk-spell/out/DssAddIlkSpell.bin 'DssAddI
 seth send "$MCD_ADM" 'etch(address[] memory)' ["${SPELL#0x}"]
 
 # Give MKR to ETH_FROM
-seth send "$MCD_GOV" 'mint(address,uint)' $ETH_FROM 100
-#seth send "$FAUCET" 'gulp(address)' $MCD_GOV
 seth send "$MCD_GOV" 'approve(address,uint256)' "$MCD_ADM" 1
 seth send "$MCD_ADM" 'lock(uint256)' 1
 seth send "$MCD_ADM" 'vote(address[] memory)' ["${SPELL#0x}"]
