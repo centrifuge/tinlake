@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -ex
 
-ADDRESS_DIR=${ADDRESS_DIR:-$PWD/out/address}
+ADDRESS_DIR=${ADDRESS_DIR:-$PWD/addresses}
 mkdir -p $ADDRESS_DIR 
 
 export ETH_GAS=${ETH_GAS:-"7000000"}

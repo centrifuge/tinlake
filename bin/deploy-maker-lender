@@ -2,7 +2,7 @@
 set -ex
 
 BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
-ADDRESS_DIR=${ADDRESS_DIR:-$PWD/out/address}
+ADDRESS_DIR=${ADDRESS_DIR:-$PWD/addresses}
 mkdir -p $ADDRESS_DIR 
 
 export ETH_GAS=${ETH_GAS:-"7000000"}
@@ -14,10 +14,11 @@ test -z "$SKIP_BUILD" && dapp build
 # Set god address to 0 if not defined
 test -z "$GOD_ADDR" && GOD_ADDR="0x00000000000000000000"
 
-LENDER_FAB=$(dapp create MakerLenderFab $MCD_DEPLOY $MCD_PROXY $CDP_MANAGER)
+LENDER_FAB=$(dapp create MakerLenderFab $MCD_DEPLOY $PROXY_ACTIONS $CDP_MANAGER)
 $(seth send $DEPLOYER 'deployLender(address, address)' $CURRENCY $LENDER_FAB)
 LENDER=0x$(seth call $DEPLOYER 'lender()(address)')
-$(seth send $LENDER 'file(bytes32, address)' "$(seth --to-bytes32 $(echo "gemJoin")"
+$(seth send $LENDER 'file(bytes32,address)' "$(seth --to-bytes32 "$(seth --from-ascii "gemJoin")")" $CVTJOIN)
+$(seth send $DESK 'file(bytes32,address)' "$(seth --to-bytes32 "$(seth --from-ascii "lender")")" $LENDER)
 
 cat > "$ADDRESS_DIR/load-maker-lender-$(seth chain)" << EOF
 #!/bin/bash
