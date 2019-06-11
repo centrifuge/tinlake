@@ -13,6 +13,15 @@ message() {
     echo
 }
 
+
+# Set verify contract option in Etherscan if the API key is in the config file
+if [[ "$ETHERSCAN_API_KEY" != "" ]]; then
+    export DAPP_VERIFY_CONTRACT="yes"
+    echo "Found ETHERSCAN_API_KEY in environment, will attempt to verify contracts."
+fi
+
+
+
 message CHECKING OUT DEPENDENCIES
 
 dapp update
