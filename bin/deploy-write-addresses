@@ -13,6 +13,7 @@ touch "$ADDRESS_DIR/addresses.json"
 
 addAddresses "$ADDRESS_DIR/addresses.json" <<EOF 
 {
+   "DEPLOYER": "$DEPLOYER",
    "APPRAISER": "$APPRAISER",
    "TITLE": "$TITLE",
    "LIGHTSWITCH":"$LIGHTSWITCH",
@@ -24,6 +25,9 @@ addAddresses "$ADDRESS_DIR/addresses.json" <<EOF
    "LENDER": "$LENDER",
    "CVTJOIN": "$CVTJOIN",
    "CVTPIP" : "$CVTPIP",
-   "NFT_COLLATERAL": "$NFT_COLLATERAL"
+   "NFT_COLLATERAL": "$NFT_COLLATERAL",
+   "ADMIT":"$ADMIT",
+   "SPELL":"$SPELL",
+   "CURRENCY":"$CURRENCY"
 }
 EOF
