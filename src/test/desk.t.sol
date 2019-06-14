@@ -41,10 +41,10 @@ contract DeskTest is DSTest {
         desk.balance();
 
         assertEq(valve.mintMaxCalls(),1);
-        assertEq(valve.usr(),address(desk));
+        assertEq(valve.usr(),address(lender));
 
         assertEq(lender.provideCalls(), 1);
-        assertEq(lender.usrC(),address(desk));
+        assertEq(lender.usrC(),address(lender));
         assertEq(lender.usrT(),address(pile));
         assertEq(lender.wadT(),uint(wadT));
         assertEq(lender.wadC(),uint(wadC));
