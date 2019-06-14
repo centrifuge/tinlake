@@ -117,6 +117,11 @@ contract MakerAdapter is DSNote {
          if (what == "gemJoin") { gemJoin = data; }
     }
 
+    function file(bytes32 what, bytes32 data) public note auth {
+        if (what == "ilk") { ilk = data; }
+    }
+    
+
     // --- Math ---
     function add(uint x, uint y) internal pure returns (uint z) {
         require((z = x + y) >= x);

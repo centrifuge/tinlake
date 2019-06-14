@@ -3,7 +3,7 @@
 set -e
 
 BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
-ADDRESS_DIR=${ADDRESS_DIR:-$PWD/out/address}
+ADDRESS_DIR=${ADDRESS_DIR:-$PWD/addresses}
 
 message() {
     echo

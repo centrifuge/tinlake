@@ -74,12 +74,21 @@ contract CollateralFab {
     }
 }
 
+contract DeskFab {
+    function newDesk(address pile, address valve, address collateral, address lightswitch) public returns (Desk desk) {
+        desk = new Desk(pile, valve, collateral, lightswitch);
+        desk.rely(msg.sender);
+        desk.deny(address(this));
+    }
+}    
+
 contract Deployer {
     TitleFab titlefab;
     LightSwitchFab lightswitchfab;
     PileFab pilefab;
     ShelfFab shelffab;
     CollateralFab collateralfab;
+    DeskFab         deskfab;
     
     Title       public title;
     LightSwitch public lightswitch;
@@ -93,7 +102,7 @@ contract Deployer {
     Admit       public admit;
     LenderLike  public lender;
 
-    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, PileFab pilefab_, ShelfFab shelffab_, CollateralFab collateralfab_) public {
+    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, PileFab pilefab_, ShelfFab shelffab_, CollateralFab collateralfab_, DeskFab deskfab_) public {
         address self = msg.sender;
         god = god_;
         
@@ -102,6 +111,7 @@ contract Deployer {
         pilefab = pilefab_;
         shelffab = shelffab_;
         collateralfab = collateralfab_;
+        deskfab = deskfab_;
     }
 
     function deployTitle(string memory name, string memory symbol) public {
@@ -135,13 +145,16 @@ contract Deployer {
         valve.rely(god); 
         collateral.rely(address(valve));
     } 
+    function deployDesk() public {
+        desk = deskfab.newDesk(address(pile), address(valve), address(collateral), address(lightswitch));
+        desk.rely(god);
+    }
     function deploy() public {
         address pile_ = address(pile);
         address shelf_ = address(shelf);
         address valve_ = address(valve);
-        desk = new Desk(pile_, valve_, address(collateral), address(lightswitch));
-        desk.rely(god);
         address desk_ = address(desk);
+
         pile.rely(desk_);
         valve.rely(desk_);
         

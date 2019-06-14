@@ -72,6 +72,7 @@ contract DeployerTest is DSTest {
     PileFab pilefab;
     ShelfFab shelffab;
     CollateralFab collateralfab;
+    DeskFab deskfab;
 
     function setUp() public {
         nft = new SimpleNFT();
@@ -83,16 +84,18 @@ contract DeployerTest is DSTest {
         pilefab = new PileFab();
         shelffab = new ShelfFab();
         collateralfab = new CollateralFab();
+        deskfab = new DeskFab();
    }
     
     function testDeploy() public logs_gas {
-        Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, pilefab, shelffab, collateralfab);
+        Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, pilefab, shelffab, collateralfab, deskfab);
         deployer.deployTitle("Test", "TEST");
         deployer.deployLightSwitch();
         deployer.deployCollateral();
         deployer.deployPile(address(dai));
         deployer.deployShelf(address(appraiser));
         deployer.deployValve();
+        deployer.deployDesk();
         deployer.deploy();
         deployer.deployLender(address(dai), address(lenderfab));
     }

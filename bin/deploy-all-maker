@@ -3,7 +3,7 @@
 set -e
 
 BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
-ADDRESS_DIR=${ADDRESS_DIR:-$PWD/out/address}
+ADDRESS_DIR=${ADDRESS_DIR:-$PWD/addresses}
 
 message() {
     echo
@@ -12,6 +12,15 @@ message() {
     echo ----------------------------------------------
     echo
 }
+
+
+# Set verify contract option in Etherscan if the API key is in the config file
+if [[ "$ETHERSCAN_API_KEY" != "" ]]; then
+    export DAPP_VERIFY_CONTRACT="yes"
+    echo "Found ETHERSCAN_API_KEY in environment, will attempt to verify contracts."
+fi
+
+
 
 message CHECKING OUT DEPENDENCIES
 
@@ -24,13 +33,16 @@ export SKIP_BUILD=1
 
 message LOADING MAKER CONTRACTS
 
-source "$BIN_DIR/lib/load-maker-addresses"
+test -z "$MCD_ADDRESS_FILE" && echo "MCD_ADDRESS_FILE needs to be set" && exit 1;
+source "$BIN_DIR/lib/load-addresses"
+loadAddresses $MCD_ADDRESS_FILE
 export CURRENCY=$MCD_DAI
 
 message DEPLOYING NFT
 
 export SKIP_CURRENCY=1
 "$BIN_DIR/deploy-mocks"
+source "$ADDRESS_DIR/load-mocks-$(seth chain)"
 
 message DEPLOYING APPRAISER
 
@@ -40,6 +52,7 @@ source "$ADDRESS_DIR/load-appraiser-$(seth chain)"
 message DEPLOYING CORE
 
 "$BIN_DIR/deploy-core"
+source "$ADDRESS_DIR/load-core-$(seth chain)"
 
 message DEPLOYING MAKER SPELL
 
@@ -51,6 +64,8 @@ message DEPLOYING MAKER LENDER
 "$BIN_DIR/deploy-maker-lender"
 source "$ADDRESS_DIR/load-maker-lender-$(seth chain)"
 
+message WRITING $ADDRESS_DIR/addresses.json
+"$BIN_DIR/deploy-write-addresses"
 
 message DONE
 

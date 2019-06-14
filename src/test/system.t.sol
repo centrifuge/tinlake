@@ -99,19 +99,21 @@ contract SystemTest is DSTest {
         PileFab pilefab = new PileFab();
         ShelfFab shelffab = new ShelfFab();
         CollateralFab collateralfab = new CollateralFab();
+        DeskFab deskfab = new DeskFab();
         appraiser = new Appraiser();
 
         manager = new ManagerUser(appraiser);
         manager_ = address(manager);
         appraiser.rely(manager_);
 
-        deployer = new Deployer(manager_, titlefab, lightswitchfab, pilefab, shelffab, collateralfab);
+        deployer = new Deployer(manager_, titlefab, lightswitchfab, pilefab, shelffab, collateralfab, deskfab);
         deployer.deployLightSwitch();
         deployer.deployTitle("Tinlake Loan", "TLNT");
         deployer.deployCollateral();
         deployer.deployPile(tkn_);
         deployer.deployShelf(address(appraiser));
         deployer.deployValve();
+        deployer.deployDesk();
         deployer.deploy();
         deployer.deployLender(tkn_, lenderfab);
 
