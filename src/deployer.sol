@@ -177,6 +177,7 @@ contract Deployer {
         
         lender = LenderLike(lender_);
         lender.rely(god);
+        lender.rely(address(desk));
         
         desk.approve(lender_, uint(-1));
         pile.file("lender", lender_);
