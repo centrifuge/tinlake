@@ -21,6 +21,7 @@ LENDER=0x$(seth call $DEPLOYER 'lender()(address)')
 $(seth send $LENDER 'file(bytes32,address)' "$(seth --to-bytes32 "$(seth --from-ascii "gemJoin")")" $CVTJOIN)
 $(seth send $LENDER 'file(bytes32,bytes32)' "$(seth --to-bytes32 "$(seth --from-ascii "ilk")")" $CVTILK)
 $(seth send $DESK 'file(bytes32,address)' "$(seth --to-bytes32 "$(seth --from-ascii "lender")")" $LENDER)
+$(seth send $LENDER 'rely(address)' $DESK)
 $(seth send $LENDER 'open()')
 
 cat > "$ADDRESS_DIR/load-maker-lender-$(seth chain)" << EOF
