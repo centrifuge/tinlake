@@ -51,12 +51,12 @@ source "$ADDRESS_DIR/load-appraiser-$(seth chain)"
 
 message DEPLOYING CORE
 
-#"$BIN_DIR/deploy-core"
+"$BIN_DIR/deploy-core"
 source "$ADDRESS_DIR/load-core-$(seth chain)"
 
 message DEPLOYING MAKER SPELL
 
-#"$BIN_DIR/deploy-maker-spell"
+"$BIN_DIR/deploy-maker-spell"
 source "$ADDRESS_DIR/load-maker-spell-$(seth chain)"
 
 message DEPLOYING MAKER LENDER
