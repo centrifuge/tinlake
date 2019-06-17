@@ -21,6 +21,7 @@ contract TokenLike {
     uint public totalSupply;
     function balanceOf(address) public view returns (uint);
     function transferFrom(address,address,uint) public;
+    function approve(address,uint) public;
 }
 
 contract VatLike {
@@ -154,11 +155,13 @@ contract MakerAdapter is DSNote {
 
     // Below methods are a bit repetitive with the above but split out to make sure we can later on abstract the Maker interaction away.
     function open() public auth {
-        require(cdp == 0, "already-open"); 
-        cdp = proxy.open(manager, ilk); 
+        require(cdp == 0, "already-open");
+        cdp = proxy.open(manager, ilk);
+        collateral.approve(address(proxy), uint(-1));
     }
 
-    function lock(address usrC, address usrT, uint wadC, uint wadT) public auth { collateral.transferFrom(usrC, address(this), wadC);
+    function lock(address usrC, address usrT, uint wadC, uint wadT) public auth {
+        collateral.transferFrom(usrC, address(this), wadC);
         proxy.lockGemAndDraw(manager, gemJoin, daiJoin, cdp, wadC, wadT);
         gem = add(gem, wadC);
         tkn.transferFrom(address(this), usrT, wadT);
