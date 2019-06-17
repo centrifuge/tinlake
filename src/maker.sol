@@ -168,10 +168,10 @@ contract MakerAdapter is DSNote {
     }
 
     function wipe(address usrC, address usrT, uint wadC, uint wadT) public auth {
-        tkn.transferFrom(usrC, address(this), wadT);
+        tkn.transferFrom(usrT, address(this), wadT);
         proxy.wipeAndFreeGem(manager, gemJoin, daiJoin, cdp, wadT, wadC);
         gem = sub(gem, wadC);
-        collateral.transferFrom(address(this), usrT, wadC);
+        collateral.transferFrom(address(this), usrC, wadC);
     }
 
     function freeGem(address usr, uint wad) public auth {
