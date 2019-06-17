@@ -158,6 +158,7 @@ contract MakerAdapter is DSNote {
         require(cdp == 0, "already-open");
         cdp = proxy.open(manager, ilk);
         collateral.approve(address(proxy), uint(-1));
+        tkn.approve(address(proxy), uint(-1));
     }
 
     function lock(address usrC, address usrT, uint wadC, uint wadT) public auth {
@@ -169,7 +170,7 @@ contract MakerAdapter is DSNote {
 
     function wipe(address usrC, address usrT, uint wadC, uint wadT) public auth {
         tkn.transferFrom(usrT, address(this), wadT);
-        proxy.wipeAndFreeGem(manager, gemJoin, daiJoin, cdp, wadT, wadC);
+        proxy.wipeAndFreeGem(manager, gemJoin, daiJoin, cdp, wadC, wadT);
         gem = sub(gem, wadC);
         collateral.transferFrom(address(this), usrC, wadC);
     }
