@@ -15,7 +15,7 @@
 
 pragma solidity >=0.4.24;
 
-import "./lightswitch.sol";
+import "../../lightswitch.sol";
 
 contract ValveLike {
     function balance(address) public;

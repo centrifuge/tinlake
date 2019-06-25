@@ -3,11 +3,11 @@ pragma solidity >=0.4.23;
 import "ds-test/test.sol";
 
 import "../desk.sol";
-import "./mock/pile.sol";
-import "./mock/lender.sol";
-import "./mock/token.sol";
-import "./mock/valve.sol";
-import "./mock/lightswitch.sol";
+import "../../../test/mock/pile.sol";
+import "../../../test/mock/lender.sol";
+import "../../../test/mock/token.sol";
+import "../../../test/mock/valve.sol";
+import "../../../test/mock/lightswitch.sol";
 
 contract DeskTest is DSTest {
     Desk desk;

@@ -21,7 +21,7 @@ import "../deployer.sol";
 import "../appraiser.sol";
 import { SimpleNFT } from "./simple/nft.sol";
 import { SimpleToken } from "./simple/token.sol";
-import "../collateral.sol";
+import "../lender/cvt/collateral.sol";
 
 contract LenderMock {
     // --- Auth ---

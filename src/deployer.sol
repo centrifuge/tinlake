@@ -19,10 +19,10 @@ import { Title } from "./title.sol";
 import { LightSwitch } from "./lightswitch.sol";
 import { Shelf } from "./shelf.sol";
 import { Reception } from "./reception.sol"; 
-import { Desk } from "./desk.sol";
+import { Desk } from "./lender/cvt/desk.sol";
 import { Pile } from "./pile.sol";
-import { Collateral } from "./collateral.sol";
-import { Valve } from "./valve.sol";
+import { Collateral } from "./lender/cvt/collateral.sol";
+import { Valve } from "./lender/cvt/valve.sol";
 import { Admit } from "./admit.sol";
 
 contract LenderFabLike {
