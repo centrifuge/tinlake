@@ -16,7 +16,7 @@
 
 pragma solidity >=0.4.24;
 
-import { TitleOwned } from "./title.sol";
+import { TitleOwned } from "./borrow/title.sol";
 
 contract DeskLike {
     // --- Desk ---

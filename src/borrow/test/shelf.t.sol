@@ -18,8 +18,8 @@ pragma solidity >=0.4.23;
 import "ds-test/test.sol";
 
 import "../shelf.sol";
-import "./mock/pile.sol";
-import "./mock/nft.sol";
+import "../../test/mock/pile.sol";
+import "../../test/mock/nft.sol";
 import "../appraiser.sol";
 
 

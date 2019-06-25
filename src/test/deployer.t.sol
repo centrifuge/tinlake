@@ -18,7 +18,7 @@ pragma solidity >=0.4.23;
 import "ds-test/test.sol";
 
 import "../deployer.sol";
-import "../appraiser.sol";
+import "../borrow/appraiser.sol";
 import { SimpleNFT } from "./simple/nft.sol";
 import { SimpleToken } from "./simple/token.sol";
 import "../lender/cvt/collateral.sol";

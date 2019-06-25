@@ -15,7 +15,7 @@
 
 pragma solidity >=0.4.24;
 
-import { ERC721Metadata } from "./openzeppelin-solidity/token/ERC721/ERC721Metadata.sol";
+import { ERC721Metadata } from "../openzeppelin-solidity/token/ERC721/ERC721Metadata.sol";
 
 contract Title is ERC721Metadata {
     // --- Auth ---

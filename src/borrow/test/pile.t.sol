@@ -18,7 +18,7 @@ pragma solidity >=0.4.23;
 import "ds-test/test.sol";
 
 import "../pile.sol";
-import "./mock/token.sol";
+import "../../test/mock/token.sol";
 
 
 contract PileTest is DSTest {
