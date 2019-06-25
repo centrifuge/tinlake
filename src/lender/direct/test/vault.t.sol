@@ -3,10 +3,10 @@ pragma solidity >=0.4.23;
 import "ds-test/test.sol";
 
 import "../vault.sol";
-import "./mock/pile.sol";
-import "./mock/token.sol";
+import "../../../test/mock/pile.sol";
+import "../../../test/mock/token.sol";
 
-import "./mock/lightswitch.sol";
+import "../../../test/mock/lightswitch.sol";
 
 contract VaultTest is DSTest {
     Vault vault;
