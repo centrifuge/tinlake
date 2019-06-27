@@ -68,17 +68,40 @@ contract PileTest is DSTest {
         assertEq(tkn.wad(),wad);
     }
 
-    function simpleBorrowTest() public {
+    function repay(uint loan, uint wad) public {
+        uint totalDebt = pile.Debt();
+
+        pile.repay(loan, wad, address(this));
+
+        (uint debt,uint balance, ,) = pile.loans(loan);
+        assertEq(totalDebt-wad, pile.Debt());
+        assertEq(debt,0);
+        assertEq(balance,0);
+
+        assertEq(tkn.transferFromCalls(),2);
+        assertEq(tkn.dst(),address(this));
+        assertEq(tkn.src(),address(pile));
+        assertEq(tkn.wad(),wad);
+
+    }
+
+    function testSimpleBorrow() public {
         uint loan  = 1;
         uint wad = 100;
         borrow(loan,wad);
     }
 
-    function simpleWithdrawTest() public {
+    function testSimpleWithdraw() public {
         uint loan  = 1;
         uint wad = 100;
         borrow(loan,wad);
         withdraw(loan, wad);
-
+    }
+    function testSimpleRepay() public {
+        uint loan  = 1;
+        uint wad = 100;
+        borrow(loan,wad);
+        withdraw(loan, wad);
+        repay(loan, wad);
     }
 }
