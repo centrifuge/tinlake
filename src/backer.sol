@@ -4,11 +4,12 @@ contract LenderTokenLike {
     function transferFrom(address, address, uint) public;
     function mint(address, uint) public;
     function approve(address usr, uint wad) public returns (bool);
+    function balanceOf(address usr) public returns (uint);
 }
 
 contract BackerFab {
-    function deploy(address tkn_, address collateral_, address lightswitch_) public returns (address) {
-        Backer lender = new Backer(tkn_, collateral_);
+    function deploy(address tkn_, address collateral_,address backer, address lightswitch_) public returns (address) {
+        Backer lender = new Backer(tkn_, collateral_,backer );
         lender.rely(msg.sender);
         return address(lender);
     }
@@ -25,36 +26,31 @@ contract Backer {
     LenderTokenLike public tkn;
     LenderTokenLike public collateral;
 
-    constructor (address tkn_, address collateral_) public {
+    address private backer;
+
+    constructor (address tkn_, address collateral_, address backer_) public {
         wards[msg.sender] = 1;
         tkn = LenderTokenLike(tkn_);
         collateral = LenderTokenLike(collateral_);
+        backer = backer_;
     }
 
     // --- Backer Methods ---
     function provide(address usrC, address usrT, uint wadC, uint wadT) auth public {
-        collateral.transferFrom(usrC, address(this), wadC);
-        require(tkn.balanceOf(address(this))>= wadT);
-        tkn.transferFrom(address(this),usrT, wadT);
+        require(tkn.balanceOf(backer)>= wadT);
+        collateral.transferFrom(usrC, backer, wadC);
+        tkn.transferFrom(backer,usrT, wadT);
 
     }
 
     function release(address usrC, address usrT, uint wadC, uint wadT) auth  public {
-        tkn.transferFrom(usrT,address(this), wadT);
-        require(collateral.balanceOf(address(this))>= wadC);
-        collateral.transferFrom(address(this), usrC, wadC);
+        require(collateral.balanceOf(backer)>= wadC);
+        tkn.transferFrom(usrT,backer, wadT);
+        collateral.transferFrom(backer, usrC, wadC);
     }
 
-    function withdraw(address usr, uint wad) auth public {
-        require(tkn.balanceOf(address(this))>= wad);
-        tkn.transferFrom(address(this),usr, wad);
+    function setBacker(address usr) auth public {
+        backer = usr;
     }
-
-    function withdrawCollateral(address usr, uint wad) auth public {
-        require(collateral.balanceOf(address(this))>= wad);
-        tkn.transferFrom(address(this),usr, wad);
-    }
-
-
 
 }
