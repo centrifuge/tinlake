@@ -37,7 +37,8 @@ contract BackerTest is DSTest {
         collateral = new TokenMock();
 
         self = address(this);
-        backer = new Backer(address(tkn), address(collateral), backerAddr);
+        backer = new Backer(address(tkn), address(collateral));
+        backer.file(backerAddr);
 
     }
 
@@ -80,12 +81,12 @@ contract BackerTest is DSTest {
         release(wadC, wadT);
     }
 
-    function testSetBacker() public {
+    function testFile() public {
         uint wadC = 150;
         uint wadT = 100;
 
         address newBackerAddr = 0x1111111177D1f98aB45afc138A787BeFaf8eC48A;
-        backer.setBacker(newBackerAddr);
+        backer.file(newBackerAddr);
         backerAddr = newBackerAddr;
         provide(wadC, wadT);
     }
