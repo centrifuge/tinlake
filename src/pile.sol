@@ -150,7 +150,13 @@ contract Pile is DSNote {
         if (now >= fees[fee].rho) {
             drip(fee);
         }
-        uint chi_ = div(fees[fee].chi, loans[loan].chi);
+        uint chi_;
+        if(loans[loan].chi != 0) {
+            chi_ = div(fees[fee].chi, loans[loan].chi);
+        } else {
+            chi_ = ONE;
+        }
+
         uint wad = mul(loans[loan].debt, chi_);
 
         loans[loan].chi = add(loans[loan].chi, chi_);
