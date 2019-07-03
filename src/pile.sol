@@ -125,15 +125,6 @@ contract Pile is DSNote {
         z = add(mul(x, ONE), y / 2) / y;
     }
 
-    function div(uint a, uint b) internal pure returns (uint) {
-        // Solidity only automatically asserts when dividing by 0
-        require(b > 0, "SafeMath: division by zero");
-        uint c = (a / b);
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-
-        return c;
-    }
-
         // --- Fee Accumulation ---
     function drip(uint fee) public {
         uint48 rho = fees[fee].rho;
@@ -156,7 +147,7 @@ contract Pile is DSNote {
         }
         uint chi_ = ONE;
         if(loans[loan].chi != 0) {
-            chi_ = div(fees[fee].chi, loans[loan].chi);
+            chi_ = rdiv(fees[fee].chi, loans[loan].chi);
         }
         uint wad = mul(loans[loan].debt, chi_)/ONE;
 
