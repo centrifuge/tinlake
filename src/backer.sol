@@ -27,7 +27,7 @@ contract Backer {
     TokenLike public tkn;
     TokenLike public collateral;
 
-    address private backer;
+    address public backer;
 
     constructor (address tkn_, address collateral_) public {
         wards[msg.sender] = 1;
