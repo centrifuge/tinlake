@@ -162,9 +162,6 @@ contract PileTest is DSTest {
         (uint debt2,,uint fee2 ,uint chi2) = pile.loans(loan);
         assertEq(debt2, 69.3 ether); // 66 ether * 1,05**1
         assertEq(fee, fee2);
-        // print
-        assertEq(chi2,0);
-
 
         assertTrue(chi1 != chi2);
 
