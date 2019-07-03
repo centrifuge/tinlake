@@ -143,7 +143,8 @@ contract PileTest is DSTest {
         assertTrue(chi1 != chi2);
     }
 
-    function testFee() public {
+
+    function testSingleFee() public {
         uint fee = uint(1000000564701133626865910626); // 5 % / day
         pile.file(fee, fee);
         uint loan = 1;
@@ -154,26 +155,60 @@ contract PileTest is DSTest {
         assertEq(debt1, 66 ether);
         assertEq(fee, fee1);
 
+        // two days later
+        hevm.warp(2 days);
+        pile.collect(loan);
+
+        (uint debt2,,uint fee2 ,uint chi2) = pile.loans(loan);
+        assertEq(debt2, 72.765 ether); // 66 ether * 1,05**2
+        assertEq(fee, fee2);
+        assertTrue(chi1 != chi2);
+
+    }
+
+    function testMultiDripFee() public {
+        uint fee = uint(1000000564701133626865910626); // 5 % / day
+        pile.file(fee, fee);
+        uint loan = 1;
+        uint principal = 66 ether;
+        pile.file(loan, fee, 0);
+        borrow(loan, principal);
+        (uint debt1,,uint fee1 ,uint chi1) = pile.loans(loan);
+        assertEq(debt1, 66 ether);
+        assertEq(fee, fee1);
+
+        (, uint chiF, , ) = pile.fees(fee);
+         //assertEq(chiF, 11111111);
+        //assertEq(chi1, 222222222222);
+
+
+        // two days
         hevm.warp(1 days);
         pile.collect(loan);
 
-//        (uint debtF, uint chiF, uint speedF, uint rhoF ) = pile.fees(fee);
+        (,  chiF, , ) = pile.fees(fee);
+      // assertEq(chiF, 11111111);
 
         (uint debt2,,uint fee2 ,uint chi2) = pile.loans(loan);
         assertEq(debt2, 69.3 ether); // 66 ether * 1,05**1
         assertEq(fee, fee2);
 
         assertTrue(chi1 != chi2);
+       // assertEq(chi2, 222222222222);
 
-        hevm.warp(1 days);
+
+        // day 2
+        hevm.warp(2 days);
         pile.collect(loan);
+
+        (,  chiF, , ) = pile.fees(fee);
+       // assertEq(chiF, 11111111);
 
         (uint debt3,,uint fee3 ,uint chi3) = pile.loans(loan);
         assertEq(debt3, 72.765 ether); // 66 ether * 1,05**2
         assertEq(fee, fee3);
         assertTrue(chi2 != chi3);
-
-
+     // assertEq(chi3, 222222222222);
 
 
     }
