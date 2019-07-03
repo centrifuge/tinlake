@@ -13,3 +13,6 @@
 [submodule "lib/dss-add-ilk-spell"]
 	path = lib/dss-add-ilk-spell
 	url = https://github.com/makerdao/dss-add-ilk-spell
+[submodule "lib/ds-token"]
+	path = lib/ds-token
+	url = https://github.com/dapphub/ds-token
