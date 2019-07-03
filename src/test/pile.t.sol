@@ -172,7 +172,7 @@ contract PileTest is DSTest {
     }
 
     function testDoubleDripFee() public {
-        uint fee = uint(1000000564701133626865910626); // 5 % / day
+        uint fee = uint(1000000564701133626865910626); // 5 % / daily
         pile.file(fee, fee);
         uint loan = 1;
         uint principal = 66 ether;
