@@ -121,10 +121,14 @@ contract Pile is DSNote {
         require(y == 0 || (z = x * y) / y == x);
     }
 
+    function rdiv(uint x, uint y) internal pure returns (uint z) {
+        z = add(mul(x, ONE), y / 2) / y;
+    }
+
     function div(uint a, uint b) internal pure returns (uint) {
         // Solidity only automatically asserts when dividing by 0
         require(b > 0, "SafeMath: division by zero");
-        uint c = a / b;
+        uint c = (a / b);
         // assert(a == b * c + a % b); // There is no case in which this doesn't hold
 
         return c;
@@ -159,9 +163,12 @@ contract Pile is DSNote {
 
         uint wad = mul(loans[loan].debt, chi_);
 
-        loans[loan].chi = add(loans[loan].chi, chi_);
+        loans[loan].chi = chi_;
         loans[loan].debt = add(loans[loan].debt, wad);
+
     }
+
+
         
    
     // --- Pile ---

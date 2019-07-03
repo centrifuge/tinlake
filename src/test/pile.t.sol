@@ -147,11 +147,11 @@ contract PileTest is DSTest {
         uint fee = uint(1000000564701133626865910626); // 5 % / day
         pile.file(fee, fee);
         uint loan = 1;
-        uint principal = 100 ether;
+        uint principal = 66 ether;
         pile.file(loan, fee, 0);
         borrow(loan, principal);
         (uint debt1,,uint fee1 ,uint chi1) = pile.loans(loan);
-        assertEq(debt1, 100 ether);
+        assertEq(debt1, 66 ether);
         assertEq(fee, fee1);
 
         hevm.warp(1 days);
@@ -159,11 +159,23 @@ contract PileTest is DSTest {
 
 //        (uint debtF, uint chiF, uint speedF, uint rhoF ) = pile.fees(fee);
 
-
         (uint debt2,,uint fee2 ,uint chi2) = pile.loans(loan);
-        assertEq(debt2, 105 ether);
+        assertEq(debt2, 69.3 ether); // 66 ether * 1,05**1
         assertEq(fee, fee2);
+        // print
+        assertEq(chi2,0);
+
+
         assertTrue(chi1 != chi2);
+
+        hevm.warp(1 days);
+        pile.collect(loan);
+
+        (uint debt3,,uint fee3 ,uint chi3) = pile.loans(loan);
+        assertEq(debt3, 72.765 ether); // 66 ether * 1,05**2
+        assertEq(fee, fee3);
+        assertTrue(chi2 != chi3);
+
 
 
 
