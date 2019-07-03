@@ -149,14 +149,10 @@ contract Pile is DSNote {
         if(loans[loan].chi != 0) {
             chi_ = rdiv(fees[fee].chi, loans[loan].chi);
         }
-        uint wad = mul(loans[loan].debt, chi_)/ONE;
+        uint wad = rmul(loans[loan].debt, chi_);
 
-        //loans[loan].chi = loans[loan].fee;
-        loans[loan].chi = chi_; // todo: needs to be fixed
-        if (wad != 0) {
-            loans[loan].debt = wad;
-        }
-
+        loans[loan].chi = rmul(loans[loan].chi,chi_);
+        loans[loan].debt = wad;
     }
 
     // --- Pile ---

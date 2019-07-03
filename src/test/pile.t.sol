@@ -166,7 +166,12 @@ contract PileTest is DSTest {
 
     }
 
-    function testMultiDripFee() public {
+    function checkDebt(uint loan, uint wad) public {
+        (uint debt,,,) = pile.loans(loan);
+        assertEq(debt, wad);
+    }
+
+    function testDoubleDripFee() public {
         uint fee = uint(1000000564701133626865910626); // 5 % / day
         pile.file(fee, fee);
         uint loan = 1;
@@ -179,7 +184,6 @@ contract PileTest is DSTest {
 
         (, uint chiF, , ) = pile.fees(fee);
 
-
         // day 1
         hevm.warp(1 days);
         pile.collect(loan);
@@ -191,12 +195,12 @@ contract PileTest is DSTest {
         assertTrue(chi1 != chi2);
 
         // day 2
-        hevm.warp(2 days);
+        hevm.warp(3 days);
         pile.collect(loan);
 
         (,  chiF, , ) = pile.fees(fee);
         (uint debt3,,uint fee3 ,uint chi3) = pile.loans(loan);
-        assertEq(debt3, 72.765 ether); // 66 ether * 1,05**2
+        assertEq(debt3, 76.40325  ether); //  66 ether * 1,05**2
         assertEq(fee, fee3);
         assertTrue(chi2 != chi3);
 
