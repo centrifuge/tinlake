@@ -76,6 +76,7 @@ contract Pile is DSNote {
     function file(uint fee, uint speed_) public auth note {
         fees[fee].speed = speed_;
         fees[fee].chi = ONE;
+        fees[fee].rho = uint48(now);
         drip(fee);
     }
 

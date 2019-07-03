@@ -33,7 +33,7 @@ contract PileTest is DSTest {
 
     function setUp() public {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-        hevm.warp(0);
+        hevm.warp(1234567);
         tkn = new TokenMock();
         pile = new Pile(address(tkn));
     }
@@ -64,7 +64,7 @@ contract PileTest is DSTest {
 
         pile.withdraw(loan,wad,address(this));
 
-         assertEq(totalBalance-wad, pile.Balance());
+        assertEq(totalBalance-wad, pile.Balance());
         (,uint newBalance, ,) = pile.loans(loan);
         assertEq(balance-wad, newBalance);
         assertEq(tkn.transferFromCalls(),1);
@@ -125,7 +125,7 @@ contract PileTest is DSTest {
         assertEq(speed1, fee);
         assertEq(rho1, now);
         assertEq(debt1, 0);
-        hevm.warp(1 days);
+        hevm.warp(now + 1 days);
 
         (debt1,  chi1,  speed1,  rho1 ) = pile.fees(fee);
         assertEq(speed1, fee);
@@ -156,7 +156,7 @@ contract PileTest is DSTest {
         assertEq(fee, fee1);
 
         // two days later
-        hevm.warp(2 days);
+        hevm.warp(now + 2 days);
         pile.collect(loan);
 
         (uint debt2,,uint fee2 ,uint chi2) = pile.loans(loan);
@@ -184,8 +184,9 @@ contract PileTest is DSTest {
 
         (, uint chiF, , ) = pile.fees(fee);
 
+        uint time = now;
         // day 1
-        hevm.warp(1 days);
+        hevm.warp(time + 1 days);
         pile.collect(loan);
 
         (,  chiF, , ) = pile.fees(fee);
@@ -195,12 +196,12 @@ contract PileTest is DSTest {
         assertTrue(chi1 != chi2);
 
         // day 2
-        hevm.warp(3 days);
+        hevm.warp(time + 3 days);
         pile.collect(loan);
 
         (,  chiF, , ) = pile.fees(fee);
         (uint debt3,,uint fee3 ,uint chi3) = pile.loans(loan);
-        assertEq(debt3, 76.40325  ether); //  66 ether * 1,05**2
+        assertEq(debt3, 76.40325  ether); //  66 ether * 1,05**3
         assertEq(fee, fee3);
         assertTrue(chi2 != chi3);
 
