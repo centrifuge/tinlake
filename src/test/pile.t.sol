@@ -20,13 +20,20 @@ import "ds-test/test.sol";
 import "../pile.sol";
 import "./mock/token.sol";
 
+contract Hevm {
+    function warp(uint256) public;
+}
+
 
 contract PileTest is DSTest {
     Pile pile;
     TokenMock tkn;
 
-    function setUp() public {
+    Hevm hevm;
 
+    function setUp() public {
+        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm.warp(0);
         tkn = new TokenMock();
         pile = new Pile(address(tkn));
     }
@@ -47,8 +54,7 @@ contract PileTest is DSTest {
         assertEq(pile.Debt(), totalBalance + wad);
         assertEq(debt, wad);
         assertEq(balance, wad);
-        assertEq(fee, 0);
-        assertEq(fee, 0);
+
     }
 
     function withdraw(uint loan, uint wad) public {
@@ -58,7 +64,7 @@ contract PileTest is DSTest {
 
         pile.withdraw(loan,wad,address(this));
 
-        assertEq(totalBalance-wad, pile.Balance());
+         assertEq(totalBalance-wad, pile.Balance());
         (,uint newBalance, ,) = pile.loans(loan);
         assertEq(balance-wad, newBalance);
         assertEq(tkn.transferFromCalls(),1);
@@ -103,5 +109,63 @@ contract PileTest is DSTest {
         borrow(loan,wad);
         withdraw(loan, wad);
         repay(loan, wad);
+    }
+
+    function rad(uint wad_) internal pure returns (uint) {
+        return wad_ * 10 ** 27;
+    }
+    function wad(uint rad_) internal pure returns (uint) {
+        return rad_ / 10 ** 27;
+    }
+
+    function testDrip() public {
+        uint fee = uint(1000000564701133626865910626); // 5 % / day
+        pile.file(fee, fee);
+        (uint debt1, uint chi1, uint speed1, uint rho1 ) = pile.fees(fee);
+        assertEq(speed1, fee);
+        assertEq(rho1, now);
+        assertEq(debt1, 0);
+        hevm.warp(1 days);
+
+        (debt1,  chi1,  speed1,  rho1 ) = pile.fees(fee);
+        assertEq(speed1, fee);
+        assertEq(debt1, 0);
+        assertTrue(rho1 != now);
+
+        pile.drip(fee);
+
+        (uint debt2, uint chi2, uint speed2, uint rho2 ) = pile.fees(fee);
+        assertEq(speed2, fee);
+        assertEq(rho2, now);
+        assertEq(debt2, 0);
+
+
+        assertTrue(chi1 != chi2);
+    }
+
+    function testFee() public {
+        uint fee = uint(1000000564701133626865910626); // 5 % / day
+        pile.file(fee, fee);
+        uint loan = 1;
+        uint principal = 100 ether;
+        pile.file(loan, fee, 0);
+        borrow(loan, principal);
+        (uint debt1,,uint fee1 ,uint chi1) = pile.loans(loan);
+        assertEq(debt1, 100 ether);
+        assertEq(fee, fee1);
+
+        hevm.warp(1 days);
+        pile.collect(loan);
+
+//        (uint debtF, uint chiF, uint speedF, uint rhoF ) = pile.fees(fee);
+
+
+        (uint debt2,,uint fee2 ,uint chi2) = pile.loans(loan);
+        assertEq(debt2, 105 ether);
+        assertEq(fee, fee2);
+        assertTrue(chi1 != chi2);
+
+
+
     }
 }

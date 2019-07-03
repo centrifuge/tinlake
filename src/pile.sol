@@ -74,7 +74,9 @@ contract Pile is DSNote {
     }
     
     function file(uint fee, uint speed_) public auth note {
-        fees[fee].speed = speed_; 
+        fees[fee].speed = speed_;
+        fees[fee].chi = ONE;
+        drip(fee);
     }
 
     // --- Math ---
@@ -119,7 +121,16 @@ contract Pile is DSNote {
         require(y == 0 || (z = x * y) / y == x);
     }
 
-    // --- Fee Accumulation ---
+    function div(uint a, uint b) internal pure returns (uint) {
+        // Solidity only automatically asserts when dividing by 0
+        require(b > 0, "SafeMath: division by zero");
+        uint c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+
+        return c;
+    }
+
+        // --- Fee Accumulation ---
     function drip(uint fee) public {
         uint48 rho = fees[fee].rho;
         uint speed = fees[fee].speed;
@@ -139,7 +150,7 @@ contract Pile is DSNote {
         if (now >= fees[fee].rho) {
             drip(fee);
         }
-        uint chi_ = sub(fees[fee].chi, loans[loan].chi);
+        uint chi_ = div(fees[fee].chi, loans[loan].chi);
         uint wad = mul(loans[loan].debt, chi_);
 
         loans[loan].chi = add(loans[loan].chi, chi_);
@@ -153,11 +164,14 @@ contract Pile is DSNote {
         return int(Balance) - int(tkn.balanceOf(address(this))); // safemath
     }
 
+
     // borrow() creates a debt by the borrower for the specified amount. 
     function borrow(uint loan, uint wad) public auth note {
-        collect(loan);
-        
         uint fee = loans[loan].fee;
+        drip(fee);
+        loans[loan].chi = fees[fee].chi;
+        collect(loan);
+
         fees[fee].debt = add(fees[fee].debt, wad);
         loans[loan].debt = add(loans[loan].debt, wad);
         loans[loan].balance = add(loans[loan].balance, wad);
