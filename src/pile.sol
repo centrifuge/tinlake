@@ -74,7 +74,10 @@ contract Pile is DSNote {
     }
     
     function file(uint fee, uint speed_) public auth note {
-        fees[fee].speed = speed_; 
+        fees[fee].speed = speed_;
+        fees[fee].chi = ONE;
+        fees[fee].rho = uint48(now);
+        drip(fee);
     }
 
     // --- Math ---
@@ -119,7 +122,11 @@ contract Pile is DSNote {
         require(y == 0 || (z = x * y) / y == x);
     }
 
-    // --- Fee Accumulation ---
+    function rdiv(uint x, uint y) internal pure returns (uint z) {
+        z = add(mul(x, ONE), y / 2) / y;
+    }
+
+        // --- Fee Accumulation ---
     function drip(uint fee) public {
         uint48 rho = fees[fee].rho;
         uint speed = fees[fee].speed;
@@ -139,25 +146,30 @@ contract Pile is DSNote {
         if (now >= fees[fee].rho) {
             drip(fee);
         }
-        uint chi_ = sub(fees[fee].chi, loans[loan].chi);
-        uint wad = mul(loans[loan].debt, chi_);
+        uint chi_ = ONE;
+        if(loans[loan].chi != 0) {
+            chi_ = rdiv(fees[fee].chi, loans[loan].chi);
+        }
+        uint wad = rmul(loans[loan].debt, chi_);
 
-        loans[loan].chi = add(loans[loan].chi, chi_);
-        loans[loan].debt = add(loans[loan].debt, wad);
+        loans[loan].chi = rmul(loans[loan].chi,chi_);
+        loans[loan].debt = wad;
     }
-        
-   
+
     // --- Pile ---
     // want() is the the additional token that must be supplied for the Pile to cover all outstanding loans. If negative, it's the reserves the Pile has.
     function want() public view returns (int) {
         return int(Balance) - int(tkn.balanceOf(address(this))); // safemath
     }
 
+
     // borrow() creates a debt by the borrower for the specified amount. 
     function borrow(uint loan, uint wad) public auth note {
-        collect(loan);
-        
         uint fee = loans[loan].fee;
+        drip(fee);
+        loans[loan].chi = fees[fee].chi;
+        collect(loan);
+
         fees[fee].debt = add(fees[fee].debt, wad);
         loans[loan].debt = add(loans[loan].debt, wad);
         loans[loan].balance = add(loans[loan].balance, wad);
