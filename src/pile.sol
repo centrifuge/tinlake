@@ -133,6 +133,7 @@ contract Pile is DSNote {
         uint chi = fees[fee].chi;
         uint debt = fees[fee].debt;
         require(now >= rho);
+        //compound period in seconds
         uint chi_ = sub(rmul(rpow(speed, now - rho, ONE), chi), chi);
         uint wad = mul(debt, chi_);
         add(Debt, wad);
