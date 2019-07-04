@@ -129,15 +129,21 @@ contract Pile is DSNote {
         // --- Fee Accumulation ---
     function drip(uint fee) public {
         uint48 rho = fees[fee].rho;
+        require(now >= rho);
         uint speed = fees[fee].speed;
+        if (speed == 0) {
+            return;
+        }
         uint chi = fees[fee].chi;
         uint debt = fees[fee].debt;
-        require(now >= rho);
-        uint chi_ = sub(rmul(rpow(speed, now - rho, ONE), chi), chi);
-        uint wad = mul(debt, chi_);
-        add(Debt, wad);
+
+        uint latest = rmul(rpow(speed, now - rho, ONE), chi);
+        uint chi_ = rdiv(latest, chi);
+        uint wad = rmul(debt, chi_)-debt;
+
+        Debt = add(Debt, wad);
         fees[fee].debt = add(debt, wad);
-        fees[fee].chi = add(chi, chi_);
+        fees[fee].chi = latest;
         fees[fee].rho = uint48(now);
     }
 
