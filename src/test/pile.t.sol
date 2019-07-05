@@ -428,4 +428,26 @@ contract PileTest is DSTest {
         assertEq(pile.Debt(), 76.40325 ether + 550 ether);
 
     }
+
+    function testBorrowRepayWithFee() public {
+        uint fee = uint(1000000003593629043335673583); // 12 % per year
+        pile.file(fee, fee);
+        uint loan = 1;
+        uint principal = 100 ether;
+        pile.file(loan, fee, 0);
+        borrow(loan, principal);
+
+        checkDebt(loan, 100 ether);
+
+        // on year later
+        hevm.warp(now + 365 days);
+        pile.collect(loan);
+
+        checkDebt(loan, 112 ether, 10);// 66 ether * 1,12
+
+        (uint debt,,,) = pile.loans(loan);
+        withdraw(loan, principal);
+        repay(loan, debt);
+
+    }
 }
