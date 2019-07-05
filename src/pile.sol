@@ -137,6 +137,7 @@ contract Pile is DSNote {
         uint chi = fees[fee].chi;
         uint debt = fees[fee].debt;
 
+        // compounding in seconds
         uint latest = rmul(rpow(speed, now - rho, ONE), chi);
         uint chi_ = rdiv(latest, chi);
         uint wad = rmul(debt, chi_)-debt;
@@ -146,6 +147,7 @@ contract Pile is DSNote {
         fees[fee].chi = latest;
         fees[fee].rho = uint48(now);
     }
+
 
     function collect(uint loan) public {
         uint fee = loans[loan].fee;

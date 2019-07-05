@@ -26,7 +26,6 @@ To deploy Tinlake with Maker follow these steps:
 
 ## TODOs
 Features:
-* Test Maker.peek method to Maker adapter that triggers lightswitch if Gem was reduced by MKR 
 * LightSwitch should disable other contract methods, build Switchable into contracts
 * Extract: Contract to remove an asset that is overdue
 * Siphon: should allow to take DAI out of the pile only if debt to lender is 0
