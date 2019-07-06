@@ -30,7 +30,9 @@ contract LenderFabLike {
 }
 
 contract LenderLike {
+    function backer() public returns(address);
     function rely(address) public;
+    function file(address) public;
 }
 
 
@@ -171,17 +173,25 @@ contract Deployer {
         pile.rely(reception_);
         desk.rely(reception_);
     }
-    function deployLender(address currency_, address lenderfab_) public {
+
+    function deployLender(address currency_, address lenderfab_) public returns(address) {
         // LenderFab deploys a lender with the defined collateral and currency
         address lender_ = LenderFabLike(lenderfab_).deploy(currency_, address(collateral), address(lightswitch));
-        
+
         lender = LenderLike(lender_);
         lender.rely(god);
         lender.rely(address(desk));
-        
+
         desk.approve(lender_, uint(-1));
         pile.file("lender", lender_);
         desk.file("lender", lender_);
+        return lender_;
+    }
+
+    function deployLender(address currency_, address lenderfab_, address backer_) public returns(address) {
+        address lender_ = deployLender(currency_, lenderfab_);
+        LenderLike(lender_).file(backer_);
+        return lender_;
     }
 }
 

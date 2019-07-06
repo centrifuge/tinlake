@@ -49,7 +49,7 @@ contract Backer {
         collateral.transferFrom(backer, usrC, wadC);
     }
 
-    function file(address usr) auth public {
+    function file(address usr) auth  public {
         backer = usr;
     }
 
