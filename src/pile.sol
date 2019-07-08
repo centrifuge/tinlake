@@ -61,6 +61,8 @@ contract Pile is DSNote {
     constructor(address tkn_) public {
         wards[msg.sender] = 1;
         tkn = TokenLike(tkn_);
+        fees[0].chi = ONE;
+        fees[0].speed = ONE;
 
     }
 
@@ -74,6 +76,7 @@ contract Pile is DSNote {
     }
     
     function file(uint fee, uint speed_) public auth note {
+        require(speed_ != 0);
         fees[fee].speed = speed_;
         fees[fee].chi = ONE;
         fees[fee].rho = uint48(now);
@@ -129,18 +132,23 @@ contract Pile is DSNote {
         // --- Fee Accumulation ---
     function drip(uint fee) public {
         uint48 rho = fees[fee].rho;
+        require(now >= rho);
         uint speed = fees[fee].speed;
+
         uint chi = fees[fee].chi;
         uint debt = fees[fee].debt;
-        require(now >= rho);
-        //compound period in seconds
-        uint chi_ = sub(rmul(rpow(speed, now - rho, ONE), chi), chi);
-        uint wad = mul(debt, chi_);
-        add(Debt, wad);
+
+        // compounding in seconds
+        uint latest = rmul(rpow(speed, now - rho, ONE), chi);
+        uint chi_ = rdiv(latest, chi);
+        uint wad = rmul(debt, chi_)-debt;
+
+        Debt = add(Debt, wad);
         fees[fee].debt = add(debt, wad);
-        fees[fee].chi = add(chi, chi_);
+        fees[fee].chi = latest;
         fees[fee].rho = uint48(now);
     }
+
 
     function collect(uint loan) public {
         uint fee = loans[loan].fee;
@@ -162,6 +170,7 @@ contract Pile is DSNote {
     function want() public view returns (int) {
         return int(Balance) - int(tkn.balanceOf(address(this))); // safemath
     }
+
 
 
     // borrow() creates a debt by the borrower for the specified amount. 

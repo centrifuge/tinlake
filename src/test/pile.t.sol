@@ -51,7 +51,7 @@ contract PileTest is DSTest {
 
         (uint debt, uint balance, uint fee, uint  chi) = pile.loans(loan);
         assertEq(pile.Balance(), totalBalance + wad);
-        assertEq(pile.Debt(), totalBalance + wad);
+        assertEq(pile.Debt(), totalDebt + wad);
         assertEq(debt, wad);
         assertEq(balance, wad);
 
@@ -364,4 +364,90 @@ contract PileTest is DSTest {
         checkDebt(loan,  calculateDebt(fee, principal,uint(3600*24*25)),tolerance);
     }
 
+    function testGlobalFees() public {
+        uint fee = uint(1000000564701133626865910626); // 5 % day
+        uint loan = 1;
+        uint principal = 66 ether;
+        pile.file(fee, fee);
+        pile.file(loan, fee, 0);
+        borrow(loan, principal);
+        checkDebt(loan, 66 ether);
+
+        uint start = now;
+        // two days later
+        hevm.warp(start + 2 days);
+        pile.collect(loan);
+
+        checkDebt(loan, 72.765 ether);// 66 ether * 1,05**2
+
+        (uint debtF, , , ) = pile.fees(fee);
+        assertEq(debtF, 72.765 ether);
+        assertEq(pile.Debt(), 72.765 ether);
+
+        pile.drip(fee);
+
+        (debtF, , , ) = pile.fees(fee);
+        assertEq(debtF, 72.765 ether);
+        assertEq(pile.Debt(), 72.765 ether);
+
+        // second loan
+        // two days later
+        uint fee2 = uint(1000001103127689513476993127); // 10 % day
+        uint loan2 = 2;
+        principal = 500 ether;
+
+        pile.file(fee2, fee2);
+        pile.file(loan2, fee2, 0);
+        borrow(loan2, principal);
+        checkDebt(loan2, 500 ether);
+
+        (debtF, , , ) = pile.fees(fee2);
+        assertEq(debtF, 500 ether);
+        assertEq(pile.Debt(), 572.765 ether);
+
+        // one day later
+        hevm.warp(start + 3 days);
+        // collect loan 1
+        pile.collect(loan);
+        (debtF, , , ) = pile.fees(fee);
+        assertEq(debtF, 76.40325 ether);
+        (debtF, , , ) = pile.fees(fee2);
+        assertEq(debtF, 500 ether);
+        checkDebt(loan, 76.40325 ether); // 66 ether * 1,05**3
+        assertEq(pile.Debt(), 576.40325 ether);
+
+
+        // collect loan 2
+        pile.collect(loan2);
+        (debtF, , , ) = pile.fees(fee);
+        assertEq(debtF, 76.40325 ether); // loan 1 stays the same
+        (debtF, , , ) = pile.fees(fee2);
+        assertEq(debtF, 550 ether);
+        checkDebt(loan2, 550 ether);
+
+        assertEq(pile.Debt(), 76.40325 ether + 550 ether);
+
+    }
+
+    function testBorrowRepayWithFee() public {
+        uint fee = uint(1000000003593629043335673583); // 12 % per year
+        pile.file(fee, fee);
+        uint loan = 1;
+        uint principal = 100 ether;
+        pile.file(loan, fee, 0);
+        borrow(loan, principal);
+
+        checkDebt(loan, 100 ether);
+
+        // on year later
+        hevm.warp(now + 365 days);
+        pile.collect(loan);
+
+        checkDebt(loan, 112 ether, 10);// 66 ether * 1,12
+
+        (uint debt,,,) = pile.loans(loan);
+        withdraw(loan, principal);
+        repay(loan, debt);
+
+    }
 }
