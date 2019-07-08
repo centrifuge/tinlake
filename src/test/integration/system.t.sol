@@ -135,11 +135,17 @@ contract SystemTest is DSTest {
 
     }
 
+
+    // lenderTokenAddr returns the address which holds the currency or collateral token for the lender
+    function lenderTokenAddr(address lender) public returns(address) {
+        return lender;
+    }
+
     // Checks
     function checkAfterBorrow(uint loan, uint tokenId, uint tBalance, uint cBalance) public {
         assertEq(tkn.balanceOf(borrower_), tBalance);
         assertEq(deployer.collateral().totalSupply(), cBalance);
-        assertEq(deployer.collateral().balanceOf(deployer.lender().backer()), cBalance);
+        assertEq(deployer.collateral().balanceOf(lenderTokenAddr(address(deployer.lender()))), cBalance);
         assertEq(nft.ownerOf(tokenId), address(deployer.shelf()));
     }
 
@@ -148,7 +154,7 @@ contract SystemTest is DSTest {
         assertEq(deployer.pile().debtOf(loan), 0);
         assertEq(tkn.balanceOf(borrower_), tTotal-tLender);
         assertEq(tkn.balanceOf(address(deployer.pile())), 0);
-        assertEq(tkn.balanceOf(deployer.lender().backer()), tLender);
+        assertEq(tkn.balanceOf(lenderTokenAddr(address(deployer.lender()))), tLender);
         assertEq(deployer.collateral().balanceOf(address(deployer.desk())), 0);
         assertEq(deployer.collateral().totalSupply(), cTotal);
     }
@@ -188,7 +194,7 @@ contract SystemTest is DSTest {
 
         checkAfterBorrow(loan, tokenId, principal, appraisal);
 
-        uint lenderBalance = tkn.balanceOf(deployer.lender().backer());
+        uint lenderBalance = tkn.balanceOf(lenderTokenAddr(address(deployer.lender())));
 
 
         // allow pile full control over borrower tokens
@@ -236,7 +242,7 @@ contract SystemTest is DSTest {
         // allow pile full control over borrower tokens
         borrower.doApproveCurrency(address(deployer.pile()), uint(-1));
 
-        uint tLenderBalance = tkn.balanceOf(deployer.lender().backer());
+        uint tLenderBalance = tkn.balanceOf(lenderTokenAddr(address(deployer.lender())));
 
         for (uint i = 0; i < 10; i++) {
             appraisal = (i+1)*100;

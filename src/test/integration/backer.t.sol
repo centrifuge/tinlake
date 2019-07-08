@@ -21,6 +21,7 @@ import "./system.t.sol";
 import "../../backer.sol";
 
 contract BackerLike {
+    function backer() public returns(address);
     function file(address usr) public;
 }
 
@@ -41,6 +42,12 @@ contract BackerTest is DSTest, SystemTest {
         b.doApproveCollateral(lender_, 1000 ether);
 
     }
+
+    // lenderTokenAddr returns the address which holds the currency or collateral token for the lender
+    function lenderTokenAddr(address lender) public returns(address) {
+        return BackerLike(lender).backer();
+    }
+
 }
 
 

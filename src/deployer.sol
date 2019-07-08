@@ -30,7 +30,6 @@ contract LenderFabLike {
 }
 
 contract LenderLike {
-    function backer() public returns(address);
     function rely(address) public;
     function file(address) public;
 }

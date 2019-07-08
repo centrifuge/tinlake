@@ -25,14 +25,10 @@ contract SimpleLender {
     LenderTokenLike public tkn;
     LenderTokenLike public collateral;
 
-
-    address public backer;
-
     constructor (address tkn_, address collateral_) public {
         wards[msg.sender] = 1;
         tkn = LenderTokenLike(tkn_);
         collateral = LenderTokenLike(collateral_);
-        backer = address(this);
     }
 
     // --- Lender Methods ---
