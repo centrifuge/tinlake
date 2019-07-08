@@ -187,10 +187,5 @@ contract Deployer {
         return lender_;
     }
 
-    function deployLender(address currency_, address lenderfab_, address backer_) public returns(address) {
-        address lender_ = deployLender(currency_, lenderfab_);
-        LenderLike(lender_).file(backer_);
-        return lender_;
-    }
 }
 

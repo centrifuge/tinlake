@@ -35,8 +35,8 @@ contract BackerTest is DSTest, SystemTest {
         b = new User(address(deployer.reception()),tkn_, address(deployer.collateral()));
         tkn.mint(address(b), 1000 ether);
 
-        backerFab = address(new BackerFab());
-        address lender_ = deployer.deployLender(tkn_, backerFab, address(b));
+        backerFab = address(new BackerFab(address(b)));
+        address lender_ = deployer.deployLender(tkn_, backerFab);
 
         b.doApproveCurrency(lender_, 1000 ether);
         b.doApproveCollateral(lender_, 1000 ether);

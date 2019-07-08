@@ -8,9 +8,17 @@ contract TokenLike {
 }
 
 contract BackerFab {
+
+    address public backer;
+
+    constructor (address backer_) public {
+        backer = backer_;
+    }
+
     function deploy(address tkn_, address collateral_ ,address lightswitch_) public returns (address) {
         Backer lender = new Backer(tkn_, collateral_);
         lender.rely(msg.sender);
+        lender.file(backer);
         lender.deny(address(this));
         return address(lender);
     }
