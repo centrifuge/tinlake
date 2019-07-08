@@ -23,19 +23,3 @@ To deploy Tinlake with Maker follow these steps:
 1) Deploy Maker with `step-4` described in github.com/makerdao/testchain-dss-deployment-scripts
 2) export MCD_ADDRESS_FILE='... path to testchain-dss-deployment-scripts/out/addresses.json...'
 3) Run `./bin/deploy-all-maker`
-
-## TODOs
-Features:
-* LightSwitch should disable other contract methods, build Switchable into contracts
-* Extract: Contract to remove an asset that is overdue
-* Siphon: should allow to take DAI out of the pile only if debt to lender is 0
-
-Refactor/Cleanup/Scaling:
-* Go through code and add DS-Note and add note to all auth calls
-* Go through code and add LightSwitch
-* Go through code and add events
-* Go through contract and replace unsafe math with safe math
-* Go through each file and add headers with license and short description
-
-Other:
-* https://github.com/makerdao/dss/blob/master/src/lib.sol#L16 and https://github.com/dapphub/ds-note/blob/master/src/note.sol diverge. Find out which version to use
