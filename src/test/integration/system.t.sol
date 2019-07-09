@@ -76,6 +76,17 @@ contract ManagerUser {
         appraiser.file(loan, value);
         return loan;
     }
+
+    function doInitFee(uint fee, uint speed) public {
+        deployer.pile().file(fee, speed);
+    }
+    function doAddFee(uint loan, uint fee, uint balance) public {
+        deployer.pile().file(loan, fee, balance);
+    }
+}
+
+contract Hevm {
+    function warp(uint256) public;
 }
 
 contract SystemTest is DSTest {
@@ -91,9 +102,14 @@ contract SystemTest is DSTest {
     address      manager_;
     User borrower;
     address      borrower_;
+    Hevm hevm;
+
 
 
     function basicSetup() public {
+        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm.warp(1234567);
+
         nft = new SimpleNFT();
         nft_ = address(nft);
 
@@ -178,6 +194,7 @@ contract SystemTest is DSTest {
     function testBorrowAndRepay() public {
         uint tokenId = 1;
 
+
         // create borrower collateral nft
         nft.mint(borrower_, tokenId);
 
@@ -185,9 +202,18 @@ contract SystemTest is DSTest {
         uint principal = 100;
         uint appraisal = 120;
 
+
+        // define fee
+        uint fee = uint(1000000564701133626865910626); // 5 % day
+        manager.doInitFee(fee, fee);
+
+
         // nft whitelist
         uint loan = manager.doAdmit(nft_, tokenId, principal, appraisal, borrower_);
         borrower.doApproveNFT(nft, address(deployer.shelf()));
+
+        // define fee for loan
+        manager.doInitFee(loan, fee, 0);
 
         // borrow transaction
         borrower.doBorrow(loan);
@@ -197,11 +223,20 @@ contract SystemTest is DSTest {
         uint lenderBalance = tkn.balanceOf(lenderTokenAddr(address(deployer.lender())));
 
 
+        hevm.warp(now + 1 days);
+
+        // borrower needs some currency to pay fee
+        tkn.mint(borrower_, 10);
+
+
         // allow pile full control over borrower tokens
         borrower.doApproveCurrency(address(deployer.pile()), uint(-1));
 
         // repay transaction
-        borrower.doRepay(loan, principal, borrower_, borrower_);
+        uint debt = deployer.pile().burden(loan);
+        uint buffer = 2;
+
+        borrower.doRepay(loan, debt+buffer, borrower_, borrower_);
 
 
         checkAfterRepay(loan, tokenId, lenderBalance + principal, 0, lenderBalance + principal);
