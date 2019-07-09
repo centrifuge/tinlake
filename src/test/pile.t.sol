@@ -261,6 +261,7 @@ contract PileTest is DSTest {
 
         // two days later
         hevm.warp(now + 2 days);
+        assertEq(pile.burden(loan), 72.765 ether);
         pile.collect(loan);
 
         checkDebt(loan, 72.765 ether);// 66 ether * 1,05**2
@@ -312,7 +313,10 @@ contract PileTest is DSTest {
         uint start = now;
         //  1 day  later
         hevm.warp(start + 1 days);
+        assertEq(pile.burden(loan), 69.3 ether);
         pile.collect(loan);
+        assertEq(pile.burden(loan), 69.3 ether);
+
 
         (,  chiF, , ) = pile.fees(fee);
         (uint debt2,,uint fee2 ,uint chi2) = pile.loans(loan);
@@ -322,6 +326,7 @@ contract PileTest is DSTest {
 
         // 2 day later
         hevm.warp(start + 3 days);
+        assertEq(pile.burden(loan), 76.40325 ether);
         pile.collect(loan);
 
         (,  chiF, , ) = pile.fees(fee);
@@ -441,6 +446,7 @@ contract PileTest is DSTest {
 
         // on year later
         hevm.warp(now + 365 days);
+
         pile.collect(loan);
 
         checkDebt(loan, 112 ether, 10);// 66 ether * 1,12
