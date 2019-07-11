@@ -21,24 +21,16 @@ if [[ "$ETHERSCAN_API_KEY" != "" ]]; then
 fi
 
 
-
 message CHECKING OUT DEPENDENCIES
 
 dapp update
 
 message BUILDING SOURCE
 
-test -z "$SKIP_BUILD" && dapp build 
+test -z "$SKIP_BUILD" && dapp build
 export SKIP_BUILD=1
 
-message LOADING MAKER CONTRACTS
-
-test -z "$MCD_ADDRESS_FILE" && echo "MCD_ADDRESS_FILE needs to be set" && exit 1;
-source "$BIN_DIR/lib/load-addresses"
-loadAddresses $MCD_ADDRESS_FILE
-export CURRENCY=$MCD_DAI
-
-message DEPLOYING NFT
+message DEPLOYING NFT AND CURRENCY ERC20
 
 export SKIP_CURRENCY=1
 "$BIN_DIR/deploy-mocks"
@@ -54,15 +46,10 @@ message DEPLOYING CORE
 "$BIN_DIR/deploy-core"
 source "$ADDRESS_DIR/load-core-$(seth chain)"
 
-message DEPLOYING MAKER SPELL
+message DEPLOYING BACKER
 
-"$BIN_DIR/deploy-maker-spell"
-source "$ADDRESS_DIR/load-maker-spell-$(seth chain)"
-
-message DEPLOYING MAKER LENDER
-
-"$BIN_DIR/deploy-maker-lender"
-source "$ADDRESS_DIR/load-maker-lender-$(seth chain)"
+"$BIN_DIR/deploy-backer-lender"
+source "$ADDRESS_DIR/load-backer-lender-$(seth chain)"
 
 message WRITING $ADDRESS_DIR/addresses.json
 "$BIN_DIR/deploy-write-addresses"
