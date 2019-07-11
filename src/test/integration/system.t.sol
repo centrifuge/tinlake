@@ -17,24 +17,27 @@ pragma solidity >=0.4.23;
 
 import "ds-test/test.sol";
 
-import "../deployer.sol";
-import "../appraiser.sol";
-import "./simple/nft.sol";
-import "./simple/token.sol";
-import "./simple/lender.sol";
+import "../../deployer.sol";
+import "../../appraiser.sol";
+import "../simple/nft.sol";
+import "../simple/token.sol";
+import "../simple/lender.sol";
 
-contract TokenLike {
+contract ERC20Like {
     function transferFrom(address, address, uint) public;
     function mint(address, uint) public;
     function approve(address usr, uint wad) public returns (bool);
+    function totalSupply() public returns (uint256);
 }
 
-contract BorrowerUser {
-    TokenLike tkn;
+contract User {
+    ERC20Like tkn;
+    ERC20Like collateral;
     Reception reception;
-    constructor (address reception_, address tkn_) public {
+    constructor (address reception_, address tkn_, address collateral_) public {
         reception = Reception(reception_);
-        tkn = TokenLike(tkn_);
+        tkn = ERC20Like(tkn_);
+        collateral = ERC20Like(collateral_);
     }
 
     function doBorrow (uint loan) public {
@@ -47,8 +50,11 @@ contract BorrowerUser {
         reception.repay(loan, wad, usrT, usrC);
     }
 
-    function doApprove(address usr, uint wad) public {
+    function doApproveCurrency(address usr, uint wad) public {
         tkn.approve(usr, wad);
+    }
+    function doApproveCollateral(address usr, uint wad) public {
+        collateral.approve(usr, wad);
     }
 }
 
@@ -83,17 +89,17 @@ contract SystemTest is DSTest {
 
     ManagerUser  manager;
     address      manager_;
-    BorrowerUser borrower;
+    User borrower;
     address      borrower_;
 
-    function setUp() public {
+
+    function basicSetup() public {
         nft = new SimpleNFT();
         nft_ = address(nft);
 
         tkn = new SimpleToken("DTKN", "Dummy Token", "1", 0);
         tkn_ = address(tkn);
 
-        lenderfab = address(new SimpleLenderFab());
         TitleFab titlefab = new TitleFab();
         LightSwitchFab lightswitchfab = new LightSwitchFab();
         PileFab pilefab = new PileFab();
@@ -115,19 +121,31 @@ contract SystemTest is DSTest {
         deployer.deployValve();
         deployer.deployDesk();
         deployer.deploy();
+
+        borrower = new User(address(deployer.reception()),tkn_,address(deployer.collateral()));
+        borrower_ = address(borrower);
+        manager.file(deployer);
+
+    }
+
+    function setUp() public {
+        basicSetup();
+        lenderfab = address(new SimpleLenderFab());
         deployer.deployLender(tkn_, lenderfab);
 
-        borrower = new BorrowerUser(address(deployer.reception()),tkn_);
-        borrower_ = address(borrower);
+    }
 
-        manager.file(deployer);
+
+    // lenderTokenAddr returns the address which holds the currency or collateral token for the lender
+    function lenderTokenAddr(address lender) public returns(address) {
+        return lender;
     }
 
     // Checks
     function checkAfterBorrow(uint loan, uint tokenId, uint tBalance, uint cBalance) public {
         assertEq(tkn.balanceOf(borrower_), tBalance);
         assertEq(deployer.collateral().totalSupply(), cBalance);
-        assertEq(deployer.collateral().balanceOf(address(deployer.lender())), cBalance);
+        assertEq(deployer.collateral().balanceOf(lenderTokenAddr(address(deployer.lender()))), cBalance);
         assertEq(nft.ownerOf(tokenId), address(deployer.shelf()));
     }
 
@@ -136,7 +154,7 @@ contract SystemTest is DSTest {
         assertEq(deployer.pile().debtOf(loan), 0);
         assertEq(tkn.balanceOf(borrower_), tTotal-tLender);
         assertEq(tkn.balanceOf(address(deployer.pile())), 0);
-        assertEq(tkn.balanceOf(address(deployer.lender())), tLender);
+        assertEq(tkn.balanceOf(lenderTokenAddr(address(deployer.lender()))), tLender);
         assertEq(deployer.collateral().balanceOf(address(deployer.desk())), 0);
         assertEq(deployer.collateral().totalSupply(), cTotal);
     }
@@ -176,15 +194,17 @@ contract SystemTest is DSTest {
 
         checkAfterBorrow(loan, tokenId, principal, appraisal);
 
+        uint lenderBalance = tkn.balanceOf(lenderTokenAddr(address(deployer.lender())));
+
 
         // allow pile full control over borrower tokens
-        borrower.doApprove(address(deployer.pile()), uint(-1));
+        borrower.doApproveCurrency(address(deployer.pile()), uint(-1));
 
         // repay transaction
         borrower.doRepay(loan, principal, borrower_, borrower_);
 
 
-        checkAfterRepay(loan, tokenId, principal, 0, principal);
+        checkAfterRepay(loan, tokenId, lenderBalance + principal, 0, lenderBalance + principal);
     }
 
     function testMultipleBorrowAndRepay () public {
@@ -192,7 +212,7 @@ contract SystemTest is DSTest {
         uint appraisal = 120;
 
         uint cTotalSupply = 0;
-        uint tTotalSupply = 0;
+        uint tBorrower = 0;
 
         // borrow
         for (uint i = 0; i < 10; i++) {
@@ -211,16 +231,18 @@ contract SystemTest is DSTest {
             borrower.doBorrow(i);
 
             cTotalSupply += appraisal;
-            tTotalSupply += principal;
-            checkAfterBorrow(i, i, tTotalSupply,cTotalSupply);
+            tBorrower += principal;
+            checkAfterBorrow(i, i, tBorrower,cTotalSupply);
         }
 
         // repay
 
-        // allow pile full control over borrower tokens
-        borrower.doApprove(address(deployer.pile()), uint(-1));
+        uint tTotal = tkn.totalSupply();
 
-        uint tLenderBalance = 0;
+        // allow pile full control over borrower tokens
+        borrower.doApproveCurrency(address(deployer.pile()), uint(-1));
+
+        uint tLenderBalance = tkn.balanceOf(lenderTokenAddr(address(deployer.lender())));
 
         for (uint i = 0; i < 10; i++) {
             appraisal = (i+1)*100;
@@ -232,7 +254,7 @@ contract SystemTest is DSTest {
             cTotalSupply -= appraisal;
             tLenderBalance += principal;
 
-            checkAfterRepay(i,i,tTotalSupply, cTotalSupply, tLenderBalance);
+            checkAfterRepay(i,i,tTotal, cTotalSupply, tLenderBalance);
         }
     }
 
