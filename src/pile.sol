@@ -223,6 +223,11 @@ contract Pile is DSNote {
         // moves currency from usr to pile and reduces debt
         require(loans[loan].balance == 0,"before repay loan needs to be withdrawn");
         collect(loan);
+
+        if (wad > loans[loan].debt) {
+            wad = loans[loan].debt;
+        }
+
         tkn.transferFrom(usr, address(this), wad);
         loans[loan].debt = sub(loans[loan].debt, wad);
         Debt -= wad;
