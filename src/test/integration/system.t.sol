@@ -41,7 +41,7 @@ contract User {
     }
 
     function doBorrow (uint loan) public {
-     reception.borrow(loan, address(this));
+        reception.borrow(loan, address(this));
     }
     function doApproveNFT(SimpleNFT nft, address usr) public {
         nft.setApprovalForAll(usr, true);
@@ -212,8 +212,8 @@ contract SystemTest is DSTest {
         uint loan = manager.doAdmit(nft_, tokenId, principal, appraisal, borrower_);
         borrower.doApproveNFT(nft, address(deployer.shelf()));
 
-        // define fee for loan
-        manager.doInitFee(loan, fee, 0);
+        // add fee for loan
+        manager.doAddFee(loan, fee, 0);
 
         // borrow transaction
         borrower.doBorrow(loan);
@@ -226,7 +226,8 @@ contract SystemTest is DSTest {
         hevm.warp(now + 1 days);
 
         // borrower needs some currency to pay fee
-        tkn.mint(borrower_, 10);
+        uint extra = 10;
+        tkn.mint(borrower_, extra);
 
 
         // allow pile full control over borrower tokens
@@ -238,8 +239,8 @@ contract SystemTest is DSTest {
 
         borrower.doRepay(loan, debt+buffer, borrower_, borrower_);
 
-
-        checkAfterRepay(loan, tokenId, lenderBalance + principal, 0, lenderBalance + principal);
+        uint totalT = lenderBalance + principal + extra;
+        checkAfterRepay(loan, tokenId,totalT , 0, lenderBalance + debt);
     }
 
     function testMultipleBorrowAndRepay () public {
@@ -336,5 +337,4 @@ contract SystemTest is DSTest {
         assertEq(tkn.balanceOf(borrower_), 100);
     }
 }
-
 
