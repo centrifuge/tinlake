@@ -63,6 +63,7 @@ contract Admin {
             pile.file(fee, fee);
         }
         pile.file(loan, fee, 0);
+        emit Whitelisted(loan);
         return loan;
     }
 }
