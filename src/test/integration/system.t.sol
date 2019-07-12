@@ -41,7 +41,7 @@ contract User {
     }
 
     function doBorrow (uint loan) public {
-     reception.borrow(loan, address(this));
+        reception.borrow(loan, address(this));
     }
     function doApproveNFT(SimpleNFT nft, address usr) public {
         nft.setApprovalForAll(usr, true);
@@ -337,5 +337,4 @@ contract SystemTest is DSTest {
         assertEq(tkn.balanceOf(borrower_), 100);
     }
 }
-
 
