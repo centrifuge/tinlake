@@ -50,7 +50,6 @@ contract Admin {
         admit = AdmitLike(admit_);
         appraiser = AppraiserLike(appraiser_);
         pile = PileLike(pile_);
-
     }
 
     // -- Whitelist --
