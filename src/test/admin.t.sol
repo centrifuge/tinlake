@@ -90,9 +90,9 @@ contract AdminTest is DSTest {
         doWhitelist(shouldLoan, shouldPileCalls);
     }
 
-    function testWhitelistWithoutFeeInit() public {
-        uint shouldSpeed = uint(1000000564701133626865910626);
-        pile.setFeeReturn(0,0,shouldSpeed,0);
+    function testWhitelist() public {
+        uint fee = uint(1000000564701133626865910626);
+        pile.setFeeReturn(0,0,fee,0);
         uint shouldPileCalls = 1;
 
         uint shouldLoan = 97;
@@ -101,9 +101,9 @@ contract AdminTest is DSTest {
         doWhitelist(shouldLoan, shouldPileCalls);
     }
 
-    function testUpdate() public {
-        uint shouldSpeed = uint(1000000564701133626865910626);
-        pile.setFeeReturn(0,0,shouldSpeed,0);
+    function testUpdateBlackList() public {
+        uint fee = uint(1000000564701133626865910626);
+        pile.setFeeReturn(0,0,fee,0);
         uint shouldPileCalls = 1;
 
         uint shouldLoan = 97;
@@ -111,6 +111,7 @@ contract AdminTest is DSTest {
 
         doWhitelist(shouldLoan, shouldPileCalls);
 
+        // first update
         uint principal = 1500 ether;
         uint appraisal = 2000 ether;
 
@@ -121,5 +122,37 @@ contract AdminTest is DSTest {
 
         assertEq(appraiser.value(), appraisal);
         assertEq(appraiser.callsFile(), 2);
+
+        // second update
+        principal = 1000 ether;
+        appraisal = 2500 ether;
+        uint nft = 13;
+        address registry = address(1);
+
+        admin.update(shouldLoan, registry, nft, principal, appraisal, fee);
+        assertEq(admit.callsUpdate(), 2);
+        assertEq(admit.principal(),principal);
+        assertEq(admit.nft(), nft);
+        assertEq(admit.registry(), registry);
+
+        assertEq(pile.callsFile(), 2);
+        assertEq(pile.fee(), fee);
+
+        assertEq(appraiser.value(), appraisal);
+        assertEq(appraiser.callsFile(), 3);
+
+        // blacklist
+        admin.blacklist(shouldLoan);
+
+        assertEq(admit.callsUpdate(), 3);
+        assertEq(admit.principal(), 0);
+        assertEq(admit.nft(), 0);
+        assertEq(admit.registry(), address(0));
+
+        assertEq(appraiser.value(), 0);
+        assertEq(appraiser.callsFile(), 4);
+
+        assertEq(pile.callsFile(), 3);
+        assertEq(pile.fee(), 0);
     }
 }
