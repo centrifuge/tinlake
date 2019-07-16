@@ -53,10 +53,21 @@ contract Admit {
         return loan;
     }
 
-    function update(uint loan, uint principal) public auth {
-        (address registry, , ,) = shelf.shelf(loan);
-        require(registry != address(0));
-        shelf.file(loan, principal);
+    function update(uint loan, address registry_, uint nft_, uint principal_) public auth {
+        (, , ,uint principal) = shelf.shelf(loan);
+
+        // loan status should be whitelisted
+        require(principal != 0);
+        shelf.file(loan, registry_, nft_, principal_);
+
+    }
+
+    function update(uint loan, uint principal_) public auth {
+        (, , ,uint principal) = shelf.shelf(loan);
+
+        // loan status should be whitelisted
+        require(principal != 0);
+        shelf.file(loan, principal_);
     }
 }
 

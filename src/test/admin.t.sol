@@ -79,9 +79,10 @@ contract AdminTest is DSTest {
     }
 
     // --Tests--
-    function testWhitelistWithFeeInit() public {
+    function testFailWhitelist() public {
+        // fee not initialized
         pile.setFeeReturn(0,0,0,0);
-        uint shouldPileCalls = 2;
+        uint shouldPileCalls = 1;
 
         uint shouldLoan = 97;
         admit.setAdmitReturn(shouldLoan);

@@ -37,22 +37,68 @@ contract AdmitTest is DSTest {
         admit = new Admit(address(title),address(shelf));
     }
 
+    function doAdmit(uint loan, address registry, uint nft, uint principal) public {
+        uint loanR = admit.admit(registry, nft, principal, self);
+
+        assertEq(shelf.fileCalls(), 1);
+        assertEq(shelf.nft(), nft);
+        assertEq(shelf.registry(), registry);
+        assertEq(shelf.principal(), principal);
+        assertEq(title.usr(), self);
+        assertEq(title.issueCalls(), 1);
+        assertEq(loanR, loan);
+    }
+
     function testAdmit() public {
+        uint loan = 97;
+        address registry = address(1);
+        uint nft = 2;
+        uint principal = 3;
+        title.setIssueReturn(loan);
+
+        doAdmit(loan, registry, nft, principal);
+    }
+
+    function testUpdate() public {
         uint loan = 97;
         address registry = address(1);
         uint nft = 2;
         uint principal = 3;
 
         title.setIssueReturn(loan);
+        shelf.setShelfReturn(registry, nft, 0, principal);
 
-        uint loanR = admit.admit(registry, nft, principal, self);
+        doAdmit(loan, registry, nft, principal);
 
-        assertEq(shelf.fileCalls(), 1);
-        assertEq(title.issueCalls(), 1);
-        assertEq(loanR, loan);
+        // update
+        principal = 4;
+        admit.update(loan, principal);
+        assertEq(shelf.principal(), principal);
+        assertEq(shelf.fileCalls(), 2);
     }
 
-    function testUpdate() public {
+    function testFullUpdate() public {
+        uint loan = 97;
+        address registry = address(1);
+        uint nft = 2;
+        uint principal = 3;
 
+        title.setIssueReturn(loan);
+        shelf.setShelfReturn(registry, nft, 0, principal);
+
+        doAdmit(loan, registry, nft, principal);
+
+        principal = 4;
+        nft = 12;
+        registry = address(2);
+        admit.update(loan, registry, nft, principal);
+        assertEq(shelf.principal(), principal);
+        assertEq(shelf.fileCalls(), 2);
+    }
+
+    function testFailUpdate() public {
+        uint loan = 1;
+        uint principal = 4;
+        admit.update(loan, principal);
     }
 }

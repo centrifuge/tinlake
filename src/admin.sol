@@ -18,6 +18,8 @@ pragma experimental ABIEncoderV2;
 
 contract AdmitLike {
     function admit (address registry, uint nft, uint principal, address usr) public returns(uint);
+    function update(uint loan, address registry, uint nft, uint principal) public;
+    function update(uint loan, uint principal) public;
 }
 
 contract AppraiserLike {
@@ -57,13 +59,29 @@ contract Admin {
         uint loan = admit.admit(registry, nft, principal, usr);
         appraiser.file(loan, appraisal);
 
-        (,,uint speed,) = pile.fees(loan);
-        if (speed == 0) {
-            pile.file(fee, fee);
-        }
+        (,,uint speed,) = pile.fees(fee);
+        require(speed != 0);
+
         pile.file(loan, fee, 0);
         emit Whitelisted(loan);
         return loan;
+    }
+
+    function update(uint loan, address registry, uint nft, uint principal, uint appraisal, uint fee) public auth {
+        admit.update(loan, registry, nft, principal);
+        appraiser.file(loan, appraisal);
+        pile.file(loan, fee, 0);
+    }
+
+    function update(uint loan, uint principal, uint appraisal) public auth  {
+        admit.update(loan, principal);
+        appraiser.file(loan, appraisal);
+    }
+
+    function blacklist(uint loan) public auth {
+        admit.update(loan, address(0), 0, 0);
+        appraiser.file(loan, 0);
+        pile.file(loan, 0, 0);
     }
 }
 
