@@ -101,4 +101,25 @@ contract AdminTest is DSTest {
         doWhitelist(shouldLoan, shouldPileCalls);
     }
 
+    function testUpdate() public {
+        uint shouldSpeed = uint(1000000564701133626865910626);
+        pile.setFeeReturn(0,0,shouldSpeed,0);
+        uint shouldPileCalls = 1;
+
+        uint shouldLoan = 97;
+        admit.setAdmitReturn(shouldLoan);
+
+        doWhitelist(shouldLoan, shouldPileCalls);
+
+        uint principal = 1500 ether;
+        uint appraisal = 2000 ether;
+
+        admin.update(shouldLoan, principal, appraisal);
+
+        assertEq(admit.callsUpdate(), 1);
+        assertEq(admit.principal(),principal);
+
+        assertEq(appraiser.value(), appraisal);
+        assertEq(appraiser.callsFile(), 2);
+    }
 }
