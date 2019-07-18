@@ -21,7 +21,7 @@ test -z "$TKN_CHAINID" && TKN_CHAINID=1
 
 # Deploy NFT & Collateral
 NFT_COLLATERAL=$(dapp create test/SimpleNFT)
-test -z $SKIP_CURRENCY && CURRENCY=$(seth send --create out/test/SimpleToken.bin 'SimpleToken(string memory,string memory,string memory, uint)' "$TKN_SYMBOL" "$TKN_NAME" "$TKN_VERSION" $(seth --to-uint256 $TKN_CHAINID))
+CURRENCY=$(seth send --create out/test/SimpleToken.bin 'SimpleToken(string memory,string memory,string memory, uint)' "$TKN_SYMBOL" "$TKN_NAME" "$TKN_VERSION" $(seth --to-uint256 $TKN_CHAINID))
 
 cat > "$ADDRESS_DIR/load-mocks-$(seth chain)" << EOF
 #!/bin/bash

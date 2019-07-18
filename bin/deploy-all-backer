@@ -1,0 +1,58 @@
+#! /usr/bin/env bash
+
+set -e
+
+BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
+ADDRESS_DIR=${ADDRESS_DIR:-$PWD/addresses}
+
+message() {
+    echo
+    echo ----------------------------------------------
+    echo "$@"
+    echo ----------------------------------------------
+    echo
+}
+
+
+# Set verify contract option in Etherscan if the API key is in the config file
+if [[ "$ETHERSCAN_API_KEY" != "" ]]; then
+    export DAPP_VERIFY_CONTRACT="yes"
+    echo "Found ETHERSCAN_API_KEY in environment, will attempt to verify contracts."
+fi
+
+
+message CHECKING OUT DEPENDENCIES
+
+dapp update
+
+message BUILDING SOURCE
+
+test -z "$SKIP_BUILD" && dapp build
+export SKIP_BUILD=1
+
+message DEPLOYING NFT AND CURRENCY ERC20
+
+export SKIP_CURRENCY=1
+"$BIN_DIR/deploy-mocks"
+source "$ADDRESS_DIR/load-mocks-$(seth chain)"
+
+message DEPLOYING APPRAISER
+
+"$BIN_DIR/deploy-appraiser"
+source "$ADDRESS_DIR/load-appraiser-$(seth chain)"
+
+message DEPLOYING CORE
+
+"$BIN_DIR/deploy-core"
+source "$ADDRESS_DIR/load-core-$(seth chain)"
+
+message DEPLOYING BACKER
+
+"$BIN_DIR/deploy-backer-lender"
+source "$ADDRESS_DIR/load-backer-lender-$(seth chain)"
+
+message WRITING $ADDRESS_DIR/addresses.json
+"$BIN_DIR/deploy-write-addresses"
+
+message DONE
+
