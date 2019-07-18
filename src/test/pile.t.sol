@@ -204,9 +204,10 @@ contract PileTest is DSTest {
         Example:
         given a 1.05 interest per day (seconds per day 3600 * 24)
 
-        i = (1+r/(3600*24))^(3600*24) would result in r = 0.051271065957324097526787272 per second compound
+        r= 0.05
+        i = (1+r/(3600*24))^(3600*24) would result in i = 1.051271065957324097526787272
 
-        fee = (1+(0.051271065957324097526787272/(3600*24)))*10^27
+        fee = (1+(0.05/(3600*24)))*10^27
         fee = 1000000593415115246806684338
 
         */
