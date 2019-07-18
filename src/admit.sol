@@ -16,11 +16,13 @@
 pragma solidity >=0.4.24;
 
 contract TitleLike {
-    function issue (address) public returns (uint); 
+    function issue (address usr) public returns (uint);
 }
 
 contract ShelfLike {
-    function file(uint, address, uint, uint) public; 
+    function file(uint loan, address registry, uint nft, uint principal) public;
+    function file(uint loan, uint principal) public;
+    function shelf(uint loan) public returns(address registry,uint256 tokenId,uint price,uint principal);
 }
 
 // Admit can add whitelist a token and set the amount that can be borrowed against it. It also sets the borrowers rate in the Pile.
@@ -49,6 +51,23 @@ contract Admit {
         shelf.file(loan, registry, nft, principal);
         emit Created(loan);
         return loan;
+    }
+
+    function update(uint loan, address registry_, uint nft_, uint principal_) public auth {
+        (, , ,uint principal) = shelf.shelf(loan);
+
+        // loan status should be whitelisted
+        require(principal != 0);
+        shelf.file(loan, registry_, nft_, principal_);
+
+    }
+
+    function update(uint loan, uint principal_) public auth {
+        (, , ,uint principal) = shelf.shelf(loan);
+
+        // loan status should be whitelisted
+        require(principal != 0);
+        shelf.file(loan, principal_);
     }
 }
 

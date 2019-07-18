@@ -34,7 +34,9 @@ contract Appraiser {
     function file (uint loan, uint wad) public auth {
         value[loan] = wad;
     }
+
     function appraise (uint loan, address registry, uint tokenId) public returns (uint) {
+        // TODO implement appraise with NFT registry
         return value[loan];
     }
 }

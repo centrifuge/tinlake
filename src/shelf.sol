@@ -25,8 +25,6 @@ contract NFTLike {
     function transferFrom(address from, address to, uint256 tokenId) public;
 }
 
-
-
 contract PileLike {
     struct Loan {
         uint debt;
@@ -80,6 +78,10 @@ contract Shelf {
     function file(uint loan, address registry_, uint nft_, uint principal_) public auth {
         shelf[loan].registry = registry_;
         shelf[loan].tokenId = nft_;
+        shelf[loan].principal = principal_;
+    }
+
+    function file(uint loan, uint principal_) public auth {
         shelf[loan].principal = principal_;
     }
 

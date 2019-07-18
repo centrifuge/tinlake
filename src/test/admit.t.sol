@@ -18,73 +18,87 @@ pragma solidity >=0.4.23;
 import "ds-test/test.sol";
 
 import { Admit } from "../admit.sol";
-
-contract TitleMock {
-    uint public calls;
-    uint loan;
-    address usr;
-
-    constructor (address usr_, uint loan_) public {
-       calls = 0;
-       loan = loan_;
-       usr = usr_;
-    }   
-
-    function issue (address usr_) public returns (uint) {
-        calls = calls+1;
-        require(usr == usr_, "bad-call"); 
-        return loan;
-    }
-}
-
-contract ShelfMock {
-    uint public calls;
-    uint loan;
-    address registry;
-    uint nft;
-    uint principal;
-
-    constructor (uint loan_, address registry_, uint nft_, uint principal_) public {
-        loan = loan_;
-        registry = registry_;
-        nft = nft_;
-        principal = principal_;
-    }
-    
-    function file(uint loan_, address registry_, uint nft_, uint principal_) public {
-        calls = calls+1;
-        require(loan == loan_, "bad-call");
-        require(registry == registry_, "bad-call");
-        require(nft == nft_, "bad-call");
-        require(principal == principal_, "bad-call");
-    }
-}
+import "./mock/title.sol";
+import "./mock/shelf.sol";
 
 contract AdmitTest is DSTest {
     Admit admit;
     TitleMock title;
     ShelfMock shelf;
-    
-    uint loan;
-    address usr;
+
     address self;
-    address registry;
-    uint nft;
-    uint principal;
-    
+
+    function setUp() public {
+        self = address(this);
+
+        title = new TitleMock();
+        shelf = new ShelfMock();
+
+        admit = new Admit(address(title),address(shelf));
+    }
+
+    function doAdmit(uint loan, address registry, uint nft, uint principal) public {
+        uint loanR = admit.admit(registry, nft, principal, self);
+
+        assertEq(shelf.fileCalls(), 1);
+        assertEq(shelf.nft(), nft);
+        assertEq(shelf.registry(), registry);
+        assertEq(shelf.principal(), principal);
+        assertEq(title.usr(), self);
+        assertEq(title.issueCalls(), 1);
+        assertEq(loanR, loan);
+    }
+
     function testAdmit() public {
-        loan = 1;
-        registry = address(1);
-        nft = 2;
-        principal = 3;
-        title = new TitleMock(usr, loan);
-        shelf  = new ShelfMock(loan, registry, nft, principal);
+        uint loan = 97;
+        address registry = address(1);
+        uint nft = 2;
+        uint principal = 3;
+        title.setIssueReturn(loan);
 
-        admit = new Admit(address(title), address(shelf));
+        doAdmit(loan, registry, nft, principal);
+    }
 
-        uint loanR = admit.admit(registry, nft, principal, usr);
-        assertEq(shelf.calls(), 1);
-        assertEq(title.calls(), 1);
-        assertEq(loan, loanR);
+    function testUpdate() public {
+        uint loan = 97;
+        address registry = address(1);
+        uint nft = 2;
+        uint principal = 3;
+
+        title.setIssueReturn(loan);
+        shelf.setShelfReturn(registry, nft, 0, principal);
+
+        doAdmit(loan, registry, nft, principal);
+
+        // update
+        principal = 4;
+        admit.update(loan, principal);
+        assertEq(shelf.principal(), principal);
+        assertEq(shelf.fileCalls(), 2);
+    }
+
+    function testFullUpdate() public {
+        uint loan = 97;
+        address registry = address(1);
+        uint nft = 2;
+        uint principal = 3;
+
+        title.setIssueReturn(loan);
+        shelf.setShelfReturn(registry, nft, 0, principal);
+
+        doAdmit(loan, registry, nft, principal);
+
+        principal = 4;
+        nft = 12;
+        registry = address(2);
+        admit.update(loan, registry, nft, principal);
+        assertEq(shelf.principal(), principal);
+        assertEq(shelf.fileCalls(), 2);
+    }
+
+    function testFailUpdate() public {
+        uint loan = 1;
+        uint principal = 4;
+        admit.update(loan, principal);
     }
 }
