@@ -142,19 +142,16 @@ contract Deployer {
 
     function deployTitle(string memory name, string memory symbol) public {
         title = titlefab.newTitle(name, symbol);
-        title.rely(address(this));
         title.rely(god);
     }
 
     function deployLightSwitch() public {
         lightswitch = lightswitchfab.newLightSwitch();
-        lightswitch.rely(address(this));
         lightswitch.rely(god);
     }  
   
     function deployCollateral() public {
         collateral = collateralfab.newCollateral();
-        collateral.rely(address(this));
         collateral.rely(god);
     }
     function deployPile(address currency_) public {
