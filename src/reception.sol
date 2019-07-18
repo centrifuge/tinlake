@@ -69,5 +69,13 @@ contract Reception is TitleOwned {
         pile.repay(loan,wad,usrT);
         shelf.release(loan, usr);
         desk.balance();
-    }    
+    }
+    function repay(uint loan, address usrT, address usr) public owner(loan) {
+        pile.collect(loan);
+
+        uint wad =pile.loans(loan);
+        pile.repay(loan,wad,usrT);
+        shelf.release(loan, usr);
+        desk.balance();
+    }
 }
