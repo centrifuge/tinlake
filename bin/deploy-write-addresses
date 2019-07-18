@@ -2,7 +2,7 @@
 set -ex
 
 ADDRESS_DIR=${ADDRESS_DIR:-$PWD/addresses}
-mkdir -p $ADDRESS_DIR 
+mkdir -p $ADDRESS_DIR
 BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
 
 
@@ -11,7 +11,7 @@ test -z "$GOD_ADDR" && GOD_ADDR="0x00000000000000000000"
 source $BIN_DIR/lib/load-addresses
 touch "$ADDRESS_DIR/addresses.json"
 
-addAddresses "$ADDRESS_DIR/addresses.json" <<EOF 
+addAddresses "$ADDRESS_DIR/addresses.json" <<EOF
 {
    "DEPLOYER": "$DEPLOYER",
    "APPRAISER": "$APPRAISER",
@@ -20,6 +20,7 @@ addAddresses "$ADDRESS_DIR/addresses.json" <<EOF
    "PILE":"$PILE",
    "SHELF":"$SHELF",
    "COLLATERAL":"$COLLATERAL",
+   "VALVE": "$VALVE",
    "DESK": "$DESK",
    "RECEPTION":"$RECEPTION",
    "LENDER": "$LENDER",
@@ -27,6 +28,7 @@ addAddresses "$ADDRESS_DIR/addresses.json" <<EOF
    "CVTPIP" : "$CVTPIP",
    "NFT_COLLATERAL": "$NFT_COLLATERAL",
    "ADMIT":"$ADMIT",
+   "ADMIN":"$ADMIN",
    "SPELL":"$SPELL",
    "CURRENCY":"$CURRENCY"
 }
