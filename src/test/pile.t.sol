@@ -494,8 +494,7 @@ contract PileTest is DSTest {
         borrow(loan, principal);
         hevm.warp(now + 1050 days); // produces max ~ chi 10^49
 
-
-        // principal 10^27 * 10^49 = 10^76 (max uint is 10^77)
+        // debt ~ 10^27 * 10^49 =  10^76 (max uint is 10^77)
         pile.collect(loan);
 
     }
@@ -508,7 +507,7 @@ contract PileTest is DSTest {
         borrow(loan, principal);
         hevm.warp(now + 1050 days); // produces max ~ chi 10^49
 
-        // debt 10^28 * 10^49 = 10^77 (max uint is 10^77)
+        // debt ~ 10^28 * 10^49 = 10^77 (max uint is 10^77)
         pile.collect(loan);
 
     }
