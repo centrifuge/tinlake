@@ -8,6 +8,7 @@ contract PileMock {
     uint public callsRepay;
     uint public callsWithdraw;
     uint public callsFile;
+    uint public callsCollect;
 
     struct Loan {
         uint debt;
@@ -46,10 +47,16 @@ contract PileMock {
         callsTotalBalance++;
         return totalBalanceReturn;
     }
+
     function borrow(uint loan_, uint wad_) public  {
         loan = loan_;
         wad = wad_;
         callsBorrow++;
+    }
+
+    function collect(uint loan_) public {
+        loan = loan_;
+        callsCollect++;
     }
 
     function repay(uint loan_, uint wad_, address usr_) public {

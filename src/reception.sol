@@ -32,6 +32,8 @@ contract PileLike {
     function withdraw(uint loan, uint wad, address usr) public;
     function repay(uint loan, uint wad, address usr) public ;
     function balanceOf(uint loan) public view returns (uint);
+    function collect(uint loan) public;
+    function loans(uint loan) public returns (uint debt, uint balance, uint fee, uint chi);
 }
 
 // Reception serves as an interface for the borrower in Tinlake.
@@ -73,8 +75,8 @@ contract Reception is TitleOwned {
     function repay(uint loan, address usrT, address usr) public owner(loan) {
         pile.collect(loan);
 
-        uint wad =pile.loans(loan);
-        pile.repay(loan,wad,usrT);
+        (uint debt,,,) = pile.loans(loan);
+        pile.repay(loan, debt, usrT);
         shelf.release(loan, usr);
         desk.balance();
     }
