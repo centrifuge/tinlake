@@ -457,4 +457,56 @@ contract PileTest is DSTest {
         repay(loan, debt);
 
     }
+
+    function testMaxChi() public {
+        // chi is uint, max value = (2^256)-1 = 1.1579209e+77
+        // chi initial 10^27
+        uint fee = uint(1000000564701133626865910626); // 5 % / daily
+        pile.file(fee, fee);
+        hevm.warp(now + 1050 days); // 1,05 ^1050 = 1.7732257e+22
+
+        // init chi 10^27 *  1.7732257 * 10^22  ~ chi 10^49
+        // rdiv operation needs to mul chi with ONE (10^27)
+        // therefore: 10^49 * 10^27 = 10^76 < 1.1579209e+77
+        pile.drip(fee);
+    }
+
+    function testFailChiTooHigh() public {
+        // chi is uint, max value = (2^256)-1 = 1.1579209e+77
+        // chi initial 10^27
+        uint fee = uint(1000000564701133626865910626); // 5 % / daily
+        pile.file(fee, fee);
+        hevm.warp(now + 1100 days); // 1,05 ^1100 = 2.0334288e+23
+
+        // init chi 10^27 *  2.0334288 * 10^23  ~ chi 10^50
+        // rdiv operation needs to mul chi with ONE (10^27)
+        // therefore: 10^50 * 10^27 = 10^77 same power as max value 1.1579209e+77
+        pile.drip(fee);
+    }
+
+    function testMaxDebt() public {
+        uint fee = uint(1000000564701133626865910626); // 5 % day
+        pile.file(fee, fee);
+        uint loan = 1;
+        uint principal = 1000000000  ether; // one billion 10^9 * 10^18 = 10^28
+        pile.file(loan, fee, 0);
+        borrow(loan, principal);
+        hevm.warp(now + 1050 days); // produces max ~ chi 10^49
+
+        // debt ~ 10^27 * 10^49 =  10^76 (max uint is 10^77)
+        pile.collect(loan);
+    }
+    function testFailDebtTooHigh() public {
+        uint fee = uint(1000000564701133626865910626); // 5 % day
+        pile.file(fee, fee);
+        uint loan = 1;
+        uint principal = 10000000000  ether; // 10 billion 10^10 * 10^18 = 10^28
+        pile.file(loan, fee, 0);
+        borrow(loan, principal);
+        hevm.warp(now + 1050 days); // produces max ~ chi 10^49
+
+        // debt ~ 10^28 * 10^49 = 10^77 (max uint is 10^77)
+        pile.collect(loan);
+    }
+
 }
