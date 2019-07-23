@@ -44,7 +44,6 @@ contract Reception is TitleOwned {
 
     // --- Data ---
 
-
     DeskLike desk;
     ShelfLike shelf;
     PileLike pile;

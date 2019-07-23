@@ -30,9 +30,15 @@ contract LenderFabLike {
     function deploy(address,address,address) public returns (address);
 }
 
-contract WardsLike {
+
+contract LenderLike {
     function rely(address) public;
     function file(address) public;
+}
+
+
+contract WardsLike {
+    function rely(address) public;
 }
 
 contract TitleFab {
@@ -124,7 +130,7 @@ contract Deployer {
     Reception   public reception;
     Admit       public admit;
     Admin       public admin;
-    WardsLike  public lender;
+    LenderLike  public lender;
 
     constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, PileFab pilefab_, ShelfFab shelffab_, CollateralFab collateralfab_, DeskFab deskfab_, AdmitFab admitfab_, AdminFab adminfab_) public {
         address self = msg.sender;
@@ -222,7 +228,7 @@ contract Deployer {
         // LenderFab deploys a lender with the defined collateral and currency
         address lender_ = LenderFabLike(lenderfab_).deploy(currency_, address(collateral), address(lightswitch));
 
-        lender = WardsLike(lender_);
+        lender = LenderLike(lender_);
         lender.rely(god);
         lender.rely(address(desk));
 
