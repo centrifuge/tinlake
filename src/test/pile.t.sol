@@ -471,7 +471,7 @@ contract PileTest is DSTest {
         pile.drip(fee);
     }
 
-    function testFailChiToHigh() public {
+    function testFailChiTooHigh() public {
         // chi is uint, max value = (2^256)-1 = 1.1579209e+77
         // chi initial 10^27
         uint fee = uint(1000000564701133626865910626); // 5 % / daily
@@ -482,7 +482,6 @@ contract PileTest is DSTest {
         // rdiv operation needs to mul chi with ONE (10^27)
         // therefore: 10^50 * 10^27 = 10^77 same power as max value 1.1579209e+77
         pile.drip(fee);
-
     }
 
     function testMaxDebt() public {
@@ -496,9 +495,8 @@ contract PileTest is DSTest {
 
         // debt ~ 10^27 * 10^49 =  10^76 (max uint is 10^77)
         pile.collect(loan);
-
     }
-    function testFailDebtToHigh() public {
+    function testFailDebtTooHigh() public {
         uint fee = uint(1000000564701133626865910626); // 5 % day
         pile.file(fee, fee);
         uint loan = 1;
@@ -509,7 +507,6 @@ contract PileTest is DSTest {
 
         // debt ~ 10^28 * 10^49 = 10^77 (max uint is 10^77)
         pile.collect(loan);
-
     }
 
 }
