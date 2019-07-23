@@ -1,0 +1,42 @@
+#! /usr/bin/env bash
+
+message() {
+    echo
+    echo ----------------------------------------------
+    echo "$@"
+    echo ----------------------------------------------
+    echo
+}
+
+ADDRESSES=${ADDRESSES:-$PWD/addresses/addresses.json}
+
+message Contracts
+
+CURRENCY=$(cat $ADDRESSES | jq  -r '.CURRENCY')
+COLLATERAL=$(cat $ADDRESSES | jq  -r '.COLLATERAL')
+LENDER=$(cat $ADDRESSES | jq  -r '.LENDER')
+echo "Currency: $CURRENCY"
+echo "Collateral: $COLLATERAL"
+echo "Lender: $LENDER"
+
+
+message Backer Balances
+echo "Backer Address: $BACKER_ETH_FROM"
+echo "ETH Balance: $(seth --from-wei $(seth balance $BACKER_ETH_FROM)) ETH"
+
+BALANCE=$(seth call $CURRENCY 'balanceOf(address)' $BACKER_ETH_FROM)
+echo "Backer Currency: $(seth --from-wei $(node <<< "console.log(parseInt('$BALANCE', 16))")) DAI"
+
+
+BALANCE=$(seth call $COLLATERAL 'balanceOf(address)' $BACKER_ETH_FROM)
+echo "Backer Currency: $(seth --from-wei $(node <<< "console.log(parseInt('$BALANCE', 16))")) CVT"
+
+
+message Approvals
+
+BALANCE=$(seth call $CURRENCY 'allowance(address, address)' $BACKER_ETH_FROM $LENDER)
+echo "Backer allows the Lender to take Currency: $(seth --from-wei $(node <<< "console.log(parseInt('$BALANCE', 16))")) DAI"
+
+BALANCE=$(seth call $COLLATERAL 'allowance(address, address)' $BACKER_ETH_FROM $LENDER)
+echo "Backer allows the Lender to take Collateral: $(seth --from-wei $(node <<< "console.log(parseInt('$BALANCE', 16))")) CVT"
+
