@@ -45,6 +45,7 @@ contract Reception is TitleOwned {
     modifier auth { require(wards[msg.sender] == 1); _; }
 
     // --- Data ---
+
     DeskLike desk;
     ShelfLike shelf;
     PileLike pile;

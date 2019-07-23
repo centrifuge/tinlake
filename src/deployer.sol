@@ -24,16 +24,22 @@ import { Pile } from "./pile.sol";
 import { Collateral } from "./collateral.sol";
 import { Valve } from "./valve.sol";
 import { Admit } from "./admit.sol";
+import { Admin } from "./admin.sol";
 
 contract LenderFabLike {
     function deploy(address,address,address) public returns (address);
 }
+
 
 contract LenderLike {
     function rely(address) public;
     function file(address) public;
 }
 
+
+contract WardsLike {
+    function rely(address) public;
+}
 
 contract TitleFab {
    function newTitle(string memory name, string memory symbol) public returns (Title title) {
@@ -81,7 +87,24 @@ contract DeskFab {
         desk.rely(msg.sender);
         desk.deny(address(this));
     }
-}    
+}
+
+contract AdmitFab {
+    function newAdmit(address title, address shelf) public returns (Admit admit) {
+        admit = new Admit(title, shelf);
+        admit.rely(msg.sender);
+        admit.deny(address(this));
+    }
+
+}
+
+contract AdminFab {
+    function newAdmin(address admit, address appraiser, address pile) public returns(Admin admin) {
+        admin = new Admin(admit, appraiser, pile);
+        admin.rely(msg.sender);
+        admin.deny(address(this));
+    }
+}
 
 contract Deployer {
     TitleFab titlefab;
@@ -89,21 +112,27 @@ contract Deployer {
     PileFab pilefab;
     ShelfFab shelffab;
     CollateralFab collateralfab;
-    DeskFab         deskfab;
-    
+    DeskFab deskfab;
+    AdmitFab admitfab;
+    AdminFab adminfab;
+
+
+    address     public god;
+    address     public appraiser_;
+
     Title       public title;
     LightSwitch public lightswitch;
     Pile        public pile;
     Shelf       public shelf;
     Collateral  public collateral;
     Valve       public valve;
-    address     public god; 
     Desk        public desk;
     Reception   public reception;
     Admit       public admit;
+    Admin       public admin;
     LenderLike  public lender;
 
-    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, PileFab pilefab_, ShelfFab shelffab_, CollateralFab collateralfab_, DeskFab deskfab_) public {
+    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, PileFab pilefab_, ShelfFab shelffab_, CollateralFab collateralfab_, DeskFab deskfab_, AdmitFab admitfab_, AdminFab adminfab_) public {
         address self = msg.sender;
         god = god_;
         
@@ -113,30 +142,30 @@ contract Deployer {
         shelffab = shelffab_;
         collateralfab = collateralfab_;
         deskfab = deskfab_;
+        admitfab = admitfab_;
+        adminfab = adminfab_;
     }
 
     function deployTitle(string memory name, string memory symbol) public {
         title = titlefab.newTitle(name, symbol);
-        title.rely(address(this));
         title.rely(god);
     }
 
     function deployLightSwitch() public {
         lightswitch = lightswitchfab.newLightSwitch();
-        lightswitch.rely(address(this));
         lightswitch.rely(god);
     }  
   
     function deployCollateral() public {
         collateral = collateralfab.newCollateral();
-        collateral.rely(address(this));
         collateral.rely(god);
     }
     function deployPile(address currency_) public {
         pile = pilefab.newPile(currency_);
         pile.rely(god);
     }
-    function deployShelf(address appraiser_) public {
+    function deployShelf(address appraiser) public {
+        appraiser_ = appraiser;
         shelf = shelffab.newShelf(address(pile), appraiser_);
         shelf.rely(god);
         pile.rely(address(shelf));
@@ -150,24 +179,46 @@ contract Deployer {
         desk = deskfab.newDesk(address(pile), address(valve), address(collateral), address(lightswitch));
         desk.rely(god);
     }
+
+    function deployAdmit() public {
+        admit = admitfab.newAdmit(address(title), address(shelf));
+        admit.rely(god);
+
+    }
+
+    function deployAdmin(address appraiser) public {
+        appraiser_ = appraiser;
+        admin = adminfab.newAdmin(address(admit), appraiser_, address(pile));
+        admin.rely(god);
+    }
     function deploy() public {
         address pile_ = address(pile);
         address shelf_ = address(shelf);
         address valve_ = address(valve);
         address desk_ = address(desk);
+        address admit_ = address(admit);
+        address admin_ = address(admin);
 
+        // desk allowed to call
         pile.rely(desk_);
         valve.rely(desk_);
-        
-        admit = new Admit(address(title), shelf_);
-        admit.rely(god);
-        address admit_ = address(admit);
+
+        // admit allowed to call
         title.rely(admit_);
         shelf.rely(admit_);
+
+
+        // admin allowed to call
+        admit.rely(admin_);
+        pile.rely(admin_);
+        WardsLike(appraiser_).rely(admin_);
+
 
         reception = new Reception(desk_, address(title), shelf_, pile_);
         reception.rely(god);
         address reception_ = address(reception);
+
+        // reception allowed to call
         shelf.rely(reception_);
         pile.rely(reception_);
         desk.rely(reception_);

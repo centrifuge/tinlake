@@ -126,13 +126,18 @@ contract SystemTest is DSTest {
         ShelfFab shelffab = new ShelfFab();
         CollateralFab collateralfab = new CollateralFab();
         DeskFab deskfab = new DeskFab();
+        AdmitFab admitfab = new AdmitFab();
+        AdminFab adminfab = new AdminFab();
         appraiser = new Appraiser();
 
         manager = new ManagerUser(appraiser);
         manager_ = address(manager);
-        appraiser.rely(manager_);
 
-        deployer = new Deployer(manager_, titlefab, lightswitchfab, pilefab, shelffab, collateralfab, deskfab);
+        deployer = new Deployer(manager_, titlefab, lightswitchfab, pilefab, shelffab, collateralfab, deskfab, admitfab, adminfab);
+
+        appraiser.rely(manager_);
+        appraiser.rely(address(deployer));
+
         deployer.deployLightSwitch();
         deployer.deployTitle("Tinlake Loan", "TLNT");
         deployer.deployCollateral();
@@ -140,6 +145,8 @@ contract SystemTest is DSTest {
         deployer.deployShelf(address(appraiser));
         deployer.deployValve();
         deployer.deployDesk();
+        deployer.deployAdmit();
+        deployer.deployAdmin(address(appraiser));
         deployer.deploy();
 
         borrower = new User(address(deployer.reception()),tkn_,address(deployer.collateral()));
