@@ -50,6 +50,10 @@ contract User {
         reception.repay(loan, wad, usrT, usrC);
     }
 
+    function doRepay(uint loan, address usrT, address usrC) public {
+        reception.repay(loan, usrT, usrC);
+    }
+
     function doApproveCurrency(address usr, uint wad) public {
         tkn.approve(usr, wad);
     }
@@ -175,7 +179,94 @@ contract SystemTest is DSTest {
         assertEq(deployer.collateral().totalSupply(), cTotal);
     }
 
-    // Tests
+    function whitelist(uint tokenId, address nft_, uint principal, uint appraisal, address borrower_, uint fee) public returns (uint) {
+        // define fee
+        manager.doInitFee(fee, fee);
+
+        // nft whitelist
+        uint loan = manager.doAdmit(nft_, tokenId, principal, appraisal, borrower_);
+
+        // add fee for loan
+        manager.doAddFee(loan, fee, 0);
+        return loan;
+    }
+
+    function borrow(uint loan, uint tokenId, uint principal, uint appraisal) public {
+        borrower.doApproveNFT(nft, address(deployer.shelf()));
+
+        // borrow transaction
+        borrower.doBorrow(loan);
+
+        checkAfterBorrow(loan, tokenId, principal, appraisal);
+    }
+
+
+    function defaultLoan() public returns(uint tokenId, uint principal, uint appraisal, uint fee) {
+        uint tokenId = 1;
+        uint principal = 1000 ether;
+        uint appraisal = 1200 ether;
+
+        // define fee
+        uint fee = uint(1000000564701133626865910626); // 5 % day
+
+        return (tokenId, principal, appraisal, fee);
+    }
+
+    function setupOngoingLoan() public returns (uint loan, uint tokenId, uint principal, uint appraisal, uint fee) {
+        (uint tokenId, uint principal, uint appraisal, uint fee) = defaultLoan();
+
+        // create borrower collateral nft
+        nft.mint(borrower_, tokenId);
+
+        uint loan = whitelist(tokenId, nft_, principal, appraisal, borrower_, fee);
+
+        borrow(loan, tokenId, principal, appraisal);
+
+        return (loan, tokenId, principal, appraisal, fee);
+    }
+
+    function setupRepayReq() public returns(uint) {
+        // borrower needs some currency to pay fee
+        uint extra = 100000000000 ether;
+        tkn.mint(borrower_, extra);
+
+        // allow pile full control over borrower tokens
+        borrower.doApproveCurrency(address(deployer.pile()), uint(-1));
+
+        return extra;
+    }
+
+    function currLenderBal() public returns(uint) {
+        return tkn.balanceOf(lenderTokenAddr(address(deployer.lender())));
+    }
+
+    function borrowRepay(uint tokenId, uint principal, uint appraisal, uint fee) public {
+        // create borrower collateral nft
+        nft.mint(borrower_, tokenId);
+
+        uint loan = whitelist(tokenId, nft_, principal, appraisal, borrower_, fee);
+
+        borrow(loan, tokenId, principal, appraisal);
+
+        hevm.warp(now + 10 days);
+
+        // borrower needs some currency to pay fee
+        uint extra = setupRepayReq();
+
+
+        uint lenderShould = deployer.pile().burden(loan) + currLenderBal();
+
+        // repay without defined amount
+        borrower.doRepay(loan, borrower_, borrower_);
+
+        uint totalT = uint(tkn.totalSupply());
+        checkAfterRepay(loan, tokenId,totalT , 0, lenderShould);
+
+    }
+
+
+    // --- Tests ---
+
     function testBorrowTransaction() public {
         uint tokenId = 1;
         // nft value
@@ -192,55 +283,68 @@ contract SystemTest is DSTest {
     }
 
     function testBorrowAndRepay() public {
-        uint tokenId = 1;
+        (uint tokenId, uint principal, uint appraisal, uint fee) = defaultLoan();
+        borrowRepay(tokenId, principal, appraisal, fee);
+    }
 
 
-        // create borrower collateral nft
-        nft.mint(borrower_, tokenId);
 
-        // nft value
-        uint principal = 100;
-        uint appraisal = 120;
+    function testMediumSizeLoans() public {
+        (uint tokenId, uint principal, uint appraisal, uint fee) = defaultLoan();
 
+        appraisal = 1200000 ether;
+        principal = 1000000 ether;
 
-        // define fee
-        uint fee = uint(1000000564701133626865910626); // 5 % day
-        manager.doInitFee(fee, fee);
+        borrowRepay(tokenId, principal, appraisal, fee);
 
+    }
 
-        // nft whitelist
-        uint loan = manager.doAdmit(nft_, tokenId, principal, appraisal, borrower_);
-        borrower.doApproveNFT(nft, address(deployer.shelf()));
+    function testHighSizeLoans() public {
+        (uint tokenId, uint principal, uint appraisal, uint fee) = defaultLoan();
 
-        // add fee for loan
-        manager.doAddFee(loan, fee, 0);
+        appraisal = 120000000 ether;
+        principal = 100000000 ether; // 100 million
 
-        // borrow transaction
-        borrower.doBorrow(loan);
+        borrowRepay(tokenId, principal, appraisal, fee);
 
-        checkAfterBorrow(loan, tokenId, principal, appraisal);
+    }
 
-        uint lenderBalance = tkn.balanceOf(lenderTokenAddr(address(deployer.lender())));
-
+    function testRepayFullAmount() public {
+        (uint loan, uint tokenId, uint principal, uint appraisal, uint fee) = setupOngoingLoan();
 
         hevm.warp(now + 1 days);
 
         // borrower needs some currency to pay fee
-        uint extra = 10;
-        tkn.mint(borrower_, extra);
+        uint extra = setupRepayReq();
 
 
-        // allow pile full control over borrower tokens
-        borrower.doApproveCurrency(address(deployer.pile()), uint(-1));
+        uint lenderShould = deployer.pile().burden(loan) + currLenderBal();
 
-        // repay transaction
-        uint debt = deployer.pile().burden(loan);
-        uint buffer = 2;
+        // repay without defined amount
+        borrower.doRepay(loan, borrower_, borrower_);
 
-        borrower.doRepay(loan, debt+buffer, borrower_, borrower_);
+        uint totalT = uint(tkn.totalSupply());
+        checkAfterRepay(loan, tokenId,totalT , 0, lenderShould);
 
-        uint totalT = lenderBalance + principal + extra;
-        checkAfterRepay(loan, tokenId,totalT , 0, lenderBalance + debt);
+    }
+
+
+    function testLongOngoing() public {
+        (uint loan, uint tokenId, uint principal, uint appraisal, uint fee) = setupOngoingLoan();
+
+        // interest 5% per day 1.05^300 ~ 2273996.1286 chi
+        hevm.warp(now + 300 days);
+
+        // borrower needs some currency to pay fee
+        uint extra = setupRepayReq();
+
+        uint lenderShould = deployer.pile().burden(loan) + currLenderBal();
+
+        // repay without defined amount
+        borrower.doRepay(loan, borrower_, borrower_);
+
+        uint totalT = uint(tkn.totalSupply());
+        checkAfterRepay(loan, tokenId,totalT , 0, lenderShould);
     }
 
     function testMultipleBorrowAndRepay () public {

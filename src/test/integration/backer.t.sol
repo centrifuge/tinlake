@@ -32,14 +32,16 @@ contract BackerTest is DSTest, SystemTest {
     function setUp() public {
         basicSetup();
 
+        uint supply = 1000000000 ether; // 1 billion
+
         b = new User(address(deployer.reception()),tkn_, address(deployer.collateral()));
-        tkn.mint(address(b), 1000 ether);
+        tkn.mint(address(b), supply);
 
         backerFab = address(new BackerFab(address(b)));
         address lender_ = deployer.deployLender(tkn_, backerFab);
 
-        b.doApproveCurrency(lender_, 1000 ether);
-        b.doApproveCollateral(lender_, 1000 ether);
+        b.doApproveCurrency(lender_, supply);
+        b.doApproveCollateral(lender_, supply);
 
     }
 

@@ -37,6 +37,10 @@ contract ReceptionUser {
     function doRepay(uint loan, uint wad, address payedBy, address nftTo) public {
         return reception.repay(loan,wad,payedBy,nftTo);
     }
+
+    function doRepay(uint loan, address payedBy, address nftTo) public {
+        return reception.repay(loan,payedBy,nftTo);
+    }
 }
 
 contract ReceptionTest is DSTest {
@@ -69,20 +73,66 @@ contract ReceptionTest is DSTest {
 
     }
 
-    function testBorrow() public {
-        uint loan = 1;
-        title.setOwnerOfReturn(address(user1));
-        pile.setBalanceReturn(500);
-
+    function borrow(uint loan, uint wad) public {
         user1.doBorrow(loan, address(user1));
 
         assertEq(desk.callsBalance(), 1);
         assertEq(pile.callsWithdraw(), 1);
         assertEq(pile.loan(), loan);
-        assertEq(pile.wad(), 500);
+        assertEq(pile.wad(), wad);
 
         assertEq(shelf.depositCalls(),1);
         assertEq(shelf.usr(), address(user1));
 
+    }
+
+    function checkRepay(uint loan, uint debt) public {
+        assertEq(desk.callsBalance(), 2);
+        assertEq(pile.callsRepay(), 1);
+        assertEq(pile.loan(), loan);
+        assertEq(pile.wad(), debt);
+        assertEq(shelf.releaseCalls(),1);
+        assertEq(shelf.usr(), address(user1));
+
+    }
+
+    function repay(uint loan, uint debt) public {
+        user1.doRepay(loan, debt, address(user1), address(user1));
+        checkRepay(loan, debt);
+    }
+
+    function repayFull(uint loan, uint debt) public {
+        user1.doRepay(loan, address(user1), address(user1));
+        checkRepay(loan, debt);
+    }
+
+    function testBorrow() public {
+        uint loan = 1;
+        uint principal = 500;
+        title.setOwnerOfReturn(address(user1));
+        pile.setBalanceReturn(principal);
+        borrow(loan, principal);
+    }
+
+    function testRepay() public {
+        uint loan = 1;
+        uint principal = 500;
+        title.setOwnerOfReturn(address(user1));
+        pile.setBalanceReturn(principal);
+        borrow(loan, principal);
+        repay(loan, principal);
+    }
+
+    function testRepayFull() public {
+        uint loan = 1;
+        uint principal = 500;
+
+        pile.setLoanReturn(principal,0,0,0);
+
+        title.setOwnerOfReturn(address(user1));
+        pile.setBalanceReturn(principal);
+        borrow(loan, principal);
+        repayFull(loan, principal);
+        assertEq(pile.callsCollect(), 1);
     }
 }
