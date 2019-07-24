@@ -22,16 +22,6 @@ $(seth send $DESK 'file(bytes32,address)' "$(seth --to-bytes32 "$(seth --from-as
 $(seth send $LENDER 'rely(address)' $DESK)
 
 
-# backer allows lender to take currency
-seth send $CURRENCY 'approve(address,uint)' $LENDER 100000 --keystore=$BACKER_ETH_KEYSTORE --password=$BACKER_ETH_PASSWORD --from=$BACKER_ETH_FROM
-
-# backer allows lender to take collateral
-seth send $COLLATERAL 'approve(address,uint)' $LENDER 100000 --keystore=$BACKER_ETH_KEYSTORE --password=$BACKER_ETH_PASSWORD --from=$BACKER_ETH_FROM
-
-# give backer some currency
-seth send $CURRENCY 'mint(address,uint)' $BACKER_ETH_FROM 100000 --keystore=$BACKER_ETH_KEYSTORE --password=$BACKER_ETH_PASSWORD --from=$BACKER_ETH_FROM
-
-
 cat > "$ADDRESS_DIR/load-backer-lender-$(seth chain)" << EOF
 #!/bin/bash
 # lender fab deployment on $(seth chain) from $(git rev-parse HEAD)

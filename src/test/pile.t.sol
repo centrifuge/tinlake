@@ -509,4 +509,15 @@ contract PileTest is DSTest {
         pile.collect(loan);
     }
 
+    function attack() public {
+        uint loan = 13;
+        pile.collect(loan);
+        (uint debt, uint balance, uint fee, uint chi) = pile.loans(13);
+        assertEq(fee, 0);
+        assertEq(chi, 0);
+        assertEq(debt, 0);
+        assertEq(balance, 0);
+
+    }
+
 }

@@ -39,7 +39,7 @@ contract ReceptionUser {
     }
 
     function doRepay(uint loan, address payedBy, address nftTo) public {
-        return reception.repay(loan,payedBy,nftTo);
+        return reception.repayFull(loan,payedBy,nftTo);
     }
 }
 

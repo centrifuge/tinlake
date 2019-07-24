@@ -51,7 +51,7 @@ contract User {
     }
 
     function doRepay(uint loan, address usrT, address usrC) public {
-        reception.repay(loan, usrT, usrC);
+        reception.repayFull(loan, usrT, usrC);
     }
 
     function doApproveCurrency(address usr, uint wad) public {
