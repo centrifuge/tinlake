@@ -44,10 +44,6 @@ contract Shelf {
     function deny(address usr) public auth { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
 
-    modifier owned (uint loan, address owner) {
-        require(NFTLike(shelf[loan].registry).ownerOf(shelf[loan].tokenId) == address(owner)); _;
-    }
-
     // --- Data ---
     PileLike                  public pile;
     AppraiserLike             public appraiser;
@@ -96,7 +92,7 @@ contract Shelf {
         adjust(loan);
     }
 
-    function deposit (uint loan, address usr) public owned (loan, usr) {
+    function deposit (uint loan, address usr) public auth {
         NFTLike(shelf[loan].registry).transferFrom(usr, address(this), shelf[loan].tokenId);
         pile.borrow(loan, shelf[loan].principal);
         shelf[loan].principal = 0;
