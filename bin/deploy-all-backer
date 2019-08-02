@@ -1,9 +1,11 @@
 #! /usr/bin/env bash
-
 set -e
 
 BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
 ADDRESS_DIR=${ADDRESS_DIR:-$PWD/addresses}
+ADDRESS_FILE="${ADDRESS_DIR}/addresses-$(seth chain).json"
+
+source $BIN_DIR/lib/load-addresses
 
 message() {
     echo
@@ -20,6 +22,11 @@ if [[ "$ETHERSCAN_API_KEY" != "" ]]; then
     echo "Found ETHERSCAN_API_KEY in environment, will attempt to verify contracts."
 fi
 
+loadAddresses $ADDRESS_FILE
+if [[ -z "$GOD_ADDR" || -z "$CURRENCY" ]]; then
+    echo "GOD_ADDR, CURRENCY are required"
+    exit
+fi
 
 message CHECKING OUT DEPENDENCIES
 
@@ -30,29 +37,20 @@ message BUILDING SOURCE
 test -z "$SKIP_BUILD" && dapp build
 export SKIP_BUILD=1
 
-message DEPLOYING NFT AND CURRENCY ERC20
-
-export SKIP_CURRENCY=1
-"$BIN_DIR/deploy-mocks"
-source "$ADDRESS_DIR/load-mocks-$(seth chain)"
-
 message DEPLOYING APPRAISER
 
 "$BIN_DIR/deploy-appraiser"
-source "$ADDRESS_DIR/load-appraiser-$(seth chain)"
+loadAddresses $ADDRESS_FILE
 
 message DEPLOYING CORE
 
 "$BIN_DIR/deploy-core"
-source "$ADDRESS_DIR/load-core-$(seth chain)"
+loadAddresses $ADDRESS_FILE
 
 message DEPLOYING BACKER
 
 "$BIN_DIR/deploy-backer-lender"
-source "$ADDRESS_DIR/load-backer-lender-$(seth chain)"
-
-message WRITING $ADDRESS_DIR/addresses.json
-"$BIN_DIR/deploy-write-addresses"
+loadAddresses $ADDRESS_FILE
 
 message DONE
 

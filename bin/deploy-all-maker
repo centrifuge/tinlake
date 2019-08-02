@@ -34,7 +34,7 @@ export SKIP_BUILD=1
 message LOADING MAKER CONTRACTS
 
 test -z "$MCD_ADDRESS_FILE" && echo "MCD_ADDRESS_FILE needs to be set" && exit 1;
-source "$BIN_DIR/lib/load-addresses"
+loadAddresses $ADDRESS_FILE
 loadAddresses $MCD_ADDRESS_FILE
 export CURRENCY=$MCD_DAI
 
@@ -42,30 +42,27 @@ message DEPLOYING NFT
 
 export SKIP_CURRENCY=1
 "$BIN_DIR/deploy-mocks"
-source "$ADDRESS_DIR/load-mocks-$(seth chain)"
+loadAddresses $ADDRESS_FILE
 
 message DEPLOYING APPRAISER
 
 "$BIN_DIR/deploy-appraiser"
-source "$ADDRESS_DIR/load-appraiser-$(seth chain)"
+loadAddresses $ADDRESS_FILE
 
 message DEPLOYING CORE
 
 "$BIN_DIR/deploy-core"
-source "$ADDRESS_DIR/load-core-$(seth chain)"
+loadAddresses $ADDRESS_FILE
 
 message DEPLOYING MAKER SPELL
 
 "$BIN_DIR/deploy-maker-spell"
-source "$ADDRESS_DIR/load-maker-spell-$(seth chain)"
+loadAddresses $ADDRESS_FILE
 
 message DEPLOYING MAKER LENDER
 
 "$BIN_DIR/deploy-maker-lender"
-source "$ADDRESS_DIR/load-maker-lender-$(seth chain)"
-
-message WRITING $ADDRESS_DIR/addresses.json
-"$BIN_DIR/deploy-write-addresses"
+loadAddresses $ADDRESS_FILE
 
 message DONE
 

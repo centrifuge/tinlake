@@ -76,13 +76,13 @@ seth send "$SPELL" 'schedule()'
 # Delay is 0, no need to wait
 seth send "$SPELL" 'cast()'
 
-cat > "$ADDRESS_DIR/load-maker-spell-$(seth chain)" << EOF
-#!/bin/bash
-# maker adapter deployment on $(seth chain) from $(git rev-parse HEAD)
-# $(date)
-export CVTILK=$CVTILK
-export CVTPIP=$CVTPIP
-export CVTJOIN=$CVTJOIN
-export SPELL=$SPELL
+source $BIN_DIR/lib/load-addresses
+touch "$ADDRESS_DIR/addresses-$(seth chain).json"
+addAddresses "$ADDRESS_DIR/addresses-$(seth chain).json" <<EOF
+{
+    "CVTILK" : "$CVTILK",
+    "CVTPIP" : "$CVTPIP",
+    "CVTJOIN": "$CVTJOIN",
+    "SPELL"  : "$SPELL"
+}
 EOF
-
