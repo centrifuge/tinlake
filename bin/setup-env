@@ -26,26 +26,9 @@ fi
 export ETH_PASSWORD="${ETH_PASSWORD:-/dev/null}"
 export ETH_KEYSTORE="${ETH_KEYSTORE:-$KEYSTORE_PATH}"
 export ETH_RPC_URL="${ETH_RPC_URL:-$TESTNET_URL}"
-export ETH_GAS=7000000
+export ETH_GAS=1100000000
 
 export ETH_FROM="${ETH_FROM:-$(seth ls | head -n1 | awk '{print $1}')}"
-
-# For dai.js tests
-if command -v sethret > /dev/null 2>&1; then
-  find_keyfile() {
-    local address
-    address="$(tr '[:upper:]' '[:lower:]' <<<"${2#0x}")"
-    while IFS= read -r -d '' file; do
-      if [[ "$(jq -r .address "$file")" == "$address" ]]; then
-        echo "$file"
-        break
-      fi
-    done < <(find "$1" -type f -print0)
-  }
-  PRIVATE_KEY="$(sethret "$(find_keyfile "$ETH_KEYSTORE" "$ETH_FROM")" "$(cat "$ETH_PASSWORD")")"
-  export PRIVATE_KEY
-fi
-export JSON_RPC="$ETH_RPC_URL"
 
 echo "=== DAPPTOOLS VARIABLES ==="
 env | grep ETH_

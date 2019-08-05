@@ -5,7 +5,7 @@ BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
 ADDRESS_DIR=${ADDRESS_DIR:-$PWD/addresses}
 mkdir -p $ADDRESS_DIR 
 
-export ETH_GAS=${ETH_GAS:-"7000000"}
+export ETH_GAS=${ETH_GAS:-"1100000000"}
 export ETH_FROM=${ETH_FROM:-$(seth rpc eth_coinbase)}
 export SOLC_FLAGS="--optimize"
 
@@ -24,10 +24,11 @@ $(seth send $DESK 'file(bytes32,address)' "$(seth --to-bytes32 "$(seth --from-as
 $(seth send $LENDER 'rely(address)' $DESK)
 $(seth send $LENDER 'open()')
 
-cat > "$ADDRESS_DIR/load-maker-lender-$(seth chain)" << EOF
-#!/bin/bash
-# lender fab deployment on $(seth chain) from $(git rev-parse HEAD)
-# $(date)
-export LENDER_FAB=$LENDER_FAB
-export LENDER=$LENDER
+source $BIN_DIR/lib/load-addresses
+touch "$ADDRESS_DIR/addresses-$(seth chain).json"
+addAddresses "$ADDRESS_DIR/addresses-$(seth chain).json" <<EOF
+{
+    "LENDER_FAB": "$LENDER_FAB",
+    "LENDER"    : "$LENDER"
+}
 EOF

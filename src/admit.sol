@@ -1,3 +1,4 @@
+// admit.sol -- allows whitelisting assets on Tinlake
 // Copyright (C) 2019 lucasvo
 
 // This program is free software: you can redistribute it and/or modify

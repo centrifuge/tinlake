@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
+ADDRESS_DIR=${ADDRESS_DIR:-$PWD/addresses}
+ADDRESS_FILE="${ADDRESS_DIR}/addresses-$(seth chain).json"
+
+export ETH_GAS=${ETH_GAS:-"1100000000"}
+export ETH_FROM=${ETH_FROM:-$(seth rpc eth_coinbase)}
+export SOLC_FLAGS="--optimize"
+
+source $BIN_DIR/lib/load-addresses
+loadAddresses $ADDRESS_FILE
+
+set -ex
+$(seth send $LENDER 'file(address)' $1)
+

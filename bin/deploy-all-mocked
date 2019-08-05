@@ -4,6 +4,9 @@ set -e
 
 BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
 ADDRESS_DIR=${ADDRESS_DIR:-$PWD/addresses}
+ADDRESS_FILE="$ADDRESS_DIR/addresses-$(seth chain).json"
+
+source $BIN_DIR/lib/load-addresses
 
 message() {
     echo
@@ -25,23 +28,22 @@ export SKIP_BUILD=1
 message DEPLOYING APPRAISER
 
 "$BIN_DIR/deploy-appraiser"
-# shellcheck source=/dev/null
-source "$ADDRESS_DIR/load-appraiser-$(seth chain)"
+loadAddresses $ADDRESS_FILE
 
 message DEPLOYING NFT AND CURRENCY
 
 "$BIN_DIR/deploy-mocks"
-source "$ADDRESS_DIR/load-mocks-$(seth chain)"
+loadAddresses $ADDRESS_FILE
 
 message DEPLOYING CORE
 
 "$BIN_DIR/deploy-core"
-source "$ADDRESS_DIR/load-core-$(seth chain)"
+loadAddresses $ADDRESS_FILE
 
 message DEPLOYING LENDERFAB
 
 "$BIN_DIR/deploy-lender"
-source "$ADDRESS_DIR/load-lender-$(seth chain)"
+loadAddresses $ADDRESS_FILE
 
 message DONE
 
