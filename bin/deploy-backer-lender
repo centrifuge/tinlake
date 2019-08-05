@@ -23,8 +23,8 @@ $(seth send $DESK 'file(bytes32,address)' "$(seth --to-bytes32 "$(seth --from-as
 $(seth send $LENDER 'rely(address)' $DESK)
 
 if [[ -n "$BACKER_ETH_FROM" ]]; then
-    seth send $CURRENCY 'approve(address,uint)' $LENDER 100000 --keystore=$BACKER_ETH_KEYSTORE --password=$BACKER_ETH_PASSWORD --from=$BACKER_ETH_FROM
-    seth send $COLLATERAL 'approve(address,uint)' $LENDER 100000 --keystore=$BACKER_ETH_KEYSTORE --password=$BACKER_ETH_PASSWORD --from=$BACKER_ETH_FROM
+    seth send $CURRENCY 'approve(address,uint)' $LENDER $(seth --to-int256 -1) --keystore=$BACKER_ETH_KEYSTORE --password=$BACKER_ETH_PASSWORD --from=$BACKER_ETH_FROM
+    seth send $COLLATERAL 'approve(address,uint)' $LENDER $(seth --to-int256 -1) --keystore=$BACKER_ETH_KEYSTORE --password=$BACKER_ETH_PASSWORD --from=$BACKER_ETH_FROM
 fi
 
 
