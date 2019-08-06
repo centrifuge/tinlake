@@ -28,7 +28,7 @@ contract ShelfMock {
         shelfReturn = Loan(registry_, tokenId_, price_, principal_);
     }
 
-    function shelf(uint loan) public returns (address registry,uint256 tokenId,uint price,uint principal) {
+    function shelf(uint loan) public returns (address registry,uint256 tokenId,uint price,uint principal)  {
         return (shelfReturn.registry,shelfReturn.tokenId, shelfReturn.price, shelfReturn.principal);
     }
 

@@ -46,12 +46,12 @@ contract User {
     function doApproveNFT(SimpleNFT nft, address usr) public {
         nft.setApprovalForAll(usr, true);
     }
-    function doRepay(uint loan, uint wad, address usrT, address usrC) public {
-        reception.repay(loan, wad, usrT, usrC);
+    function doRepay(uint loan, uint wad, address usr) public {
+        reception.repay(loan, wad, usr);
     }
 
-    function doRepay(uint loan, address usrT, address usrC) public {
-        reception.repay(loan, usrT, usrC);
+    function doClose(uint loan, address usr) public {
+        reception.close(loan, usr);
     }
 
     function doApproveCurrency(address usr, uint wad) public {
@@ -263,8 +263,8 @@ contract SystemTest is DSTest {
 
         uint lenderShould = deployer.pile().burden(loan) + currLenderBal();
 
-        // repay without defined amount
-        borrower.doRepay(loan, borrower_, borrower_);
+        // close without defined amount
+        borrower.doClose(loan, borrower_);
 
         uint totalT = uint(tkn.totalSupply());
         checkAfterRepay(loan, tokenId,totalT , 0, lenderShould);
@@ -327,8 +327,8 @@ contract SystemTest is DSTest {
 
         uint lenderShould = deployer.pile().burden(loan) + currLenderBal();
 
-        // repay without defined amount
-        borrower.doRepay(loan, borrower_, borrower_);
+        // close without defined amount
+        borrower.doClose(loan, borrower_);
 
         uint totalT = uint(tkn.totalSupply());
         checkAfterRepay(loan, tokenId,totalT , 0, lenderShould);
@@ -347,8 +347,8 @@ contract SystemTest is DSTest {
 
         uint lenderShould = deployer.pile().burden(loan) + currLenderBal();
 
-        // repay without defined amount
-        borrower.doRepay(loan, borrower_, borrower_);
+        // close without defined amount
+        borrower.doClose(loan, borrower_);
 
         uint totalT = uint(tkn.totalSupply());
         checkAfterRepay(loan, tokenId,totalT , 0, lenderShould);
@@ -396,7 +396,7 @@ contract SystemTest is DSTest {
             principal = appraisal/100 * 80;
 
             // repay transaction
-            borrower.doRepay(i, principal, borrower_, borrower_);
+            borrower.doRepay(i, principal, borrower_);
 
             cTotalSupply -= appraisal;
             tLenderBalance += principal;

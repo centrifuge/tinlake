@@ -135,7 +135,7 @@ contract Pile is DSNote {
             chi_ = rdiv(chi, loans[loan].chi);
         }
         uint debt = rmul(loans[loan].debt, chi_);
-        uint chi = rmul(loans[loan].chi,chi_);
+        uint chi = rmul(loans[loan].chi, chi_);
         return (debt, chi);
     }
 
@@ -162,13 +162,13 @@ contract Pile is DSNote {
         uint latest = rmul(rpow(speed, now - rho, ONE), chi);
         uint chi_ = rdiv(latest, chi);
         uint wad = rmul(debt, chi_)-debt;
-        return (latest,chi_, wad);
+        return (latest, chi_, wad);
 
     }
 
     // --- Fee Accumulation ---
     function drip(uint fee) public {
-        (uint latest, uint chi_, uint wad) = compounding(fee);
+        (uint latest, , uint wad) = compounding(fee);
         Debt = add(Debt, wad);
         fees[fee].debt = add(fees[fee].debt, wad);
         fees[fee].chi = latest;
@@ -181,7 +181,7 @@ contract Pile is DSNote {
         if (now >= fees[fee].rho) {
             drip(fee);
         }
-        (loans[loan].debt,loans[loan].chi ) = update(loan, fees[fee].chi);
+        (loans[loan].debt, loans[loan].chi ) = update(loan, fees[fee].chi);
     }
 
     // --- Pile ---
