@@ -5,11 +5,11 @@ BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
 ADDRESS_DIR=${ADDRESS_DIR:-$PWD/addresses}
 mkdir -p $ADDRESS_DIR 
 
-export ETH_GAS=${ETH_GAS:-"1100000000"}
+export ETH_GAS=${ETH_GAS:-"7000000"}
 export ETH_FROM=${ETH_FROM:-$(seth rpc eth_coinbase)}
 export SOLC_FLAGS="--optimize"
 
-test -z "$SKIP_BUILD" && dapp build
+test -z "$SKIP_BUILD" && dapp build --extract
 
 # Set god address to 0 if not defined
 test -z "$GOD_ADDR" && GOD_ADDR=$(seth --to-address "0x00000000000000000000") 

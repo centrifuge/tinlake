@@ -28,7 +28,7 @@ dapp update
 
 message BUILDING SOURCE
 
-test -z "$SKIP_BUILD" && dapp build 
+test -z "$SKIP_BUILD" && dapp build --extract
 export SKIP_BUILD=1
 
 message LOADING MAKER CONTRACTS
