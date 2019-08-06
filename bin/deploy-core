@@ -51,7 +51,7 @@ addAddresses "$ADDRESS_DIR/addresses-$(seth chain).json" <<EOF
 {
     "APPRAISER"  :  "$APPRAISER",
     "DEPLOYER"   :  "$DEPLOYER",
-    "CURRENCY    :  "$CURRENCY",
+    "CURRENCY"   :  "$CURRENCY",
     "TITLE"      :  "0x$(seth call $DEPLOYER 'title()(address)')",
     "LIGHTSWITCH":  "0x$(seth call $DEPLOYER 'lightswitch()(address)')",
     "PILE"       :  "0x$(seth call $DEPLOYER 'pile()(address)')",
