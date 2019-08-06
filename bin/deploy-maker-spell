@@ -8,7 +8,7 @@ OUT_DIR=${OUT_DIR:-$(cd "${0%/*}"&&pwd)/../out}
 
 source "$ADDRESS_DIR/load-core-$(seth chain)"
 
-export ETH_GAS=${ETH_GAS:-"7000000"}
+export ETH_GAS=${ETH_GAS:-"1100000000"}
 export ETH_FROM=${ETH_FROM:-$(seth rpc eth_coinbase)}
 export SOLC_FLAGS="--optimize"
 
@@ -76,13 +76,13 @@ seth send "$SPELL" 'schedule()'
 # Delay is 0, no need to wait
 seth send "$SPELL" 'cast()'
 
-cat > "$ADDRESS_DIR/load-maker-spell-$(seth chain)" << EOF
-#!/bin/bash
-# maker adapter deployment on $(seth chain) from $(git rev-parse HEAD)
-# $(date)
-export CVTILK=$CVTILK
-export CVTPIP=$CVTPIP
-export CVTJOIN=$CVTJOIN
-export SPELL=$SPELL
+source $BIN_DIR/lib/load-addresses
+touch "$ADDRESS_DIR/addresses-$(seth chain).json"
+addAddresses "$ADDRESS_DIR/addresses-$(seth chain).json" <<EOF
+{
+    "CVTILK" : "$CVTILK",
+    "CVTPIP" : "$CVTPIP",
+    "CVTJOIN": "$CVTJOIN",
+    "SPELL"  : "$SPELL"
+}
 EOF
-

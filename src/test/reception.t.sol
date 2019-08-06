@@ -34,12 +34,12 @@ contract ReceptionUser {
         return reception.borrow(loan, deposit);
     }
 
-    function doRepay(uint loan, uint wad, address payedBy, address nftTo) public {
-        return reception.repay(loan,wad,payedBy,nftTo);
+    function doRepay(uint loan, uint wad, address nftTo) public {
+        return reception.repay(loan, wad, nftTo);
     }
 
-    function doRepay(uint loan, address payedBy, address nftTo) public {
-        return reception.repay(loan,payedBy,nftTo);
+    function doClose(uint loan, address nftTo) public {
+        return reception.close(loan, nftTo);
     }
 }
 
@@ -97,12 +97,12 @@ contract ReceptionTest is DSTest {
     }
 
     function repay(uint loan, uint debt) public {
-        user1.doRepay(loan, debt, address(user1), address(user1));
+        user1.doRepay(loan, debt, address(user1));
         checkRepay(loan, debt);
     }
 
-    function repayFull(uint loan, uint debt) public {
-        user1.doRepay(loan, address(user1), address(user1));
+    function close(uint loan, uint debt) public {
+        user1.doClose(loan, address(user1));
         checkRepay(loan, debt);
     }
 
@@ -123,7 +123,7 @@ contract ReceptionTest is DSTest {
         repay(loan, principal);
     }
 
-    function testRepayFull() public {
+    function testClose() public {
         uint loan = 1;
         uint principal = 500;
 
@@ -132,7 +132,7 @@ contract ReceptionTest is DSTest {
         title.setOwnerOfReturn(address(user1));
         pile.setBalanceReturn(principal);
         borrow(loan, principal);
-        repayFull(loan, principal);
+        close(loan, principal);
         assertEq(pile.callsCollect(), 1);
     }
 }

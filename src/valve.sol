@@ -1,3 +1,4 @@
+// valve.sol -- determines if CVT can be minted or not
 // Copyright (C) 2019 lucasvo
 
 // This program is free software: you can redistribute it and/or modify

@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -ex
 
+BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
 ADDRESS_DIR=${ADDRESS_DIR:-$PWD/addresses}
 mkdir -p $ADDRESS_DIR 
 
-export ETH_GAS=${ETH_GAS:-"7000000"}
+export ETH_GAS=${ETH_GAS:-"1100000000"}
 export ETH_FROM=${ETH_FROM:-$(seth rpc eth_coinbase)}
 export SOLC_FLAGS="--optimize"
 
@@ -43,20 +44,22 @@ $(seth send $APPRAISER 'rely(address)' $DEPLOYER)
 
 $(seth send $DEPLOYER 'deploy()')
 
-cat > "$ADDRESS_DIR/load-core-$(seth chain)" << EOF
-#!/bin/bash
-# tinlake deployment on $(seth chain) from $(git rev-parse HEAD)
-# $(date)
-export APPRAISER=$APPRAISER
-export DEPLOYER=$DEPLOYER
-export TITLE=0x$(seth call $DEPLOYER 'title()(address)')
-export LIGHTSWITCH=0x$(seth call $DEPLOYER 'lightswitch()(address)')
-export PILE=0x$(seth call $DEPLOYER 'pile()(address)')
-export SHELF=0x$(seth call $DEPLOYER 'shelf()(address)')
-export COLLATERAL=0x$(seth call $DEPLOYER 'collateral()(address)')
-export VALVE=0x$(seth call $DEPLOYER 'valve()(address)')
-export RECEPTION=0x$(seth call $DEPLOYER 'reception()(address)')
-export DESK=0x$(seth call $DEPLOYER 'desk()(address)')
-export ADMIT=0x$(seth call $DEPLOYER 'admit()(address)')
-export ADMIN=0x$(seth call $DEPLOYER 'admin()(address)')
+
+source $BIN_DIR/lib/load-addresses
+touch "$ADDRESS_DIR/addresses-$(seth chain).json"
+addAddresses "$ADDRESS_DIR/addresses-$(seth chain).json" <<EOF
+{
+    "APPRAISER"  :  "$APPRAISER",
+    "DEPLOYER"   :  "$DEPLOYER",
+    "TITLE"      :  "0x$(seth call $DEPLOYER 'title()(address)')",
+    "LIGHTSWITCH":  "0x$(seth call $DEPLOYER 'lightswitch()(address)')",
+    "PILE"       :  "0x$(seth call $DEPLOYER 'pile()(address)')",
+    "SHELF"      :  "0x$(seth call $DEPLOYER 'shelf()(address)')",
+    "COLLATERAL" :  "0x$(seth call $DEPLOYER 'collateral()(address)')",
+    "VALVE"      :  "0x$(seth call $DEPLOYER 'valve()(address)')",
+    "RECEPTION"  :  "0x$(seth call $DEPLOYER 'reception()(address)')",
+    "DESK"       :  "0x$(seth call $DEPLOYER 'desk()(address)')",
+    "ADMIT"      :  "0x$(seth call $DEPLOYER 'admit()(address)')",
+    "ADMIN"      :  "0x$(seth call $DEPLOYER 'admin()(address)')"
+}
 EOF
