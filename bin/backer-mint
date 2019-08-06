@@ -1,0 +1,30 @@
+#! /usr/bin/env bash
+
+message() {
+    echo
+    echo ----------------------------------------------
+    echo "$@"
+    echo ----------------------------------------------
+    echo
+}
+
+ADDRESSES=${ADDRESSES:-$PWD/addresses/addresses-$(seth chain).json}
+
+message Contracts
+
+CURRENCY=$(cat $ADDRESSES | jq  -r '.CURRENCY')
+COLLATERAL=$(cat $ADDRESSES | jq  -r '.COLLATERAL')
+LENDER=$(cat $ADDRESSES | jq  -r '.LENDER')
+echo "Currency: $CURRENCY"
+echo "Collateral: $COLLATERAL"
+echo "Lender: $LENDER"
+
+
+message Mint
+
+# 1000 Currency
+AMOUNT=1000000000000000000000
+AMOUNT=$(seth --to-uint256 $AMOUNT)
+
+# give backer some currency
+seth send $CURRENCY 'mint(address,uint)' $BACKER_ETH_FROM $AMOUNT

@@ -26,7 +26,7 @@ fi
 export ETH_PASSWORD="${ETH_PASSWORD:-/dev/null}"
 export ETH_KEYSTORE="${ETH_KEYSTORE:-$KEYSTORE_PATH}"
 export ETH_RPC_URL="${ETH_RPC_URL:-$TESTNET_URL}"
-export ETH_GAS=1100000000
+export ETH_GAS=7000000
 
 export ETH_FROM="${ETH_FROM:-$(seth ls | head -n1 | awk '{print $1}')}"
 

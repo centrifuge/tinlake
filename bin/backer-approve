@@ -1,0 +1,29 @@
+#! /usr/bin/env bash
+
+message() {
+    echo
+    echo ----------------------------------------------
+    echo "$@"
+    echo ----------------------------------------------
+    echo
+}
+
+ADDRESSES=${ADDRESSES:-$PWD/addresses/addresses-$(seth chain).json}
+
+message Contracts
+
+CURRENCY=$(cat $ADDRESSES | jq  -r '.CURRENCY')
+COLLATERAL=$(cat $ADDRESSES | jq  -r '.COLLATERAL')
+LENDER=$(cat $ADDRESSES | jq  -r '.LENDER')
+echo "Currency: $CURRENCY"
+echo "Collateral: $COLLATERAL"
+echo "Lender: $LENDER"
+
+
+message Approve
+
+# backer allows lender to take currency
+seth send $CURRENCY 'approve(address,uint)' $LENDER ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff --keystore=$BACKER_ETH_KEYSTORE --password=$BACKER_ETH_PASSWORD --from=$BACKER_ETH_FROM
+
+# backer allows lender to take collateral
+seth send $COLLATERAL 'approve(address,uint)' $LENDER ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff --keystore=$BACKER_ETH_KEYSTORE --password=$BACKER_ETH_PASSWORD --from=$BACKER_ETH_FROM
