@@ -32,7 +32,6 @@ source $BIN_DIR/lib/load-addresses
 touch "$ADDRESS_DIR/addresses-$(seth chain).json"
 addAddresses "$ADDRESS_DIR/addresses-$(seth chain).json" <<EOF
 {
-    "LENDER_FAB": "$LENDER_FAB",
     "LENDER"    : "$LENDER"
 }
 EOF
