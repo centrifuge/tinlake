@@ -20,23 +20,25 @@ echo "Collateral: $COLLATERAL"
 echo "Lender: $LENDER"
 
 
-message Backer Balances
-echo "Backer Address: $BACKER_ETH_FROM"
-echo "ETH Balance: $(seth --from-wei $(seth balance $BACKER_ETH_FROM)) ETH"
+BACKER_ADDR="0x$(seth call $LENDER 'backer()(address)')"
 
-BALANCE=$(seth call $CURRENCY 'balanceOf(address)' $BACKER_ETH_FROM)
+message Backer Balances
+echo "Backer Address: $BACKER_ADDR"
+echo "ETH Balance: $(seth --from-wei $(seth balance $BACKER_ADDR)) ETH"
+
+BALANCE=$(seth call $CURRENCY 'balanceOf(address)' $BACKER_ADDR)
 echo "Backer Currency: $(seth --from-wei $(node <<< "console.log(parseInt('$BALANCE', 16))")) DAI"
 
 
-BALANCE=$(seth call $COLLATERAL 'balanceOf(address)' $BACKER_ETH_FROM)
+BALANCE=$(seth call $COLLATERAL 'balanceOf(address)' $BACKER_ADDR)
 echo "Backer Currency: $(seth --from-wei $(node <<< "console.log(parseInt('$BALANCE', 16))")) CVT"
 
 
 message Approvals
 
-BALANCE=$(seth call $CURRENCY 'allowance(address, address)' $BACKER_ETH_FROM $LENDER)
+BALANCE=$(seth call $CURRENCY 'allowance(address, address)' $BACKER_ADDR $LENDER)
 echo "Backer allows the Lender to take Currency: $(seth --from-wei $(node <<< "console.log(parseInt('$BALANCE', 16))")) DAI"
 
-BALANCE=$(seth call $COLLATERAL 'allowance(address, address)' $BACKER_ETH_FROM $LENDER)
+BALANCE=$(seth call $COLLATERAL 'allowance(address, address)' $BACKER_ADDR $LENDER)
 echo "Backer allows the Lender to take Collateral: $(seth --from-wei $(node <<< "console.log(parseInt('$BALANCE', 16))")) CVT"
 
