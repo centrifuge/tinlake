@@ -1,0 +1,22 @@
+#! /usr/bin/env bash
+
+message() {
+    echo
+    echo ----------------------------------------------
+    echo "$@"
+    echo ----------------------------------------------
+    echo
+}
+
+ADDRESSES=${ADDRESSES:-$PWD/addresses/addresses-$(seth chain).json}
+
+message Contracts
+
+ADMIN=$(cat $ADDRESSES | jq  -r '.ADMIN')
+PILE=$(cat $ADDRESSES | jq  -r '.PILE')
+echo "Admin: $ADMIN"
+echo "Pile: $PILE"
+
+message Permissions
+echo "Admin Contract: $(seth call $ADMIN  'wards(address)(bool)' $1)"
+echo "Pile Contract: $(seth call $PILE  'wards(address)(bool)' $1)"
