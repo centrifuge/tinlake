@@ -75,12 +75,20 @@ contract PileTest is DSTest {
     }
 
     function repay(uint loan, uint wad) public {
+        // pre state
+        (,,uint fee,) = pile.loans(loan);
         uint totalDebt = pile.Debt();
+        (uint totalFeeDebt,,,) = pile.fees(fee);
 
         pile.repay(loan, wad, address(this));
 
+        // post state
         (uint debt,uint balance, ,) = pile.loans(loan);
+        (uint feeDebt,,,) = pile.fees(fee);
+
         assertEq(totalDebt-wad, pile.Debt());
+        assertEq(totalFeeDebt-wad,feeDebt);
+
         assertEq(debt,0);
         assertEq(balance,0);
 

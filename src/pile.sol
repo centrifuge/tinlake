@@ -190,8 +190,6 @@ contract Pile is DSNote {
         return int(Balance) - int(tkn.balanceOf(address(this))); // safemath
     }
 
-
-
     // borrow() creates a debt by the borrower for the specified amount. 
     function borrow(uint loan, uint wad) public auth note {
         uint fee = loans[loan].fee;
@@ -230,7 +228,10 @@ contract Pile is DSNote {
 
         tkn.transferFrom(usr, address(this), wad);
         loans[loan].debt = sub(loans[loan].debt, wad);
-        Debt -= wad;
+
+        uint fee = loans[loan].fee;
+        fees[fee].debt = sub(fees[fee].debt, wad);
+        Debt = sub(Debt, wad);
 
         tkn.approve(lender,wad);
     }
