@@ -33,6 +33,7 @@ contract Appraiser {
 
     // --- Appraiser ---
     function file (uint loan, uint wad) public auth {
+        require(wad > 0);
         value[loan] = wad;
     }
 

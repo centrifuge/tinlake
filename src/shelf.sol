@@ -73,6 +73,7 @@ contract Shelf {
     }
     
     function file(uint loan, address registry_, uint nft_, uint principal_) public auth {
+        require(principal_ > 0);
         shelf[loan].registry = registry_;
         shelf[loan].tokenId = nft_;
         shelf[loan].principal = principal_;
