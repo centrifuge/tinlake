@@ -24,7 +24,8 @@ message Mint
 
 # 1000 Currency
 AMOUNT=1000000000000000000000
+          1000000000000000000
 AMOUNT=$(seth --to-uint256 $AMOUNT)
 
 # give backer some currency
-seth send $CURRENCY 'mint(address,uint)' $BACKER_ETH_FROM $AMOUNT
+    seth send $CURRENCY 'mint(address,uint)' $BACKER_ETH_FROM $AMOUNT
