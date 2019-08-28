@@ -3,8 +3,9 @@
 set -e
 
 BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
-ADDRESS_DIR=${ADDRESS_DIR:-$PWD/addresses}
-ADDRESS_FILE="$ADDRESS_DIR/addresses-$(seth chain).json"
+DEPLOY_DIR=deployments/$(seth chain)
+ADDRESS_DIR=$PWD/$DEPLOY_DIR
+ADDRESS_FILE="$ADDRESS_DIR/addresses.json"
 
 source $BIN_DIR/lib/load-addresses
 
@@ -42,7 +43,7 @@ loadAddresses $ADDRESS_FILE
 
 message DEPLOYING LENDERFAB
 
-"$BIN_DIR/deploy-lender"
+"$BIN_DIR/deploy-lender-mock"
 loadAddresses $ADDRESS_FILE
 
 message DONE

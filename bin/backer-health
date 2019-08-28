@@ -8,13 +8,15 @@ message() {
     echo
 }
 
-ADDRESSES=${ADDRESSES:-$PWD/addresses/addresses-$(seth chain).json}
+DEPLOY_DIR=deployments/$(seth chain)
+ADDRESS_DIR=$PWD/$DEPLOY_DIR
+ADDRESS_FILE="$ADDRESS_DIR/addresses.json"
 
 message Contracts
 
-CURRENCY=$(cat $ADDRESSES | jq  -r '.CURRENCY')
-COLLATERAL=$(cat $ADDRESSES | jq  -r '.COLLATERAL')
-LENDER=$(cat $ADDRESSES | jq  -r '.LENDER')
+CURRENCY=$(cat $ADDRESS_FILE | jq  -r '.CURRENCY')
+COLLATERAL=$(cat $ADDRESS_FILE | jq  -r '.COLLATERAL')
+LENDER=$(cat $ADDRESS_FILE | jq  -r '.LENDER')
 echo "Currency: $CURRENCY"
 echo "Collateral: $COLLATERAL"
 echo "Lender: $LENDER"

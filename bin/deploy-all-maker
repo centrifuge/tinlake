@@ -3,7 +3,9 @@
 set -e
 
 BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
-ADDRESS_DIR=${ADDRESS_DIR:-$PWD/addresses}
+DEPLOY_DIR=deployments/$(seth chain)
+ADDRESS_DIR=$PWD/$DEPLOY_DIR
+ADDRESS_FILE="$ADDRESS_DIR/addresses.json"
 
 message() {
     echo
