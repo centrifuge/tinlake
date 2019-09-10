@@ -107,6 +107,13 @@ contract AdminFab {
 }
 
 contract Deployer {
+
+    // --- Auth ---
+    mapping (address => uint) public wards;
+    function rely(address usr) public auth { wards[usr] = 1; }
+    function deny(address usr) public auth { wards[usr] = 0; }
+    modifier auth { require(wards[msg.sender] == 1); _; }
+
     TitleFab titlefab;
     LightSwitchFab lightswitchfab;
     PileFab pilefab;
@@ -133,7 +140,7 @@ contract Deployer {
     LenderLike  public lender;
 
     constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, PileFab pilefab_, ShelfFab shelffab_, CollateralFab collateralfab_, DeskFab deskfab_, AdmitFab admitfab_, AdminFab adminfab_) public {
-        address self = msg.sender;
+        wards[msg.sender] = 1;
         god = god_;
         
         titlefab = titlefab_;
@@ -146,52 +153,52 @@ contract Deployer {
         adminfab = adminfab_;
     }
 
-    function deployTitle(string memory name, string memory symbol) public {
+    function deployTitle(string memory name, string memory symbol) public auth {
         title = titlefab.newTitle(name, symbol);
         title.rely(god);
     }
 
-    function deployLightSwitch() public {
+    function deployLightSwitch() public auth {
         lightswitch = lightswitchfab.newLightSwitch();
         lightswitch.rely(god);
     }  
   
-    function deployCollateral() public {
+    function deployCollateral() public auth {
         collateral = collateralfab.newCollateral();
         collateral.rely(god);
     }
-    function deployPile(address currency_) public {
+    function deployPile(address currency_) public auth{
         pile = pilefab.newPile(currency_);
         pile.rely(god);
     }
-    function deployShelf(address appraiser) public {
+    function deployShelf(address appraiser) public auth {
         appraiser_ = appraiser;
         shelf = shelffab.newShelf(address(pile), appraiser_);
         shelf.rely(god);
         pile.rely(address(shelf));
     }
-    function deployValve() public {
+    function deployValve() public auth {
         valve = new Valve(address(collateral), address(shelf));
         valve.rely(god); 
         collateral.rely(address(valve));
     } 
-    function deployDesk() public {
+    function deployDesk() public auth {
         desk = deskfab.newDesk(address(pile), address(valve), address(collateral), address(lightswitch));
         desk.rely(god);
     }
 
-    function deployAdmit() public {
+    function deployAdmit() public auth {
         admit = admitfab.newAdmit(address(title), address(shelf));
         admit.rely(god);
 
     }
 
-    function deployAdmin(address appraiser) public {
+    function deployAdmin(address appraiser) public auth {
         appraiser_ = appraiser;
         admin = adminfab.newAdmin(address(admit), appraiser_, address(pile));
         admin.rely(god);
     }
-    function deploy() public {
+    function deploy() public auth {
         address pile_ = address(pile);
         address shelf_ = address(shelf);
         address valve_ = address(valve);
@@ -224,7 +231,7 @@ contract Deployer {
         desk.rely(reception_);
     }
 
-    function deployLender(address currency_, address lenderfab_) public returns(address) {
+    function deployLender(address currency_, address lenderfab_) public auth returns(address) {
         // LenderFab deploys a lender with the defined collateral and currency
         address lender_ = LenderFabLike(lenderfab_).deploy(currency_, address(collateral), address(lightswitch));
 
