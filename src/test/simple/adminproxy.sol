@@ -20,7 +20,7 @@ contract AdminLike {
     function whitelist (address registry, uint nft, uint principal, uint appraisal, uint fee, address usr) public returns(uint);
 }
 
-// AdminProxy is used as a wrapper for the Admin contract for demo purposes of tinlake. So that any address can whitelist nfts.
+// AdminProxy is a wrapper for the Admin contract. It is useful for demo purposes of Tinlake, so that any user can whitelist nfts.
 contract AdminProxy {
     // --- Data ---
     AdminLike admin;
