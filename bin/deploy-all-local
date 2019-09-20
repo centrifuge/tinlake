@@ -17,6 +17,7 @@ message Set enviroment for local node
 BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
 NODE_DIR=$HOME/.dapp/testnet/8545
 export ETH_RPC_URL=http://127.0.0.1:8545
+export ETH_GAS=7000000
 
 # God Address
 export ETH_FROM=0x$(sed -n '1p' $NODE_DIR/config/account)

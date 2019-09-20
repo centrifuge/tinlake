@@ -4,6 +4,12 @@ Tinlake is a set of smart contracts that mints an ERC20 token for each unit of v
 This is a very rough prototype and is not ready for production use.
 
 
+
+## Install Dependencies
+```bash 
+dapp update
+```
+
 ## Run Tests
 ```bash
 dapp test
