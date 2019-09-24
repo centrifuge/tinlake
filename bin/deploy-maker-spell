@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -ex
 
-ADDRESS_DIR=${ADDRESS_DIR:-$PWD/addresses}
+DEPLOY_DIR=deployments/$(seth chain)
+ADDRESS_DIR=$PWD/$DEPLOY_DIR
+ADDRESS_FILE="$ADDRESS_DIR/addresses.json"
+
 mkdir -p $ADDRESS_DIR 
 BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
 OUT_DIR=${OUT_DIR:-$(cd "${0%/*}"&&pwd)/../out}
@@ -77,8 +80,8 @@ seth send "$SPELL" 'schedule()'
 seth send "$SPELL" 'cast()'
 
 source $BIN_DIR/lib/load-addresses
-touch "$ADDRESS_DIR/addresses-$(seth chain).json"
-addAddresses "$ADDRESS_DIR/addresses-$(seth chain).json" <<EOF
+touch $ADDRESS_FILE
+addAddresses $ADDRESS_FILE <<EOF
 {
     "CVTILK" : "$CVTILK",
     "CVTPIP" : "$CVTPIP",

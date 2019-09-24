@@ -2,7 +2,9 @@
 set -ex
 
 BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
-ADDRESS_DIR=${ADDRESS_DIR:-$PWD/addresses}
+DEPLOY_DIR=deployments/$(seth chain)
+ADDRESS_DIR=$PWD/$DEPLOY_DIR
+ADDRESS_FILE="$ADDRESS_DIR/addresses.json"
 mkdir -p $ADDRESS_DIR 
 
 export ETH_GAS=${ETH_GAS:-"7000000"}
@@ -25,8 +27,8 @@ NFT_COLLATERAL=$(dapp create SimpleNFT)
 CURRENCY=$(seth send --create out/SimpleToken.bin 'SimpleToken(string memory,string memory,string memory, uint)' "$TKN_SYMBOL" "$TKN_NAME" "$TKN_VERSION" $(seth --to-uint256 $TKN_CHAINID))
 
 source $BIN_DIR/lib/load-addresses
-touch "$ADDRESS_DIR/addresses-$(seth chain).json"
-addAddresses "$ADDRESS_DIR/addresses-$(seth chain).json" <<EOF
+touch $ADDRESS_FILE
+addAddresses $ADDRESS_FILE <<EOF
 {
     "NFT_COLLATERAL": "$NFT_COLLATERAL",
     "CURRENCY": "$CURRENCY"
