@@ -90,8 +90,9 @@ contract DeployerTest is DSTest {
         admitfab = new AdmitFab();
         adminfab = new AdminFab();
    }
-    
-    function testDeploy() public logs_gas {
+
+
+    function deploy() public returns(address)  {
         Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, pilefab, shelffab, collateralfab, deskfab,admitfab, adminfab);
 
         appraiser.rely(address(deployer));
@@ -107,5 +108,17 @@ contract DeployerTest is DSTest {
         deployer.deployAdmin(address(appraiser));
         deployer.deploy();
         deployer.deployLender(address(dai), address(lenderfab));
+        return address(deployer);
     }
+
+    function testDeploy() public logs_gas {
+        deploy();
+    }
+
+    function testFailDeploy() public logs_gas {
+        Deployer deployer = Deployer(deploy());
+        deployer.deployValve();
+    }
+
+
 }

@@ -30,7 +30,6 @@ contract LenderFabLike {
     function deploy(address,address,address) public returns (address);
 }
 
-
 contract LenderLike {
     function rely(address) public;
     function file(address) public;
@@ -229,6 +228,18 @@ contract Deployer {
         shelf.rely(reception_);
         pile.rely(reception_);
         desk.rely(reception_);
+
+    }
+
+    function resign() internal {
+        address self = address(this);
+        pile.deny(self);
+        desk.deny(self);
+        shelf.deny(self);
+        admit.deny(self);
+        collateral.deny(self);
+        valve.deny(self);
+        title.deny(self);
     }
 
     function deployLender(address currency_, address lenderfab_) public auth returns(address) {
@@ -242,6 +253,10 @@ contract Deployer {
         desk.approve(lender_, uint(-1));
         pile.file("lender", lender_);
         desk.file("lender", lender_);
+
+        // remove power of deployer
+        resign();
+
         return lender_;
     }
 
