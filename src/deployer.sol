@@ -240,6 +240,8 @@ contract Deployer {
         collateral.deny(self);
         valve.deny(self);
         title.deny(self);
+        admin.deny(self);
+        lightswitch.deny(self);
     }
 
     function deployLender(address currency_, address lenderfab_) public auth returns(address) {
