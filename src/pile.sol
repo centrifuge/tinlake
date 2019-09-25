@@ -129,14 +129,12 @@ contract Pile is DSNote {
         z = add(mul(x, ONE), y / 2) / y;
     }
 
-    function update(uint loan, uint chi) internal view returns (uint, uint) {
+    function update(uint loan, uint chi) internal view returns (uint) {
         uint chi_ = ONE;
         if(loans[loan].chi != 0) {
             chi_ = rdiv(chi, loans[loan].chi);
         }
-        uint debt = rmul(loans[loan].debt, chi_);
-        uint chi = rmul(loans[loan].chi, chi_);
-        return (debt, chi);
+        return rmul(loans[loan].debt, chi_);
     }
 
     function incDebt(uint fee, uint wad) internal {
@@ -157,8 +155,7 @@ contract Pile is DSNote {
         if (now >= fees[fee].rho) {
             (chi, ,) = compounding(fee);
         }
-        (uint debt, ) = update(loan, chi);
-        return debt;
+        return update(loan, chi);
     }
 
     function compounding(uint fee) public view returns (uint,uint,uint) {
@@ -191,7 +188,8 @@ contract Pile is DSNote {
         if (now >= fees[fee].rho) {
             drip(fee);
         }
-        (loans[loan].debt, loans[loan].chi ) = update(loan, fees[fee].chi);
+        loans[loan].debt = update(loan, fees[fee].chi);
+        loans[loan].chi = fees[fee].chi;
     }
 
     // --- Pile ---
