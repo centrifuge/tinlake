@@ -97,7 +97,6 @@ contract AdminTest is DSTest {
         assertEq(pile.callsFile(), 1);
         assertEq(pile.speed(), fee);
         assertEq(pile.fee(), fee);
-
     }
 
     function testWhitelist() public {
