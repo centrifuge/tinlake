@@ -82,7 +82,7 @@ contract ManagerUser {
     }
 
     function doInitFee(uint fee, uint speed) public {
-        deployer.pile().file(fee, speed);
+        deployer.admin().file(fee, speed);
     }
     function doAddFee(uint loan, uint fee, uint balance) public {
         deployer.pile().file(loan, fee, balance);

@@ -90,6 +90,15 @@ contract AdminTest is DSTest {
         doWhitelist(shouldLoan, shouldPileCalls);
     }
 
+
+    function testFileFee() public {
+        uint fee = uint(1000000564701133626865910626);
+        admin.file(fee, fee);
+        assertEq(pile.callsFile(), 1);
+        assertEq(pile.speed(), fee);
+        assertEq(pile.fee(), fee);
+    }
+
     function testWhitelist() public {
         uint fee = uint(1000000564701133626865910626);
         pile.setFeeReturn(0,0,fee,0);
