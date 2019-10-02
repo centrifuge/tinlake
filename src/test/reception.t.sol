@@ -123,6 +123,18 @@ contract ReceptionTest is DSTest {
         repay(loan, principal);
     }
 
+    function testFileVersion() public {
+        bytes32 version = keccak256("1");
+        reception.file("version",version);
+        assertEq(version, reception.version());
+    }
+
+    function testFailFileVersion() public {
+        bytes32 version = keccak256("1");
+        reception.file("wrong",version);
+        assertEq(version, reception.version());
+    }
+
     function testClose() public {
         uint loan = 1;
         uint principal = 500;
