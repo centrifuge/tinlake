@@ -45,16 +45,22 @@ contract Reception is TitleOwned {
     modifier auth { require(wards[msg.sender] == 1); _; }
 
     // --- Data ---
-
     DeskLike desk;
     ShelfLike shelf;
     PileLike pile;
+
+    bytes32 public version;
 
     constructor (address desk_, address title_, address shelf_, address pile_) TitleOwned(title_) public {
         wards[msg.sender] = 1;
         desk = DeskLike(desk_);
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
+    }
+
+    function file(bytes32 what, bytes32 data) public auth {
+        if (what == "version") version = data;
+        else revert();
     }
 
     // --- Reception ---
