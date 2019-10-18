@@ -231,17 +231,8 @@ contract Deployer {
 
     }
 
-    function resign() internal {
-        address self = address(this);
-        pile.deny(self);
-        desk.deny(self);
-        shelf.deny(self);
-        admit.deny(self);
-        collateral.deny(self);
-        valve.deny(self);
-        title.deny(self);
-        admin.deny(self);
-        lightswitch.deny(self);
+    function resign() public auth {
+        selfdestruct(msg.sender);
     }
 
     function deployLender(address currency_, address lenderfab_) public auth returns(address) {
@@ -255,9 +246,6 @@ contract Deployer {
         desk.approve(lender_, uint(-1));
         pile.file("lender", lender_);
         desk.file("lender", lender_);
-
-        // remove power of deployer
-        resign();
 
         return lender_;
     }

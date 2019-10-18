@@ -93,7 +93,7 @@ contract DeployerTest is DSTest {
 
 
     function deploy() public returns(address)  {
-        Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, pilefab, shelffab, collateralfab, deskfab,admitfab, adminfab);
+        Deployer deployer = new Deployer(address(123), titlefab, lightswitchfab, pilefab, shelffab, collateralfab, deskfab,admitfab, adminfab);
 
         appraiser.rely(address(deployer));
 
@@ -117,8 +117,10 @@ contract DeployerTest is DSTest {
 
     function testFailDeploy() public logs_gas {
         Deployer deployer = Deployer(deploy());
-        deployer.deployValve();
+        assertEq(deployer.god(), address(123));
+        deployer.resign();
+        // should fail
+        assertEq(deployer.god(), address(123));
     }
-
 
 }

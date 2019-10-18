@@ -50,7 +50,7 @@ contract Reception is TitleOwned {
     ShelfLike shelf;
     PileLike pile;
 
-    constructor (address desk_, address title_, address shelf_, address pile_) TitleOwned(title_) public {
+        constructor (address desk_, address title_, address shelf_, address pile_) TitleOwned(title_) public {
         wards[msg.sender] = 1;
         desk = DeskLike(desk_);
         shelf = ShelfLike(shelf_);
