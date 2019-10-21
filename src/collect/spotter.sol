@@ -1,4 +1,4 @@
-// spotter.sol the spotter monitors the pool detect collectable assets
+// spotter.sol -- monitors the pool detect collectable assets
 // Copyright (C) 2019 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
@@ -14,38 +14,57 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+pragma solidity >=0.4.24;
+
 contract ShelfLike {
-    function adjust() public;
+    function adjust(uint loan) public;
+    function shelf(uint loan) public returns (address, uint256, uint, uint);
 }
 
 contract PileLike {
     function loans(uint loan) public returns (uint, uint, uint ,uint);
+    function collect(uint loan) public;
 }
 
 contract Spotter {
 
     // --- Auth ---
     mapping (address => uint) public wards;
-    function rely(address usr) public auth note { wards[usr] = 1; }
-    function deny(address usr) public auth note { wards[usr] = 0; }
+    function rely(address usr) public auth { wards[usr] = 1; }
+    function deny(address usr) public auth { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
 
 
     ShelfLike public shelf;
     PileLike public pile;
 
-    constructor(address shelf_, address pile_) {
+    uint public threshold;
+
+    constructor(address shelf_, address pile_) public {
         wards[msg.sender] = 1;
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
     }
 
+    // --- Math ---
+    uint256 constant ONE = 10 ** 27;
+    function rdiv(uint x, uint y) internal pure returns (uint z) {
+        z = add(mul(x, ONE), y / 2) / y;
+    }
+
+    function add(uint x, uint y) internal pure returns (uint z) {
+        require((z = x + y) >= x);
+    }
+
+    function mul(uint x, uint y) internal pure returns (uint z) {
+        require(y == 0 || (z = x * y) / y == x);
+    }
+
+
     function file(bytes32 what, uint data) public auth {
         if (what == "threshold") threshold = data;
         else revert();
     }
-
-    uint public threshold;
 
     function actPrice(uint loan) internal returns(uint) {
         shelf.adjust(loan);
@@ -63,7 +82,7 @@ contract Spotter {
         uint price = actPrice(loan);
         uint debt = actDebt(loan);
 
-        uint ratio = rdiv(price/debt);
+        uint ratio = rdiv(price, debt);
         if(ratio >= threshold) {
             return true;
         }

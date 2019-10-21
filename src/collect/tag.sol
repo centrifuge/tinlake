@@ -1,4 +1,5 @@
-// collector.sol the collector contract can remove bad assets from the pool
+// tag.sol -- knows the price for a collectable loan. Current implementation price == debt.
+// in more complex scenarios the tag contract could return the selling price from an auction.
 // Copyright (C) 2019 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
@@ -14,38 +15,29 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+pragma solidity >=0.4.24;
 
-contract SpotterLike {
-    function collectable(uint loan) public returns(bool);
+contract PileLike {
+    function loans(uint loan) public returns (uint, uint, uint ,uint);
+    function collect(uint loan) public;
 }
 
-contract Collector {
-
+contract Tag {
     // --- Auth ---
     mapping (address => uint) public wards;
-    function rely(address usr) public auth note { wards[usr] = 1; }
-    function deny(address usr) public auth note { wards[usr] = 0; }
+    function rely(address usr) public auth { wards[usr] = 1; }
+    function deny(address usr) public auth { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
 
-    SpotterLike spotter;
+    PileLike pile;
 
-    constructor (address spotter_) public {
-        spotter = SpotterLik(spotter_);
+    constructor(address pile_) public {
+        pile = PileLike(pile);
     }
 
-    function file(bytes32 what, uint data) public auth {
-        if (what == "threshold") threshold = data;
-        else revert();
+    function price(uint loan) public returns (uint) {
+        pile.collect(loan);
+        (uint debt,,,) = pile.loans(loan);
+        return debt;
     }
-
-    modifier collectable (uint loan) { require(spotter.overdue(loan) == true); _; }
-
-
-    function collect(uint loan, address usr, uint wad) public collectable(loan) auth {
-        pile.repay(loan, wad, msg.sender);
-        shelf.free(loan, usr);
-        desk.balance();
-    }
-
-
 }
