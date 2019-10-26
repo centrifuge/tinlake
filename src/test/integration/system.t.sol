@@ -267,15 +267,12 @@ contract SystemTest is DSTest {
         // create borrower collateral nft
         nft.mint(borrower_, tokenId);
         uint loan = whitelist(tokenId, nft_, principal, appraisal, borrower_, fee);
-        emit log_named_uint("loan", loan);
         borrow(loan, tokenId, principal, appraisal);
         hevm.warp(now + 10 days);
         // borrower needs some currency to pay fee
         uint extra = setupRepayReq();
         uint lenderShould = deployer.pile().burden(loan) + currLenderBal();
         // close without defined amount
-        emit log_named_address("user", borrower_);
-        emit log_named_address("self", address(borrower));
         borrower.doClose(loan, borrower_);
 
         uint totalT = uint(tkn.totalSupply());
