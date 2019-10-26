@@ -34,7 +34,7 @@ contract BackerTest is DSTest, SystemTest {
 
         uint supply = 1000000000 ether; // 1 billion
 
-        b = new User(address(deployer.reception()),tkn_, address(deployer.collateral()));
+        b = new User(address(deployer.pile()), address(deployer.shelf()), address(deployer.desk()), tkn_, address(deployer.collateral()));
         tkn.mint(address(b), supply);
 
         backerFab = address(new BackerFab(address(b)));

@@ -19,6 +19,7 @@ import "ds-test/test.sol";
 
 import "../shelf.sol";
 import "./mock/pile.sol";
+import "./mock/title.sol";
 import "./mock/nft.sol";
 import "../appraiser.sol";
 
@@ -28,6 +29,7 @@ contract ShelfTest is DSTest {
     PileMock pile;
     NFTMock nft;
     Appraiser appraiser;
+    TitleMock title;
     
     uint loan = 1;
     uint secondLoan = 2;
@@ -42,11 +44,12 @@ contract ShelfTest is DSTest {
         pile = new PileMock();
         nft = new NFTMock();
         appraiser = new Appraiser();
-        shelf = createShelf(address(pile), address(appraiser));
+        title = new TitleMock();
+        shelf = createShelf(address(pile), address(appraiser), address(title));
     }
 
-    function createShelf(address pile_, address appraiser_) internal returns (Shelf) {
-        return new Shelf(pile_, appraiser_);
+    function createShelf(address pile_, address appraiser_, address title_) internal returns (Shelf) {
+        return new Shelf(pile_, appraiser_, title_);
     }
 
     function testSetupPrecondition() public {
@@ -59,6 +62,7 @@ contract ShelfTest is DSTest {
         appraiser.file(loan, appraisal);
         shelf.file(loan, address(nft), tokenId, principal);
 
+        title.setOwnerOfReturn(address(this));
         shelf.deposit(loan, address(this));
 
         // check correct call nft.transferFrom

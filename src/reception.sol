@@ -30,7 +30,7 @@ contract ShelfLike {
 
 contract PileLike {
     function withdraw(uint loan, uint wad, address usr) public;
-    function repay(uint loan, uint wad, address usr) public ;
+    function repay(uint loan, uint wad, address usr) public;
     function balanceOf(uint loan) public view returns (uint);
     function collect(uint loan) public;
     function loans(uint loan) public returns (uint debt, uint balance, uint fee, uint chi);
@@ -69,7 +69,7 @@ contract Reception is TitleOwned {
     }
 
     function repay(uint loan, uint wad, address usr) public owner(loan) {
-        pile.repay(loan,wad, msg.sender);
+        pile.repay(loan, wad, msg.sender);
         shelf.release(loan, usr);
         desk.balance();
     }
@@ -77,6 +77,6 @@ contract Reception is TitleOwned {
     function close(uint loan, address usr) public owner(loan) {
         pile.collect(loan);
         (uint debt,,,) = pile.loans(loan);
-        repay(loan, debt , usr);
+        repay(loan, debt, usr);
     }
 }
