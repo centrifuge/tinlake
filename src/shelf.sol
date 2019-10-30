@@ -85,13 +85,13 @@ contract Shelf is TitleOwned{
     }
 
     // Move the NFT out of the shelf. To be used by Collector contract.
-    function move(address registry_, uint nft_, address to, uint loan) public owner(loan) {
+    function move(uint loan, address registry_, uint nft_, address to) public owner(loan) {
         NFTLike(registry_).transferFrom(address(this), to, nft_);
     }
     
     function release (uint loan, address usr) public owner(loan) {
         require(pile.loans(loan).debt == 0, "debt");
-        move(shelf[loan].registry, shelf[loan].tokenId, usr, loan);
+        move(loan, shelf[loan].registry, shelf[loan].tokenId, usr);
         adjust(loan);
     }
 

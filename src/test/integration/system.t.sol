@@ -59,7 +59,7 @@ contract User {
     }
 
     function doRepay(uint loan, uint wad, address usr) public {
-       pile.repay(loan, wad, usr);
+       pile.repay(loan, wad);
        shelf.release(loan, usr);
        desk.balance();
     }
@@ -268,15 +268,18 @@ contract SystemTest is DSTest {
         nft.mint(borrower_, tokenId);
         uint loan = whitelist(tokenId, nft_, principal, appraisal, borrower_, fee);
         borrow(loan, tokenId, principal, appraisal);
+        
         hevm.warp(now + 10 days);
+        
         // borrower needs some currency to pay fee
         uint extra = setupRepayReq();
         uint lenderShould = deployer.pile().burden(loan) + currLenderBal();
+        
         // close without defined amount
         borrower.doClose(loan, borrower_);
 
         uint totalT = uint(tkn.totalSupply());
-        checkAfterRepay(loan, tokenId,totalT , 0, lenderShould);
+        checkAfterRepay(loan, tokenId,totalT, 0, lenderShould);
     }
 
 

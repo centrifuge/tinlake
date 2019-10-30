@@ -218,7 +218,7 @@ contract Pile is DSNote, TitleOwned {
     }
 
     // repay() a certain amount of token from the user to the Pile
-    function repay(uint loan, uint wad, address usr) public owner(loan) note {
+    function repay(uint loan, uint wad) public owner(loan) note {
         // moves currency from usr to pile and reduces debt
         require(loans[loan].balance == 0,"before repay loan needs to be withdrawn");
         collect(loan);
@@ -227,7 +227,7 @@ contract Pile is DSNote, TitleOwned {
             wad = loans[loan].debt;
         }
 
-        tkn.transferFrom(usr, address(this), wad);
+        tkn.transferFrom(msg.sender, address(this), wad);
         loans[loan].debt = sub(loans[loan].debt, wad);
 
         uint fee = loans[loan].fee;

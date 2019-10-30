@@ -83,7 +83,7 @@ contract PileTest is DSTest {
         uint totalDebt = pile.Debt();
         (uint totalFeeDebt,,,) = pile.fees(fee);
 
-        pile.repay(loan, wad, address(this));
+        pile.repay(loan, wad);
 
         // post state
         (uint debt,uint balance, ,) = pile.loans(loan);

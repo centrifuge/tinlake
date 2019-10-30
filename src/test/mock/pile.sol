@@ -59,10 +59,9 @@ contract PileMock {
         callsCollect++;
     }
 
-    function repay(uint loan_, uint wad_, address usr_) public {
+    function repay(uint loan_, uint wad_) public {
         loan = loan_;
         wad = wad_;
-        usr = usr_;
         callsRepay++;
     }
 
