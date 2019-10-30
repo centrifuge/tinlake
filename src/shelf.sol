@@ -67,6 +67,13 @@ contract Shelf {
     }
     
     // --- Shelf ---
+
+    function depend (bytes32 what, address addr) public auth {
+        if (what == "pile") { pile = PileLike(addr); }
+        else if (what == "appraiser") { appraiser = AppraiserLike(addr); }
+        else revert();
+    }
+
     function file(uint loan, address registry_, uint nft_) public auth {
         shelf[loan].registry = registry_;
         shelf[loan].tokenId = nft_;

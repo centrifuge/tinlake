@@ -30,7 +30,7 @@ contract DeskTest is DSTest {
         lightswitch = new LightSwitchMock();
 
         desk = new Desk(address(pile), address(valve), address(collateral), address(lightswitch));
-        desk.file("lender", address(lender));
+        desk.depend("lender", address(lender));
     }
 
 

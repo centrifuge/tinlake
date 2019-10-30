@@ -66,7 +66,7 @@ contract Pile is DSNote {
 
     }
 
-    function file (bytes32 what, address data) public auth {
+    function depend(bytes32 what, address data) public auth {
         if (what == "lender") { lender = data; }
     }
 

@@ -45,6 +45,11 @@ contract Admit {
         title = TitleLike(title_);
         shelf = ShelfLike(shelf_);
     }
+
+    function depend (bytes32 what, address addr) public auth {
+        if (what == "shelf") { shelf = ShelfLike(addr); }
+        else revert();
+    }
     
     // --- Admit ---
     function admit (address registry, uint nft, uint principal, address usr) public auth returns (uint) {

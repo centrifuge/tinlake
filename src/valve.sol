@@ -44,7 +44,12 @@ contract Valve {
         wards[msg.sender] = 1;
         tkn = TokenLike(tkn_); 
         shelf = ShelfLike(shelf_);
-    } 
+    }
+
+    function depend (bytes32 what, address addr) public auth {
+        if (what == "shelf") { shelf = ShelfLike(addr); }
+        else revert();
+    }
 
     // --- Valve ---
     function balance(address usr) public auth {

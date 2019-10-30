@@ -58,6 +58,13 @@ contract Reception is TitleOwned {
         pile = PileLike(pile_);
     }
 
+    function depend (bytes32 what, address addr) public auth {
+        if (what == "pile") { pile = PileLike(addr); }
+        else if (what == "shelf") { shelf = ShelfLike(addr); }
+        else if (what == "desk") { desk = DeskLike(addr); }
+        else revert();
+    }
+
     function file(bytes32 what, bytes32 data) public auth {
         if (what == "version") version = data;
         else revert();
@@ -71,7 +78,6 @@ contract Reception is TitleOwned {
         // borrow max amount
         uint wad = pile.balanceOf(loan);
         pile.withdraw(loan, wad, deposit);
-
     }
 
     function repay(uint loan, uint wad, address usr) public owner(loan) {

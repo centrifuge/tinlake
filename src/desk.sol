@@ -70,8 +70,12 @@ contract Desk is Switchable {
 
     }
 
-    function file(bytes32 what, address data) public auth {
-        if (what == "lender") { lender = LenderLike(data); }
+    function depend (bytes32 what, address addr) public auth {
+        if (what == "pile") { pile = PileLike(addr); }
+        else if (what == "valve") { valve = ValveLike(addr); }
+        else if (what == "collateral") { collateral = CollateralLike(addr); }
+        else if (what == "lender") { lender = LenderLike(addr); }
+        else revert();
     }
 
     function approve(address usr, uint wad) public auth {

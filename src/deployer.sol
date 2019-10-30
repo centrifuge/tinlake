@@ -233,8 +233,8 @@ contract Deployer {
         lender.rely(address(desk));
 
         desk.approve(lender_, uint(-1));
-        pile.file("lender", lender_);
-        desk.file("lender", lender_);
+        pile.depend("lender", lender_);
+        desk.depend("lender", lender_);
         return lender_;
     }
 
