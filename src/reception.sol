@@ -58,6 +58,14 @@ contract Reception is TitleOwned {
         pile = PileLike(pile_);
     }
 
+    function depend (bytes32 what, address addr) public auth {
+        if (what == "pile") { pile = PileLike(addr); }
+        else if (what == "shelf") { shelf = ShelfLike(addr); }
+        else if (what == "desk") { desk = DeskLike(addr); }
+        else revert();
+    }
+
+
     function file(bytes32 what, bytes32 data) public auth {
         if (what == "version") version = data;
         else revert();
