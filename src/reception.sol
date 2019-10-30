@@ -65,7 +65,6 @@ contract Reception is TitleOwned {
         else revert();
     }
 
-
     function file(bytes32 what, bytes32 data) public auth {
         if (what == "version") version = data;
         else revert();
