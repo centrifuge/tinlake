@@ -57,6 +57,7 @@ contract Admin {
     function depend (bytes32 what, address addr) public auth {
         if (what == "pile") { pile = PileLike(addr); }
         else if (what == "admit") { admit = AdmitLike(addr); }
+        else if (what == "appraiser") { appraiser = AppraiserLike(addr); }
         else revert();
     }
 
@@ -71,11 +72,6 @@ contract Admin {
         pile.file(loan, fee, 0);
         emit Whitelisted(loan);
         return loan;
-    }
-
-    function file(bytes32 what, address addr) public auth {
-        if (what == "appraiser") { appraiser = AppraiserLike(addr); }
-        else revert();
     }
 
     function file(uint fee, uint speed) public auth {

@@ -78,7 +78,6 @@ contract Reception is TitleOwned {
         // borrow max amount
         uint wad = pile.balanceOf(loan);
         pile.withdraw(loan, wad, deposit);
-
     }
 
     function repay(uint loan, uint wad, address usr) public owner(loan) {

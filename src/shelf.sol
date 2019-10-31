@@ -70,11 +70,7 @@ contract Shelf {
 
     function depend (bytes32 what, address addr) public auth {
         if (what == "pile") { pile = PileLike(addr); }
-        else revert();
-    }
-
-    function file(bytes32 what, address addr) public auth {
-        if (what == "appraiser") { appraiser = AppraiserLike(addr); }
+        else if (what == "appraiser") { appraiser = AppraiserLike(addr); }
         else revert();
     }
 
