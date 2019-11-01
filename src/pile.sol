@@ -16,6 +16,7 @@
 pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
+import { TitleOwned } from "./title.sol";
 
 contract TokenLike {
     uint public totalSupply;
@@ -26,7 +27,7 @@ contract TokenLike {
 
 // Pile 
 // Manages the balance for the currency ERC20 in which borrowers want to borrow. 
-contract Pile is DSNote {
+contract Pile is DSNote, TitleOwned {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth note { wards[usr] = 1; }
@@ -58,7 +59,7 @@ contract Pile is DSNote {
 
     address public lender;
 
-    constructor(address tkn_) public {
+    constructor(address tkn_, address title_) TitleOwned(title_) public {
         wards[msg.sender] = 1;
         tkn = TokenLike(tkn_);
         fees[0].chi = ONE;
@@ -217,7 +218,7 @@ contract Pile is DSNote {
     }
 
     // withdraw() moves token from the Pile to the user
-    function withdraw(uint loan, uint wad, address usr) public auth note {
+    function withdraw(uint loan, uint wad, address usr) public owner(loan) note {
         require(wad <= loans[loan].balance, "only max. balance can be withdrawn");
         loans[loan].balance -= wad;
         Balance -= wad;
@@ -229,7 +230,7 @@ contract Pile is DSNote {
     }
 
     // repay() a certain amount of token from the user to the Pile
-    function repay(uint loan, uint wad, address usr) public auth note {
+    function repay(uint loan, uint wad) public owner(loan) note {
         // moves currency from usr to pile and reduces debt
         require(loans[loan].balance == 0,"before repay loan needs to be withdrawn");
         collect(loan);
@@ -238,8 +239,7 @@ contract Pile is DSNote {
             wad = loans[loan].debt;
         }
 
-        tkn.transferFrom(usr, address(this), wad);
-
+        tkn.transferFrom(msg.sender, address(this), wad);
         loans[loan].debt = sub(loans[loan].debt, wad);
         decDebt(loans[loan].fee, wad);
 

@@ -17,6 +17,8 @@
 pragma solidity >=0.4.24;
 pragma experimental ABIEncoderV2;
 
+import { TitleOwned } from "./title.sol";
+
 contract AppraiserLike {
     function appraise(uint, address, uint) public returns (uint);
 }
@@ -38,7 +40,7 @@ contract PileLike {
 }
 
 
-contract Shelf {
+contract Shelf is TitleOwned{
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth { wards[usr] = 1; }
@@ -60,7 +62,7 @@ contract Shelf {
 
     uint public bags; // sum of all prices
 
-    constructor(address pile_, address appraiser_) public {
+    constructor(address pile_, address appraiser_, address title_) TitleOwned(title_) public {
         wards[msg.sender] = 1;
         pile = PileLike(pile_);
         appraiser = AppraiserLike(appraiser_);
@@ -90,17 +92,17 @@ contract Shelf {
     }
 
     // Move the NFT out of the shelf. To be used by Collector contract.
-    function move(address registry_, uint nft_, address to) public auth {
+    function move(uint loan, address registry_, uint nft_, address to) public owner(loan) {
         NFTLike(registry_).transferFrom(address(this), to, nft_);
     }
     
-    function release (uint loan, address usr) public auth {
+    function release (uint loan, address usr) public owner(loan) {
         require(pile.loans(loan).debt == 0, "debt");
-        move(shelf[loan].registry, shelf[loan].tokenId, usr);
+        move(loan, shelf[loan].registry, shelf[loan].tokenId, usr);
         adjust(loan);
     }
 
-    function deposit (uint loan, address usr) public auth {
+    function deposit (uint loan, address usr) public owner(loan) {
         NFTLike(shelf[loan].registry).transferFrom(usr, address(this), shelf[loan].tokenId);
         pile.borrow(loan, shelf[loan].principal);
         shelf[loan].principal = 0;

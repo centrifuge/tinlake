@@ -61,7 +61,7 @@ contract Valve {
     }
 
     function want() public returns (int) {
-    return int(shelf.bags() - tkn.totalSupply());
+        return int(shelf.bags() - tkn.totalSupply());
     }
 
     function mint(address usr, uint wad) public auth {

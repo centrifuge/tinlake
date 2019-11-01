@@ -18,6 +18,7 @@ pragma solidity >=0.4.23;
 import "ds-test/test.sol";
 
 import "../pile.sol";
+import "./mock/title.sol";
 import "./mock/token.sol";
 
 contract Hevm {
@@ -28,6 +29,7 @@ contract Hevm {
 contract PileTest is DSTest {
     Pile pile;
     TokenMock tkn;
+    TitleMock title;
 
     Hevm hevm;
 
@@ -35,7 +37,8 @@ contract PileTest is DSTest {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
         tkn = new TokenMock();
-        pile = new Pile(address(tkn));
+        title = new TitleMock();
+        pile = new Pile(address(tkn), address(title));
     }
 
     function testSetupPrecondition() public {
@@ -49,7 +52,7 @@ contract PileTest is DSTest {
 
         pile.borrow(loan, wad);
 
-        (uint debt, uint balance, uint fee, uint  chi) = pile.loans(loan);
+        (uint debt, uint balance, uint fee, uint chi) = pile.loans(loan);
         assertEq(pile.Balance(), totalBalance + wad);
         assertEq(pile.Debt(), totalDebt + wad);
         assertEq(debt, wad);
@@ -80,7 +83,7 @@ contract PileTest is DSTest {
         uint totalDebt = pile.Debt();
         (uint totalFeeDebt,,,) = pile.fees(fee);
 
-        pile.repay(loan, wad, address(this));
+        pile.repay(loan, wad);
 
         // post state
         (uint debt,uint balance, ,) = pile.loans(loan);
@@ -102,18 +105,21 @@ contract PileTest is DSTest {
     function testSimpleBorrow() public {
         uint loan  = 1;
         uint wad = 100;
+        title.setOwnerOfReturn(address(this));
         borrow(loan,wad);
     }
 
     function testSimpleWithdraw() public {
         uint loan  = 1;
         uint wad = 100;
+        title.setOwnerOfReturn(address(this));
         borrow(loan,wad);
         withdraw(loan, wad);
     }
     function testSimpleRepay() public {
         uint loan  = 1;
         uint wad = 100;
+        title.setOwnerOfReturn(address(this));
         borrow(loan,wad);
         withdraw(loan, wad);
         repay(loan, wad);
@@ -449,6 +455,7 @@ contract PileTest is DSTest {
         uint loan = 1;
         uint principal = 100 ether;
         pile.file(loan, fee, 0);
+        title.setOwnerOfReturn(address(this));
         borrow(loan, principal);
 
         checkDebt(loan, 100 ether);
@@ -463,7 +470,6 @@ contract PileTest is DSTest {
         (uint debt,,,) = pile.loans(loan);
         withdraw(loan, principal);
         repay(loan, debt);
-
     }
 
     function testMaxChi() public {

@@ -33,25 +33,41 @@ contract ERC20Like {
 contract User {
     ERC20Like tkn;
     ERC20Like collateral;
-    Reception reception;
-    constructor (address reception_, address tkn_, address collateral_) public {
-        reception = Reception(reception_);
+    Pile pile;
+    Shelf shelf;
+    Desk desk;
+
+    constructor (address pile_, address shelf_, address desk_, address tkn_, address collateral_) public {
+        pile = Pile(pile_);
+        shelf = Shelf(shelf_);
+        desk = Desk(desk_);
         tkn = ERC20Like(tkn_);
         collateral = ERC20Like(collateral_);
     }
 
     function doBorrow (uint loan) public {
-        reception.borrow(loan, address(this));
+        shelf.deposit(loan, address(this));
+        desk.balance();
+
+        // borrow max amount
+        uint wad = pile.balanceOf(loan);
+        pile.withdraw(loan, wad, address(this));
     }
+
     function doApproveNFT(SimpleNFT nft, address usr) public {
         nft.setApprovalForAll(usr, true);
     }
+
     function doRepay(uint loan, uint wad, address usr) public {
-        reception.repay(loan, wad, usr);
+       pile.repay(loan, wad);
+       shelf.release(loan, usr);
+       desk.balance();
     }
 
     function doClose(uint loan, address usr) public {
-        reception.close(loan, usr);
+        pile.collect(loan);
+        (uint debt,,,) = pile.loans(loan);
+        doRepay(loan, debt, usr);
     }
 
     function doApproveCurrency(address usr, uint wad) public {
@@ -149,7 +165,7 @@ contract SystemTest is DSTest {
         deployer.deployAdmin(address(appraiser));
         deployer.deploy();
 
-        borrower = new User(address(deployer.reception()),tkn_,address(deployer.collateral()));
+        borrower = new User(address(deployer.pile()), address(deployer.shelf()), address(deployer.desk()), tkn_,address(deployer.collateral()));
         borrower_ = address(borrower);
         manager.file(deployer);
 
@@ -250,25 +266,20 @@ contract SystemTest is DSTest {
     function borrowRepay(uint tokenId, uint principal, uint appraisal, uint fee) public {
         // create borrower collateral nft
         nft.mint(borrower_, tokenId);
-
         uint loan = whitelist(tokenId, nft_, principal, appraisal, borrower_, fee);
-
         borrow(loan, tokenId, principal, appraisal);
-
+        
         hevm.warp(now + 10 days);
-
+        
         // borrower needs some currency to pay fee
         uint extra = setupRepayReq();
-
-
         uint lenderShould = deployer.pile().burden(loan) + currLenderBal();
-
+        
         // close without defined amount
         borrower.doClose(loan, borrower_);
 
         uint totalT = uint(tkn.totalSupply());
-        checkAfterRepay(loan, tokenId,totalT , 0, lenderShould);
-
+        checkAfterRepay(loan, tokenId,totalT, 0, lenderShould);
     }
 
 

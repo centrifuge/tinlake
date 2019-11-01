@@ -61,7 +61,6 @@ addAddresses $ADDRESS_FILE <<EOF
     "SHELF"      :  "0x$(seth call $DEPLOYER 'shelf()(address)')",
     "COLLATERAL" :  "0x$(seth call $DEPLOYER 'collateral()(address)')",
     "VALVE"      :  "0x$(seth call $DEPLOYER 'valve()(address)')",
-    "RECEPTION"  :  "0x$(seth call $DEPLOYER 'reception()(address)')",
     "DESK"       :  "0x$(seth call $DEPLOYER 'desk()(address)')",
     "ADMIT"      :  "0x$(seth call $DEPLOYER 'admit()(address)')",
     "ADMIN"      :  "0x$(seth call $DEPLOYER 'admin()(address)')"

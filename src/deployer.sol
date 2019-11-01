@@ -18,7 +18,6 @@ pragma solidity >=0.4.24;
 import { Title } from "./title.sol";
 import { LightSwitch } from "./lightswitch.sol";
 import { Shelf } from "./shelf.sol";
-import { Reception } from "./reception.sol"; 
 import { Desk } from "./desk.sol";
 import { Pile } from "./pile.sol";
 import { Collateral } from "./collateral.sol";
@@ -58,16 +57,16 @@ contract LightSwitchFab {
 }
 
 contract PileFab {
-   function newPile(address tkn) public returns (Pile pile) {
-        pile = new Pile(tkn);
+   function newPile(address tkn, address title) public returns (Pile pile) {
+        pile = new Pile(tkn, title);
         pile.rely(msg.sender);
         pile.deny(address(this));
     }
 }
 
 contract ShelfFab {
-   function newShelf(address pile, address appraiser) public returns (Shelf shelf) {
-        shelf = new Shelf(pile, appraiser);
+   function newShelf(address pile, address appraiser, address title) public returns (Shelf shelf) {
+        shelf = new Shelf(pile, appraiser, title);
         shelf.rely(msg.sender);
         shelf.deny(address(this));
     }
@@ -127,7 +126,6 @@ contract Deployer {
     Collateral  public collateral;
     Valve       public valve;
     Desk        public desk;
-    Reception   public reception;
     Admit       public admit;
     Admin       public admin;
     LenderLike  public lender;
@@ -161,12 +159,12 @@ contract Deployer {
         collateral.rely(god);
     }
     function deployPile(address currency_) public {
-        pile = pilefab.newPile(currency_);
+        pile = pilefab.newPile(currency_, address(title));
         pile.rely(god);
     }
     function deployShelf(address appraiser) public {
         appraiser_ = appraiser;
-        shelf = shelffab.newShelf(address(pile), appraiser_);
+        shelf = shelffab.newShelf(address(pile), appraiser_, address(title));
         shelf.rely(god);
         pile.rely(address(shelf));
     }
@@ -212,16 +210,6 @@ contract Deployer {
         admit.rely(admin_);
         pile.rely(admin_);
         WardsLike(appraiser_).rely(admin_);
-
-
-        reception = new Reception(desk_, address(title), shelf_, pile_);
-        reception.rely(god);
-        address reception_ = address(reception);
-
-        // reception allowed to call
-        shelf.rely(reception_);
-        pile.rely(reception_);
-        desk.rely(reception_);
     }
 
     function deployLender(address currency_, address lenderfab_) public returns(address) {

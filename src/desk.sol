@@ -83,7 +83,7 @@ contract Desk is Switchable {
     }
 
     // --- Desk ---
-    function balance() public auth {
+    function balance() public {
         int wadT = pile.want();
         address self = address(this);
 
