@@ -2,8 +2,10 @@
 set -e
 
 BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
-ADDRESS_DIR=${ADDRESS_DIR:-$PWD/addresses}
-ADDRESS_FILE="${ADDRESS_DIR}/addresses-$(seth chain).json"
+DEPLOY_DIR=deployments/$(seth chain)
+mkdir -p $DEPLOY_DIR
+ADDRESS_DIR=$PWD/$DEPLOY_DIR
+ADDRESS_FILE="$ADDRESS_DIR/addresses.json"
 
 source $BIN_DIR/lib/load-addresses
 
@@ -22,6 +24,9 @@ if [[ "$ETHERSCAN_API_KEY" != "" ]]; then
     echo "Found ETHERSCAN_API_KEY in environment, will attempt to verify contracts."
 fi
 
+
+
+touch $ADDRESS_FILE
 loadAddresses $ADDRESS_FILE
 if [[ -z "$GOD_ADDR" || -z "$CURRENCY" ]]; then
     echo "GOD_ADDR, CURRENCY are required"

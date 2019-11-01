@@ -67,6 +67,10 @@ contract Admin {
         return loan;
     }
 
+    function file(uint fee, uint speed) public auth {
+        pile.file(fee, speed);
+    }
+
     function update(uint loan, address registry, uint nft, uint principal, uint appraisal, uint fee) public auth {
         admit.update(loan, registry, nft, principal);
         appraiser.file(loan, appraisal);

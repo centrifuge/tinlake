@@ -36,7 +36,7 @@ contract Pile is DSNote, TitleOwned {
 
     // --- Data ---
     TokenLike public tkn;
-   
+
     // https://github.com/makerdao/dsr/blob/master/src/dsr.sol
     struct Fee {
         uint debt;
@@ -130,14 +130,23 @@ contract Pile is DSNote, TitleOwned {
         z = add(mul(x, ONE), y / 2) / y;
     }
 
-    function update(uint loan, uint chi) internal view returns (uint, uint) {
+    function update(uint loan, uint chi) internal view returns (uint) {
         uint chi_ = ONE;
         if(loans[loan].chi != 0) {
             chi_ = rdiv(chi, loans[loan].chi);
         }
-        uint debt = rmul(loans[loan].debt, chi_);
-        uint chi = rmul(loans[loan].chi, chi_);
-        return (debt, chi);
+        return rmul(loans[loan].debt, chi_);
+    }
+
+    function incDebt(uint fee, uint wad) internal {
+        fees[fee].debt = add(fees[fee].debt, wad);
+        Debt = add(Debt, wad);
+
+    }
+
+    function decDebt(uint fee, uint wad) internal {
+        fees[fee].debt = sub(fees[fee].debt, wad);
+        Debt = sub(Debt, wad);
     }
 
     function burden(uint loan) public view returns (uint) {
@@ -147,8 +156,7 @@ contract Pile is DSNote, TitleOwned {
         if (now >= fees[fee].rho) {
             (chi, ,) = compounding(fee);
         }
-        (uint debt, ) = update(loan, chi);
-        return debt;
+        return update(loan, chi);
     }
 
     function compounding(uint fee) public view returns (uint,uint,uint) {
@@ -170,19 +178,19 @@ contract Pile is DSNote, TitleOwned {
     // --- Fee Accumulation ---
     function drip(uint fee) public {
         (uint latest, , uint wad) = compounding(fee);
-        Debt = add(Debt, wad);
-        fees[fee].debt = add(fees[fee].debt, wad);
         fees[fee].chi = latest;
-        fees[fee].rho = uint48(now);
-    }
 
+        fees[fee].rho = uint48(now);
+        incDebt(fee, wad);
+    }
 
     function collect(uint loan) public {
         uint fee = loans[loan].fee;
         if (now >= fees[fee].rho) {
             drip(fee);
         }
-        (loans[loan].debt, loans[loan].chi ) = update(loan, fees[fee].chi);
+        loans[loan].debt = update(loan, fees[fee].chi);
+        loans[loan].chi = fees[fee].chi;
     }
 
     // --- Pile ---
@@ -191,18 +199,22 @@ contract Pile is DSNote, TitleOwned {
         return int(Balance) - int(tkn.balanceOf(address(this))); // safemath
     }
 
+    function initLoan(uint loan,uint wad, uint chi) internal {
+        loans[loan].chi = chi;
+        loans[loan].debt = add(loans[loan].debt, wad);
+        loans[loan].balance = add(loans[loan].balance, wad);
+        Balance = add(Balance, wad);
+
+    }
+
     // borrow() creates a debt by the borrower for the specified amount. 
     function borrow(uint loan, uint wad) public auth note {
         uint fee = loans[loan].fee;
         drip(fee);
-        loans[loan].chi = fees[fee].chi;
-        collect(loan);
 
-        fees[fee].debt = add(fees[fee].debt, wad);
-        loans[loan].debt = add(loans[loan].debt, wad);
-        loans[loan].balance = add(loans[loan].balance, wad);
-        Balance = add(Balance, wad);
-        Debt = add(Debt, wad);
+        initLoan(loan, wad,fees[fee].chi);
+
+        incDebt(fee, wad);
     }
 
     // withdraw() moves token from the Pile to the user
@@ -229,10 +241,7 @@ contract Pile is DSNote, TitleOwned {
 
         tkn.transferFrom(msg.sender, address(this), wad);
         loans[loan].debt = sub(loans[loan].debt, wad);
-
-        uint fee = loans[loan].fee;
-        fees[fee].debt = sub(fees[fee].debt, wad);
-        Debt = sub(Debt, wad);
+        decDebt(loans[loan].fee, wad);
 
         tkn.approve(lender,wad);
     }

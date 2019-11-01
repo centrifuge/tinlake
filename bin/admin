@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
-ADDRESS_DIR=${ADDRESS_DIR:-$PWD/addresses}
-ADDRESS_FILE="${ADDRESS_DIR}/addresses-$(seth chain).json"
+DEPLOY_DIR=deployments/$(seth chain)
+ADDRESS_DIR=$PWD/$DEPLOY_DIR
+ADDRESS_FILE="$ADDRESS_DIR/addresses.json"
 
 export ETH_GAS=${ETH_GAS:-"8000000"}
 export ETH_FROM=${ETH_FROM:-$(seth rpc eth_coinbase)}
