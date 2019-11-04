@@ -74,6 +74,7 @@ contract AdmitTest is DSTest {
         principal = 4;
         admit.update(loan, principal);
         assertEq(shelf.principal(), principal);
+        assertEq(shelf.initial(), principal);
         assertEq(shelf.fileCalls(), 2);
     }
 
@@ -93,6 +94,7 @@ contract AdmitTest is DSTest {
         registry = address(2);
         admit.update(loan, registry, nft, principal);
         assertEq(shelf.principal(), principal);
+        assertEq(shelf.initial(), principal);
         assertEq(shelf.fileCalls(), 2);
     }
 

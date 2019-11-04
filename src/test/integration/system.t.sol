@@ -109,6 +109,10 @@ contract Hevm {
     function warp(uint256) public;
 }
 
+contract ShelfLike {
+    function shelf(uint loan) public returns(address registry,uint256 tokenId,uint price,uint principal, uint initial);
+}
+
 contract SystemTest is DSTest {
     SimpleNFT    nft;
     address      nft_;
@@ -123,8 +127,6 @@ contract SystemTest is DSTest {
     User borrower;
     address      borrower_;
     Hevm hevm;
-
-
 
     function basicSetup() public {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
@@ -219,7 +221,6 @@ contract SystemTest is DSTest {
 
         // borrow transaction
         borrower.doBorrow(loan);
-
         checkAfterBorrow(loan, tokenId, principal, appraisal);
     }
 
@@ -228,7 +229,7 @@ contract SystemTest is DSTest {
         uint tokenId = 1;
         uint principal = 1000 ether;
         uint appraisal = 1200 ether;
-
+        uint initial = principal;
         // define fee
         uint fee = uint(1000000564701133626865910626); // 5 % day
 
@@ -242,7 +243,6 @@ contract SystemTest is DSTest {
         nft.mint(borrower_, tokenId);
 
         uint loan = whitelist(tokenId, nft_, principal, appraisal, borrower_, fee);
-
         borrow(loan, tokenId, principal, appraisal);
 
         return (loan, tokenId, principal, appraisal, fee);
@@ -267,8 +267,17 @@ contract SystemTest is DSTest {
         // create borrower collateral nft
         nft.mint(borrower_, tokenId);
         uint loan = whitelist(tokenId, nft_, principal, appraisal, borrower_, fee);
+
+        ShelfLike shelf_ = ShelfLike(address(deployer.shelf()));
+        ( , , , uint p_, uint i_) = shelf_.shelf(loan);
+        assertEq(p_, i_);
+
         borrow(loan, tokenId, principal, appraisal);
-        
+
+        ( , , , uint p2, uint i2) = shelf_.shelf(loan);
+        assertEq(p2, 0);
+        assertEq(i2, p_);
+
         hevm.warp(now + 10 days);
         
         // borrower needs some currency to pay fee
