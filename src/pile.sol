@@ -46,7 +46,7 @@ contract Pile is DSNote, TitleOwned {
     }
 
     struct Loan {
-        uint pie;
+        uint pie; // Used to calculated debt
         uint balance;
         uint fee;
     }
@@ -192,7 +192,8 @@ contract Pile is DSNote, TitleOwned {
     }
 
     // --- Pile ---
-    // want() is the the additional token that must be supplied for the Pile to cover all outstanding loans_. If negative, it's the reserves the Pile has.
+    // want() is the the additional token that must be supplied for the Pile to cover all outstanding loans_.
+    // If negative, it's the reserves the Pile has.
     function want() public view returns (int) {
         return int(Balance) - int(tkn.balanceOf(address(this))); // safemath
     }
