@@ -46,7 +46,7 @@ contract Pile is DSNote, TitleOwned {
     }
 
     struct Loan {
-        uint pie; // Used to calculated debt
+        uint pie; // Used to calculate debt
         uint balance;
         uint fee;
     }
