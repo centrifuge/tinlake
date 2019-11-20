@@ -31,8 +31,8 @@ contract NFTLike {
 contract PileLike {
     struct Loan {
         uint debt;
-        uint fee;
-        uint chi;
+        uint balance;
+        uint fee;   
     }
     function loans(uint) public returns (Loan memory);
     function borrow(uint, uint) public;
