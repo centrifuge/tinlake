@@ -46,9 +46,9 @@ contract Pile is DSNote, TitleOwned {
     }
 
     struct Loan {
+        uint pie;
         uint balance;
         uint fee;
-        uint pie;
     }
 
     mapping (uint => Fee) public fees;
@@ -240,15 +240,14 @@ contract Pile is DSNote, TitleOwned {
             wad = debt;
         }
 
-        uint chi = fees[loans_[loan].fee].chi;
-        uint pie_ = rdiv(wad, chi);
-
         tkn.transferFrom(msg.sender, address(this), wad);
+
+        uint chi = getChi(loan);
+        uint pie_ = rdiv(wad, chi);
         loans_[loan].pie = sub(loans_[loan].pie, pie_);
 
         decDebt(loans_[loan].fee, wad);
-
-        tkn.approve(lender,wad);
+        tkn.approve(lender, wad);
     }
 
     function debtOf(uint loan) public returns(uint) {
@@ -256,7 +255,7 @@ contract Pile is DSNote, TitleOwned {
         return rmul(loans_[loan].pie, chi);
     }
 
-    function getChi(uint loan) public returns(uint) {
+    function getChi(uint loan) internal returns(uint) {
         return fees[loans_[loan].fee].chi;
     }
 }
