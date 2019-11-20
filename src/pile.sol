@@ -25,8 +25,8 @@ contract TokenLike {
     function approve(address, uint) public;
 }
 
-// Pile 
-// Manages the balance for the currency ERC20 in which borrowers want to borrow. 
+// Pile
+// Manages the balance for the currency ERC20 in which borrowers want to borrow.
 contract Pile is DSNote, TitleOwned {
     // --- Auth ---
     mapping (address => uint) public wards;
@@ -52,14 +52,11 @@ contract Pile is DSNote, TitleOwned {
     }
 
     mapping (uint => Fee) public fees;
-    // TODO can be renamed to loans again after loans func is removed
     mapping (uint => Loan) public loans_;
 
-    // TODO can be removed after tests don't depend on old loan struct anymore
-    function loans(uint loan) public view returns (uint, uint, uint, uint)  {
-        uint fee = loans_[loan].fee;
-        uint debt = rmul(loans_[loan].pie,fees[fee].chi);
-        return (debt, loans_[loan].balance,loans_[loan].fee, 0);
+    function loans(uint loan) public view returns (uint debt, uint balance, uint fee)  {
+        uint debt = debtOf(loan);
+        return (debt, loans_[loan].balance, loans_[loan].fee);
     }
 
     uint public Balance;
@@ -82,7 +79,7 @@ contract Pile is DSNote, TitleOwned {
         loans_[loan].fee = fee_;
         loans_[loan].balance = balance_;
     }
-    
+
     function file(uint fee, uint speed_) public auth note {
         require(speed_ != 0);
         fees[fee].speed = speed_;
@@ -100,19 +97,19 @@ contract Pile is DSNote, TitleOwned {
                 switch mod(n, 2) case 0 { z := base } default { z := x }
                 let half := div(base, 2)  // for rounding.
                 for { n := div(n, 2) } n { n := div(n,2) } {
-                    let xx := mul(x, x)
-                    if iszero(eq(div(xx, x), x)) { revert(0,0) }
-                    let xxRound := add(xx, half)
-                    if lt(xxRound, xx) { revert(0,0) }
-                    x := div(xxRound, base)
-                    if mod(n,2) {
-                        let zx := mul(z, x)
-                        if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0,0) }
-                        let zxRound := add(zx, half)
-                        if lt(zxRound, zx) { revert(0,0) }
-                        z := div(zxRound, base)
-                    }
+                let xx := mul(x, x)
+                if iszero(eq(div(xx, x), x)) { revert(0,0) }
+                let xxRound := add(xx, half)
+                if lt(xxRound, xx) { revert(0,0) }
+                x := div(xxRound, base)
+                if mod(n,2) {
+                    let zx := mul(z, x)
+                    if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0,0) }
+                    let zxRound := add(zx, half)
+                    if lt(zxRound, zx) { revert(0,0) }
+                    z := div(zxRound, base)
                 }
+            }
             }
         }
     }
@@ -206,7 +203,7 @@ contract Pile is DSNote, TitleOwned {
         Balance = add(Balance, wad);
     }
 
-    // borrow() creates a debt by the borrower for the specified amount. 
+    // borrow() creates a debt by the borrower for the specified amount.
     function borrow(uint loan, uint wad) public auth note {
         uint fee = loans_[loan].fee;
         drip(fee);
@@ -250,12 +247,12 @@ contract Pile is DSNote, TitleOwned {
         tkn.approve(lender, wad);
     }
 
-    function debtOf(uint loan) public returns(uint) {
+    function debtOf(uint loan) public view returns(uint) {
         uint chi = getChi(loan);
         return rmul(loans_[loan].pie, chi);
     }
 
-    function getChi(uint loan) internal returns(uint) {
+    function getChi(uint loan) internal view returns(uint) {
         return fees[loans_[loan].fee].chi;
     }
 }
