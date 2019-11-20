@@ -337,7 +337,7 @@ contract PileTest is DSTest {
         (uint debt2,,uint fee2 ,uint chi2) = pile.loans(loan);
         assertEq(debt2, 69.3 ether); // 66 ether * 1,05**1
         assertEq(fee, fee2);
-        assertTrue(chi1 != chi2);
+
 
         // 2 day later
         hevm.warp(start + 3 days);
@@ -348,7 +348,6 @@ contract PileTest is DSTest {
         (uint debt3,,uint fee3 ,uint chi3) = pile.loans(loan);
         assertEq(debt3, 76.40325  ether); //  66 ether * 1,05**3
         assertEq(fee, fee3);
-        assertTrue(chi2 != chi3);
     }
 
 

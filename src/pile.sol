@@ -46,14 +46,22 @@ contract Pile is DSNote, TitleOwned {
     }
 
     struct Loan {
-        uint debt;
         uint balance;
         uint fee;
-        uint chi;
+        uint pie;
     }
 
     mapping (uint => Fee) public fees;
-    mapping (uint => Loan) public loans;
+    // TODO can be renamed to loans again after loans func is removed
+    mapping (uint => Loan) public loans_;
+
+    // TODO can be removed after tests don't depend on old loan struct anymore
+    function loans(uint loan) public view returns (uint, uint, uint, uint)  {
+        uint fee = loans_[loan].fee;
+        uint debt = rmul(loans_[loan].pie,fees[fee].chi);
+        return (debt, loans_[loan].balance,loans_[loan].fee, 0);
+    }
+
     uint public Balance;
     uint public Debt;
 
@@ -64,7 +72,6 @@ contract Pile is DSNote, TitleOwned {
         tkn = TokenLike(tkn_);
         fees[0].chi = ONE;
         fees[0].speed = ONE;
-
     }
 
     function depend(bytes32 what, address data) public auth {
@@ -72,8 +79,8 @@ contract Pile is DSNote, TitleOwned {
     }
 
     function file(uint loan, uint fee_, uint balance_) public auth note {
-        loans[loan].fee = fee_;
-        loans[loan].balance = balance_;
+        loans_[loan].fee = fee_;
+        loans_[loan].balance = balance_;
     }
     
     function file(uint fee, uint speed_) public auth note {
@@ -129,13 +136,8 @@ contract Pile is DSNote, TitleOwned {
     function rdiv(uint x, uint y) internal pure returns (uint z) {
         z = add(mul(x, ONE), y / 2) / y;
     }
-
-    function update(uint loan, uint chi) internal view returns (uint) {
-        uint chi_ = ONE;
-        if(loans[loan].chi != 0) {
-            chi_ = rdiv(chi, loans[loan].chi);
-        }
-        return rmul(loans[loan].debt, chi_);
+    function div(uint x, uint y) internal pure returns (uint z) {
+        z = x / y;
     }
 
     function incDebt(uint fee, uint wad) internal {
@@ -150,13 +152,14 @@ contract Pile is DSNote, TitleOwned {
     }
 
     function burden(uint loan) public view returns (uint) {
-        uint fee = loans[loan].fee;
+        uint fee = loans_[loan].fee;
         uint chi = fees[fee].chi;
 
         if (now >= fees[fee].rho) {
             (chi, ,) = compounding(fee);
         }
-        return update(loan, chi);
+        uint debt = rmul(loans_[loan].pie, chi);
+        return debt;
     }
 
     function compounding(uint fee) public view returns (uint,uint,uint) {
@@ -185,31 +188,27 @@ contract Pile is DSNote, TitleOwned {
     }
 
     function collect(uint loan) public {
-        uint fee = loans[loan].fee;
+        uint fee = loans_[loan].fee;
         if (now >= fees[fee].rho) {
             drip(fee);
         }
-        loans[loan].debt = update(loan, fees[fee].chi);
-        loans[loan].chi = fees[fee].chi;
     }
 
     // --- Pile ---
-    // want() is the the additional token that must be supplied for the Pile to cover all outstanding loans. If negative, it's the reserves the Pile has.
+    // want() is the the additional token that must be supplied for the Pile to cover all outstanding loans_. If negative, it's the reserves the Pile has.
     function want() public view returns (int) {
         return int(Balance) - int(tkn.balanceOf(address(this))); // safemath
     }
 
     function initLoan(uint loan,uint wad, uint chi) internal {
-        loans[loan].chi = chi;
-        loans[loan].debt = add(loans[loan].debt, wad);
-        loans[loan].balance = add(loans[loan].balance, wad);
+        loans_[loan].pie  = rdiv(wad, chi);
+        loans_[loan].balance = add(loans_[loan].balance, wad);
         Balance = add(Balance, wad);
-
     }
 
     // borrow() creates a debt by the borrower for the specified amount. 
     function borrow(uint loan, uint wad) public auth note {
-        uint fee = loans[loan].fee;
+        uint fee = loans_[loan].fee;
         drip(fee);
 
         initLoan(loan, wad,fees[fee].chi);
@@ -219,34 +218,45 @@ contract Pile is DSNote, TitleOwned {
 
     // withdraw() moves token from the Pile to the user
     function withdraw(uint loan, uint wad, address usr) public owner(loan) note {
-        require(wad <= loans[loan].balance, "only max. balance can be withdrawn");
-        loans[loan].balance -= wad;
+        require(wad <= loans_[loan].balance, "only max. balance can be withdrawn");
+        loans_[loan].balance -= wad;
         Balance -= wad;
         tkn.transferFrom(address(this), usr, wad);
     }
 
     function balanceOf(uint loan) public view returns (uint) {
-        return loans[loan].balance;
+        return loans_[loan].balance;
     }
 
     // repay() a certain amount of token from the user to the Pile
     function repay(uint loan, uint wad) public owner(loan) note {
         // moves currency from usr to pile and reduces debt
-        require(loans[loan].balance == 0,"before repay loan needs to be withdrawn");
+        require(loans_[loan].balance == 0,"before repay loan needs to be withdrawn");
         collect(loan);
 
-        if (wad > loans[loan].debt) {
-            wad = loans[loan].debt;
+        // only repay max loan debt
+        uint debt = debtOf(loan);
+        if (wad > debt) {
+            wad = debt;
         }
 
+        uint chi = fees[loans_[loan].fee].chi;
+        uint pie_ = rdiv(wad, chi);
+
         tkn.transferFrom(msg.sender, address(this), wad);
-        loans[loan].debt = sub(loans[loan].debt, wad);
-        decDebt(loans[loan].fee, wad);
+        loans_[loan].pie = sub(loans_[loan].pie, pie_);
+
+        decDebt(loans_[loan].fee, wad);
 
         tkn.approve(lender,wad);
     }
 
     function debtOf(uint loan) public returns(uint) {
-        return loans[loan].debt;
+        uint chi = getChi(loan);
+        return rmul(loans_[loan].pie, chi);
+    }
+
+    function getChi(uint loan) public returns(uint) {
+        return fees[loans_[loan].fee].chi;
     }
 }
