@@ -1,7 +1,6 @@
 pragma solidity >=0.4.24;
-pragma experimental ABIEncoderV2;
 
-
+// Tranche Manager mock
 contract LifeguardMock {
 
     // calls
