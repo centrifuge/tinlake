@@ -10,15 +10,10 @@ contract PileLike {
     function want() public returns (int);
 }
 
-contract OperatorLike {
-    function provide(address,address,uint,uint) public;
-    function release(address,address,uint,uint) public;
-    function free(address, uint) public;
-}
 
 contract SimpleLifeguardFab {
-    function deploy(address pile_, address operator_, address lightswitch_) public returns (address) {
-        SimpleLifeguard lifeguard = new SimpleLifeguard(pile_, operator_);
+    function deploy(address pile_, address token_, address lightswitch_) public returns (address) {
+        SimpleLifeguard lifeguard = new SimpleLifeguard(pile_, token_);
         lifeguard.rely(msg.sender);
         return address(lifeguard);
     }
@@ -27,18 +22,12 @@ contract SimpleLifeguardFab {
 // Tranche Manager
 contract SimpleLifeguard {
 
-    mapping (address => uint) public wards;
-    function rely(address usr) public auth { wards[usr] = 1; }
-    function deny(address usr) public auth { wards[usr] = 0; }
-    modifier auth { require(wards[msg.sender] == 1); _; }
-
     // --- Data ---
     PileLike public pile;
     // simple lifeguard = 1 tranche/1 operator for now
-    OperatorLike public operator;
-    constructor (address pile_, address operator) public {
-        wards[msg.sender] = 1;
-
+    TokenLike public token;
+    constructor (address pile_, address token_) public {
+        token = TokenLike(token_);
         pile = PileLike(pile_);
     }
 
@@ -46,30 +35,14 @@ contract SimpleLifeguard {
     function balance() public {
         int wadT = pile.want();
         if (wadT > 0) {
-            operator.provide(address(pile), uint(wadT));
+            provide(address(pile), uint(wadT));
 
         } else {
-            operator.release(address(pile), uint(wadT*-1));
+            release(address(pile), uint(wadT*-1));
         }
     }
-}
 
-contract SimpleOperator {
-
-    mapping (address => uint) public wards;
-    function rely(address usr) public auth { wards[usr] = 1; }
-    function deny(address usr) public auth { wards[usr] = 0; }
-    modifier auth { require(wards[msg.sender] == 1); _; }
-
-    // --- Data ---
-    TokenLike public token;
-
-    constructor (address token_) public {
-        wards[msg.sender] = 1;
-        token = TokenLike(token_);
-    }
-
-    // --- Lender Side Methods ---
+    // --- Operator Methods ---
     function provide(address usrT, uint wadT) public {
         tkn.mint(usrT, wadT);
     }
