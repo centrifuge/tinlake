@@ -40,11 +40,11 @@ contract TrancheManager {
 
     // --- Operator Methods ---
     function give(address usr, uint wad) public {
-        tkn.mint(usr, wad);
+        token.mint(usr, wad);
     }
 
     function take(address usr, uint wad) public {
-        tkn.transferFrom(usr, address(this), wad);
+        token.transferFrom(usr, address(this), wad);
     }
 
 }
