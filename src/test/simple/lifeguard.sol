@@ -3,7 +3,6 @@ pragma solidity >=0.4.24;
 contract TokenLike {
     function transferFrom(address, address, uint) public;
     function mint(address, uint) public;
-    function approve(address usr, uint wad) public returns (bool);
 }
 
 contract PileLike {
@@ -11,16 +10,15 @@ contract PileLike {
 }
 
 
-contract SimpleLifeguardFab {
+contract SimpleTrancheManagerFab {
     function deploy(address pile_, address token_, address lightswitch_) public returns (address) {
-        SimpleLifeguard lifeguard = new SimpleLifeguard(pile_, token_);
-        lifeguard.rely(msg.sender);
-        return address(lifeguard);
+        SimpleTrancheManager manager = new SimpleTrancheManager(pile_, token_);
+        return address(manager);
     }
 }
 
 // Tranche Manager
-contract SimpleLifeguard {
+contract SimpleTrancheManager {
 
     // --- Data ---
     PileLike public pile;
@@ -35,23 +33,20 @@ contract SimpleLifeguard {
     function balance() public {
         int wadT = pile.want();
         if (wadT > 0) {
-            provide(address(pile), uint(wadT));
+            give(address(pile), uint(wadT));
 
         } else {
-            release(address(pile), uint(wadT*-1));
+            take(address(pile), uint(wadT*-1));
         }
     }
 
     // --- Operator Methods ---
-    function provide(address usrT, uint wadT) public {
+    function give(address usrT, uint wadT) public {
         tkn.mint(usrT, wadT);
     }
 
-    function release(address usrT, uint wadT) public {
+    function take(address usrT, uint wadT) public {
         tkn.transferFrom(usrT, address(this), wadT);
     }
 
-    function free(address usr, uint wad) public {
-        revert();
-    }
 }
