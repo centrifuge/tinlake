@@ -32,8 +32,7 @@ contract PileLike {
     struct Loan {
         uint debt;
         uint balance;
-        uint fee;
-        uint chi;
+        uint fee;   
     }
     function loans(uint) public returns (Loan memory);
     function borrow(uint, uint) public;
