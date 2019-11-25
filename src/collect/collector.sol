@@ -18,6 +18,7 @@ pragma solidity >=0.4.24;
 
 contract SpotterLike {
     function collectable(uint loan) public returns(bool);
+    function seizure(uint loan) public;
 }
 
 contract TagLike {
@@ -67,12 +68,17 @@ contract Collector {
         else revert();
     }
 
-    modifier buyable (uint loan) { require(spotter.collectable(loan) == true); _; }
+    function collect(uint loan, address usr) public auth {
+        if(spotter.collectable(loan)){
+            spotter.seizure(loan);
+        }
 
-    function collect(uint loan, address usr) public buyable(loan) auth {
         uint wad = tag.price(loan);
         pile.repay(loan, wad, msg.sender);
         shelf.free(loan, usr);
         desk.balance();
     }
+
+
+
 }

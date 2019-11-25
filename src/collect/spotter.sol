@@ -19,11 +19,17 @@ pragma solidity >=0.4.24;
 contract ShelfLike {
     function adjust(uint loan) public;
     function shelf(uint loan) public returns (address, uint256, uint, uint);
+    function free(uint loan, address usr) public;
 }
 
 contract PileLike {
     function loans(uint loan) public returns (uint, uint, uint ,uint);
     function collect(uint loan) public;
+}
+
+contract NFTLike {
+    function ownerOf(uint256 tokenId) public view returns (address owner);
+    function transferFrom(address from, address to, uint256 tokenId) public;
 }
 
 contract Spotter {
@@ -66,21 +72,31 @@ contract Spotter {
         else revert();
     }
 
-    function actPrice(uint loan) internal returns(uint) {
+    function nowPrice(uint loan) internal returns(uint) {
         shelf.adjust(loan);
         (,,uint price,) = shelf.shelf(loan);
         return price;
     }
 
-    function actDebt(uint loan) internal returns(uint) {
+    function nowDebt(uint loan) internal returns(uint) {
         pile.collect(loan);
         (uint debt,,,) = pile.loans(loan);
         return debt;
     }
 
-    function collectable(uint loan) public returns(bool) {
-        uint price = actPrice(loan);
-        uint debt = actDebt(loan);
+    function seizure(uint loan) public {
+        require(seizable(loan));
+        shelf.free(loan, address(this));
+    }
+
+    function nftOwner(uint loan) public returns(address) {
+        (address registry, uint256 tokenId, , ) = shelf.shelf(loan);
+        return NFTLike(registry).ownerOf(tokenId);
+    }
+
+    function seizable(uint loan) public returns(bool) {
+        uint price = nowPrice(loan);
+        uint debt = nowDebt(loan);
 
         uint ratio = rdiv(price, debt);
         if(ratio >= threshold) {
@@ -89,4 +105,7 @@ contract Spotter {
         return false;
     }
 
+    function collectable(uint loan) public returns(bool) {
+        return nftOwner(loan) == address(this);
+    }
 }
