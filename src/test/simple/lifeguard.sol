@@ -1,7 +1,5 @@
 pragma solidity >=0.4.24;
 
-import "../../lightswitch.sol";
-
 contract TokenLike {
     function transferFrom(address, address, uint) public;
     function mint(address, uint) public;
