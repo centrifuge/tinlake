@@ -38,7 +38,6 @@ contract TrancheManager {
         }
     }
 
-    // --- Operator Methods ---
     function give(address usr, uint wad) public {
         token.mint(usr, wad);
     }
