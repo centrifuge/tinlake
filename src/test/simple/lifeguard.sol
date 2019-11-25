@@ -9,20 +9,18 @@ contract PileLike {
     function want() public returns (int);
 }
 
-
-contract SimpleTrancheManagerFab {
-    function deploy(address pile_, address token_, address lightswitch_) public returns (address) {
-        SimpleTrancheManager manager = new SimpleTrancheManager(pile_, token_);
+contract TrancheManagerFab {
+    function deploy(address pile_, address token_) public returns (address) {
+        TrancheManager manager = new TrancheManager(pile_, token_);
         return address(manager);
     }
 }
 
-// Tranche Manager
-contract SimpleTrancheManager {
+contract TrancheManager {
 
     // --- Data ---
     PileLike public pile;
-    // simple lifeguard = 1 tranche/1 operator for now
+    // simple tranche manager = 1 tranche/1 operator for now
     TokenLike public token;
     constructor (address pile_, address token_) public {
         token = TokenLike(token_);
@@ -31,22 +29,22 @@ contract SimpleTrancheManager {
 
     // --- Calls ---
     function balance() public {
-        int wadT = pile.want();
-        if (wadT > 0) {
-            give(address(pile), uint(wadT));
+        int wad = pile.want();
+        if (wad > 0) {
+            give(address(pile), uint(wad));
 
         } else {
-            take(address(pile), uint(wadT*-1));
+            take(address(pile), uint(wad*-1));
         }
     }
 
     // --- Operator Methods ---
-    function give(address usrT, uint wadT) public {
-        tkn.mint(usrT, wadT);
+    function give(address usr, uint wad) public {
+        tkn.mint(usr, wad);
     }
 
-    function take(address usrT, uint wadT) public {
-        tkn.transferFrom(usrT, address(this), wadT);
+    function take(address usr, uint wad) public {
+        tkn.transferFrom(usr, address(this), wad);
     }
 
 }
