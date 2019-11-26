@@ -106,13 +106,13 @@ contract Beans is DSNote {
     }
 
     function incLoanDebt(uint loan, uint fee, uint wad) public auth note {
-        require(now >= fees[fee].rho);
+        require(now == fees[fee].rho);
         pie[loan] = add(pie[loan], calcPie(fees[fee].chi, wad));
         incTotalDebt(fee, wad);
     }
 
     function decLoanDebt(uint loan, uint fee, uint wad) public auth note {
-        require(now >= fees[fee].rho);
+        require(now == fees[fee].rho);
         pie[loan] = sub(pie[loan], calcPie(fees[fee].chi, wad));
         decTotalDebt(fee, wad);
     }
