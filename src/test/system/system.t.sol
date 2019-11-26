@@ -170,14 +170,12 @@ contract SystemTest is DSTest {
         borrower = new User(address(deployer.pile()), address(deployer.shelf()), address(deployer.desk()), tkn_,address(deployer.collateral()));
         borrower_ = address(borrower);
         manager.file(deployer);
-
     }
 
     function setUp() public {
         basicSetup();
         lenderfab = address(new SimpleLenderFab());
         deployer.deployLender(tkn_, lenderfab);
-
     }
 
 
