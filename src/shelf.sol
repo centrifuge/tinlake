@@ -55,6 +55,7 @@ contract Shelf is TitleOwned{
         uint256 tokenId;
         uint price; //
         uint principal; //
+        uint initial; //
     }
 
     mapping (uint => Loan) public shelf;
@@ -84,10 +85,12 @@ contract Shelf is TitleOwned{
         shelf[loan].registry = registry_;
         shelf[loan].tokenId = nft_;
         shelf[loan].principal = principal_;
+        shelf[loan].initial = principal_;
     }
 
     function file(uint loan, uint principal_) public auth {
         shelf[loan].principal = principal_;
+        shelf[loan].initial = principal_;
     }
 
     // Move the NFT out of the shelf. To be used by Collector contract.
