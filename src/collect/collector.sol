@@ -73,7 +73,11 @@ contract Collector {
             spotter.seizure(loan);
         }
 
-        uint wad = tag.price(loan);
+        uint price = tag.price(loan);
+
+
+
+
         pile.repay(loan, wad, msg.sender);
         shelf.free(loan, usr);
         desk.balance();
