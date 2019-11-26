@@ -52,7 +52,8 @@ contract BeansTest is DSTest {
         uint loan = 1;
         uint principal = 66 ether;
         beans.file(fee, fee);
-        beans.initLoanDebt(loan, fee, principal);
+        beans.drip(fee);
+        beans.incLoanDebt(loan, fee, principal);
 
         // one day later
         hevm.warp(now + 1 days);
@@ -89,8 +90,8 @@ contract BeansTest is DSTest {
         beans.file(fee, fee);
         uint loan = 1;
         uint principal = 66 ether;
-
-        beans.initLoanDebt(loan, fee, principal);
+        beans.drip(fee);
+        beans.incLoanDebt(loan, fee, principal);
         checkDebt(loan, fee, 66 ether);
 
         // two days later
@@ -115,7 +116,8 @@ contract BeansTest is DSTest {
         beans.file(fee, fee);
         uint loan = 1;
         uint principal = 66 ether;
-        beans.initLoanDebt(loan, fee, principal);
+        beans.drip(fee);
+        beans.incLoanDebt(loan, fee, principal);
 
         checkDebt(loan, fee, 66 ether);
 
@@ -181,15 +183,14 @@ contract BeansTest is DSTest {
         beans.file(fee, fee);
         uint loan = 1;
         uint principal = 1000000000  ether; // one billion 10^9 * 10^18 = 10^28
-       
-        beans.initLoanDebt(loan, fee, principal);
+        beans.drip(fee);
+        beans.incLoanDebt(loan, fee, principal);
 
         // 150 days later
         hevm.warp(now + 1050 days); // produces max ~ chi 10^49
         // debt ~ 10^27 * 10^49 =  10^76 (max uint is 10^77)
         beans.drip(fee);
     }
-
 
     function checkDebt(uint loan, uint fee, uint should) public {
         uint debt = beans.debtOf(loan, fee);

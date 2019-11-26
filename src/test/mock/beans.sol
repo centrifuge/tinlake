@@ -2,7 +2,7 @@ pragma solidity >=0.4.24;
 
 contract BeansMock {
 
-    uint public callsInitLoanDebt;
+    uint public callsIncLoanDebt;
     uint public callsDecLoanDebt;
     uint public callsDrip;
     uint public callsBurden;
@@ -31,11 +31,11 @@ contract BeansMock {
         return (feeReturn.debt, feeReturn.chi, feeReturn.speed, feeReturn.rho);
     }
 
-    function initLoanDebt(uint loan_, uint fee_, uint wad_) public {
+    function incLoanDebt(uint loan_, uint fee_, uint wad_) public {
        loan = loan_;
        fee = fee_;
        wad = wad_;
-       callsInitLoanDebt++;
+       callsIncLoanDebt++;
     }
 
     function decLoanDebt(uint loan_, uint fee_, uint wad_) public {
@@ -58,7 +58,7 @@ contract BeansMock {
        return loanDebtReturn;
     }
 
-    function debt() public returns (uint){
+    function totalDebt() public returns (uint){
         return totalDebtReturn;
     }
 

@@ -50,7 +50,7 @@ contract PileTest is DSTest {
         pile.borrow(loan, wad);
 
         (uint debt, uint balance, uint fee) = pile.loans(loan);
-        assertEq(beans.callsInitLoanDebt(), 1);
+        assertEq(beans.callsIncLoanDebt(), 1);
         assertEq(pile.Balance(), totalBalance + wad);
         assertEq(pile.Debt(), wad);
         assertEq(balance, wad);
@@ -86,7 +86,7 @@ contract PileTest is DSTest {
         // post state
         (uint debt, uint balance, ) = pile.loans(loan);
         
-        assertEq(beans.callsDrip(), 1);
+        assertEq(beans.callsDrip(), 2);
         assertEq(beans.callsDecLoanDebt(), 1);
         
         assertEq(totalDebt-wad, pile.Debt());

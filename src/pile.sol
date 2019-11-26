@@ -27,11 +27,11 @@ contract TokenLike{
 }
 
 contract BeansLike {
-    uint public debt;
+    uint public totalDebt;
     function debtOf(uint, uint) public view returns (uint);
     function burden(uint, uint) public view returns (uint);
     function initFee(uint, uint) public;
-    function initLoanDebt(uint, uint, uint) public;
+    function incLoanDebt(uint, uint, uint) public;
     function decLoanDebt(uint, uint, uint) public;
     function drip(uint) public;
 }
@@ -63,7 +63,7 @@ contract Pile is DSNote, TitleOwned {
     }
 
     function Debt() public view returns (uint debt) {
-        return beans.debt();
+        return beans.totalDebt();
     }
 
     uint public Balance;
@@ -101,7 +101,8 @@ contract Pile is DSNote, TitleOwned {
     }
 
     function initLoan(uint loan, uint wad) internal {
-        beans.initLoanDebt(loan, loans_[loan].fee, wad);
+        beans.drip(loans_[loan].fee);
+        beans.incLoanDebt(loan, loans_[loan].fee, wad);
         loans_[loan].balance = add(loans_[loan].balance, wad);
         Balance = add(Balance, wad);
     }
@@ -131,8 +132,8 @@ contract Pile is DSNote, TitleOwned {
     function repay(uint loan, uint wad) public owner(loan) note {
         // moves currency from usr to pile and reduces debt
         require(loans_[loan].balance == 0,"before repay loan needs to be withdrawn");
+        collect(loan);
         uint fee = loans_[loan].fee;
-        beans.drip(fee);
         uint debt = beans.debtOf(loan, fee);
 
         // only repay max loan debt

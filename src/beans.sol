@@ -39,7 +39,7 @@ contract Beans is DSNote {
     mapping (uint => Fee) public fees;
     mapping (uint => uint) public pie;
 
-    uint public debt;
+    uint public totalDebt;
 
     constructor() public {
         wards[msg.sender] = 1;
@@ -105,17 +105,16 @@ contract Beans is DSNote {
         z = x / y;
     }
 
-    function initLoanDebt(uint loan, uint fee, uint wad) public auth note {
-        drip(fee);
-        uint pie_ = calcPie(fees[fee].chi, wad);
-        pie[loan] = pie_;
-        incDebt(fee, wad);
+    function incLoanDebt(uint loan, uint fee, uint wad) public auth note {
+        require(now >= fees[fee].rho);
+        pie[loan] = add(pie[loan], calcPie(fees[fee].chi, wad));
+        incTotalDebt(fee, wad);
     }
 
     function decLoanDebt(uint loan, uint fee, uint wad) public auth note {
-        uint pie_ = calcPie(fees[fee].chi, wad);
-        pie[loan] = sub(pie[loan], pie_);
-        decDebt(fee, wad);
+        require(now >= fees[fee].rho);
+        pie[loan] = sub(pie[loan], calcPie(fees[fee].chi, wad));
+        decTotalDebt(fee, wad);
     }
 
     function compounding(uint fee) public view returns (uint, uint, uint) {
@@ -129,7 +128,7 @@ contract Beans is DSNote {
         // compounding in seconds
         uint latest = rmul(rpow(speed, now - rho, ONE), chi);
         uint chi_ = rdiv(latest, chi);
-        uint wad = rmul(debt_, chi_)-debt_;
+        uint wad = rmul(debt_, chi_) - debt_;
         return (latest, chi_, wad);
     }
 
@@ -139,7 +138,7 @@ contract Beans is DSNote {
             (uint latest, , uint wad) = compounding(fee);
             fees[fee].chi = latest;
             fees[fee].rho = uint48(now);
-            incDebt(fee, wad);   
+            incTotalDebt(fee, wad);   
         }
     }
 
@@ -155,14 +154,14 @@ contract Beans is DSNote {
         return calcDebt(fees[fee].chi, pie[loan]);
     }
     
-    function incDebt(uint fee, uint wad) private {
+    function incTotalDebt(uint fee, uint wad) private {
         fees[fee].debt = add(fees[fee].debt, wad);
-        debt = add(debt, wad);
+        totalDebt = add(totalDebt, wad);
     }
 
-    function decDebt(uint fee, uint wad) private {
+    function decTotalDebt(uint fee, uint wad) private {
         fees[fee].debt = sub(fees[fee].debt, wad);
-        debt = sub(debt, wad);
+        totalDebt = sub(totalDebt, wad);
     }
 
     function calcPie(uint chi, uint wad) private view returns (uint) {
