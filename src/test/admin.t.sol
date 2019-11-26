@@ -22,11 +22,13 @@ import { Admin } from "../admin.sol";
 import "./mock/appraiser.sol";
 import "./mock/admit.sol";
 import "./mock/pile.sol";
+import "./mock/beans.sol";
 
 contract AdminTest is DSTest {
     AdmitMock admit;
     PileMock pile;
     AppraiserMock appraiser;
+    BeansMock beans;
     Admin admin;
 
     address self;
@@ -36,13 +38,12 @@ contract AdminTest is DSTest {
         admit = new AdmitMock();
         pile = new PileMock();
         appraiser = new AppraiserMock();
-
-        admin = new Admin(address(admit),address(appraiser), address(pile));
+        beans = new BeansMock();
+        admin = new Admin(address(admit),address(appraiser), address(pile), address(beans));
     }
 
-
-    function whitelist(uint nft, address registry, uint principal, uint appraisal, uint fee, uint loan, uint pileCalls) public {
-        admin.whitelist(registry, nft, principal,appraisal,fee, self);
+    function whitelist(uint nft, address registry, uint principal, uint appraisal, uint fee, uint loan, uint pileCalls, uint beansCalls) public {
+        admin.whitelist(registry, nft, principal, appraisal, fee, self);
 
         // check admit
         assertEq(admit.callsAdmit(),1);
@@ -53,8 +54,10 @@ contract AdminTest is DSTest {
 
         // check pile
         assertEq(pile.callsFile(),pileCalls);
-        if (pileCalls == 2) {
-            assertEq(pile.speed(), fee);
+        assertEq(beans.callsFile(),beansCalls);
+        if (beansCalls == 1) {
+            assertEq(beans.speed(), fee);
+            assertEq(beans.fee(), fee);
         }
         assertEq(pile.loan(), loan);
         assertEq(pile.balance(), 0);
@@ -67,58 +70,58 @@ contract AdminTest is DSTest {
     }
 
 
-    function doWhitelist(uint shouldLoan, uint shouldPileCalls) public {
+    function doWhitelist(uint shouldLoan, uint shouldPileCalls, uint shouldBeansCalls) public {
         uint nft = 1;
         address registry = 0x29C76e6aD8f28BB1004902578Fb108c507Be341b;
         uint principal = 500 ether;
         uint appraisal = 600 ether;
         uint fee = uint(1000000564701133626865910626); // 5 % / daily
 
-        whitelist(nft, registry, principal, appraisal, fee, shouldLoan, shouldPileCalls);
+        whitelist(nft, registry, principal, appraisal, fee, shouldLoan, shouldPileCalls, shouldBeansCalls);
 
     }
 
     // --Tests--
     function testFailWhitelist() public {
         // fee not initialized
-        pile.setFeeReturn(0,0,0,0);
+        beans.setFeeReturn(0,0,0,0);
         uint shouldPileCalls = 1;
 
         uint shouldLoan = 97;
         admit.setAdmitReturn(shouldLoan);
 
-        doWhitelist(shouldLoan, shouldPileCalls);
+        doWhitelist(shouldLoan, shouldPileCalls, 0);
     }
 
 
     function testFileFee() public {
         uint fee = uint(1000000564701133626865910626);
         admin.file(fee, fee);
-        assertEq(pile.callsFile(), 1);
-        assertEq(pile.speed(), fee);
-        assertEq(pile.fee(), fee);
+        assertEq(beans.callsFile(), 1);
+        assertEq(beans.speed(), fee);
+        assertEq(beans.fee(), fee);
     }
 
     function testWhitelist() public {
         uint fee = uint(1000000564701133626865910626);
-        pile.setFeeReturn(0,0,fee,0);
+        beans.setFeeReturn(0,0,fee,0);
         uint shouldPileCalls = 1;
 
         uint shouldLoan = 97;
         admit.setAdmitReturn(shouldLoan);
 
-        doWhitelist(shouldLoan, shouldPileCalls);
+        doWhitelist(shouldLoan, shouldPileCalls, 0);
     }
 
     function testUpdateBlackList() public {
         uint fee = uint(1000000564701133626865910626);
-        pile.setFeeReturn(0,0,fee,0);
+        beans.setFeeReturn(0,0,fee,0);
         uint shouldPileCalls = 1;
 
         uint shouldLoan = 97;
         admit.setAdmitReturn(shouldLoan);
 
-        doWhitelist(shouldLoan, shouldPileCalls);
+        doWhitelist(shouldLoan, shouldPileCalls, 0);
 
         // first update
         uint principal = 1500 ether;

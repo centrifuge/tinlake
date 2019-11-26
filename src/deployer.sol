@@ -24,6 +24,7 @@ import { Collateral } from "./collateral.sol";
 import { Valve } from "./valve.sol";
 import { Admit } from "./admit.sol";
 import { Admin } from "./admin.sol";
+import { Beans } from "./beans.sol";
 
 contract LenderFabLike {
     function deploy(address,address,address) public returns (address);
@@ -38,6 +39,14 @@ contract LenderLike {
 
 contract WardsLike {
     function rely(address) public;
+}
+
+contract BeansFab {
+    function newBeans() public returns (Beans beans) {
+        beans = new Beans();
+        beans.rely(msg.sender);
+        beans.deny(address(this));
+    }
 }
 
 contract TitleFab {
@@ -57,8 +66,8 @@ contract LightSwitchFab {
 }
 
 contract PileFab {
-   function newPile(address tkn, address title) public returns (Pile pile) {
-        pile = new Pile(tkn, title);
+   function newPile(address tkn, address title, address beans) public returns (Pile pile) {
+        pile = new Pile(tkn, title, beans);
         pile.rely(msg.sender);
         pile.deny(address(this));
     }
@@ -98,8 +107,8 @@ contract AdmitFab {
 }
 
 contract AdminFab {
-    function newAdmin(address admit, address appraiser, address pile) public returns(Admin admin) {
-        admin = new Admin(admit, appraiser, pile);
+    function newAdmin(address admit, address appraiser, address pile, address beans) public returns(Admin admin) {
+        admin = new Admin(admit, appraiser, pile, beans);
         admin.rely(msg.sender);
         admin.deny(address(this));
     }
@@ -114,6 +123,7 @@ contract Deployer {
     DeskFab deskfab;
     AdmitFab admitfab;
     AdminFab adminfab;
+    BeansFab beansfab;
 
 
     address     public god;
@@ -129,8 +139,9 @@ contract Deployer {
     Admit       public admit;
     Admin       public admin;
     LenderLike  public lender;
+    Beans       public beans;
 
-    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, PileFab pilefab_, ShelfFab shelffab_, CollateralFab collateralfab_, DeskFab deskfab_, AdmitFab admitfab_, AdminFab adminfab_) public {
+    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, PileFab pilefab_, ShelfFab shelffab_, CollateralFab collateralfab_, DeskFab deskfab_, AdmitFab admitfab_, AdminFab adminfab_, BeansFab beansfab_) public {
         address self = msg.sender;
         god = god_;
         
@@ -142,8 +153,14 @@ contract Deployer {
         deskfab = deskfab_;
         admitfab = admitfab_;
         adminfab = adminfab_;
+        beansfab = beansfab_;
     }
 
+    function deployBeans() public {
+        beans = beansfab.newBeans();
+        beans.rely(god);
+    }
+    
     function deployTitle(string memory name, string memory symbol) public {
         title = titlefab.newTitle(name, symbol);
         title.rely(god);
@@ -158,21 +175,25 @@ contract Deployer {
         collateral = collateralfab.newCollateral();
         collateral.rely(god);
     }
+
     function deployPile(address currency_) public {
-        pile = pilefab.newPile(currency_, address(title));
+        pile = pilefab.newPile(currency_, address(title), address(beans));
         pile.rely(god);
     }
+
     function deployShelf(address appraiser) public {
         appraiser_ = appraiser;
         shelf = shelffab.newShelf(address(pile), appraiser_, address(title));
         shelf.rely(god);
         pile.rely(address(shelf));
     }
+
     function deployValve() public {
         valve = new Valve(address(collateral), address(shelf));
         valve.rely(god); 
         collateral.rely(address(valve));
     } 
+
     function deployDesk() public {
         desk = deskfab.newDesk(address(pile), address(valve), address(collateral), address(lightswitch));
         desk.rely(god);
@@ -181,12 +202,11 @@ contract Deployer {
     function deployAdmit() public {
         admit = admitfab.newAdmit(address(title), address(shelf));
         admit.rely(god);
-
     }
 
     function deployAdmin(address appraiser) public {
         appraiser_ = appraiser;
-        admin = adminfab.newAdmin(address(admit), appraiser_, address(pile));
+        admin = adminfab.newAdmin(address(admit), appraiser_, address(pile), address(beans));
         admin.rely(god);
     }
     function deploy() public {
@@ -196,6 +216,7 @@ contract Deployer {
         address desk_ = address(desk);
         address admit_ = address(admit);
         address admin_ = address(admin);
+        address beans_ = address(beans);
 
         // desk allowed to call
         pile.rely(desk_);
@@ -205,10 +226,14 @@ contract Deployer {
         title.rely(admit_);
         shelf.rely(admit_);
 
-
         // admin allowed to call
         admit.rely(admin_);
         pile.rely(admin_);
+        beans.rely(admin_);
+
+        // pile allowed to call
+        beans.rely(pile_);
+
         WardsLike(appraiser_).rely(admin_);
     }
 

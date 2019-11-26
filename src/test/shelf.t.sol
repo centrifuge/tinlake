@@ -109,7 +109,7 @@ contract ShelfTest is DSTest {
 
     function testFailRelease() public {
         // debt not repaid in pile
-        pile.setDebtReturn(100);
+        pile.setLoanDebtReturn(100);
         shelf.release(loan, address(this));
 
     }

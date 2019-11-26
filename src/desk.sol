@@ -70,7 +70,7 @@ contract Desk is Switchable {
 
     }
 
-    function depend (bytes32 what, address addr) public auth {
+    function depend(bytes32 what, address addr) public auth {
         if (what == "pile") { pile = PileLike(addr); }
         else if (what == "valve") { valve = ValveLike(addr); }
         else if (what == "collateral") { collateral = CollateralLike(addr); }
