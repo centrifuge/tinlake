@@ -73,7 +73,7 @@ contract Collector {
             spotter.seizure(loan);
         }
 
-        uint price = tag.price(loan);
+        uint wad = tag.price(loan);
 
 
 

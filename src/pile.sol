@@ -50,8 +50,6 @@ contract Pile is DSNote, TitleOwned {
         uint balance;
         uint fee;
         uint chi;
-        uint status;
-        uint paid;
     }
 
     mapping (uint => Fee) public fees;
@@ -231,13 +229,9 @@ contract Pile is DSNote, TitleOwned {
         return loans[loan].balance;
     }
 
-
-
-
-
     // recovery used for defaulted loans
     function recovery(uint loan, uint wad) public auth {
-        revert();
+
 
     }
 
