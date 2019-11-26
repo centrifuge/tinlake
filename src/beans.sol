@@ -16,12 +16,11 @@
 pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
-import "ds-test/test.sol";
 
 // Beans
-// Keeps track of interest rate accumulators (chi values) for all interest rates.
-// Calculates & stores debt for each loan according to its interest rate and pie value.
-contract Beans is DSNote, DSTest {
+// Keeps track of interest rate accumulators (chi values) for all interest rate categories.
+// Calculates debt each loan according to its interest rate category and pie value.
+contract Beans is DSNote {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth note { wards[usr] = 1; }

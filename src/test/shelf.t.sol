@@ -159,7 +159,7 @@ contract ShelfTest is DSTest {
 
         // together with second
         shelf.adjust(secondLoan);
-        assertEq(shelf.bags(), 10000+ apprFirstNFT);
+        assertEq(shelf.bags(), 10000 + apprFirstNFT);
 
         // decrease second nft
         appraiser.file(secondLoan, 8000);

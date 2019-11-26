@@ -30,7 +30,7 @@ contract ERC20Like {
     function totalSupply() public returns (uint256);
 }
 
-contract User is DSTest {
+contract User {
     ERC20Like tkn;
     ERC20Like collateral;
     Pile pile;
