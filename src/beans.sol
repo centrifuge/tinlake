@@ -134,7 +134,7 @@ contract Beans is DSNote {
 
     // --- Fee Accumulation ---
     function drip(uint fee) public {
-        if (now > fees[fee].rho) {
+        if (now >= fees[fee].rho) {
             (uint latest, , uint wad) = compounding(fee);
             fees[fee].chi = latest;
             fees[fee].rho = uint48(now);
