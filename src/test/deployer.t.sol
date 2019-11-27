@@ -76,6 +76,8 @@ contract DeployerTest is DSTest {
     AdmitFab admitfab;
     AdminFab adminfab;
 
+    Title title;
+
     function setUp() public {
         nft = new SimpleNFT();
         dai = new SimpleToken("DDAI", "Dummy Dai", "1", 0);

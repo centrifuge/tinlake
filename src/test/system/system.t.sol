@@ -22,6 +22,7 @@ import "../../appraiser.sol";
 import "../simple/nft.sol";
 import "../simple/token.sol";
 import "../simple/lender.sol";
+import "../../actions/proxydeployer.sol";
 
 contract ERC20Like {
     function transferFrom(address, address, uint) public;
@@ -36,6 +37,9 @@ contract User {
     Pile pile;
     Shelf shelf;
     Desk desk;
+
+    ProxyFactory factory;
+    ProxyRegistry registry;
 
     constructor (address pile_, address shelf_, address desk_, address tkn_, address collateral_) public {
         pile = Pile(pile_);
@@ -76,12 +80,19 @@ contract User {
     function doApproveCollateral(address usr, uint wad) public {
         collateral.approve(usr, wad);
     }
+
+    function doDeployProxy(address registry_) public returns (address proxy_) {
+        registry = ProxyRegistry(registry_);
+        return registry.build();
+    }
 }
 
 contract ManagerUser {
     // --- Data ---
     Deployer    deployer;
     Appraiser appraiser;
+
+    Title public title;
 
     constructor (Appraiser appraiser_) public {
         appraiser = appraiser_;
@@ -103,6 +114,10 @@ contract ManagerUser {
     function doAddFee(uint loan, uint fee, uint balance) public {
         deployer.pile().file(loan, fee, balance);
     }
+    function doAddTitle(address proxydeployer_) public {
+        title = new Title("ProxyTitle", "PPP");
+        title.rely(proxydeployer_);
+    }
 }
 
 contract Hevm {
@@ -121,11 +136,13 @@ contract SystemTest is DSTest {
     address      lenderfab;
     Appraiser    appraiser;
     Deployer     deployer;
+    ProxyDeployer proxydeployer;
 
     ManagerUser  manager;
     address      manager_;
     User borrower;
     address      borrower_;
+    address      proxy;
     Hevm hevm;
 
     function basicSetup() public {
@@ -146,12 +163,15 @@ contract SystemTest is DSTest {
         DeskFab deskfab = new DeskFab();
         AdmitFab admitfab = new AdmitFab();
         AdminFab adminfab = new AdminFab();
+        FactoryFab factoryfab = new FactoryFab();
+        RegistryFab registryfab = new RegistryFab();
         appraiser = new Appraiser();
 
         manager = new ManagerUser(appraiser);
         manager_ = address(manager);
 
         deployer = new Deployer(manager_, titlefab, lightswitchfab, pilefab, shelffab, collateralfab, deskfab, admitfab, adminfab);
+        proxydeployer = new ProxyDeployer(manager_, factoryfab, registryfab);
 
         appraiser.rely(manager_);
         appraiser.rely(address(deployer));
@@ -172,12 +192,21 @@ contract SystemTest is DSTest {
         manager.file(deployer);
     }
 
+    function proxySetUp() public {
+        // deploy a title for proxy access tokens and corresponding station
+        manager.doAddTitle(address(proxydeployer));
+        proxydeployer.deployProxyStation(address(manager.title()));
+
+        // deploy proxy, set borrower as owner
+        proxy = borrower.doDeployProxy(address(proxydeployer.registry()));
+    }
+
     function setUp() public {
         basicSetup();
+        proxySetUp();
         lenderfab = address(new SimpleLenderFab());
         deployer.deployLender(tkn_, lenderfab);
     }
-
 
     // lenderTokenAddr returns the address which holds the currency or collateral token for the lender
     function lenderTokenAddr(address lender) public returns(address) {

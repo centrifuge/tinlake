@@ -115,16 +115,16 @@ contract Deployer {
     address     public god;
     address     public appraiser_;
 
-    Title           public title;
-    LightSwitch     public lightswitch;
-    Pile            public pile;
-    Shelf           public shelf;
-    Collateral      public collateral;
-    Valve           public valve;
-    Desk            public desk;
-    Admit           public admit;
-    Admin           public admin;
-    LenderLike      public lender;
+    Title       public title;
+    LightSwitch public lightswitch;
+    Pile        public pile;
+    Shelf       public shelf;
+    Collateral  public collateral;
+    Valve       public valve;
+    Desk        public desk;
+    Admit       public admit;
+    Admin       public admin;
+    LenderLike  public lender;
 
     constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, PileFab pilefab_, ShelfFab shelffab_, CollateralFab collateralfab_, DeskFab deskfab_, AdmitFab admitfab_, AdminFab adminfab_) public {
         address self = msg.sender;

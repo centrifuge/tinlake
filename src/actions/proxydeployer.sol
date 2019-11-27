@@ -20,27 +20,18 @@ import { Proxy, ProxyFactory } from "./proxy.sol";
 import { ProxyRegistry } from "./registry.sol";
 
 contract FactoryFab {
-    function newProxyFactory(address title) public returns (ProxyFactory factory) {
-        factory = new ProxyFactory(title);
+    function newProxyFactory(address title_) public returns (ProxyFactory factory) {
+        factory = new ProxyFactory(title_);
     }
 }
 
 contract RegistryFab {
-    function newProxyRegistry(address factory) public returns (ProxyRegistry registry) {
-        registry = new ProxyRegistry(factory);
+    function newProxyRegistry(address factory_) public returns (ProxyRegistry registry) {
+        registry = new ProxyRegistry(factory_);
     }
 }
 
-contract TitleFab {
-    function newTitle(string memory name, string memory symbol) public returns (Title title) {
-        title = new Title(name, symbol);
-        title.rely(msg.sender);
-        title.deny(address(this));
-    }
-}
-
-contract Deployer {
-    TitleFab titlefab;
+contract ProxyDeployer {
     FactoryFab factoryfab;
     RegistryFab registryfab;
 
@@ -50,27 +41,24 @@ contract Deployer {
     ProxyFactory    public factory;
     ProxyRegistry   public registry;
 
-    constructor (address god_, TitleFab titlefab_, FactoryFab factoryfab_, RegistryFab registryfab_) public {
+    constructor (address god_, FactoryFab factoryfab_, RegistryFab registryfab_) public {
         address self = msg.sender;
         god = god_;
 
-        titlefab = titlefab_;
         factoryfab = factoryfab_;
         registryfab = registryfab_;
     }
 
-    function deployTitle(string memory name, string memory symbol) public {
-        title = titlefab.newTitle(name, symbol);
-        title.rely(god);
-    }
-
-    function deployProxyStation(Title title_) public {
-        factory = factoryfab.newProxyFactory(address(title_));
-        title_.rely(address(factory));
+    function deployProxyStation(address title_) public {
+        factory = factoryfab.newProxyFactory(title_);
+        Title title = Title(title_);
+        title.rely(address(factory));
         registry = registryfab.newProxyRegistry(address(factory));
+//        title.rely(address(registry));
     }
 
-    function deployProxy(ProxyRegistry registry_) public returns (address payable proxy) {
-       return registry.build();
+    function deployProxy(address registry_) public {
+       ProxyRegistry registry = ProxyRegistry(registry_);
+       registry.build();
     }
 }

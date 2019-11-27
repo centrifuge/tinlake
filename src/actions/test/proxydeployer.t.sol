@@ -20,25 +20,24 @@ import "ds-test/test.sol";
 import { Title } from "../../title.sol";
 import { Proxy, ProxyFactory } from "../proxy.sol";
 import { ProxyRegistry } from "../registry.sol";
-import "../deployer.sol";
+import "../proxydeployer.sol";
 
-contract DeployerTest is DSTest {
-    TitleFab titlefab;
+contract ProxyDeployerTest is DSTest {
     FactoryFab factoryfab;
     RegistryFab registryfab;
 
     Title title;
 
     function setUp() public {
-        titlefab = new TitleFab();
         factoryfab = new FactoryFab();
         registryfab = new RegistryFab();
     }
 
     function testDeploy() public logs_gas {
-        Deployer deployer = new Deployer(address(0), titlefab, factoryfab, registryfab);
-        deployer.deployTitle("Test", "TEST");
-        deployer.deployProxyStation(deployer.title());
-        deployer.deployProxy(deployer.registry());
+        ProxyDeployer deployer = new ProxyDeployer(address(0), factoryfab, registryfab);
+        title = new Title("Tinlake", "TLO");
+        title.rely(address(deployer));
+        deployer.deployProxyStation(address(title));
+        deployer.deployProxy(address(deployer.factory()));
     }
 }
