@@ -52,7 +52,7 @@ contract PileTest is DSTest {
 
         pile.borrow(loan, wad);
 
-        (uint debt, uint balance, uint fee, uint chi) = pile.loans(loan);
+        (uint debt, uint balance, uint fee) = pile.loans(loan);
         assertEq(pile.Balance(), totalBalance + wad);
         assertEq(pile.Debt(), totalDebt + wad);
         assertEq(debt, wad);
@@ -62,13 +62,13 @@ contract PileTest is DSTest {
 
     function withdraw(uint loan, uint wad) public {
         uint totalBalance = pile.Balance();
-        (,uint balance, ,) = pile.loans(loan);
+        (,uint balance, ) = pile.loans(loan);
         assertEq(balance,wad);
 
         pile.withdraw(loan,wad,address(this));
 
         assertEq(totalBalance-wad, pile.Balance());
-        (,uint newBalance, ,) = pile.loans(loan);
+        (,uint newBalance, ) = pile.loans(loan);
         assertEq(balance-wad, newBalance);
         assertEq(tkn.transferFromCalls(),1);
 
@@ -79,14 +79,14 @@ contract PileTest is DSTest {
 
     function repay(uint loan, uint wad) public {
         // pre state
-        (,,uint fee,) = pile.loans(loan);
+        (,,uint fee) = pile.loans(loan);
         uint totalDebt = pile.Debt();
         (uint totalFeeDebt,,,) = pile.fees(fee);
 
         pile.repay(loan, wad);
 
         // post state
-        (uint debt,uint balance, ,) = pile.loans(loan);
+        (uint debt,uint balance, ) = pile.loans(loan);
         (uint feeDebt,,,) = pile.fees(fee);
 
         assertEq(totalDebt-wad, pile.Debt());
@@ -199,12 +199,12 @@ contract PileTest is DSTest {
     }
 
     function checkDebt(uint loan, uint should) public {
-        (uint debt,,,) = pile.loans(loan);
+        uint debt = pile.debtOf(loan);
         assertEq(debt, should);
     }
 
     function checkDebt(uint loan, uint should, uint tolerance) public {
-        (uint debt,,,) = pile.loans(loan);
+        uint debt = pile.debtOf(loan);
         assertEq(debt/tolerance, should/tolerance);
     }
 
@@ -319,7 +319,7 @@ contract PileTest is DSTest {
         uint principal = 66 ether;
         pile.file(loan, fee, 0);
         borrow(loan, principal);
-        (uint debt1,,uint fee1 ,uint chi1) = pile.loans(loan);
+        (uint debt1,,uint fee1) = pile.loans(loan);
         assertEq(debt1, 66 ether);
         assertEq(fee, fee1);
 
@@ -334,10 +334,10 @@ contract PileTest is DSTest {
 
 
         (,  chiF, , ) = pile.fees(fee);
-        (uint debt2,,uint fee2 ,uint chi2) = pile.loans(loan);
+        (uint debt2,,uint fee2) = pile.loans(loan);
         assertEq(debt2, 69.3 ether); // 66 ether * 1,05**1
         assertEq(fee, fee2);
-        assertTrue(chi1 != chi2);
+
 
         // 2 day later
         hevm.warp(start + 3 days);
@@ -345,10 +345,9 @@ contract PileTest is DSTest {
         pile.collect(loan);
 
         (,  chiF, , ) = pile.fees(fee);
-        (uint debt3,,uint fee3 ,uint chi3) = pile.loans(loan);
+        (uint debt3,,uint fee3) = pile.loans(loan);
         assertEq(debt3, 76.40325  ether); //  66 ether * 1,05**3
         assertEq(fee, fee3);
-        assertTrue(chi2 != chi3);
     }
 
 
@@ -467,7 +466,7 @@ contract PileTest is DSTest {
 
         checkDebt(loan, 112 ether, 10);// 66 ether * 1,12
 
-        (uint debt,,,) = pile.loans(loan);
+        uint debt = pile.debtOf(loan);
         withdraw(loan, principal);
         repay(loan, debt);
     }

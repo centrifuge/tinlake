@@ -25,8 +25,8 @@ contract TokenLike {
     function approve(address, uint) public;
 }
 
-// Pile 
-// Manages the balance for the currency ERC20 in which borrowers want to borrow. 
+// Pile
+// Manages the balance for the currency ERC20 in which borrowers want to borrow.
 contract Pile is DSNote, TitleOwned {
     // --- Auth ---
     mapping (address => uint) public wards;
@@ -46,25 +46,25 @@ contract Pile is DSNote, TitleOwned {
     }
 
     struct Loan {
-        uint debt;
+        uint pie; // Used to calculate debt
         uint balance;
         uint fee;
-        uint chi;
 
-        uint principal;
         uint paid;
+        uint principal;
     }
 
-    function loans(uint loan) public returns ( uint debt, uint balance, uint fee, uint chi) {
-        return (loans_[loan].debt,loans_[loan].balance, loans_[loan].fee, loans_[loan].chi);
-
-        }
-
-    // profit and losses
+    // profits and losses
     int public yield;
 
     mapping (uint => Fee) public fees;
     mapping (uint => Loan) public loans_;
+
+    function loans(uint loan) public view returns (uint debt, uint balance, uint fee)  {
+        uint debt = debtOf(loan);
+        return (debt, loans_[loan].balance, loans_[loan].fee);
+    }
+
     uint public Balance;
     uint public Debt;
 
@@ -75,7 +75,6 @@ contract Pile is DSNote, TitleOwned {
         tkn = TokenLike(tkn_);
         fees[0].chi = ONE;
         fees[0].speed = ONE;
-
     }
 
     function depend(bytes32 what, address data) public auth {
@@ -86,7 +85,7 @@ contract Pile is DSNote, TitleOwned {
         loans_[loan].fee = fee_;
         loans_[loan].balance = balance_;
     }
-    
+
     function file(uint fee, uint speed_) public auth note {
         require(speed_ != 0);
         fees[fee].speed = speed_;
@@ -104,19 +103,19 @@ contract Pile is DSNote, TitleOwned {
                 switch mod(n, 2) case 0 { z := base } default { z := x }
                 let half := div(base, 2)  // for rounding.
                 for { n := div(n, 2) } n { n := div(n,2) } {
-                    let xx := mul(x, x)
-                    if iszero(eq(div(xx, x), x)) { revert(0,0) }
-                    let xxRound := add(xx, half)
-                    if lt(xxRound, xx) { revert(0,0) }
-                    x := div(xxRound, base)
-                    if mod(n,2) {
-                        let zx := mul(z, x)
-                        if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0,0) }
-                        let zxRound := add(zx, half)
-                        if lt(zxRound, zx) { revert(0,0) }
-                        z := div(zxRound, base)
-                    }
+                let xx := mul(x, x)
+                if iszero(eq(div(xx, x), x)) { revert(0,0) }
+                let xxRound := add(xx, half)
+                if lt(xxRound, xx) { revert(0,0) }
+                x := div(xxRound, base)
+                if mod(n,2) {
+                    let zx := mul(z, x)
+                    if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0,0) }
+                    let zxRound := add(zx, half)
+                    if lt(zxRound, zx) { revert(0,0) }
+                    z := div(zxRound, base)
                 }
+            }
             }
         }
     }
@@ -140,13 +139,8 @@ contract Pile is DSNote, TitleOwned {
     function rdiv(uint x, uint y) internal pure returns (uint z) {
         z = add(mul(x, ONE), y / 2) / y;
     }
-
-    function update(uint loan, uint chi) internal view returns (uint) {
-        uint chi_ = ONE;
-        if(loans_[loan].chi != 0) {
-            chi_ = rdiv(chi, loans_[loan].chi);
-        }
-        return rmul(loans_[loan].debt, chi_);
+    function div(uint x, uint y) internal pure returns (uint z) {
+        z = x / y;
     }
 
     function incDebt(uint fee, uint wad) internal {
@@ -167,7 +161,8 @@ contract Pile is DSNote, TitleOwned {
         if (now >= fees[fee].rho) {
             (chi, ,) = compounding(fee);
         }
-        return update(loan, chi);
+        uint debt = rmul(loans_[loan].pie, chi);
+        return debt;
     }
 
     function compounding(uint fee) public view returns (uint,uint,uint) {
@@ -200,31 +195,28 @@ contract Pile is DSNote, TitleOwned {
         if (now >= fees[fee].rho) {
             drip(fee);
         }
-        loans_[loan].debt = update(loan, fees[fee].chi);
-        loans_[loan].chi = fees[fee].chi;
     }
 
     // --- Pile ---
-    // want() is the the additional token that must be supplied for the Pile to cover all outstanding loans_. If negative, it's the reserves the Pile has.
+    // want() is the the additional token that must be supplied for the Pile to cover all outstanding loans_.
+    // If negative, it's the reserves the Pile has.
     function want() public view returns (int) {
         return int(Balance) - int(tkn.balanceOf(address(this))); // safemath
     }
 
     function initLoan(uint loan,uint wad, uint chi) internal {
-        loans_[loan].chi = chi;
-        loans_[loan].debt = add(loans_[loan].debt, wad);
-        loans_[loan].principal = loans_[loan].debt;
+        loans_[loan].pie  = rdiv(wad, chi);
         loans_[loan].balance = add(loans_[loan].balance, wad);
         Balance = add(Balance, wad);
-
     }
 
-    // borrow() creates a debt by the borrower for the specified amount. 
+    // borrow() creates a debt by the borrower for the specified amount.
     function borrow(uint loan, uint wad) public auth note {
         uint fee = loans_[loan].fee;
         drip(fee);
 
         initLoan(loan, wad,fees[fee].chi);
+
         incDebt(fee, wad);
     }
 
@@ -244,10 +236,10 @@ contract Pile is DSNote, TitleOwned {
     function recovery(uint loan, uint wad) public auth {
         doRepay(loan, wad);
 
-        uint loss = loans_[loan].debt;
+        uint loss = debtOf(loan);
         yield -= int(loss);
 
-        loans_[loan].debt = sub(loans_[loan].debt, loss);
+        loans_[loan].pie = 0;
         decDebt(loans_[loan].fee, loss);
     }
 
@@ -258,17 +250,24 @@ contract Pile is DSNote, TitleOwned {
 
     function doRepay(uint loan, uint wad) internal {
         collect(loan);
-        if (wad > loans_[loan].debt) {
-            wad = loans_[loan].debt;
+
+        // only repay max loan debt
+        uint debt = debtOf(loan);
+
+        if (wad > debt) {
+            wad = debt;
         }
 
         tkn.transferFrom(msg.sender, address(this), wad);
-        loans_[loan].debt = sub(loans_[loan].debt, wad);
+
+        uint chi = getChi(loan);
+        uint pie_ = rdiv(wad, chi);
+
+        loans_[loan].pie = sub(loans_[loan].pie, pie_);
         loans_[loan].paid = add(loans_[loan].paid , wad);
         decDebt(loans_[loan].fee, wad);
         tkn.approve(lender,wad);
     }
-
 
 
     // repay() a certain amount of token from the user to the Pile
@@ -278,14 +277,17 @@ contract Pile is DSNote, TitleOwned {
 
         doRepay(loan, wad);
 
-        if(loans_[loan].debt == 0) {
+        if(loans_[loan].pie == 0) {
             closeLoan(loan);
         }
-
-
     }
 
-    function debtOf(uint loan) public returns(uint) {
-        return loans_[loan].debt;
+    function debtOf(uint loan) public view returns(uint) {
+        uint chi = getChi(loan);
+        return rmul(loans_[loan].pie, chi);
+    }
+
+    function getChi(uint loan) internal view returns(uint) {
+        return fees[loans_[loan].fee].chi;
     }
 }
