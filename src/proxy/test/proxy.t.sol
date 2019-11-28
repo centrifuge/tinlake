@@ -3,7 +3,7 @@ pragma solidity >=0.4.24;
 import "ds-test/test.sol";
 
 import "../proxy.sol";
-import "../../title.sol";
+import "../../core/title.sol";
 
 
 contract SimpleCore {
