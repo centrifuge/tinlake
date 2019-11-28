@@ -33,6 +33,8 @@ contract PileTest is DSTest {
 
     Hevm hevm;
 
+    uint tolerance = 10; // ignore last digit
+
     function setUp() public {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
@@ -469,6 +471,14 @@ contract PileTest is DSTest {
         uint debt = pile.debtOf(loan);
         withdraw(loan, principal);
         repay(loan, debt);
+
+        // check profit
+        (,,,uint loanPrincipal, uint paid) = pile.loans_(loan);
+        assertEq(loanPrincipal, principal);
+        assertEq(pile.yield()/int(tolerance), 12 ether/int(tolerance));
+        assertEq(paid/tolerance, 112 ether/tolerance);
+
+
     }
 
     function testMaxChi() public {

@@ -50,8 +50,9 @@ contract Pile is DSNote, TitleOwned {
         uint balance;
         uint fee;
 
-        uint paid;
         uint principal;
+        uint paid;
+
     }
 
     // profits and losses
@@ -207,6 +208,7 @@ contract Pile is DSNote, TitleOwned {
     function initLoan(uint loan,uint wad, uint chi) internal {
         loans_[loan].pie  = rdiv(wad, chi);
         loans_[loan].balance = add(loans_[loan].balance, wad);
+        loans_[loan].principal = loans_[loan].balance;
         Balance = add(Balance, wad);
     }
 
