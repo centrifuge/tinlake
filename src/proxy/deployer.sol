@@ -15,7 +15,7 @@
 
 pragma solidity >=0.4.24;
 
-import { Title } from "../title.sol";
+import { Title } from "../core/title.sol";
 import { Proxy, ProxyFactory } from "./proxy.sol";
 import { ProxyRegistry } from "./registry.sol";
 
@@ -54,7 +54,6 @@ contract ProxyDeployer {
         Title title = Title(title_);
         title.rely(address(factory));
         registry = registryfab.newProxyRegistry(address(factory));
-//        title.rely(address(registry));
     }
 
     function deployProxy(address registry_) public {
