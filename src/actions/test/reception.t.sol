@@ -4,12 +4,12 @@ import "ds-test/test.sol";
 
 import "../reception.sol";
 
-import "../../proxy.sol";
-import "../../registry.sol";
+import "../../proxy/proxy.sol";
+import "../../proxy/registry.sol";
 
-import "../../../core/test/mock/shelf.sol";
-import "../../../core/test/mock/pile.sol";
-import "../../../core/test/mock/desk.sol";
+import "../../core/test/mock/shelf.sol";
+import "../../core/test/mock/pile.sol";
+import "../../core/test/mock/desk.sol";
 
 contract RegistryTest is DSTest {
     ProxyRegistry registry;
