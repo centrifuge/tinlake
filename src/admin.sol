@@ -28,6 +28,9 @@ contract AppraiserLike {
 
 contract PileLike {
     function file(uint loan, uint fee_, uint balance_) public;
+}
+
+contract BeansLike {
     function file(uint fee, uint speed_) public;
     function fees(uint) public view returns(uint, uint, uint, uint);
 }
@@ -44,20 +47,23 @@ contract Admin {
     AdmitLike admit;
     AppraiserLike appraiser;
     PileLike pile;
+    BeansLike beans;
 
     event Whitelisted(uint loan);
 
-    constructor (address admit_, address appraiser_, address pile_) public {
+    constructor (address admit_, address appraiser_, address pile_, address beans_) public {
         wards[msg.sender] = 1;
         admit = AdmitLike(admit_);
         appraiser = AppraiserLike(appraiser_);
         pile = PileLike(pile_);
+        beans = BeansLike(beans_);
     }
 
     function depend (bytes32 what, address addr) public auth {
         if (what == "pile") { pile = PileLike(addr); }
         else if (what == "admit") { admit = AdmitLike(addr); }
         else if (what == "appraiser") { appraiser = AppraiserLike(addr); }
+        else if (what == "beans") { beans = BeansLike(addr); }
         else revert();
     }
 
@@ -66,7 +72,7 @@ contract Admin {
         uint loan = admit.admit(registry, nft, principal, usr);
         appraiser.file(loan, appraisal);
 
-        (,,uint speed,) = pile.fees(fee);
+        (,, uint speed,) = beans.fees(fee);
         require(speed != 0);
 
         pile.file(loan, fee, 0);
@@ -75,7 +81,7 @@ contract Admin {
     }
 
     function file(uint fee, uint speed) public auth {
-        pile.file(fee, speed);
+        beans.file(fee, speed);
     }
 
     function update(uint loan, address registry, uint nft, uint principal, uint appraisal, uint fee) public auth {

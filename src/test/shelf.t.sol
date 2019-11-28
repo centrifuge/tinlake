@@ -109,7 +109,7 @@ contract ShelfTest is DSTest {
 
     function testFailRelease() public {
         // debt not repaid in pile
-        pile.setDebtReturn(100);
+        pile.setLoanDebtReturn(100);
         shelf.release(loan, address(this));
 
     }
@@ -159,7 +159,7 @@ contract ShelfTest is DSTest {
 
         // together with second
         shelf.adjust(secondLoan);
-        assertEq(shelf.bags(), 10000+ apprFirstNFT);
+        assertEq(shelf.bags(), 10000 + apprFirstNFT);
 
         // decrease second nft
         appraiser.file(secondLoan, 8000);
