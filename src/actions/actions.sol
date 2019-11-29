@@ -34,20 +34,28 @@ contract PileLike {
     function loans(uint loan) public returns (uint debt, uint balance, uint fee);
 }
 
-// Reception serves as an interface for the borrower in Tinlake.
+contract NFTLike {
+    function approve(address to, uint256 tokenId) public;
+}
 
-// Warning: Reception should be used as a library with a proxy contract
-contract Reception {
+// Actions serves as an interface for the borrower in Tinlake.
+
+// Warning: Actions should be used as a library with a proxy contract
+contract Actions {
     constructor () public {}
 
     // --- Reception ---
     function borrow(address desk_, address pile_, address shelf_, uint loan, address deposit) public {
-        ShelfLike(shelf_).deposit(loan, msg.sender);
+        ShelfLike(shelf_).deposit(loan, address(this));
         DeskLike(desk_).balance();
 
         // borrow max amount
         uint wad = PileLike(pile_).balanceOf(loan);
         PileLike(pile_).withdraw(loan, wad, deposit);
+    }
+
+    function approve(address nft_, address to, uint256 tokenId) public {
+        NFTLike(nft_).approve(to, tokenId);
     }
 
     function repay(address desk_, address pile_, address shelf_, uint loan, uint wad, address usr) public {

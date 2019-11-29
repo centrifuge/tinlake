@@ -1,4 +1,4 @@
-// Copyright (C) 2019 lucasvo
+// Copyright (C) 2019 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -22,13 +22,13 @@ import "../../appraiser.sol";
 import "../simple/nft.sol";
 import "../simple/token.sol";
 import "../simple/lender.sol";
-import "../../actions/proxydeployer.sol";
 
 contract ERC20Like {
     function transferFrom(address, address, uint) public;
     function mint(address, uint) public;
     function approve(address usr, uint wad) public returns (bool);
     function totalSupply() public returns (uint256);
+    function balanceOf(address usr) public returns (uint);
 }
 
 contract User {
@@ -37,9 +37,6 @@ contract User {
     Pile pile;
     Shelf shelf;
     Desk desk;
-
-    ProxyFactory factory;
-    ProxyRegistry registry;
 
     constructor (address pile_, address shelf_, address desk_, address tkn_, address collateral_) public {
         pile = Pile(pile_);
@@ -63,9 +60,9 @@ contract User {
     }
 
     function doRepay(uint loan, uint wad, address usr) public {
-       pile.repay(loan, wad);
-       shelf.release(loan, usr);
-       desk.balance();
+        pile.repay(loan, wad);
+        shelf.release(loan, usr);
+        desk.balance();
     }
 
     function doClose(uint loan, address usr) public {
@@ -77,13 +74,9 @@ contract User {
     function doApproveCurrency(address usr, uint wad) public {
         tkn.approve(usr, wad);
     }
+
     function doApproveCollateral(address usr, uint wad) public {
         collateral.approve(usr, wad);
-    }
-
-    function doDeployProxy(address registry_) public returns (address proxy_) {
-        registry = ProxyRegistry(registry_);
-        return registry.build();
     }
 }
 
@@ -91,8 +84,6 @@ contract ManagerUser {
     // --- Data ---
     Deployer    deployer;
     Appraiser appraiser;
-
-    Title public title;
 
     constructor (Appraiser appraiser_) public {
         appraiser = appraiser_;
@@ -111,12 +102,9 @@ contract ManagerUser {
     function doInitFee(uint fee, uint speed) public {
         deployer.admin().file(fee, speed);
     }
+
     function doAddFee(uint loan, uint fee, uint balance) public {
         deployer.pile().file(loan, fee, balance);
-    }
-    function doAddTitle(address proxydeployer_) public {
-        title = new Title("ProxyTitle", "PPP");
-        title.rely(proxydeployer_);
     }
 }
 
@@ -129,20 +117,18 @@ contract ShelfLike {
 }
 
 contract SystemTest is DSTest {
-    SimpleNFT    nft;
-    address      nft_;
-    SimpleToken  tkn;
+    SimpleNFT    public nft;
+    address      public nft_;
+    SimpleToken  public tkn;
     address      tkn_;
     address      lenderfab;
     Appraiser    appraiser;
-    Deployer     deployer;
-    ProxyDeployer proxydeployer;
+    Deployer     public deployer;
 
     ManagerUser  manager;
     address      manager_;
     User borrower;
     address      borrower_;
-    address      proxy;
     Hevm hevm;
 
     function basicSetup() public {
@@ -163,21 +149,20 @@ contract SystemTest is DSTest {
         DeskFab deskfab = new DeskFab();
         AdmitFab admitfab = new AdmitFab();
         AdminFab adminfab = new AdminFab();
-        FactoryFab factoryfab = new FactoryFab();
-        RegistryFab registryfab = new RegistryFab();
+        BeansFab beansfab = new BeansFab();
         appraiser = new Appraiser();
 
         manager = new ManagerUser(appraiser);
         manager_ = address(manager);
 
-        deployer = new Deployer(manager_, titlefab, lightswitchfab, pilefab, shelffab, collateralfab, deskfab, admitfab, adminfab);
-        proxydeployer = new ProxyDeployer(manager_, factoryfab, registryfab);
+        deployer = new Deployer(manager_, titlefab, lightswitchfab, pilefab, shelffab, collateralfab, deskfab, admitfab, adminfab, beansfab);
 
         appraiser.rely(manager_);
         appraiser.rely(address(deployer));
 
         deployer.deployLightSwitch();
         deployer.deployTitle("Tinlake Loan", "TLNT");
+        deployer.deployBeans();
         deployer.deployCollateral();
         deployer.deployPile(tkn_);
         deployer.deployShelf(address(appraiser));
@@ -192,18 +177,8 @@ contract SystemTest is DSTest {
         manager.file(deployer);
     }
 
-    function proxySetUp() public {
-        // deploy a title for proxy access tokens and corresponding station
-        manager.doAddTitle(address(proxydeployer));
-        proxydeployer.deployProxyStation(address(manager.title()));
-
-        // deploy proxy, set borrower as owner
-        proxy = borrower.doDeployProxy(address(proxydeployer.registry()));
-    }
-
     function setUp() public {
         basicSetup();
-        proxySetUp();
         lenderfab = address(new SimpleLenderFab());
         deployer.deployLender(tkn_, lenderfab);
     }
@@ -251,8 +226,7 @@ contract SystemTest is DSTest {
         checkAfterBorrow(loan, tokenId, principal, appraisal);
     }
 
-
-    function defaultLoan() public returns(uint tokenId, uint principal, uint appraisal, uint fee) {
+    function defaultLoan() public pure returns(uint tokenId, uint principal, uint appraisal, uint fee) {
         uint tokenId = 1;
         uint principal = 1000 ether;
         uint appraisal = 1200 ether;
@@ -265,10 +239,8 @@ contract SystemTest is DSTest {
 
     function setupOngoingLoan() public returns (uint loan, uint tokenId, uint principal, uint appraisal, uint fee) {
         (uint tokenId, uint principal, uint appraisal, uint fee) = defaultLoan();
-
         // create borrower collateral nft
         nft.mint(borrower_, tokenId);
-
         uint loan = whitelist(tokenId, nft_, principal, appraisal, borrower_, fee);
         borrow(loan, tokenId, principal, appraisal);
 
@@ -314,10 +286,9 @@ contract SystemTest is DSTest {
         // close without defined amount
         borrower.doClose(loan, borrower_);
 
-//        uint totalT = uint(tkn.totalSupply());
-//        checkAfterRepay(loan, tokenId,totalT, 0, lenderShould);
+        //        uint totalT = uint(tkn.totalSupply());
+        //        checkAfterRepay(loan, tokenId,totalT, 0, lenderShould);
     }
-
 
     // --- Tests ---
 
@@ -341,8 +312,6 @@ contract SystemTest is DSTest {
         borrowRepay(tokenId, principal, appraisal, fee);
     }
 
-
-
     function testMediumSizeLoans() public {
         (uint tokenId, uint principal, uint appraisal, uint fee) = defaultLoan();
 
@@ -350,7 +319,6 @@ contract SystemTest is DSTest {
         principal = 1000000 ether;
 
         borrowRepay(tokenId, principal, appraisal, fee);
-
     }
 
     function testHighSizeLoans() public {
@@ -360,7 +328,6 @@ contract SystemTest is DSTest {
         principal = 100000000 ether; // 100 million
 
         borrowRepay(tokenId, principal, appraisal, fee);
-
     }
 
     function testRepayFullAmount() public {
@@ -379,9 +346,7 @@ contract SystemTest is DSTest {
 
         uint totalT = uint(tkn.totalSupply());
         checkAfterRepay(loan, tokenId,totalT , 0, lenderShould);
-
     }
-
 
     function testLongOngoing() public {
         (uint loan, uint tokenId, uint principal, uint appraisal, uint fee) = setupOngoingLoan();
@@ -495,4 +460,3 @@ contract SystemTest is DSTest {
         assertEq(tkn.balanceOf(borrower_), 100);
     }
 }
-

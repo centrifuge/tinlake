@@ -20,7 +20,7 @@ import "ds-test/test.sol";
 import { Title } from "../../core/title.sol";
 import { Proxy, ProxyFactory } from "../proxy.sol";
 import { ProxyRegistry } from "../registry.sol";
-import "../proxydeployer.sol";
+import "../deployer.sol";
 
 contract ProxyDeployerTest is DSTest {
     FactoryFab factoryfab;
@@ -38,6 +38,6 @@ contract ProxyDeployerTest is DSTest {
         title = new Title("Tinlake", "TLO");
         title.rely(address(deployer));
         deployer.deployProxyStation(address(title));
-        deployer.deployProxy(address(deployer.factory()));
+        deployer.deployProxy(address(deployer.factory()), address(this));
     }
 }

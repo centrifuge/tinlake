@@ -31,6 +31,14 @@ contract RegistryFab {
     }
 }
 
+contract AccessRegistryFab {
+    function newAccessRegistry(string memory name, string memory symbol) public returns (Title accessRegistry) {
+        accessRegistry = new Title(name, symbol);
+        accessRegistry.rely(msg.sender);
+        accessRegistry.deny(address(this));
+    }
+}
+
 contract ProxyDeployer {
     FactoryFab factoryfab;
     RegistryFab registryfab;
@@ -49,15 +57,14 @@ contract ProxyDeployer {
         registryfab = registryfab_;
     }
 
-    function deployProxyStation(address title_) public {
+    function deployProxyStation(address title_) public returns (address registry){
+        require(Title(title_).wards(address(this)) == 1);
         factory = factoryfab.newProxyFactory(title_);
-        Title title = Title(title_);
-        title.rely(address(factory));
-        registry = registryfab.newProxyRegistry(address(factory));
+        Title(title_).rely(address(factory));
+        return address(registryfab.newProxyRegistry(address(factory)));
     }
 
-    function deployProxy(address registry_) public {
-       ProxyRegistry registry = ProxyRegistry(registry_);
-       registry.build();
+    function deployProxy(address registry_, address user_) public returns (address payable proxy) {
+       return ProxyRegistry(registry_).build(user_);
     }
 }

@@ -2,7 +2,7 @@ pragma solidity >=0.4.24;
 
 import "ds-test/test.sol";
 
-import "../reception.sol";
+import "../actions.sol";
 
 import "../../proxy/proxy.sol";
 import "../../proxy/registry.sol";
@@ -23,7 +23,7 @@ contract RegistryTest is DSTest {
     PileMock pile;
     DeskMock desk;
 
-    Reception reception;
+    Actions actions;
 
     function buildProxy() public returns(Proxy) {
         title = new Title("Tinlake", "TLO");
@@ -42,13 +42,13 @@ contract RegistryTest is DSTest {
         pile = new PileMock();
         desk = new DeskMock();
 
-        reception = new Reception();
+        actions = new Actions();
     }
     // --- Checks ---
     function checkBorrow(uint loan, address deposit, uint balance) public {
         assertEq(shelf.loan(), loan);
         assertEq(shelf.depositCalls(), 1);
-        assertEq(shelf.usr(), address(this));
+        assertEq(shelf.usr(), address(proxy));
 
         assertEq(desk.callsBalance(), 1);
 
@@ -85,7 +85,7 @@ contract RegistryTest is DSTest {
         pile.setBalanceReturn(balance);
 
         bytes memory data = abi.encodeWithSignature("borrow(address,address,address,uint256,address)", address(desk), address(pile), address(shelf), loan, deposit);
-        proxy.execute(address(reception), data);
+        proxy.execute(address(actions), data);
         checkBorrow(loan, deposit, balance);
     }
 
@@ -93,7 +93,7 @@ contract RegistryTest is DSTest {
         (uint loan, address deposit, uint debt) = init();
 
         bytes memory data = abi.encodeWithSignature("repay(address,address,address,uint256,uint256,address)", address(desk), address(pile), address(shelf), loan, debt, deposit);
-        proxy.execute(address(reception), data);
+        proxy.execute(address(actions), data);
         checkRepay(loan, deposit, debt);
     }
 
@@ -102,7 +102,7 @@ contract RegistryTest is DSTest {
         pile.setLoanReturn(debt, 0, 0, 0);
 
         bytes memory data = abi.encodeWithSignature("close(address,address,address,uint256,address)", address(desk), address(pile), address(shelf), loan, deposit);
-        proxy.execute(address(reception), data);
+        proxy.execute(address(actions), data);
 
         assertEq(pile.callsCollect(), 1);
         checkRepay(loan, deposit, debt);
