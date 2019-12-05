@@ -21,7 +21,6 @@ import { SystemTest, ERC20Like } from "../core/test/system/system.t.sol";
 import { Deployer } from "../core/deployer.sol";
 import { ProxyDeployer, AccessRegistryFab, RegistryFab, FactoryFab } from "../proxy/deployer.sol";
 import { Title } from "../core/title.sol";
-import { Beans } from "../core/beans.sol";
 import { Actions } from "../actions/actions.sol";
 import { Proxy } from "../proxy/proxy.sol";
 import { User } from "./user.sol";
@@ -138,15 +137,17 @@ contract FunctionalTest is DSTest {
         systemTest.hevm().warp(now + 10 days);
 
         uint extra = 100000000000 ether;
+        // add liquidity for repayment
         setUpRepayLiquidity(proxy_, extra);
         assertEq(ERC20Like(tinlake.currency_).balanceOf(proxy_), extra + principal);
         assertEq(Title(tinlake.title_).ownerOf(loan), proxy_);
-        borrower.approveERC20(proxy_, actions_, tinlake.pile_, tinlake.currency_);
 
+        // approve token transfer and close/repay loan
+        borrower.approveERC20(proxy_, actions_, tinlake.pile_, tinlake.currency_);
         PileLike(tinlake.pile_).collect(loan);
         uint debt = PileLike(tinlake.pile_).debtOf(loan);
-
         borrower.close(proxy_, actions_, tinlake.desk_, tinlake.pile_, tinlake.shelf_, loan, proxy_);
+
         assertEq(ERC20Like(tinlake.currency_).balanceOf(proxy_), extra + principal -  debt);
         assertEq(PileLike(tinlake.pile_).balanceOf(loan), 0);
         assertEq(Title(tinlake.collateralNFT_).ownerOf(tokenId), proxy_);
