@@ -128,20 +128,11 @@ contract Pile is DSNote, TitleOwned {
         beans.drip(loans_[loan].fee);
     }
 
-
-    // recovery used for defaulted loans_
-    function recovery(uint loan, uint wad) public auth {
-        doRepay(loan, wad);
-
-        uint fee = loans_[loan].fee;
-        uint loss = beans.debtOf(loan, fee);
-
-        beans.decLoanDebt(loan, loans_[loan].fee, loss);
-    }
-
-    function doRepay(uint loan, uint wad) internal {
+    // repay() a certain amount of token from the user to the Pile
+    function repay(uint loan, uint wad) public owner(loan) note {
+        // moves currency from usr to pile and reduces debt
+        require(loans_[loan].balance == 0,"before repay loan needs to be withdrawn");
         collect(loan);
-
         uint fee = loans_[loan].fee;
         uint debt = beans.debtOf(loan, fee);
 
@@ -153,14 +144,6 @@ contract Pile is DSNote, TitleOwned {
         tkn.transferFrom(msg.sender, address(this), wad);
         beans.decLoanDebt(loan, fee, wad);
         tkn.approve(lender, wad);
-    }
-
-    // repay() a certain amount of token from the user to the Pile
-    function repay(uint loan, uint wad) public owner(loan) note {
-        // moves currency from usr to pile and reduces debt
-        require(loans_[loan].balance == 0,"before repay loan needs to be withdrawn");
-        doRepay(loan, wad);
-
     }
 
     function debtOf(uint loan) public returns (uint) {
