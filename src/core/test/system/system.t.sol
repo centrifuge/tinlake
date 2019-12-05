@@ -120,7 +120,7 @@ contract SystemTest is DSTest {
     SimpleNFT    public nft;
     address      public nft_;
     SimpleToken  public tkn;
-    address      tkn_;
+    address      public tkn_;
     address      lenderfab;
     Appraiser    appraiser;
     Deployer     public deployer;
@@ -129,7 +129,7 @@ contract SystemTest is DSTest {
     address      manager_;
     User borrower;
     address      borrower_;
-    Hevm hevm;
+    Hevm public hevm;
 
     function basicSetup() public {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);

@@ -31,11 +31,16 @@ contract PileLike {
     function repay(uint loan, uint wad) public ;
     function balanceOf(uint loan) public view returns (uint);
     function collect(uint loan) public;
-    function loans(uint loan) public returns (uint debt, uint balance, uint fee);
+    function loans(uint loan) public returns (uint, uint, uint);
+    function debtOf(uint loan) public returns (uint);
 }
 
 contract NFTLike {
     function approve(address to, uint256 tokenId) public;
+}
+
+contract ERC20Like {
+    function approve(address usr_, uint wad) public returns (bool);
 }
 
 // Actions serves as an interface for the borrower in Tinlake.
@@ -58,16 +63,19 @@ contract Actions {
         NFTLike(nft_).approve(to, tokenId);
     }
 
+    function close(address desk_, address pile_, address shelf_, uint loan, address usr) public {
+        PileLike(pile_).collect(loan);
+        uint debt = PileLike(pile_).debtOf(loan);
+        repay(desk_, pile_, shelf_, loan, debt , usr);
+    }
+
     function repay(address desk_, address pile_, address shelf_, uint loan, uint wad, address usr) public {
         PileLike(pile_).repay(loan, wad);
         ShelfLike(shelf_).release(loan, usr);
         DeskLike(desk_).balance();
     }
 
-
-    function close(address desk_, address pile_, address shelf_, uint loan, address usr) public {
-        PileLike(pile_).collect(loan);
-        (uint debt,,) = PileLike(pile_).loans(loan);
-        repay(desk_, pile_, shelf_, loan, debt , usr);
+    function approveERC20(address tkn_, address pile_) public {
+        ERC20Like(tkn_).approve(pile_, uint(-1));
     }
 }

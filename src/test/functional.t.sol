@@ -21,16 +21,23 @@ import { SystemTest, ERC20Like } from "../core/test/system/system.t.sol";
 import { Deployer } from "../core/deployer.sol";
 import { ProxyDeployer, AccessRegistryFab, RegistryFab, FactoryFab } from "../proxy/deployer.sol";
 import { Title } from "../core/title.sol";
+import { Beans } from "../core/beans.sol";
 import { Actions } from "../actions/actions.sol";
 import { Proxy } from "../proxy/proxy.sol";
-import { Executor } from "./executor.sol";
+import { User } from "./user.sol";
+
+contract PileLike {
+    function balanceOf(uint loan) public returns (uint);
+    function debtOf(uint loan) public returns (uint);
+    function collect(uint loan) public;
+}
 
 contract FunctionalTest is DSTest {
 
     Deployer coreDeployer;
     ProxyDeployer proxyDeployer;
     SystemTest systemTest;
-    Executor  executor;
+    User borrower;
 
     // proxy addresses
     address registry_;
@@ -61,12 +68,12 @@ contract FunctionalTest is DSTest {
     }
 
     function buildProxy() public returns (address payable) {
-       return proxyDeployer.deployProxy(registry_, address(this));
+       return proxyDeployer.deployProxy(registry_, address(borrower));
     }
 
     function setUpActions() public {
         actions_ = address(new Actions());
-        executor = new Executor();
+        borrower = new User();
     }
 
     function fetchTinlakeAddr() public {
@@ -76,7 +83,7 @@ contract FunctionalTest is DSTest {
             address(coreDeployer.pile()),
             address(coreDeployer.desk()),
             address(coreDeployer.title()),
-            address(systemTest.tkn())
+            systemTest.tkn_()
         );
     }
 
@@ -84,10 +91,10 @@ contract FunctionalTest is DSTest {
         systemTest = new SystemTest();
         systemTest.setUp();
         coreDeployer = systemTest.deployer();
+        setUpActions();
 
         setUpProxyStation();
         proxy_ = buildProxy();
-        setUpActions();
 
         fetchTinlakeAddr();
     }
@@ -97,36 +104,52 @@ contract FunctionalTest is DSTest {
         systemTest.nft().mint(proxy_, tokenId);
     }
 
-    function testSimpleBorrow () public {
+    function setUpRepayLiquidity(address proxy_, uint liquidity) public  {
+        ERC20Like(tinlake.currency_).mint(proxy_, liquidity);
+        // allow pile to spend borrower tokens
+        ERC20Like(tinlake.currency_).approve(tinlake.pile_, uint(-1));
+    }
+
+    function testSimpleBorrow() public {
         // proxy owns collateral NFT
         (uint tokenId, uint principal, uint appraisal, uint fee) = systemTest.defaultLoan();
         mintCollateralNFT(proxy_, tokenId);
-        //check collateral NFT owner
         assertEq(Title(tinlake.collateralNFT_).ownerOf(tokenId), proxy_);
         // whitelist
         uint loan = systemTest.whitelist(tokenId, tinlake.collateralNFT_, principal, appraisal, proxy_, fee);
-        // check loan NFT owner
         assertEq(Title(tinlake.title_).ownerOf(loan), proxy_);
-        emit log_named_address('nft', tinlake.collateralNFT_);
-
-//        executor.approve(proxy_,  actions_, tinlake.collateralNFT_, tinlake.shelf_, tokenId);
-        approve(proxy_,  actions_, tinlake.collateralNFT_, tinlake.shelf_, tokenId);
+        // approve collateral NFT transfer
+        borrower.approve(proxy_,  actions_, tinlake.collateralNFT_, tinlake.shelf_, tokenId);
         assertEq(Title(tinlake.collateralNFT_).getApproved(tokenId), tinlake.shelf_);
-
-//        executor.borrow(proxy_, actions_, tinlake.desk_, tinlake.pile_, tinlake.shelf_, loan, proxy_);
-        borrow(proxy_, actions_, tinlake.desk_, tinlake.pile_, tinlake.shelf_, loan, proxy_);
+        // borrow action
+        borrower.borrow(proxy_, actions_, tinlake.desk_, tinlake.pile_, tinlake.shelf_, loan, proxy_);
         assertEq(Title(tinlake.collateralNFT_).ownerOf(tokenId), tinlake.shelf_);
         assertEq(ERC20Like(tinlake.currency_).balanceOf(proxy_), principal);
     }
 
-    function approve(address payable proxy_, address actions_, address nft_, address approvee_, uint tokenId) public returns (bytes memory) {
-        bytes memory data = abi.encodeWithSignature("approve(address,address,uint256)", nft_, approvee_, tokenId);
-        return Proxy(proxy_).execute(actions_, data);
+    function testBorrowRepay() public {
+        // setup initial loan + borrow
+        (uint tokenId, uint principal, uint appraisal, uint fee) = systemTest.defaultLoan();
+        mintCollateralNFT(proxy_, tokenId);
+        uint loan = systemTest.whitelist(tokenId, tinlake.collateralNFT_, principal, appraisal, proxy_, fee);
+        borrower.approve(proxy_,  actions_, tinlake.collateralNFT_, tinlake.shelf_, tokenId);
+        borrower.borrow(proxy_, actions_, tinlake.desk_, tinlake.pile_, tinlake.shelf_, loan, proxy_);
+
+        systemTest.hevm().warp(now + 10 days);
+
+        uint extra = 100000000000 ether;
+        setUpRepayLiquidity(proxy_, extra);
+        assertEq(ERC20Like(tinlake.currency_).balanceOf(proxy_), extra + principal);
+        assertEq(Title(tinlake.title_).ownerOf(loan), proxy_);
+        borrower.approveERC20(proxy_, actions_, tinlake.pile_, tinlake.currency_);
+
+        PileLike(tinlake.pile_).collect(loan);
+        uint debt = PileLike(tinlake.pile_).debtOf(loan);
+
+        borrower.close(proxy_, actions_, tinlake.desk_, tinlake.pile_, tinlake.shelf_, loan, proxy_);
+        assertEq(ERC20Like(tinlake.currency_).balanceOf(proxy_), extra + principal -  debt);
+        assertEq(PileLike(tinlake.pile_).balanceOf(loan), 0);
+        assertEq(Title(tinlake.collateralNFT_).ownerOf(tokenId), proxy_);
     }
 
-    function borrow(address payable proxy_, address actions_, address desk_, address pile_, address shelf_, uint loan, address deposit) public returns (bytes memory) {
-        bytes memory data = abi.encodeWithSignature("borrow(address,address,address,uint256,address)", desk_, pile_, shelf_, loan, deposit);
-        return Proxy(proxy_).execute(actions_, data);
-    }
 }
-
