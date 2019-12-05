@@ -56,14 +56,14 @@ contract FunctionalTest is DSTest {
 
     function setUpProxyStation() public {
         AccessRegistryFab accessRegistryFab = new AccessRegistryFab();
-        Title accessRegistry = accessRegistryFab.newAccessRegistry("Tinlake", "TLT");
+        Title accessRegistry = accessRegistryFab.newAccessNFTRegistry("Tinlake", "TLT");
 
         FactoryFab factoryfab = new FactoryFab();
         RegistryFab registryfab = new RegistryFab();
 
         proxyDeployer = new ProxyDeployer(address(this), factoryfab, registryfab);
         accessRegistry.rely(address(proxyDeployer));
-        registry_ = proxyDeployer.deployProxyStation(address(accessRegistry));
+        registry_ = proxyDeployer.deployProxyRegistry(address(accessRegistry));
     }
 
     function buildProxy() public returns (address payable) {
@@ -143,7 +143,7 @@ contract FunctionalTest is DSTest {
         assertEq(Title(tinlake.title_).ownerOf(loan), proxy_);
 
         // approve token transfer and close/repay loan
-        borrower.approveERC20(proxy_, actions_, tinlake.pile_, tinlake.currency_);
+        borrower.approveERC20(proxy_, actions_,  tinlake.currency_, tinlake.pile_);
         PileLike(tinlake.pile_).collect(loan);
         uint debt = PileLike(tinlake.pile_).debtOf(loan);
         borrower.close(proxy_, actions_, tinlake.desk_, tinlake.pile_, tinlake.shelf_, loan, proxy_);

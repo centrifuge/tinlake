@@ -32,7 +32,7 @@ contract RegistryFab {
 }
 
 contract AccessRegistryFab {
-    function newAccessRegistry(string memory name, string memory symbol) public returns (Title accessRegistry) {
+    function newAccessNFTRegistry(string memory name, string memory symbol) public returns (Title accessRegistry) {
         accessRegistry = new Title(name, symbol);
         accessRegistry.rely(msg.sender);
         accessRegistry.deny(address(this));
@@ -57,7 +57,7 @@ contract ProxyDeployer {
         registryfab = registryfab_;
     }
 
-    function deployProxyStation(address title_) public returns (address registry){
+    function deployProxyRegistry(address title_) public returns (address registry){
         require(Title(title_).wards(address(this)) == 1);
         factory = factoryfab.newProxyFactory(title_);
         Title(title_).rely(address(factory));

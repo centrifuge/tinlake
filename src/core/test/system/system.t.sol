@@ -226,7 +226,7 @@ contract SystemTest is DSTest {
         checkAfterBorrow(loan, tokenId, principal, appraisal);
     }
 
-    function defaultLoan() public pure returns(uint tokenId, uint principal, uint appraisal, uint fee) {
+    function defaultLoan() public returns(uint tokenId, uint principal, uint appraisal, uint fee) {
         uint tokenId = 1;
         uint principal = 1000 ether;
         uint appraisal = 1200 ether;
@@ -286,8 +286,8 @@ contract SystemTest is DSTest {
         // close without defined amount
         borrower.doClose(loan, borrower_);
 
-        //        uint totalT = uint(tkn.totalSupply());
-        //        checkAfterRepay(loan, tokenId,totalT, 0, lenderShould);
+        uint totalT = uint(tkn.totalSupply());
+        checkAfterRepay(loan, tokenId,totalT, 0, lenderShould);
     }
 
     // --- Tests ---
