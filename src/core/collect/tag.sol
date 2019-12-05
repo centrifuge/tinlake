@@ -20,6 +20,7 @@ pragma solidity >=0.4.24;
 contract PileLike {
     function loans(uint loan) public returns (uint, uint, uint ,uint);
     function collect(uint loan) public;
+    function debtOf(uint loan) public returns (uint);
 }
 
 contract Tag {
@@ -29,15 +30,41 @@ contract Tag {
     function deny(address usr) public auth { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
 
+    // --- Math ---
+    uint256 constant ONE = 10 ** 27;
+
+    function rmul(uint x, uint y) internal pure returns (uint z) {
+        z = mul(x, y) / ONE;
+    }
+    function mul(uint x, uint y) internal pure returns (uint z) {
+        require(y == 0 || (z = x * y) / y == x);
+    }
+
     PileLike pile;
 
+    uint public globalDiscount;
+    mapping (uint => uint) public discount;
+
+    function reduce(uint discount_) public auth {
+        globalDiscount = discount_;
+    }
+
+    function reduce(uint loan, uint discount_) public auth {
+        discount[loan] = discount_;
+    }
+
     constructor(address pile_) public {
-        pile = PileLike(pile);
+        wards[msg.sender] = 1;
+        pile = PileLike(pile_);
+        globalDiscount = ONE;
     }
 
     function price(uint loan) public returns (uint) {
         pile.collect(loan);
-        (uint debt,,,) = pile.loans(loan);
-        return debt;
+        if (discount[loan] == 0) {
+            return rmul(pile.debtOf(loan), globalDiscount);
+
+        }
+        return rmul(pile.debtOf(loan), discount[loan]);
     }
 }
