@@ -31,7 +31,7 @@ contract PileLike {
     function repay(uint loan, uint wad) public ;
     function balanceOf(uint loan) public view returns (uint);
     function collect(uint loan) public;
-    function loans(uint loan) public returns (uint debt, uint balance, uint fee, uint chi);
+    function loans(uint loan) public returns (uint debt, uint balance, uint fee);
 }
 
 // Reception serves as an interface for the borrower in Tinlake.
@@ -56,9 +56,10 @@ contract Reception {
         DeskLike(desk_).balance();
     }
 
+
     function close(address desk_, address pile_, address shelf_, uint loan, address usr) public {
         PileLike(pile_).collect(loan);
-        (uint debt,,,) = PileLike(pile_).loans(loan);
+        (uint debt,,) = PileLike(pile_).loans(loan);
         repay(desk_, pile_, shelf_, loan, debt , usr);
     }
 }

@@ -73,6 +73,7 @@ contract User {
     function doApproveCurrency(address usr, uint wad) public {
         tkn.approve(usr, wad);
     }
+
     function doApproveCollateral(address usr, uint wad) public {
         collateral.approve(usr, wad);
     }
@@ -100,6 +101,7 @@ contract ManagerUser {
     function doInitFee(uint fee, uint speed) public {
         deployer.admin().file(fee, speed);
     }
+
     function doAddFee(uint loan, uint fee, uint balance) public {
         deployer.pile().file(loan, fee, balance);
     }
@@ -146,18 +148,20 @@ contract SystemTest is DSTest {
         DeskFab deskfab = new DeskFab();
         AdmitFab admitfab = new AdmitFab();
         AdminFab adminfab = new AdminFab();
+        BeansFab beansfab = new BeansFab();
         appraiser = new Appraiser();
 
         manager = new ManagerUser(appraiser);
         manager_ = address(manager);
 
-        deployer = new Deployer(manager_, titlefab, lightswitchfab, pilefab, shelffab, collateralfab, deskfab, admitfab, adminfab);
+        deployer = new Deployer(manager_, titlefab, lightswitchfab, pilefab, shelffab, collateralfab, deskfab, admitfab, adminfab, beansfab);
 
         appraiser.rely(manager_);
         appraiser.rely(address(deployer));
 
         deployer.deployLightSwitch();
         deployer.deployTitle("Tinlake Loan", "TLNT");
+        deployer.deployBeans();
         deployer.deployCollateral();
         deployer.deployPile(tkn_);
         deployer.deployShelf(address(appraiser));
@@ -177,7 +181,6 @@ contract SystemTest is DSTest {
         lenderfab = address(new SimpleLenderFab());
         deployer.deployLender(tkn_, lenderfab);
     }
-
 
     // lenderTokenAddr returns the address which holds the currency or collateral token for the lender
     function lenderTokenAddr(address lender) public returns(address) {
@@ -222,7 +225,6 @@ contract SystemTest is DSTest {
         checkAfterBorrow(loan, tokenId, principal, appraisal);
     }
 
-
     function defaultLoan() public returns(uint tokenId, uint principal, uint appraisal, uint fee) {
         uint tokenId = 1;
         uint principal = 1000 ether;
@@ -236,10 +238,8 @@ contract SystemTest is DSTest {
 
     function setupOngoingLoan() public returns (uint loan, uint tokenId, uint principal, uint appraisal, uint fee) {
         (uint tokenId, uint principal, uint appraisal, uint fee) = defaultLoan();
-
         // create borrower collateral nft
         nft.mint(borrower_, tokenId);
-
         uint loan = whitelist(tokenId, nft_, principal, appraisal, borrower_, fee);
         borrow(loan, tokenId, principal, appraisal);
 
@@ -289,7 +289,6 @@ contract SystemTest is DSTest {
 //        checkAfterRepay(loan, tokenId,totalT, 0, lenderShould);
     }
 
-
     // --- Tests ---
 
     function testBorrowTransaction() public {
@@ -312,8 +311,6 @@ contract SystemTest is DSTest {
         borrowRepay(tokenId, principal, appraisal, fee);
     }
 
-
-
     function testMediumSizeLoans() public {
         (uint tokenId, uint principal, uint appraisal, uint fee) = defaultLoan();
 
@@ -321,7 +318,6 @@ contract SystemTest is DSTest {
         principal = 1000000 ether;
 
         borrowRepay(tokenId, principal, appraisal, fee);
-
     }
 
     function testHighSizeLoans() public {
@@ -331,7 +327,6 @@ contract SystemTest is DSTest {
         principal = 100000000 ether; // 100 million
 
         borrowRepay(tokenId, principal, appraisal, fee);
-
     }
 
     function testRepayFullAmount() public {
@@ -350,9 +345,7 @@ contract SystemTest is DSTest {
 
         uint totalT = uint(tkn.totalSupply());
         checkAfterRepay(loan, tokenId,totalT , 0, lenderShould);
-
     }
-
 
     function testLongOngoing() public {
         (uint loan, uint tokenId, uint principal, uint appraisal, uint fee) = setupOngoingLoan();
@@ -466,4 +459,3 @@ contract SystemTest is DSTest {
         assertEq(tkn.balanceOf(borrower_), 100);
     }
 }
-
