@@ -75,9 +75,6 @@ contract Collector {
 
         uint wad = tag.price(loan);
 
-
-
-
         pile.repay(loan, wad, msg.sender);
         shelf.free(loan, usr);
         desk.balance();
