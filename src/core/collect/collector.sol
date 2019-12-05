@@ -79,7 +79,4 @@ contract Collector {
         shelf.free(loan, usr);
         desk.balance();
     }
-
-
-
 }

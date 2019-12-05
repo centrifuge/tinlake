@@ -21,7 +21,6 @@ import "ds-test/test.sol";
 import "../../test/mock/pile.sol";
 import "../tag.sol";
 
-
 contract TagTest is DSTest {
     PileMock pile;
     Tag tag;
