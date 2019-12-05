@@ -40,7 +40,7 @@ contract PileLike {
 }
 
 
-contract Shelf is TitleOwned, DSTest{
+contract Shelf is TitleOwned {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth { wards[usr] = 1; }

@@ -130,13 +130,13 @@ contract Pile is DSNote, TitleOwned {
 
     // repay() a certain amount of token from the user to the Pile
     function repay(uint loan, uint wad) public owner(loan) note {
-//         moves currency from usr to pile and reduces debt
+        // moves currency from usr to pile and reduces debt
         require(loans_[loan].balance == 0,"before repay loan needs to be withdrawn");
         collect(loan);
         uint fee = loans_[loan].fee;
         uint debt = beans.debtOf(loan, fee);
 
-//         only repay max loan debt
+        // only repay max loan debt
         if (wad > debt) {
             wad = debt;
         }
