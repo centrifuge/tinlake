@@ -75,7 +75,7 @@ contract Actions {
         DeskLike(desk_).balance();
     }
 
-    function approveERC20(address tkn_, address pile_) public {
-        ERC20Like(tkn_).approve(pile_, uint(-1));
+    function approveERC20(address tkn_, address pile_, uint wad) public {
+        ERC20Like(tkn_).approve(pile_, wad);
     }
 }
