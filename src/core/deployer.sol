@@ -30,12 +30,10 @@ contract LenderFabLike {
     function deploy(address,address,address) public returns (address);
 }
 
-
 contract LenderLike {
     function rely(address) public;
     function file(address) public;
 }
-
 
 contract WardsLike {
     function rely(address) public;
@@ -103,7 +101,6 @@ contract AdmitFab {
         admit.rely(msg.sender);
         admit.deny(address(this));
     }
-
 }
 
 contract AdminFab {
@@ -124,7 +121,6 @@ contract Deployer {
     AdmitFab admitfab;
     AdminFab adminfab;
     BeansFab beansfab;
-
 
     address     public god;
     address     public appraiser_;
@@ -250,6 +246,5 @@ contract Deployer {
         desk.depend("lender", lender_);
         return lender_;
     }
-
 }
 

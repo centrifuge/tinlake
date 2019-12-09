@@ -63,7 +63,6 @@ contract Tag {
         pile.collect(loan);
         if (discount[loan] == 0) {
             return rmul(pile.debtOf(loan), globalDiscount);
-
         }
         return rmul(pile.debtOf(loan), discount[loan]);
     }

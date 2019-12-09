@@ -9,14 +9,14 @@ contract PileLike {
     function want() public returns (int);
 }
 
-contract TrancheManagerFab {
+contract DeskFab {
     function deploy(address pile_, address token_) public returns (address) {
-        TrancheManager manager = new TrancheManager(pile_, token_);
-        return address(manager);
+        Desk desk = new Desk(pile_, token_);
+        return address(desk);
     }
 }
 
-contract TrancheManager {
+contract Desk {
 
     // --- Data ---
     PileLike public pile;

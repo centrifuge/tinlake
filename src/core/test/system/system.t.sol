@@ -1,4 +1,4 @@
-// Copyright (C) 2019 lucasvo
+// Copyright (C) 2019 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -28,6 +28,7 @@ contract ERC20Like {
     function mint(address, uint) public;
     function approve(address usr, uint wad) public returns (bool);
     function totalSupply() public returns (uint256);
+    function balanceOf(address usr) public returns (uint);
 }
 
 contract User {
@@ -59,9 +60,9 @@ contract User {
     }
 
     function doRepay(uint loan, uint wad, address usr) public {
-       pile.repay(loan, wad);
-       shelf.release(loan, usr);
-       desk.balance();
+        pile.repay(loan, wad);
+        shelf.release(loan, usr);
+        desk.balance();
     }
 
     function doClose(uint loan, address usr) public {
@@ -116,19 +117,19 @@ contract ShelfLike {
 }
 
 contract SystemTest is DSTest {
-    SimpleNFT    nft;
-    address      nft_;
-    SimpleToken  tkn;
-    address      tkn_;
+    SimpleNFT    public nft;
+    address      public nft_;
+    SimpleToken  public tkn;
+    address      public tkn_;
     address      lenderfab;
     Appraiser    appraiser;
-    Deployer     deployer;
+    Deployer     public deployer;
 
     ManagerUser  manager;
     address      manager_;
     User borrower;
     address      borrower_;
-    Hevm hevm;
+    Hevm public hevm;
 
     function basicSetup() public {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
@@ -285,8 +286,8 @@ contract SystemTest is DSTest {
         // close without defined amount
         borrower.doClose(loan, borrower_);
 
-//        uint totalT = uint(tkn.totalSupply());
-//        checkAfterRepay(loan, tokenId,totalT, 0, lenderShould);
+        uint totalT = uint(tkn.totalSupply());
+        checkAfterRepay(loan, tokenId,totalT, 0, lenderShould);
     }
 
     // --- Tests ---

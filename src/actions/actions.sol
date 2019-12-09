@@ -31,23 +31,42 @@ contract PileLike {
     function repay(uint loan, uint wad) public ;
     function balanceOf(uint loan) public view returns (uint);
     function collect(uint loan) public;
-    function loans(uint loan) public returns (uint debt, uint balance, uint fee);
+    function loans(uint loan) public returns (uint, uint, uint);
+    function debtOf(uint loan) public returns (uint);
 }
 
-// Reception serves as an interface for the borrower in Tinlake.
+contract NFTLike {
+    function approve(address to, uint256 tokenId) public;
+}
 
-// Warning: Reception should be used as a library with a proxy contract
-contract Reception {
+contract ERC20Like {
+    function approve(address usr_, uint wad) public returns (bool);
+}
+
+// Actions serves as an interface for the borrower in Tinlake.
+
+// Warning: Actions should be used as a library with a proxy contract
+contract Actions {
     constructor () public {}
 
     // --- Reception ---
     function borrow(address desk_, address pile_, address shelf_, uint loan, address deposit) public {
-        ShelfLike(shelf_).deposit(loan, msg.sender);
+        ShelfLike(shelf_).deposit(loan, address(this));
         DeskLike(desk_).balance();
 
         // borrow max amount
         uint wad = PileLike(pile_).balanceOf(loan);
         PileLike(pile_).withdraw(loan, wad, deposit);
+    }
+
+    function approve(address nft_, address to, uint256 tokenId) public {
+        NFTLike(nft_).approve(to, tokenId);
+    }
+
+    function close(address desk_, address pile_, address shelf_, uint loan, address usr) public {
+        PileLike(pile_).collect(loan);
+        uint debt = PileLike(pile_).debtOf(loan);
+        repay(desk_, pile_, shelf_, loan, debt , usr);
     }
 
     function repay(address desk_, address pile_, address shelf_, uint loan, uint wad, address usr) public {
@@ -56,10 +75,7 @@ contract Reception {
         DeskLike(desk_).balance();
     }
 
-
-    function close(address desk_, address pile_, address shelf_, uint loan, address usr) public {
-        PileLike(pile_).collect(loan);
-        (uint debt,,) = PileLike(pile_).loans(loan);
-        repay(desk_, pile_, shelf_, loan, debt , usr);
+    function approveERC20(address tkn_, address pile_, uint wad) public {
+        ERC20Like(tkn_).approve(pile_, wad);
     }
 }
