@@ -28,26 +28,13 @@ import "../collector.sol";
 
 import "../tag.sol";
 import "../spotter.sol";
-
+import "../collector.sol";
 
 contract Shelf is ShelfMock {
-    mapping(uint => Loan) public loans;
-    address registry;
-
-    constructor(address registry_) public {
-        registry = registry_;
-    }
-    function prepareLoan(uint loan, uint tokenId, uint price) public {
-        loans[loan].tokenId = tokenId;
-        loans[loan].price = price;
-
-    }
-
     function free(uint loan, address usr) public  {
-        NFTLike(registry).transferFrom(address(this), usr, loans[loan].tokenId);
+        NFTLike(shelfReturn.registry).transferFrom(address(this), usr, shelfReturn.tokenId);
     }
 }
-
 
 contract CollectorIntegrationTest is DSTest {
     PileMock pile;
@@ -57,23 +44,34 @@ contract CollectorIntegrationTest is DSTest {
     SimpleNFT nft;
 
     Collector collector;
-    function setUp() public {
+    Spotter spotter;
+    Tag tag = new Tag(address(pile));
 
+    function setUp() public {
         nft = new SimpleNFT();
         //mock
         pile = new PileMock();
-        shelf = new Shelf(address(nft));
+        shelf = new Shelf();
         desk = new DeskMock();
 
         // collect contracts
-        Tag tag = new Tag(address(pile));
-        Spotter spotter = new Spotter(address(shelf), address(pile));
+        tag = new Tag(address(pile));
+        spotter = new Spotter(address(shelf), address(pile));
         collector = new Collector(address(spotter), address(tag), address(desk), address(pile));
+
+        // auth
+        spotter.rely(address(collector));
+
+        // spotter threshold 120%
+        uint threshold = 12 * 10**26;
+        spotter.file("threshold", threshold);
 
     }
 
     function setUpLoan(uint loan, uint tokenId, uint price, uint debt) public {
-        shelf.prepareLoan(loan, tokenId, price);
+        // defines price and token Id
+        shelf.setShelfReturn(address(nft), tokenId, price, 0);
+
         nft.mint(address(shelf), tokenId);
 
         // define debt
@@ -82,10 +80,46 @@ contract CollectorIntegrationTest is DSTest {
 
     function testCollect() public {
         uint loan = 1; uint tokenId = 123;
-        uint price = 150; uint debt = 100;
+        uint price = 150 ether; uint debt = 130 ether;
         setUpLoan(loan,tokenId, price, debt);
 
+        // collect nft ratio 115% instead of >= 120%
+        collector.collect(loan, address(this));
+
+        // check nft transfer
+        assertEq(nft.ownerOf(tokenId), address(this));
+
+        // check contract calls
+        assertEq(desk.callsBalance(), 1);
+        assertEq(pile.callsRecovery(), 1);
+        assertEq(pile.wad(), debt);
+        assertEq(pile.loan(), loan);
     }
+
+    function testCollectWithoutSpotter() public {
+        uint loan = 1; uint tokenId = 123;
+        uint price = 150 ether; uint debt = 100 ether;
+        setUpLoan(loan,tokenId, price, debt);
+
+        // 150% is enough threshold is 120%
+        assertTrue(spotter.seizable(loan) == false);
+
+        // increase debt to 115%
+        pile.setDebtOfReturn(130 ether);
+        assertTrue(spotter.seizable(loan) == true);
+
+        // seizure nft
+        assertTrue(!spotter.collectable(loan));
+        spotter.seizure(loan);
+        assertTrue(spotter.collectable(loan));
+
+        // collect nft
+        collector.collect(loan, address(this));
+
+        // new nft owner
+        assertEq(nft.ownerOf(tokenId), address(this));
+    }
+
 }
 
 

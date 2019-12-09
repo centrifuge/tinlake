@@ -52,6 +52,7 @@ contract Collector {
         tag = TagLike(tag_);
         desk = DeskLike(desk_);
         pile = PileLike(pile_);
+        wards[msg.sender] = 1;
     }
 
     function depend(bytes32 what, address addr) public auth {
