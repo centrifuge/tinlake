@@ -63,6 +63,11 @@ contract PileMock {
         return debtReturn;
     }
 
+    function debtOf(uint loan_) public returns (uint) {
+        loan = loan_;
+        return loanReturn.debt;
+    }
+
     function balanceOf(uint loan_) public returns (uint) {
         return balanceReturn;
     }

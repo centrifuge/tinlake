@@ -67,7 +67,7 @@ contract PileTest is DSTest {
         assertEq(totalBalance-wad, pile.Balance());
         (, uint newBalance, ) = pile.loans(loan);
         assertEq(balance-wad, newBalance);
-       
+
         assertEq(tkn.transferFromCalls(), 1);
         assertEq(tkn.dst(), address(pile));
         assertEq(tkn.src(), address(this));
@@ -75,20 +75,20 @@ contract PileTest is DSTest {
     }
 
     function repay(uint loan, uint wad) public {
-        // pre state    
+        // pre state
         (,, uint fee) = pile.loans(loan);
         uint totalDebt = pile.Debt();
-       
+
         pile.repay(loan, wad);
         beans.setTotalDebtReturn(0);
         beans.setLoanDebtReturn(0);
-        
+
         // post state
         (uint debt, uint balance, ) = pile.loans(loan);
-        
+
         assertEq(beans.callsDrip(), 2);
         assertEq(beans.callsDecLoanDebt(), 1);
-        
+
         assertEq(totalDebt-wad, pile.Debt());
         assertEq(debt,0);
         assertEq(balance,0);
