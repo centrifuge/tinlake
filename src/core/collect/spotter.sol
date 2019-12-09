@@ -109,4 +109,9 @@ contract Spotter {
     function collectable(uint loan) public returns(bool) {
         return nftOwner(loan) == address(this);
     }
+
+    function free(uint loan, address usr) public auth {
+        (address registry, uint256 tokenId, , ) = shelf.shelf(loan);
+        NFTLike(registry).transferFrom(address(this), usr, tokenId);
+    }
 }

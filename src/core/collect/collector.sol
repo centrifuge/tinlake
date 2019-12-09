@@ -19,6 +19,7 @@ pragma solidity >=0.4.24;
 contract SpotterLike {
     function collectable(uint loan) public returns(bool);
     function seizure(uint loan) public;
+    function free(uint loan, address usr) public;
 }
 
 contract TagLike {
@@ -35,6 +36,7 @@ contract ShelfLike {
 
 contract PileLike {
     function repay(uint loan, uint wad, address usr) public;
+    function recovery(uint loan, uint wad) public;
 }
 
 contract Collector {
@@ -75,8 +77,8 @@ contract Collector {
 
         uint wad = tag.price(loan);
 
-        pile.repay(loan, wad, msg.sender);
-        shelf.free(loan, usr);
+        pile.recovery(loan, wad);
+        spotter.free(loan, usr);
         desk.balance();
     }
 }
