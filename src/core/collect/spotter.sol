@@ -24,6 +24,7 @@ contract ShelfLike {
 
 contract PileLike {
     function loans(uint loan) public returns (uint, uint, uint ,uint);
+    function debtOf(uint loan) public returns (uint);
     function collect(uint loan) public;
 }
 
@@ -44,6 +45,7 @@ contract Spotter {
     ShelfLike public shelf;
     PileLike public pile;
 
+    // in rad 10**27
     uint public threshold;
 
     constructor(address shelf_, address pile_) public {
@@ -80,8 +82,7 @@ contract Spotter {
 
     function nowDebt(uint loan) internal returns(uint) {
         pile.collect(loan);
-        (uint debt,,,) = pile.loans(loan);
-        return debt;
+        return pile.debtOf(loan);
     }
 
     function seizure(uint loan) public {
@@ -100,9 +101,9 @@ contract Spotter {
 
         uint ratio = rdiv(price, debt);
         if(ratio >= threshold) {
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 
     function collectable(uint loan) public returns(bool) {
