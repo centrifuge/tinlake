@@ -96,7 +96,7 @@ contract CollectorIntegrationTest is DSTest {
         assertEq(pile.loan(), loan);
     }
 
-    function testCollectWithoutSpotter() public {
+    function testCollectWithSpotter() public {
         uint loan = 1; uint tokenId = 123;
         uint price = 150 ether; uint debt = 100 ether;
         setUpLoan(loan,tokenId, price, debt);
@@ -108,7 +108,7 @@ contract CollectorIntegrationTest is DSTest {
         pile.setDebtOfReturn(130 ether);
         assertTrue(spotter.seizable(loan) == true);
 
-        // seizure nft
+        // seizure nft by direct spotter call
         assertTrue(!spotter.collectable(loan));
         spotter.seizure(loan);
         assertTrue(spotter.collectable(loan));
