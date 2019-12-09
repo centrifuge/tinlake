@@ -30,12 +30,7 @@ contract DeskLike {
     function balance() public;
 }
 
-contract ShelfLike {
-    function free(uint loan, address usr) public;
-}
-
 contract PileLike {
-    function repay(uint loan, uint wad, address usr) public;
     function recovery(uint loan, uint wad) public;
 }
 
@@ -50,14 +45,14 @@ contract Collector {
     SpotterLike spotter;
     TagLike tag;
     DeskLike desk;
-    ShelfLike shelf;
+
     PileLike pile;
 
-    constructor (address spotter_, address tag_, address desk_, address shelf_, address pile_) public {
+    constructor (address spotter_, address tag_, address desk_, address pile_) public {
         spotter = SpotterLike(spotter_);
         tag = TagLike(tag_);
         desk = DeskLike(desk_);
-        shelf = ShelfLike(shelf_);
+
         pile = PileLike(pile_);
     }
 
@@ -65,7 +60,6 @@ contract Collector {
         if (what == "spotter") spotter = SpotterLike(addr);
         else if (what == "tag") tag = TagLike(addr);
         else if (what == "desk") desk = DeskLike(desk);
-        else if (what == "shelf") shelf = ShelfLike(shelf);
         else if (what == "pile") pile = PileLike(pile);
         else revert();
     }
