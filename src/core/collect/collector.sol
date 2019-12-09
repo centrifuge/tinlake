@@ -64,7 +64,7 @@ contract Collector {
     }
 
     function collect(uint loan, address usr) public auth {
-        if(spotter.collectable(loan)){
+        if(spotter.collectable(loan) == false){
             spotter.seizure(loan);
         }
 

@@ -22,7 +22,7 @@ contract ShelfLike {
     function free(uint loan, address usr) public;
 }
 
-contract PileLike {
+contract SPileLike {
     function loans(uint loan) public returns (uint, uint, uint ,uint);
     function debtOf(uint loan) public returns (uint);
     function collect(uint loan) public;
@@ -43,7 +43,7 @@ contract Spotter {
 
 
     ShelfLike public shelf;
-    PileLike public pile;
+    SPileLike public pile;
 
     // in rad 10**27
     uint public threshold;
@@ -51,7 +51,7 @@ contract Spotter {
     constructor(address shelf_, address pile_) public {
         wards[msg.sender] = 1;
         shelf = ShelfLike(shelf_);
-        pile = PileLike(pile_);
+        pile = SPileLike(pile_);
     }
 
     // --- Math ---
