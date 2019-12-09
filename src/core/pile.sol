@@ -133,9 +133,7 @@ contract Pile is DSNote, TitleOwned {
     function recovery(uint loan, uint wad) public auth {
         doRepay(loan, wad);
 
-        uint fee = loans_[loan].fee;
-        uint loss = beans.debtOf(loan, fee);
-
+        uint loss = beans.debtOf(loan, loans_[loan].fee);
         beans.decLoanDebt(loan, loans_[loan].fee, loss);
     }
 
@@ -160,7 +158,6 @@ contract Pile is DSNote, TitleOwned {
         // moves currency from usr to pile and reduces debt
         require(loans_[loan].balance == 0,"before repay loan needs to be withdrawn");
         doRepay(loan, wad);
-
     }
 
     function debtOf(uint loan) public returns (uint) {

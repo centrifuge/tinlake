@@ -51,11 +51,10 @@ contract Collector {
         spotter = SpotterLike(spotter_);
         tag = TagLike(tag_);
         desk = DeskLike(desk_);
-
         pile = PileLike(pile_);
     }
 
-    function file(bytes32 what, address addr) public auth {
+    function depend(bytes32 what, address addr) public auth {
         if (what == "spotter") spotter = SpotterLike(addr);
         else if (what == "tag") tag = TagLike(addr);
         else if (what == "desk") desk = DeskLike(desk);
