@@ -45,7 +45,6 @@ contract Collector {
     SpotterLike spotter;
     TagLike tag;
     DeskLike desk;
-
     PileLike pile;
 
     constructor (address spotter_, address tag_, address desk_, address pile_) public {
