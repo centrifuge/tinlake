@@ -20,8 +20,6 @@ import { LightSwitch } from "./lightswitch.sol";
 import { Shelf } from "./shelf.sol";
 import { Desk } from "./test/simple/desk.sol";
 import { Pile } from "./pile.sol";
-import { Collateral } from "./collateral.sol";
-import { Valve } from "./valve.sol";
 import { Admit } from "./admit.sol";
 import { Admin } from "./admin.sol";
 import { Beans } from "./beans.sol";

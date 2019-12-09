@@ -21,7 +21,6 @@ import "../deployer.sol";
 import "../appraiser.sol";
 import { SimpleNFT } from "./simple/nft.sol";
 import { SimpleToken } from "./simple/token.sol";
-import "../collateral.sol";
 
 contract DeployerTest is DSTest {
     SimpleNFT nft;
