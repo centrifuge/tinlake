@@ -37,7 +37,7 @@ contract ProxyDeployerTest is DSTest {
         ProxyDeployer deployer = new ProxyDeployer(address(0), factoryfab, registryfab);
         title = new Title("Tinlake", "TLO");
         title.rely(address(deployer));
-        deployer.deployProxyStation(address(title));
+        deployer.deployProxyRegistry(address(title));
         deployer.deployProxy(address(deployer.factory()), address(this));
     }
 }

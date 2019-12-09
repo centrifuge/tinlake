@@ -33,12 +33,8 @@ contract User {
         return Proxy(proxy_).execute(actions_, data);
     }
 
-    function repay(address payable proxy_, address actions_, address desk_, address pile_, address shelf_, uint loan, uint wad, address usr_) public returns (bytes memory) {
-        bytes memory data = abi.encodeWithSignature("repay(address,address,address,uint256, uint256, address)", desk_, pile_, shelf_, loan, wad, usr_);
-        return Proxy(proxy_).execute(actions_, data);
-    }
-    function approveERC20(address payable proxy_, address actions_, address pile_, address tkn_) public returns (bytes memory) {
-        bytes memory data = abi.encodeWithSignature("approveERC20(address,address)", tkn_, pile_);
+    function approveERC20(address payable proxy_, address actions_, address tkn_, address pile_, uint wad) public returns (bytes memory) {
+        bytes memory data = abi.encodeWithSignature("approveERC20(address,address,uint256)", tkn_, pile_, wad);
         return Proxy(proxy_).execute(actions_, data);
     }
 }
