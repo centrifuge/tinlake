@@ -143,7 +143,7 @@ contract FunctionalTest is DSTest {
         assertEq(Title(tinlake.title_).ownerOf(loan), proxy_);
 
         // approve token transfer and close/repay loan
-        borrower.approveERC20(proxy_, actions_, tinlake.pile_, tinlake.currency_, uint(-1));
+        borrower.approveERC20(proxy_, actions_, tinlake.currency_, tinlake.pile_, uint(-1));
         PileLike(tinlake.pile_).collect(loan);
         uint debt = PileLike(tinlake.pile_).debtOf(loan);
         borrower.close(proxy_, actions_, tinlake.desk_, tinlake.pile_, tinlake.shelf_, loan, proxy_);
