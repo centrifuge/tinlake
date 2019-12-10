@@ -99,7 +99,7 @@ contract RegistryTest is DSTest {
 
     function testClose() public {
         (uint loan, address deposit, uint debt) = init();
-        pile.setLoanReturn(debt, 0, 0, 0);
+        pile.setDebtOfReturn(debt);
 
         bytes memory data = abi.encodeWithSignature("close(address,address,address,uint256,address)", address(desk), address(pile), address(shelf), loan, deposit);
         proxy.execute(address(actions), data);
