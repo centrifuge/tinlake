@@ -11,6 +11,7 @@ contract PileMock {
     uint public callsCollect;
 
     struct Loan {
+        uint debt;
         uint balance;
         uint fee;
     }
@@ -21,7 +22,7 @@ contract PileMock {
     uint public balanceReturn; function setBalanceReturn(uint balanceReturn_) public {balanceReturn=balanceReturn_;}
     uint public totalBalanceReturn; function setTotalBalanceReturn(uint totalBalanceReturn_) public {totalBalanceReturn=totalBalanceReturn_;}
     int public wantReturn; function setWantReturn(int wantReturn_) public {wantReturn=wantReturn_;}
-    Loan public loanReturn; function setLoanReturn(uint balance, uint fee, uint chi) public {loanReturn = Loan(balance, fee);}
+    Loan public loanReturn; function setLoanReturn(uint debt, uint balance, uint fee) public {loanReturn=Loan(debt,balance,fee);}
 
     uint public loan;
     uint public wad;
