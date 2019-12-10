@@ -30,7 +30,7 @@ contract ERC20Like {
     function balanceOf(address usr) public returns (uint);
 }
 
-contract User is DSTest{
+contract User {
     ERC20Like tkn;
     Pile pile;
     Shelf shelf;
@@ -230,6 +230,7 @@ contract SystemTest is DSTest {
         return extra;
     }
 
+    // note: this method will be refactored with the new lender side contracts, as the Desk should not hold any currency
     function currDeskBal() public returns(uint) {
         return tkn.balanceOf(address(deployer.desk()));
     }

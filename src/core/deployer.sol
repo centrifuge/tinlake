@@ -78,6 +78,7 @@ contract ShelfFab {
 }
 
 contract DeskFab {
+    // note: this is the mock Desk, which will interface with the lender/tranche side of Tinlake, and does not require auth for now.
     function newDesk(address pile_, address token_) public returns (Desk desk) {
         desk = new Desk(pile_, token_);
         return desk;
@@ -163,6 +164,8 @@ contract Deployer {
         pile.rely(address(shelf));
     }
 
+    // note: this method will be refactored with the new lender side contracts, we will rely on God once more
+    //and the Pile should articulate that it depends on the Desk, not a generic "lender".
     function deployDesk(address currency_) public {
         desk = deskfab.newDesk(address(pile), currency_);
         pile.depend("lender", address(desk));
