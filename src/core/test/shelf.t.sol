@@ -117,9 +117,9 @@ contract ShelfTest is DSTest {
         nft.reset();
         pile.setLoanReturn(0, 0, 0);
         shelf.release(1, address(this));
-//        assertEq(nft.from(), address(shelf));
-//        assertEq(nft.to(), address(this));
-//        assertEq(nft.transferFromCalls(), 1);
+        assertEq(nft.from(), address(shelf));
+        assertEq(nft.to(), address(this));
+        assertEq(nft.transferFromCalls(), 1);
     }
     function testAdjust() public {
         // first nft
