@@ -1,5 +1,5 @@
 // Copyright (C) 2019 lucasvo
-
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.4.23;
+//pragma solidity >=0.4.23;
 
 import "ds-test/test.sol";
 
@@ -30,7 +30,7 @@ contract ShelfTest is DSTest {
     NFTMock nft;
     Appraiser appraiser;
     TitleMock title;
-    
+
     uint loan = 1;
     uint secondLoan = 2;
 
@@ -76,7 +76,6 @@ contract ShelfTest is DSTest {
         // check correct call pile.borrow
         assertEq(pile.wad(), principal);
         assertEq(pile.callsBorrow(),1);
-
     }
     function testFailDepositNoWhiteList() public {
         // loan is not whitelisted in shelf
@@ -116,7 +115,7 @@ contract ShelfTest is DSTest {
     function testRelease() public {
         testDeposit();
         nft.reset();
-        pile.setLoanReturn(0, 0, 0, 0);
+        pile.setLoanReturn(0, 0, 0);
         shelf.release(1, address(this));
         assertEq(nft.from(), address(shelf));
         assertEq(nft.to(), address(this));

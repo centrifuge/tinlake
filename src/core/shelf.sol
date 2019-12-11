@@ -31,11 +31,10 @@ contract NFTLike {
 
 contract PileLike {
     struct Loan {
-        uint debt;
         uint balance;
         uint fee;   
     }
-    function loans(uint) public returns (Loan memory);
+    function debtOf(uint) public returns (uint debt);
     function borrow(uint, uint) public;
 }
 
@@ -100,7 +99,8 @@ contract Shelf is TitleOwned {
     }
     
     function release (uint loan, address usr) public owner(loan) {
-        require(pile.loans(loan).debt == 0, "debt");
+        uint debt = pile.debtOf(loan);
+        require(debt == 0, "debt");
         move(loan, shelf[loan].registry, shelf[loan].tokenId, usr);
         adjust(loan);
     }
