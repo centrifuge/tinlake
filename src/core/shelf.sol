@@ -105,6 +105,11 @@ contract Shelf is TitleOwned {
         adjust(loan);
     }
 
+    function free(uint loan, address usr) public auth {
+        move(loan, shelf[loan].registry, shelf[loan].tokenId, usr);
+        adjust(loan);
+    }
+
     function deposit (uint loan, address usr) public owner(loan) {
         NFTLike(shelf[loan].registry).transferFrom(usr, address(this), shelf[loan].tokenId);
         pile.borrow(loan, shelf[loan].principal);

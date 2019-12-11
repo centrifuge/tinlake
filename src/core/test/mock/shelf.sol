@@ -6,6 +6,8 @@ contract ShelfMock {
     uint public releaseCalls;
     uint public depositCalls;
     uint public fileCalls;
+    uint public adjustCalls;
+    uint public freeCalls;
 
     uint public bags = 0; function setBags(uint bags_) public {bags=bags_;}
 
@@ -31,6 +33,11 @@ contract ShelfMock {
 
     function shelf(uint loan) public returns (address registry,uint256 tokenId,uint price,uint principal)  {
         return (shelfReturn.registry,shelfReturn.tokenId, shelfReturn.price, shelfReturn.principal);
+    }
+
+    function adjust(uint loan_) public {
+        loan = loan_;
+        adjustCalls++;
     }
 
     function release (uint loan_, address usr_) public {
@@ -65,5 +72,11 @@ contract ShelfMock {
         principal = principal_;
         initial = principal;
         fileCalls++;
+    }
+
+    function free(uint loan_, address usr_) public {
+        loan = loan_;
+        usr = usr_;
+        freeCalls++;
     }
 }
