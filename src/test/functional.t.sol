@@ -86,7 +86,7 @@ contract FunctionalTest is DSTest {
         );
     }
 
-    function setUp() public {
+    function basicSetup() public {
         systemTest = new SystemTest();
         systemTest.setUp();
         coreDeployer = systemTest.deployer();
@@ -109,47 +109,4 @@ contract FunctionalTest is DSTest {
         ERC20Like(tinlake.currency_).approve(tinlake.pile_, uint(-1));
     }
 
-    function testSimpleBorrow() public {
-        // proxy owns collateral NFT
-        (uint tokenId, uint principal, uint appraisal, uint fee) = systemTest.defaultLoan();
-        mintCollateralNFT(proxy_, tokenId);
-        assertEq(Title(tinlake.collateralNFT_).ownerOf(tokenId), proxy_);
-        // whitelist
-        uint loan = systemTest.whitelist(tokenId, tinlake.collateralNFT_, principal, appraisal, proxy_, fee);
-        assertEq(Title(tinlake.title_).ownerOf(loan), proxy_);
-        // approve collateral NFT transfer
-        borrower.approve(proxy_,  actions_, tinlake.collateralNFT_, tinlake.shelf_, tokenId);
-        assertEq(Title(tinlake.collateralNFT_).getApproved(tokenId), tinlake.shelf_);
-        // borrow action
-        borrower.borrow(proxy_, actions_, tinlake.desk_, tinlake.pile_, tinlake.shelf_, loan, proxy_);
-        assertEq(Title(tinlake.collateralNFT_).ownerOf(tokenId), tinlake.shelf_);
-        assertEq(ERC20Like(tinlake.currency_).balanceOf(proxy_), principal);
-    }
-
-    function testBorrowRepay() public {
-        // setup initial loan + borrow
-        (uint tokenId, uint principal, uint appraisal, uint fee) = systemTest.defaultLoan();
-        mintCollateralNFT(proxy_, tokenId);
-        uint loan = systemTest.whitelist(tokenId, tinlake.collateralNFT_, principal, appraisal, proxy_, fee);
-        borrower.approve(proxy_,  actions_, tinlake.collateralNFT_, tinlake.shelf_, tokenId);
-        borrower.borrow(proxy_, actions_, tinlake.desk_, tinlake.pile_, tinlake.shelf_, loan, proxy_);
-
-        systemTest.hevm().warp(now + 10 days);
-
-        uint extra = 100000000000 ether;
-        // add liquidity for repayment
-        setUpRepayLiquidity(proxy_, extra);
-        assertEq(ERC20Like(tinlake.currency_).balanceOf(proxy_), extra + principal);
-        assertEq(Title(tinlake.title_).ownerOf(loan), proxy_);
-
-        // approve token transfer and close/repay loan
-        borrower.approveERC20(proxy_, actions_, tinlake.currency_, tinlake.pile_, uint(-1));
-        PileLike(tinlake.pile_).collect(loan);
-        uint debt = PileLike(tinlake.pile_).debtOf(loan);
-        borrower.close(proxy_, actions_, tinlake.desk_, tinlake.pile_, tinlake.shelf_, loan, proxy_);
-
-        assertEq(ERC20Like(tinlake.currency_).balanceOf(proxy_), extra + principal -  debt);
-        assertEq(PileLike(tinlake.pile_).balanceOf(loan), 0);
-        assertEq(Title(tinlake.collateralNFT_).ownerOf(tokenId), proxy_);
-    }
 }
