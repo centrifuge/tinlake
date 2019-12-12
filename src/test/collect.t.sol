@@ -33,7 +33,7 @@ contract CollectTest is FunctionalTest {
     }
 
     function testBasicCollect() public {
-
+        //TODO
     }
 }
 
