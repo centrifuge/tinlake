@@ -141,4 +141,5 @@ contract PileTest is DSTest {
         uint debt = pile.burden(loan);
         repay(loan, debt);
     }
+
 }

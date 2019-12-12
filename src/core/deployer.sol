@@ -1,4 +1,4 @@
-// Copyright (C) 2019 lucasvo
+// Copyright (C) 2019 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -18,10 +18,8 @@ pragma solidity >=0.4.24;
 import { Title } from "./title.sol";
 import { LightSwitch } from "./lightswitch.sol";
 import { Shelf } from "./shelf.sol";
-import { Desk } from "./desk.sol";
+import { Desk } from "./test/simple/desk.sol";
 import { Pile } from "./pile.sol";
-import { Collateral } from "./collateral.sol";
-import { Valve } from "./valve.sol";
 import { Admit } from "./admit.sol";
 import { Admin } from "./admin.sol";
 import { Beans } from "./beans.sol";
@@ -79,19 +77,11 @@ contract ShelfFab {
     }
 }
 
-contract CollateralFab {
-    function newCollateral() public returns (Collateral collateral) {
-        collateral = new Collateral("CVT", "Collateral Value Token", "something", 0);
-        collateral.rely(msg.sender);
-        collateral.deny(address(this));
-    }
-}
-
 contract DeskFab {
-    function newDesk(address pile, address valve, address collateral, address lightswitch) public returns (Desk desk) {
-        desk = new Desk(pile, valve, collateral, lightswitch);
-        desk.rely(msg.sender);
-        desk.deny(address(this));
+    // note: this is the mock Desk, which will interface with the lender/tranche side of Tinlake, and does not require auth for now.
+    function newDesk(address pile_, address token_) public returns (Desk desk) {
+        desk = new Desk(pile_, token_);
+        return desk;
     }
 }
 
@@ -116,7 +106,6 @@ contract Deployer {
     LightSwitchFab lightswitchfab;
     PileFab pilefab;
     ShelfFab shelffab;
-    CollateralFab collateralfab;
     DeskFab deskfab;
     AdmitFab admitfab;
     AdminFab adminfab;
@@ -129,23 +118,19 @@ contract Deployer {
     LightSwitch public lightswitch;
     Pile        public pile;
     Shelf       public shelf;
-    Collateral  public collateral;
-    Valve       public valve;
     Desk        public desk;
     Admit       public admit;
     Admin       public admin;
     LenderLike  public lender;
     Beans       public beans;
 
-    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, PileFab pilefab_, ShelfFab shelffab_, CollateralFab collateralfab_, DeskFab deskfab_, AdmitFab admitfab_, AdminFab adminfab_, BeansFab beansfab_) public {
-        address self = msg.sender;
+    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, PileFab pilefab_, ShelfFab shelffab_, DeskFab deskfab_, AdmitFab admitfab_, AdminFab adminfab_, BeansFab beansfab_) public {
         god = god_;
         
         titlefab = titlefab_;
         lightswitchfab = lightswitchfab_;
         pilefab = pilefab_;
         shelffab = shelffab_;
-        collateralfab = collateralfab_;
         deskfab = deskfab_;
         admitfab = admitfab_;
         adminfab = adminfab_;
@@ -167,11 +152,6 @@ contract Deployer {
         lightswitch.rely(god);
     }  
   
-    function deployCollateral() public {
-        collateral = collateralfab.newCollateral();
-        collateral.rely(god);
-    }
-
     function deployPile(address currency_) public {
         pile = pilefab.newPile(currency_, address(title), address(beans));
         pile.rely(god);
@@ -184,15 +164,11 @@ contract Deployer {
         pile.rely(address(shelf));
     }
 
-    function deployValve() public {
-        valve = new Valve(address(collateral), address(shelf));
-        valve.rely(god); 
-        collateral.rely(address(valve));
-    } 
-
-    function deployDesk() public {
-        desk = deskfab.newDesk(address(pile), address(valve), address(collateral), address(lightswitch));
-        desk.rely(god);
+    // note: this method will be refactored with the new lender side contracts, we will rely on God once more
+    //and the Pile should articulate that it depends on the Desk, not a generic "lender".
+    function deployDesk(address currency_) public {
+        desk = deskfab.newDesk(address(pile), currency_);
+        pile.depend("lender", address(desk));
     }
 
     function deployAdmit() public {
@@ -207,16 +183,12 @@ contract Deployer {
     }
     function deploy() public {
         address pile_ = address(pile);
-        address shelf_ = address(shelf);
-        address valve_ = address(valve);
         address desk_ = address(desk);
         address admit_ = address(admit);
         address admin_ = address(admin);
-        address beans_ = address(beans);
 
         // desk allowed to call
         pile.rely(desk_);
-        valve.rely(desk_);
 
         // admit allowed to call
         title.rely(admit_);
@@ -231,20 +203,6 @@ contract Deployer {
         beans.rely(pile_);
 
         WardsLike(appraiser_).rely(admin_);
-    }
-
-    function deployLender(address currency_, address lenderfab_) public returns(address) {
-        // LenderFab deploys a lender with the defined collateral and currency
-        address lender_ = LenderFabLike(lenderfab_).deploy(currency_, address(collateral), address(lightswitch));
-
-        lender = LenderLike(lender_);
-        lender.rely(god);
-        lender.rely(address(desk));
-
-        desk.approve(lender_, uint(-1));
-        pile.depend("lender", lender_);
-        desk.depend("lender", lender_);
-        return lender_;
     }
 }
 

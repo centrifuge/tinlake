@@ -17,7 +17,7 @@
 
 pragma solidity >=0.4.24;
 
-contract PileLike {
+contract TPileLike {
     function loans(uint loan) public returns (uint, uint, uint ,uint);
     function collect(uint loan) public;
     function debtOf(uint loan) public returns (uint);
@@ -40,7 +40,7 @@ contract Tag {
         require(y == 0 || (z = x * y) / y == x);
     }
 
-    PileLike pile;
+    TPileLike pile;
 
     uint public globalDiscount;
     mapping (uint => uint) public discount;
@@ -55,7 +55,7 @@ contract Tag {
 
     constructor(address pile_) public {
         wards[msg.sender] = 1;
-        pile = PileLike(pile_);
+        pile = TPileLike(pile_);
         globalDiscount = ONE;
     }
 
