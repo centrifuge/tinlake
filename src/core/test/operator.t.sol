@@ -56,10 +56,7 @@ contract OperatorTest is DSTest {
         assertEq(reserve.usr(), address(this));
         assertEq(reserve.wadT(), wadT);
         assertEq(reserve.wadS(), wadS);
-        assertEq(slicer.callsUpdateISupply(), 1);
-        assertEq(slicer.takeSpeed(), takeSpeed);
-        assertEq(slicer.debt(), debt);
-        assertEq(slicer.reserve(), wadT);
+        checkSlicerUpdated(takeSpeed, debt, wadT);
     }
 
     function redeem(uint wadS, uint usrSlice, uint redeemWadS) internal {

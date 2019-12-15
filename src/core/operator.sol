@@ -42,7 +42,7 @@ contract SlicerLike {
 }
 
 // Operator
-// Manages the tranche reserve
+// Manages the reserve. Triggers iSupply & iTake calculations.
 contract Operator is DSNote {
     // --- Auth ---
     mapping (address => uint) public wards;

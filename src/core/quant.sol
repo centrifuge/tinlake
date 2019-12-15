@@ -18,7 +18,7 @@ pragma solidity >=0.4.24;
 import "ds-note/note.sol";
 
 // Quant
-// Keeps track of the tranch debt and the iTake calculation
+// Keeps track of the tranche debt. Manages iTake & its calculation.
 contract Quant is DSNote {
     // --- Auth ---
     mapping (address => uint) public wards;

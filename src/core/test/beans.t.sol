@@ -106,7 +106,7 @@ contract BeansTest is DSTest {
         n = 24 * 3600 * 365
 
         simplified fee
-        12
+        fee = i^(1/n) * 10^27
 
         fee = 1.12^(1/(3600*24*365)) * 10^27
         fee = 1000000003593629043335673583

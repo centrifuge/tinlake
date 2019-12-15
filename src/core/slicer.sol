@@ -18,7 +18,7 @@ pragma solidity >=0.4.24;
 import "ds-note/note.sol";
 
 // Slicer
-// Keeps track of iSupply & token amount conversions
+//  Calculates payouts and slices based on the current iSupply chi. Manages iSupply.
 contract Slicer is DSNote {
     // --- Auth ---
     mapping (address => uint) public wards;
