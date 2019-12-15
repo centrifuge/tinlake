@@ -49,16 +49,16 @@ contract SlicerTest is DSTest {
     }
 
     function testDrip() public {
-        uint speed = uint(1000000001547125957863212450);  // 5 % per year
+        uint speed = uint(1000000003593629043335673583);  // 12 % per year
         slicer.file("isupply", speed);
-        (uint chi,,) = slicer.iSupply();
-       
+        uint initialDebt = 66 ether;
         hevm.warp(now + 365 days); // 1 year passed
         slicer.drip();
 
-        // (1000000001547125957863212450) ^ (3600 * 24 * 365) 
         (uint chiNow,,) = slicer.iSupply();
-        assertEq(chiNow, 1050000000000000000031594147);
+        uint debt = rmul(initialDebt, chiNow);
+        // debt after one year: 66 ether * 1,12 = 73.92 
+        assertEq(debt, 73.92 ether);
     }
 
     function testInstantChop() public {
