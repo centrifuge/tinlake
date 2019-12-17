@@ -23,6 +23,7 @@ import { Pile } from "./pile.sol";
 import { Admit } from "./admit.sol";
 import { Admin } from "./admin.sol";
 import { Beans } from "./beans.sol";
+import {CollectDeployer} from "./collect/deployer.sol";
 
 contract LenderFabLike {
     function deploy(address,address,address) public returns (address);
@@ -111,6 +112,8 @@ contract Deployer {
     AdminFab adminfab;
     BeansFab beansfab;
 
+    CollectDeployer collectDeployer;
+
     address     public god;
     address     public appraiser_;
 
@@ -124,6 +127,7 @@ contract Deployer {
     LenderLike  public lender;
     Beans       public beans;
 
+
     constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, PileFab pilefab_, ShelfFab shelffab_, DeskFab deskfab_, AdmitFab admitfab_, AdminFab adminfab_, BeansFab beansfab_) public {
         god = god_;
         
@@ -135,6 +139,11 @@ contract Deployer {
         admitfab = admitfab_;
         adminfab = adminfab_;
         beansfab = beansfab_;
+    }
+
+    function deployCollect(address collectDeployer_ ,uint threshold_) public {
+        collectDeployer = CollectDeployer(collectDeployer_);
+        collectDeployer.deploy(address(pile), address(shelf), address(desk), threshold_);
     }
 
     function deployBeans() public {
