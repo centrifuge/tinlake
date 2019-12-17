@@ -31,7 +31,7 @@ contract QuantLike {
    uint public iBorrow;
    function file(bytes32, uint) public;
    function updateDebt(int) public;
-   function updateiBorrow(uint, uint) public;
+   function UpdateiBorrow(uint, uint) public;
    function getSpeed() public returns(uint);
 }
 

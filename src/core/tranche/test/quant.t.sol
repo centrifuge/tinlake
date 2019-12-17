@@ -88,7 +88,7 @@ contract QuantTest is DSTest {
         uint supplySpeed = 1000000001547125957863212450; // 5 % per year
                     
         quant.updateDebt(int(debt));
-        quant.updateiBorrow(supplySpeed, reserve); 
+        quant.UpdateIBorrow(supplySpeed, reserve); 
         // 0.05 * ((300 + 100) / 100) = 0.2
     
         (, uint speedNow, ) = quant.iBorrow();

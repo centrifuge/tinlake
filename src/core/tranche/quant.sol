@@ -52,7 +52,7 @@ contract Quant is DSNote {
         return iBorrow.speed;
     }
 
-    function updateiBorrow(uint supplySpeed, uint reserve) public note auth {
+    function UpdateIBorrow(uint supplySpeed, uint reserve) public note auth {
         require (supplySpeed > 0);
         if (now >= iBorrow.rho) {
             drip();

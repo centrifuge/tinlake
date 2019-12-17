@@ -20,7 +20,7 @@ contract QuantMock {
         callsFile++;
     }
 
-    function updateiBorrow(uint supplySpeed_, uint reserve_) public { 
+    function UpdateiBorrow(uint supplySpeed_, uint reserve_) public { 
         supplySpeed = supplySpeed_;
         reserve = reserve_;
         callsUpdateiBorrow++;
