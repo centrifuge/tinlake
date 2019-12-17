@@ -15,22 +15,30 @@
 
 pragma solidity >=0.4.24;
 
+import "../../lib/dss-add-ilk-spell/lib/dss-deploy/lib/dss/src/lib.sol";
+
 contract PileLike {
     function want() public returns (int);
 }
 
 contract DistributorLike {
-    function waterfallGive() public;
+    function waterfallRepay() public;
+    function makerRepay() public;
 }
 
 contract OperatorLike {
-    function give(address, uint) public;
-    function take(address, uint) public;
-    boolean public supplyActive;
-    boolean public redeemActive;
+    function borrow(address, uint) public;
+    function repay(address, uint) public;
+    function balance() public returns (uint);
+    function file(bytes32, bool) public;
+
+    bool public supplyActive;
+    bool public redeemActive;
 }
 
-contract Desk {
+// Desk
+// Keeps track of the tranches. Manages the interfacing between the tranche side and borrower side of the contracts.
+contract Desk is DSNote {
 
     // --- Auth ---
     mapping (address => uint) public wards;
@@ -50,6 +58,7 @@ contract Desk {
     // --- Data ---
     PileLike public pile;
     DistributorLike public distributor;
+
     bool public flowThrough;
 
     constructor (address pile_, address distributor_) public {
@@ -69,6 +78,10 @@ contract Desk {
         if (what == "flowThrough") { flowThrough = data; }
     }
 
+    function file(uint i, bytes32 what, bool data) public auth {
+        tranches[i].operator.file(what, data);
+    }
+
     // --- Calls ---
 
     function addTranche(uint ratio, address operator_) public auth {
@@ -78,33 +91,41 @@ contract Desk {
         tranches.push(t);
     }
 
-    function returnOperator(uint i) public auth {
-       return tranches[i].operator;
+    function returnOperator(uint i) public auth returns (address){
+       return address(tranches[i].operator);
     }
 
-    function returnRatio(uint i) public auth {
+    function returnRatio(uint i) public auth returns (uint) {
         return tranches[i].ratio;
     }
 
-    function balance() public auth {
+    function balance(uint i) public auth {
+
+        // balance methods should:
+        // iterate through the tranches
+        // quant debt =  how much is
+
+        Tranche memory t = tranches[i];
+        // if capital should flow through, all funds in reserve should be moved in pile
         if (flowThrough) {
-            if (operator.supplyActive) {
-                        //operator.balance()
-              uint wadR = reserve.balance();
-              operator.take(address.pile, uint(wadR));
+            if (t.operator.supplyActive()) {
+                // calculates how much money is in the reserve, transfers all of this balance to the pile
+                uint wadR = t.operator.balance();
+                t.operator.borrow(address(pile), uint(wadR));
             }
-            if (operator.redeemActive) {
+            if (t.operator.redeemActive()) {
                 // payout
-                distributor.waterfallGive();
+                distributor.waterfallRepay();
             }
         } else {
             int wad = pile.want();
             if (wad > 0) {
-                // this should open MCD Vault and take DAI into reserve
-                operator.take(address(pile), uint(wad));
+                // transfer from reserve only how much the pile wants
+                t.operator.borrow(address(pile), uint(wad));
             } else {
-                // this should repay Vault
-                operator.give(address(pile), uint(wad*-1));
+                // this should take the money from the pile, repay and close the vault
+                distributor.makerRepay();
+                t.operator.repay(address(pile), uint(wad*-1));
             }
         }
     }
