@@ -32,6 +32,10 @@ contract CollectTest is FunctionalTest {
         basicSetup();
     }
 
+    function setUpCollector() public {
+        // todo
+    }
+
     function testBasicCollect() public {
         //TODO
     }
