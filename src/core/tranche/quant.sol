@@ -18,7 +18,7 @@ pragma solidity >=0.4.24;
 import "ds-note/note.sol";
 
 // Quant
-// Keeps track of the tranche debt. Manages iTake & its calculation.
+// Keeps track of the tranche debt. Manages iBorrow & its calculation.
 contract Quant is DSNote {
     // --- Auth ---
     mapping (address => uint) public wards;
@@ -32,58 +32,58 @@ contract Quant is DSNote {
         uint48 rho; // Last time the rate was accumulated
     }
     
-    Fee public iTake;
+    Fee public iBorrow;
     uint public debt;
     
     constructor() public {
         wards[msg.sender] = 1;
-        iTake.chi = ONE;
-        iTake.speed = ONE;
+        iBorrow.chi = ONE;
+        iBorrow.speed = ONE;
     }
 
     function file(bytes32 what, uint speed_) public note auth {
-         if (what == "itake") {
+         if (what == "iborrow") {
             drip();
-            iTake.speed = speed_;
+            iBorrow.speed = speed_;
         }
     }
 
     function getSpeed() public returns(uint) {
-        return iTake.speed;
+        return iBorrow.speed;
     }
 
-    function updateITake(uint supplySpeed, uint reserve) public note auth {
+    function updateiBorrow(uint supplySpeed, uint reserve) public note auth {
         require (supplySpeed > 0);
-        if (now >= iTake.rho) {
+        if (now >= iBorrow.rho) {
             drip();
         }
         uint supplySpeed_ = sub(supplySpeed, ONE);
         uint ratio = rdiv(add(reserve, debt), debt); 
-        iTake.speed = add(rmul(ratio, supplySpeed_), ONE);
+        iBorrow.speed = add(rmul(ratio, supplySpeed_), ONE);
     }
 
     function drip() public note auth{
-        if (now >= iTake.rho) {
+        if (now >= iBorrow.rho) {
             (uint latest, , uint wad) = compounding();
-            iTake.chi = latest;
-            iTake.rho = uint48(now);
+            iBorrow.chi = latest;
+            iBorrow.rho = uint48(now);
             debt = add(debt, wad);   
         }
     }
 
     function updateDebt(int wad) public note auth  {
-        if (now >= iTake.rho) {
+        if (now >= iBorrow.rho) {
             drip();
         }
         debt = uint(int(debt) + int(wad));
     }
 
     function compounding() internal view returns (uint, uint, uint) {
-        uint48 rho = iTake.rho;
+        uint48 rho = iBorrow.rho;
         require(now >= rho);
-        uint speed = iTake.speed;
+        uint speed = iBorrow.speed;
 
-        uint chi = iTake.chi;
+        uint chi = iBorrow.chi;
 
         // compounding in seconds
         uint latest = rmul(rpow(speed, now - rho, ONE), chi);

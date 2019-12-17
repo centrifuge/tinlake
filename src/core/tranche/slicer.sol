@@ -47,19 +47,19 @@ contract Slicer is DSNote {
         } 
     }
 
-    function chop(uint wadT) public note auth returns (uint) {
+    function calcSlice(uint currencyAmount) public note auth returns (uint) {
         if (now > iSupply.rho) {
             drip();
         }
-        uint slice = rdiv(wadT, iSupply.chi);
+        uint slice = rdiv(currencyAmount, iSupply.chi);
         return slice;
     }
 
-    function payout(uint wadS) public note auth returns (uint) {
+    function calcPayout(uint tokenAmount) public note auth returns (uint) {
         if (now > iSupply.rho) {
             drip();
         }
-        uint payout = rmul(wadS, iSupply.chi);
+        uint payout = rmul(tokenAmount, iSupply.chi);
         return payout;
     }
 
@@ -82,14 +82,14 @@ contract Slicer is DSNote {
         return (latest, chi_);
     }
 
-    function updateISupply(uint takeSpeed, uint debt, uint reserve) public note auth {
-        require (takeSpeed > 0);
+    function updateISupply(uint borrowSpeed, uint debt, uint reserve) public note auth {
+        require (borrowSpeed > 0);
         if (now >= iSupply.rho) {
             drip();
         }
         uint ratio = rdiv(debt, add(reserve, debt));
-        uint takeSpeed_ = sub(takeSpeed, ONE);
-        iSupply.speed = add(rmul(takeSpeed_, ratio), ONE);
+        uint borrowSpeed_ = sub(borrowSpeed, ONE);
+        iSupply.speed = add(rmul(borrowSpeed_, ratio), ONE);
     }
 
     // --- Math ---

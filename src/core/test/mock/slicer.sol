@@ -4,28 +4,27 @@ contract SlicerMock {
 
     uint public callsUpdateISupply;
     uint public callsDrip;
-    uint public callsPayout;
-    uint public callsChop;
+    uint public callsCalcPayout;
+    uint public callsCalcSlice;
     uint public callsFile;
 
-    uint public takeSpeed;
+    uint public borrowSpeed;
     uint public speed;
     uint public debt;
     uint public reserve;
-    uint public wadS;
-    uint public wadT;
-    int public wad;
+    uint public tokenAmount;
+    uint public currencyAmount;
 
-    uint public chopReturn; function setChopReturn(uint wadS_) public {chopReturn=wadS_;}
-    uint public payoutReturn; function setPayoutReturn(uint wadT_) public {payoutReturn=wadT_;}
+    uint public calcSliceReturn; function setCalcSliceReturn(uint tokenAmount_) public {calcSliceReturn=tokenAmount_;}
+    uint public calcPayoutReturn; function setCalcPayoutReturn(uint currencyAmount_) public {calcPayoutReturn=currencyAmount_;}
     
     function file(bytes32 what, uint speed_) public {
         speed = speed_;
         callsFile++;
     }
 
-    function updateISupply(uint takeSpeed_, uint debt_, uint reserve_) public { 
-        takeSpeed = takeSpeed_;
+    function updateISupply(uint borrowSpeed_, uint debt_, uint reserve_) public { 
+        borrowSpeed = borrowSpeed_;
         debt = debt_;
         reserve = reserve_;
         callsUpdateISupply++;
@@ -35,15 +34,15 @@ contract SlicerMock {
         callsDrip++;
     }
 
-    function chop(uint wadT_) public returns(uint) {
-        wadT = wadT_;
-        callsChop++;
-        return chopReturn;
+    function calcSlice(uint currencyAmount_) public returns(uint) {
+        currencyAmount = currencyAmount_;
+        callsCalcSlice++;
+        return calcSliceReturn;
     }
 
-    function payout(uint wadS_) public returns(uint) {
-        wadS = wadS_;
-        callsPayout++;
-        return payoutReturn;
+    function calcPayout(uint tokenAmount_) public returns(uint) {
+        tokenAmount = tokenAmount_;
+        callsCalcPayout++;
+        return calcPayoutReturn;
     }
 }

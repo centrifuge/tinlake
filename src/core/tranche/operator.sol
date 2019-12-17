@@ -22,27 +22,27 @@ contract ReserveLike{
     function sliceOf(address) public view returns (uint);
     function redeem(address, uint, uint) public;
     function supply(address, uint, uint) public;
-    function give(address, uint) public;
-    function take(address, uint) public;
+    function repay(address, uint) public;
+    function borrow(address, uint) public;
 }
 
 contract QuantLike {
    uint public debt; 
-   uint public iTake;
+   uint public iBorrow;
    function file(bytes32, uint) public;
    function updateDebt(int) public;
-   function updateITake(uint, uint) public;
+   function updateiBorrow(uint, uint) public;
    function getSpeed() public returns(uint);
 }
 
 contract SlicerLike {
-   function chop(uint) public returns(uint);
-   function payout(uint) public returns(uint);
+   function calcSlice(uint) public returns(uint);
+   function calcPayout(uint) public returns(uint);
    function updateISupply(uint, uint, uint) public;
 }
 
 // Operator
-// Manages the reserve. Triggers iSupply & iTake calculations.
+// Manages the reserve. Triggers iSupply & iBorrow calculations.
 contract Operator is DSNote {
     // --- Auth ---
     mapping (address => uint) public wards;
@@ -72,44 +72,46 @@ contract Operator is DSNote {
         else if (what == "redeem") { redeemActive = data; }
     }
     
-    function supply(address usr, uint wadT) public note auth {
-        require (supplyActive);
-        uint wadS = slicer.chop(wadT);
-        reserve.supply(usr, wadS, wadT);
-        adjustSlicer();
+    function balance() public returns (uint) {
+        return reserve.balance();
     }
 
-    function redeem(address usr, uint wadS) public note auth {
+    function supply(address usr, uint currencyAmount) public note auth {
+        require (supplyActive);
+        uint tokenAmount = slicer.calcSlice(currencyAmount);
+        reserve.supply(usr, tokenAmount, currencyAmount);
+        updateSupplyRate();
+    }
+
+    function redeem(address usr, uint tokenAmount) public note auth {
         require (redeemActive);
         uint slice = reserve.sliceOf(usr); 
-         if (slice < wadS) {
-            uint wadT = slicer.payout(slice);
-            reserve.redeem(usr, slice, wadT);
-        } else {
-            uint wadT = slicer.payout(wadS);
-            reserve.redeem(usr, wadS, wadT);
+         if (slice < tokenAmount) {
+            tokenAmount = slice;
         }
-        adjustSlicer();
+        uint currencyAmount = slicer.calcPayout(tokenAmount);
+        reserve.redeem(usr, tokenAmount, currencyAmount);
+        updateSupplyRate();
     }
 
-    function give(address usr, uint wadT) public note auth {
-        reserve.give(usr, wadT);
-        quant.updateDebt(int(wadT) * -1);
-        adjustSlicer();
+    function repay(address usr, uint currencyAmount) public note auth {
+        reserve.repay(usr, currencyAmount);
+        quant.updateDebt(int(currencyAmount) * -1);
+        updateSupplyRate();
     }
 
-    function take(address usr, uint wadT) public note auth {
-        reserve.take(usr, wadT);
-        quant.updateDebt(int(wadT));
-        adjustSlicer();
+    function borrow(address usr, uint currencyAmount) public note auth {
+        reserve.borrow(usr, currencyAmount);
+        quant.updateDebt(int(currencyAmount));
+        updateSupplyRate();
     }
 
     function adjustQuant(uint speed) public note auth {
-        quant.file("itake", speed);
-        adjustSlicer();
+        quant.file("iBorrow", speed);
+        updateSupplyRate();
     }
 
-    function adjustSlicer() internal {
+    function updateSupplyRate() internal {
         slicer.updateISupply(quant.getSpeed(), quant.debt(), reserve.balance());
     }
 

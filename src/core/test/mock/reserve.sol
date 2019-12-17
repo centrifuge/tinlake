@@ -4,40 +4,40 @@ contract ReserveMock {
 
     uint public callsSupply;
     uint public callsRedeem;
-    uint public callsGive;
-    uint public callsTake;
+    uint public callsRepay;
+    uint public callsBorrow;
 
-    uint public wadT;
-    uint public wadS;
+    uint public currencyAmount;
+    uint public tokenAmount;
     address public usr;
 
-    uint public sliceReturn; function setSliceReturn(uint wadS_) public {sliceReturn=wadS_;}
-    uint public balance; function setBalanceReturn(uint wadT_) public {balance=wadT_;}
+    uint public sliceReturn; function setSliceReturn(uint tokenAmount_) public {sliceReturn=tokenAmount_;}
+    uint public balance; function setBalanceReturn(uint currencyAmount_) public {balance=currencyAmount_;}
     
-    function supply(address usr_, uint wadS_, uint wadT_) public returns(uint) {
+    function supply(address usr_, uint tokenAmount_, uint currencyAmount_) public returns(uint) {
        usr = usr_;
-       wadT = wadT_;
-       wadS = wadS_;
+       currencyAmount = currencyAmount_;
+       tokenAmount = tokenAmount_;
        callsSupply++;
     }
 
-    function redeem(address usr_, uint wadS_, uint wadT_) public {
+    function redeem(address usr_, uint tokenAmount_, uint currencyAmount_) public {
        usr = usr_;
-       wadT = wadT_;
-       wadS = wadS_;
+       currencyAmount = currencyAmount_;
+       tokenAmount = tokenAmount_;
        callsRedeem++;
     }
 
-    function give(address usr_, uint wadT_) public {
+    function repay(address usr_, uint currencyAmount_) public {
        usr = usr_;
-       wadT = wadT_;
-       callsGive++;
+       currencyAmount = currencyAmount_;
+       callsRepay++;
     }
 
-    function take(address usr_, uint wadT_) public {
+    function borrow(address usr_, uint currencyAmount_) public {
        usr = usr_;
-       wadT = wadT_;
-       callsTake++;
+       currencyAmount = currencyAmount_;
+       callsBorrow++;
     }
 
     function sliceOf(address usr_) public returns(uint) {

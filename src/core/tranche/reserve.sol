@@ -28,6 +28,7 @@ contract TokenLike{
 
 // Reserve
 // Manages the token balances & transfers
+// Currency & Token amounts are denominated in wad
 contract Reserve is DSNote {
     // --- Auth ---
     mapping (address => uint) public wards;
@@ -36,38 +37,39 @@ contract Reserve is DSNote {
     modifier auth { require(wards[msg.sender] == 1); _; }
 
     // --- Data ---
-    TokenLike public sliceTkn;
-    TokenLike public tkn;
+    TokenLike public token;
+    TokenLike public currency;
 
-    constructor(address sliceTkn_, address tkn_) public {
+    constructor(address token_, address currency_) public {
         wards[msg.sender] = 1;
-        sliceTkn = TokenLike(sliceTkn_);
-        tkn = TokenLike(tkn_);
+        token = TokenLike(token_);
+        currency = TokenLike(currency_);
     }
 
     function balance() public returns (uint){
-        return tkn.balanceOf(address(this));
+        return currency.balanceOf(address(this));
     }
 
     function sliceOf(address usr) public returns (uint) {
-        return sliceTkn.balanceOf(address(usr));
+        return token.balanceOf(address(usr));
     }
     
-    function supply(address usr, uint wadS, uint wadT) public note auth {
-        tkn.transferFrom(usr, address(this), wadT);
-        sliceTkn.mint(usr, wadS);
+    function supply(address usr, uint tokenAmount, uint currencyAmount) public note auth {
+        currency.transferFrom(usr, address(this), currencyAmount);
+        token.mint(usr, tokenAmount);
     }
 
-    function redeem(address usr, uint wadS, uint wadT) public note auth {
-        sliceTkn.burn(usr, wadS);
-        tkn.transferFrom(address(this), usr, wadT);
+    function redeem(address usr, uint tokenAmount, uint currencyAmount) public note auth {
+        token.transferFrom(usr, address(this), tokenAmount);
+        token.burn(address(this), tokenAmount);
+        currency.transferFrom(address(this), usr, currencyAmount);
     }
 
-    function give(address usr, uint wadT) public note auth {
-        tkn.transferFrom(usr, address(this), wadT);
+    function repay(address usr, uint currencyAmount) public note auth {
+        currency.transferFrom(usr, address(this), currencyAmount);
     }
 
-    function take(address usr, uint wadT) public note auth {
-        tkn.transferFrom(address(this), usr, wadT);
+    function borrow(address usr, uint currencyAmount) public note auth {
+        currency.transferFrom(address(this), usr, currencyAmount);
     }
 }

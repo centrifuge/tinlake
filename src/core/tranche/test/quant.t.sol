@@ -1,4 +1,4 @@
-// Copyright (C) 2019 
+// Copyright (C) 2019 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -17,105 +17,95 @@ pragma solidity >=0.4.23;
 
 import "ds-test/test.sol";
 
-import "../slicer.sol";
+import "../quant.sol";
 
 contract Hevm {
     function warp(uint256) public;
 }
 
-contract SlicerTest is DSTest {
+contract QuantTest is DSTest {
 
-    Slicer slicer;
+    Quant quant;
     Hevm hevm;
 
     function setUp() public {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
-        slicer = new Slicer();
+        quant = new Quant();
     }
 
-    function testFileISupply() public {
+    function testInitDebt() public {
+        uint debt = 66 ether;
+        quant.updateDebt(int(debt));
+        assertEq(quant.debt(), debt);
+    }
+
+    function testIncreaseDebt() public {
+        uint speed = uint(1000000003593629043335673583); // 12 % per year
+        uint initialDebt = 66 ether;
+        quant.file("iborrow", speed);
+        quant.updateDebt(int(initialDebt));
+
+        hevm.warp(now + 365 days); // 1 year passed 
+        // debt after one year: 66 ether * 1,12 = 73.92 
+
+        uint debt = 66 ether;
+        quant.updateDebt(int(debt)); 
+        assertEq(quant.debt(), 139.92 ether); // 73.92 + 66 = 139.92
+    }
+
+    function testDecreaseDebt() public {
+        uint speed = uint(1000000003593629043335673583); // 12 % per year
+        uint initialDebt = 66 ether;
+        quant.file("iborrow", speed);
+        quant.updateDebt(int(initialDebt));
+
+        hevm.warp(now + 365 days); // 1 year passed
+        // debt after one year: 66 ether * 1,12 = 73.92 
+
+        int debt = -73.92 ether; 
+        quant.updateDebt(debt);
+        assertEq(quant.debt(), 0);
+    }
+
+    function testFileIBorrow() public {
         uint speed = uint(1000000003593629043335673583);
-        slicer.file("isupply", speed);
-        (, uint speedNow, ) = slicer.iSupply();
+        quant.file("iborrow", speed);
+        (, uint speedNow, ) = quant.iBorrow();
         assertEq(speed, speedNow);
     }
 
-    function testFailFileISupplyWrongSelector() public {
+    function testFailFileIBorrowWrongSelector() public {
         uint speed = uint(1000000003593629043335673583);
-        slicer.file("itake", speed);
-        (, uint speedNow, ) = slicer.iSupply();
+        quant.file("isupply", speed);
+        (, uint speedNow, ) = quant.iBorrow();
         assertEq(speed, speedNow);
+    }
+
+    function testUpdateIBorrow() public {
+        uint debt = 100 ether;
+        uint reserve = 300 ether;
+        uint supplySpeed = 1000000001547125957863212450; // 5 % per year
+                    
+        quant.updateDebt(int(debt));
+        quant.updateiBorrow(supplySpeed, reserve); 
+        // 0.05 * ((300 + 100) / 100) = 0.2
+    
+        (, uint speedNow, ) = quant.iBorrow();
+        assertEq(speedNow, uint(1000000006188503831452849800));     
     }
 
     function testDrip() public {
-        uint speed = uint(1000000003593629043335673583);  // 12 % per year
-        slicer.file("isupply", speed);
+        uint speed = uint(1000000003593629043335673583); // 12 % per year
         uint initialDebt = 66 ether;
-        hevm.warp(now + 365 days); // 1 year passed
-        slicer.drip();
+        quant.file("iborrow", speed);
+        quant.updateDebt(int(initialDebt));
 
-        (uint chiNow,,) = slicer.iSupply();
-        uint debt = rmul(initialDebt, chiNow);
+        hevm.warp(now + 365 days); // 1 year passed 
+        
+        quant.drip();
         // debt after one year: 66 ether * 1,12 = 73.92 
-        assertEq(debt, 73.92 ether);
-    }
-
-    function testInstantChop() public {
-        uint speed = uint(1000000001547125957863212450); // 5 % per year
-        slicer.file("isupply", speed);
-        uint wadT = 100 ether;
-        uint slice = slicer.chop(wadT);
-
-        assertEq(slice, wadT);
-    }
-
-    function testChopAfter1Year() public {
-        uint speed = uint(1000000001547125957863212450); // 5 % per year
-        slicer.file("isupply", speed);
-
-        hevm.warp(now + 365 days); // 1 year passed
-    
-        uint wadT = 100 ether;
-        uint slice = slicer.chop(wadT);
-
-        //100 / (1000000001547125957863212450) ^ (3600 * 24 * 365) 
-        assertEq(slice, 95238095238095238093);
-    }
-
-    function testPayoutAfter1Year() public { 
-        uint speed = uint(1000000003593629043335673583);  // 12 % per year
-        slicer.file("isupply", speed);
-        uint wadT = 66 ether;
-        uint slice = slicer.chop(wadT);
-        uint payout = slicer.payout(slice);
-
-        assertEq(payout, 66 ether);
-    }
- 
-    function testInstantPayout() public { 
-        uint speed = uint(1000000003593629043335673583);  // 12 % per year
-        slicer.file("isupply", speed);
-        uint wadT = 66 ether;
-        uint slice = slicer.chop(wadT);
-
-        hevm.warp(now + 365 days); // 1 year passed
-
-        uint payout = slicer.payout(slice);
-        // 66 * (1000000003593629043335673583) ^ (3600 * 24 * 365) 
-        assertEq(payout, 73.92 ether);
-    }
-
-    function testUpdateISupply() public {
-        uint debt = 100 ether;
-        uint reserve = 300 ether;
-        uint takeSpeed = uint(1000000001547125957863212450); // 5 % per year
-                    
-        slicer.updateISupply(takeSpeed, debt, reserve); 
-        // 0.05 * (100  / (100 + 300)) ->  0.0125 
-    
-        (, uint speedNow, ) = slicer.iSupply();
-        assertEq(speedNow, uint(1000000000386781489465803112));   
+        assertEq(quant.debt(), 73.92 ether);
     }
 
     // --- Math ---

@@ -18,9 +18,9 @@ pragma solidity >=0.4.23;
 import "ds-test/test.sol";
 
 import "../operator.sol";
-import "./mock/reserve.sol";
-import "./mock/slicer.sol";
-import "./mock/quant.sol";
+import "../../test/mock/reserve.sol";
+import "../../test/mock/slicer.sol";
+import "../../test/mock/quant.sol";
 
 contract OperatorTest is DSTest {
     Operator operator;
@@ -39,89 +39,90 @@ contract OperatorTest is DSTest {
 
 
     function supply() internal {
-        uint wadT = 200 ether;
-        uint wadS = 100;
-        uint takeSpeed = ONE;
+        uint currencyAmount = 200 ether;
+        uint tokenAmount = 100;
+        uint borrowSpeed = ONE;
         uint debt = 0;
 
-        slicer.setChopReturn(wadS);
-        quant.setSpeedReturn(takeSpeed);
+        slicer.setCalcSliceReturn(tokenAmount);
+        quant.setSpeedReturn(borrowSpeed);
         quant.setDebtReturn(debt);
-        reserve.setBalanceReturn(wadT);
+        reserve.setBalanceReturn(currencyAmount);
 
-        operator.supply(address(this), wadT);
+        operator.supply(address(this), currencyAmount);
 
-        assertEq(slicer.callsChop(), 1);
+        assertEq(slicer.callsCalcSlice(), 1);
         assertEq(reserve.callsSupply(), 1);
         assertEq(reserve.usr(), address(this));
-        assertEq(reserve.wadT(), wadT);
-        assertEq(reserve.wadS(), wadS);
-        checkSlicerUpdated(takeSpeed, debt, wadT);
+        assertEq(reserve.currencyAmount(), currencyAmount);
+        assertEq(reserve.tokenAmount(), tokenAmount);
+        checkSlicerUpdated(borrowSpeed, debt, currencyAmount);
     }
 
-    function redeem(uint wadS, uint usrSlice, uint redeemWadS) internal {
-        uint wadT = 200 ether;
-        uint takeSpeed = ONE;
+    function redeem(uint tokenAmount, uint usrSlice, uint redeemTokenAmount) internal {
+        uint currencyAmount = 200 ether;
+        uint borrowSpeed = ONE;
         uint debt = 0;
         uint balance = 200;
 
+
         reserve.setSliceReturn(usrSlice);
         reserve.setBalanceReturn(balance);
-        slicer.setPayoutReturn(wadT);
-        quant.setSpeedReturn(takeSpeed);
+        slicer.setCalcPayoutReturn(currencyAmount);
+        quant.setSpeedReturn(borrowSpeed);
         quant.setDebtReturn(debt);
 
-        operator.redeem(address(this), wadS);
-        assertEq(slicer.callsPayout(), 1);
+        operator.redeem(address(this), tokenAmount);
+        assertEq(slicer.callsCalcPayout(), 1);
         assertEq(reserve.callsRedeem(), 1);
         assertEq(reserve.usr(), address(this));
-        assertEq(reserve.wadT(), wadT);
-        assertEq(reserve.wadS(), redeemWadS);
-        checkSlicerUpdated(takeSpeed, debt, balance);
+        assertEq(reserve.currencyAmount(), currencyAmount);
+        assertEq(reserve.tokenAmount(), redeemTokenAmount);
+        checkSlicerUpdated(borrowSpeed, debt, balance);
     }
 
-    function give() internal { 
-        uint wadT = 200 ether; 
-        uint takeSpeed = ONE;
+    function repay() internal { 
+        uint currencyAmount = 200 ether; 
+        uint borrowSpeed = ONE;
         uint debt = 0;
 
-        quant.setSpeedReturn(takeSpeed);
+        quant.setSpeedReturn(borrowSpeed);
         quant.setDebtReturn(debt);
-        reserve.setBalanceReturn(wadT);
+        reserve.setBalanceReturn(currencyAmount);
 
-        operator.give(address(this), wadT);
+        operator.repay(address(this), currencyAmount);
 
-        assertEq(reserve.callsGive(), 1);
+        assertEq(reserve.callsRepay(), 1);
         assertEq(reserve.usr(), address(this));
-        assertEq(reserve.wadT(), wadT);
+        assertEq(reserve.currencyAmount(), currencyAmount);
         assertEq(quant.callsUpdateDebt(), 1);
-        assertEq(quant.wad(), (-1 * int(wadT)));
-        checkSlicerUpdated(takeSpeed, debt, wadT);
+        assertEq(quant.loanAmount(), (-1 * int(currencyAmount)));
+        checkSlicerUpdated(borrowSpeed, debt, currencyAmount);
     }
 
-    function take() internal {
-        uint wadT = 200 ether; 
-        uint takeSpeed = ONE;
+    function borrow() internal {
+        uint currencyAmount = 200 ether; 
+        uint borrowSpeed = ONE;
         uint debt = 0;
         uint balance = 0;
 
-        quant.setSpeedReturn(takeSpeed);
+        quant.setSpeedReturn(borrowSpeed);
         quant.setDebtReturn(debt);
         reserve.setBalanceReturn(balance);
 
-        operator.take(address(this), wadT);
+        operator.borrow(address(this), currencyAmount);
         
-        assertEq(reserve.callsTake(), 1);
+        assertEq(reserve.callsBorrow(), 1);
         assertEq(reserve.usr(), address(this));
-        assertEq(reserve.wadT(), wadT);
+        assertEq(reserve.currencyAmount(), currencyAmount);
         assertEq(quant.callsUpdateDebt(), 1);
-        assertEq(quant.wad(), int(wadT));
-        checkSlicerUpdated(takeSpeed, debt, balance);
+        assertEq(quant.loanAmount(), int(currencyAmount));
+        checkSlicerUpdated(borrowSpeed, debt, balance);
     }
 
     function checkSlicerUpdated(uint speed, uint debt, uint reserve) internal {
         assertEq(slicer.callsUpdateISupply(), 1);
-        assertEq(slicer.takeSpeed(), speed);
+        assertEq(slicer.borrowSpeed(), speed);
         assertEq(slicer.debt(), debt);
         assertEq(slicer.reserve(), reserve);
     }
@@ -148,29 +149,29 @@ contract OperatorTest is DSTest {
     }
 
     function testRedeem() public {
-        uint wadS = 100;
+        uint tokenAmount = 100;
         uint usrSlice = 150;
-        redeem(wadS, usrSlice, wadS);
+        redeem(tokenAmount, usrSlice, tokenAmount);
     }
 
     function testRedeemMax() public {        
-        uint wadS = 200;
+        uint tokenAmount = 200;
         uint usrSlice = 150;
-        redeem(wadS, usrSlice, usrSlice);
+        redeem(tokenAmount, usrSlice, usrSlice);
     }
 
     function testFailRedeemNotActive() public {
         operator.file("redeem", false);
-        uint wadS = 100;
+        uint tokenAmount = 100;
         uint usrSlice = 150;
-        redeem(wadS, usrSlice, wadS);
+        redeem(tokenAmount, usrSlice, tokenAmount);
     }
 
-    function testGive() public {
-        give();
+    function testRepay() public {
+        repay();
     }
 
-    function testTake() public {
-        take();
+    function testBorrow() public {
+        borrow();
     }
 }
