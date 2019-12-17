@@ -2,7 +2,7 @@ pragma solidity >=0.4.24;
 
 contract QuantMock {
 
-    uint public callsUpdateiBorrow;
+    uint public callsUpdateIBorrow;
     uint public callsUpdateDebt;
     uint public callsDrip;
     uint public callsFile;
@@ -20,10 +20,10 @@ contract QuantMock {
         callsFile++;
     }
 
-    function UpdateiBorrow(uint supplySpeed_, uint reserve_) public { 
+    function UpdateIBorrow(uint supplySpeed_, uint reserve_) public { 
         supplySpeed = supplySpeed_;
         reserve = reserve_;
-        callsUpdateiBorrow++;
+        callsUpdateIBorrow++;
     }
 
     function drip() public {
