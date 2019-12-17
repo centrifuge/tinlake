@@ -19,9 +19,15 @@ contract PileLike {
     function want() public returns (int);
 }
 
+contract DistributorLike {
+    function waterfallGive() public;
+}
+
 contract OperatorLike {
     function give(address, uint) public;
     function take(address, uint) public;
+    boolean public supplyActive;
+    boolean public redeemActive;
 }
 
 contract Desk {
@@ -32,30 +38,74 @@ contract Desk {
     function deny(address usr) public auth note { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
 
+    // --- Tranches ---
+
+    struct Tranche {
+        uint ratio;
+        OperatorLike operator;
+    }
+
+    Tranche[] tranches;
+
     // --- Data ---
     PileLike public pile;
-    OperatorLike public operator;
+    DistributorLike public distributor;
+    bool public flowThrough;
 
-    constructor (address pile_, address operator_) public {
+    constructor (address pile_, address distributor_) public {
         wards[msg.sender] = 1;
         pile = PileLike(pile_);
-        operator = OperatorLike(operator_);
+        distributor = DistributorLike(distributor_);
+        flowThrough = false;
     }
 
     function depend (bytes32 what, address addr) public auth {
         if (what == "pile") { pile = PileLike(addr); }
-        else if (what == "operator") { operator = OperatorLike(addr); }
+        else if (what == "distributor") { distributor = DistributorLike(addr); }
         else revert();
     }
 
-    // --- Calls ---
-    function balance() public auth {
-        int wad = pile.want();
-        if (wad > 0) {
-            operator.take(address(pile), uint(wad));
+    function file(bytes32 what, bool data) public auth {
+        if (what == "flowThrough") { flowThrough = data; }
+    }
 
+    // --- Calls ---
+
+    function addTranche(uint ratio, address operator_) public auth {
+        Tranche memory t;
+        t.ratio = ratio;
+        t.operator = OperatorLike(operator_);
+        tranches.push(t);
+    }
+
+    function returnOperator(uint i) public auth {
+       return tranches[i].operator;
+    }
+
+    function returnRatio(uint i) public auth {
+        return tranches[i].ratio;
+    }
+
+    function balance() public auth {
+        if (flowThrough) {
+            if (operator.supplyActive) {
+                        //operator.balance()
+              uint wadR = reserve.balance();
+              operator.take(address.pile, uint(wadR));
+            }
+            if (operator.redeemActive) {
+                // payout
+                distributor.waterfallGive();
+            }
         } else {
-            operator.give(address(pile), uint(wad*-1));
+            int wad = pile.want();
+            if (wad > 0) {
+                // this should open MCD Vault and take DAI into reserve
+                operator.take(address(pile), uint(wad));
+            } else {
+                // this should repay Vault
+                operator.give(address(pile), uint(wad*-1));
+            }
         }
     }
 }

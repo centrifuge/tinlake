@@ -24,8 +24,6 @@ contract Desk {
     function balance() public {
         int wad = pile.want();
         if (wad > 0) {
-
-
         } else {
             take(address(pile), uint(wad*-1));
         }
