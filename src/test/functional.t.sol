@@ -31,6 +31,10 @@ contract PileLike {
     function collect(uint loan) public;
 }
 
+contract ERC721Like {
+    function ownerOf(uint tokenId) public returns(address);
+}
+
 contract FunctionalTest is DSTest {
 
     Deployer coreDeployer;

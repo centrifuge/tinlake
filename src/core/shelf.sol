@@ -39,7 +39,7 @@ contract PileLike {
 }
 
 
-contract Shelf is TitleOwned {
+contract Shelf is TitleOwned,DSTest {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth { wards[usr] = 1; }
@@ -105,8 +105,8 @@ contract Shelf is TitleOwned {
         adjust(loan);
     }
 
-    function free(uint loan, address usr) public auth {
-        move(loan, shelf[loan].registry, shelf[loan].tokenId, usr);
+    function free(uint loan, address usr) public auth  {
+        NFTLike(shelf[loan].registry).transferFrom(address(this), usr, shelf[loan].tokenId);
         adjust(loan);
     }
 

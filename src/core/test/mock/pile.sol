@@ -41,9 +41,10 @@ contract PileMock {
     }
 
 
-    function recovery(uint loan_, uint wad_) public  {
+    function recovery(uint loan_, address usr_, uint wad_) public  {
         loan = loan_;
         wad = wad_;
+        usr = usr_;
         callsRecovery++;
     }
 

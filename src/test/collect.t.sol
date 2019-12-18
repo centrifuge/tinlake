@@ -16,6 +16,7 @@
 pragma solidity >=0.4.23;
 
 import "ds-test/test.sol";
+import "ds-math/math.sol";
 
 import { SystemTest, ERC20Like } from "../core/test/system/system.t.sol";
 import { Deployer } from "../core/deployer.sol";
@@ -28,7 +29,7 @@ import "./functional.t.sol";
 import {CollectDeployer} from "../core/collect/deployer.sol";
 
 
-contract CollectTest is FunctionalTest {
+contract CollectTest is FunctionalTest,DSMath {
     function setUp() public {
         basicSetup();
     }
@@ -39,10 +40,8 @@ contract CollectTest is FunctionalTest {
 
         CollectDeployer collectDeployer = CollectDeployer(address(systemTest.deployer().collectDeployer()));
 
-        // threshold 120%
-        assertEq(collectDeployer.spotter().threshold(), 12 * 10**26);
-        // current ratio 120%
-        //assertEq(rdiv(appraisal, principal));
+        // intial threshold and ratio at 120%
+        assertEq(collectDeployer.spotter().threshold(), rdiv(appraisal, principal));
 
         bool seizable = collectDeployer.spotter().seizable(loan);
         assertTrue(seizable==false);
@@ -52,6 +51,17 @@ contract CollectTest is FunctionalTest {
         seizable = collectDeployer.spotter().seizable(loan);
         assertTrue(seizable==true);
 
+        assertTrue(collectDeployer.spotter().collectable(loan) == false);
+
+        // seizure loan
+        collectDeployer.spotter().seizure(loan);
+        assertTrue(collectDeployer.spotter().collectable(loan));
+
+        setUpRepayLiquidity(address(this), 2000 ether);
+        // collect NFT
+        collectDeployer.collector().collect(loan, address(this));
+
+        assertEq(ERC721Like(tinlake.collateralNFT_).ownerOf(tokenId), address(this));
     }
 }
 
