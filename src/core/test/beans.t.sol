@@ -61,7 +61,6 @@ contract BeansTest is DSTest {
         uint should = calculateDebt(fee, principal, uint(3600*24));
         checkDebt(loan, fee, should);
     }
-
     function testSingleCompoundDay() public {
         /*
         Compound period in pile is in seconds
@@ -124,7 +123,7 @@ contract BeansTest is DSTest {
         // on year later
         hevm.warp(now + 365 days);
         beans.drip(fee);
-        checkDebt(loan, fee, 73.92 ether);// 66 ether * 1,12
+        checkDebt(loan, fee, 73.92 ether); // 66 ether * 1,12
     }  
 
     function testDrip() public {
