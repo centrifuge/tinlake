@@ -25,19 +25,33 @@ import { Actions } from "../actions/actions.sol";
 import { Proxy } from "../proxy/proxy.sol";
 import { User } from "./user.sol";
 import "./functional.t.sol";
+import {CollectDeployer} from "../core/collect/deployer.sol";
+
 
 contract CollectTest is FunctionalTest {
-
     function setUp() public {
         basicSetup();
     }
 
-    function setUpCollector() public {
-        // todo
-    }
-
     function testBasicCollect() public {
-        //TODO
+        (uint tokenId, uint principal, uint appraisal, uint fee) = systemTest.defaultLoan();
+        uint loan = whitelistAndBorrow(tokenId, principal, appraisal, fee);
+
+        CollectDeployer collectDeployer = CollectDeployer(address(systemTest.deployer().collectDeployer()));
+
+        // threshold 120%
+        assertEq(collectDeployer.spotter().threshold(), 12 * 10**26);
+        // current ratio 120%
+        //assertEq(rdiv(appraisal, principal));
+
+        bool seizable = collectDeployer.spotter().seizable(loan);
+        assertTrue(seizable==false);
+
+        systemTest.hevm().warp(now + 10 days);
+
+        seizable = collectDeployer.spotter().seizable(loan);
+        assertTrue(seizable==true);
+
     }
 }
 

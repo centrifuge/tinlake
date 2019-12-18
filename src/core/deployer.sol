@@ -117,7 +117,9 @@ contract Deployer {
     AdminFab adminfab;
     BeansFab beansfab;
 
-    CollectDeployerLike collectDeployer;
+    CollectDeployerLike public
+
+    collectDeployer;
 
     address     public god;
     address     public appraiser_;
