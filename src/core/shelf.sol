@@ -18,7 +18,6 @@ pragma solidity >=0.4.24;
 pragma experimental ABIEncoderV2;
 
 import { TitleOwned } from "./title.sol";
-import "ds-test/test.sol";
 
 contract AppraiserLike {
     function appraise(uint, address, uint) public returns (uint);
@@ -39,7 +38,7 @@ contract PileLike {
 }
 
 
-contract Shelf is TitleOwned,DSTest {
+contract Shelf is TitleOwned {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth { wards[usr] = 1; }
