@@ -34,6 +34,10 @@ contract CollectTest is FunctionalTest,DSMath {
         basicSetup();
     }
 
+    function setUpCollector() public {
+        // todo
+    }
+
     function testBasicCollect() public {
         (uint tokenId, uint principal, uint appraisal, uint fee) = systemTest.defaultLoan();
         uint loan = whitelistAndBorrow(tokenId, principal, appraisal, fee);
