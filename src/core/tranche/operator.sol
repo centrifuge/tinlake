@@ -58,7 +58,7 @@ contract Operator is DSNote {
     bool public supplyActive;
     bool public redeemActive;
 
-    constructor( address reserve_, address quant_, address slicer_) public {
+    constructor(address reserve_, address quant_, address slicer_) public {
         wards[msg.sender] = 1;
         quant = QuantLike(quant_);
         slicer = SlicerLike(slicer_);
@@ -106,7 +106,7 @@ contract Operator is DSNote {
         updateSupplyRate();
     }
 
-    function adjustQuant(uint speed) public note auth {
+    function updateBorrowRate(uint speed) public note auth {
         quant.file("iBorrow", speed);
         updateSupplyRate();
     }
