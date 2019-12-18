@@ -2,7 +2,7 @@ pragma solidity >=0.4.24;
 
 contract SlicerMock {
 
-    uint public callsUpdateISupply;
+    uint public callsupdateSupplyRate;
     uint public callsDrip;
     uint public callsCalcPayout;
     uint public callsCalcSlice;
@@ -23,11 +23,11 @@ contract SlicerMock {
         callsFile++;
     }
 
-    function updateISupply(uint borrowSpeed_, uint debt_, uint reserve_) public { 
+    function updateSupplyRate(uint borrowSpeed_, uint debt_, uint reserve_) public { 
         borrowSpeed = borrowSpeed_;
         debt = debt_;
         reserve = reserve_;
-        callsUpdateISupply++;
+        callsupdateSupplyRate++;
     }
 
     function drip() public {

@@ -38,7 +38,7 @@ contract QuantLike {
 contract SlicerLike {
    function calcSlice(uint) public returns(uint);
    function calcPayout(uint) public returns(uint);
-   function updateISupply(uint, uint, uint) public;
+   function updateSupplyRate(uint, uint, uint) public;
 }
 
 // Operator
@@ -112,7 +112,7 @@ contract Operator is DSNote {
     }
 
     function updateSupplyRate() internal {
-        slicer.updateISupply(quant.getSpeed(), quant.debt(), reserve.balance());
+        slicer.updateSupplyRate(quant.getSpeed(), quant.debt(), reserve.balance());
     }
 
     // --- Math ---

@@ -106,12 +106,12 @@ contract SlicerTest is DSTest {
         assertEq(payout, 73.92 ether);
     }
 
-    function testUpdateISupply() public {
+    function testupdateSupplyRate() public {
         uint debt = 100 ether;
         uint reserve = 300 ether;
         uint borrowSpeed = uint(1000000001547125957863212450); // 5 % per year
                     
-        slicer.updateISupply(borrowSpeed, debt, reserve); 
+        slicer.updateSupplyRate(borrowSpeed, debt, reserve); 
         // 0.05 * (100  / (100 + 300)) ->  0.0125 
     
         (, uint speedNow, ) = slicer.iSupply();

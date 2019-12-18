@@ -121,7 +121,7 @@ contract OperatorTest is DSTest {
     }
 
     function checkSlicerUpdated(uint speed, uint debt, uint reserve) internal {
-        assertEq(slicer.callsUpdateISupply(), 1);
+        assertEq(slicer.callsupdateSupplyRate(), 1);
         assertEq(slicer.borrowSpeed(), speed);
         assertEq(slicer.debt(), debt);
         assertEq(slicer.reserve(), reserve);

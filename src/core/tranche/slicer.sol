@@ -64,25 +64,15 @@ contract Slicer is DSNote {
     }
 
     function drip() public note auth {
-        if (now >= iSupply.rho) {
-            (uint latest,) = compounding();
-            iSupply.chi = latest;
+         if (now >= iSupply.rho) {
+            iSupply.chi = rmul(rpow(iSupply.speed, now - iSupply.rho, ONE),  iSupply.chi );
             iSupply.rho = uint48(now);
         }
     }
 
-    function compounding() public view returns (uint, uint) {
-        uint48 rho = iSupply.rho;
-        require(now >= rho);
-        uint speed = iSupply.speed;
-        uint chi = iSupply.chi;
-        // compounding in seconds
-        uint latest = rmul(rpow(speed, now - rho, ONE), chi);
-        uint chi_ = rdiv(latest, chi);
-        return (latest, chi_);
-    }
 
-    function updateISupply(uint borrowSpeed, uint debt, uint reserve) public note auth {
+
+    function updateSupplyRate(uint borrowSpeed, uint debt, uint reserve) public note auth {
         require (borrowSpeed > 0);
         if (now >= iSupply.rho) {
             drip();

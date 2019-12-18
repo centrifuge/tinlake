@@ -15,7 +15,7 @@
 
 pragma solidity >=0.4.24;
 
-contract Drop {
+contract Erc20 {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth { wards[usr] = 1; }
