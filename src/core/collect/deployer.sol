@@ -51,9 +51,9 @@ contract CollectDeployer {
 
     address god;
 
-    Spotter spotter;
-    Tag tag;
-    Collector collector;
+    Spotter public spotter;
+    Tag public tag;
+    Collector public collector;
 
     constructor(address god_, SpotterFab spotterFab_, TagFab tagFab_, CollectorFab collectorFab_) public {
         god = god_;

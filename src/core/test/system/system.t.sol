@@ -21,6 +21,7 @@ import "../../deployer.sol";
 import "../../appraiser.sol";
 import "../simple/nft.sol";
 import "../simple/token.sol";
+import "../../collect/deployer.sol";
 
 contract ERC20Like {
     function transferFrom(address, address, uint) public;
@@ -159,11 +160,25 @@ contract SystemTest is DSTest {
         deployer.deployDesk(tkn_);
         deployer.deployAdmit();
         deployer.deployAdmin(address(appraiser));
+
+        deployCollect();
+
         deployer.deploy();
 
         borrower = new User(address(deployer.pile()), address(deployer.shelf()), address(deployer.desk()), tkn_);
         borrower_ = address(borrower);
         admin.file(deployer);
+    }
+
+    function deployCollect() public {
+        SpotterFab spotterFab = new SpotterFab();
+        TagFab tagFab = new TagFab();
+        CollectorFab collectorFab = new CollectorFab();
+
+        CollectDeployer collectDeployer  = new CollectDeployer(address(this), spotterFab, tagFab, collectorFab);
+
+        uint threshold = 12 * 10**26; // threshold 120%
+        deployer.deployCollect(address(collectDeployer), threshold);
     }
 
     // Checks

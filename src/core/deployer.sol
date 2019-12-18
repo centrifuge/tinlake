@@ -29,6 +29,11 @@ contract LenderFabLike {
     function deploy(address,address,address) public returns (address);
 }
 
+contract CollectDeployerLike {
+    function deploy(address pile_, address shelf_, address desk_, uint threshold_) public;
+    function spotter() public returns(address);
+}
+
 contract LenderLike {
     function rely(address) public;
     function file(address) public;
@@ -112,7 +117,7 @@ contract Deployer {
     AdminFab adminfab;
     BeansFab beansfab;
 
-    CollectDeployer collectDeployer;
+    CollectDeployerLike collectDeployer;
 
     address     public god;
     address     public appraiser_;
@@ -142,7 +147,7 @@ contract Deployer {
     }
 
     function deployCollect(address collectDeployer_ ,uint threshold_) public {
-        collectDeployer = CollectDeployer(collectDeployer_);
+        collectDeployer = CollectDeployerLike(collectDeployer_);
         collectDeployer.deploy(address(pile), address(shelf), address(desk), threshold_);
     }
 
@@ -190,6 +195,7 @@ contract Deployer {
         admin = adminfab.newAdmin(address(admit), appraiser_, address(pile), address(beans));
         admin.rely(god);
     }
+
     function deploy() public {
         address pile_ = address(pile);
         address desk_ = address(desk);
@@ -210,6 +216,8 @@ contract Deployer {
 
         // pile allowed to call
         beans.rely(pile_);
+
+        shelf.rely(address(collectDeployer.spotter()));
 
         WardsLike(appraiser_).rely(admin_);
     }
