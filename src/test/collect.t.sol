@@ -34,10 +34,6 @@ contract CollectTest is FunctionalTest,DSMath {
         basicSetup();
     }
 
-    function setUpCollector() public {
-        // todo
-    }
-
     function testBasicCollect() public {
         (uint tokenId, uint principal, uint appraisal, uint fee) = systemTest.defaultLoan();
         uint loan = whitelistAndBorrow(tokenId, principal, appraisal, fee);
@@ -60,6 +56,9 @@ contract CollectTest is FunctionalTest,DSMath {
         // seizure loan
         collectDeployer.spotter().seizure(loan);
         assertTrue(collectDeployer.spotter().collectable(loan));
+
+        // allow test to collect NFT's
+        systemTest.admin().addKeeper(address(this));
 
         setUpRepayLiquidity(address(this), 2000 ether);
         // collect NFT
