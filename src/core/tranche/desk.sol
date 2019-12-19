@@ -69,11 +69,6 @@ contract Desk is DSNote {
         return distributor.ratioOf(i);
     }
 
-    // this function assumes two tranches only
-    function equityRatio() public auth returns (uint) {
-        return distributor.equityRatio();
-    }
-
     function balance() public auth {
         if (flowThrough) {
             distributor.tradFlow(poolClosing);
