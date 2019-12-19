@@ -49,9 +49,9 @@ contract DebtRegister is DSNote {
         rates[0].ratePerSecond = ONE;
     }
 
-    function file(uint rate, uint speed_) public auth note {
-        require(speed_ != 0);
-        rates[rate].ratePerSecond = speed_;
+    function file(uint rate, uint ratePerSecond_) public auth note {
+        require(ratePerSecond_ != 0);
+        rates[rate].ratePerSecond = ratePerSecond_;
         rates[rate].rateIndex = ONE;
         rates[rate].lastUpdated = uint48(now);
         drip(rate);
@@ -140,7 +140,7 @@ contract DebtRegister is DSNote {
             (uint latestRateIndex, , uint wad) = compounding(rate);
             rates[rate].rateIndex = latestRateIndex;
             rates[rate].lastUpdated = uint48(now);
-            incTotalDebt(rate, wad);   
+            incTotalDebt(rate, wad);
         }
     }
 
@@ -155,7 +155,7 @@ contract DebtRegister is DSNote {
     function debtOf(uint loan, uint rate) public view returns(uint) {
         return calcDebt(rates[rate].rateIndex, debtBalance[loan]);
     }
-    
+
     function incTotalDebt(uint rate, uint wad) private {
         rates[rate].debt = add(rates[rate].debt, wad);
         totalDebt = add(totalDebt, wad);
@@ -172,5 +172,12 @@ contract DebtRegister is DSNote {
 
     function calcDebt(uint rateIndex, uint debtBalance_) private view returns (uint) {
         return rmul(debtBalance_, rateIndex);
+    }
+
+    function rateSwitch(uint loan, uint currentRate, uint newRate) public auth {
+        require(now == rates[currentRate].lastUpdated);
+        require(now == rates[newRate].lastUpdated);
+        uint debt = calcDebt(rates[currentRate].rateIndex, debtBalance[loan]);
+        debtBalance[loan] = calcDebtBalance(rates[newRate].rateIndex, debt);
     }
 }
