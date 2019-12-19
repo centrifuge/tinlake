@@ -34,11 +34,11 @@ contract BasicTest is FunctionalTest {
 
     function testSimpleBorrow() public {
         // proxy owns collateral NFT
-        (uint tokenId, uint principal, uint appraisal, uint fee) = systemTest.defaultLoan();
+        (uint tokenId, uint principal, uint appraisal, uint rate) = systemTest.defaultLoan();
         mintCollateralNFT(proxy_, tokenId);
         assertEq(Title(tinlake.collateralNFT_).ownerOf(tokenId), proxy_);
         // whitelist
-        uint loan = systemTest.whitelist(tokenId, tinlake.collateralNFT_, principal, appraisal, proxy_, fee);
+        uint loan = systemTest.whitelist(tokenId, tinlake.collateralNFT_, principal, appraisal, proxy_, rate);
         assertEq(Title(tinlake.title_).ownerOf(loan), proxy_);
         // approve collateral NFT transfer
         borrower.approve(proxy_,  actions_, tinlake.collateralNFT_, tinlake.shelf_, tokenId);
@@ -51,9 +51,9 @@ contract BasicTest is FunctionalTest {
 
     function testBorrowRepay() public {
         // setup initial loan + borrow
-        (uint tokenId, uint principal, uint appraisal, uint fee) = systemTest.defaultLoan();
+        (uint tokenId, uint principal, uint appraisal, uint rate) = systemTest.defaultLoan();
         mintCollateralNFT(proxy_, tokenId);
-        uint loan = systemTest.whitelist(tokenId, tinlake.collateralNFT_, principal, appraisal, proxy_, fee);
+        uint loan = systemTest.whitelist(tokenId, tinlake.collateralNFT_, principal, appraisal, proxy_, rate);
         borrower.approve(proxy_,  actions_, tinlake.collateralNFT_, tinlake.shelf_, tokenId);
         borrower.borrow(proxy_, actions_, tinlake.desk_, tinlake.pile_, tinlake.shelf_, loan, proxy_);
 

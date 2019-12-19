@@ -52,14 +52,14 @@ contract Pile is DSNote, TitleOwned {
     // https://github.com/makerdao/dsr/blob/master/src/dsr.sol
     struct Loan {
         uint balance;
-        uint fee;
+        uint rate;
     }
 
     mapping (uint => Loan) public loans_;
 
-    function loans(uint loan) public view returns (uint debt, uint balance, uint fee)  {
-        uint debt = beans.debtOf(loan, loans_[loan].fee);
-        return (debt, loans_[loan].balance, loans_[loan].fee);
+    function loans(uint loan) public view returns (uint debt, uint balance, uint rate)  {
+        uint debt = beans.debtOf(loan, loans_[loan].rate);
+        return (debt, loans_[loan].balance, loans_[loan].rate);
     }
 
     function Debt() public view returns (uint debt) {
@@ -79,8 +79,8 @@ contract Pile is DSNote, TitleOwned {
         if (what == "lender") { lender = data; }
     }
 
-    function file(uint loan, uint fee_, uint balance_) public auth note {
-        loans_[loan].fee = fee_;
+    function file(uint loan, uint rate_, uint balance_) public auth note {
+        loans_[loan].rate = rate_;
         loans_[loan].balance = balance_;
     }
 
@@ -90,7 +90,7 @@ contract Pile is DSNote, TitleOwned {
     }
 
     function burden(uint loan) public view returns (uint) {
-        return beans.burden(loan, loans_[loan].fee);
+        return beans.burden(loan, loans_[loan].rate);
     }
 
     // --- Pile ---
@@ -101,8 +101,8 @@ contract Pile is DSNote, TitleOwned {
     }
 
     function initLoan(uint loan, uint wad) internal {
-        beans.drip(loans_[loan].fee);
-        beans.incLoanDebt(loan, loans_[loan].fee, wad);
+        beans.drip(loans_[loan].rate);
+        beans.incLoanDebt(loan, loans_[loan].rate, wad);
         loans_[loan].balance = add(loans_[loan].balance, wad);
         Balance = add(Balance, wad);
     }
@@ -125,7 +125,7 @@ contract Pile is DSNote, TitleOwned {
     }
 
     function collect(uint loan) public {
-        beans.drip(loans_[loan].fee);
+        beans.drip(loans_[loan].rate);
     }
 
 
@@ -133,15 +133,15 @@ contract Pile is DSNote, TitleOwned {
     function recovery(uint loan, uint wad) public auth {
         doRepay(loan, wad);
 
-        uint loss = beans.debtOf(loan, loans_[loan].fee);
-        beans.decLoanDebt(loan, loans_[loan].fee, loss);
+        uint loss = beans.debtOf(loan, loans_[loan].rate);
+        beans.decLoanDebt(loan, loans_[loan].rate, loss);
     }
 
     function doRepay(uint loan, uint wad) internal {
         collect(loan);
 
-        uint fee = loans_[loan].fee;
-        uint debt = beans.debtOf(loan, fee);
+        uint rate = loans_[loan].rate;
+        uint debt = beans.debtOf(loan, rate);
 
         // only repay max loan debt
         if (wad > debt) {
@@ -149,7 +149,7 @@ contract Pile is DSNote, TitleOwned {
         }
 
         tkn.transferFrom(msg.sender, address(this), wad);
-        beans.decLoanDebt(loan, fee, wad);
+        beans.decLoanDebt(loan, rate, wad);
         tkn.approve(lender, wad);
     }
 
@@ -161,6 +161,6 @@ contract Pile is DSNote, TitleOwned {
     }
 
     function debtOf(uint loan) public returns (uint) {
-        return beans.debtOf(loan, loans_[loan].fee);
+        return beans.debtOf(loan, loans_[loan].rate);
     }
 }

@@ -19,42 +19,42 @@ contract BeansMock {
     uint public loanDebtReturn; function setLoanDebtReturn(uint loanDebtReturn_) public {loanDebtReturn=loanDebtReturn_;}
     uint public burdenReturn; function setBurdenReturn(uint burdenReturn_) public {burdenReturn=burdenReturn_;}
     uint public totalDebtReturn; function setTotalDebtReturn(uint totalDebtReturn_) public {totalDebtReturn=totalDebtReturn_;} 
-    Fee public feeReturn; function setFeeReturn(uint debt, uint chi, uint speed, uint48 rho) public {feeReturn = Fee(debt, chi, speed, rho);}
+    Fee public rateReturn; function setFeeReturn(uint debt, uint chi, uint speed, uint48 rho) public {rateReturn = Fee(debt, chi, speed, rho);}
 
     address public usr;
     uint public loan;
     uint public wad;
-    uint public fee;
+    uint public rate;
     uint public speed;
 
-    function fees(uint loan) public view returns(uint, uint, uint, uint) {
-        return (feeReturn.debt, feeReturn.chi, feeReturn.speed, feeReturn.rho);
+    function rates(uint loan) public view returns(uint, uint, uint, uint) {
+        return (rateReturn.debt, rateReturn.chi, rateReturn.speed, rateReturn.rho);
     }
 
-    function incLoanDebt(uint loan_, uint fee_, uint wad_) public {
+    function incLoanDebt(uint loan_, uint rate_, uint wad_) public {
        loan = loan_;
-       fee = fee_;
+       rate = rate_;
        wad = wad_;
        callsIncLoanDebt++;
     }
 
-    function decLoanDebt(uint loan_, uint fee_, uint wad_) public {
+    function decLoanDebt(uint loan_, uint rate_, uint wad_) public {
        loan = loan_;
-       fee = fee_;
+       rate = rate_;
        wad = wad_;
        callsDecLoanDebt++;
     }
 
-    function drip(uint fee_) public {
-        fee = fee_;
+    function drip(uint rate_) public {
+        rate = rate_;
         callsDrip++;
     }
 
-    function burden(uint loan_, uint fee_) public returns (uint){
+    function burden(uint loan_, uint rate_) public returns (uint){
        return burdenReturn;
     }
 
-    function debtOf(uint loan_, uint fee_) public returns (uint){
+    function debtOf(uint loan_, uint rate_) public returns (uint){
        return loanDebtReturn;
     }
 
@@ -62,9 +62,9 @@ contract BeansMock {
         return totalDebtReturn;
     }
 
-    function file(uint fee_, uint speed_) public {
+    function file(uint rate_, uint speed_) public {
         callsFile++;
-        fee = fee_;
+        rate = rate_;
         speed = speed_;
     }
 

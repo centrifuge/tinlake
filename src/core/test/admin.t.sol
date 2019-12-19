@@ -42,8 +42,8 @@ contract AdminTest is DSTest {
         admin = new Admin(address(admit),address(appraiser), address(pile), address(beans));
     }
 
-    function whitelist(uint nft, address registry, uint principal, uint appraisal, uint fee, uint loan, uint pileCalls, uint beansCalls) public {
-        admin.whitelist(registry, nft, principal, appraisal, fee, self);
+    function whitelist(uint nft, address registry, uint principal, uint appraisal, uint rate, uint loan, uint pileCalls, uint beansCalls) public {
+        admin.whitelist(registry, nft, principal, appraisal, rate, self);
 
         // check admit
         assertEq(admit.callsAdmit(),1);
@@ -56,12 +56,12 @@ contract AdminTest is DSTest {
         assertEq(pile.callsFile(),pileCalls);
         assertEq(beans.callsFile(),beansCalls);
         if (beansCalls == 1) {
-            assertEq(beans.speed(), fee);
-            assertEq(beans.fee(), fee);
+            assertEq(beans.speed(), rate);
+            assertEq(beans.rate(), rate);
         }
         assertEq(pile.loan(), loan);
         assertEq(pile.balance(), 0);
-        assertEq(pile.fee(), fee);
+        assertEq(pile.rate(), rate);
 
         // check appraisal
         assertEq(appraiser.callsFile(), 1);
@@ -75,15 +75,15 @@ contract AdminTest is DSTest {
         address registry = 0x29C76e6aD8f28BB1004902578Fb108c507Be341b;
         uint principal = 500 ether;
         uint appraisal = 600 ether;
-        uint fee = uint(1000000564701133626865910626); // 5 % / daily
+        uint rate = uint(1000000564701133626865910626); // 5 % / daily
 
-        whitelist(nft, registry, principal, appraisal, fee, shouldLoan, shouldPileCalls, shouldBeansCalls);
+        whitelist(nft, registry, principal, appraisal, rate, shouldLoan, shouldPileCalls, shouldBeansCalls);
 
     }
 
     // --Tests--
     function testFailWhitelist() public {
-        // fee not initialized
+        // rate not initialized
         beans.setFeeReturn(0,0,0,0);
         uint shouldPileCalls = 1;
 
@@ -95,16 +95,16 @@ contract AdminTest is DSTest {
 
 
     function testFileFee() public {
-        uint fee = uint(1000000564701133626865910626);
-        admin.file(fee, fee);
+        uint rate = uint(1000000564701133626865910626);
+        admin.file(rate, rate);
         assertEq(beans.callsFile(), 1);
-        assertEq(beans.speed(), fee);
-        assertEq(beans.fee(), fee);
+        assertEq(beans.speed(), rate);
+        assertEq(beans.rate(), rate);
     }
 
     function testWhitelist() public {
-        uint fee = uint(1000000564701133626865910626);
-        beans.setFeeReturn(0,0,fee,0);
+        uint rate = uint(1000000564701133626865910626);
+        beans.setFeeReturn(0,0,rate,0);
         uint shouldPileCalls = 1;
 
         uint shouldLoan = 97;
@@ -114,8 +114,8 @@ contract AdminTest is DSTest {
     }
 
     function testUpdateBlackList() public {
-        uint fee = uint(1000000564701133626865910626);
-        beans.setFeeReturn(0,0,fee,0);
+        uint rate = uint(1000000564701133626865910626);
+        beans.setFeeReturn(0,0,rate,0);
         uint shouldPileCalls = 1;
 
         uint shouldLoan = 97;
@@ -141,14 +141,14 @@ contract AdminTest is DSTest {
         uint nft = 13;
         address registry = address(1);
 
-        admin.update(shouldLoan, registry, nft, principal, appraisal, fee);
+        admin.update(shouldLoan, registry, nft, principal, appraisal, rate);
         assertEq(admit.callsUpdate(), 2);
         assertEq(admit.principal(),principal);
         assertEq(admit.nft(), nft);
         assertEq(admit.registry(), registry);
 
         assertEq(pile.callsFile(), 2);
-        assertEq(pile.fee(), fee);
+        assertEq(pile.rate(), rate);
 
         assertEq(appraiser.value(), appraisal);
         assertEq(appraiser.callsFile(), 3);
@@ -165,6 +165,6 @@ contract AdminTest is DSTest {
         assertEq(appraiser.callsFile(), 4);
 
         assertEq(pile.callsFile(), 3);
-        assertEq(pile.fee(), 0);
+        assertEq(pile.rate(), 0);
     }
 }

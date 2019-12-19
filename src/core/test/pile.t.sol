@@ -49,7 +49,7 @@ contract PileTest is DSTest {
 
         pile.borrow(loan, wad);
 
-        (uint debt, uint balance, uint fee) = pile.loans(loan);
+        (uint debt, uint balance, uint rate) = pile.loans(loan);
         assertEq(beans.callsIncLoanDebt(), 1);
         assertEq(pile.Balance(), totalBalance + wad);
         assertEq(pile.Debt(), wad);
@@ -76,7 +76,7 @@ contract PileTest is DSTest {
 
     function repay(uint loan, uint wad) public {
         // pre state
-        (,, uint fee) = pile.loans(loan);
+        (,, uint rate) = pile.loans(loan);
         uint totalDebt = pile.Debt();
 
         pile.repay(loan, wad);
@@ -124,10 +124,10 @@ contract PileTest is DSTest {
     }
 
     function testBorrowRepayWithFee() public {
-        uint fee = uint(1000000003593629043335673583); // 12 % per year
+        uint rate = uint(1000000003593629043335673583); // 12 % per year
         uint loan = 1;
         uint principal = 100 ether;
-        pile.file(loan, fee, 0);
+        pile.file(loan, rate, 0);
         title.setOwnerOfReturn(address(this));
 
         borrow(loan, principal);

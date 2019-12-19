@@ -27,12 +27,12 @@ contract AppraiserLike {
 }
 
 contract PileLike {
-    function file(uint loan, uint fee_, uint balance_) public;
+    function file(uint loan, uint rate_, uint balance_) public;
 }
 
 contract BeansLike {
-    function file(uint fee, uint speed_) public;
-    function fees(uint) public view returns(uint, uint, uint, uint);
+    function file(uint rate, uint speed_) public;
+    function rates(uint) public view returns(uint, uint, uint, uint);
 }
 
 // Admin can add whitelist a token and set the amount that can be borrowed against it. It also sets the borrowers rate in the Pile.
@@ -68,26 +68,26 @@ contract Admin {
     }
 
     // -- Whitelist --
-    function whitelist(address registry, uint nft, uint principal, uint appraisal, uint fee, address usr) public auth returns(uint) {
+    function whitelist(address registry, uint nft, uint principal, uint appraisal, uint rate, address usr) public auth returns(uint) {
         uint loan = admit.admit(registry, nft, principal, usr);
         appraiser.file(loan, appraisal);
 
-        (,, uint speed,) = beans.fees(fee);
+        (,, uint speed,) = beans.rates(rate);
         require(speed != 0);
 
-        pile.file(loan, fee, 0);
+        pile.file(loan, rate, 0);
         emit Whitelisted(loan);
         return loan;
     }
 
-    function file(uint fee, uint speed) public auth {
-        beans.file(fee, speed);
+    function file(uint rate, uint speed) public auth {
+        beans.file(rate, speed);
     }
 
-    function update(uint loan, address registry, uint nft, uint principal, uint appraisal, uint fee) public auth {
+    function update(uint loan, address registry, uint nft, uint principal, uint appraisal, uint rate) public auth {
         admit.update(loan, registry, nft, principal);
         appraiser.file(loan, appraisal);
-        pile.file(loan, fee, 0);
+        pile.file(loan, rate, 0);
     }
 
     function update(uint loan, uint principal, uint appraisal) public auth  {
