@@ -37,6 +37,8 @@ contract Beans is DSNote {
     }
 
     mapping (uint => Rate) public rates;
+
+    // debtBalance = debt/rateIndex
     mapping (uint => uint) public debtBalance;
 
     uint public totalDebt;
@@ -126,17 +128,17 @@ contract Beans is DSNote {
         uint debt_ = rates[rate].debt;
 
         // compounding in seconds
-        uint latest = rmul(rpow(ratePerSecond, now - lastUpdated, ONE), rateIndex);
-        uint chi_ = rdiv(latest, rateIndex);
-        uint wad = rmul(debt_, chi_) - debt_;
-        return (latest, chi_, wad);
+        uint latestRateIndex = rmul(rpow(ratePerSecond, now - lastUpdated, ONE), rateIndex);
+        uint rateIndex_ = rdiv(latestRateIndex, rateIndex);
+        uint wad = rmul(debt_, rateIndex_) - debt_;
+        return (latestRateIndex, rateIndex_, wad);
     }
 
     // --- Rate Accumulation ---
     function drip(uint rate) public {
         if (now >= rates[rate].lastUpdated) {
-            (uint latest, , uint wad) = compounding(rate);
-            rates[rate].rateIndex = latest;
+            (uint latestRateIndex, , uint wad) = compounding(rate);
+            rates[rate].rateIndex = latestRateIndex;
             rates[rate].lastUpdated = uint48(now);
             incTotalDebt(rate, wad);   
         }
@@ -168,7 +170,7 @@ contract Beans is DSNote {
         return rdiv(wad, rateIndex);
     }
 
-    function calcDebt(uint rateIndex, uint pie_) private view returns (uint) {
-        return rmul(pie_, rateIndex);
+    function calcDebt(uint rateIndex, uint debtBalance_) private view returns (uint) {
+        return rmul(debtBalance_, rateIndex);
     }
 }
