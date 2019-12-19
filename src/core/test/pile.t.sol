@@ -123,7 +123,7 @@ contract PileTest is DSTest {
         repay(loan, wad);
     }
 
-    function testBorrowRepayWithFee() public {
+    function testBorrowRepayWithRate() public {
         uint rate = uint(1000000003593629043335673583); // 12 % per year
         uint loan = 1;
         uint principal = 100 ether;
@@ -138,7 +138,7 @@ contract PileTest is DSTest {
         beans.setTotalDebtReturn(112 ether);
         beans.setLoanDebtReturn(112 ether);
 
-        uint debt = pile.burden(loan);
+        uint debt = pile.getCurrentDebt(loan);
         repay(loan, debt);
     }
 

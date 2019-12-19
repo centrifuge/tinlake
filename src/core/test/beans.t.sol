@@ -95,7 +95,7 @@ contract BeansTest is DSTest {
 
         // two days later
         hevm.warp(now + 2 days);
-        assertEq(beans.burden(loan, rate), 72.765 ether); // 66 ether * 1,05**2
+        assertEq(beans.getCurrentDebt(loan, rate), 72.765 ether); // 66 ether * 1,05**2
         beans.drip(rate);
         checkDebt(loan, rate, 72.765 ether);
     }

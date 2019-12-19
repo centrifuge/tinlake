@@ -144,7 +144,7 @@ contract Beans is DSNote {
         }
     }
 
-    function burden(uint loan, uint rate) public view returns (uint) {
+    function getCurrentDebt(uint loan, uint rate) public view returns (uint) {
         uint rateIndex = rates[rate].rateIndex;
         if (now >= rates[rate].lastUpdated) {
             (rateIndex, ,) = compounding(rate);

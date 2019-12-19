@@ -93,11 +93,11 @@ contract AdminUser {
         return loan;
     }
 
-    function doInitFee(uint rate, uint speed) public {
+    function doInitRate(uint rate, uint speed) public {
         deployer.admin().file(rate, speed);
     }
 
-    function doAddFee(uint loan, uint rate, uint balance) public {
+    function doAddRate(uint loan, uint rate, uint balance) public {
         deployer.pile().file(loan, rate, balance);
     }
 }
@@ -196,13 +196,13 @@ contract SystemTest is DSTest {
 
     function whitelist(uint tokenId, address nft_, uint principal, uint appraisal, address borrower_, uint rate) public returns (uint) {
         // define rate
-        admin.doInitFee(rate, rate);
+        admin.doInitRate(rate, rate);
 
         // nft whitelist
         uint loan = admin.doAdmit(nft_, tokenId, principal, appraisal, borrower_);
 
         // add rate for loan
-        admin.doAddFee(loan, rate, 0);
+        admin.doAddRate(loan, rate, 0);
         return loan;
     }
 
@@ -269,7 +269,7 @@ contract SystemTest is DSTest {
 
         // borrower needs some currency to pay rate
         setupRepayReq();
-        uint deskShould = deployer.pile().burden(loan) + currDeskBal();
+        uint deskShould = deployer.pile().getCurrentDebt(loan) + currDeskBal();
 
         // close without defined amount
         borrower.doClose(loan, borrower_);
@@ -324,7 +324,7 @@ contract SystemTest is DSTest {
 
         // borrower needs some currency to pay rate
         setupRepayReq();
-        uint deskShould = deployer.pile().burden(loan) + currDeskBal();
+        uint deskShould = deployer.pile().getCurrentDebt(loan) + currDeskBal();
 
         // close without defined amount
         borrower.doClose(loan, borrower_);
@@ -342,7 +342,7 @@ contract SystemTest is DSTest {
         // borrower needs some currency to pay rate
         setupRepayReq();
 
-        uint deskShould = deployer.pile().burden(loan) + currDeskBal();
+        uint deskShould = deployer.pile().getCurrentDebt(loan) + currDeskBal();
 
         // close without defined amount
         borrower.doClose(loan, borrower_);

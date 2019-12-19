@@ -9,7 +9,7 @@ contract BeansMock {
     uint public callsDebtOf;
     uint public callsFile;
 
-    struct Fee {
+    struct Rate {
         uint debt;
         uint chi;
         uint speed;
@@ -17,9 +17,9 @@ contract BeansMock {
     }
 
     uint public loanDebtReturn; function setLoanDebtReturn(uint loanDebtReturn_) public {loanDebtReturn=loanDebtReturn_;}
-    uint public burdenReturn; function setBurdenReturn(uint burdenReturn_) public {burdenReturn=burdenReturn_;}
+    uint public getCurrentDebtReturn; function setBurdenReturn(uint getCurrentDebtReturn_) public {getCurrentDebtReturn=getCurrentDebtReturn_;}
     uint public totalDebtReturn; function setTotalDebtReturn(uint totalDebtReturn_) public {totalDebtReturn=totalDebtReturn_;} 
-    Fee public rateReturn; function setFeeReturn(uint debt, uint chi, uint speed, uint48 rho) public {rateReturn = Fee(debt, chi, speed, rho);}
+    Rate public rateReturn; function setRateReturn(uint debt, uint chi, uint speed, uint48 rho) public {rateReturn = Rate(debt, chi, speed, rho);}
 
     address public usr;
     uint public loan;
@@ -50,8 +50,8 @@ contract BeansMock {
         callsDrip++;
     }
 
-    function burden(uint loan_, uint rate_) public returns (uint){
-       return burdenReturn;
+    function getCurrentDebt(uint loan_, uint rate_) public returns (uint){
+       return getCurrentDebtReturn;
     }
 
     function debtOf(uint loan_, uint rate_) public returns (uint){

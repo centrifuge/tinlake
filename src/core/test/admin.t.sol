@@ -84,7 +84,7 @@ contract AdminTest is DSTest {
     // --Tests--
     function testFailWhitelist() public {
         // rate not initialized
-        beans.setFeeReturn(0,0,0,0);
+        beans.setRateReturn(0,0,0,0);
         uint shouldPileCalls = 1;
 
         uint shouldLoan = 97;
@@ -94,7 +94,7 @@ contract AdminTest is DSTest {
     }
 
 
-    function testFileFee() public {
+    function testFileRate() public {
         uint rate = uint(1000000564701133626865910626);
         admin.file(rate, rate);
         assertEq(beans.callsFile(), 1);
@@ -104,7 +104,7 @@ contract AdminTest is DSTest {
 
     function testWhitelist() public {
         uint rate = uint(1000000564701133626865910626);
-        beans.setFeeReturn(0,0,rate,0);
+        beans.setRateReturn(0,0,rate,0);
         uint shouldPileCalls = 1;
 
         uint shouldLoan = 97;
@@ -115,7 +115,7 @@ contract AdminTest is DSTest {
 
     function testUpdateBlackList() public {
         uint rate = uint(1000000564701133626865910626);
-        beans.setFeeReturn(0,0,rate,0);
+        beans.setRateReturn(0,0,rate,0);
         uint shouldPileCalls = 1;
 
         uint shouldLoan = 97;

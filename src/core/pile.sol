@@ -29,8 +29,8 @@ contract TokenLike{
 contract BeansLike {
     uint public totalDebt;
     function debtOf(uint, uint) public view returns (uint);
-    function burden(uint, uint) public view returns (uint);
-    function initFee(uint, uint) public;
+    function getCurrentDebt(uint, uint) public view returns (uint);
+    function initRate(uint, uint) public;
     function incLoanDebt(uint, uint, uint) public;
     function decLoanDebt(uint, uint, uint) public;
     function drip(uint) public;
@@ -89,8 +89,8 @@ contract Pile is DSNote, TitleOwned {
         require((z = x + y) >= x);
     }
 
-    function burden(uint loan) public view returns (uint) {
-        return beans.burden(loan, loans_[loan].rate);
+    function getCurrentDebt(uint loan) public view returns (uint) {
+        return beans.getCurrentDebt(loan, loans_[loan].rate);
     }
 
     // --- Pile ---
