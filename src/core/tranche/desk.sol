@@ -17,23 +17,12 @@ pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
 
-contract PileLike {
-    function want() public returns (int);
-}
-
 contract DistributorLike {
     function tradFlow(bool) public;
     function customFlow(bool) public;
-}
-
-contract OperatorLike {
-    function borrow(address, uint) public;
-    function repay(address, uint) public;
-    function balance() public returns (uint);
-    function file(bytes32, bool) public;
-
-    bool public supplyActive;
-    bool public redeemActive;
+    function addTranche(uint, address) public;
+    function ratioOf(uint) public returns (uint);
+    function equityRatio() public returns (uint);
 }
 
 // Desk
@@ -46,33 +35,21 @@ contract Desk is DSNote {
     function deny(address usr) public auth note { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
 
-    // --- Tranches ---
-
-    struct Tranche {
-        uint ratio;
-        OperatorLike operator;
-    }
-
-    Tranche[] tranches;
-
     // --- Data ---
-    PileLike public pile;
     DistributorLike public distributor;
 
     bool public flowThrough;
     bool public poolClosing;
 
-    constructor (address pile_, address distributor_) public {
+    constructor (address distributor_) public {
         wards[msg.sender] = 1;
-        pile = PileLike(pile_);
         distributor = DistributorLike(distributor_);
         flowThrough = false;
         poolClosing = false;
     }
 
     function depend (bytes32 what, address addr) public auth {
-        if (what == "pile") { pile = PileLike(addr); }
-        else if (what == "distributor") { distributor = DistributorLike(addr); }
+        if (what == "distributor") { distributor = DistributorLike(addr); }
         else revert();
     }
 
@@ -85,39 +62,23 @@ contract Desk is DSNote {
 
     // TIN tranche should always be added first
     function addTranche(uint ratio, address operator_) public auth {
-        Tranche memory t;
-        t.ratio = ratio;
-        t.operator = OperatorLike(operator_);
-        tranches.push(t);
+        distributor.addTranche(ratio, operator_);
     }
 
-    function returnOperator(uint i) public auth returns (address){
-       return address(tranches[i].operator);
+    function ratioOf(uint i) public auth returns (uint) {
+        return distributor.ratioOf(i);
     }
 
-    function returnRatio(uint i) public auth returns (uint) {
-        return tranches[i].ratio;
+    // this function assumes two tranches only
+    function equityRatio() public auth returns (uint) {
+        return distributor.equityRatio();
     }
-
-//    function returnEquityRatios
 
     function balance() public auth {
         if (flowThrough) {
-            distributor.tradFlow();
+            distributor.tradFlow(poolClosing);
         } else {
-            distributor.customFlow();
+            distributor.customFlow(poolClosing);
         }
     }
-
-    // Note: assumes two tranche setup for now
-    function calcMaxTake() public auth {
-
-    }
-
-    // max_take is how much liquidity can be taken out from a specific tranche,
-    // given the current equity reserve/equity debt, in order to maintain the equity ratio which has been set by the pool manager.
-
-    // max_take =  (Equity.Reserve + Equity.Debt)/Equity.Ratio * Senior.Ratio - Senior.Debt
-
-
 }
