@@ -31,7 +31,7 @@ contract DeskLike {
 }
 
 contract PileLike {
-    function recovery(uint loan, uint wad) public;
+    function recovery(uint loan, address usr, uint wad) public;
 }
 
 contract Collector {
@@ -63,14 +63,14 @@ contract Collector {
         else revert();
     }
 
-    function collect(uint loan, address usr) public auth {
+    function collect(uint loan, address usr) public auth  {
         if(spotter.collectable(loan) == false){
             spotter.seizure(loan);
         }
 
         uint wad = tag.price(loan);
 
-        pile.recovery(loan, wad);
+        pile.recovery(loan, msg.sender, wad);
         spotter.free(loan, usr);
         desk.balance();
     }

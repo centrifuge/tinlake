@@ -100,6 +100,11 @@ contract AdminUser {
     function doAddFee(uint loan, uint fee, uint balance) public {
         deployer.pile().file(loan, fee, balance);
     }
+
+    function addKeeper(address usr) public {
+        CollectDeployer cd = CollectDeployer(address(deployer.collectDeployer()));
+        cd.collector().rely(usr);
+    }
 }
 
 contract Hevm {
@@ -118,7 +123,7 @@ contract SystemTest is DSTest {
     Appraiser    appraiser;
     Deployer     public deployer;
 
-    AdminUser  admin;
+    AdminUser public  admin;
     address      admin_;
     User borrower;
     address      borrower_;
@@ -175,7 +180,7 @@ contract SystemTest is DSTest {
         TagFab tagFab = new TagFab();
         CollectorFab collectorFab = new CollectorFab();
 
-        CollectDeployer collectDeployer  = new CollectDeployer(address(this), spotterFab, tagFab, collectorFab);
+        CollectDeployer collectDeployer  = new CollectDeployer(admin_, spotterFab, tagFab, collectorFab);
 
         uint threshold = 12 * 10**26; // threshold 120%
         deployer.deployCollect(address(collectDeployer), threshold);

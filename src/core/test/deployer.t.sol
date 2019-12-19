@@ -29,6 +29,10 @@ contract MockCollectDeployer {
     function spotter() public returns(address) {
         return address(123);
     }
+
+    function collector() public returns(address) {
+        return address(123);
+    }
 }
 
 contract DeployerTest is DSTest {
