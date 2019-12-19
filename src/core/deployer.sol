@@ -22,7 +22,7 @@ import { Desk } from "./test/simple/desk.sol";
 import { Pile } from "./pile.sol";
 import { Admit } from "./admit.sol";
 import { Admin } from "./admin.sol";
-import { Beans } from "./beans.sol";
+import { DebtRegister } from "./debt_register.sol";
 import {CollectDeployer} from "./collect/deployer.sol";
 
 contract LenderFabLike {
@@ -43,11 +43,11 @@ contract WardsLike {
     function rely(address) public;
 }
 
-contract BeansFab {
-    function newBeans() public returns (Beans beans) {
-        beans = new Beans();
-        beans.rely(msg.sender);
-        beans.deny(address(this));
+contract DebtRegisterFab {
+    function newDebtRegister() public returns (DebtRegister debtRegister) {
+        debtRegister = new DebtRegister();
+        debtRegister.rely(msg.sender);
+        debtRegister.deny(address(this));
     }
 }
 
@@ -68,8 +68,8 @@ contract LightSwitchFab {
 }
 
 contract PileFab {
-   function newPile(address tkn, address title, address beans) public returns (Pile pile) {
-        pile = new Pile(tkn, title, beans);
+   function newPile(address tkn, address title, address debtRegister) public returns (Pile pile) {
+        pile = new Pile(tkn, title, debtRegister);
         pile.rely(msg.sender);
         pile.deny(address(this));
     }
@@ -100,8 +100,8 @@ contract AdmitFab {
 }
 
 contract AdminFab {
-    function newAdmin(address admit, address appraiser, address pile, address beans) public returns(Admin admin) {
-        admin = new Admin(admit, appraiser, pile, beans);
+    function newAdmin(address admit, address appraiser, address pile, address debtRegister) public returns(Admin admin) {
+        admin = new Admin(admit, appraiser, pile, debtRegister);
         admin.rely(msg.sender);
         admin.deny(address(this));
     }
@@ -115,7 +115,7 @@ contract Deployer {
     DeskFab deskfab;
     AdmitFab admitfab;
     AdminFab adminfab;
-    BeansFab beansfab;
+    DebtRegisterFab debtRegisterfab;
 
     CollectDeployerLike collectDeployer;
 
@@ -130,10 +130,10 @@ contract Deployer {
     Admit       public admit;
     Admin       public admin;
     LenderLike  public lender;
-    Beans       public beans;
+    DebtRegister       public debtRegister;
 
 
-    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, PileFab pilefab_, ShelfFab shelffab_, DeskFab deskfab_, AdmitFab admitfab_, AdminFab adminfab_, BeansFab beansfab_) public {
+    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, PileFab pilefab_, ShelfFab shelffab_, DeskFab deskfab_, AdmitFab admitfab_, AdminFab adminfab_, DebtRegisterFab debtRegisterfab_) public {
         god = god_;
         
         titlefab = titlefab_;
@@ -143,7 +143,7 @@ contract Deployer {
         deskfab = deskfab_;
         admitfab = admitfab_;
         adminfab = adminfab_;
-        beansfab = beansfab_;
+        debtRegisterfab = debtRegisterfab_;
     }
 
     function deployCollect(address collectDeployer_ ,uint threshold_) public {
@@ -151,9 +151,9 @@ contract Deployer {
         collectDeployer.deploy(address(pile), address(shelf), address(desk), threshold_);
     }
 
-    function deployBeans() public {
-        beans = beansfab.newBeans();
-        beans.rely(god);
+    function deployDebtRegister() public {
+        debtRegister = debtRegisterfab.newDebtRegister();
+        debtRegister.rely(god);
     }
     
     function deployTitle(string memory name, string memory symbol) public {
@@ -167,7 +167,7 @@ contract Deployer {
     }  
   
     function deployPile(address currency_) public {
-        pile = pilefab.newPile(currency_, address(title), address(beans));
+        pile = pilefab.newPile(currency_, address(title), address(debtRegister));
         pile.rely(god);
     }
 
@@ -192,7 +192,7 @@ contract Deployer {
 
     function deployAdmin(address appraiser) public {
         appraiser_ = appraiser;
-        admin = adminfab.newAdmin(address(admit), appraiser_, address(pile), address(beans));
+        admin = adminfab.newAdmin(address(admit), appraiser_, address(pile), address(debtRegister));
         admin.rely(god);
     }
 
@@ -212,10 +212,10 @@ contract Deployer {
         // admin allowed to call
         admit.rely(admin_);
         pile.rely(admin_);
-        beans.rely(admin_);
+        debtRegister.rely(admin_);
 
         // pile allowed to call
-        beans.rely(pile_);
+        debtRegister.rely(pile_);
 
         shelf.rely(address(collectDeployer.spotter()));
 

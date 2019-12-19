@@ -17,10 +17,10 @@ pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
 
-// Beans
+// DebtRegister
 // Keeps track of interest rate accumulators (rateIndex values) for all interest rate categories.
 // Calculates debt each loan according to its interest rate category and debtBalance value.
-contract Beans is DSNote {
+contract DebtRegister is DSNote {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth note { wards[usr] = 1; }

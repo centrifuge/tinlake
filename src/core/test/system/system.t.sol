@@ -141,20 +141,20 @@ contract SystemTest is DSTest {
         DeskFab deskfab = new DeskFab();
         AdmitFab admitfab = new AdmitFab();
         AdminFab adminfab = new AdminFab();
-        BeansFab beansfab = new BeansFab();
+        DebtRegisterFab debtRegisterfab = new DebtRegisterFab();
         appraiser = new Appraiser();
 
         admin = new AdminUser(appraiser);
         admin_ = address(admin);
 
-        deployer = new Deployer(admin_, titlefab, lightswitchfab, pilefab, shelffab, deskfab, admitfab, adminfab, beansfab);
+        deployer = new Deployer(admin_, titlefab, lightswitchfab, pilefab, shelffab, deskfab, admitfab, adminfab, debtRegisterfab);
 
         appraiser.rely(admin_);
         appraiser.rely(address(deployer));
 
         deployer.deployLightSwitch();
         deployer.deployTitle("Tinlake Loan", "TLNT");
-        deployer.deployBeans();
+        deployer.deployDebtRegister();
         deployer.deployPile(tkn_);
         deployer.deployShelf(address(appraiser));
         deployer.deployDesk(tkn_);

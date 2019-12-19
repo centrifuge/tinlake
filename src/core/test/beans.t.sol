@@ -16,20 +16,20 @@
 pragma solidity >=0.4.23;
 
 import "ds-test/test.sol";
-import "../beans.sol";
+import "../debt_register.sol";
 
 contract Hevm {
     function warp(uint256) public;
 }
 
-contract BeansTest is DSTest {
-    Beans beans;
+contract DebtRegisterTest is DSTest {
+    DebtRegister debtRegister;
     Hevm hevm;
 
     function setUp() public {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
-        beans = new Beans();
+        debtRegister = new DebtRegister();
     }
 
     function testSingleCompoundSec() public  {
@@ -51,13 +51,13 @@ contract BeansTest is DSTest {
         uint rate = 1000000593415115246806684338; // 5 % per day compound in seconds
         uint loan = 1;
         uint principal = 66 ether;
-        beans.file(rate, rate);
-        beans.drip(rate);
-        beans.incLoanDebt(loan, rate, principal);
+        debtRegister.file(rate, rate);
+        debtRegister.drip(rate);
+        debtRegister.incLoanDebt(loan, rate, principal);
 
         // one day later
         hevm.warp(now + 1 days);
-        beans.drip(rate);
+        debtRegister.drip(rate);
         uint should = calculateDebt(rate, principal, uint(3600*24));
         checkDebt(loan, rate, should);
     }
@@ -86,17 +86,17 @@ contract BeansTest is DSTest {
 
         */
         uint rate = uint(1000000564701133626865910626); // 5 % day
-        beans.file(rate, rate);
+        debtRegister.file(rate, rate);
         uint loan = 1;
         uint principal = 66 ether;
-        beans.drip(rate);
-        beans.incLoanDebt(loan, rate, principal);
+        debtRegister.drip(rate);
+        debtRegister.incLoanDebt(loan, rate, principal);
         checkDebt(loan, rate, 66 ether);
 
         // two days later
         hevm.warp(now + 2 days);
-        assertEq(beans.getCurrentDebt(loan, rate), 72.765 ether); // 66 ether * 1,05**2
-        beans.drip(rate);
+        assertEq(debtRegister.getCurrentDebt(loan, rate), 72.765 ether); // 66 ether * 1,05**2
+        debtRegister.drip(rate);
         checkDebt(loan, rate, 72.765 ether);
     }
 
@@ -112,24 +112,24 @@ contract BeansTest is DSTest {
         rate = 1000000003593629043335673583
         */
         uint rate = uint(1000000003593629043335673583); // 12 % per year
-        beans.file(rate, rate);
+        debtRegister.file(rate, rate);
         uint loan = 1;
         uint principal = 66 ether;
-        beans.drip(rate);
-        beans.incLoanDebt(loan, rate, principal);
+        debtRegister.drip(rate);
+        debtRegister.incLoanDebt(loan, rate, principal);
 
         checkDebt(loan, rate, 66 ether);
 
         // on year later
         hevm.warp(now + 365 days);
-        beans.drip(rate);
+        debtRegister.drip(rate);
         checkDebt(loan, rate, 73.92 ether); // 66 ether * 1,12
     }  
 
     function testDrip() public {
         uint rate = uint(1000000564701133626865910626); // 5 % / day
-        beans.file(rate, rate);
-        (uint debt1, uint chi1, uint speed1, uint rho1 ) = beans.rates(rate);
+        debtRegister.file(rate, rate);
+        (uint debt1, uint chi1, uint speed1, uint rho1 ) = debtRegister.rates(rate);
         assertEq(speed1, rate);
         assertEq(rho1, now);
         assertEq(debt1, 0);
@@ -137,14 +137,14 @@ contract BeansTest is DSTest {
         // on day later
         hevm.warp(now + 1 days);
 
-        (debt1,  chi1,  speed1,  rho1 ) = beans.rates(rate);
+        (debt1,  chi1,  speed1,  rho1 ) = debtRegister.rates(rate);
         assertEq(speed1, rate);
         assertEq(debt1, 0);
         assertTrue(rho1 != now);
 
-        beans.drip(rate);
+        debtRegister.drip(rate);
 
-        (uint debt2, uint chi2, uint speed2, uint rho2 ) = beans.rates(rate);
+        (uint debt2, uint chi2, uint speed2, uint rho2 ) = debtRegister.rates(rate);
         assertEq(speed2, rate);
         assertEq(rho2, now);
         assertEq(debt2, 0);
@@ -155,44 +155,44 @@ contract BeansTest is DSTest {
         // chi is uint, max value = (2^256)-1 = 1.1579209e+77
         // chi initial 10^27
         uint rate = uint(1000000564701133626865910626); // 5 % / daily
-        beans.file(rate, rate);
+        debtRegister.file(rate, rate);
         hevm.warp(now + 1050 days); // 1,05 ^1050 = 1.7732257e+22
 
         // init chi 10^27 *  1.7732257 * 10^22  ~ chi 10^49
         // rdiv operation needs to mul chi with ONE (10^27)
         // therefore: 10^49 * 10^27 = 10^76 < 1.1579209e+77
-        beans.drip(rate);
+        debtRegister.drip(rate);
     }
     
     function testFailChiTooHigh() public {
         // chi is uint, max value = (2^256)-1 = 1.1579209e+77
         // chi initial 10^27
         uint rate = uint(1000000564701133626865910626); // 5 % / daily
-        beans.file(rate, rate);
+        debtRegister.file(rate, rate);
         hevm.warp(now + 1100 days); // 1,05 ^1100 = 2.0334288e+23
 
         // init chi 10^27 *  2.0334288 * 10^23  ~ chi 10^50
         // rdiv operation needs to mul chi with ONE (10^27)
         // therefore: 10^50 * 10^27 = 10^77 same power as max value 1.1579209e+77
-        beans.drip(rate);
+        debtRegister.drip(rate);
     }
 
     function testMaxDebt() public {
         uint rate = uint(1000000564701133626865910626); // 5 % day
-        beans.file(rate, rate);
+        debtRegister.file(rate, rate);
         uint loan = 1;
         uint principal = 1000000000  ether; // one billion 10^9 * 10^18 = 10^28
-        beans.drip(rate);
-        beans.incLoanDebt(loan, rate, principal);
+        debtRegister.drip(rate);
+        debtRegister.incLoanDebt(loan, rate, principal);
 
         // 150 days later
         hevm.warp(now + 1050 days); // produces max ~ chi 10^49
         // debt ~ 10^27 * 10^49 =  10^76 (max uint is 10^77)
-        beans.drip(rate);
+        debtRegister.drip(rate);
     }
 
     function checkDebt(uint loan, uint rate, uint should) public {
-        uint debt = beans.debtOf(loan, rate);
+        uint debt = debtRegister.debtOf(loan, rate);
         assertEq(debt, should);
     }
 
