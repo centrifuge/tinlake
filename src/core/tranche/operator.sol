@@ -27,22 +27,17 @@ contract ReserveLike{
 }
 
 contract QuantLike {
-   uint public debt; 
-   uint public iBorrow;
-   function file(bytes32, uint) public;
    function updateDebt(int) public;
-   function UpdateiBorrow(uint, uint) public;
-   function getSpeed() public returns(uint);
+   function updateBorrowRate() public;
 }
 
 contract SlicerLike {
-   function calcSlice(uint) public returns(uint);
-   function calcPayout(uint) public returns(uint);
-   function updateSupplyRate(uint, uint, uint) public;
+   function getSlice(uint) public returns(uint);
+   function getPayout(uint) public returns(uint);
 }
 
 // Operator
-// Manages the reserve. Triggers iSupply & iBorrow calculations.
+// Manages the reserve. Triggers supplyRate & borrowRate calculations.
 contract Operator is DSNote {
     // --- Auth ---
     mapping (address => uint) public wards;
@@ -78,9 +73,9 @@ contract Operator is DSNote {
 
     function supply(address usr, uint currencyAmount) public note auth {
         require (supplyActive);
-        uint tokenAmount = slicer.calcSlice(currencyAmount);
+        uint tokenAmount = slicer.getSlice(currencyAmount);
         reserve.supply(usr, tokenAmount, currencyAmount);
-        updateSupplyRate();
+        quant.updateBorrowRate();
     }
 
     function redeem(address usr, uint tokenAmount) public note auth {
@@ -89,41 +84,20 @@ contract Operator is DSNote {
          if (slice < tokenAmount) {
             tokenAmount = slice;
         }
-        uint currencyAmount = slicer.calcPayout(tokenAmount);
+        uint currencyAmount = slicer.getPayout(tokenAmount);
         reserve.redeem(usr, tokenAmount, currencyAmount);
-        updateSupplyRate();
+        quant.updateBorrowRate();
     }
 
     function repay(address usr, uint currencyAmount) public note auth {
         reserve.repay(usr, currencyAmount);
         quant.updateDebt(int(currencyAmount) * -1);
-        updateSupplyRate();
+        quant.updateBorrowRate();
     }
 
     function borrow(address usr, uint currencyAmount) public note auth {
         reserve.borrow(usr, currencyAmount);
         quant.updateDebt(int(currencyAmount));
-        updateSupplyRate();
+        quant.updateBorrowRate();
     }
-
-    function updateBorrowRate(uint speed) public note auth {
-        quant.file("iBorrow", speed);
-        updateSupplyRate();
-    }
-
-    function updateSupplyRate() internal {
-        slicer.updateSupplyRate(quant.getSpeed(), quant.debt(), reserve.balance());
-    }
-
-    // --- Math ---
-    uint256 constant ONE = 10 ** 27;
-
-    function rmul(uint x, uint y) internal pure returns (uint z) {
-        z = mul(x, y) / ONE;
-    }
-
-    function mul(uint x, uint y) internal pure returns (uint z) {
-        require(y == 0 || (z = x * y) / y == x);
-    }
-
 }
