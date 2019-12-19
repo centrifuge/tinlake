@@ -1,4 +1,4 @@
-// Copyright (C) 2018  Rain <rainbreak@riseup.net>, lucasvo
+// Copyright (C) 2018  Rain <rainbreak@riseup.net>, Centrifuge
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -18,8 +18,8 @@ pragma solidity >=0.4.24;
 import "ds-note/note.sol";
 
 // Beans
-// Keeps track of interest rate accumulators (chi values) for all interest rate categories.
-// Calculates debt each loan according to its interest rate category and pie value.
+// Keeps track of interest rate accumulators (rateIndex values) for all interest rate categories.
+// Calculates debt each loan according to its interest rate category and debtBalance value.
 contract Beans is DSNote {
     // --- Auth ---
     mapping (address => uint) public wards;
@@ -29,30 +29,30 @@ contract Beans is DSNote {
     
     // --- Data ---
     // https://github.com/makerdao/dsr/blob/master/src/dsr.sol
-    struct Fee {
-        uint debt;
-        uint chi;
-        uint speed; // Accumulation per second
-        uint48 rho; // Last time the rate was accumulated
+    struct Rate {
+        uint debt;  // Total debt of all loans with this rate
+        uint rateIndex; // Accumulated rates
+        uint ratePerSecond; // Accumulation per second
+        uint48 lastUpdated; // Last time the rate was accumulated
     }
 
-    mapping (uint => Fee) public fees;
-    mapping (uint => uint) public pie;
+    mapping (uint => Rate) public rates;
+    mapping (uint => uint) public debtBalance;
 
     uint public totalDebt;
 
     constructor() public {
         wards[msg.sender] = 1;
-        fees[0].chi = ONE;
-        fees[0].speed = ONE;
+        rates[0].rateIndex = ONE;
+        rates[0].ratePerSecond = ONE;
     }
 
-    function file(uint fee, uint speed_) public auth note {
+    function file(uint rate, uint speed_) public auth note {
         require(speed_ != 0);
-        fees[fee].speed = speed_;
-        fees[fee].chi = ONE;
-        fees[fee].rho = uint48(now);
-        drip(fee);
+        rates[rate].ratePerSecond = speed_;
+        rates[rate].rateIndex = ONE;
+        rates[rate].lastUpdated = uint48(now);
+        drip(rate);
     }
 
     // --- Math ---
@@ -105,71 +105,70 @@ contract Beans is DSNote {
         z = x / y;
     }
 
-    function incLoanDebt(uint loan, uint fee, uint wad) public auth note {
-        require(now == fees[fee].rho);
-        pie[loan] = add(pie[loan], calcPie(fees[fee].chi, wad));
-        incTotalDebt(fee, wad);
+    function incLoanDebt(uint loan, uint rate, uint wad) public auth note {
+        require(now == rates[rate].lastUpdated);
+        debtBalance[loan] = add(debtBalance[loan], calcDebtBalance(rates[rate].rateIndex, wad));
+        incTotalDebt(rate, wad);
     }
 
-    function decLoanDebt(uint loan, uint fee, uint wad) public auth note {
-        require(now == fees[fee].rho);
-        pie[loan] = sub(pie[loan], calcPie(fees[fee].chi, wad));
-        decTotalDebt(fee, wad);
+    function decLoanDebt(uint loan, uint rate, uint wad) public auth note {
+        require(now == rates[rate].lastUpdated);
+        debtBalance[loan] = sub(debtBalance[loan], calcDebtBalance(rates[rate].rateIndex, wad));
+        decTotalDebt(rate, wad);
     }
 
-    function compounding(uint fee) public view returns (uint, uint, uint) {
-        uint48 rho = fees[fee].rho;
-        require(now >= rho);
-        uint speed = fees[fee].speed;
+    function compounding(uint rate) public view returns (uint, uint, uint) {
+        uint48 lastUpdated = rates[rate].lastUpdated;
+        require(now >= lastUpdated);
+        uint ratePerSecond = rates[rate].ratePerSecond;
 
-        uint chi = fees[fee].chi;
-        uint debt_ = fees[fee].debt;
+        uint rateIndex = rates[rate].rateIndex;
+        uint debt_ = rates[rate].debt;
 
         // compounding in seconds
-        uint latest = rmul(rpow(speed, now - rho, ONE), chi);
-        uint chi_ = rdiv(latest, chi);
+        uint latest = rmul(rpow(ratePerSecond, now - lastUpdated, ONE), rateIndex);
+        uint chi_ = rdiv(latest, rateIndex);
         uint wad = rmul(debt_, chi_) - debt_;
         return (latest, chi_, wad);
     }
 
-    // --- Fee Accumulation ---
-    function drip(uint fee) public {
-        if (now >= fees[fee].rho) {
-            (uint latest, , uint wad) = compounding(fee);
-            fees[fee].chi = latest;
-            fees[fee].rho = uint48(now);
-            incTotalDebt(fee, wad);   
+    // --- Rate Accumulation ---
+    function drip(uint rate) public {
+        if (now >= rates[rate].lastUpdated) {
+            (uint latest, , uint wad) = compounding(rate);
+            rates[rate].rateIndex = latest;
+            rates[rate].lastUpdated = uint48(now);
+            incTotalDebt(rate, wad);   
         }
     }
 
-    function burden(uint loan, uint fee) public view returns (uint) {
-        uint chi = fees[fee].chi;
-        if (now >= fees[fee].rho) {
-            (chi, ,) = compounding(fee);
+    function burden(uint loan, uint rate) public view returns (uint) {
+        uint rateIndex = rates[rate].rateIndex;
+        if (now >= rates[rate].lastUpdated) {
+            (rateIndex, ,) = compounding(rate);
         }
-        return calcDebt(chi, pie[loan]);
+        return calcDebt(rateIndex, debtBalance[loan]);
     }
 
-    function debtOf(uint loan, uint fee) public view returns(uint) {
-        return calcDebt(fees[fee].chi, pie[loan]);
+    function debtOf(uint loan, uint rate) public view returns(uint) {
+        return calcDebt(rates[rate].rateIndex, debtBalance[loan]);
     }
     
-    function incTotalDebt(uint fee, uint wad) private {
-        fees[fee].debt = add(fees[fee].debt, wad);
+    function incTotalDebt(uint rate, uint wad) private {
+        rates[rate].debt = add(rates[rate].debt, wad);
         totalDebt = add(totalDebt, wad);
     }
 
-    function decTotalDebt(uint fee, uint wad) private {
-        fees[fee].debt = sub(fees[fee].debt, wad);
+    function decTotalDebt(uint rate, uint wad) private {
+        rates[rate].debt = sub(rates[rate].debt, wad);
         totalDebt = sub(totalDebt, wad);
     }
 
-    function calcPie(uint chi, uint wad) private view returns (uint) {
-        return rdiv(wad, chi);
+    function calcDebtBalance(uint rateIndex, uint wad) private view returns (uint) {
+        return rdiv(wad, rateIndex);
     }
 
-    function calcDebt(uint chi, uint pie_) private view returns (uint) {
-        return rmul(pie_, chi);
+    function calcDebt(uint rateIndex, uint pie_) private view returns (uint) {
+        return rmul(pie_, rateIndex);
     }
-
 }

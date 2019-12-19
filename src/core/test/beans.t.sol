@@ -129,7 +129,7 @@ contract BeansTest is DSTest {
     function testDrip() public {
         uint fee = uint(1000000564701133626865910626); // 5 % / day
         beans.file(fee, fee);
-        (uint debt1, uint chi1, uint speed1, uint rho1 ) = beans.fees(fee);
+        (uint debt1, uint chi1, uint speed1, uint rho1 ) = beans.rates(fee);
         assertEq(speed1, fee);
         assertEq(rho1, now);
         assertEq(debt1, 0);
@@ -137,14 +137,14 @@ contract BeansTest is DSTest {
         // on day later
         hevm.warp(now + 1 days);
 
-        (debt1,  chi1,  speed1,  rho1 ) = beans.fees(fee);
+        (debt1,  chi1,  speed1,  rho1 ) = beans.rates(fee);
         assertEq(speed1, fee);
         assertEq(debt1, 0);
         assertTrue(rho1 != now);
 
         beans.drip(fee);
 
-        (uint debt2, uint chi2, uint speed2, uint rho2 ) = beans.fees(fee);
+        (uint debt2, uint chi2, uint speed2, uint rho2 ) = beans.rates(fee);
         assertEq(speed2, fee);
         assertEq(rho2, now);
         assertEq(debt2, 0);
