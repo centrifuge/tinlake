@@ -101,9 +101,14 @@ contract AdminUser {
         deployer.pile().file(loan, fee, balance);
     }
 
-    function addKeeper(address usr) public {
+    function doAddKeeper(address usr) public {
         CollectDeployer cd = CollectDeployer(address(deployer.collectDeployer()));
         cd.collector().rely(usr);
+    }
+
+    // appraisal -- dominated in WAD
+    function doUpdateAppraisal(uint loan, uint appraisal) public {
+        appraiser.file(loan, appraisal);
     }
 }
 
