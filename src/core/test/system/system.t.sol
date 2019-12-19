@@ -21,6 +21,7 @@ import "../../deployer.sol";
 import "../../appraiser.sol";
 import "../simple/nft.sol";
 import "../simple/token.sol";
+import "../../collect/deployer.sol";
 
 contract ERC20Like {
     function transferFrom(address, address, uint) public;
@@ -73,7 +74,7 @@ contract User {
     }
 }
 
-contract ManagerUser {
+contract AdminUser {
     // --- Data ---
     Deployer    deployer;
     Appraiser appraiser;
@@ -117,8 +118,8 @@ contract SystemTest is DSTest {
     Appraiser    appraiser;
     Deployer     public deployer;
 
-    ManagerUser  manager;
-    address      manager_;
+    AdminUser  admin;
+    address      admin_;
     User borrower;
     address      borrower_;
     Hevm public hevm;
@@ -143,12 +144,12 @@ contract SystemTest is DSTest {
         BeansFab beansfab = new BeansFab();
         appraiser = new Appraiser();
 
-        manager = new ManagerUser(appraiser);
-        manager_ = address(manager);
+        admin = new AdminUser(appraiser);
+        admin_ = address(admin);
 
-        deployer = new Deployer(manager_, titlefab, lightswitchfab, pilefab, shelffab, deskfab, admitfab, adminfab, beansfab);
+        deployer = new Deployer(admin_, titlefab, lightswitchfab, pilefab, shelffab, deskfab, admitfab, adminfab, beansfab);
 
-        appraiser.rely(manager_);
+        appraiser.rely(admin_);
         appraiser.rely(address(deployer));
 
         deployer.deployLightSwitch();
@@ -159,11 +160,25 @@ contract SystemTest is DSTest {
         deployer.deployDesk(tkn_);
         deployer.deployAdmit();
         deployer.deployAdmin(address(appraiser));
+
+        deployCollect();
+
         deployer.deploy();
 
         borrower = new User(address(deployer.pile()), address(deployer.shelf()), address(deployer.desk()), tkn_);
         borrower_ = address(borrower);
-        manager.file(deployer);
+        admin.file(deployer);
+    }
+
+    function deployCollect() public {
+        SpotterFab spotterFab = new SpotterFab();
+        TagFab tagFab = new TagFab();
+        CollectorFab collectorFab = new CollectorFab();
+
+        CollectDeployer collectDeployer  = new CollectDeployer(address(this), spotterFab, tagFab, collectorFab);
+
+        uint threshold = 12 * 10**26; // threshold 120%
+        deployer.deployCollect(address(collectDeployer), threshold);
     }
 
     // Checks
@@ -181,13 +196,13 @@ contract SystemTest is DSTest {
 
     function whitelist(uint tokenId, address nft_, uint principal, uint appraisal, address borrower_, uint fee) public returns (uint) {
         // define fee
-        manager.doInitFee(fee, fee);
+        admin.doInitFee(fee, fee);
 
         // nft whitelist
-        uint loan = manager.doAdmit(nft_, tokenId, principal, appraisal, borrower_);
+        uint loan = admin.doAdmit(nft_, tokenId, principal, appraisal, borrower_);
 
         // add fee for loan
-        manager.doAddFee(loan, fee, 0);
+        admin.doAddFee(loan, fee, 0);
         return loan;
     }
 
@@ -272,7 +287,7 @@ contract SystemTest is DSTest {
 
         // create borrower collateral nft
         nft.mint(borrower_, tokenId);
-        uint loan = manager.doAdmit(nft_, tokenId, principal, appraisal, borrower_);
+        uint loan = admin.doAdmit(nft_, tokenId, principal, appraisal, borrower_);
         borrower.doApproveNFT(nft, address(deployer.shelf()));
         borrower.doBorrow(loan);
 
@@ -351,7 +366,7 @@ contract SystemTest is DSTest {
             nft.mint(borrower_, i);
 
             // nft whitelist
-            manager.doAdmit(nft_, i, principal, appraisal, borrower_);
+            admin.doAdmit(nft_, i, principal, appraisal, borrower_);
             borrower.doApproveNFT(nft, address(deployer.shelf()));
 
             // borrow transaction
@@ -388,7 +403,7 @@ contract SystemTest is DSTest {
 
         // create borrower collateral nft
         nft.mint(borrower_, tokenId);
-        uint loan = manager.doAdmit(nft_, tokenId, principal, appraisal, borrower_);
+        uint loan = admin.doAdmit(nft_, tokenId, principal, appraisal, borrower_);
         borrower.doApproveNFT(nft, address(deployer.shelf()));
         borrower.doBorrow(loan);
         checkAfterBorrow(tokenId, principal);
@@ -410,7 +425,7 @@ contract SystemTest is DSTest {
     }
 
     function testFailAdmitNonExistingNFT() public {
-        uint loan = manager.doAdmit(nft_, 1, 100, 120, borrower_);
+        uint loan = admin.doAdmit(nft_, 1, 100, 120, borrower_);
         borrower.doBorrow(loan);
         assertEq(tkn.balanceOf(borrower_), 0);
     }
@@ -418,7 +433,7 @@ contract SystemTest is DSTest {
     function testFailBorrowNFTNotApproved() public {
         uint nft_tokenId = 1;
         nft.mint(borrower_, nft_tokenId);
-        uint loan = manager.doAdmit(nft_, nft_tokenId, 100, 120, borrower_);
+        uint loan = admin.doAdmit(nft_, nft_tokenId, 100, 120, borrower_);
         borrower.doBorrow(loan);
         assertEq(tkn.balanceOf(borrower_), 100);
     }

@@ -22,6 +22,15 @@ import "../appraiser.sol";
 import { SimpleNFT } from "./simple/nft.sol";
 import { SimpleToken } from "./simple/token.sol";
 
+contract MockCollectDeployer {
+    function deploy(address pile_, address shelf_, address desk_, uint threshold_) public {
+
+    }
+    function spotter() public returns(address) {
+        return address(123);
+    }
+}
+
 contract DeployerTest is DSTest {
     SimpleNFT nft;
     SimpleToken dai;
@@ -64,6 +73,9 @@ contract DeployerTest is DSTest {
         deployer.deployDesk(address(dai));
         deployer.deployAdmit();
         deployer.deployAdmin(address(appraiser));
+
+        MockCollectDeployer collectDeployer = new MockCollectDeployer();
+        deployer.deployCollect(address(collectDeployer) ,0);
         deployer.deploy();
     }
 }
