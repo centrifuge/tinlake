@@ -70,8 +70,6 @@ contract OperatorTest is DSTest {
 
     function repay() internal { 
         uint currencyAmount = 200 ether; 
-        uint borrowRate = ONE;
-        uint debt = 0;
 
         operator.repay(address(this), currencyAmount);
 
@@ -86,7 +84,6 @@ contract OperatorTest is DSTest {
     function borrow() internal {
         uint currencyAmount = 200 ether;
         
-
         operator.borrow(address(this), currencyAmount);
         
         assertEq(reserve.callsBorrow(), 1);

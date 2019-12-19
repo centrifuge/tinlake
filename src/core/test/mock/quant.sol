@@ -12,9 +12,6 @@ contract QuantMock {
     uint public reserve;
     int public loanAmount;
 
-    uint public borrowRateReturn; function setBorrowRateReturn(uint borrowRate_) public {borrowRateReturn=borrowRate_;}
-    uint public debt; function setDebtReturn(uint debt_) public {debt=debt_;}
-
     function file(bytes32 what, uint rate_) public {
         rate = rate_;
         callsFile++;
@@ -32,9 +29,4 @@ contract QuantMock {
         loanAmount = loanAmount_;
         callsUpdateDebt++;
     }
-
-    function getBorrowRate() public returns(uint){
-        return borrowRateReturn;
-    }
-
 }
