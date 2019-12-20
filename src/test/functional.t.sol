@@ -31,6 +31,10 @@ contract PileLike {
     function collect(uint loan) public;
 }
 
+contract ERC721Like {
+    function ownerOf(uint tokenId) public returns(address);
+}
+
 contract FunctionalTest is DSTest {
 
     Deployer coreDeployer;
@@ -107,6 +111,42 @@ contract FunctionalTest is DSTest {
         ERC20Like(tinlake.currency_).mint(proxy_, liquidity);
         // allow pile to spend borrower tokens
         ERC20Like(tinlake.currency_).approve(tinlake.pile_, uint(-1));
+    }
+
+    function repay(uint loan, uint tokenId, uint principal) public {
+        uint extra = 100000000000 ether;
+        // add liquidity for repayment
+        setUpRepayLiquidity(proxy_, extra);
+        assertEq(ERC20Like(tinlake.currency_).balanceOf(proxy_), extra + principal);
+        assertEq(Title(tinlake.title_).ownerOf(loan), proxy_);
+
+        // approve token transfer and close/repay loan
+        borrower.approveERC20(proxy_, actions_, tinlake.currency_, tinlake.pile_, uint(-1));
+        PileLike(tinlake.pile_).collect(loan);
+        uint debt = PileLike(tinlake.pile_).debtOf(loan);
+        borrower.close(proxy_, actions_, tinlake.desk_, tinlake.pile_, tinlake.shelf_, loan, proxy_);
+
+        assertEq(ERC20Like(tinlake.currency_).balanceOf(proxy_), extra + principal -  debt);
+        assertEq(PileLike(tinlake.pile_).balanceOf(loan), 0);
+        assertEq(Title(tinlake.collateralNFT_).ownerOf(tokenId), proxy_);
+
+    }
+
+    function whitelistAndBorrow(uint tokenId, uint principal, uint appraisal, uint fee) public returns (uint) {
+        // proxy owns collateral NFT
+        mintCollateralNFT(proxy_, tokenId);
+        assertEq(Title(tinlake.collateralNFT_).ownerOf(tokenId), proxy_);
+        // whitelist
+        uint loan = systemTest.whitelist(tokenId, tinlake.collateralNFT_, principal, appraisal, proxy_, fee);
+        assertEq(Title(tinlake.title_).ownerOf(loan), proxy_);
+        // approve collateral NFT transfer
+        borrower.approve(proxy_,  actions_, tinlake.collateralNFT_, tinlake.shelf_, tokenId);
+        assertEq(Title(tinlake.collateralNFT_).getApproved(tokenId), tinlake.shelf_);
+        // borrow action
+        borrower.borrow(proxy_, actions_, tinlake.desk_, tinlake.pile_, tinlake.shelf_, loan, proxy_);
+        assertEq(Title(tinlake.collateralNFT_).ownerOf(tokenId), tinlake.shelf_);
+        assertEq(ERC20Like(tinlake.currency_).balanceOf(proxy_), principal);
+        return loan;
     }
 
 }
