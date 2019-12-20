@@ -18,7 +18,7 @@ pragma solidity >=0.4.24;
 import "ds-note/note.sol";
 
 // DebtRegister
-// Keeps track of interest rate accumulators (rateIndex values) for all interest rate categories.
+// Keeps track of interest rate accumulators (index values) for all interest rate categories.
 // Calculates debt each loan according to its interest rate category and debtBalance value.
 contract DebtRegister is DSNote {
     // --- Auth ---
@@ -31,28 +31,28 @@ contract DebtRegister is DSNote {
     // https://github.com/makerdao/dsr/blob/master/src/dsr.sol
     struct Rate {
         uint debt;  // Total debt of all loans with this rate
-        uint rateIndex; // Accumulated rates
-        uint ratePerSecond; // Accumulation per second
+        uint index; // Accumulated rates
+        uint perSecond; // Accumulation per second
         uint48 lastUpdated; // Last time the rate was accumulated
     }
 
     mapping (uint => Rate) public rates;
 
-    // debtBalance = debt/rateIndex
+    // debtBalance = debt/index
     mapping (uint => uint) public debtBalance;
 
     uint public totalDebt;
 
     constructor() public {
         wards[msg.sender] = 1;
-        rates[0].rateIndex = ONE;
-        rates[0].ratePerSecond = ONE;
+        rates[0].index = ONE;
+        rates[0].perSecond = ONE;
     }
 
     function file(uint rate, uint speed_) public auth note {
         require(speed_ != 0);
-        rates[rate].ratePerSecond = speed_;
-        rates[rate].rateIndex = ONE;
+        rates[rate].perSecond = speed_;
+        rates[rate].index = ONE;
         rates[rate].lastUpdated = uint48(now);
         drip(rate);
     }
@@ -109,51 +109,51 @@ contract DebtRegister is DSNote {
 
     function incLoanDebt(uint loan, uint rate, uint wad) public auth note {
         require(now == rates[rate].lastUpdated);
-        debtBalance[loan] = add(debtBalance[loan], calcDebtBalance(rates[rate].rateIndex, wad));
+        debtBalance[loan] = add(debtBalance[loan], calcDebtBalance(rates[rate].index, wad));
         incTotalDebt(rate, wad);
     }
 
     function decLoanDebt(uint loan, uint rate, uint wad) public auth note {
         require(now == rates[rate].lastUpdated);
-        debtBalance[loan] = sub(debtBalance[loan], calcDebtBalance(rates[rate].rateIndex, wad));
+        debtBalance[loan] = sub(debtBalance[loan], calcDebtBalance(rates[rate].index, wad));
         decTotalDebt(rate, wad);
     }
 
     function compounding(uint rate) public view returns (uint, uint, uint) {
         uint48 lastUpdated = rates[rate].lastUpdated;
         require(now >= lastUpdated);
-        uint ratePerSecond = rates[rate].ratePerSecond;
+        uint perSecond = rates[rate].perSecond;
 
-        uint rateIndex = rates[rate].rateIndex;
+        uint index = rates[rate].index;
         uint debt_ = rates[rate].debt;
 
         // compounding in seconds
-        uint latestRateIndex = rmul(rpow(ratePerSecond, now - lastUpdated, ONE), rateIndex);
-        uint rateIndex_ = rdiv(latestRateIndex, rateIndex);
-        uint wad = rmul(debt_, rateIndex_) - debt_;
-        return (latestRateIndex, rateIndex_, wad);
+        uint latestRateIndex = rmul(rpow(perSecond, now - lastUpdated, ONE), index);
+        uint index_ = rdiv(latestRateIndex, index);
+        uint wad = rmul(debt_, index_) - debt_;
+        return (latestRateIndex, index_, wad);
     }
 
     // --- Rate Accumulation ---
     function drip(uint rate) public {
         if (now >= rates[rate].lastUpdated) {
             (uint latestRateIndex, , uint wad) = compounding(rate);
-            rates[rate].rateIndex = latestRateIndex;
+            rates[rate].index = latestRateIndex;
             rates[rate].lastUpdated = uint48(now);
             incTotalDebt(rate, wad);   
         }
     }
 
     function getCurrentDebt(uint loan, uint rate) public view returns (uint) {
-        uint rateIndex = rates[rate].rateIndex;
+        uint index = rates[rate].index;
         if (now >= rates[rate].lastUpdated) {
-            (rateIndex, ,) = compounding(rate);
+            (index, ,) = compounding(rate);
         }
-        return calcDebt(rateIndex, debtBalance[loan]);
+        return calcDebt(index, debtBalance[loan]);
     }
 
     function debtOf(uint loan, uint rate) public view returns(uint) {
-        return calcDebt(rates[rate].rateIndex, debtBalance[loan]);
+        return calcDebt(rates[rate].index, debtBalance[loan]);
     }
     
     function incTotalDebt(uint rate, uint wad) private {
@@ -166,11 +166,11 @@ contract DebtRegister is DSNote {
         totalDebt = sub(totalDebt, wad);
     }
 
-    function calcDebtBalance(uint rateIndex, uint wad) private view returns (uint) {
-        return rdiv(wad, rateIndex);
+    function calcDebtBalance(uint index, uint wad) private view returns (uint) {
+        return rdiv(wad, index);
     }
 
-    function calcDebt(uint rateIndex, uint debtBalance_) private view returns (uint) {
-        return rmul(debtBalance_, rateIndex);
+    function calcDebt(uint index, uint debtBalance_) private view returns (uint) {
+        return rmul(debtBalance_, index);
     }
 }
