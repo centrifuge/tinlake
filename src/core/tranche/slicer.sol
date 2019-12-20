@@ -26,13 +26,13 @@ contract Slicer is DSNote {
     function deny(address usr) public auth note { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
 
-    struct Fee {
+    struct Rate {
         uint chi;
         uint speed;
         uint48 rho;
     }
     
-    Fee public iSupply;
+    Rate public iSupply;
     
     constructor() public {
         wards[msg.sender] = 1;
