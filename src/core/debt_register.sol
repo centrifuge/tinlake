@@ -179,5 +179,7 @@ contract DebtRegister is DSNote {
         require(now == rates[newRate].lastUpdated);
         uint debt = calcDebt(rates[currentRate].index, debtBalance[loan]);
         debtBalance[loan] = calcDebtBalance(rates[newRate].index, debt);
+        decTotalDebt(currentRate, debt);
+        incTotalDebt(newRate, debt);
     }
 }

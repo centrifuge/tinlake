@@ -129,24 +129,24 @@ contract DebtRegisterTest is DSTest {
     function testDrip() public {
         uint rate = uint(1000000564701133626865910626); // 5 % / day
         debtRegister.file(rate, rate);
-        (uint debt1, uint rateIndex1, uint ratePerSecond1, uint rho1 ) = debtRegister.rates(rate);
+        (uint debt1, uint rateIndex1, uint ratePerSecond1, uint lastUpdated1 ) = debtRegister.rates(rate);
         assertEq(ratePerSecond1, rate);
-        assertEq(rho1, now);
+        assertEq(lastUpdated1, now);
         assertEq(debt1, 0);
 
         // on day later
         hevm.warp(now + 1 days);
 
-        (debt1,  rateIndex1,  ratePerSecond1,  rho1 ) = debtRegister.rates(rate);
+        (debt1,  rateIndex1,  ratePerSecond1,  lastUpdated1 ) = debtRegister.rates(rate);
         assertEq(ratePerSecond1, rate);
         assertEq(debt1, 0);
-        assertTrue(rho1 != now);
+        assertTrue(lastUpdated1 != now);
 
         debtRegister.drip(rate);
 
-        (uint debt2, uint rateIndex2, uint ratePerSecond2, uint rho2 ) = debtRegister.rates(rate);
+        (uint debt2, uint rateIndex2, uint ratePerSecond2, uint lastUpdated2 ) = debtRegister.rates(rate);
         assertEq(ratePerSecond2, rate);
-        assertEq(rho2, now);
+        assertEq(lastUpdated2, now);
         assertEq(debt2, 0);
         assertTrue(rateIndex1 != rateIndex2);
     }
@@ -208,9 +208,17 @@ contract DebtRegisterTest is DSTest {
         debtRegister.drip(highRate);
         checkDebt(loan, lowRate, 105 ether);
 
+        (uint rateTotalDebt, , ,) = debtRegister.rates(lowRate); assertEq(rateTotalDebt, 105 ether);
+        (rateTotalDebt, , ,)  = debtRegister.rates(highRate); assertEq(rateTotalDebt, 0);
+        assertEq(debtRegister.totalDebt(), 105 ether);
+
         // rate switch
         debtRegister.rateSwitch(loan, lowRate, highRate);
         checkDebt(loan, highRate, 105 ether);
+
+        (rateTotalDebt, , ,) = debtRegister.rates(lowRate); assertEq(rateTotalDebt, 0 );
+        (rateTotalDebt, , ,)  = debtRegister.rates(highRate); assertEq(rateTotalDebt, 105 ether);
+        assertEq(debtRegister.totalDebt(), 105 ether);
 
         hevm.warp(now + 1 days);
 
