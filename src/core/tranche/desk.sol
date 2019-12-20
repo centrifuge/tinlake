@@ -18,11 +18,9 @@ pragma solidity >=0.4.24;
 import "ds-note/note.sol";
 
 contract DistributorLike {
-    function tradFlow(bool) public;
-    function customFlow(bool) public;
+    function handleFlow(bool, bool) public;
     function addTranche(uint, address) public;
     function ratioOf(uint) public returns (uint);
-    function equityRatio() public returns (uint);
 }
 
 // Desk
@@ -70,10 +68,6 @@ contract Desk is DSNote {
     }
 
     function balance() public auth {
-        if (flowThrough) {
-            distributor.tradFlow(poolClosing);
-        } else {
-            distributor.customFlow(poolClosing);
-        }
+        distributor.handleFlow(flowThrough, poolClosing);
     }
 }

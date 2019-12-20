@@ -26,15 +26,19 @@ contract QuantLike {
 }
 
 contract OperatorLike {
+
     function borrow(address, uint) public;
     function repay(address, uint) public;
     function balance() public returns (uint);
     function file(bytes32, bool) public;
 
+    bool public supplyActive;
+    bool public redeemActive;
+
     QuantLike public quant;
 }
 
-contract Distributor is DSNote {
+contract Diffuser is DSNote {
 
     // --- Tranches ---
 
@@ -75,23 +79,55 @@ contract Distributor is DSNote {
         return tranches[i].ratio;
     }
 
-    // if capital should flow through, all funds in reserve should be moved in pile
     function handleFlow(bool flowThrough, bool poolClosing) public auth {
-        require(flowThrough);
+        require(flowThrough==false);
         if (poolClosing) {
             pileHas();
         } else {
-            for (uint i = 0; i < tranches.length; i++) {
-                // calculates how much money is in the reserve, transfers all of this balance to the pile
-                uint wadR = tranches[i].operator.balance();
-                tranches[i].operator.borrow(address(pile), uint(wadR));
-            }
+            poolOpen();
         }
     }
 
-    // Takes all the money from the pile, pay sr tranche debt first, then pay jr tranche debt
+    function poolOpen() private {
+        int wad = pile.want();
+        // pile wants money
+        if (wad > 0) {
+            pileWants(uint(wad));
+        } else if (wad < 0) {
+            // pile has extra money
+            pileHas();
+        }
+    }
+
+    function pileWants(uint wad) private {
+//        uint wad = wad;
+//        uint max = calcMaxTake();
+        // should always take money from the equity tranche first
+        for (uint i = 0; i < tranches.length; i++) {
+            uint wadR = tranches[i].operator.balance();
+            // this can be cast into uint bc wad should always be positive at this point
+            if (wad < wadR) {
+                // assumes sr is second tranche
+//                if (i == 1) {
+//                    require(wad < max);
+//                }
+                tranches[i].operator.borrow(address(pile), wad);
+//                wad = 0;
+                return;
+            }
+                // assumes sr is second tranche
+//                if (i == 1) {
+//                    require(wad < max);
+//                }
+            tranches[i].operator.borrow(address(pile), wadR);
+            wad = sub(wad, wadR);
+        }
+    }
+
     function pileHas() private {
         int wad = pile.want();
+        // pile has extra money, this can be repaid into the reserve
+        // senior tranche should always be the last tranche in the array and be repaid first
         for (uint i = tranches.length - 1; i >= 0; i--) {
             QuantLike quant = tranches[i].operator.quant();
             // should be positive number here, means there is some debt in the senior tranche, or 0
@@ -103,5 +139,39 @@ contract Distributor is DSNote {
             tranches[i].operator.repay(address(pile), uint(wadD));
             wad = int(wad) + int(wadD);
         }
+    }
+
+    // Note: assumes two tranche setup for now
+
+    // max_take is how much liquidity can be taken out from a specific tranche, given the current equity reserve/equity debt,
+    // in order to maintain the equity ratio which has been set by the pool manager.
+
+    // max_take =  (Equity.Reserve + Equity.Debt)/Equity.Ratio * Senior.Ratio - Senior.Debt
+
+    function calcMaxTake() public auth returns (uint) {
+        QuantLike quantE = tranches[0].operator.quant();
+        uint wadER = tranches[0].operator.balance();
+        uint wadED = quantE.debt();
+        uint ratioE = ratioOf(0);
+
+        QuantLike quantS = tranches[1].operator.quant();
+        uint wadSD = quantS.debt();
+        uint ratioS = ratioOf(1);
+
+        return sub(mul(add(wadER, wadED)/ratioE, ratioS), wadSD);
+    }
+
+    // --- Math ---
+
+    function add(uint x, uint y) internal pure returns (uint z) {
+        require((z = x + y) >= x);
+    }
+
+    function sub(uint x, uint y) internal pure returns (uint z) {
+        require((z = x - y) <= x);
+    }
+
+    function mul(uint x, uint y) internal pure returns (uint z) {
+        require(y == 0 || (z = x * y) / y == x);
     }
 }
