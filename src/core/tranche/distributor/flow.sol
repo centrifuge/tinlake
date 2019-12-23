@@ -47,7 +47,7 @@ contract Distribution {
         flow = 1;
     }
 
-    // --- LightSwitch ---
+    // --- Distribution ---
     function file(bytes32 what, uint data) public auth {
         require(data < 2);
         if (what == "flow") {flow = data;}

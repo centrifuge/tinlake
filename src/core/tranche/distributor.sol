@@ -46,7 +46,6 @@ contract ManagerLike {
     function operatorOf(uint i) public returns (address);
 }
 
-
 contract Distributor is DSNote {
     // --- Auth ---
     mapping (address => uint) public wards;
