@@ -26,6 +26,7 @@ contract OperatorLike {}
 
 contract DistributorLike {
     function balance() public;
+    function repayTranches(uint) public;
 }
 
 // TrancheManager
@@ -56,7 +57,6 @@ contract TrancheManager is DSNote {
     constructor (address pile_) public {
         wards[msg.sender] = 1;
         pile = PileLike(pile_);
-        flowThrough = false;
         poolClosing = false;
     }
 
@@ -73,6 +73,7 @@ contract TrancheManager is DSNote {
     // --- Calls ---
 
     // TIN tranche should always be added first
+    // We use 10ˆ27 for the ratio. For example, a ratio of 70% is 70 * 10^27 (70)
     function addTranche(uint ratio, address operator_) public auth {
         Tranche memory t;
         t.ratio = ratio;
@@ -82,7 +83,7 @@ contract TrancheManager is DSNote {
 
     function balance() public auth {
         if (poolClosing) {
-            distributor.repayTranches(uint(pile.want*-1));
+            distributor.repayTranches(uint(pile.want()*-1));
         } else {
             distributor.balance();
         }
@@ -103,4 +104,8 @@ contract TrancheManager is DSNote {
     function ratioOf(uint i) public auth returns (uint) {
         return tranches[i].ratio;
     }
+
+//    function getTrancheAssets() {
+//
+//    }
 }

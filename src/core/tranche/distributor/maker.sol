@@ -22,7 +22,8 @@ import "./flow.sol";
 contract MakerDistributor is Distributor, Flowable {
 
     function balance() public auth maker {
-        require(manager.poolClosing == false);
+        require(manager.poolClosing() == false);
+
         int wad = manager.checkPile();
         if (wad > 0) {
             borrowFromTranches(uint(wad));

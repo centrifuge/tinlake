@@ -21,14 +21,14 @@ contract FlowLike {
 
 contract Flowable {
     // --- Data ---
-    FlowLike public flow;
+    FlowLike public distribution;
 
     constructor (address flow_) public {
-        flow = FlowLike(flow_);
+        distribution = FlowLike(flow_);
     }
-    // --- Switchable ---
-    modifier trad { require(Distribution.flow() == 1); _; }
-    modifier maker { require(Distribution.flow() == 0); _; }
+    // --- Flowable ---
+    modifier trad { require(distribution.flow() == 1); _; }
+    modifier maker { require(distribution.flow() == 0); _; }
 
 }
 
@@ -44,12 +44,12 @@ contract Distribution {
 
     constructor () public {
         wards[msg.sender] = 1;
-        on = 1;
+        flow = 1;
     }
 
     // --- LightSwitch ---
     function file(bytes32 what, uint data) public auth {
-        require(data_ < 2);
+        require(data < 2);
         if (what == "flow") {flow = data;}
         else revert();
     }

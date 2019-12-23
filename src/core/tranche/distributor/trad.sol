@@ -22,7 +22,7 @@ import "./flow.sol";
 contract TraditionalDistributor is Distributor, Flowable {
 
     function balance() public auth trad {
-        require(manager.poolClosing == false);
+        require(manager.poolClosing() == false);
         for (uint i = 0; i < manager.trancheCount(); i++) {
             OperatorLike o = OperatorLike(manager.operatorOf(i));
             uint availableCurrency = o.balance();
