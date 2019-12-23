@@ -76,6 +76,10 @@ contract Operator is DSNote {
         return reserve.balance();
     }
 
+    function debt() public returns (uint) {
+        return quant.debt();
+    }
+
     function supply(address usr, uint currencyAmount) public note auth {
         require (supplyActive);
         uint tokenAmount = slicer.calcSlice(currencyAmount);

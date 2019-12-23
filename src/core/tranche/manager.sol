@@ -16,16 +16,21 @@
 pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
+import "../lightswitch.sol";
 
-contract DistributorLike {
-    function handleFlow(bool, bool) public;
-    function addTranche(uint, address) public;
-    function ratioOf(uint) public returns (uint);
+contract PileLike {
+    function want() public returns (int);
 }
 
-// Desk
+contract OperatorLike {}
+
+contract DistributorLike {
+    function balance() public;
+}
+
+// TrancheManager
 // Keeps track of the tranches. Manages the interfacing between the tranche side and borrower side of the contracts.
-contract Desk is DSNote {
+contract TrancheManager is Switchable, DSNote {
 
     // --- Auth ---
     mapping (address => uint) public wards;
@@ -35,18 +40,29 @@ contract Desk is DSNote {
 
     // --- Data ---
     DistributorLike public distributor;
+    PileLike public pile;
+
+    // --- Tranches ---
+
+    struct Tranche {
+        uint ratio;
+        OperatorLike operator;
+    }
+
+    Tranche[] public tranches;
 
     bool public flowThrough;
     bool public poolClosing;
 
-    constructor (address distributor_) public {
+    constructor (address pile_) public {
         wards[msg.sender] = 1;
-        distributor = DistributorLike(distributor_);
+        pile = PileLike(pile_);
         flowThrough = false;
         poolClosing = false;
     }
 
     function depend (bytes32 what, address addr) public auth {
+        if (what == "pile") { pile = PileLike(addr); }
         if (what == "distributor") { distributor = DistributorLike(addr); }
         else revert();
     }
@@ -60,14 +76,29 @@ contract Desk is DSNote {
 
     // TIN tranche should always be added first
     function addTranche(uint ratio, address operator_) public auth {
-        distributor.addTranche(ratio, operator_);
-    }
-
-    function ratioOf(uint i) public auth returns (uint) {
-        return distributor.ratioOf(i);
+        Tranche memory t;
+        t.ratio = ratio;
+        t.operator = OperatorLike(operator_);
+        tranches.push(t);
     }
 
     function balance() public auth {
-        distributor.handleFlow(flowThrough, poolClosing);
+        distributor.balance();
+    }
+
+    function checkPile() public auth returns (int){
+        return pile.want();
+    }
+
+    function trancheCount() public auth returns (uint) {
+        return tranches.length;
+    }
+
+    function operatorOf(uint i) public auth returns (address) {
+        return address(tranches[i].operator);
+    }
+
+    function ratioOf(uint i) public auth returns (uint) {
+        return tranches[i].ratio;
     }
 }

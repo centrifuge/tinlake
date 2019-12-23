@@ -21,87 +21,62 @@ contract PileLike {
     function want() public returns (int);
 }
 
-contract QuantLike {
-    uint public debt;
-}
-
 contract OperatorLike {
     function borrow(address, uint) public;
+    function debt() public returns (uint);
     function repay(address, uint) public;
     function balance() public returns (uint);
     function file(bytes32, bool) public;
-
-    QuantLike public quant;
 }
 
-contract Distributor is DSNote {
-
-    // --- Tranches ---
-
+contract ManagerLike {
     struct Tranche {
         uint ratio;
         OperatorLike operator;
     }
 
-    Tranche[] tranches;
+    Tranche[] public tranches;
+    PileLike public pile;
 
+    bool public poolClosing;
+
+    function ratioOf(uint) public returns (uint);
+    function checkPile() public returns (int);
+    function trancheCount() public returns (uint);
+    function operatorOf(uint i) public returns (address);
+}
+
+
+contract Distributor is DSNote {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth note { wards[usr] = 1; }
     function deny(address usr) public auth note { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
 
-    PileLike public pile;
+    ManagerLike public manager;
 
-    constructor (address pile_) public {
+    constructor(address manager_) public {
         wards[msg.sender] = 1;
-        pile = PileLike(pile_);
+        manager = ManagerLike(manager_);
     }
 
     function depend (bytes32 what, address addr) public auth {
-        if (what == "pile") { pile = PileLike(addr); }
+        if (what == "manager") { manager = ManagerLike(addr); }
         else revert();
     }
 
-    // TIN tranche should always be added first
-    function addTranche(uint ratio, address operator_) public auth {
-        Tranche memory t;
-        t.ratio = ratio;
-        t.operator = OperatorLike(operator_);
-        tranches.push(t);
-    }
-
-    function ratioOf(uint i) public auth returns (uint) {
-        return tranches[i].ratio;
-    }
-
-    // if capital should flow through, all funds in reserve should be moved in pile
-    function handleFlow(bool flowThrough, bool poolClosing) public auth {
-        require(flowThrough);
-        if (poolClosing) {
-            pileHas();
-        } else {
-            for (uint i = 0; i < tranches.length; i++) {
-                // calculates how much money is in the reserve, transfers all of this balance to the pile
-                uint wadR = tranches[i].operator.balance();
-                tranches[i].operator.borrow(address(pile), uint(wadR));
-            }
-        }
-    }
-
-    // Takes all the money from the pile, pay sr tranche debt first, then pay jr tranche debt
-    function pileHas() private {
-        int wad = pile.want();
-        for (uint i = tranches.length - 1; i >= 0; i--) {
-            QuantLike quant = tranches[i].operator.quant();
-            // should be positive number here, means there is some debt in the senior tranche, or 0
-            uint wadD = quant.debt();
-            if (wadD >= uint(wad*-1)) {
-                tranches[i].operator.repay(address(pile), uint(wad*-1));
+    function repayTranches() public auth {
+        uint availableCurrency = uint(manager.checkPile()*-1);
+        for (uint i = manager.trancheCount() - 1; i >= 0; i--) {
+            OperatorLike o = OperatorLike(manager.operatorOf(i));
+            uint trancheDebt = o.debt();
+            if (trancheDebt >= availableCurrency) {
+                o.repay(address(manager.pile), availableCurrency);
                 return;
             }
-            tranches[i].operator.repay(address(pile), uint(wadD));
-            wad = int(wad) + int(wadD);
+            o.repay(address(manager.pile), uint(trancheDebt));
+            availableCurrency = availableCurrency - trancheDebt;
         }
     }
 }

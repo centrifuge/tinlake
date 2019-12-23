@@ -16,27 +16,22 @@
 pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
+import "../distributor.sol";
+import "../../lightswitch.sol";
 
-import {Diffuser} from "./diffuser.sol";
-import {Distributor} from "./distributor.sol";
+contract TraditionalDistributor is Distributor, Switchable {
+    function balance() public auth {
 
-contract Orchestrator is DSNote{
+//        require(flowThrough);
 
-    Diffuser public diffuser;
-    Distributor public distributor;
-
-    // --- Auth ---
-    mapping (address => uint) public wards;
-    function rely(address usr) public auth note { wards[usr] = 1; }
-    function deny(address usr) public auth note { wards[usr] = 0; }
-    modifier auth { require(wards[msg.sender] == 1); _; }
-
-    function handleFlow(bool flowThrough, bool poolClosing) public auth {
-        if (flowThrough) {
-            distributor.handleFlow(flowThrough, poolClosing);
+        if (manager.poolClosing()) {
+            repayTranches();
         } else {
-            diffuser.handleFlow(flowThrough, poolClosing);
+            for (uint i = 0; i < manager.trancheCount(); i++) {
+                OperatorLike o = OperatorLike(manager.operatorOf(i));
+                uint availableCurrency = o.balance();
+                o.borrow(address(manager.pile), uint(availableCurrency));
+            }
         }
     }
-
 }
