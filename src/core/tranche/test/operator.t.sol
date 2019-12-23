@@ -42,7 +42,7 @@ contract OperatorTest is DSTest {
         uint currencyAmount = 200 ether;
         uint tokenAmount = 100;
 
-        slicer.setSliceReturn(tokenAmount);
+        slicer.setTokenBalanceReturn(tokenAmount);
         operator.supply(address(this), currencyAmount);
 
         assertEq(slicer.callsGetSlice(), 1);
@@ -56,7 +56,7 @@ contract OperatorTest is DSTest {
     function redeem(uint tokenAmount, uint usrSlice, uint redeemTokenAmount) internal {
         uint currencyAmount = 200 ether;
 
-        reserve.setSliceReturn(usrSlice);
+        reserve.setTokenBalanceReturn(usrSlice);
         slicer.setPayoutReturn(currencyAmount);
         
         operator.redeem(address(this), tokenAmount);

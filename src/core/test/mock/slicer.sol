@@ -8,7 +8,7 @@ contract SlicerMock {
     uint public tokenAmount;
     uint public currencyAmount;
 
-    uint public slicetReturn; function setSliceReturn(uint tokenAmount_) public {slicetReturn=tokenAmount_;}
+    uint public slicetReturn; function setTokenBalanceReturn(uint tokenAmount_) public {slicetReturn=tokenAmount_;}
     uint public payoutReturn; function setPayoutReturn(uint currencyAmount_) public {payoutReturn=currencyAmount_;}
     
     function getSlice(uint currencyAmount_) public returns(uint) {

@@ -54,20 +54,23 @@ contract Slicer is DSNote {
         return calcPayout(tokenAmount, tokenPrice);
     }
 
-    function getTokenPrice() public note auth returns (uint) {
+    function getTokenPrice() public returns (uint) {
         uint totalSupply = reserve.tokenSupply();
         uint totalAssets = trancheManager.getTrancheAssets(address(this));
         return calcTokenPrice(totalSupply, totalAssets);
     }
 
+    // tokenPrice in rad / precision: 10^27
     function calcPayout(uint tokenAmount, uint tokenPrice) internal pure returns (uint) {
         return rmul(tokenAmount, tokenPrice);
     }
 
+    // tokenPrice in rad / precision: 10^27
     function calcSlice(uint currencyAmount, uint tokenPrice) internal pure returns (uint) {
         return rdiv(currencyAmount, tokenPrice);
     }
 
+    // tokenSupply & totalAssets in wad / precision: 10^18 & tokenPrice in rad / precision: 10^27
     function calcTokenPrice(uint tokenSupply, uint totalAssets) internal pure returns (uint) {
         return rdiv(totalAssets, tokenSupply);
     }
