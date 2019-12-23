@@ -66,8 +66,7 @@ contract Distributor is DSNote {
         else revert();
     }
 
-    function repayTranches() public auth {
-        uint availableCurrency = uint(manager.checkPile()*-1);
+    function repayTranches(uint availableCurrency) public auth {
         for (uint i = manager.trancheCount() - 1; i >= 0; i--) {
             OperatorLike o = OperatorLike(manager.operatorOf(i));
             uint trancheDebt = o.debt();
@@ -75,7 +74,7 @@ contract Distributor is DSNote {
                 o.repay(address(manager.pile), availableCurrency);
                 return;
             }
-            o.repay(address(manager.pile), uint(trancheDebt));
+            o.repay(address(manager.pile), trancheDebt);
             availableCurrency = availableCurrency - trancheDebt;
         }
     }

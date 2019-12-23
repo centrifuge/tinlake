@@ -17,36 +17,26 @@ pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
 import "../distributor.sol";
-import "../../lightswitch.sol";
+import "./flow.sol";
 
-contract MakerDistributor is Distributor, Switchable {
+contract MakerDistributor is Distributor, Flowable {
 
-    function balance() public auth {
-
-//        require(flowThrough==false);
-
-        if (manager.poolClosing()) {
-            repayTranches();
-        } else {
-            poolOpen();
-        }
-    }
-
-    function poolOpen() private {
+    function balance() public auth maker {
+        require(manager.poolClosing == false);
         int wad = manager.checkPile();
         if (wad > 0) {
             borrowFromTranches(uint(wad));
         } else if (wad < 0) {
-            repayTranches();
+            // takes extra money from Pile and repays tranche debt to avoid accumulation of fees
+            repayTranches(uint(wad*-1));
         }
     }
 
-    function borrowFromTranches(uint wad) private {
-        uint borrowAmount = wad;
+    function borrowFromTranches(uint borrowAmount) private {
         for (uint i = 0; i < manager.trancheCount(); i++) {
             OperatorLike o = OperatorLike(manager.operatorOf(i));
             uint trancheReserve = o.balance();
-            if (borrowAmount < trancheReserve) {
+            if (borrowAmount <= trancheReserve) {
                 o.borrow(address(manager.pile), borrowAmount);
                 return;
             }

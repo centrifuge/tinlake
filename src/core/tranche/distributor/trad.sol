@@ -17,19 +17,16 @@ pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
 import "../distributor.sol";
-import "../../lightswitch.sol";
+import "./flow.sol";
 
-contract TraditionalDistributor is Distributor, Switchable {
-    function balance() public auth {
+contract TraditionalDistributor is Distributor, Flowable {
 
-//        require(flowThrough);
-
-        if (manager.poolClosing()) {
-            repayTranches();
-        } else {
-            for (uint i = 0; i < manager.trancheCount(); i++) {
-                OperatorLike o = OperatorLike(manager.operatorOf(i));
-                uint availableCurrency = o.balance();
+    function balance() public auth trad {
+        require(manager.poolClosing == false);
+        for (uint i = 0; i < manager.trancheCount(); i++) {
+            OperatorLike o = OperatorLike(manager.operatorOf(i));
+            uint availableCurrency = o.balance();
+            if (availableCurrency > 0) {
                 o.borrow(address(manager.pile), uint(availableCurrency));
             }
         }

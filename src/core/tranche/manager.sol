@@ -30,7 +30,7 @@ contract DistributorLike {
 
 // TrancheManager
 // Keeps track of the tranches. Manages the interfacing between the tranche side and borrower side of the contracts.
-contract TrancheManager is Switchable, DSNote {
+contract TrancheManager is DSNote {
 
     // --- Auth ---
     mapping (address => uint) public wards;
@@ -51,7 +51,6 @@ contract TrancheManager is Switchable, DSNote {
 
     Tranche[] public tranches;
 
-    bool public flowThrough;
     bool public poolClosing;
 
     constructor (address pile_) public {
@@ -68,7 +67,6 @@ contract TrancheManager is Switchable, DSNote {
     }
 
     function file(bytes32 what, bool data) public auth {
-        if (what == "flowThrough") { flowThrough = data; }
         if (what == "poolClosing") { poolClosing = data; }
     }
 
@@ -83,7 +81,11 @@ contract TrancheManager is Switchable, DSNote {
     }
 
     function balance() public auth {
-        distributor.balance();
+        if (poolClosing) {
+            distributor.repayTranches(uint(pile.want*-1));
+        } else {
+            distributor.balance();
+        }
     }
 
     function checkPile() public auth returns (int){
