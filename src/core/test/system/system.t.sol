@@ -105,6 +105,16 @@ contract AdminUser {
         CollectDeployer cd = CollectDeployer(address(deployer.collectDeployer()));
         cd.collector().rely(usr);
     }
+
+    function doAddKeeper(address usr) public {
+        CollectDeployer cd = CollectDeployer(address(deployer.collectDeployer()));
+        cd.collector().rely(usr);
+    }
+
+    // appraisal -- dominated in WAD
+    function doUpdateAppraisal(uint loan, uint appraisal) public {
+        appraiser.file(loan, appraisal);
+    }
 }
 
 contract Hevm {

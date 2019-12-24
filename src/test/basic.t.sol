@@ -37,11 +37,11 @@ contract BasicTest is FunctionalTest {
         whitelistAndBorrow(tokenId, principal, appraisal, fee);
     }
 
-    function testBorrowRepay() public {
+    function testBorrowClose() public {
         (uint tokenId, uint principal, uint appraisal, uint fee) = systemTest.defaultLoan();
         uint loan = whitelistAndBorrow(tokenId, principal, appraisal, fee);
 
         systemTest.hevm().warp(now + 10 days);
-        repay(loan, tokenId, principal);
+        close(loan, tokenId, principal);
     }
 }

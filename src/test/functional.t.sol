@@ -113,7 +113,7 @@ contract FunctionalTest is DSTest {
         ERC20Like(tinlake.currency_).approve(tinlake.pile_, uint(-1));
     }
 
-    function repay(uint loan, uint tokenId, uint principal) public {
+    function close(uint loan, uint tokenId, uint principal) public {
         uint extra = 100000000000 ether;
         // add liquidity for repayment
         setUpRepayLiquidity(proxy_, extra);
