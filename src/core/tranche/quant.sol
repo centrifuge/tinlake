@@ -63,8 +63,10 @@ contract Quant is DSNote {
         }
     }
 
-    function setFixedSupplyRate(bool fixed_) public note auth {
-        supplyRateFixed = fixed_;
+    function file(bytes32 what, bool data) public note auth {
+         if (what ==  "fixedsupplyrate") {
+             supplyRateFixed = data;
+        }
     }
 
     function updateBorrowRate() public note auth {
@@ -80,9 +82,7 @@ contract Quant is DSNote {
     }
 
     function updateDebt(int wad) public note auth  {
-        if (now >= borrowRate.lastUpdated) {
-            drip();
-        }
+        drip();
         debt = uint(int(debt) + int(wad));
     }
 

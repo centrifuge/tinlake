@@ -93,7 +93,7 @@ contract QuantTest is DSTest {
         
         quant.file( "borrowrate", borrowRate); 
         quant.file( "supplyrate", supplyRate); 
-        quant.setFixedSupplyRate(true);
+        quant.file("fixedsupplyrate", true);
         reserve.setBalanceReturn(balance);
           
         quant.updateDebt(int(debt));
