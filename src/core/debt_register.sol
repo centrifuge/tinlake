@@ -173,4 +173,13 @@ contract DebtRegister is DSNote {
     function calcDebt(uint index, uint debtBalance_) private view returns (uint) {
         return rmul(debtBalance_, index);
     }
+
+    function rateSwitch(uint loan, uint currentRate, uint newRate) public auth {
+        require(now == rates[currentRate].lastUpdated);
+        require(now == rates[newRate].lastUpdated);
+        uint debt = calcDebt(rates[currentRate].index, debtBalance[loan]);
+        debtBalance[loan] = calcDebtBalance(rates[newRate].index, debt);
+        decTotalDebt(currentRate, debt);
+        incTotalDebt(newRate, debt);
+    }
 }

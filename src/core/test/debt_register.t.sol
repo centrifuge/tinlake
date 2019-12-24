@@ -1,4 +1,4 @@
-// Copyright (C) 2019 lucasvo
+// Copyright (C) 2019 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -124,55 +124,55 @@ contract DebtRegisterTest is DSTest {
         hevm.warp(now + 365 days);
         debtRegister.drip(rate);
         checkDebt(loan, rate, 73.92 ether); // 66 ether * 1,12
-    }  
+    }
 
     function testDrip() public {
         uint rate = uint(1000000564701133626865910626); // 5 % / day
         debtRegister.file(rate, rate);
-        (uint debt1, uint chi1, uint speed1, uint rho1 ) = debtRegister.rates(rate);
-        assertEq(speed1, rate);
-        assertEq(rho1, now);
+        (uint debt1, uint rateIndex1, uint ratePerSecond1, uint lastUpdated1 ) = debtRegister.rates(rate);
+        assertEq(ratePerSecond1, rate);
+        assertEq(lastUpdated1, now);
         assertEq(debt1, 0);
 
         // on day later
         hevm.warp(now + 1 days);
 
-        (debt1,  chi1,  speed1,  rho1 ) = debtRegister.rates(rate);
-        assertEq(speed1, rate);
+        (debt1,  rateIndex1,  ratePerSecond1,  lastUpdated1 ) = debtRegister.rates(rate);
+        assertEq(ratePerSecond1, rate);
         assertEq(debt1, 0);
-        assertTrue(rho1 != now);
+        assertTrue(lastUpdated1 != now);
 
         debtRegister.drip(rate);
 
-        (uint debt2, uint chi2, uint speed2, uint rho2 ) = debtRegister.rates(rate);
-        assertEq(speed2, rate);
-        assertEq(rho2, now);
+        (uint debt2, uint rateIndex2, uint ratePerSecond2, uint lastUpdated2 ) = debtRegister.rates(rate);
+        assertEq(ratePerSecond2, rate);
+        assertEq(lastUpdated2, now);
         assertEq(debt2, 0);
-        assertTrue(chi1 != chi2);
-    }  
+        assertTrue(rateIndex1 != rateIndex2);
+    }
 
-    function testMaxChi() public {
-        // chi is uint, max value = (2^256)-1 = 1.1579209e+77
-        // chi initial 10^27
+    function testMaxrateIndex() public {
+        // rateIndex is uint, max value = (2^256)-1 = 1.1579209e+77
+        // rateIndex initial 10^27
         uint rate = uint(1000000564701133626865910626); // 5 % / daily
         debtRegister.file(rate, rate);
         hevm.warp(now + 1050 days); // 1,05 ^1050 = 1.7732257e+22
 
-        // init chi 10^27 *  1.7732257 * 10^22  ~ chi 10^49
-        // rdiv operation needs to mul chi with ONE (10^27)
+        // init rateIndex 10^27 *  1.7732257 * 10^22  ~ rateIndex 10^49
+        // rdiv operation needs to mul rateIndex with ONE (10^27)
         // therefore: 10^49 * 10^27 = 10^76 < 1.1579209e+77
         debtRegister.drip(rate);
     }
-    
-    function testFailChiTooHigh() public {
-        // chi is uint, max value = (2^256)-1 = 1.1579209e+77
-        // chi initial 10^27
+
+    function testFailrateIndexTooHigh() public {
+        // rateIndex is uint, max value = (2^256)-1 = 1.1579209e+77
+        // rateIndex initial 10^27
         uint rate = uint(1000000564701133626865910626); // 5 % / daily
         debtRegister.file(rate, rate);
         hevm.warp(now + 1100 days); // 1,05 ^1100 = 2.0334288e+23
 
-        // init chi 10^27 *  2.0334288 * 10^23  ~ chi 10^50
-        // rdiv operation needs to mul chi with ONE (10^27)
+        // init rateIndex 10^27 *  2.0334288 * 10^23  ~ rateIndex 10^50
+        // rdiv operation needs to mul rateIndex with ONE (10^27)
         // therefore: 10^50 * 10^27 = 10^77 same power as max value 1.1579209e+77
         debtRegister.drip(rate);
     }
@@ -186,9 +186,45 @@ contract DebtRegisterTest is DSTest {
         debtRegister.incLoanDebt(loan, rate, principal);
 
         // 150 days later
-        hevm.warp(now + 1050 days); // produces max ~ chi 10^49
+        hevm.warp(now + 1050 days); // produces max ~ rateIndex 10^49
         // debt ~ 10^27 * 10^49 =  10^76 (max uint is 10^77)
         debtRegister.drip(rate);
+    }
+
+    function testRateSwitch() public {
+        uint highRate = uint(1000001311675458706187136988); // 12 % per day
+        debtRegister.file(highRate, highRate);
+        uint lowRate = uint(1000000564701133626865910626); // 5 % / day
+        debtRegister.file(lowRate, lowRate);
+
+        uint loan = 1;
+        uint principal = 100 ether;
+        debtRegister.drip(lowRate);
+        debtRegister.incLoanDebt(loan, lowRate, principal);
+        checkDebt(loan, lowRate, 100 ether);
+
+        hevm.warp(now + 1 days);
+        debtRegister.drip(lowRate);
+        debtRegister.drip(highRate);
+        checkDebt(loan, lowRate, 105 ether);
+
+        (uint rateTotalDebt, , ,) = debtRegister.rates(lowRate); assertEq(rateTotalDebt, 105 ether);
+        (rateTotalDebt, , ,)  = debtRegister.rates(highRate); assertEq(rateTotalDebt, 0);
+        assertEq(debtRegister.totalDebt(), 105 ether);
+
+        // rate switch
+        debtRegister.rateSwitch(loan, lowRate, highRate);
+        checkDebt(loan, highRate, 105 ether);
+
+        (rateTotalDebt, , ,) = debtRegister.rates(lowRate); assertEq(rateTotalDebt, 0 );
+        (rateTotalDebt, , ,)  = debtRegister.rates(highRate); assertEq(rateTotalDebt, 105 ether);
+        assertEq(debtRegister.totalDebt(), 105 ether);
+
+        hevm.warp(now + 1 days);
+
+        //105 * 1.12 =117.6
+        debtRegister.drip(highRate);
+        checkDebt(loan, highRate, 117.6 ether);
     }
 
     function checkDebt(uint loan, uint rate, uint should) public {
