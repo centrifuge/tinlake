@@ -11,10 +11,15 @@ contract ReserveMock {
     uint public tokenAmount;
     address public usr;
 
-    uint public sliceReturn; function setSliceReturn(uint tokenAmount_) public {sliceReturn=tokenAmount_;}
+    uint public tokenBalanceReturn; function setTokenBalanceReturn(uint tokenAmount_) public {tokenBalanceReturn=tokenAmount_;}
+    uint public tokenSupplyReturn; function setTokenSupplyReturn(uint tokenAmount_) public {tokenSupplyReturn=tokenAmount_;}
     uint public balance; function setBalanceReturn(uint currencyAmount_) public {balance=currencyAmount_;}
     
-    function supply(address usr_, uint tokenAmount_, uint currencyAmount_) public  {
+    function tokenSupply() public returns(uint){
+       return tokenSupplyReturn;
+    }
+
+    function supply(address usr_, uint tokenAmount_, uint currencyAmount_) public {
        usr = usr_;
        currencyAmount = currencyAmount_;
        tokenAmount = tokenAmount_;
@@ -40,7 +45,7 @@ contract ReserveMock {
        callsBorrow++;
     }
 
-    function sliceOf(address usr_) public returns(uint) {
-       return sliceReturn;
+    function tokenBalanceOf(address usr_) public returns(uint) {
+       return tokenBalanceReturn;
     }
 }

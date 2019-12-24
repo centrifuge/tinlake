@@ -17,69 +17,62 @@ pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
 
+contract TrancheManagerLike {
+   function getTrancheAssets(address) public returns(uint);
+}
+
+contract ReserveLike {
+   function tokenSupply() public returns(uint);
+}
+
 // Slicer
-//  Calculates payouts and slices based on the current iSupply chi. Manages iSupply.
+// Calculates payouts and tranche slices represented in tokens
 contract Slicer is DSNote {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth note { wards[usr] = 1; }
     function deny(address usr) public auth note { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
+    
+    // --- Data ---
+    TrancheManagerLike public trancheManager;
+    ReserveLike public reserve;
 
-    struct Rate {
-        uint chi;
-        uint speed;
-        uint48 rho;
-    }
-    
-    Rate public iSupply;
-    
-    constructor() public {
+    constructor(address trancheManager_, address reserve_) public {
+        reserve = ReserveLike(reserve_);
+        trancheManager = TrancheManagerLike(trancheManager_);
         wards[msg.sender] = 1;
-        iSupply.chi = ONE;
-        iSupply.speed = ONE;
     }
 
-    function file(bytes32 what, uint speed_) public note auth {
-        if (what == "isupply") { 
-            drip();
-            iSupply.speed = speed_;    
-        } 
+    function getSlice(uint currencyAmount) public note auth returns (uint) {
+        uint tokenPrice = getTokenPrice();
+        return calcSlice(currencyAmount, tokenPrice);
     }
 
-    function calcSlice(uint currencyAmount) public note auth returns (uint) {
-        if (now > iSupply.rho) {
-            drip();
-        }
-        uint slice = rdiv(currencyAmount, iSupply.chi);
-        return slice;
+    function getPayout(uint tokenAmount) public note auth returns (uint) {
+        uint tokenPrice = getTokenPrice();
+        return calcPayout(tokenAmount, tokenPrice);
     }
 
-    function calcPayout(uint tokenAmount) public note auth returns (uint) {
-        if (now > iSupply.rho) {
-            drip();
-        }
-        uint payout = rmul(tokenAmount, iSupply.chi);
-        return payout;
+    function getTokenPrice() public returns (uint) {
+        uint totalSupply = reserve.tokenSupply();
+        uint totalAssets = trancheManager.getTrancheAssets(address(this));
+        return calcTokenPrice(totalSupply, totalAssets);
     }
 
-    function drip() public note auth {
-         if (now >= iSupply.rho) {
-            iSupply.chi = rmul(rpow(iSupply.speed, now - iSupply.rho, ONE),  iSupply.chi );
-            iSupply.rho = uint48(now);
-        }
+    // tokenPrice in rad / precision: 10^27
+    function calcPayout(uint tokenAmount, uint tokenPrice) internal pure returns (uint) {
+        return rmul(tokenAmount, tokenPrice);
     }
 
+    // tokenPrice in rad / precision: 10^27
+    function calcSlice(uint currencyAmount, uint tokenPrice) internal pure returns (uint) {
+        return rdiv(currencyAmount, tokenPrice);
+    }
 
-
-    function updateSupplyRate(uint borrowSpeed, uint debt, uint reserve) public note auth {
-        require (borrowSpeed > 0);
-        if (now >= iSupply.rho) {
-            drip();
-        }
-        uint ratio = rdiv(debt, add(reserve, debt));
-        uint borrowSpeed_ = sub(borrowSpeed, ONE);
-        iSupply.speed = add(rmul(borrowSpeed_, ratio), ONE);
+    // tokenSupply & totalAssets in wad / precision: 10^18 & tokenPrice in rad / precision: 10^27
+    function calcTokenPrice(uint tokenSupply, uint totalAssets) internal pure returns (uint) {
+        return rdiv(totalAssets, tokenSupply);
     }
 
     // --- Math ---

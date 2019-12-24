@@ -18,6 +18,7 @@ pragma solidity >=0.4.23;
 import "ds-test/test.sol";
 
 import "../quant.sol";
+import "../../test/mock/reserve.sol";
 
 contract Hevm {
     function warp(uint256) public;
@@ -27,11 +28,13 @@ contract QuantTest is DSTest {
 
     Quant quant;
     Hevm hevm;
+    ReserveMock reserve;
 
     function setUp() public {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
-        quant = new Quant();
+        reserve = new ReserveMock();
+        quant = new Quant(address(reserve));
     }
 
     function testInitDebt() public {
@@ -41,9 +44,9 @@ contract QuantTest is DSTest {
     }
 
     function testIncreaseDebt() public {
-        uint speed = uint(1000000003593629043335673583); // 12 % per year
+        uint borrowRate = uint(1000000003593629043335673583); // 12 % per year
         uint initialDebt = 66 ether;
-        quant.file("iborrow", speed);
+        quant.file( "borrowrate", borrowRate);
         quant.updateDebt(int(initialDebt));
 
         hevm.warp(now + 365 days); // 1 year passed 
@@ -55,9 +58,9 @@ contract QuantTest is DSTest {
     }
 
     function testDecreaseDebt() public {
-        uint speed = uint(1000000003593629043335673583); // 12 % per year
+        uint borrowRate = uint(1000000003593629043335673583); // 12 % per year
         uint initialDebt = 66 ether;
-        quant.file("iborrow", speed);
+        quant.file( "borrowrate", borrowRate);
         quant.updateDebt(int(initialDebt));
 
         hevm.warp(now + 365 days); // 1 year passed
@@ -68,45 +71,55 @@ contract QuantTest is DSTest {
         assertEq(quant.debt(), 0);
     }
 
-    function testFileIBorrow() public {
-        uint speed = uint(1000000003593629043335673583);
-        quant.file("iborrow", speed);
-        (, uint speedNow, ) = quant.iBorrow();
-        assertEq(speed, speedNow);
+    function testFileBorrowRate() public {
+        uint borrowRate = uint(1000000003593629043335673583);
+        quant.file( "borrowrate", borrowRate);
+        (, uint actual, ) = quant.borrowRate();
+        assertEq(borrowRate, actual);
+    }
+  
+    function testFileSupplyRate() public {
+        uint supplyRate = uint(1000000003593629043335673583);
+        quant.file("supplyrate", supplyRate);
+        uint actual = quant.supplyRate();
+        assertEq(supplyRate, actual);
     }
 
-    function testFailFileIBorrowWrongSelector() public {
-        uint speed = uint(1000000003593629043335673583);
-        quant.file("isupply", speed);
-        (, uint speedNow, ) = quant.iBorrow();
-        assertEq(speed, speedNow);
-    }
-
-    function testUpdateIBorrow() public {
+    function testUpdateBorrowRateSupplyRateFixed() public {
         uint debt = 100 ether;
-        uint reserve = 300 ether;
-        uint supplySpeed = 1000000001547125957863212450; // 5 % per year
-                    
-        quant.updateDebt(int(debt));
-        quant.UpdateIBorrow(supplySpeed, reserve); 
-        // 0.05 * ((300 + 100) / 100) = 0.2
-    
-        (, uint speedNow, ) = quant.iBorrow();
-        assertEq(speedNow, uint(1000000006188503831452849800));     
-    }
-
-    function testDrip() public {
-        uint speed = uint(1000000003593629043335673583); // 12 % per year
-        uint initialDebt = 66 ether;
-        quant.file("iborrow", speed);
-        quant.updateDebt(int(initialDebt));
-
-        hevm.warp(now + 365 days); // 1 year passed 
+        uint balance = 300 ether;
+        uint supplyRate = 1000000001547125957863212450;
+        uint borrowRate = uint(1000000003593629043335673583);
         
-        quant.drip();
-        // debt after one year: 66 ether * 1,12 = 73.92 
-        assertEq(quant.debt(), 73.92 ether);
+        quant.file( "borrowrate", borrowRate); 
+        quant.file( "supplyrate", supplyRate); 
+        quant.file("fixedsupplyrate", true);
+        reserve.setBalanceReturn(balance);
+          
+        quant.updateDebt(int(debt));
+        quant.updateBorrowRate(); 
+        // 0.05 * ((300 + 100) / 100) = 0.2
+        (, uint actual, ) = quant.borrowRate();
+        assertEq(actual, uint(1000000006188503831452849800));     
     }
+
+    function testUpdateBorrowRateSupplyRateNotFixed() public {
+        uint debt = 100 ether;
+        uint balance = 300 ether;
+        uint supplyRate = 1000000001547125957863212450;
+        uint borrowRate = uint(1000000003593629043335673583);
+        
+        quant.file( "borrowrate", borrowRate); 
+        quant.file( "supplyrate", supplyRate); 
+        reserve.setBalanceReturn(balance);
+          
+        quant.updateDebt(int(debt));
+        quant.updateBorrowRate(); 
+
+        (, uint actual, ) = quant.borrowRate();
+        // no changes
+        assertEq(actual, borrowRate);   
+    } 
 
     // --- Math ---
     uint256 constant ONE = 10 ** 27;

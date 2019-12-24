@@ -15,7 +15,7 @@
 
 pragma solidity >=0.4.24;
 
-contract Erc20 {
+contract ERC20 {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth { wards[usr] = 1; }
