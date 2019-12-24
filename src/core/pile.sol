@@ -26,11 +26,11 @@ contract TokenLike{
     function approve(address, uint) public;
 }
 
-contract BeansLike {
+contract DebtRegisterLike {
     uint public totalDebt;
     function debtOf(uint, uint) public view returns (uint);
-    function burden(uint, uint) public view returns (uint);
-    function initFee(uint, uint) public;
+    function getCurrentDebt(uint, uint) public view returns (uint);
+    function initRate(uint, uint) public;
     function incLoanDebt(uint, uint, uint) public;
     function decLoanDebt(uint, uint, uint) public;
     function drip(uint) public;
@@ -47,40 +47,40 @@ contract Pile is DSNote, TitleOwned {
 
     // --- Data ---
     TokenLike public tkn;
-    BeansLike public beans;
+    DebtRegisterLike public debtRegister;
 
     // https://github.com/makerdao/dsr/blob/master/src/dsr.sol
     struct Loan {
         uint balance;
-        uint fee;
+        uint rate;
     }
 
     mapping (uint => Loan) public loans_;
 
-    function loans(uint loan) public view returns (uint debt, uint balance, uint fee)  {
-        uint debt = beans.debtOf(loan, loans_[loan].fee);
-        return (debt, loans_[loan].balance, loans_[loan].fee);
+    function loans(uint loan) public view returns (uint debt, uint balance, uint rate)  {
+        uint debt = debtRegister.debtOf(loan, loans_[loan].rate);
+        return (debt, loans_[loan].balance, loans_[loan].rate);
     }
 
     function Debt() public view returns (uint debt) {
-        return beans.totalDebt();
+        return debtRegister.totalDebt();
     }
 
     uint public Balance;
     address public lender;
 
-    constructor(address tkn_, address title_, address beans_) TitleOwned(title_) public {
+    constructor(address tkn_, address title_, address debtRegister_) TitleOwned(title_) public {
         wards[msg.sender] = 1;
         tkn = TokenLike(tkn_);
-        beans = BeansLike(beans_);
+        debtRegister = DebtRegisterLike(debtRegister_);
     }
 
     function depend(bytes32 what, address data) public auth {
         if (what == "lender") { lender = data; }
     }
 
-    function file(uint loan, uint fee_, uint balance_) public auth note {
-        loans_[loan].fee = fee_;
+    function file(uint loan, uint rate_, uint balance_) public auth note {
+        loans_[loan].rate = rate_;
         loans_[loan].balance = balance_;
     }
 
@@ -89,8 +89,8 @@ contract Pile is DSNote, TitleOwned {
         require((z = x + y) >= x);
     }
 
-    function burden(uint loan) public view returns (uint) {
-        return beans.burden(loan, loans_[loan].fee);
+    function getCurrentDebt(uint loan) public view returns (uint) {
+        return debtRegister.getCurrentDebt(loan, loans_[loan].rate);
     }
 
     // --- Pile ---
@@ -101,8 +101,8 @@ contract Pile is DSNote, TitleOwned {
     }
 
     function initLoan(uint loan, uint wad) internal {
-        beans.drip(loans_[loan].fee);
-        beans.incLoanDebt(loan, loans_[loan].fee, wad);
+        debtRegister.drip(loans_[loan].rate);
+        debtRegister.incLoanDebt(loan, loans_[loan].rate, wad);
         loans_[loan].balance = add(loans_[loan].balance, wad);
         Balance = add(Balance, wad);
     }
@@ -125,7 +125,7 @@ contract Pile is DSNote, TitleOwned {
     }
 
     function collect(uint loan) public {
-        beans.drip(loans_[loan].fee);
+        debtRegister.drip(loans_[loan].rate);
     }
 
 
@@ -133,15 +133,15 @@ contract Pile is DSNote, TitleOwned {
     function recovery(uint loan, address usr, uint wad) public auth {
         doRepay(loan, usr, wad);
 
-        uint loss = beans.debtOf(loan, loans_[loan].fee);
-        beans.decLoanDebt(loan, loans_[loan].fee, loss);
+        uint loss = debtRegister.debtOf(loan, loans_[loan].rate);
+        debtRegister.decLoanDebt(loan, loans_[loan].rate, loss);
     }
 
     function doRepay(uint loan, address usr, uint wad) internal {
         collect(loan);
 
-        uint fee = loans_[loan].fee;
-        uint debt = beans.debtOf(loan, fee);
+        uint rate = loans_[loan].rate;
+        uint debt = debtRegister.debtOf(loan, rate);
 
         // only repay max loan debt
         if (wad > debt) {
@@ -149,7 +149,7 @@ contract Pile is DSNote, TitleOwned {
         }
 
         tkn.transferFrom(usr, address(this), wad);
-        beans.decLoanDebt(loan, fee, wad);
+        debtRegister.decLoanDebt(loan, rate, wad);
         tkn.approve(lender, wad);
     }
 
@@ -161,6 +161,6 @@ contract Pile is DSNote, TitleOwned {
     }
 
     function debtOf(uint loan) public returns (uint) {
-        return beans.debtOf(loan, loans_[loan].fee);
+        return debtRegister.debtOf(loan, loans_[loan].rate);
     }
 }

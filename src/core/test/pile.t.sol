@@ -20,7 +20,7 @@ import "ds-test/test.sol";
 import "../pile.sol";
 import "./mock/title.sol";
 import "./mock/token.sol";
-import "./mock/beans.sol";
+import "./mock/debt_register.sol";
 
 
 
@@ -28,13 +28,13 @@ contract PileTest is DSTest {
     Pile pile;
     TokenMock tkn;
     TitleMock title;
-    BeansMock beans;
+    DebtRegisterMock debtRegister;
 
     function setUp() public {
         tkn = new TokenMock();
         title = new TitleMock();
-        beans = new BeansMock();
-        pile = new Pile(address(tkn), address(title), address(beans));
+        debtRegister = new DebtRegisterMock();
+        pile = new Pile(address(tkn), address(title), address(debtRegister));
     }
 
     function testSetupPrecondition() public {
@@ -44,13 +44,13 @@ contract PileTest is DSTest {
 
     function borrow(uint loan, uint wad) public {
         uint totalBalance = pile.Balance();
-        beans.setTotalDebtReturn(wad);
-        beans.setLoanDebtReturn(wad);
+        debtRegister.setTotalDebtReturn(wad);
+        debtRegister.setLoanDebtReturn(wad);
 
         pile.borrow(loan, wad);
 
-        (uint debt, uint balance, uint fee) = pile.loans(loan);
-        assertEq(beans.callsIncLoanDebt(), 1);
+        (uint debt, uint balance, uint rate) = pile.loans(loan);
+        assertEq(debtRegister.callsIncLoanDebt(), 1);
         assertEq(pile.Balance(), totalBalance + wad);
         assertEq(pile.Debt(), wad);
         assertEq(balance, wad);
@@ -76,18 +76,18 @@ contract PileTest is DSTest {
 
     function repay(uint loan, uint wad) public {
         // pre state
-        (,, uint fee) = pile.loans(loan);
+        (,, uint rate) = pile.loans(loan);
         uint totalDebt = pile.Debt();
 
         pile.repay(loan, wad);
-        beans.setTotalDebtReturn(0);
-        beans.setLoanDebtReturn(0);
+        debtRegister.setTotalDebtReturn(0);
+        debtRegister.setLoanDebtReturn(0);
 
         // post state
         (uint debt, uint balance, ) = pile.loans(loan);
 
-        assertEq(beans.callsDrip(), 2);
-        assertEq(beans.callsDecLoanDebt(), 1);
+        assertEq(debtRegister.callsDrip(), 2);
+        assertEq(debtRegister.callsDecLoanDebt(), 1);
 
         assertEq(totalDebt-wad, pile.Debt());
         assertEq(debt,0);
@@ -123,22 +123,22 @@ contract PileTest is DSTest {
         repay(loan, wad);
     }
 
-    function testBorrowRepayWithFee() public {
-        uint fee = uint(1000000003593629043335673583); // 12 % per year
+    function testBorrowRepayWithRate() public {
+        uint rate = uint(1000000003593629043335673583); // 12 % per year
         uint loan = 1;
         uint principal = 100 ether;
-        pile.file(loan, fee, 0);
+        pile.file(loan, rate, 0);
         title.setOwnerOfReturn(address(this));
 
         borrow(loan, principal);
         withdraw(loan, principal);
 
         // one year later -> 1,12 * 100
-        beans.setBurdenReturn(112 ether);
-        beans.setTotalDebtReturn(112 ether);
-        beans.setLoanDebtReturn(112 ether);
+        debtRegister.setBurdenReturn(112 ether);
+        debtRegister.setTotalDebtReturn(112 ether);
+        debtRegister.setLoanDebtReturn(112 ether);
 
-        uint debt = pile.burden(loan);
+        uint debt = pile.getCurrentDebt(loan);
         repay(loan, debt);
     }
 

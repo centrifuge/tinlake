@@ -46,7 +46,7 @@ contract DeployerTest is DSTest {
     DeskFab deskfab;
     AdmitFab admitfab;
     AdminFab adminfab;
-    BeansFab beansfab;
+    DebtRegisterFab debtRegisterfab;
 
     Title title;
 
@@ -61,16 +61,16 @@ contract DeployerTest is DSTest {
         deskfab = new DeskFab();
         admitfab = new AdmitFab();
         adminfab = new AdminFab();
-        beansfab = new BeansFab();
+        debtRegisterfab = new DebtRegisterFab();
    }
     
     function testDeploy() public logs_gas {
-        Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, pilefab, shelffab, deskfab, admitfab, adminfab, beansfab);
+        Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, pilefab, shelffab, deskfab, admitfab, adminfab, debtRegisterfab);
 
         appraiser.rely(address(deployer));
 
         deployer.deployTitle("Test", "TEST");
-        deployer.deployBeans();
+        deployer.deployDebtRegister();
         deployer.deployLightSwitch();
         deployer.deployPile(address(dai));
         deployer.deployShelf(address(appraiser));
