@@ -14,7 +14,7 @@ contract ReserveMock {
     uint public sliceReturn; function setSliceReturn(uint tokenAmount_) public {sliceReturn=tokenAmount_;}
     uint public balance; function setBalanceReturn(uint currencyAmount_) public {balance=currencyAmount_;}
     
-    function supply(address usr_, uint tokenAmount_, uint currencyAmount_) public returns(uint) {
+    function supply(address usr_, uint tokenAmount_, uint currencyAmount_) public  {
        usr = usr_;
        currencyAmount = currencyAmount_;
        tokenAmount = tokenAmount_;

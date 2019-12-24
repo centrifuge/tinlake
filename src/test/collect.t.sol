@@ -16,6 +16,7 @@
 pragma solidity >=0.4.23;
 
 import "ds-test/test.sol";
+import "ds-math/math.sol";
 
 import { SystemTest, ERC20Like } from "../core/test/system/system.t.sol";
 import { Deployer } from "../core/deployer.sol";
@@ -25,15 +26,76 @@ import { Actions } from "../actions/actions.sol";
 import { Proxy } from "../proxy/proxy.sol";
 import { User } from "./user.sol";
 import "./functional.t.sol";
+import {CollectDeployer} from "../core/collect/deployer.sol";
 
-contract CollectTest is FunctionalTest {
+
+contract CollectTest is FunctionalTest,DSMath {
+
+    CollectDeployer public collectDeployer;
 
     function setUp() public {
         basicSetup();
     }
 
-    function testBasicCollect() public {
-        //TODO
+    function collect(uint loan, uint tokenId, uint principal, uint appraisal, uint fee) public {
+        bool seizable = collectDeployer.spotter().seizable(loan);
+        assertTrue(seizable==true);
+
+        assertTrue(collectDeployer.spotter().collectable(loan) == false);
+
+        // seizure loan
+        collectDeployer.spotter().seizure(loan);
+        assertTrue(collectDeployer.spotter().collectable(loan));
+
+        // allow test to collect NFT's
+        systemTest.admin().doAddKeeper(address(this));
+
+        assertTrue(systemTest.deployer().pile().Debt() != 0);
+
+        setUpRepayLiquidity(address(this), 2000 ether);
+        // collect NFT
+        collectDeployer.collector().collect(loan, address(this));
+
+        assertEq(ERC721Like(tinlake.collateralNFT_).ownerOf(tokenId), address(this));
+        assertEq(systemTest.deployer().pile().Debt(), 0);
+    }
+
+    function setupLoan() public returns (uint loan, uint tokenId, uint principal, uint appraisal, uint fee) {
+        (uint tokenId, uint principal, uint appraisal, uint fee) = systemTest.defaultLoan();
+        uint loan = whitelistAndBorrow(tokenId, principal, appraisal, fee);
+
+        collectDeployer = CollectDeployer(address(systemTest.deployer().collectDeployer()));
+
+        // intial threshold and ratio at 120%
+        assertEq(collectDeployer.spotter().threshold(), rdiv(appraisal, principal));
+
+        bool seizable = collectDeployer.spotter().seizable(loan);
+        assertTrue(seizable==false);
+        return (loan, tokenId, principal, appraisal, fee);
+
+    }
+
+    function testCollectDebtTooHigh() public {
+        (uint loan, uint tokenId, uint principal, uint appraisal, uint fee) = setupLoan();
+        systemTest.hevm().warp(now + 10 days);
+        collect(loan, tokenId, principal, appraisal, fee);
+    }
+
+    function testCollectPriceTooLow() public {
+        (uint loan, uint tokenId, uint principal, uint appraisal, uint fee) = setupLoan();
+
+        // decrease appraisal
+        systemTest.admin().doUpdateAppraisal(loan, appraisal/2);
+
+        collect(loan, tokenId, principal, appraisal, fee);
+    }
+
+    function testFailRepayDefaultedLoan() public {
+        (uint loan, uint tokenId, uint principal, uint appraisal, uint fee) = setupLoan();
+        systemTest.hevm().warp(now + 10 days);
+        collect(loan, tokenId, principal, appraisal, fee);
+
+        close(loan, tokenId, principal);
     }
 }
 

@@ -22,6 +22,19 @@ import "../appraiser.sol";
 import { SimpleNFT } from "./simple/nft.sol";
 import { SimpleToken } from "./simple/token.sol";
 
+contract MockCollectDeployer {
+    function deploy(address pile_, address shelf_, address desk_, uint threshold_) public {
+
+    }
+    function spotter() public returns(address) {
+        return address(123);
+    }
+
+    function collector() public returns(address) {
+        return address(123);
+    }
+}
+
 contract DeployerTest is DSTest {
     SimpleNFT nft;
     SimpleToken dai;
@@ -33,7 +46,7 @@ contract DeployerTest is DSTest {
     DeskFab deskfab;
     AdmitFab admitfab;
     AdminFab adminfab;
-    BeansFab beansfab;
+    DebtRegisterFab debtRegisterfab;
 
     Title title;
 
@@ -48,22 +61,25 @@ contract DeployerTest is DSTest {
         deskfab = new DeskFab();
         admitfab = new AdmitFab();
         adminfab = new AdminFab();
-        beansfab = new BeansFab();
+        debtRegisterfab = new DebtRegisterFab();
    }
     
     function testDeploy() public logs_gas {
-        Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, pilefab, shelffab, deskfab, admitfab, adminfab, beansfab);
+        Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, pilefab, shelffab, deskfab, admitfab, adminfab, debtRegisterfab);
 
         appraiser.rely(address(deployer));
 
         deployer.deployTitle("Test", "TEST");
-        deployer.deployBeans();
+        deployer.deployDebtRegister();
         deployer.deployLightSwitch();
         deployer.deployPile(address(dai));
         deployer.deployShelf(address(appraiser));
         deployer.deployDesk(address(dai));
         deployer.deployAdmit();
         deployer.deployAdmin(address(appraiser));
+
+        MockCollectDeployer collectDeployer = new MockCollectDeployer();
+        deployer.deployCollect(address(collectDeployer) ,0);
         deployer.deploy();
     }
 }

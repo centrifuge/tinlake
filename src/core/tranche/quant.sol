@@ -26,13 +26,13 @@ contract Quant is DSNote {
     function deny(address usr) public auth note { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
 
-    struct Fee {
+    struct Rate {
         uint chi;
         uint speed; // Accumulation per second
         uint48 rho; // Last time the rate was accumulated
     }
     
-    Fee public iBorrow;
+    Rate public iBorrow;
     uint public debt;
     
     constructor() public {
