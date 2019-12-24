@@ -17,8 +17,12 @@ pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
 
+contract ReserveLike {
+   function balance() public returns(uint);
+}
+
 // Quant
-// Keeps track of the tranche debt. Manages iBorrow & its calculation.
+// Keeps track of the tranche debt / expected tranche returns. Manages borrowRate & its calculation.
 contract Quant is DSNote {
     // --- Auth ---
     mapping (address => uint) public wards;
@@ -26,70 +30,83 @@ contract Quant is DSNote {
     function deny(address usr) public auth note { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
 
+    // --- Data ---
+    ReserveLike public reserve;
+
     struct Rate {
-        uint chi;
+        uint index;
         uint speed; // Accumulation per second
-        uint48 rho; // Last time the rate was accumulated
+        uint48 lastUpdated; // Last time the rate was accumulated
     }
     
-    Rate public iBorrow;
+    Rate public borrowRate;
     uint public debt;
+    uint public supplyRate;
+    bool public supplyRateFixed;
     
-    constructor() public {
+    constructor(address reserve_) public {
+        reserve = ReserveLike(reserve_);
         wards[msg.sender] = 1;
-        iBorrow.chi = ONE;
-        iBorrow.speed = ONE;
+        borrowRate.index = ONE;
+        borrowRate.speed = ONE;
+        supplyRate = ONE;
     }
 
     function file(bytes32 what, uint speed_) public note auth {
-         if (what == "iborrow") {
+         if (what ==  "borrowrate") {
             drip();
-            iBorrow.speed = speed_;
+            borrowRate.speed = speed_;
+        }
+        else if (what ==  "supplyrate") {
+            drip();
+            supplyRate = speed_;
         }
     }
 
-    function getSpeed() public returns(uint) {
-        return iBorrow.speed;
-    }
-
-    function UpdateIBorrow(uint supplySpeed, uint reserve) public note auth {
-        require (supplySpeed > 0);
-        if (now >= iBorrow.rho) {
-            drip();
+    function file(bytes32 what, bool data) public note auth {
+         if (what ==  "fixedsupplyrate") {
+             supplyRateFixed = data;
         }
-        uint supplySpeed_ = sub(supplySpeed, ONE);
-        uint ratio = rdiv(add(reserve, debt), debt); 
-        iBorrow.speed = add(rmul(ratio, supplySpeed_), ONE);
     }
 
-    function drip() public note auth{
-        if (now >= iBorrow.rho) {
-            (uint latest, , uint wad) = compounding();
-            iBorrow.chi = latest;
-            iBorrow.rho = uint48(now);
-            debt = add(debt, wad);   
+    function updateBorrowRate() public note auth {
+        if (supplyRateFixed && supplyRate > 0) {
+            if (now >= borrowRate.lastUpdated) {
+                drip();
+            }
+            uint balance = reserve.balance();
+            uint supplyRate_ = sub(supplyRate, ONE);
+            uint ratio = rdiv(add(balance, debt), debt); 
+            borrowRate.speed = add(rmul(ratio, supplyRate_), ONE);
         }
     }
 
     function updateDebt(int wad) public note auth  {
-        if (now >= iBorrow.rho) {
-            drip();
-        }
+        drip();
         debt = uint(int(debt) + int(wad));
     }
 
-    function compounding() internal view returns (uint, uint, uint) {
-        uint48 rho = iBorrow.rho;
-        require(now >= rho);
-        uint speed = iBorrow.speed;
+    function drip() internal {
+        if (now >= borrowRate.lastUpdated) {
+            (uint latest, , uint wad) = compounding();
+            borrowRate.index = latest;
+            borrowRate.lastUpdated = uint48(now);
+            debt = add(debt, wad);   
+        }
+    }
 
-        uint chi = iBorrow.chi;
+    function compounding() internal view returns (uint, uint, uint) {
+        uint48 lastUpdated = borrowRate.lastUpdated;
+        require(now >= lastUpdated);
+        uint speed = borrowRate.speed;
+
+        uint index = borrowRate.index;
 
         // compounding in seconds
-        uint latest = rmul(rpow(speed, now - rho, ONE), chi);
-        uint chi_ = rdiv(latest, chi);
-        uint wad = rmul(debt, chi_) - debt;
-        return (latest, chi_, wad);
+        uint latest = rmul(rpow(speed, now - lastUpdated, ONE), index);
+        uint index_ = rdiv(latest, index);
+        uint wad = rmul(debt, index_) - debt;
+        return (latest, index_, wad);
     }
 
     // --- Math ---
