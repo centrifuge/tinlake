@@ -16,23 +16,23 @@
 pragma solidity >=0.4.24;
 
 contract FlowLike {
-    function flow() public returns (uint);
+    function distribution() public returns (uint);
 }
 
 contract Flowable {
     // --- Data ---
-    FlowLike public distribution;
+    FlowLike public flow;
 
     constructor (address flow_) public {
-        distribution = FlowLike(flow_);
+        flow = FlowLike(flow_);
     }
     // --- Flowable ---
-    modifier fix { require(distribution.flow() == 1); _; }
-    modifier line { require(distribution.flow() == 0); _; }
+    modifier fix { require(flow.distribution() == 1); _; }
+    modifier line { require(flow.distribution() == 0); _; }
 
 }
 
-contract Distribution {
+contract Flow {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth { wards[usr] = 1; }
@@ -40,17 +40,17 @@ contract Distribution {
     modifier auth { require(wards[msg.sender] == 1); _; }
 
     // --- Data ---
-    uint public flow;
+    uint public distribution;
 
     constructor () public {
         wards[msg.sender] = 1;
-        flow = 1;
+        distribution = 1;
     }
 
     // --- Distribution ---
     function file(bytes32 what, uint data) public auth {
         require(data < 2);
-        if (what == "flow") {flow = data;}
+        if (what == "distribution") {distribution = data;}
         else revert();
     }
 }
