@@ -19,9 +19,9 @@ import "ds-note/note.sol";
 import "../distributor.sol";
 import "./flow.sol";
 
-contract MakerDistributor is Distributor, Flowable {
+contract LineOfCreditDistributor is Distributor, Flowable {
 
-    function balance() public auth maker {
+    function balance() public auth line {
         require(manager.poolClosing() == false);
 
         int wad = manager.checkPile();
@@ -50,6 +50,8 @@ contract MakerDistributor is Distributor, Flowable {
 
     // max_take is how much liquidity can be taken out from a specific tranche, given the current equity reserve/equity debt,
     // in order to maintain the equity ratio which has been set by the pool manager.
+
+    // Note that this formula is for the Maker scenario: we are assuming the Senior Reserve to be 0
 
     // max_take =  (Equity.Reserve + Equity.Debt)/Equity.Ratio * Senior.Ratio - Senior.Debt
 

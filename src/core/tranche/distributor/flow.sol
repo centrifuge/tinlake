@@ -27,8 +27,8 @@ contract Flowable {
         distribution = FlowLike(flow_);
     }
     // --- Flowable ---
-    modifier trad { require(distribution.flow() == 1); _; }
-    modifier maker { require(distribution.flow() == 0); _; }
+    modifier fix { require(distribution.flow() == 1); _; }
+    modifier line { require(distribution.flow() == 0); _; }
 
 }
 

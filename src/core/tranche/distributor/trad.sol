@@ -19,9 +19,9 @@ import "ds-note/note.sol";
 import "../distributor.sol";
 import "./flow.sol";
 
-contract TraditionalDistributor is Distributor, Flowable {
+contract FixedCreditDistributor is Distributor, Flowable {
 
-    function balance() public auth trad {
+    function balance() public auth fix {
         require(manager.poolClosing() == false);
 
         for (uint i = 0; i < manager.trancheCount(); i++) {
