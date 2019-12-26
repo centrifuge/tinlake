@@ -76,7 +76,10 @@ contract Quant is DSNote {
             }
             uint balance = reserve.balance();
             uint supplyRate_ = sub(supplyRate, ONE);
-            uint ratio = rdiv(add(balance, debt), debt); 
+            uint ratio = ONE;
+            if (debt > 0) {
+                ratio = rdiv(add(balance, debt), debt);
+            }
             borrowRate.speed = add(rmul(ratio, supplyRate_), ONE);
         }
     }

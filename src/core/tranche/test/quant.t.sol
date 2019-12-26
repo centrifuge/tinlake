@@ -85,25 +85,57 @@ contract QuantTest is DSTest {
         assertEq(supplyRate, actual);
     }
 
-    function testUpdateBorrowRateSupplyRateFixed() public {
+
+    function updateBorrowRate(uint debt, uint balance, uint supplyRate) public returns (uint) {
+        quant.file( "supplyrate", supplyRate);
+        quant.file("fixedsupplyrate", true);
+        reserve.setBalanceReturn(balance);
+        quant.updateDebt(int(debt));
+        quant.updateBorrowRate();
+
+        (, uint rate, ) = quant.borrowRate();
+        return rate;
+    }
+
+    function testUpdateBorrowRate_SupplyRateFixed() public {
         uint debt = 100 ether;
         uint balance = 300 ether;
         uint supplyRate = 1000000001547125957863212450;
-        uint borrowRate = uint(1000000003593629043335673583);
-        
-        quant.file( "borrowrate", borrowRate); 
-        quant.file( "supplyrate", supplyRate); 
-        quant.file("fixedsupplyrate", true);
-        reserve.setBalanceReturn(balance);
-          
-        quant.updateDebt(int(debt));
-        quant.updateBorrowRate(); 
+
+        uint actual = updateBorrowRate(debt, balance, supplyRate);
+
         // 0.05 * ((300 + 100) / 100) = 0.2
-        (, uint actual, ) = quant.borrowRate();
         assertEq(actual, uint(1000000006188503831452849800));     
     }
 
-    function testUpdateBorrowRateSupplyRateNotFixed() public {
+    function testUpdateBorrowRate_SupplyRateFixed_lowRates() public {
+        uint debt = 100 ether;
+        uint balance = 100 ether;
+        uint supplyRate = 1000000000000000000000000008;
+
+        uint actual = updateBorrowRate(debt, balance, supplyRate);
+        assertEq(actual, uint(1000000000000000000000000016));
+    }
+
+    function testUpdateBorrowRate_SupplyRateFixed_zeroBalance() public {
+        uint debt = 100 ether;
+        uint balance = 0;
+        uint supplyRate = 1000000001547125957863212450;
+
+        uint actual = updateBorrowRate(debt, balance, supplyRate);
+        assertEq(actual, supplyRate);
+    }
+
+    function testUpdateBorrowRate_SupplyRateFixed_zeroDebt() public {
+        uint debt = 0;
+        uint balance = 100 ether;
+        uint supplyRate = 1000000001547125957863212450;
+
+        uint actual = updateBorrowRate(debt, balance, supplyRate);
+        assertEq(actual, supplyRate);
+    }
+
+    function testUpdateBorrowRate_SupplyRateNotFixed() public {
         uint debt = 100 ether;
         uint balance = 300 ether;
         uint supplyRate = 1000000001547125957863212450;
