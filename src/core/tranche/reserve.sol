@@ -46,11 +46,15 @@ contract Reserve is DSNote {
         currency = TokenLike(currency_);
     }
 
-    function balance() public returns (uint){
+    function balance() public returns (uint) {
         return currency.balanceOf(address(this));
     }
 
-    function sliceOf(address usr) public returns (uint) {
+    function tokenSupply() public returns (uint) {
+        return token.totalSupply();
+    }
+
+    function tokenBalanceOf(address usr) public returns (uint) {
         return token.balanceOf(address(usr));
     }
     

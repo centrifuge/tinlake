@@ -18,7 +18,6 @@ pragma solidity >=0.4.24;
 pragma experimental ABIEncoderV2;
 
 import { TitleOwned } from "./title.sol";
-import "ds-test/test.sol";
 
 contract AppraiserLike {
     function appraise(uint, address, uint) public returns (uint);
@@ -32,7 +31,7 @@ contract NFTLike {
 contract PileLike {
     struct Loan {
         uint balance;
-        uint fee;   
+        uint rate;
     }
     function debtOf(uint) public returns (uint debt);
     function borrow(uint, uint) public;
@@ -105,8 +104,8 @@ contract Shelf is TitleOwned {
         adjust(loan);
     }
 
-    function free(uint loan, address usr) public auth {
-        move(loan, shelf[loan].registry, shelf[loan].tokenId, usr);
+    function free(uint loan, address usr) public auth  {
+        NFTLike(shelf[loan].registry).transferFrom(address(this), usr, shelf[loan].tokenId);
         adjust(loan);
     }
 

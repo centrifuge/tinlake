@@ -41,54 +41,35 @@ contract OperatorTest is DSTest {
     function supply() internal {
         uint currencyAmount = 200 ether;
         uint tokenAmount = 100;
-        uint borrowSpeed = ONE;
-        uint debt = 0;
 
-        slicer.setCalcSliceReturn(tokenAmount);
-        quant.setSpeedReturn(borrowSpeed);
-        quant.setDebtReturn(debt);
-        reserve.setBalanceReturn(currencyAmount);
-
+        slicer.setTokenBalanceReturn(tokenAmount);
         operator.supply(address(this), currencyAmount);
 
-        assertEq(slicer.callsCalcSlice(), 1);
+        assertEq(slicer.callsGetSlice(), 1);
         assertEq(reserve.callsSupply(), 1);
         assertEq(reserve.usr(), address(this));
         assertEq(reserve.currencyAmount(), currencyAmount);
         assertEq(reserve.tokenAmount(), tokenAmount);
-        checkSlicerUpdated(borrowSpeed, debt, currencyAmount);
+        assertEq(quant.callsUpdateBorrowRate(), 1);
     }
 
     function redeem(uint tokenAmount, uint usrSlice, uint redeemTokenAmount) internal {
         uint currencyAmount = 200 ether;
-        uint borrowSpeed = ONE;
-        uint debt = 0;
-        uint balance = 200;
 
-
-        reserve.setSliceReturn(usrSlice);
-        reserve.setBalanceReturn(balance);
-        slicer.setCalcPayoutReturn(currencyAmount);
-        quant.setSpeedReturn(borrowSpeed);
-        quant.setDebtReturn(debt);
-
+        reserve.setTokenBalanceReturn(usrSlice);
+        slicer.setPayoutReturn(currencyAmount);
+        
         operator.redeem(address(this), tokenAmount);
-        assertEq(slicer.callsCalcPayout(), 1);
+        assertEq(slicer.callsGetPayout(), 1);
         assertEq(reserve.callsRedeem(), 1);
         assertEq(reserve.usr(), address(this));
         assertEq(reserve.currencyAmount(), currencyAmount);
         assertEq(reserve.tokenAmount(), redeemTokenAmount);
-        checkSlicerUpdated(borrowSpeed, debt, balance);
+        assertEq(quant.callsUpdateBorrowRate(), 1);
     }
 
     function repay() internal { 
         uint currencyAmount = 200 ether; 
-        uint borrowSpeed = ONE;
-        uint debt = 0;
-
-        quant.setSpeedReturn(borrowSpeed);
-        quant.setDebtReturn(debt);
-        reserve.setBalanceReturn(currencyAmount);
 
         operator.repay(address(this), currencyAmount);
 
@@ -97,19 +78,12 @@ contract OperatorTest is DSTest {
         assertEq(reserve.currencyAmount(), currencyAmount);
         assertEq(quant.callsUpdateDebt(), 1);
         assertEq(quant.loanAmount(), (-1 * int(currencyAmount)));
-        checkSlicerUpdated(borrowSpeed, debt, currencyAmount);
+        assertEq(quant.callsUpdateBorrowRate(), 1);
     }
 
     function borrow() internal {
-        uint currencyAmount = 200 ether; 
-        uint borrowSpeed = ONE;
-        uint debt = 0;
-        uint balance = 0;
-
-        quant.setSpeedReturn(borrowSpeed);
-        quant.setDebtReturn(debt);
-        reserve.setBalanceReturn(balance);
-
+        uint currencyAmount = 200 ether;
+        
         operator.borrow(address(this), currencyAmount);
         
         assertEq(reserve.callsBorrow(), 1);
@@ -117,14 +91,7 @@ contract OperatorTest is DSTest {
         assertEq(reserve.currencyAmount(), currencyAmount);
         assertEq(quant.callsUpdateDebt(), 1);
         assertEq(quant.loanAmount(), int(currencyAmount));
-        checkSlicerUpdated(borrowSpeed, debt, balance);
-    }
-
-    function checkSlicerUpdated(uint speed, uint debt, uint reserve) internal {
-        assertEq(slicer.callsupdateSupplyRate(), 1);
-        assertEq(slicer.borrowSpeed(), speed);
-        assertEq(slicer.debt(), debt);
-        assertEq(slicer.reserve(), reserve);
+        assertEq(quant.callsUpdateBorrowRate(), 1);
     }
 
     function testDeactivateSupply() public {

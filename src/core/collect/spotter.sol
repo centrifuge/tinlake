@@ -74,13 +74,13 @@ contract Spotter {
         else revert();
     }
 
-    function nowPrice(uint loan) internal returns(uint) {
+    function nowPrice(uint loan) public returns(uint) {
         shelf.adjust(loan);
         (,,uint price,) = shelf.shelf(loan);
         return price;
     }
 
-    function nowDebt(uint loan) internal returns(uint) {
+    function nowDebt(uint loan) public returns(uint) {
         pile.collect(loan);
         return pile.debtOf(loan);
     }
