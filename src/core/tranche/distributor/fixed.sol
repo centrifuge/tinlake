@@ -16,14 +16,16 @@
 pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
-import "../distributor.sol";
+import "./distributor.sol";
 import "./flow.sol";
 
-contract FixedCreditDistributor is Distributor, Flowable {
+contract FixedCredit is Distributor, Flowable {
 
-    function balance() public auth fix {
+    constructor (address distributor_, address flowable_) Distributor (distributor_) Flowable(flowable_) public {
+    }
+
+    function balance() public auth {
         require(manager.poolClosing() == false);
-
         for (uint i = 0; i < manager.trancheCount(); i++) {
             OperatorLike o = OperatorLike(manager.operatorOf(i));
             uint availableCurrency = o.balance();

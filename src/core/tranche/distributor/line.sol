@@ -16,10 +16,13 @@
 pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
-import "../distributor.sol";
+import "./distributor.sol";
 import "./flow.sol";
 
-contract LineOfCreditDistributor is Distributor, Flowable {
+contract LOC is Distributor, Flowable {
+
+    constructor (address distributor_, address flowable_) Distributor (distributor_) Flowable(flowable_) public {
+    }
 
     function balance() public auth line {
         require(manager.poolClosing() == false);

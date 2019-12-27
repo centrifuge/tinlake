@@ -15,7 +15,7 @@
 
 pragma solidity >=0.4.24;
 
-contract OperatorLike {}
+import {OperatorLike} from "../../tranche/distributor/distributor.sol";
 
 contract DeskMock {
 
@@ -27,9 +27,8 @@ contract DeskMock {
     Tranche[] public tranches;
 
     uint public assetReturn; function setAssetReturn(uint assetAmount_) public {assetReturn=assetAmount_;}
-    bool poolClosing; function setPoolClosing(bool close_) public {poolClosing=close_;}
-
-    address pile; function setPile(address p_) public {pile=p_;}
+    bool public poolClosing; function setPoolClosing(bool close_) public {poolClosing=close_;}
+    address public pile; function setPile(address p_) public {pile=p_;}
 
     // calls
     uint public callsBalance;
@@ -62,4 +61,14 @@ contract DeskMock {
     function trancheCount() public returns (uint) {
         return tranches.length;
     }
+
+    function operatorOf(uint i) public returns (address) {
+        return address(tranches[i].operator);
+    }
+
+    function ratioOf(uint i) public returns (uint) {
+        return tranches[i].ratio;
+    }
+
+//    function checkPile() public
 }
