@@ -60,8 +60,6 @@ contract TrancheManagerMock {
     function operatorOf(uint i) public returns (address) {
         return tranches[i].operator;
     }
-
-
 }
 
     

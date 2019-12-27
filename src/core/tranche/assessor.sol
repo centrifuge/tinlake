@@ -45,10 +45,10 @@ contract Assessor {
          uint trancheDebt = operator.debt();
          uint trancheReserve = operator.balance();
          int trancheIndex = trancheManager.indexOf(operator_);
+
          require(trancheIndex >= 0);
-         // total debt of all tranches with lower risk
-         uint totalSeniorDebt = calcSeniorDebt(trancheIndex-1);
-         // total assets in the reserves of all tranches with higher risk
+
+         uint totalSeniorDebt = calcSeniorDebt(trancheIndex-1);    
          uint totalEquityReserve = calcEquityReserve(uint(trancheIndex+1));
          uint poolValue = trancheManager.poolValue();
          if (trancheManager.isEquity(operator_)) {
