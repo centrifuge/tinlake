@@ -19,7 +19,7 @@ import "ds-note/note.sol";
 
 contract ReserveLike{
     function balance() public view returns (uint);
-    function sliceOf(address) public view returns (uint);
+    function tokenBalanceOf(address) public view returns (uint);
     function redeem(address, uint, uint) public;
     function supply(address, uint, uint) public;
     function repay(address, uint) public;
@@ -85,7 +85,7 @@ contract Operator is DSNote {
 
     function redeem(address usr, uint tokenAmount) public note auth {
         require (redeemActive);
-        uint slice = reserve.sliceOf(usr); 
+        uint slice = reserve.tokenBalanceOf(usr); 
          if (slice < tokenAmount) {
             tokenAmount = slice;
         }

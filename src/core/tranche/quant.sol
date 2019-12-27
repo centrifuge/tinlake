@@ -33,13 +33,13 @@ contract Quant is DSNote {
     // --- Data ---
     ReserveLike public reserve;
 
-    struct Fee {
-        uint chi;
+    struct Rate {
+        uint index;
         uint speed; // Accumulation per second
-        uint48 rho; // Last time the rate was accumulated
+        uint48 lastUpdated; // Last time the rate was accumulated
     }
     
-    Fee public borrowRate;
+    Rate public borrowRate;
     uint public debt;
     uint public supplyRate;
     bool public supplyRateFixed;
@@ -47,7 +47,7 @@ contract Quant is DSNote {
     constructor(address reserve_) public {
         reserve = ReserveLike(reserve_);
         wards[msg.sender] = 1;
-        borrowRate.chi = ONE;
+        borrowRate.index = ONE;
         borrowRate.speed = ONE;
         supplyRate = ONE;
     }
@@ -63,13 +63,15 @@ contract Quant is DSNote {
         }
     }
 
-    function setFixedSupplyRate(bool fixed_) public note auth {
-        supplyRateFixed = fixed_;
+    function file(bytes32 what, bool data) public note auth {
+         if (what ==  "fixedsupplyrate") {
+             supplyRateFixed = data;
+        }
     }
 
     function updateBorrowRate() public note auth {
         if (supplyRateFixed && supplyRate > 0) {
-            if (now >= borrowRate.rho) {
+            if (now >= borrowRate.lastUpdated) {
                 drip();
             }
             uint balance = reserve.balance();
@@ -80,33 +82,30 @@ contract Quant is DSNote {
     }
 
     function updateDebt(int wad) public note auth  {
-        if (now >= borrowRate.rho) {
-            drip();
-        }
+        drip();
         debt = uint(int(debt) + int(wad));
     }
 
     function drip() internal {
-        if (now >= borrowRate.rho) {
+        if (now >= borrowRate.lastUpdated) {
             (uint latest, , uint wad) = compounding();
-            borrowRate.chi = latest;
-            borrowRate.rho = uint48(now);
+            borrowRate.index = latest;
+            borrowRate.lastUpdated = uint48(now);
             debt = add(debt, wad);   
         }
     }
 
     function compounding() internal view returns (uint, uint, uint) {
-        uint48 rho = borrowRate.rho;
-        require(now >= rho);
+        uint48 lastUpdated = borrowRate.lastUpdated;
+        require(now >= lastUpdated);
         uint speed = borrowRate.speed;
-
-        uint chi = borrowRate.chi;
+        uint index = borrowRate.index;
 
         // compounding in seconds
-        uint latest = rmul(rpow(speed, now - rho, ONE), chi);
-        uint chi_ = rdiv(latest, chi);
-        uint wad = rmul(debt, chi_) - debt;
-        return (latest, chi_, wad);
+        uint latest = rmul(rpow(speed, now - lastUpdated, ONE), index);
+        uint index_ = rdiv(latest, index);
+        uint wad = rmul(debt, index_) - debt;
+        return (latest, index_, wad);
     }
 
     // --- Math ---

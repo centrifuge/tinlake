@@ -9,7 +9,7 @@ import "../../proxy/registry.sol";
 
 import "../../core/test/mock/shelf.sol";
 import "../../core/test/mock/pile.sol";
-import "../../core/test/mock/tranchemanager.sol";
+import "../../core/test/mock/trancheManager.sol";
 
 contract RegistryTest is DSTest {
     ProxyRegistry registry;
@@ -21,7 +21,7 @@ contract RegistryTest is DSTest {
     // Core Contracts Mocks
     ShelfMock shelf;
     PileMock pile;
-    DeskMock desk;
+    TrancheManagerMock trancheManager;
 
     Actions actions;
 
@@ -40,7 +40,7 @@ contract RegistryTest is DSTest {
 
         shelf = new ShelfMock();
         pile = new PileMock();
-        desk = new DeskMock();
+        trancheManager = new TrancheManagerMock();
 
         actions = new Actions();
     }
@@ -50,7 +50,7 @@ contract RegistryTest is DSTest {
         assertEq(shelf.depositCalls(), 1);
         assertEq(shelf.usr(), address(proxy));
 
-        assertEq(desk.callsBalance(), 1);
+        assertEq(trancheManager.callsBalance(), 1);
 
         assertEq(pile.callsWithdraw(), 1);
         assertEq(pile.loan(), loan);
@@ -67,7 +67,7 @@ contract RegistryTest is DSTest {
         assertEq(shelf.loan(), loan);
         assertEq(shelf.usr(), deposit);
 
-        assertEq(desk.callsBalance(), 1);
+        assertEq(trancheManager.callsBalance(), 1);
     }
 
 
@@ -84,7 +84,7 @@ contract RegistryTest is DSTest {
         (uint loan, address deposit, uint balance) = init();
         pile.setBalanceReturn(balance);
 
-        bytes memory data = abi.encodeWithSignature("borrow(address,address,address,uint256,address)", address(desk), address(pile), address(shelf), loan, deposit);
+        bytes memory data = abi.encodeWithSignature("borrow(address,address,address,uint256,address)", address(trancheManager), address(pile), address(shelf), loan, deposit);
         proxy.execute(address(actions), data);
         checkBorrow(loan, deposit, balance);
     }
@@ -92,7 +92,7 @@ contract RegistryTest is DSTest {
     function testRepay() public {
         (uint loan, address deposit, uint debt) = init();
 
-        bytes memory data = abi.encodeWithSignature("repay(address,address,address,uint256,uint256,address)", address(desk), address(pile), address(shelf), loan, debt, deposit);
+        bytes memory data = abi.encodeWithSignature("repay(address,address,address,uint256,uint256,address)", address(trancheManager), address(pile), address(shelf), loan, debt, deposit);
         proxy.execute(address(actions), data);
         checkRepay(loan, deposit, debt);
     }
@@ -101,7 +101,7 @@ contract RegistryTest is DSTest {
         (uint loan, address deposit, uint debt) = init();
         pile.setDebtOfReturn(debt);
 
-        bytes memory data = abi.encodeWithSignature("close(address,address,address,uint256,address)", address(desk), address(pile), address(shelf), loan, deposit);
+        bytes memory data = abi.encodeWithSignature("close(address,address,address,uint256,address)", address(trancheManager), address(pile), address(shelf), loan, deposit);
         proxy.execute(address(actions), data);
 
         assertEq(pile.callsCollect(), 1);

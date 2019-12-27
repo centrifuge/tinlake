@@ -50,7 +50,7 @@ contract Slicer is DSNote {
             operator = address_;
         }
     }
-
+   
     function getSlice(uint currencyAmount) public note auth returns (uint) {
         uint tokenPrice = getTokenPrice();
         return calcSlice(currencyAmount, tokenPrice);

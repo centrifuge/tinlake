@@ -21,11 +21,6 @@ contract PileLike {
     function Debt() public returns (uint); 
 }
 
-contract OperatorLike {
-    function balance() public returns (uint);
-    function debt() public returns (uint);
-}
-
 // TrancheManager
 // Keeps track of the tranches. Manages the interfacing between the tranche side and borrower side of the contracts.
 contract TrancheManager is DSNote {
@@ -42,7 +37,7 @@ contract TrancheManager is DSNote {
     // --- Tranches ---
     struct Tranche {
         uint ratio;
-        OperatorLike operator;
+        address operator;
     }
 
     Tranche[] public tranches;
@@ -52,34 +47,41 @@ contract TrancheManager is DSNote {
         pile = PileLike(pile_);
     }
 
-    function depend (bytes32 what, address addr) public auth {
+    function depend (bytes32 what, address addr) public note auth {
         if (what == "pile") { pile = PileLike(addr); }
         else revert();
     }
 
-    // --- Calls ---
-    // TIN tranche should always be added first
-    // We use 10ˆ27 for the ratio. For example, a ratio of 70% is 70 * 10^27 (70)
     function addTranche(uint ratio, address operator_) public auth {
         Tranche memory t;
         t.ratio = ratio;
-        t.operator = OperatorLike(operator_);
+        t.operator = operator_;
         tranches.push(t);
     }
 
-    function trancheCount() public auth returns (uint) {
+    function trancheCount() public returns (uint) {
         return tranches.length;
     }
 
-    function poolDebt() public returns (uint) {
-
+    function operatorOf(uint i) public returns (address) {
+        return tranches[i].operator;
     }
 
-    function trancheDebt(address trancheOperator_) public returns (uint) {
-
+    function poolValue() public returns (uint) {
+        return pile.Debt();
     }
 
-    function trancheReserve(address trancheOperator_) public returns (uint) {
-        
+    // returns true for the tranche with the highest risk
+    function isEquity(address operator_) public returns (bool) {
+        return tranches[tranches.length-1].operator == operator_;
     }
-} 
+
+    function indexOf(address operator_) public returns (int) {
+        for (uint i = 0; i < tranches.length; i++) {
+            if (tranches[i].operator == operator_) {
+                return int(i);
+            }
+        }
+        return -1;
+    }
+}

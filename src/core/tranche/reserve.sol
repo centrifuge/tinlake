@@ -54,7 +54,7 @@ contract Reserve is DSNote {
         return token.totalSupply();
     }
 
-    function sliceOf(address usr) public returns (uint) {
+    function tokenBalanceOf(address usr) public returns (uint) {
         return token.balanceOf(address(usr));
     }
     
