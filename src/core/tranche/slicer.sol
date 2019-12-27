@@ -17,8 +17,8 @@ pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
 
-contract TrancheManagerLike {
-   function getTrancheAssets(address) public returns(uint);
+contract AssessorLike {
+   function getAssetValueFor(address) public returns(uint);
 }
 
 contract ReserveLike {
@@ -35,13 +35,20 @@ contract Slicer is DSNote {
     modifier auth { require(wards[msg.sender] == 1); _; }
     
     // --- Data ---
-    TrancheManagerLike public trancheManager;
+    AssessorLike public assessor;
     ReserveLike public reserve;
+    address operator;
 
-    constructor(address trancheManager_, address reserve_) public {
+    constructor(address assessor_, address reserve_) public {
         reserve = ReserveLike(reserve_);
-        trancheManager = TrancheManagerLike(trancheManager_);
+        assessor = AssessorLike(assessor_);
         wards[msg.sender] = 1;
+    }
+
+    function file(bytes32 what, address address_) public note auth {
+        if (what == "operator") {
+            operator = address_;
+        }
     }
 
     function getSlice(uint currencyAmount) public note auth returns (uint) {
@@ -56,7 +63,7 @@ contract Slicer is DSNote {
 
     function getTokenPrice() public note auth returns (uint) {
         uint totalSupply = reserve.tokenSupply();
-        uint totalAssets = trancheManager.getTrancheAssets(address(this));
+        uint totalAssets = assessor.getAssetValueFor(operator);
         return calcTokenPrice(totalSupply, totalAssets);
     }
 

@@ -20,7 +20,7 @@ import "ds-test/test.sol";
 
 import "../../test/mock/pile.sol";
 import "../../test/mock/shelf.sol";
-import "../../test/mock/desk.sol";
+import "../../test/mock/tranchemanager.sol";
 
 import "../../test/simple/nft.sol";
 

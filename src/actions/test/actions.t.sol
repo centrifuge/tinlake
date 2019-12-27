@@ -9,7 +9,7 @@ import "../../proxy/registry.sol";
 
 import "../../core/test/mock/shelf.sol";
 import "../../core/test/mock/pile.sol";
-import "../../core/test/mock/desk.sol";
+import "../../core/test/mock/tranchemanager.sol";
 
 contract RegistryTest is DSTest {
     ProxyRegistry registry;

@@ -27,6 +27,7 @@ contract ReserveLike{
 }
 
 contract QuantLike {
+   uint public debt;
    function updateDebt(int) public;
    function updateBorrowRate() public;
 }
@@ -69,6 +70,10 @@ contract Operator is DSNote {
     
     function balance() public returns (uint) {
         return reserve.balance();
+    }
+
+    function debt() public returns (uint) {
+        return quant.debt();
     }
 
     function supply(address usr, uint currencyAmount) public note auth {
