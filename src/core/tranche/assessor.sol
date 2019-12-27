@@ -17,8 +17,6 @@
 
 pragma solidity >=0.4.24;
 
-import "ds-test/test.sol";
-
 contract OperatorLike {
     function balance() public returns(uint);
     function debt() public returns(uint);
@@ -32,7 +30,7 @@ contract TrancheManagerLike {
     function operatorOf(uint) public returns(address);
 }
 
-contract Assessor is DSTest {
+contract Assessor {
     // --- Data ---
     TrancheManagerLike trancheManager; 
 
@@ -45,21 +43,14 @@ contract Assessor is DSTest {
     function getAssetValueFor(address operator_) public returns (uint) {
          OperatorLike operator = OperatorLike(operator_);
          uint trancheDebt = operator.debt();
-         emit log_named_uint("trancheDebt", trancheDebt);
          uint trancheReserve = operator.balance();
-         emit log_named_uint("trancheReserve", trancheReserve);
          int trancheIndex = trancheManager.indexOf(operator_);
          require(trancheIndex >= 0);
-         
-         emit log_named_int("trancheIndex", trancheIndex);
          // total debt of all tranches with lower risk
          uint totalSeniorDebt = calcSeniorDebt(trancheIndex-1);
-         emit log_named_uint("totalSeniorDebt", totalSeniorDebt);
          // total assets in the reserves of all tranches with higher risk
          uint totalEquityReserve = calcEquityReserve(uint(trancheIndex+1));
-         emit log_named_uint("totalEquityReserve", totalEquityReserve);
          uint poolValue = trancheManager.poolValue();
-
          if (trancheManager.isEquity(operator_)) {
             return calcEquityAssetValue(poolValue, trancheReserve, totalSeniorDebt);
          } 
@@ -97,14 +88,10 @@ contract Assessor is DSTest {
     // totalSeniorDebt = sum of the debt of all tranches with lower risk than the tranche with the index provided
     function calcSeniorDebt(int startIndex) internal returns (uint) {
         uint totalSeniorDebt = 0;
-        emit log_named_int("start", startIndex);
         for (int i = startIndex; i >= 0; i--) {
             OperatorLike seniorOperator = OperatorLike(trancheManager.operatorOf(uint(i)));
-            emit log_named_uint("debt", seniorOperator.debt());
             totalSeniorDebt += seniorOperator.debt();
-            emit log_named_uint("totalSeniorDebt", totalSeniorDebt);
         }
-        emit log_named_uint("totalSeniorDebt", totalSeniorDebt);
         return totalSeniorDebt;
     }
 }
