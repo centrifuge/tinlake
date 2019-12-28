@@ -15,7 +15,7 @@
 
 pragma solidity >=0.4.23;
 
-//import "ds-test/test.sol";
+import "ds-test/test.sol";
 
 import "../../../test/mock/operator.sol";
 import "../distributor.sol";
@@ -24,63 +24,123 @@ import "../fixed.sol";
 import "../flow.sol";
 import "../../../test/mock/pile.sol";
 import "../../../test/mock/desk.sol";
-import "../../../../../lib/dss-add-ilk-spell/lib/dss-deploy/lib/esm/lib/ds-token/lib/ds-test/src/test.sol";
 
 contract DistributorTest is DSTest{
 
-    OperatorMock o1;
-    OperatorMock o2;
+    OperatorMock oE;
+    OperatorMock oS;
     PileMock pile;
     DeskMock manager;
-    Flowable flowable;
     Flow flow;
+    Flowable flowable;
     Distributor distributor;
     LOC l;
     FixedCredit f;
 
     function setUp() public {
-        o1 = new OperatorMock();
-        o2 = new OperatorMock();
+        oE = new OperatorMock();
+        oS = new OperatorMock();
         pile = new PileMock();
         manager = new DeskMock();
-        distributor = new Distributor(address(manager));
         flow = new Flow();
         flowable = new Flowable(address(flow));
-        l = new LOC(address(distributor), address(flowable));
-        f = new FixedCredit(address(distributor), address(flowable));
+        distributor = createDistributor(address(manager), address(flow));
+        f = createFixedCreditDistribution(address(manager), address(flow));
+        l = createLineOfCreditDistribution(address(manager), address(flow));
+
+        flow.rely(address(distributor));
 
         addTranches();
     }
 
+    function createDistributor(address manager_, address flow_) internal returns (Distributor) {
+        return new Distributor(manager_, flow_);
+    }
+
+    function createFixedCreditDistribution(address manager_, address flow_) internal returns (FixedCredit) {
+        return new FixedCredit(manager_, flow_);
+    }
+
+    function createLineOfCreditDistribution(address manager_, address flow_) internal returns (LOC) {
+        return new LOC(manager_, flow_);
+    }
+
     function addTranches() public {
-        manager.addTranche(30, address(o1));
-        manager.addTranche(70, address(o2));
+        manager.addTranche(70, address(oE));
+        manager.addTranche(30, address(oS));
     }
 
     function testFixedBalance() public {
-        flow.file("distribution", 1);
+        distributor.file("distribution", 1);
         manager.setPoolClosing(false);
-//        f.balance();
+        oE.setBalance(7);
+        oS.setBalance(3);
+        f.balance();
+        assertEq(oE.callsBorrow(), 1);
+        assertEq(oE.balanceOf(), 0);
+        assertEq(oS.callsBorrow(), 1);
+        assertEq(oS.balanceOf(), 0);
+
+        // nothing in the operator balance so no calls should be made
+        f.balance();
+        assertEq(oE.callsBorrow(), 1);
+        assertEq(oS.callsBorrow(), 1);
     }
 
-    function testFailFixedBalance() public {
+    function testFailFixedBalancePoolClosing() public {
+        distributor.file("distribution", 1);
+        manager.setPoolClosing(true);
+        f.balance();
+    }
 
+    function testFailFixedBalanceFlowable() public {
+        distributor.file("distribution", 0);
+        manager.setPoolClosing(false);
+        f.balance();
     }
 
     function testLOCBalance() public {
+        distributor.file("distribution", 0);
+        manager.setPoolClosing(false);
+        oE.setBalance(7);
+        oS.setBalance(3);
+        manager.setPileAmount(10);
+        l.balance();
+        assertEq(oE.callsBorrow(), 1);
+        assertEq(oE.balanceOf(), 0);
+        assertEq(oS.callsBorrow(), 1);
+        assertEq(oS.balanceOf(), 0);
 
+        manager.setPileAmount(-10);
+        oS.setDebtOf(10);
+        l.balance();
+        assertEq(oS.callsRepay(), 1);
+        assertEq(oS.balanceOf(), 10);
+        assertEq(oS.debt(), 0);
+        assertEq(oE.callsRepay(), 0);
+
+        manager.setPileAmount(-10);
+        oS.setDebtOf(5);
+        oE.setDebtOf(8);
+        l.balance();
+        assertEq(oS.callsRepay(), 2);
+        assertEq(oS.balanceOf(), 15);
+        assertEq(oS.debt(), 0);
+        assertEq(oE.callsRepay(), 1);
+        assertEq(oE.balanceOf(), 5);
+        assertEq(oE.debt(), 3);
     }
 
-    function testFailLOCBalance() public {
-
+    function testFailLOCBalancePoolClosing() public {
+        distributor.file("distribution", 0);
+        manager.setPoolClosing(true);
+        l.balance();
     }
 
-    function testRepayTranches() public {
 
+    function testFailLOCBalancePoolFlowable() public {
+        distributor.file("distribution", 1);
+        manager.setPoolClosing(false);
+        l.balance();
     }
-
-    function testFailRepayTranches() public {
-
-    }
-
 }

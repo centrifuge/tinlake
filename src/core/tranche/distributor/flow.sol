@@ -17,6 +17,7 @@ pragma solidity >=0.4.24;
 
 contract FlowLike {
     function distribution() public returns (uint);
+    function file(bytes32,uint) public;
 }
 
 contract Flowable {

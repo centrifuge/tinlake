@@ -29,6 +29,7 @@ contract DeskMock {
     uint public assetReturn; function setAssetReturn(uint assetAmount_) public {assetReturn=assetAmount_;}
     bool public poolClosing; function setPoolClosing(bool close_) public {poolClosing=close_;}
     address public pile; function setPile(address p_) public {pile=p_;}
+    int public pileAmount; function setPileAmount(int wad_) public {pileAmount=wad_;}
 
     // calls
     uint public callsBalance;
@@ -70,5 +71,7 @@ contract DeskMock {
         return tranches[i].ratio;
     }
 
-//    function checkPile() public
+    function checkPile() public returns (int) {
+        return pileAmount;
+    }
 }

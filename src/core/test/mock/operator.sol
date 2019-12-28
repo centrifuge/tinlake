@@ -22,7 +22,7 @@ contract OperatorMock {
     uint public callsRepay;
     uint public callsDebt;
 
-    uint public debtOf; function setDebt(uint debt_) public {debtOf=debt_;}
+    uint public debtOf; function setDebtOf(uint debt_) public {debtOf=debt_;}
     uint public balanceOf; function setBalance(uint balance_) public {balanceOf=balance_;}
 
     uint public supplyRate;
@@ -42,10 +42,15 @@ contract OperatorMock {
 
     function repay(address usr, uint currencyAmount) public {
         callsRepay++;
+        balanceOf = balanceOf + currencyAmount;
+        debtOf = debtOf - currencyAmount;
     }
 
     function borrow(address usr, uint borrowAmount) public {
         callsBorrow++;
+        balanceOf = balanceOf - borrowAmount;
+        debtOf = debtOf + borrowAmount;
+
     }
 
 }

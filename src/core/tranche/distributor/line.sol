@@ -15,14 +15,11 @@
 
 pragma solidity >=0.4.24;
 
-import "ds-note/note.sol";
 import "./distributor.sol";
-import "./flow.sol";
 
-contract LOC is Distributor, Flowable {
+contract LOC is Distributor {
 
-    constructor (address distributor_, address flowable_) Distributor (distributor_) Flowable(flowable_) public {
-    }
+    constructor (address manager_, address flow_) Distributor(manager_, flow_) public {}
 
     function balance() public auth line {
         require(manager.poolClosing() == false);
