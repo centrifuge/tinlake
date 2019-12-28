@@ -30,7 +30,6 @@ contract QuantLike {
    function updateDebt(int) public;
    function updateBorrowRate() public;
     uint public debt;
-
 }
 
 contract SlicerLike {

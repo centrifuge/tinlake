@@ -30,7 +30,6 @@ contract Flowable {
     // --- Flowable ---
     modifier fix { require(flow.distribution() == 1); _; }
     modifier line { require(flow.distribution() == 0); _; }
-
 }
 
 contract Flow {
