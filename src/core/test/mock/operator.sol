@@ -50,7 +50,5 @@ contract OperatorMock {
         callsBorrow++;
         balanceOf = balanceOf - borrowAmount;
         debtOf = debtOf + borrowAmount;
-
     }
-
 }
