@@ -17,7 +17,7 @@ pragma solidity >=0.4.24;
 
 import {OperatorLike} from "../../tranche/distributor/distributor.sol";
 
-contract DeskMock {
+contract ManagerMock {
 
     struct Tranche {
         uint ratio;

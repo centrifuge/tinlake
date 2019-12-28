@@ -23,14 +23,14 @@ import "../line.sol";
 import "../fixed.sol";
 import "../flow.sol";
 import "../../../test/mock/pile.sol";
-import "../../../test/mock/desk.sol";
+import "../../../test/mock/manager.sol";
 
 contract DistributorTest is DSTest{
 
     OperatorMock oE;
     OperatorMock oS;
     PileMock pile;
-    DeskMock manager;
+    ManagerMock manager;
     Flow flow;
     Flowable flowable;
     Distributor distributor;
@@ -41,7 +41,7 @@ contract DistributorTest is DSTest{
         oE = new OperatorMock();
         oS = new OperatorMock();
         pile = new PileMock();
-        manager = new DeskMock();
+        manager = new ManagerMock();
         flow = new Flow();
         flowable = new Flowable(address(flow));
         distributor = createDistributor(address(manager), address(flow));
