@@ -17,7 +17,7 @@ pragma solidity >=0.4.24;
 
 import "ds-test/test.sol";
 
-import { Title } from "../../core/title.sol";
+import { Title } from "tinlake-title/title.sol";
 import { Proxy, ProxyFactory } from "../proxy.sol";
 import { ProxyRegistry } from "../registry.sol";
 import "../deployer.sol";
