@@ -17,7 +17,7 @@
 pragma solidity >=0.4.24;
 pragma experimental ABIEncoderV2;
 
-import { TitleOwned } from "./title.sol";
+import { TitleOwned } from "tinlake-title/title.sol";
 
 contract AppraiserLike {
     function appraise(uint, address, uint) public returns (uint);
@@ -66,7 +66,7 @@ contract Shelf is TitleOwned {
         pile = PileLike(pile_);
         appraiser = AppraiserLike(appraiser_);
     }
-    
+
     // --- Shelf ---
 
     function depend (bytes32 what, address addr) public auth {
@@ -79,7 +79,7 @@ contract Shelf is TitleOwned {
         shelf[loan].registry = registry_;
         shelf[loan].tokenId = nft_;
     }
-    
+
     function file(uint loan, address registry_, uint nft_, uint principal_) public auth {
         shelf[loan].registry = registry_;
         shelf[loan].tokenId = nft_;
@@ -92,11 +92,11 @@ contract Shelf is TitleOwned {
         shelf[loan].initial = principal_;
     }
 
-    // Move the NFT out of the shelf. To be used by Collector contract.
+    // Move the NFT out of the shelf
     function move(uint loan, address registry_, uint nft_, address to) public owner(loan) {
         NFTLike(registry_).transferFrom(address(this), to, nft_);
     }
-    
+
     function release (uint loan, address usr) public owner(loan) {
         uint debt = pile.debtOf(loan);
         require(debt == 0, "debt");
@@ -115,7 +115,7 @@ contract Shelf is TitleOwned {
         shelf[loan].principal = 0;
         adjust(loan);
     }
-    
+
     // Value collateral and update the total value of the shelf
     // Anyone can call this method to force the shelf to adjust the shelf total value (bags).
     function adjust (uint loan) public {

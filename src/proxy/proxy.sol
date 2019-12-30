@@ -16,7 +16,7 @@
 
 pragma solidity >=0.4.24;
 
-import "../core/title.sol";
+import "tinlake-title/title.sol";
 
 // Original DSProxy https://github.com/dapphub/ds-proxy
 contract Proxy is TitleOwned {

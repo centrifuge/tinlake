@@ -19,3 +19,9 @@
 [submodule "lib/ds-math"]
 	path = lib/ds-math
 	url = https://github.com/dapphub/ds-math
+[submodule "lib/tinlake-title"]
+	path = lib/tinlake-title
+	url = https://github.com/centrifuge/tinlake-title
+[submodule "lib/tinlake-erc20"]
+	path = lib/tinlake-erc20
+	url = https://github.com/centrifuge/tinlake-erc20

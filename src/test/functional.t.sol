@@ -20,7 +20,7 @@ import "ds-test/test.sol";
 import { SystemTest, ERC20Like } from "../core/test/system/system.t.sol";
 import { Deployer } from "../core/deployer.sol";
 import { ProxyDeployer, AccessRegistryFab, RegistryFab, FactoryFab } from "../proxy/deployer.sol";
-import { Title } from "../core/title.sol";
+import { Title } from "tinlake-title/title.sol";
 import { Actions } from "../actions/actions.sol";
 import { Proxy } from "../proxy/proxy.sol";
 import { User } from "./user.sol";
