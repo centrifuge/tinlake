@@ -18,10 +18,6 @@ pragma solidity >=0.5.12;
 
 import 'tinlake-registry/registry.sol';
 
-contract TagLike {
-    function price(uint loan) public returns(uint);
-}
-
 contract DeskLike {
     function balance() public;
 }
@@ -34,6 +30,11 @@ contract RegistryLike {
     function get(uint) public returns (uint);
 }
 
+contract ShelfLike {
+    function claim(uint, address) public;
+    function lock(uint, uint) public;
+}
+
 contract Collector {
     // --- Auth ---
     mapping (address => uint) public wards;
@@ -41,35 +42,46 @@ contract Collector {
     function deny(address usr) public auth { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
 
+    // --- Data ---
     RegistryLike liquidation;
-    TagLike tag;
+    struct Lot {
+        address usr;
+        uint    wad;
+    }
+    mapping (uint => Lot) public tags;
+
     DeskLike desk;
     PileLike pile;
 
-    constructor (address tag_, address desk_, address pile_) public {
-        tag = TagLike(tag_);
+    constructor (address desk_, address pile_) public {
         desk = DeskLike(desk_);
         pile = PileLike(pile_);
         wards[msg.sender] = 1;
     }
 
     function depend(bytes32 what, address addr) public auth {
-        if (what == "tag") tag = TagLike(addr);
         else if (what == "desk") desk = DeskLike(addr);
+        else if (what == "shelf") shelf = ShelfLike(addr);
         else if (what == "pile") pile = PileLike(addr);
         else if (what == "liquidation") liquidation = RegistryLike(addr);
         else revert();
     }
 
-    function seize(uint loan) public {
-        require((liquidation.get(loan) >= pile.debt(loan)), "threshold-not-reached");
-        shelf.free(loan);
+    // --- Collector ---
+    function file(uint loan, address usr, uint wad) auth {
+        tags[loan] = Lot(usr, wad);
     }
 
-    function collect(uint loan, address usr) public auth {
-        uint wad = tag.price(loan);
+    function seize(uint loan) public {
+        require((liquidation.get(loan) >= pile.debt(loan)), "threshold-not-reached");
+        shelf.lock(loan, 1);
+    }
 
-        pile.recovery(loan, msg.sender, wad);
+    function collect(uint loan) public auth {
+        uint wad, address usr = tags[loan];
+        require(msg.sender == usr);
+        shelf.claim(loan, usr);
+        pile.recovery(loan, usr, wad);
         desk.balance();
     }
 }
