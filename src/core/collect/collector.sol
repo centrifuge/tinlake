@@ -14,13 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.4.24;
+pragma solidity >=0.5.12;
 
-contract SpotterLike {
-    function collectable(uint loan) public returns(bool);
-    function seizure(uint loan) public;
-    function free(uint loan, address usr) public;
-}
+import 'tinlake-registry/registry.sol';
 
 contract TagLike {
     function price(uint loan) public returns(uint);
@@ -34,21 +30,23 @@ contract PileLike {
     function recovery(uint loan, address usr, uint wad) public;
 }
 
-contract Collector {
+contract RegistryLike {
+    function get(uint) public returns (uint);
+}
 
+contract Collector {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth { wards[usr] = 1; }
     function deny(address usr) public auth { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
 
-    SpotterLike spotter;
+    RegistryLike liquidation;
     TagLike tag;
     DeskLike desk;
     PileLike pile;
 
-    constructor (address spotter_, address tag_, address desk_, address pile_) public {
-        spotter = SpotterLike(spotter_);
+    constructor (address tag_, address desk_, address pile_) public {
         tag = TagLike(tag_);
         desk = DeskLike(desk_);
         pile = PileLike(pile_);
@@ -56,22 +54,22 @@ contract Collector {
     }
 
     function depend(bytes32 what, address addr) public auth {
-        if (what == "spotter") spotter = SpotterLike(addr);
-        else if (what == "tag") tag = TagLike(addr);
-        else if (what == "desk") desk = DeskLike(desk);
-        else if (what == "pile") pile = PileLike(pile);
+        if (what == "tag") tag = TagLike(addr);
+        else if (what == "desk") desk = DeskLike(addr);
+        else if (what == "pile") pile = PileLike(addr);
+        else if (what == "liquidation") liquidation = RegistryLike(addr);
         else revert();
     }
 
-    function collect(uint loan, address usr) public auth  {
-        if(spotter.collectable(loan) == false){
-            spotter.seizure(loan);
-        }
+    function seize(uint loan) public {
+        require((liquidation.get(loan) >= pile.debt(loan)), "threshold-not-reached");
+        shelf.free(loan);
+    }
 
+    function collect(uint loan, address usr) public auth {
         uint wad = tag.price(loan);
 
         pile.recovery(loan, msg.sender, wad);
-        spotter.free(loan, usr);
         desk.balance();
     }
 }
