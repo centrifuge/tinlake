@@ -48,18 +48,16 @@ contract TrancheManagerMock {
         tranches.push(t);
     }
 
-    function indexOf(address operator_) public returns (int) {
-       for (uint i = 0; i < tranches.length; i++) {
-            if (tranches[i].operator == operator_) {
-                return int(i);
-            }
-        }
-        return -1;
+    function equityOperator() public returns (address) {
+        return tranches[tranches.length-1].operator;
+    }
+
+    function seniorOperator() public returns (address) {
+        return tranches[0].operator;
     }
 
     function operatorOf(uint i) public returns (address) {
         return tranches[i].operator;
     }
 }
-
     

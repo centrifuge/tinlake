@@ -46,15 +46,14 @@ contract TrancheManagerTest is DSTest {
         assert(!isEquity);
     }
 
-    function testIndexOf() public {
-        int index = trancheManager.indexOf(address(seniorOperator));
-        assertEq(index, 0);  
+    function testGetSeniorOperator() public {
+        address operatorAddress = trancheManager.seniorOperator();
+        assertEq(operatorAddress, address(seniorOperator));  
     }
 
-    function testIndexDoesNotExist() public {
-        OperatorMock randomOperator = new OperatorMock();
-        int index = trancheManager.indexOf(address(randomOperator));
-        assertEq(index, -1);    
+    function testGetEquityOperator() public {
+        address operatorAddress = trancheManager.equityOperator();
+        assertEq(operatorAddress, address(equityOperator));  
     }
 }
 
