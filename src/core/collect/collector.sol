@@ -60,7 +60,7 @@ contract Collector {
     }
 
     function depend(bytes32 what, address addr) public auth {
-        else if (what == "desk") desk = DeskLike(addr);
+        if (what == "desk") desk = DeskLike(addr);
         else if (what == "shelf") shelf = ShelfLike(addr);
         else if (what == "pile") pile = PileLike(addr);
         else if (what == "liquidation") liquidation = RegistryLike(addr);
