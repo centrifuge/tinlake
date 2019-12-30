@@ -92,7 +92,7 @@ contract Shelf is TitleOwned {
         shelf[loan].initial = principal_;
     }
 
-    // Move the NFT out of the shelf. To be used by Collector contract.
+    // Move the NFT out of the shelf
     function move(uint loan, address registry_, uint nft_, address to) public owner(loan) {
         NFTLike(registry_).transferFrom(address(this), to, nft_);
     }
