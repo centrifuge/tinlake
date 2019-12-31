@@ -17,16 +17,11 @@ pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
 
-contract PileLike {
-    function want() public returns (int);
-}
-
 contract OperatorLike {
     function borrow(address, uint) public;
     function debt() public returns (uint);
     function repay(address, uint) public;
     function balance() public returns (uint);
-    function file(bytes32, bool) public;
 }
 
 contract ManagerLike {
@@ -34,10 +29,12 @@ contract ManagerLike {
     function junior() public returns(address);
 
     function pile() public returns(address);
+    function poolClosing() public returns(bool);
 
     function ActionTake() public returns (uint);
     function ActionGive() public returns (uint);
     function requestAction() public returns (uint, uint);
+
 }
 
 contract Distributor is DSNote {
