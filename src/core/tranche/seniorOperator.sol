@@ -17,10 +17,6 @@ pragma solidity >=0.4.24;
 
 import "./operator.sol";
 
-contract QuantLike {
-   function updateDebt(int) public;
-}
-
 // SeniorOperator
 // Interface to the senior tranche. Uses the quant to keep track of the current debt towards the tranche. 
 contract SeniorOperator is Operator {
