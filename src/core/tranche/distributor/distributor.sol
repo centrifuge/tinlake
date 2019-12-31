@@ -30,20 +30,14 @@ contract OperatorLike {
 }
 
 contract ManagerLike {
-    struct Tranche {
-        uint ratio;
-        OperatorLike operator;
-    }
+    function senior() public returns(address);
+    function junior() public returns(address);
 
-    Tranche[] public tranches;
-    PileLike public pile;
+    function pile() public returns(address);
 
-    bool public poolClosing;
-
-    function ratioOf(uint) public returns (uint);
-    function checkPile() public returns (int);
-    function trancheCount() public returns (uint);
-    function operatorOf(uint i) public returns (address);
+    function ActionTake() public returns (uint);
+    function ActionGive() public returns (uint);
+    function requestAction() public returns (uint, uint);
 }
 
 contract Distributor is DSNote {
@@ -54,6 +48,7 @@ contract Distributor is DSNote {
     modifier auth { require(wards[msg.sender] == 1); _; }
 
     ManagerLike public manager;
+    enum Action { Take, Give, None}
 
     constructor(address manager_)  public {
         wards[msg.sender] = 1;
@@ -65,17 +60,61 @@ contract Distributor is DSNote {
         else revert();
     }
 
-    function repayTranches(uint availableCurrency) public auth {
-        for (uint i = manager.trancheCount() - 1; i >= 0; i--) {
-            OperatorLike o = OperatorLike(manager.operatorOf(i));
-            uint trancheDebt = o.debt();
-            if (trancheDebt >= availableCurrency) {
-                o.repay(address(manager.pile), availableCurrency);
-                return;
-            }
-            o.repay(address(manager.pile), trancheDebt);
-            availableCurrency = availableCurrency - trancheDebt;
+    function balance() public {
+        (uint action, uint amount) = manager.requestAction();
+
+        if (action == manager.ActionTake()) {
+            borrowTranches(amount);
+        }
+
+        if (action == manager.ActionGive()) {
+            repayTranches(amount);
         }
     }
 
+    // -- Borrow Tranches ---
+    function borrowTranches(uint requestCurrency) internal  {
+        requestCurrency = borrow(manager.junior(), requestCurrency);
+
+        if (requestCurrency > 0) {
+            requestCurrency = borrow(manager.senior(), requestCurrency);
+            return;
+        }
+
+        revert("request amount too high");
+    }
+
+    function borrow(address tranche, uint requestCurrency) internal returns(uint left) {
+        OperatorLike tranche = OperatorLike(tranche);
+        uint maxTranche = tranche.balance();
+        uint take = maxTranche;
+        if (maxTranche >= requestCurrency) {
+            take = requestCurrency;
+        }
+
+        tranche.borrow(address(manager.pile()), take);
+        return requestCurrency - take;
+    }
+
+    // -- Repay Tranches ---
+    function repayTranches(uint availableCurrency) public auth {
+        availableCurrency = repay(manager.senior(), availableCurrency);
+
+        if (availableCurrency > 0) {
+            // junior gets the rest
+            OperatorLike(manager.junior()).repay(manager.pile(), availableCurrency);
+        }
+    }
+
+    function repay(address tranche, uint availableCurrency) internal returns(uint left) {
+        OperatorLike tranche = OperatorLike(tranche);
+
+        uint give = tranche.debt();
+        if (availableCurrency < tranche.debt()) {
+            give = availableCurrency;
+        }
+
+        tranche.repay(address(manager.pile()), give);
+        return availableCurrency - give;
+    }
 }
