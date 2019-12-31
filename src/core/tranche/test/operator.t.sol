@@ -17,13 +17,13 @@ pragma solidity >=0.4.23;
 
 import "ds-test/test.sol";
 
-import "../operator.sol";
+import "../seniorOperator.sol";
 import "../../test/mock/reserve.sol";
 import "../../test/mock/slicer.sol";
 import "../../test/mock/quant.sol";
 
 contract OperatorTest is DSTest {
-    Operator operator;
+    SeniorOperator operator;
     ReserveMock reserve;
     SlicerMock slicer;
     QuantMock quant;
@@ -34,7 +34,7 @@ contract OperatorTest is DSTest {
         reserve = new ReserveMock();
         quant = new QuantMock();
         slicer = new SlicerMock();
-        operator = new Operator(address(reserve), address(quant), address(slicer));
+        operator = new SeniorOperator(address(reserve), address(slicer), address(quant));
     }
 
 
@@ -50,7 +50,6 @@ contract OperatorTest is DSTest {
         assertEq(reserve.usr(), address(this));
         assertEq(reserve.currencyAmount(), currencyAmount);
         assertEq(reserve.tokenAmount(), tokenAmount);
-        assertEq(quant.callsUpdateBorrowRate(), 1);
     }
 
     function redeem(uint tokenAmount, uint usrSlice, uint redeemTokenAmount) internal {
@@ -65,7 +64,6 @@ contract OperatorTest is DSTest {
         assertEq(reserve.usr(), address(this));
         assertEq(reserve.currencyAmount(), currencyAmount);
         assertEq(reserve.tokenAmount(), redeemTokenAmount);
-        assertEq(quant.callsUpdateBorrowRate(), 1);
     }
 
     function repay() internal { 
@@ -78,7 +76,6 @@ contract OperatorTest is DSTest {
         assertEq(reserve.currencyAmount(), currencyAmount);
         assertEq(quant.callsUpdateDebt(), 1);
         assertEq(quant.loanAmount(), (-1 * int(currencyAmount)));
-        assertEq(quant.callsUpdateBorrowRate(), 1);
     }
 
     function borrow() internal {
@@ -91,7 +88,6 @@ contract OperatorTest is DSTest {
         assertEq(reserve.currencyAmount(), currencyAmount);
         assertEq(quant.callsUpdateDebt(), 1);
         assertEq(quant.loanAmount(), int(currencyAmount));
-        assertEq(quant.callsUpdateBorrowRate(), 1);
     }
 
     function testDeactivateSupply() public {

@@ -60,12 +60,12 @@ contract ProxyTest is DSTest {
     function testBuildProxy() public {
         address payable first = factory.build();
         Proxy proxy = Proxy(first);
-        assertEq(proxy.accessToken(), 0);
+        assertEq(proxy.accessToken(), 1);
 
         address payable second = factory.build();
         assertTrue(first != second);
         proxy = Proxy(second);
-        assertEq(proxy.accessToken(), 1);
+        assertEq(proxy.accessToken(), 2);
     }
 
     function testExecute() public {

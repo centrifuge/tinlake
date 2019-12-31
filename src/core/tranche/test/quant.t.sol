@@ -78,49 +78,6 @@ contract QuantTest is DSTest {
         assertEq(borrowRate, actual);
     }
   
-    function testFileSupplyRate() public {
-        uint supplyRate = uint(1000000003593629043335673583);
-        quant.file("supplyrate", supplyRate);
-        uint actual = quant.supplyRate();
-        assertEq(supplyRate, actual);
-    }
-
-    function testUpdateBorrowRateSupplyRateFixed() public {
-        uint debt = 100 ether;
-        uint balance = 300 ether;
-        uint supplyRate = 1000000001547125957863212450;
-        uint borrowRate = uint(1000000003593629043335673583);
-        
-        quant.file( "borrowrate", borrowRate); 
-        quant.file( "supplyrate", supplyRate); 
-        quant.file("fixedsupplyrate", true);
-        reserve.setBalanceReturn(balance);
-          
-        quant.updateDebt(int(debt));
-        quant.updateBorrowRate(); 
-        // 0.05 * ((300 + 100) / 100) = 0.2
-        (, uint actual, ) = quant.borrowRate();
-        assertEq(actual, uint(1000000006188503831452849800));     
-    }
-
-    function testUpdateBorrowRateSupplyRateNotFixed() public {
-        uint debt = 100 ether;
-        uint balance = 300 ether;
-        uint supplyRate = 1000000001547125957863212450;
-        uint borrowRate = uint(1000000003593629043335673583);
-        
-        quant.file( "borrowrate", borrowRate); 
-        quant.file( "supplyrate", supplyRate); 
-        reserve.setBalanceReturn(balance);
-          
-        quant.updateDebt(int(debt));
-        quant.updateBorrowRate(); 
-
-        (, uint actual, ) = quant.borrowRate();
-        // no changes
-        assertEq(actual, borrowRate);   
-    } 
-
     // --- Math ---
     uint256 constant ONE = 10 ** 27;
     function rpow(uint x, uint n, uint base) internal pure returns (uint z) {

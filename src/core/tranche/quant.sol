@@ -41,43 +41,18 @@ contract Quant is DSNote {
     
     Rate public borrowRate;
     uint public debt;
-    uint public supplyRate;
-    bool public supplyRateFixed;
     
     constructor(address reserve_) public {
         reserve = ReserveLike(reserve_);
         wards[msg.sender] = 1;
         borrowRate.index = ONE;
         borrowRate.speed = ONE;
-        supplyRate = ONE;
     }
 
     function file(bytes32 what, uint speed_) public note auth {
          if (what ==  "borrowrate") {
             drip();
             borrowRate.speed = speed_;
-        }
-        else if (what ==  "supplyrate") {
-            drip();
-            supplyRate = speed_;
-        }
-    }
-
-    function file(bytes32 what, bool data) public note auth {
-         if (what ==  "fixedsupplyrate") {
-             supplyRateFixed = data;
-        }
-    }
-
-    function updateBorrowRate() public note auth {
-        if (supplyRateFixed && supplyRate > 0) {
-            if (now >= borrowRate.lastUpdated) {
-                drip();
-            }
-            uint balance = reserve.balance();
-            uint supplyRate_ = sub(supplyRate, ONE);
-            uint ratio = rdiv(add(balance, debt), debt); 
-            borrowRate.speed = add(rmul(ratio, supplyRate_), ONE);
         }
     }
 
