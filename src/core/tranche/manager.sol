@@ -92,7 +92,17 @@ contract TrancheManager is DSNote {
         distributor.balance();
     }
 
-    function checkPile() public auth returns (int){
-        return pile.want();
+    enum Action { Take, Give, None}
+
+    function requestAction() public auth returns (Action, uint){
+        int amount = pile.want();
+
+        if (amount >= 0 ) {
+            return (Action.Take, uint(amount));
+        }
+        if (amount <= 0) {
+            return (Action.Give, uint(amount*-1));
+        }
+        return (Action.None, 0);
     }
 }
