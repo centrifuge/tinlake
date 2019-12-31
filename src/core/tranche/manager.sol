@@ -44,13 +44,12 @@ contract TrancheManager is DSNote {
     PileLike public pile;
 
     // --- Tranches ---
+    OperatorLike public senior;
+    OperatorLike public junior;
 
-    struct Tranche {
-        uint ratio;
-        OperatorLike operator;
-    }
-
-    Tranche[] public tranches;
+    // dominated in RAD
+    // ratio of the junior tranche in percent
+    uint public juniorRatio;
 
     bool public poolClosing;
 
@@ -60,52 +59,40 @@ contract TrancheManager is DSNote {
         poolClosing = false;
     }
 
+    uint constant ONE = 10 ** 27;
+
+    function seniorRatio() public returns(uint) {
+        return ONE - juniorRatio;
+    }
+
     function depend (bytes32 what, address addr) public auth {
         if (what == "pile") { pile = PileLike(addr); }
-        if (what == "distributor") { distributor = DistributorLike(addr); }
+        else if (what == "distributor") { distributor = DistributorLike(addr); }
         else revert();
     }
 
     function file(bytes32 what, bool data) public auth {
         if (what == "poolClosing") { poolClosing = data; }
+        else revert();
+    }
+
+    function file(bytes32 what, uint ratio) public auth {
+        if (what == "juniorRatio") { juniorRatio = ratio; }
+        else revert();
     }
 
     // --- Calls ---
-
-    // TIN tranche should always be added first
-    // We use 10ˆ27 for the ratio. For example, a ratio of 70% is 70 * 10^27 (70)
-    function addTranche(uint ratio, address operator_) public auth {
-        Tranche memory t;
-        t.ratio = ratio;
-        t.operator = OperatorLike(operator_);
-        tranches.push(t);
+    function setTranche(bytes32 tranche, address operator_) public auth {
+        if (tranche == "junior") { junior = OperatorLike(operator_); }
+        else if (tranche == "senior") { senior = OperatorLike(operator_); }
+        else revert();
     }
 
     function balance() public auth {
-        if (poolClosing) {
-            distributor.repayTranches(uint(pile.want()*-1));
-        } else {
-            distributor.balance();
-        }
+        distributor.balance();
     }
 
     function checkPile() public auth returns (int){
         return pile.want();
     }
-
-    function trancheCount() public auth returns (uint) {
-        return tranches.length;
-    }
-
-    function operatorOf(uint i) public auth returns (address) {
-        return address(tranches[i].operator);
-    }
-
-    function ratioOf(uint i) public auth returns (uint) {
-        return tranches[i].ratio;
-    }
-
-//    function getTrancheAssets() {
-//
-//    }
 }
