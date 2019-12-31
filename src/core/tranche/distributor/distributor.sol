@@ -45,7 +45,6 @@ contract Distributor is DSNote {
     modifier auth { require(wards[msg.sender] == 1); _; }
 
     ManagerLike public manager;
-    enum Action { Take, Give, None}
 
     constructor(address manager_)  public {
         wards[msg.sender] = 1;
@@ -77,7 +76,6 @@ contract Distributor is DSNote {
             requestCurrency = borrow(manager.senior(), requestCurrency);
             return;
         }
-
         revert("request amount too high");
     }
 
@@ -105,7 +103,6 @@ contract Distributor is DSNote {
 
     function repay(address tranche, uint availableCurrency) internal returns(uint left) {
         OperatorLike tranche = OperatorLike(tranche);
-
         uint give = tranche.debt();
         if (availableCurrency < tranche.debt()) {
             give = availableCurrency;

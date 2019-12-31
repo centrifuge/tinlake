@@ -17,6 +17,7 @@ pragma solidity >=0.4.24;
 
 import {OperatorLike} from "../../tranche/distributor/distributor.sol";
 
+// TODO refactor mock
 contract ManagerMock {
 
     struct Tranche {
