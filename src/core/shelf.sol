@@ -58,7 +58,6 @@ contract Shelf is TitleOwned {
     }
 
     mapping (uint => Loan) public shelf;
-    mapping (uint => uint) public locks;
 
     uint public bags; // sum of all prices
 
@@ -75,6 +74,10 @@ contract Shelf is TitleOwned {
     }
 
     // --- Shelf ---
+    function token(uint loan) public view returns (address registry, uint nft) {
+        return (shelf[loan].registry, shelf[loan].tokenId);
+    }
+
     function file(uint loan, address registry_, uint nft_) public auth {
         shelf[loan].registry = registry_;
         shelf[loan].tokenId = nft_;
@@ -94,7 +97,6 @@ contract Shelf is TitleOwned {
 
     // Move the NFT out of the shelf
     function move(uint loan, address registry_, uint nft_, address to) public owner(loan) {
-        require(locks[loan] == 0, "nft-locked");
         NFTLike(registry_).transferFrom(address(this), to, nft_);
         // TODO: Shouldn't this only be allowed if debt == 0?
     }
@@ -105,6 +107,7 @@ contract Shelf is TitleOwned {
         move(loan, shelf[loan].registry, shelf[loan].tokenId, usr);
         adjust(loan);
     }
+
     function deposit (uint loan, address usr) public owner(loan) {
         NFTLike(shelf[loan].registry).transferFrom(usr, address(this), shelf[loan].tokenId);
         pile.borrow(loan, shelf[loan].principal);
@@ -114,10 +117,8 @@ contract Shelf is TitleOwned {
 
     // Used by the collector
     function claim(uint loan, address usr) public auth {
+        // TODO: need to update pile/shelf to let it know it's gone.
         NFTLike(shelf[loan].registry).transferFrom(address(this), usr, shelf[loan].tokenId);
-    }
-    function lock(uint loan, uint wad) public auth {
-        locks[loan] = wad;
     }
 
     // Value collateral and update the total value of the shelf

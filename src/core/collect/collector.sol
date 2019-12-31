@@ -18,6 +18,11 @@ pragma solidity >=0.5.12;
 
 import 'tinlake-registry/registry.sol';
 
+contract NFTLike {
+    function ownerOf(uint256 tokenId) public view returns (address owner);
+    function transferFrom(address from, address to, uint256 tokenId) public;
+}
+
 contract DeskLike {
     function balance() public;
 }
@@ -32,7 +37,7 @@ contract RegistryLike {
 
 contract ShelfLike {
     function claim(uint, address) public;
-    function lock(uint, uint) public;
+    function token(uint loan) public returns (address, uint);
 }
 
 contract Collector {
@@ -74,13 +79,14 @@ contract Collector {
 
     function seize(uint loan) public {
         require((liquidation.get(loan) >= pile.debt(loan)), "threshold-not-reached");
-        shelf.lock(loan, 1);
+        shelf.claim(loan, address(this));
     }
 
     function collect(uint loan) public auth {
-        uint wad, address usr = tags[loan];
-        require(msg.sender == usr);
-        shelf.claim(loan, usr);
+        (uint wad, address usr) = tags[loan];
+        require(msg.sender == usr || usr == 0);
+        (address registry, uint nft) = shelf.token(loan);
+        NFTLike(registry).transferFrom(address(this), msg.sender, nft);
         pile.recovery(loan, usr, wad);
         desk.balance();
     }
