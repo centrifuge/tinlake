@@ -21,7 +21,6 @@ import "../../deployer.sol";
 import "../../appraiser.sol";
 import "../simple/nft.sol";
 import "../simple/token.sol";
-import "../../collect/deployer.sol";
 
 contract ERC20Like {
     function transferFrom(address, address, uint) public;
@@ -102,13 +101,13 @@ contract AdminUser {
     }
 
     function addKeeper(address usr) public {
-        CollectDeployer cd = CollectDeployer(address(deployer.collectDeployer()));
-        cd.collector().rely(usr);
+        // CollectDeployer cd = CollectDeployer(address(deployer.collectDeployer()));
+        // cd.collector().rely(usr);
     }
 
     function doAddKeeper(address usr) public {
-        CollectDeployer cd = CollectDeployer(address(deployer.collectDeployer()));
-        cd.collector().rely(usr);
+        // CollectDeployer cd = CollectDeployer(address(deployer.collectDeployer()));
+        // cd.collector().rely(usr);
     }
 
     // appraisal -- dominated in WAD
@@ -186,14 +185,8 @@ contract SystemTest is DSTest {
     }
 
     function deployCollect() public {
-        SpotterFab spotterFab = new SpotterFab();
-        TagFab tagFab = new TagFab();
         CollectorFab collectorFab = new CollectorFab();
-
-        CollectDeployer collectDeployer  = new CollectDeployer(admin_, spotterFab, tagFab, collectorFab);
-
-        uint threshold = 12 * 10**26; // threshold 120%
-        deployer.deployCollect(address(collectDeployer), threshold);
+        // TODO
     }
 
     // Checks

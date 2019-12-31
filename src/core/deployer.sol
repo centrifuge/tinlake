@@ -103,8 +103,8 @@ contract AdminFab {
 }
 
 contract CollectorFab {
-    function newCollector(address desk, address pile, address liquidation) public returns (Collector collector) {
-        collector = new Collector(desk, pile, liquidation);
+    function newCollector(address desk, address pile, address shelf, address liquidation) public returns (Collector collector) {
+        collector = new Collector(desk, pile, shelf, liquidation);
         collector.rely(msg.sender);
         collector.deny(address(this));
     }
@@ -149,8 +149,8 @@ contract Deployer {
     }
 
     function deployCollect(address collectDeployer_ ,uint threshold_) public {
-        collectDeployer = CollectDeployerLike(collectDeployer_);
-        collectDeployer.deploy(address(pile), address(shelf), address(desk), threshold_);
+        //collectDeployer = CollectDeployerLike(collectDeployer_);
+        //collectDeployer.deploy(address(pile), address(shelf), address(desk), threshold_);
     }
 
     function deployDebtRegister() public {
@@ -220,8 +220,8 @@ contract Deployer {
         debtRegister.rely(pile_);
 
         // collect contracts
-        shelf.rely(address(collectDeployer.spotter()));
-        pile.rely(address(collectDeployer.collector()));
+        // TODO: shelf.rely(address(collectDeployer.spotter()));
+        // TODO: pile.rely(address(collectDeployer.collector()));
 
         WardsLike(appraiser_).rely(admin_);
     }

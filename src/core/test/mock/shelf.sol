@@ -7,7 +7,7 @@ contract ShelfMock {
     uint public depositCalls;
     uint public fileCalls;
     uint public adjustCalls;
-    uint public freeCalls;
+    uint public claimCalls;
 
     uint public bags = 0; function setBags(uint bags_) public {bags=bags_;}
 
@@ -74,9 +74,9 @@ contract ShelfMock {
         fileCalls++;
     }
 
-    function free(uint loan_, address usr_) public {
+    function claim(uint loan_, address usr_) public {
         loan = loan_;
         usr = usr_;
-        freeCalls++;
+        claimCalls++;
     }
 }

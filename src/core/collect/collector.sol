@@ -28,6 +28,7 @@ contract DeskLike {
 }
 
 contract PileLike {
+    function loans(uint loan) public returns (uint, uint, uint);
     function recovery(uint loan, address usr, uint wad) public;
 }
 
@@ -48,20 +49,22 @@ contract Collector {
     modifier auth { require(wards[msg.sender] == 1); _; }
 
     // --- Data ---
-    RegistryLike liquidation;
+    RegistryLike threshold;
     struct Lot {
         address usr;
         uint    wad;
     }
     mapping (uint => Lot) public tags;
 
-    DeskLike desk;
-    PileLike pile;
+    DeskLike  desk;
+    PileLike  pile;
+    ShelfLike shelf;
 
-    constructor (address desk_, address pile_, address liquidation_) public {
+    constructor (address desk_, address pile_, address shelf_, address threshold_) public {
         desk = DeskLike(desk_);
         pile = PileLike(pile_);
-        liquidation = RegistryLike(liquidation_);
+        shelf = ShelfLike(shelf_);
+        threshold = RegistryLike(threshold_);
         wards[msg.sender] = 1;
     }
 
@@ -69,7 +72,7 @@ contract Collector {
         if (what == "desk") desk = DeskLike(addr);
         else if (what == "shelf") shelf = ShelfLike(addr);
         else if (what == "pile") pile = PileLike(addr);
-        else if (what == "liquidation") liquidation = RegistryLike(addr);
+        else if (what == "threshold") threshold = RegistryLike(addr);
         else revert();
     }
 
@@ -79,16 +82,17 @@ contract Collector {
     }
 
     function seize(uint loan) public {
-        require((liquidation.get(loan) >= pile.debt(loan)), "threshold-not-reached");
+        (uint debt,,) = pile.loans(loan); // TODO: call debt registry or similar
+        require((threshold.get(loan) >= debt), "threshold-not-reached");
         shelf.claim(loan, address(this));
     }
 
     function collect(uint loan) public auth {
-        (uint wad, address usr) = tags[loan];
-        require(msg.sender == usr || usr == 0);
+        require(msg.sender == tags[loan].usr || tags[loan].usr == address(0));
+        // TODO: reentrancy?
         (address registry, uint nft) = shelf.token(loan);
         NFTLike(registry).transferFrom(address(this), msg.sender, nft);
-        pile.recovery(loan, usr, wad);
+        pile.recovery(loan, msg.sender, tags[loan].wad);
         desk.balance();
     }
 }
