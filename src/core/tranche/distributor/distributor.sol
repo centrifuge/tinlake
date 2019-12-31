@@ -17,8 +17,6 @@ pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
 
-import {Flowable} from "./flow.sol";
-
 contract PileLike {
     function want() public returns (int);
 }
@@ -48,7 +46,7 @@ contract ManagerLike {
     function operatorOf(uint i) public returns (address);
 }
 
-contract Distributor is DSNote, Flowable {
+contract Distributor is DSNote {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth note { wards[usr] = 1; }
@@ -57,7 +55,7 @@ contract Distributor is DSNote, Flowable {
 
     ManagerLike public manager;
 
-    constructor(address manager_, address flow_) Flowable(flow_) public {
+    constructor(address manager_)  public {
         wards[msg.sender] = 1;
         manager = ManagerLike(manager_);
     }
@@ -80,7 +78,4 @@ contract Distributor is DSNote, Flowable {
         }
     }
 
-    function file(bytes32 what, uint data) public auth {
-        flow.file(what, data);
-    }
 }

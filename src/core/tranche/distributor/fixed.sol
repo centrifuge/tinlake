@@ -19,9 +19,9 @@ import "./distributor.sol";
 
 contract FixedCredit is Distributor {
 
-    constructor (address manager_, address flow_) Distributor(manager_, flow_) public {}
+    constructor (address manager_) Distributor(manager_) public {}
 
-    function balance() public auth fix {
+    function balance() public auth  {
         require(manager.poolClosing() == false);
         for (uint i = 0; i < manager.trancheCount(); i++) {
             OperatorLike o = OperatorLike(manager.operatorOf(i));

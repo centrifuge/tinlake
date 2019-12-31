@@ -21,7 +21,6 @@ import "../../../test/mock/operator.sol";
 import "../distributor.sol";
 import "../line.sol";
 import "../fixed.sol";
-import "../flow.sol";
 import "../../../test/mock/pile.sol";
 import "../../../test/mock/manager.sol";
 
@@ -31,8 +30,7 @@ contract DistributorTest is DSTest{
     OperatorMock oS;
     PileMock pile;
     ManagerMock manager;
-    Flow flow;
-    Flowable flowable;
+
     Distributor distributor;
     LOC l;
     FixedCredit f;
@@ -42,27 +40,25 @@ contract DistributorTest is DSTest{
         oS = new OperatorMock();
         pile = new PileMock();
         manager = new ManagerMock();
-        flow = new Flow();
-        flowable = new Flowable(address(flow));
-        distributor = createDistributor(address(manager), address(flow));
-        f = createFixedCreditDistribution(address(manager), address(flow));
-        l = createLineOfCreditDistribution(address(manager), address(flow));
 
-        flow.rely(address(distributor));
+        distributor = createDistributor(address(manager));
+        f = createFixedCreditDistribution(address(manager));
+        l = createLineOfCreditDistribution(address(manager));
+
 
         addTranches();
     }
 
-    function createDistributor(address manager_, address flow_) internal returns (Distributor) {
-        return new Distributor(manager_, flow_);
+    function createDistributor(address manager_) internal returns (Distributor) {
+        return new Distributor(manager_);
     }
 
-    function createFixedCreditDistribution(address manager_, address flow_) internal returns (FixedCredit) {
-        return new FixedCredit(manager_, flow_);
+    function createFixedCreditDistribution(address manager_) internal returns (FixedCredit) {
+        return new FixedCredit(manager_);
     }
 
-    function createLineOfCreditDistribution(address manager_, address flow_) internal returns (LOC) {
-        return new LOC(manager_, flow_);
+    function createLineOfCreditDistribution(address manager_) internal returns (LOC) {
+        return new LOC(manager_);
     }
 
     function addTranches() public {
@@ -71,7 +67,6 @@ contract DistributorTest is DSTest{
     }
 
     function testFixedBalance() public {
-        distributor.file("distribution", 1);
         manager.setPoolClosing(false);
         oE.setBalance(7);
         oS.setBalance(3);
@@ -88,19 +83,11 @@ contract DistributorTest is DSTest{
     }
 
     function testFailFixedBalancePoolClosing() public {
-        distributor.file("distribution", 1);
         manager.setPoolClosing(true);
         f.balance();
     }
 
-    function testFailFixedBalanceFlowable() public {
-        distributor.file("distribution", 0);
-        manager.setPoolClosing(false);
-        f.balance();
-    }
-
     function testLOCBalance() public {
-        distributor.file("distribution", 0);
         manager.setPoolClosing(false);
         oE.setBalance(7);
         oS.setBalance(3);
@@ -132,15 +119,8 @@ contract DistributorTest is DSTest{
     }
 
     function testFailLOCBalancePoolClosing() public {
-        distributor.file("distribution", 0);
         manager.setPoolClosing(true);
         l.balance();
     }
 
-
-    function testFailLOCBalancePoolFlowable() public {
-        distributor.file("distribution", 1);
-        manager.setPoolClosing(false);
-        l.balance();
-    }
 }

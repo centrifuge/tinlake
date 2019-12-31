@@ -19,9 +19,9 @@ import "./distributor.sol";
 
 contract LOC is Distributor {
 
-    constructor (address manager_, address flow_) Distributor(manager_, flow_) public {}
+    constructor (address manager_) Distributor(manager_) public {}
 
-    function balance() public auth line {
+    function balance() public auth {
         require(manager.poolClosing() == false);
 
         int wad = manager.checkPile();
