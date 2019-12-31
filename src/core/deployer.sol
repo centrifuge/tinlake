@@ -23,16 +23,10 @@ import { Pile } from "./pile.sol";
 import { Admit } from "./admit.sol";
 import { Admin } from "./admin.sol";
 import { DebtRegister } from "./debt_register.sol";
-import {CollectDeployer} from "./collect/deployer.sol";
+import { Collector } from "./collect/collector.sol";
 
 contract LenderFabLike {
     function deploy(address,address,address) public returns (address);
-}
-
-contract CollectDeployerLike {
-    function deploy(address pile_, address shelf_, address desk_, uint threshold_) public;
-    function spotter() public returns(address);
-    function collector() public returns(address);
 }
 
 contract LenderLike {
@@ -108,17 +102,24 @@ contract AdminFab {
     }
 }
 
-contract Deployer {
-    TitleFab titlefab;
-    LightSwitchFab lightswitchfab;
-    PileFab pilefab;
-    ShelfFab shelffab;
-    DeskFab deskfab;
-    AdmitFab admitfab;
-    AdminFab adminfab;
-    DebtRegisterFab debtRegisterfab;
+contract CollectorFab {
+    function newCollector(address desk, address pile, address liquidation) public returns (Collector collector) {
+        collector = new Collector(desk, pile, liquidation);
+        collector.rely(msg.sender);
+        collector.deny(address(this));
+    }
+}
 
-    CollectDeployerLike public collectDeployer;
+contract Deployer {
+    TitleFab          titlefab;
+    LightSwitchFab    lightswitchfab;
+    PileFab           pilefab;
+    ShelfFab          shelffab;
+    DeskFab           deskfab;
+    AdmitFab          admitfab;
+    AdminFab          adminfab;
+    DebtRegisterFab   debtRegisterfab;
+    CollectorFab      collectorFab;
 
     address     public god;
     address     public appraiser_;

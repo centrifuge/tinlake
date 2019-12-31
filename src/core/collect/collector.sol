@@ -58,9 +58,10 @@ contract Collector {
     DeskLike desk;
     PileLike pile;
 
-    constructor (address desk_, address pile_) public {
+    constructor (address desk_, address pile_, address liquidation_) public {
         desk = DeskLike(desk_);
         pile = PileLike(pile_);
+        liquidation = RegistryLike(liquidation_);
         wards[msg.sender] = 1;
     }
 
@@ -73,7 +74,7 @@ contract Collector {
     }
 
     // --- Collector ---
-    function file(uint loan, address usr, uint wad) auth {
+    function file(uint loan, address usr, uint wad) public auth {
         tags[loan] = Lot(usr, wad);
     }
 

@@ -26,10 +26,6 @@ import "../../test/simple/nft.sol";
 
 import "../collector.sol";
 
-import "../tag.sol";
-import "../spotter.sol";
-import "../collector.sol";
-
 contract Shelf is ShelfMock {
     function free(uint loan, address usr) public  {
         NFTLike(shelfReturn.registry).transferFrom(address(this), usr, shelfReturn.tokenId);
