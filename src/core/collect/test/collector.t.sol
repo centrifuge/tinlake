@@ -83,6 +83,10 @@ contract CollectorTest is DSTest {
         assertEq(pile.wad(), debt-1);
         assertEq(pile.usr(), address(this));
     }
+    // TODO: Missing test cases:
+    // * disallow collect from unauthorized user
+    // * allow collect from any user if Tag.usr is 0
+    // * test reentrancy, this code is not secure
 }
 
 
