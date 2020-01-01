@@ -53,7 +53,7 @@ contract DebtRegisterTest is DSTest {
         uint principal = 66 ether;
         debtRegister.file(rate, rate);
         debtRegister.drip(rate);
-        debtRegister.incLoanDebt(loan, rate, principal);
+        debtRegister.inc(loan, principal);
 
         // one day later
         hevm.warp(now + 1 days);
@@ -89,13 +89,14 @@ contract DebtRegisterTest is DSTest {
         debtRegister.file(rate, rate);
         uint loan = 1;
         uint principal = 66 ether;
+        debtRegister.set(loan, rate);
         debtRegister.drip(rate);
-        debtRegister.incLoanDebt(loan, rate, principal);
+        debtRegister.inc(loan, principal);
         checkDebt(loan, rate, 66 ether);
 
         // two days later
         hevm.warp(now + 2 days);
-        assertEq(debtRegister.getCurrentDebt(loan, rate), 72.765 ether); // 66 ether * 1,05**2
+        assertEq(debtRegister.debt(loan), 72.765 ether); // 66 ether * 1,05**2
         debtRegister.drip(rate);
         checkDebt(loan, rate, 72.765 ether);
     }
@@ -116,7 +117,7 @@ contract DebtRegisterTest is DSTest {
         uint loan = 1;
         uint principal = 66 ether;
         debtRegister.drip(rate);
-        debtRegister.incLoanDebt(loan, rate, principal);
+        debtRegister.inc(loan, principal);
 
         checkDebt(loan, rate, 66 ether);
 
@@ -183,7 +184,8 @@ contract DebtRegisterTest is DSTest {
         uint loan = 1;
         uint principal = 1000000000  ether; // one billion 10^9 * 10^18 = 10^28
         debtRegister.drip(rate);
-        debtRegister.incLoanDebt(loan, rate, principal);
+        debtRegister.set(loan, rate);
+        debtRegister.inc(loan, principal);
 
         // 150 days later
         hevm.warp(now + 1050 days); // produces max ~ rateIndex 10^49
@@ -200,7 +202,8 @@ contract DebtRegisterTest is DSTest {
         uint loan = 1;
         uint principal = 100 ether;
         debtRegister.drip(lowRate);
-        debtRegister.incLoanDebt(loan, lowRate, principal);
+        debtRegister.set(loan, lowRate);
+        debtRegister.inc(loan, principal);
         checkDebt(loan, lowRate, 100 ether);
 
         hevm.warp(now + 1 days);
@@ -210,15 +213,15 @@ contract DebtRegisterTest is DSTest {
 
         (uint rateTotalDebt, , ,) = debtRegister.rates(lowRate); assertEq(rateTotalDebt, 105 ether);
         (rateTotalDebt, , ,)  = debtRegister.rates(highRate); assertEq(rateTotalDebt, 0);
-        assertEq(debtRegister.totalDebt(), 105 ether);
+        assertEq(debtRegister.total(), 105 ether);
 
         // rate switch
-        debtRegister.rateSwitch(loan, lowRate, highRate);
+        debtRegister.change(loan, highRate);
         checkDebt(loan, highRate, 105 ether);
 
         (rateTotalDebt, , ,) = debtRegister.rates(lowRate); assertEq(rateTotalDebt, 0 );
         (rateTotalDebt, , ,)  = debtRegister.rates(highRate); assertEq(rateTotalDebt, 105 ether);
-        assertEq(debtRegister.totalDebt(), 105 ether);
+        assertEq(debtRegister.total(), 105 ether);
 
         hevm.warp(now + 1 days);
 
@@ -228,12 +231,12 @@ contract DebtRegisterTest is DSTest {
     }
 
     function checkDebt(uint loan, uint rate, uint should) public {
-        uint debt = debtRegister.debtOf(loan, rate);
+        uint debt = debtRegister.debt(loan);
         assertEq(debt, should);
     }
 
     function calculateDebt(uint rate, uint principal, uint time) internal pure returns(uint z) {
-        z = rmul(principal, rpow(rate,time,ONE));
+        z = rmul(principal, rpow(rate, time, ONE));
     }
 
     function rad(uint wad_) internal pure returns (uint) {

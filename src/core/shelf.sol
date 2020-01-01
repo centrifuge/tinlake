@@ -18,7 +18,7 @@ pragma solidity >=0.4.24;
 pragma experimental ABIEncoderV2;
 
 import { Title, TitleOwned } from "tinlake-title/title.sol";
-
+import { DebtLike, DebtRegister } from "./debt_register.sol";
 
 contract NFTLike {
     function ownerOf(uint256 tokenId) public view returns (address owner);
@@ -34,7 +34,6 @@ contract PileLike {
     function borrow(uint, uint) public;
 }
 
-
 contract Shelf is TitleOwned {
     // --- Auth ---
     mapping (address => uint) public wards;
@@ -43,8 +42,9 @@ contract Shelf is TitleOwned {
     modifier auth { require(wards[msg.sender] == 1); _; }
 
     // --- Data ---
-    PileLike                  public pile;
-    Title                     public title;
+    PileLike public  pile;
+    Title public     title;
+    DebtLike public  debt;
 
     struct Loan {
         address registry;
@@ -98,7 +98,6 @@ contract Shelf is TitleOwned {
         nftlookup[nft] = 0;
     }
 
-
     // ---- Shelf ---
     function file(uint loan, address registry_, uint nft_, uint principal_) public auth {
         shelf[loan].registry = registry_;
@@ -117,6 +116,20 @@ contract Shelf is TitleOwned {
         pile.borrow(loan, shelf[loan].principal);
         shelf[loan].principal = 0;
     }
+
+    // --- Currency actions ---
+    function borrow(uint loan, uint wad) public owner(loan) {
+        debt.accrue(loan);
+        // principal.borrow(loan, wad); TODO: reentrancy
+        debt.inc(loan, wad);
+    }
+
+    function repay(uint loan, uint wad) public owner(loan) {
+        debt.accrue(loan);
+        // principal.repay(loan, wad); TODO: reentrancy
+        debt.dec(loan, wad);
+    }
+
     // --- NFT actions ---
     function lock(uint loan) public owner(loan) {
         NFTLike(shelf[loan].registry).transferFrom(msg.sender, address(this), shelf[loan].tokenId);
