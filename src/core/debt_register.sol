@@ -145,10 +145,10 @@ contract DebtRegister is DSNote {
     // changes the interest rate of a rate category
     function file(uint rate, uint speed_) public auth note {
         require(speed_ != 0);
-        drip(rate);
         rates[rate].speed = speed_;
         rates[rate].index = ONE;
         rates[rate].rho = uint48(now);
+        drip(rate);
     }
 
     // Converters:
@@ -173,7 +173,7 @@ contract DebtRegister is DSNote {
         // compounding in seconds
         uint index_ = rmul(rpow(speed, now - rho, ONE), index);
         uint debt = fromChi(chi_, index);
-
+        require(index != 0);
         index_delta = rdiv(index_, index);
         delta = rmul(chi_, index_) - debt;
 
