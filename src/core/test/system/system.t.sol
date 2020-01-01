@@ -58,7 +58,7 @@ contract User {
 
     function doRepay(uint loan, uint wad, address usr) public {
         pile.repay(loan, wad);
-        shelf.release(loan, usr);
+        shelf.unlock(loan);
         desk.balance();
     }
 
@@ -170,7 +170,7 @@ contract SystemTest is DSTest {
         deployer.deployTitle("Tinlake Loan", "TLNT");
         deployer.deployDebtRegister();
         deployer.deployPile(tkn_);
-        deployer.deployShelf(address(appraiser));
+        deployer.deployShelf();
         deployer.deployDesk(tkn_);
         deployer.deployAdmit();
         deployer.deployAdmin(address(appraiser));

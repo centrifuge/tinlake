@@ -71,8 +71,8 @@ contract PileFab {
 }
 
 contract ShelfFab {
-   function newShelf(address pile, address appraiser, address title) public returns (Shelf shelf) {
-        shelf = new Shelf(pile, appraiser, title);
+   function newShelf(address pile, address title) public returns (Shelf shelf) {
+        shelf = new Shelf(pile, title);
         shelf.rely(msg.sender);
         shelf.deny(address(this));
     }
@@ -173,9 +173,8 @@ contract Deployer {
         pile.rely(god);
     }
 
-    function deployShelf(address appraiser) public {
-        appraiser_ = appraiser;
-        shelf = shelffab.newShelf(address(pile), appraiser_, address(title));
+    function deployShelf() public {
+        shelf = shelffab.newShelf(address(pile), address(title));
         shelf.rely(god);
         pile.rely(address(shelf));
     }

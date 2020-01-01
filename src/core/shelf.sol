@@ -19,9 +19,6 @@ pragma experimental ABIEncoderV2;
 
 import { Title, TitleOwned } from "tinlake-title/title.sol";
 
-contract AppraiserLike {
-    function appraise(uint, address, uint) public returns (uint);
-}
 
 contract NFTLike {
     function ownerOf(uint256 tokenId) public view returns (address owner);
@@ -47,7 +44,6 @@ contract Shelf is TitleOwned {
 
     // --- Data ---
     PileLike                  public pile;
-    AppraiserLike             public appraiser;
     Title                     public title;
 
     struct Loan {
@@ -63,16 +59,14 @@ contract Shelf is TitleOwned {
 
     uint public bags; // sum of all prices
 
-    constructor(address pile_, address appraiser_, address title_) TitleOwned(title_) public {
+    constructor(address pile_, address title_) TitleOwned(title_) public {
         wards[msg.sender] = 1;
         pile = PileLike(pile_);
-        appraiser = AppraiserLike(appraiser_);
         title = Title(title_);
     }
 
     function depend (bytes32 what, address addr) public auth {
         if (what == "pile") { pile = PileLike(addr); }
-        else if (what == "appraiser") { appraiser = AppraiserLike(addr); }
         else revert();
     }
 
@@ -80,7 +74,6 @@ contract Shelf is TitleOwned {
     function token(uint loan) public view returns (address registry, uint nft) {
         return (shelf[loan].registry, shelf[loan].tokenId);
     }
-
 
     // --- Shelf: Creation and closing of a loan ---
     function issue(address registry, uint token) public returns (uint) {
@@ -107,11 +100,6 @@ contract Shelf is TitleOwned {
 
 
     // ---- Shelf ---
-    function file(uint loan, address registry_, uint nft_) public auth {
-        shelf[loan].registry = registry_;
-        shelf[loan].tokenId = nft_;
-    }
-
     function file(uint loan, address registry_, uint nft_, uint principal_) public auth {
         shelf[loan].registry = registry_;
         shelf[loan].tokenId = nft_;
@@ -124,44 +112,24 @@ contract Shelf is TitleOwned {
         shelf[loan].initial = principal_;
     }
 
-    // Move the NFT out of the shelf
-    function move(uint loan, address registry_, uint nft_, address to) public owner(loan) {
-        NFTLike(registry_).transferFrom(address(this), to, nft_);
-        // TODO: Shouldn't this only be allowed if debt == 0?
-    }
-
-    function release (uint loan, address usr) public owner(loan) {
-        uint debt = pile.debtOf(loan);
-        require(debt == 0, "debt");
-        move(loan, shelf[loan].registry, shelf[loan].tokenId, usr);
-        adjust(loan);
-    }
-
-    function deposit (uint loan, address usr) public owner(loan) {
+    function deposit(uint loan, address usr) public owner(loan) {
         NFTLike(shelf[loan].registry).transferFrom(usr, address(this), shelf[loan].tokenId);
         pile.borrow(loan, shelf[loan].principal);
         shelf[loan].principal = 0;
-        adjust(loan);
+    }
+    // --- NFT actions ---
+    function lock(uint loan) public owner(loan) {
+        NFTLike(shelf[loan].registry).transferFrom(msg.sender, address(this), shelf[loan].tokenId);
+    }
+
+    function unlock(uint loan) public owner(loan) {
+        require(pile.debtOf(loan) == 0, "has-debt");
+        NFTLike(shelf[loan].registry).transferFrom(address(this), msg.sender, shelf[loan].tokenId);
     }
 
     // Used by the collector
     function claim(uint loan, address usr) public auth {
         // TODO: need to update pile/shelf to let it know it's gone.
         NFTLike(shelf[loan].registry).transferFrom(address(this), usr, shelf[loan].tokenId);
-    }
-
-    // Value collateral and update the total value of the shelf
-    // Anyone can call this method to force the shelf to adjust the shelf total value (bags).
-    function adjust (uint loan) public {
-        uint appraisal = 0;
-        if (NFTLike(shelf[loan].registry).ownerOf(shelf[loan].tokenId) == address(this)) {
-            appraisal  = appraiser.appraise(loan, shelf[loan].registry, shelf[loan].tokenId);
-        }
-        if (appraisal < shelf[loan].price) {
-            bags -= (shelf[loan].price - appraisal);
-        } else {
-            bags += (appraisal - shelf[loan].price);
-        }
-        shelf[loan].price = appraisal;
     }
 }
