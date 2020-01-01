@@ -56,6 +56,34 @@ contract ShelfTest is DSTest {
         assertEq(shelf.bags(),0);
     }
 
+
+    function testNFTIssue() public {
+        uint256 tokenId = 55;
+        nft.setOwnerOfReturn(address(this));
+        title.setIssueReturn(1);
+        uint loan = shelf.issue(address(nft), tokenId);
+        assertEq(loan, 1);
+        assertEq(shelf.nftlookup(keccak256(abi.encodePacked(address(nft), tokenId))), 1);
+
+        title.setOwnerOfReturn(address(this));
+        shelf.close(loan);
+        assertEq(shelf.nftlookup(keccak256(abi.encodePacked(address(nft), tokenId))), 0);
+        assertEq(title.closeCalls(), 1);
+        assertEq(title.tkn(), 1);
+
+        title.setIssueReturn(2);
+        shelf.issue(address(nft), tokenId);
+        assertEq(shelf.nftlookup(keccak256(abi.encodePacked(address(nft), tokenId))), 2);
+    }
+
+    function testNFTMultipleIssueFail() public {
+        uint256 tokenId = 55;
+        nft.setOwnerOfReturn(address(this));
+        shelf.issue(address(nft), tokenId);
+        shelf.issue(address(nft), tokenId);
+    }
+
+
     function testDeposit() public {
         uint256 tokenId = 55;
         nft.setOwnerOfReturn(address(this));

@@ -17,7 +17,7 @@
 pragma solidity >=0.4.24;
 pragma experimental ABIEncoderV2;
 
-import { TitleOwned } from "tinlake-title/title.sol";
+import { Title, TitleOwned } from "tinlake-title/title.sol";
 
 contract AppraiserLike {
     function appraise(uint, address, uint) public returns (uint);
@@ -48,6 +48,7 @@ contract Shelf is TitleOwned {
     // --- Data ---
     PileLike                  public pile;
     AppraiserLike             public appraiser;
+    Title                     public title;
 
     struct Loan {
         address registry;
@@ -57,7 +58,8 @@ contract Shelf is TitleOwned {
         uint initial;
     }
 
-    mapping (uint => Loan) public shelf;
+    mapping (uint => Loan) public    shelf;
+    mapping (bytes32 => uint) public nftlookup;
 
     uint public bags; // sum of all prices
 
@@ -65,6 +67,7 @@ contract Shelf is TitleOwned {
         wards[msg.sender] = 1;
         pile = PileLike(pile_);
         appraiser = AppraiserLike(appraiser_);
+        title = Title(title_);
     }
 
     function depend (bytes32 what, address addr) public auth {
@@ -73,11 +76,37 @@ contract Shelf is TitleOwned {
         else revert();
     }
 
-    // --- Shelf ---
+    // --- Shelf: Getters ---
     function token(uint loan) public view returns (address registry, uint nft) {
         return (shelf[loan].registry, shelf[loan].tokenId);
     }
 
+
+    // --- Shelf: Creation and closing of a loan ---
+    function issue(address registry, uint token) public returns (uint) {
+        require(NFTLike(registry).ownerOf(token) == msg.sender, "nft-not-owned");
+
+        bytes32 nft = keccak256(abi.encodePacked(registry, token));
+        require(nftlookup[nft] == 0, "nft-in-use");
+
+        uint loan = title.issue(msg.sender);
+        nftlookup[nft] = loan;
+
+        shelf[loan].registry = registry;
+        shelf[loan].tokenId = token;
+
+        return loan;
+    }
+
+    function close(uint loan) public owner(loan) {
+        require(pile.debtOf(loan) == 0, "outstanding-debt"); // TODO: only allow closing of a loan that isn't active anymore. maybe there is a better criteria
+        title.close(loan);
+        bytes32 nft = keccak256(abi.encodePacked(shelf[loan].registry, shelf[loan].tokenId));
+        nftlookup[nft] = 0;
+    }
+
+
+    // ---- Shelf ---
     function file(uint loan, address registry_, uint nft_) public auth {
         shelf[loan].registry = registry_;
         shelf[loan].tokenId = nft_;
