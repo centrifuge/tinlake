@@ -11,28 +11,27 @@ contract ShelfMock {
 
     uint public bags = 0; function setBags(uint bags_) public {bags=bags_;}
 
-    uint public loan;
+    uint public    loan;
     address public usr;
     address public registry;
-    uint public nft;
-    uint public principal;
-    uint public initial;
+    uint public    nft;
+    uint public    principal;
+    uint public    initial;
+    uint public    price;
 
-    struct Loan {
-        address registry;
-        uint256 tokenId;
-        uint price; //
-        uint principal;
-        uint initial;
+    function setShelfReturn(address registry_, uint nft_,uint price_, uint principal_) public {
+        registry = registry_;
+        nft = nft_;
+        price = price_;
+        principal = principal_;
     }
 
-    Loan public shelfReturn;
-    function setShelfReturn(address registry_, uint256 tokenId_,uint price_, uint principal_) public {
-        shelfReturn = Loan(registry_, tokenId_, price_, principal_, principal_);
+    function shelf(uint loan) public returns (address, uint, uint, uint)  {
+        return (registry, nft, price, principal);
     }
 
-    function shelf(uint loan) public returns (address registry,uint256 tokenId,uint price,uint principal)  {
-        return (shelfReturn.registry,shelfReturn.tokenId, shelfReturn.price, shelfReturn.principal);
+    function token(uint loan) public returns (address, uint) {
+        return (registry, nft);
     }
 
     function adjust(uint loan_) public {
@@ -53,6 +52,7 @@ contract ShelfMock {
     }
 
     function file(uint loan_, address registry_, uint nft_) public  {
+        revert();
         loan = loan_;
         registry = registry_;
         nft = nft_;

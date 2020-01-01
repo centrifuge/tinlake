@@ -21,31 +21,26 @@ import "ds-test/test.sol";
 import "../../test/mock/pile.sol";
 import "../../test/mock/shelf.sol";
 import "../../test/mock/desk.sol";
+import "../../test/mock/nft.sol";
 
-import "../../test/simple/nft.sol";
 import "tinlake-registry/registry.sol";
 import "../collector.sol";
 
-contract Shelf is ShelfMock {
-    function free(uint loan, address usr) public  {
-        NFTLike(shelfReturn.registry).transferFrom(address(this), usr, shelfReturn.tokenId);
-    }
-}
+
 
 contract CollectorTest is DSTest {
     PileMock  pile;
-    Shelf     shelf;
+    ShelfMock shelf;
     DeskMock  desk;
-
-    SimpleNFT nft;
+    NFTMock   nft;
 
     Collector    collector;
     PushRegistry threshold;
 
     function setUp() public {
-        nft = new SimpleNFT();
+        nft = new NFTMock();
         pile = new PileMock();
-        shelf = new Shelf();
+        shelf = new ShelfMock();
         desk = new DeskMock();
 
         threshold = new PushRegistry();
@@ -55,65 +50,39 @@ contract CollectorTest is DSTest {
     function setUpLoan(uint loan, uint tokenId, uint debt) public {
         // defines price and token Id
         shelf.setShelfReturn(address(nft), tokenId, 0, 0);
-        nft.mint(address(shelf), tokenId);
         // define debt
         pile.setDebtOfReturn(debt);
     }
 
-    function testSeize() public {
+    function testSeizeFail() public {
         uint loan = 1; uint tokenId = 123;
         uint debt = 100;
         setUpLoan(loan,tokenId, debt);
 
+        threshold.set(loan, debt-1);
+        collector.seize(loan);
+    }
+
+    function testSeizeCollect() public {
+        uint loan = 1; uint tokenId = 123;
+        uint debt = 100;
+        setUpLoan(loan, tokenId, debt);
+
         threshold.set(loan, debt);
+        collector.file(loan, address(this), debt-1);
         collector.seize(loan);
         assertEq(shelf.claimCalls(), 1);
         assertEq(shelf.loan(), loan);
         assertEq(shelf.usr(), address(collector));
-    }
-/*
-    function testCollect() public {
-        uint loan = 1; uint tokenId = 123;
-        uint debt = 100;
-        setUpLoan(loan,tokenId, debt);
 
-        collector.file(loan, address(this), debt-1);
         collector.collect(loan);
-
-        // check nft transfer
-        assertEq(nft.ownerOf(tokenId), address(this));
-
-        // check contract calls
-        assertEq(desk.callsBalance(), 1);
+        assertEq(nft.transferFromCalls(), 1);
+        assertEq(nft.to(), address(this));
+        assertEq(nft.tokenId(), tokenId);
         assertEq(pile.callsRecovery(), 1);
-        assertEq(pile.wad(), debt);
-        assertEq(pile.loan(), loan);
+        assertEq(pile.wad(), debt-1);
+        assertEq(pile.usr(), address(this));
     }
-
-    function testCollectWithSpotter() public {
-        uint loan = 1; uint tokenId = 123;
-        uint price = 150 ether; uint debt = 100 ether;
-        setUpLoan(loan,tokenId, price, debt);
-
-        // 150% is enough threshold is 120%
-        assertTrue(spotter.seizable(loan) == false);
-
-        // increase debt to 115%
-        pile.setDebtOfReturn(130 ether);
-        assertTrue(spotter.seizable(loan) == true);
-
-        // seizure nft by direct spotter call
-        assertTrue(!spotter.collectable(loan));
-        spotter.seizure(loan);
-        assertTrue(spotter.collectable(loan));
-
-        // collect nft
-        collector.collect(loan, address(this));
-
-        // new nft owner
-        assertEq(nft.ownerOf(tokenId), address(this));
-    }
-*/
 }
 
 
