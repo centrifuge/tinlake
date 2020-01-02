@@ -31,8 +31,8 @@ contract ManagerLike {
     function pile() public returns(address);
     function poolClosing() public returns(bool);
 
-    function ActionTake() public returns (uint);
-    function ActionGive() public returns (uint);
+    function ActionBorrow() public returns (uint);
+    function ActionRepay() public returns (uint);
     function requestAction() public returns (uint, uint);
 
 }
@@ -59,11 +59,11 @@ contract Distributor is DSNote {
     function balance() public {
         (uint action, uint amount) = manager.requestAction();
 
-        if (action == manager.ActionTake()) {
+        if (action == manager.ActionBorrow()) {
             borrowTranches(amount);
         }
 
-        if (action == manager.ActionGive()) {
+        if (action == manager.ActionRepay()) {
             repayTranches(amount);
         }
     }
@@ -76,19 +76,22 @@ contract Distributor is DSNote {
             requestCurrency = borrow(manager.senior(), requestCurrency);
             return;
         }
-        revert("request amount too high");
+
+        if (requestCurrency > 0) {
+            revert("requested currency amount too high");
+        }
     }
 
     function borrow(address tranche, uint requestCurrency) internal returns(uint left) {
         OperatorLike tranche = OperatorLike(tranche);
-        uint maxTranche = tranche.balance();
-        uint take = maxTranche;
-        if (maxTranche >= requestCurrency) {
-            take = requestCurrency;
+        uint maxBorrow = tranche.balance();
+        uint borrowAmount = maxBorrow;
+        if (maxBorrow >= requestCurrency) {
+            borrowAmount = requestCurrency;
         }
 
-        tranche.borrow(address(manager.pile()), take);
-        return requestCurrency - take;
+        tranche.borrow(address(manager.pile()), borrowAmount);
+        return requestCurrency - borrowAmount;
     }
 
     // -- Repay Tranches ---
@@ -103,12 +106,12 @@ contract Distributor is DSNote {
 
     function repay(address tranche, uint availableCurrency) internal returns(uint left) {
         OperatorLike tranche = OperatorLike(tranche);
-        uint give = tranche.debt();
+        uint repayAmount = tranche.debt();
         if (availableCurrency < tranche.debt()) {
-            give = availableCurrency;
+            repayAmount = availableCurrency;
         }
 
-        tranche.repay(address(manager.pile()), give);
-        return availableCurrency - give;
+        tranche.repay(address(manager.pile()), repayAmount);
+        return availableCurrency - repayAmount;
     }
 }

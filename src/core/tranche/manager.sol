@@ -92,17 +92,17 @@ contract TrancheManager is DSNote {
         distributor.balance();
     }
 
-    uint public ActionTake = 1;
-    uint public ActionGive = 2;
+    uint public ActionBorrow = 1;
+    uint public ActionRepay = 2;
 
     function requestAction() public auth returns (uint, uint){
         int amount = pile.want();
 
-        if (amount >= 0 ) {
-            return (ActionTake, uint(amount));
+        if (amount > 0 ) {
+            return (ActionBorrow, uint(amount));
         }
-        if (amount <= 0) {
-            return (ActionGive, uint(amount*-1));
+        if (amount < 0) {
+            return (ActionRepay, uint(amount*-1));
         }
         return (0, 0);
     }
