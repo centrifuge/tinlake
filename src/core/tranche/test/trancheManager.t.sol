@@ -26,24 +26,24 @@ contract TrancheManagerTest is DSTest {
     PileMock pile;
     TrancheManager trancheManager;
     OperatorMock seniorOperator = new OperatorMock();
-    OperatorMock equityOperator = new OperatorMock();
+    OperatorMock juniorOperator = new OperatorMock();
 
     function setUp() public {
         pile = new PileMock();
         trancheManager = new TrancheManager(address(pile));
         //add tranches
-        trancheManager.addTranche(70, address(seniorOperator));
-        trancheManager.addTranche(30, address(equityOperator));
+        trancheManager.addTranche("senior", 70, address(seniorOperator));
+        trancheManager.addTranche("junior", 30, address(juniorOperator));
     }
 
-    function testIsEquity() public { 
-        bool isEquity = trancheManager.isEquity(address(equityOperator));
-        assert(isEquity);
+    function testIsJunior() public { 
+        bool isJunior = trancheManager.isJunior(address(juniorOperator));
+        assert(isJunior);
     }
 
-    function testIsNotEquity() public { 
-        bool isEquity = trancheManager.isEquity(address(seniorOperator));
-        assert(!isEquity);
+    function testIsNotJunior() public { 
+        bool isJunior = trancheManager.isJunior(address(seniorOperator));
+        assert(!isJunior);
     }
 
     function testGetSeniorOperator() public {
@@ -51,9 +51,9 @@ contract TrancheManagerTest is DSTest {
         assertEq(operatorAddress, address(seniorOperator));  
     }
 
-    function testGetEquityOperator() public {
-        address operatorAddress = trancheManager.equityOperator();
-        assertEq(operatorAddress, address(equityOperator));  
+    function testGetjuniorOperator() public {
+        address operatorAddress = trancheManager.juniorOperator();
+        assertEq(operatorAddress, address(juniorOperator));  
     }
 }
 

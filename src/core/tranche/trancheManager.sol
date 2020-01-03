@@ -40,7 +40,8 @@ contract TrancheManager is DSNote {
         address operator;
     }
 
-    Tranche[] public tranches;
+    Tranche junior;
+    Tranche senior;
 
     constructor (address pile_) public {
         wards[msg.sender] = 1;
@@ -52,19 +53,19 @@ contract TrancheManager is DSNote {
         else revert();
     }
 
-    function addTranche(uint ratio, address operator_) public auth {
+    function addTranche(bytes32 what, uint ratio, address operator_) public auth {
         Tranche memory t;
         t.ratio = ratio;
         t.operator = operator_;
-        tranches.push(t);
+        if (what == "junior") { junior = t; }
+        else if (what == "senior") { senior = t; }
     }
 
     function trancheCount() public returns (uint) {
-        return tranches.length;
-    }
-
-    function operatorOf(uint i) public returns (address) {
-        return tranches[i].operator;
+        uint count = 0;
+        if (junior.operator != address(0x0)) { count++; }
+        if (senior.operator != address(0x0)) { count++; }
+        return count;
     }
 
     function poolValue() public returns (uint) {
@@ -72,15 +73,15 @@ contract TrancheManager is DSNote {
     }
 
     // returns true for the tranche with the highest risk
-    function isEquity(address operator_) public returns (bool) {
-        return tranches[tranches.length-1].operator == operator_;
+    function isJunior(address operator_) public returns (bool) {
+        return junior.operator == operator_;
     }
 
-    function equityOperator() public returns (address) {
-        return tranches[tranches.length-1].operator;
+    function juniorOperator() public returns (address) {
+        return junior.operator;
     }
 
     function seniorOperator() public returns (address) {
-        return tranches[0].operator;
+        return senior.operator;
     }
 }

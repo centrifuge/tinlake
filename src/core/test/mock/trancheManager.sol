@@ -6,7 +6,7 @@ contract TrancheManagerMock {
     uint public callsBalance;
     uint public callsReduce;
 
-    bool public isEquityReturn; function setIsEquityReturn(bool isEquity) public {isEquityReturn=isEquity;}
+    bool public isJuniorReturn; function setIsJuniorReturn(bool isJunior) public {isJuniorReturn=isJunior;}
     uint public poolValueReturn; function setPoolValueReturn(uint poolValue) public {poolValueReturn=poolValue;}
     uint public wad;
     address operator;
@@ -17,7 +17,8 @@ contract TrancheManagerMock {
         address operator;
     }
 
-    Tranche[] public tranches;
+    Tranche senior;
+    Tranche junior;
 
     function balance() public {
         callsBalance++;
@@ -29,35 +30,35 @@ contract TrancheManagerMock {
     }
 
     function trancheCount() public returns (uint) {
-        return tranches.length;
+        uint count = 0;
+        if (junior.operator != address(0x0)) { count++; }
+        if (senior.operator != address(0x0)) { count++; }
+        return count;
     }
 
-    function isEquity(address operator_) public returns (bool) {
+    function isJunior(address operator_) public returns (bool) {
         operator = operator_;
-        return isEquityReturn;
+        return isJuniorReturn;
     }
 
     function poolValue() public returns (uint) {
         return poolValueReturn;
     }
 
-    function addTranche(uint ratio, address operator_) public {
+    function addTranche(bytes32 what, uint ratio, address operator_) public {
         Tranche memory t;
         t.ratio = ratio;
         t.operator = operator_;
-        tranches.push(t);
+        if (what == "junior") { junior = t; }
+        else if (what == "senior") { senior = t; }
     }
 
-    function equityOperator() public returns (address) {
-        return tranches[tranches.length-1].operator;
+    function juniorOperator() public returns (address) {
+        return junior.operator;
     }
 
     function seniorOperator() public returns (address) {
-        return tranches[0].operator;
-    }
-
-    function operatorOf(uint i) public returns (address) {
-        return tranches[i].operator;
+        return senior.operator;
     }
 }
     

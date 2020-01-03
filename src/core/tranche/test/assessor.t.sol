@@ -26,23 +26,23 @@ contract AssessorTest is DSTest {
     Assessor assessor;
     TrancheManagerMock trancheManager;
     OperatorMock seniorOperator = new OperatorMock();
-    OperatorMock equityOperator = new OperatorMock();
+    OperatorMock juniorOperator = new OperatorMock();
 
     function setUp() public {
         trancheManager = new TrancheManagerMock();
         assessor = new Assessor(address(trancheManager));
-        trancheManager.addTranche(70, address(seniorOperator));
-        trancheManager.addTranche(30, address(equityOperator));
+        trancheManager.addTranche("senior", 70, address(seniorOperator));
+        trancheManager.addTranche("junior", 30, address(juniorOperator));
     }
 
-    function getAssetValueFor(address operator, uint seniorTrancheDebt, uint seniorTrancheReserve, uint equityTrancheDebt, uint equityTrancheReserve, uint poolValue) internal returns (uint) { 
+    function getAssetValueFor(address operator, uint seniorTrancheDebt, uint seniorTrancheReserve, uint juniorTrancheDebt, uint juniorTrancheReserve, uint poolValue) internal returns (uint) { 
         trancheManager.setPoolValueReturn(poolValue);
 
         seniorOperator.setBalanceReturn(seniorTrancheReserve);
         seniorOperator.setDebtReturn(seniorTrancheDebt);
 
-        equityOperator.setBalanceReturn(equityTrancheReserve);
-        equityOperator.setDebtReturn(equityTrancheDebt);
+        juniorOperator.setBalanceReturn(juniorTrancheReserve);
+        juniorOperator.setDebtReturn(juniorTrancheDebt);
 
         return assessor.getAssetValueFor(address(operator));
     }
@@ -50,53 +50,53 @@ contract AssessorTest is DSTest {
     function testSeniorAssetValueHealthyPool() public {
         uint seniorTrancheDebt = 200;
         uint seniorTrancheReserve = 150;
-        // default 0 - equity tranche does not need to keep track of debt value 
-        uint equityTrancheDebt = 0;
-        uint equityTrancheReserve = 50;  
+        // default 0 - junior tranche does not need to keep track of debt value 
+        uint juniorTrancheDebt = 0;
+        uint juniorTrancheReserve = 50;  
         uint poolValue = 250; 
 
-        trancheManager.setIsEquityReturn(false); 
+        trancheManager.setIsJuniorReturn(false); 
         
-        uint assetValue = getAssetValueFor(address(seniorOperator), seniorTrancheDebt, seniorTrancheReserve, equityTrancheDebt, equityTrancheReserve, poolValue);
+        uint assetValue = getAssetValueFor(address(seniorOperator), seniorTrancheDebt, seniorTrancheReserve, juniorTrancheDebt, juniorTrancheReserve, poolValue);
         assertEq(assetValue, 350);
     }
 
     function testSeniorAssetValueWithLosses() public { 
         uint seniorTrancheDebt = 200;
         uint seniorTrancheReserve = 150;
-        uint equityTrancheDebt = 0;
-        uint equityTrancheReserve = 50;  
+        uint juniorTrancheDebt = 0;
+        uint juniorTrancheReserve = 50;  
         uint poolValue = 100; 
 
-        trancheManager.setIsEquityReturn(false); 
+        trancheManager.setIsJuniorReturn(false); 
         
-        uint assetValue = getAssetValueFor(address(seniorOperator), seniorTrancheDebt, seniorTrancheReserve, equityTrancheDebt, equityTrancheReserve, poolValue);
+        uint assetValue = getAssetValueFor(address(seniorOperator), seniorTrancheDebt, seniorTrancheReserve, juniorTrancheDebt, juniorTrancheReserve, poolValue);
         assertEq(assetValue, 300);
     }
 
-    function testEquityAssetValueHealthyPool() public { 
+    function testJuniorAssetValueHealthyPool() public { 
         uint seniorTrancheDebt = 200;
         uint seniorTrancheReserve = 150;
-        uint equityTrancheDebt = 0;
-        uint equityTrancheReserve = 50;  
+        uint juniorTrancheDebt = 0;
+        uint juniorTrancheReserve = 50;  
         uint poolValue = 800; 
 
-        trancheManager.setIsEquityReturn(true); 
+        trancheManager.setIsJuniorReturn(true); 
         
-        uint assetValue = getAssetValueFor(address(equityOperator), seniorTrancheDebt, seniorTrancheReserve, equityTrancheDebt, equityTrancheReserve, poolValue);
+        uint assetValue = getAssetValueFor(address(juniorOperator), seniorTrancheDebt, seniorTrancheReserve, juniorTrancheDebt, juniorTrancheReserve, poolValue);
         assertEq(assetValue, 650);
     }
 
-    function testEquityAssetValueWithLosses() public { 
+    function testJuniorAssetValueWithLosses() public { 
         uint seniorTrancheDebt = 500;
         uint seniorTrancheReserve = 150; 
-        uint equityTrancheDebt = 0;
-        uint equityTrancheReserve = 200;  
+        uint juniorTrancheDebt = 0;
+        uint juniorTrancheReserve = 200;  
         uint poolValue = 200;  
 
-        trancheManager.setIsEquityReturn(true); 
+        trancheManager.setIsJuniorReturn(true); 
 
-        uint assetValue = getAssetValueFor(address(equityOperator), seniorTrancheDebt, seniorTrancheReserve, equityTrancheDebt, equityTrancheReserve, poolValue);
+        uint assetValue = getAssetValueFor(address(juniorOperator), seniorTrancheDebt, seniorTrancheReserve, juniorTrancheDebt, juniorTrancheReserve, poolValue);
         assertEq(assetValue, 0);
     }
 }

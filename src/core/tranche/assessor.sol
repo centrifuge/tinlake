@@ -23,10 +23,10 @@ contract OperatorLike {
 
 contract TrancheManagerLike {
     function trancheCount() public returns(uint);
-    function isEquity(address) public returns(bool);
+    function isJunior(address) public returns(bool);
     function poolValue() public returns(uint);
     function indexOf(address) public returns(int);
-    function equityOperator() public returns(address);
+    function juniorOperator() public returns(address);
     function seniorOperator() public returns(address);
 }
 
@@ -45,30 +45,30 @@ contract Assessor {
          uint trancheDebt = operator.debt();
          uint trancheReserve = operator.balance();
          uint poolValue = trancheManager.poolValue();
-         if (trancheManager.isEquity(operator_)) {
+         if (trancheManager.isJunior(operator_)) {
             uint seniorDebt = calcSeniorDebt(); 
-            return calcEquityAssetValue(poolValue, trancheReserve, seniorDebt);
+            return calcJuniorAssetValue(poolValue, trancheReserve, seniorDebt);
          }
 
-         uint equityReserve = calcEquityReserve();
-         return calcSeniorAssetValue(poolValue, trancheReserve, trancheDebt, equityReserve);   
+         uint juniorReserve = calcJuniorReserve();
+         return calcSeniorAssetValue(poolValue, trancheReserve, trancheDebt, juniorReserve);   
     }
 
-    // Tranche.assets (Equity) = (Pool.value + Tranche.reserve - Senior.debt) > 0 && (Pool.value - Tranche.reserve - Senior.debt) || 0
-    function calcEquityAssetValue(uint poolValue, uint trancheReserve, uint seniorDebt) internal returns (uint) {
+    // Tranche.assets (Junior) = (Pool.value + Tranche.reserve - Senior.debt) > 0 && (Pool.value - Tranche.reserve - Senior.debt) || 0
+    function calcJuniorAssetValue(uint poolValue, uint trancheReserve, uint seniorDebt) internal returns (uint) {
         int assetValue = int(poolValue + trancheReserve - seniorDebt);
         return (assetValue > 0) ? uint(assetValue) : 0;
     }
 
-    // Tranche.assets (Senior) = (Tranche.debt < (Pool.value + Equity.reserve)) && (Senior.debt + Tranche.reserve) || (Pool.value + Equity.reserve + Tranche.reserve)
-    function calcSeniorAssetValue(uint poolValue, uint trancheReserve, uint trancheDebt, uint equityReserve) internal returns (uint) {
-        return ((poolValue + equityReserve) >= trancheDebt) ? (trancheDebt + trancheReserve) : (poolValue + equityReserve + trancheReserve);
+    // Tranche.assets (Senior) = (Tranche.debt < (Pool.value + Junior.reserve)) && (Senior.debt + Tranche.reserve) || (Pool.value + Junior.reserve + Tranche.reserve)
+    function calcSeniorAssetValue(uint poolValue, uint trancheReserve, uint trancheDebt, uint juniorReserve) internal returns (uint) {
+        return ((poolValue + juniorReserve) >= trancheDebt) ? (trancheDebt + trancheReserve) : (poolValue + juniorReserve + trancheReserve);
 
     }
 
-    function calcEquityReserve() internal returns (uint) {
-        uint equityReserve =  (trancheManager.trancheCount() > 1) ? OperatorLike(trancheManager.equityOperator()).balance() : 0;
-        return equityReserve;
+    function calcJuniorReserve() internal returns (uint) {
+        uint juniorReserve =  (trancheManager.trancheCount() > 1) ? OperatorLike(trancheManager.juniorOperator()).balance() : 0;
+        return juniorReserve;
     }
 
     function calcSeniorDebt() internal returns (uint) {

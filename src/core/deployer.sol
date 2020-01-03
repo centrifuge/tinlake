@@ -15,7 +15,7 @@
 
 pragma solidity >=0.4.24;
 
-import { Title } from "./title.sol";
+import { Title } from "tinlake-title/title.sol";
 import { LightSwitch } from "./lightswitch.sol";
 import { Shelf } from "./shelf.sol";
 import { Desk } from "./test/simple/desk.sol";
@@ -136,7 +136,7 @@ contract Deployer {
 
     constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, PileFab pilefab_, ShelfFab shelffab_, DeskFab deskfab_, AdmitFab admitfab_, AdminFab adminfab_, DebtRegisterFab debtRegisterfab_) public {
         god = god_;
-        
+
         titlefab = titlefab_;
         lightswitchfab = lightswitchfab_;
         pilefab = pilefab_;
@@ -156,7 +156,7 @@ contract Deployer {
         debtRegister = debtRegisterfab.newDebtRegister();
         debtRegister.rely(god);
     }
-    
+
     function deployTitle(string memory name, string memory symbol) public {
         title = titlefab.newTitle(name, symbol);
         title.rely(god);
@@ -165,8 +165,8 @@ contract Deployer {
     function deployLightSwitch() public {
         lightswitch = lightswitchfab.newLightSwitch();
         lightswitch.rely(god);
-    }  
-  
+    }
+
     function deployPile(address currency_) public {
         pile = pilefab.newPile(currency_, address(title), address(debtRegister));
         pile.rely(god);

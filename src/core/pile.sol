@@ -17,7 +17,7 @@ pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
 
-import { TitleOwned } from "./title.sol";
+import { TitleOwned } from "tinlake-title/title.sol";
 
 contract TokenLike{
     uint public totalSupply;
