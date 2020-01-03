@@ -381,11 +381,11 @@ contract SystemTest is DSTest {
             nft.mint(borrower_, i);
 
             // nft whitelist
-            admin.doAdmit(nft_, i, principal, appraisal, borrower_);
+            uint loan = admin.doAdmit(nft_, i, principal, appraisal, borrower_);
             borrower.doApproveNFT(nft, address(deployer.shelf()));
 
             // borrow transaction
-            borrower.doBorrow(i);
+            borrower.doBorrow(loan);
             tBorrower += principal;
             checkAfterBorrow(i, tBorrower);
         }
@@ -404,7 +404,8 @@ contract SystemTest is DSTest {
             principal = appraisal/100 * 80;
 
             // repay transaction
-            borrower.doRepay(i, principal, borrower_);
+            uint loan = i+1;
+            borrower.doRepay(loan, principal, borrower_);
             deskBalance += principal;
             checkAfterRepay(i, i, tTotal, deskBalance);
         }
