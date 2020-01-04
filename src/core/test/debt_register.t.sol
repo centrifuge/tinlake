@@ -59,7 +59,7 @@ contract DebtRegisterTest is DSTest {
         debtRegister.file(rate, rate);
         debtRegister.set(loan, rate);
         debtRegister.drip(rate);
-        debtRegister.inc(loan, principal);
+        debtRegister.increase(loan, principal);
 
         // one day later
         hevm.warp(now + 1 days);
@@ -99,7 +99,7 @@ contract DebtRegisterTest is DSTest {
         debtRegister.file(rate, rate);
         debtRegister.set(loan, rate);
         debtRegister.drip(rate);
-        debtRegister.inc(loan, principal);
+        debtRegister.increase(loan, principal);
         assertDebt(loan, rate, 66 ether);
 
         // two days later
@@ -126,7 +126,7 @@ contract DebtRegisterTest is DSTest {
         debtRegister.file(rate, rate);
         debtRegister.set(loan, rate);
         debtRegister.drip(rate);
-        debtRegister.inc(loan, principal);
+        debtRegister.increase(loan, principal);
 
         assertDebt(loan, rate, 66 ether);
 
@@ -194,7 +194,7 @@ contract DebtRegisterTest is DSTest {
         uint principal = 1000000000  ether; // one billion 10^9 * 10^18 = 10^28
         debtRegister.drip(rate);
         debtRegister.set(loan, rate);
-        debtRegister.inc(loan, principal);
+        debtRegister.increase(loan, principal);
 
         // 150 days later
         hevm.warp(now + 1050 days); // produces max ~ rateIndex 10^49
@@ -214,7 +214,7 @@ contract DebtRegisterTest is DSTest {
         debtRegister.drip(highRate);
         debtRegister.drip(lowRate);
         debtRegister.set(loan, lowRate);
-        debtRegister.inc(loan, principal);
+        debtRegister.increase(loan, principal);
         assertDebt(loan, lowRate, 100 ether);
 
         hevm.warp(now + 1 days);
