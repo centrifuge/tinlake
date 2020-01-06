@@ -18,7 +18,7 @@ pragma solidity >=0.4.24;
 import "./operator.sol";
 
 // SeniorOperator
-// Interface to the senior tranche. Uses the quant to keep track of the current debt towards the tranche. 
+// Interface to the senior tranche. keeps track of the current debt towards the tranche. 
 contract SeniorOperator is Operator {
 
     struct Rate {
