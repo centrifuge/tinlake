@@ -79,6 +79,7 @@ contract Shelf is TitleOwned {
         require(NFTLike(registry).ownerOf(token) == msg.sender, "nft-not-owned");
 
         bytes32 nft = keccak256(abi.encodePacked(registry, token));
+        // Title.issue() never assigns the "0" token id.
         require(nftlookup[nft] == 0, "nft-in-use");
 
         uint loan = title.issue(msg.sender);
