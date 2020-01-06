@@ -83,7 +83,6 @@ contract OperatorTest is DSTest {
         assertEq(reserve.usr(), address(this));
         assertEq(reserve.currencyAmount(), currencyAmount);
         assertEq(operator.debt(), currencyAmount);
-        emit log_named_uint("moin", operator.debt());
     }
 
     function testDeactivateSupply() public {
