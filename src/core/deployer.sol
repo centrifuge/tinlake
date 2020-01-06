@@ -19,7 +19,6 @@ import { Title } from "tinlake-title/title.sol";
 import { LightSwitch } from "./lightswitch.sol";
 import { Shelf } from "./shelf.sol";
 import { Desk } from "./test/simple/desk.sol";
-import { Pile } from "./pile.sol";
 import { Admit } from "./admit.sol";
 import { Admin } from "./admin.sol";
 import { DebtRegister } from "./debt_register.sol";
@@ -62,17 +61,9 @@ contract LightSwitchFab {
     }
 }
 
-contract PileFab {
-   function newPile(address tkn, address title, address debtRegister) public returns (Pile pile) {
-        pile = new Pile(tkn, title, debtRegister);
-        pile.rely(msg.sender);
-        pile.deny(address(this));
-    }
-}
-
 contract ShelfFab {
-   function newShelf(address pile, address title) public returns (Shelf shelf) {
-        shelf = new Shelf(pile, title);
+   function newShelf(address tkn_, address title_, address debt_, address ceiling_) public returns (Shelf shelf) {
+        shelf = new Shelf(tkn_, title_, debt_, ceiling_);
         shelf.rely(msg.sender);
         shelf.deny(address(this));
     }
@@ -80,8 +71,8 @@ contract ShelfFab {
 
 contract DeskFab {
     // note: this is the mock Desk, which will interface with the lender/tranche side of Tinlake, and does not require auth for now.
-    function newDesk(address pile_, address token_) public returns (Desk desk) {
-        desk = new Desk(pile_, token_);
+    function newDesk(address shelf_, address token_) public returns (Desk desk) {
+        desk = new Desk(shelf_, token_);
         return desk;
     }
 }
@@ -103,8 +94,8 @@ contract AdminFab {
 }
 
 contract CollectorFab {
-    function newCollector(address desk, address pile, address shelf, address liquidation) public returns (Collector collector) {
-        collector = new Collector(desk, pile, shelf, liquidation);
+    function newCollector(address desk, address shelf, address liquidation) public returns (Collector collector) {
+        collector = new Collector(desk, shelf, liquidation);
         collector.rely(msg.sender);
         collector.deny(address(this));
     }
@@ -113,7 +104,6 @@ contract CollectorFab {
 contract Deployer {
     TitleFab          titlefab;
     LightSwitchFab    lightswitchfab;
-    PileFab           pilefab;
     ShelfFab          shelffab;
     DeskFab           deskfab;
     AdmitFab          admitfab;
@@ -126,7 +116,6 @@ contract Deployer {
 
     Title       public title;
     LightSwitch public lightswitch;
-    Pile        public pile;
     Shelf       public shelf;
     Desk        public desk;
     Admit       public admit;
@@ -135,12 +124,11 @@ contract Deployer {
     DebtRegister       public debtRegister;
 
 
-    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, PileFab pilefab_, ShelfFab shelffab_, DeskFab deskfab_, AdmitFab admitfab_, AdminFab adminfab_, DebtRegisterFab debtRegisterfab_) public {
+    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, ShelfFab shelffab_, DeskFab deskfab_, AdmitFab admitfab_, AdminFab adminfab_, DebtRegisterFab debtRegisterfab_) public {
         god = god_;
 
         titlefab = titlefab_;
         lightswitchfab = lightswitchfab_;
-        pilefab = pilefab_;
         shelffab = shelffab_;
         deskfab = deskfab_;
         admitfab = admitfab_;
@@ -168,22 +156,16 @@ contract Deployer {
         lightswitch.rely(god);
     }
 
-    function deployPile(address currency_) public {
-        pile = pilefab.newPile(currency_, address(title), address(debtRegister));
-        pile.rely(god);
-    }
-
     function deployShelf() public {
-        shelf = shelffab.newShelf(address(pile), address(title));
+        shelf = shelffab.newShelf(address(shelf), address(title));
         shelf.rely(god);
-        pile.rely(address(shelf));
     }
 
     // note: this method will be refactored with the new lender side contracts, we will rely on God once more
     //and the Pile should articulate that it depends on the Desk, not a generic "lender".
     function deployDesk(address currency_) public {
-        desk = deskfab.newDesk(address(pile), currency_);
-        pile.depend("lender", address(desk));
+        desk = deskfab.newDesk(address(shelf), currency_);
+        shelf.depend("lender", address(desk));
     }
 
     function deployAdmit() public {
@@ -198,13 +180,12 @@ contract Deployer {
     }
 
     function deploy() public {
-        address pile_ = address(pile);
         address desk_ = address(desk);
         address admit_ = address(admit);
         address admin_ = address(admin);
 
         // desk allowed to call
-        pile.rely(desk_);
+        shelf.rely(desk_);
 
         // admit allowed to call
         title.rely(admit_);
@@ -212,11 +193,11 @@ contract Deployer {
 
         // admin allowed to call
         admit.rely(admin_);
-        pile.rely(admin_);
+        //pile.rely(admin_);
         debtRegister.rely(admin_);
 
         // pile allowed to call
-        debtRegister.rely(pile_);
+        debtRegister.rely(shelf_);
 
         // collect contracts
         // TODO: shelf.rely(address(collectDeployer.spotter()));

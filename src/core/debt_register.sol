@@ -23,8 +23,8 @@ contract DebtLike {
     uint public total;
     function debt(uint) public view returns (uint);
     function accrue(uint) public;
-    function inc(uint, uint) public;
-    function dec(uint, uint) public;
+    function increase(uint, uint) public;
+    function decrease(uint, uint) public;
 }
 
 // ## Interst Group based DebtRegister
@@ -42,7 +42,7 @@ contract DebtRegister is DSNote {
     // https://github.com/makerdao/dsr/blob/master/src/dsr.sol
     struct Rate {
         uint   pie;         // Total debt of all loans with this rate
-        uint   chi;       // Accumulated rates
+        uint   chi;         // Accumulated rates
         uint   speed;       // Accumulation per second
         uint48 rho;         // Last time the rate was accumulated
     }
@@ -191,7 +191,6 @@ contract DebtRegister is DSNote {
         }
     }
 
-
     function debt(uint loan) public view returns (uint) {
         uint rate = group[loan];
         uint chi = rates[rate].chi;
@@ -215,7 +214,5 @@ contract DebtRegister is DSNote {
         rates[rate].pie = sub(rates[rate].pie, pie_);
         pie[loan] = toPie(rates[rate_].chi, debt);
         rates[rate_].pie = add(rates[rate_].pie, pie[loan]);
-        // TODO decTotalDebt(currentRate, debt);
-        // TODO incTotalDebt(newRate, debt);
     }
 }

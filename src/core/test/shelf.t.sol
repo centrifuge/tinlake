@@ -18,38 +18,139 @@
 import "ds-test/test.sol";
 
 import "../shelf.sol";
-import "./mock/pile.sol";
 import "./mock/title.sol";
 import "./mock/nft.sol";
-import "../appraiser.sol";
-
+import "./mock/token.sol";
+import "./mock/debt_register.sol";
 
 contract ShelfTest is DSTest {
     Shelf shelf;
-    PileMock pile;
     NFTMock nft;
     TitleMock title;
+    TokenMock tkn;
+    DebtRegisterMock debt;
+    CeilingMock ceiling;
 
     uint loan = 1;
     uint secondLoan = 2;
 
-    uint principal = 5000;
     uint debt = 5500;
     address someAddr = address(1);
 
 
     function setUp() public {
-        pile = new PileMock();
         nft = new NFTMock();
         title = new TitleMock();
-        shelf = createShelf(address(pile), address(title));
+        tkn = new TokenMock();
+        debtRegister = new DebtRegisterMock();
+        ceiling = new CeilingMock();
+        shelf = new Shelf(address(tkn), address(title), address(debt), address(ceiling));
     }
 
-    function createShelf(address pile_, address title_) internal returns (Shelf) {
-        return new Shelf(pile_, title_);
+    function borrow(uint loan, uint wad) public {
+        uint totalBalance = pile.Balance();
+        debtRegister.setTotalDebtReturn(wad);
+        debtRegister.setLoanDebtReturn(wad);
+
+        pile.borrow(loan, wad);
+
+        (uint debt, uint balance, uint rate) = pile.loans(loan);
+        assertEq(debtRegister.callsIncLoanDebt(), 1);
+        assertEq(pile.Balance(), totalBalance + wad);
+        assertEq(pile.Debt(), wad);
+        assertEq(balance, wad);
+        assertEq(debt, wad);
     }
+
+    function withdraw(uint loan, uint wad) public {
+        uint totalBalance = pile.Balance();
+        (, uint balance, ) = pile.loans(loan);
+        assertEq(balance, wad);
+
+        pile.withdraw(loan,wad,address(this));
+
+        assertEq(totalBalance-wad, pile.Balance());
+        (, uint newBalance, ) = pile.loans(loan);
+        assertEq(balance-wad, newBalance);
+
+        assertEq(tkn.transferFromCalls(), 1);
+        assertEq(tkn.dst(), address(pile));
+        assertEq(tkn.src(), address(this));
+        assertEq(tkn.wad(), wad);
+    }
+
+    function repay(uint loan, uint wad) public {
+        // pre state
+        (,, uint rate) = pile.loans(loan);
+        uint totalDebt = pile.Debt();
+
+        pile.repay(loan, wad);
+        debtRegister.setTotalDebtReturn(0);
+        debtRegister.setLoanDebtReturn(0);
+
+        // post state
+        (uint debt, uint balance, ) = pile.loans(loan);
+
+        assertEq(debtRegister.callsDrip(), 2);
+        assertEq(debtRegister.callsDecLoanDebt(), 1);
+
+        assertEq(totalDebt-wad, pile.Debt());
+        assertEq(debt,0);
+        assertEq(balance,0);
+
+        assertEq(tkn.transferFromCalls(),2);
+        assertEq(tkn.dst(),address(this));
+        assertEq(tkn.src(),address(pile));
+        assertEq(tkn.wad(),wad);
+    }
+
+    function testSimpleBorrow() public {
+        uint loan  = 1;
+        uint wad = 100;
+        title.setOwnerOfReturn(address(this));
+        borrow(loan, wad);
+    }
+
+    function testSimpleWithdraw() public {
+        uint loan  = 1;
+        uint wad = 100;
+        title.setOwnerOfReturn(address(this));
+        borrow(loan, wad);
+        withdraw(loan, wad);
+    }
+
+    function testSimpleRepay() public {
+        uint loan  = 1;
+        uint wad = 100;
+        title.setOwnerOfReturn(address(this));
+        borrow(loan, wad);
+        withdraw(loan, wad);
+        repay(loan, wad);
+    }
+
+    function testBorrowRepayWithRate() public {
+        uint rate = uint(1000000003593629043335673583); // 12 % per year
+        uint loan = 1;
+        uint principal = 100 ether;
+        pile.file(loan, rate, 0);
+        title.setOwnerOfReturn(address(this));
+
+        borrow(loan, principal);
+        withdraw(loan, principal);
+
+        // one year later -> 1,12 * 100
+        debtRegister.setBurdenReturn(112 ether);
+        debtRegister.setTotalDebtReturn(112 ether);
+        debtRegister.setLoanDebtReturn(112 ether);
+
+        uint debt = pile.getCurrentDebt(loan);
+        repay(loan, debt);
+    }
+
 
     function testSetupPrecondition() public {
+        tkn.setBalanceOfReturn(0);
+        assertEq(pile.want(),0);
         assertEq(shelf.bags(),0);
     }
 

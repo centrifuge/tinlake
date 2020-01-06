@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity >=0.4.24;
 
 import 'tinlake-registry/registry.sol';
 
@@ -83,7 +83,7 @@ contract Collector {
 
     function seize(uint loan) public {
         (uint debt,,) = pile.loans(loan); // TODO: call debt registry or similar
-        require((threshold.get(loan) >= debt), "threshold-not-reached");
+        require((threshold.get(loan) <= debt), "threshold-not-reached");
         shelf.claim(loan, address(this));
     }
 
