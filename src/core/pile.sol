@@ -100,18 +100,18 @@ contract Pile is DSNote, TitleOwned {
         return int(Balance) - int(tkn.balanceOf(address(this))); // safemath
     }
 
+/*
     function initLoan(uint loan, uint wad) internal {
         debtRegister.drip(loans_[loan].rate);
         debtRegister.incLoanDebt(loan, loans_[loan].rate, wad);
         loans_[loan].balance = add(loans_[loan].balance, wad);
         Balance = add(Balance, wad);
-    }
+    }/*
 
     // borrow() creates a debt by the borrower for the specified amount.
-    function borrow(uint loan, uint wad) public auth note {
+   /* function borrow(uint loan, uint wad) public auth note {
         initLoan(loan, wad);
     }
-
     // withdraw() moves token from the Pile to the user
     function withdraw(uint loan, uint wad, address usr) public owner(loan) note {
         require(wad <= loans_[loan].balance, "only max. balance can be withdrawn");
@@ -120,9 +120,8 @@ contract Pile is DSNote, TitleOwned {
         tkn.transferFrom(address(this), usr, wad);
     }
 
-    function balanceOf(uint loan) public view returns (uint) {
-        return loans_[loan].balance;
-    }
+
+
 
     function collect(uint loan) public {
         debtRegister.drip(loans_[loan].rate);
@@ -136,6 +135,7 @@ contract Pile is DSNote, TitleOwned {
         uint loss = debtRegister.debtOf(loan, loans_[loan].rate);
         debtRegister.decLoanDebt(loan, loans_[loan].rate, loss);
     }
+    */
 
     function doRepay(uint loan, address usr, uint wad) internal {
         collect(loan);
