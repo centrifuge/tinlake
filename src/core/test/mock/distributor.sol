@@ -15,26 +15,20 @@
 
 pragma solidity >=0.4.24;
 
-import './proxy.sol';
+contract DistributorMock {
 
-contract ProxyRegistry {
-    mapping(uint => Proxy) public proxies;
-    ProxyFactory factory;
+    // calls
+    uint public callsRepayTranches;
+    uint public callsBalance;
 
-    constructor(address factory_) public {
-        factory = ProxyFactory(factory_);
+    uint public wad;
+    address public tranche;
+
+    function balance() public {
+        callsBalance++;
     }
 
-    // deploys a new proxy instance
-    function build() public returns (address payable proxy) {
-        proxy = build(msg.sender);
-    }
-
-    // deploys a new proxy instance
-    // sets custom owner of proxy by creating an accessToken NFT
-    function build(address owner) public returns (address payable proxy) {
-        proxy = factory.build(owner);
-        uint accessToken = Proxy(proxy).accessToken();
-        proxies[accessToken] = Proxy(proxy);
+    function repayTranches(uint pileAmount) public {
+        callsRepayTranches++;
     }
 }

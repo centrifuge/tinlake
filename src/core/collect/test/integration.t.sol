@@ -20,7 +20,7 @@ import "ds-test/test.sol";
 
 import "../../test/mock/pile.sol";
 import "../../test/mock/shelf.sol";
-import "../../test/mock/desk.sol";
+import "../../test/mock/manager.sol";
 
 import "../../test/simple/nft.sol";
 
@@ -39,7 +39,7 @@ contract Shelf is ShelfMock {
 contract CollectorIntegrationTest is DSTest {
     PileMock pile;
     Shelf shelf;
-    DeskMock desk;
+    ManagerMock manager;
 
     SimpleNFT nft;
 
@@ -52,12 +52,12 @@ contract CollectorIntegrationTest is DSTest {
         //mock
         pile = new PileMock();
         shelf = new Shelf();
-        desk = new DeskMock();
+        manager = new ManagerMock();
 
         // collect contracts
         tag = new Tag(address(pile));
         spotter = new Spotter(address(shelf), address(pile));
-        collector = new Collector(address(spotter), address(tag), address(desk), address(pile));
+        collector = new Collector(address(spotter), address(tag), address(manager), address(pile));
 
         // auth
         spotter.rely(address(collector));
@@ -90,7 +90,7 @@ contract CollectorIntegrationTest is DSTest {
         assertEq(nft.ownerOf(tokenId), address(this));
 
         // check contract calls
-        assertEq(desk.callsBalance(), 1);
+        assertEq(manager.callsBalance(), 1);
         assertEq(pile.callsRecovery(), 1);
         assertEq(pile.wad(), debt);
         assertEq(pile.loan(), loan);

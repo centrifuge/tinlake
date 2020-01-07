@@ -26,7 +26,7 @@ contract DebtRegister is DSNote {
     function rely(address usr) public auth note { wards[usr] = 1; }
     function deny(address usr) public auth note { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
-    
+
     // --- Data ---
     // https://github.com/makerdao/dsr/blob/master/src/dsr.sol
     struct Rate {
@@ -58,7 +58,7 @@ contract DebtRegister is DSNote {
     }
 
     // --- Math ---
-    uint256 constant ONE = 10 ** 27;
+        uint256 constant ONE = 10 ** 27;
     function rpow(uint x, uint n, uint base) internal pure returns (uint z) {
         assembly {
             switch x case 0 {switch n case 0 {z := base} default {z := 0}}
@@ -140,7 +140,7 @@ contract DebtRegister is DSNote {
             (uint latestRateIndex, , uint wad) = compounding(rate);
             rates[rate].index = latestRateIndex;
             rates[rate].lastUpdated = uint48(now);
-            incTotalDebt(rate, wad);   
+            incTotalDebt(rate, wad);
         }
     }
 
@@ -155,7 +155,7 @@ contract DebtRegister is DSNote {
     function debtOf(uint loan, uint rate) public view returns(uint) {
         return calcDebt(rates[rate].index, debtBalance[loan]);
     }
-    
+
     function incTotalDebt(uint rate, uint wad) private {
         rates[rate].debt = add(rates[rate].debt, wad);
         totalDebt = add(totalDebt, wad);
