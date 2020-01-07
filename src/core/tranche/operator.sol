@@ -40,9 +40,6 @@ contract Operator is DSNote, DSMath {
     function deny(address usr) public auth note { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
 
-    bool public supplyActive;
-    bool public redeemActive;
-    
     // --- Data ---
     TokenLike public token;
     TokenLike public currency;
@@ -59,16 +56,8 @@ contract Operator is DSNote, DSMath {
         assessor = AssessorLike(assessor_);
 
         self = address(this);
-        
-        supplyActive = true;
-        redeemActive = true;
     }
 
-    function file(bytes32 what, bool data) public note auth {
-        if (what == "supply") { supplyActive = data; }
-        else if (what == "redeem") { redeemActive = data; }
-    }
-    
     function balance() public returns (uint) {
         return currency.balanceOf(self);
     }
@@ -78,35 +67,25 @@ contract Operator is DSNote, DSMath {
     }
 
     // -- Lender Side --
-    
     function supply(address usr, uint currencyAmount) public note auth {
-        require (supplyActive);
-        uint tokenAmount = getSlice(currencyAmount);
-        supplyTransfers(usr, tokenAmount, currencyAmount);
-    }
+        uint tokenAmount =rdiv(currencyAmount, getTokenPrice());
 
-    function supplyTransfers(address usr, uint tokenAmount, uint currencyAmount) internal {
         currency.transferFrom(usr, self, currencyAmount);
         token.mint(usr, tokenAmount);
     }
 
     function redeem(address usr, uint tokenAmount) public note auth {
-        require (redeemActive);
         uint slice = token.balanceOf(usr);
          if (slice < tokenAmount) {
             tokenAmount = slice;
         }
-        uint currencyAmount = getPayout(tokenAmount);
-        redeemTransfers(usr, tokenAmount, currencyAmount);
-    }
+        uint currencyAmount = rmul(tokenAmount, getTokenPrice());
 
-    function redeemTransfers(address usr, uint tokenAmount, uint currencyAmount) internal {
         token.transferFrom(usr, self, tokenAmount);
         token.burn(self, tokenAmount);
         currency.transferFrom(self, usr, currencyAmount);
     }
 
-    
     // -- Borrow Side --
     function repay(address usr, uint currencyAmount) public note auth {
         currency.transferFrom(usr, self, currencyAmount);
@@ -116,14 +95,6 @@ contract Operator is DSNote, DSMath {
         currency.transferFrom(self, usr, currencyAmount);
     }
 
-    // -- Slice & Payouts --
-    function getSlice(uint currencyAmount) internal returns (uint) {
-        return rdiv(currencyAmount, getTokenPrice());
-    }
-
-    function getPayout(uint tokenAmount) internal returns (uint) {
-        return rmul(tokenAmount, getTokenPrice());
-    }
 
     function getTokenPrice() internal returns (uint) {
         return rdiv(assessor.getAssetValue(), tokenSupply());
