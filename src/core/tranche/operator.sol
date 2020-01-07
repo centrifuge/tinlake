@@ -28,7 +28,7 @@ contract TokenLike{
 }
 
 contract AssessorLike {
-    function getAssetValueFor() public returns(uint);
+    function getAssetValue() public returns(uint);
 }
 
 // Operator
@@ -126,6 +126,6 @@ contract Operator is DSNote, DSMath {
     }
 
     function getTokenPrice() internal returns (uint) {
-        return rdiv(assessor.getAssetValueFor(), tokenSupply());
+        return rdiv(assessor.getAssetValue(), tokenSupply());
     }
 }

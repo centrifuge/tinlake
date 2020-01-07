@@ -13,45 +13,64 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 pragma solidity >=0.4.24;
+
+import "ds-note/note.sol";
 
 contract OperatorLike {
     function balance() public returns(uint);
     function debt() public returns(uint);
 }
 
-contract TrancheManagerLike {
-    function trancheCount() public returns(uint);
-    function isJunior(address) public returns(bool);
-    function poolValue() public returns(uint);
-    function indexOf(address) public returns(int);
-    function juniorOperator() public returns(address);
-    function seniorOperator() public returns(address);
+contract PileLike {
+    function Debt() public returns(uint);
 }
 
-contract Assessor {
-    // --- Data ---
-    TrancheManagerLike trancheManager; 
+contract Assessor is DSNote {
+    // --- Auth ---
+    mapping (address => uint) public wards;
+    function rely(address usr) public auth note { wards[usr] = 1; }
+    function deny(address usr) public auth note { wards[usr] = 0; }
+    modifier auth { require(wards[msg.sender] == 1); _; }
+
+    // --- Tranches ---
+    address public senior;
+    address public junior;
+
+    PileLike pile;
 
     // --- Assessor ---
     // computes the current asset value for tranches.
-    constructor(address trancheManager_) public {
-        trancheManager = TrancheManagerLike(trancheManager_);
+    constructor(address pile_) public {
+        wards[msg.sender] = 1;
+        pile = PileLike(pile_);
+
     }
 
-    function getAssetValueFor(address operator_) public returns (uint) {
-         OperatorLike operator = OperatorLike(operator_);
-         uint trancheDebt = operator.debt();
+    function trancheCount() public returns (uint) {
+        uint count = 0;
+        if (junior != address(0x0)) { count++; }
+        if (senior != address(0x0)) { count++; }
+        return count;
+    }
+
+    // --- Calls ---
+    function file(bytes32 what, address addr_) public auth {
+        if (what == "junior") { junior = addr_; }
+        else if (what == "senior") { senior = addr_; }
+        else revert();
+    }
+
+    function getAssetValue() public returns (uint) {
+         OperatorLike operator = OperatorLike(msg.sender);
          uint trancheReserve = operator.balance();
-         uint poolValue = trancheManager.poolValue();
-         if (trancheManager.isJunior(operator_)) {
-            uint seniorDebt = calcSeniorDebt(); 
-            return calcJuniorAssetValue(poolValue, trancheReserve, seniorDebt);
+         uint poolValue = pile.Debt();
+         if (msg.sender == junior) {
+            return calcJuniorAssetValue(poolValue, trancheReserve, calcSeniorDebt());
          }
 
          uint juniorReserve = calcJuniorReserve();
-         return calcSeniorAssetValue(poolValue, trancheReserve, trancheDebt, juniorReserve);   
+         return calcSeniorAssetValue(poolValue, trancheReserve, operator.debt(), juniorReserve);
     }
 
     // Tranche.assets (Junior) = (Pool.value + Tranche.reserve - Senior.debt) > 0 && (Pool.value - Tranche.reserve - Senior.debt) || 0
@@ -67,12 +86,12 @@ contract Assessor {
     }
 
     function calcJuniorReserve() internal returns (uint) {
-        uint juniorReserve =  (trancheManager.trancheCount() > 1) ? OperatorLike(trancheManager.juniorOperator()).balance() : 0;
+        uint juniorReserve =  (trancheCount() > 1) ? OperatorLike(junior).balance() : 0;
         return juniorReserve;
     }
 
     function calcSeniorDebt() internal returns (uint) {
-         uint seniorDebt =  (trancheManager.trancheCount() > 1) ? OperatorLike(trancheManager.seniorOperator()).debt() : 0;
+         uint seniorDebt =  (trancheCount() > 1) ? OperatorLike(senior).debt() : 0;
         return seniorDebt;
     }
 }
