@@ -19,9 +19,8 @@ import "ds-note/note.sol";
 
 contract PileLike {
     function want() public returns (int);
+    function Debt() public returns (uint);
 }
-
-contract OperatorLike {}
 
 contract DistributorLike {
     function balance() public;
@@ -43,8 +42,8 @@ contract TrancheManager is DSNote {
     PileLike public pile;
 
     // --- Tranches ---
-    OperatorLike public senior;
-    OperatorLike public junior;
+    address public senior;
+    address public junior;
 
     // denominated in RAD
     // ratio of the junior tranche in percent
@@ -82,8 +81,8 @@ contract TrancheManager is DSNote {
 
     // --- Calls ---
     function setTranche(bytes32 tranche, address operator_) public auth {
-        if (tranche == "junior") { junior = OperatorLike(operator_); }
-        else if (tranche == "senior") { senior = OperatorLike(operator_); }
+        if (tranche == "junior") { junior = operator_; }
+        else if (tranche == "senior") { senior = operator_; }
         else revert();
     }
 
@@ -93,6 +92,21 @@ contract TrancheManager is DSNote {
 
     uint public ActionBorrow = 1;
     uint public ActionRepay = 2;
+
+    function trancheCount() public returns (uint) {
+        uint count = 0;
+        if (junior != address(0x0)) { count++; }
+        if (senior != address(0x0)) { count++; }
+        return count;
+    }
+
+    function poolValue() public returns (uint) {
+        return pile.Debt();
+    }
+
+    function isJunior(address operator_) public returns (bool) {
+        return junior == operator_;
+    }
 
     function requestAction() public auth returns (uint, uint){
         int amount = pile.want();

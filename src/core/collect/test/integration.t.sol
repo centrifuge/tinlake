@@ -20,7 +20,7 @@ import "ds-test/test.sol";
 
 import "../../test/mock/pile.sol";
 import "../../test/mock/shelf.sol";
-import "../../test/mock/manager.sol";
+import "../../test/mock/trancheManager.sol";
 
 import "../../test/simple/nft.sol";
 
@@ -39,7 +39,7 @@ contract Shelf is ShelfMock {
 contract CollectorIntegrationTest is DSTest {
     PileMock pile;
     Shelf shelf;
-    ManagerMock manager;
+    TrancheManagerMock manager;
 
     SimpleNFT nft;
 
@@ -52,7 +52,7 @@ contract CollectorIntegrationTest is DSTest {
         //mock
         pile = new PileMock();
         shelf = new Shelf();
-        manager = new ManagerMock();
+        manager = new TrancheManagerMock();
 
         // collect contracts
         tag = new Tag(address(pile));
