@@ -19,7 +19,7 @@ import "ds-test/test.sol";
 
 import "../slicer.sol";
 import "../../test/mock/reserve.sol";
-import "../../test/mock/manager.sol";
+import "../../test/mock/assessor.sol";
 
 contract Hevm {
     function warp(uint256) public;
@@ -30,21 +30,20 @@ contract SlicerTest is DSTest {
     Slicer slicer;
     Hevm hevm;
     ReserveMock reserve;
-    ManagerMock manager;
+    AssessorMock assessor;
 
     function setUp() public {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
-        manager = new ManagerMock();
+        assessor = new AssessorMock();
         reserve = new ReserveMock();
-        slicer = new Slicer(address(manager), address(reserve));
+        slicer = new Slicer(address(assessor), address(reserve));
     }
 
     function testGetSlice() public {
         uint currencyAmount = 50;
         reserve.setTokenSupplyReturn(400);
-        manager.setAssetReturn(200);
-
+        assessor.setAssetReturn(200);
         uint slice = slicer.getSlice(currencyAmount);
 
         // 200 (total assets) / 400 (total token supply) = 0.5 (price / token) => 50 * 0.5 = 100 
@@ -54,7 +53,7 @@ contract SlicerTest is DSTest {
     function testGetPayout() public { 
         uint tokenAmount = 50; // 5 % per year
         reserve.setTokenSupplyReturn(400);
-        manager.setAssetReturn(200);
+        assessor.setAssetReturn(200);
 
         uint payout = slicer.getPayout(tokenAmount);
 
@@ -62,5 +61,4 @@ contract SlicerTest is DSTest {
         assertEq(payout, 25);
     }
 }
-
 
