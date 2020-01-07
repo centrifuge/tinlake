@@ -35,8 +35,8 @@ contract TraditionalDistributor is Distributor {
 
     function balance() public {
         if(manager.poolClosing() == true) {
-            uint give = currency.balanceOf(manager.pile());
-            repayTranches(give);
+            uint repayAmount = currency.balanceOf(manager.pile());
+            repayTranches(repayAmount);
             return;
         }
 

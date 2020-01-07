@@ -16,7 +16,6 @@
 pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
-import "../lightswitch.sol";
 
 contract PileLike {
     function want() public returns (int);
@@ -47,7 +46,7 @@ contract TrancheManager is DSNote {
     OperatorLike public senior;
     OperatorLike public junior;
 
-    // dominated in RAD
+    // denominated in RAD
     // ratio of the junior tranche in percent
     uint public juniorRatio;
 

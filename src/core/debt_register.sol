@@ -58,7 +58,7 @@ contract DebtRegister is DSNote {
     }
 
     // --- Math ---
-    uint256 constant ONE = 10 ** 27;
+        uint256 constant ONE = 10 ** 27;
     function rpow(uint x, uint n, uint base) internal pure returns (uint z) {
         assembly {
             switch x case 0 {switch n case 0 {z := base} default {z := 0}}

@@ -74,7 +74,6 @@ contract Distributor is DSNote {
 
         if (requestCurrency > 0) {
             requestCurrency = borrow(manager.senior(), requestCurrency);
-            return;
         }
 
         if (requestCurrency > 0) {
