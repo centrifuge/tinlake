@@ -44,17 +44,15 @@ contract SeniorOperator is Operator {
 
     function repay(address usr, uint currencyAmount) public note auth {
         super.repay(usr, currencyAmount);
-        updateDebt(int(currencyAmount) * -1);
+        drip();
+
+        debt = sub(debt, currencyAmount);
     }
 
     function borrow(address usr, uint currencyAmount) public note auth {
         super.borrow(usr, currencyAmount);
-        updateDebt(int(currencyAmount));
-    }
-
-    function updateDebt(int wad) public note auth  {
         drip();
-        debt = uint(int(debt) + int(wad));
+        debt = add(debt, currencyAmount);
     }
 
     function drip() internal {
