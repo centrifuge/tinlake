@@ -78,10 +78,6 @@ contract Operator is DSNote {
     function tokenSupply() public returns (uint) {
         return token.totalSupply();
     }
-    
-    function tokenBalanceOf(address usr) public returns (uint) {
-        return token.balanceOf(address(usr));
-    }
 
     // -- Lender Side --
     
@@ -98,7 +94,7 @@ contract Operator is DSNote {
 
     function redeem(address usr, uint tokenAmount) public note auth {
         require (redeemActive);
-        uint slice = tokenBalanceOf(usr); 
+        uint slice = token.balanceOf(usr);
          if (slice < tokenAmount) {
             tokenAmount = slice;
         }
