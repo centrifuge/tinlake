@@ -83,9 +83,9 @@ contract Distributor is DSNote {
 
     function borrow(address tranche, uint requestCurrency) internal returns(uint left) {
         OperatorLike tranche = OperatorLike(tranche);
-        uint maxBorrow = tranche.balance();
-        uint borrowAmount = maxBorrow;
-        if (maxBorrow >= requestCurrency) {
+
+        uint borrowAmount = tranche.balance();
+        if (borrowAmount >= requestCurrency) {
             borrowAmount = requestCurrency;
         }
 
