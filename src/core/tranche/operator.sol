@@ -16,11 +16,7 @@
 pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
-
-contract SlicerLike {
-   function getSlice(uint) public returns(uint);
-   function getPayout(uint) public returns(uint);
-}
+import "ds-math/math.sol";
 
 contract TokenLike{
     uint public totalSupply;
@@ -31,17 +27,18 @@ contract TokenLike{
     function burn(address, uint) public;
 }
 
+contract AssessorLike {
+    function getAssetValueFor() public returns(uint);
+}
+
 // Operator
 // Interface of a tranche. Coordinates investments and borrows to/from the tranche.
-contract Operator is DSNote {
+contract Operator is DSNote, DSMath {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth note { wards[usr] = 1; }
     function deny(address usr) public auth note { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
-
-    // --- Data ---
-    SlicerLike public slicer;
 
     bool public supplyActive;
     bool public redeemActive;
@@ -49,16 +46,17 @@ contract Operator is DSNote {
     // --- Data ---
     TokenLike public token;
     TokenLike public currency;
-    
-    
+
+    AssessorLike public assessor;
+
     address public self;
 
-    constructor(address slicer_, address token_, address currency_) public {
+    constructor(address token_, address currency_, address assessor_) public {
         wards[msg.sender] = 1;
-        slicer = SlicerLike(slicer_);
 
         token = TokenLike(token_);
         currency = TokenLike(currency_);
+        assessor = AssessorLike(assessor_);
 
         self = address(this);
         
@@ -83,7 +81,7 @@ contract Operator is DSNote {
     
     function supply(address usr, uint currencyAmount) public note auth {
         require (supplyActive);
-        uint tokenAmount = slicer.getSlice(currencyAmount);
+        uint tokenAmount = getSlice(currencyAmount);
         supplyTransfers(usr, tokenAmount, currencyAmount);
     }
 
@@ -98,7 +96,7 @@ contract Operator is DSNote {
          if (slice < tokenAmount) {
             tokenAmount = slice;
         }
-        uint currencyAmount = slicer.getPayout(tokenAmount);
+        uint currencyAmount = getPayout(tokenAmount);
         redeemTransfers(usr, tokenAmount, currencyAmount);
     }
 
@@ -116,5 +114,18 @@ contract Operator is DSNote {
 
     function borrow(address usr, uint currencyAmount) public note auth {
         currency.transferFrom(self, usr, currencyAmount);
+    }
+
+    // -- Slice & Payouts --
+    function getSlice(uint currencyAmount) internal returns (uint) {
+        return rdiv(currencyAmount, getTokenPrice());
+    }
+
+    function getPayout(uint tokenAmount) internal returns (uint) {
+        return rmul(tokenAmount, getTokenPrice());
+    }
+
+    function getTokenPrice() internal returns (uint) {
+        return rdiv(assessor.getAssetValueFor(), tokenSupply());
     }
 }
