@@ -26,19 +26,13 @@ contract ReserveLike{
     function borrow(address, uint) public;
 }
 
-contract QuantLike {
-   function updateDebt(int) public;
-   function updateBorrowRate() public;
-    uint public debt;
-}
-
 contract SlicerLike {
    function getSlice(uint) public returns(uint);
    function getPayout(uint) public returns(uint);
 }
 
 // Operator
-// Manages the reserve. Triggers supplyRate & borrowRate calculations.
+// Interface of a tranche. Coordinates investments and borrows to/from the tranche.
 contract Operator is DSNote {
     // --- Auth ---
     mapping (address => uint) public wards;
@@ -48,15 +42,13 @@ contract Operator is DSNote {
 
     // --- Data ---
     ReserveLike public reserve;
-    QuantLike public quant;
     SlicerLike public slicer;
 
     bool public supplyActive;
     bool public redeemActive;
 
-    constructor(address reserve_, address quant_, address slicer_) public {
+    constructor(address reserve_, address slicer_) public {
         wards[msg.sender] = 1;
-        quant = QuantLike(quant_);
         slicer = SlicerLike(slicer_);
         reserve = ReserveLike(reserve_);
         supplyActive = true;
@@ -72,15 +64,10 @@ contract Operator is DSNote {
         return reserve.balance();
     }
 
-    function debt() public returns (uint) {
-        return quant.debt();
-    }
-
     function supply(address usr, uint currencyAmount) public note auth {
         require (supplyActive);
         uint tokenAmount = slicer.getSlice(currencyAmount);
         reserve.supply(usr, tokenAmount, currencyAmount);
-        quant.updateBorrowRate();
     }
 
     function redeem(address usr, uint tokenAmount) public note auth {
@@ -91,18 +78,13 @@ contract Operator is DSNote {
         }
         uint currencyAmount = slicer.getPayout(tokenAmount);
         reserve.redeem(usr, tokenAmount, currencyAmount);
-        quant.updateBorrowRate();
     }
 
     function repay(address usr, uint currencyAmount) public note auth {
         reserve.repay(usr, currencyAmount);
-        quant.updateDebt(int(currencyAmount) * -1);
-        quant.updateBorrowRate();
     }
 
     function borrow(address usr, uint currencyAmount) public note auth {
         reserve.borrow(usr, currencyAmount);
-        quant.updateDebt(int(currencyAmount));
-        quant.updateBorrowRate();
     }
 }

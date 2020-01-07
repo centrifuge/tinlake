@@ -17,24 +17,26 @@ pragma solidity >=0.4.23;
 
 import "ds-test/test.sol";
 
-import "../operator.sol";
+import "../seniorOperator.sol";
 import "../../test/mock/reserve.sol";
 import "../../test/mock/slicer.sol";
-import "../../test/mock/quant.sol";
+
+contract Hevm {
+    function warp(uint256) public;
+}
 
 contract OperatorTest is DSTest {
-    Operator operator;
+    SeniorOperator operator;
     ReserveMock reserve;
     SlicerMock slicer;
-    QuantMock quant;
-
-    uint256 constant ONE = 10 ** 27;
+    Hevm hevm;
 
     function setUp() public {
         reserve = new ReserveMock();
-        quant = new QuantMock();
         slicer = new SlicerMock();
-        operator = new Operator(address(reserve), address(quant), address(slicer));
+        operator = new SeniorOperator(address(reserve), address(slicer));
+        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm.warp(1234567);
     }
 
 
@@ -50,7 +52,6 @@ contract OperatorTest is DSTest {
         assertEq(reserve.usr(), address(this));
         assertEq(reserve.currencyAmount(), currencyAmount);
         assertEq(reserve.tokenAmount(), tokenAmount);
-        assertEq(quant.callsUpdateBorrowRate(), 1);
     }
 
     function redeem(uint tokenAmount, uint usrSlice, uint redeemTokenAmount) internal {
@@ -65,33 +66,23 @@ contract OperatorTest is DSTest {
         assertEq(reserve.usr(), address(this));
         assertEq(reserve.currencyAmount(), currencyAmount);
         assertEq(reserve.tokenAmount(), redeemTokenAmount);
-        assertEq(quant.callsUpdateBorrowRate(), 1);
     }
 
-    function repay() internal {
-        uint currencyAmount = 200 ether;
-
+    function repay(uint currencyAmount) internal { 
         operator.repay(address(this), currencyAmount);
-
         assertEq(reserve.callsRepay(), 1);
         assertEq(reserve.usr(), address(this));
         assertEq(reserve.currencyAmount(), currencyAmount);
-        assertEq(quant.callsUpdateDebt(), 1);
-        assertEq(quant.loanAmount(), (-1 * int(currencyAmount)));
-        assertEq(quant.callsUpdateBorrowRate(), 1);
+        assertEq(operator.debt(), 0);
     }
 
-    function borrow() internal {
-        uint currencyAmount = 200 ether;
-
+    function borrow(uint currencyAmount) internal {
         operator.borrow(address(this), currencyAmount);
 
         assertEq(reserve.callsBorrow(), 1);
         assertEq(reserve.usr(), address(this));
         assertEq(reserve.currencyAmount(), currencyAmount);
-        assertEq(quant.callsUpdateDebt(), 1);
-        assertEq(quant.loanAmount(), int(currencyAmount));
-        assertEq(quant.callsUpdateBorrowRate(), 1);
+        assertEq(operator.debt(), currencyAmount);
     }
 
     function testDeactivateSupply() public {
@@ -134,11 +125,64 @@ contract OperatorTest is DSTest {
         redeem(tokenAmount, usrSlice, tokenAmount);
     }
 
-    function testRepay() public {
-        repay();
+    function testBorrow() public {
+        borrow(200 ether);
     }
 
-    function testBorrow() public {
-        borrow();
+    function testBorrowAndRepay() public {
+        uint borrowRate = uint(1000000003593629043335673583);
+        operator.file( "borrowrate", borrowRate);
+        borrow(66 ether);
+        hevm.warp(now + 365 days);
+        repay(73.92 ether);
+    }
+
+    function testFileBorrowRate() public {
+        uint borrowRate = uint(1000000003593629043335673583);
+        operator.file( "borrowrate", borrowRate);
+        (, uint actual, ) = operator.borrowRate();
+        assertEq(borrowRate, actual);
+    }
+  
+    // --- Math ---
+    uint256 constant ONE = 10 ** 27;
+    function rpow(uint x, uint n, uint base) internal pure returns (uint z) {
+        assembly {
+            switch x case 0 {switch n case 0 {z := base} default {z := 0}}
+            default {
+                switch mod(n, 2) case 0 { z := base } default { z := x }
+                let half := div(base, 2)  // for rounding.
+                for { n := div(n, 2) } n { n := div(n,2) } {
+                let xx := mul(x, x)
+                if iszero(eq(div(xx, x), x)) { revert(0,0) }
+                let xxRound := add(xx, half)
+                if lt(xxRound, xx) { revert(0,0) }
+                x := div(xxRound, base)
+                if mod(n,2) {
+                    let zx := mul(z, x)
+                    if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0,0) }
+                    let zxRound := add(zx, half)
+                    if lt(zxRound, zx) { revert(0,0) }
+                    z := div(zxRound, base)
+                }
+            }
+            }
+        }
+    }
+
+    function rmul(uint x, uint y) internal pure returns (uint z) {
+        z = mul(x, y) / ONE;
+    }
+
+    function add(uint x, uint y) internal pure returns (uint z) {
+        require((z = x + y) >= x);
+    }
+
+    function sub(uint x, uint y) internal pure returns (uint z) {
+        require((z = x - y) <= x);
+    }
+
+    function mul(uint x, uint y) internal pure returns (uint z) {
+        require(y == 0 || (z = x * y) / y == x);
     }
 }

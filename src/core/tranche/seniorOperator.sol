@@ -15,23 +15,11 @@
 
 pragma solidity >=0.4.24;
 
-import "ds-note/note.sol";
+import "./operator.sol";
 
-contract ReserveLike {
-   function balance() public returns(uint);
-}
-
-// Quant
-// Keeps track of the tranche debt / expected tranche returns. Manages borrowRate & its calculation.
-contract Quant is DSNote {
-    // --- Auth ---
-    mapping (address => uint) public wards;
-    function rely(address usr) public auth note { wards[usr] = 1; }
-    function deny(address usr) public auth note { wards[usr] = 0; }
-    modifier auth { require(wards[msg.sender] == 1); _; }
-
-    // --- Data ---
-    ReserveLike public reserve;
+// SeniorOperator
+// Interface to the senior tranche. keeps track of the current debt towards the tranche. 
+contract SeniorOperator is Operator {
 
     struct Rate {
         uint index;
@@ -41,15 +29,10 @@ contract Quant is DSNote {
     
     Rate public borrowRate;
     uint public debt;
-    uint public supplyRate;
-    bool public supplyRateFixed;
-    
-    constructor(address reserve_) public {
-        reserve = ReserveLike(reserve_);
-        wards[msg.sender] = 1;
+
+    constructor(address reserve_, address slicer_) Operator(reserve_, slicer_) public {
         borrowRate.index = ONE;
         borrowRate.speed = ONE;
-        supplyRate = ONE;
     }
 
     function file(bytes32 what, uint speed_) public note auth {
@@ -57,28 +40,16 @@ contract Quant is DSNote {
             drip();
             borrowRate.speed = speed_;
         }
-        else if (what ==  "supplyrate") {
-            drip();
-            supplyRate = speed_;
-        }
     }
 
-    function file(bytes32 what, bool data) public note auth {
-         if (what ==  "fixedsupplyrate") {
-             supplyRateFixed = data;
-        }
+    function repay(address usr, uint currencyAmount) public note auth {
+        super.repay(usr, currencyAmount);
+        updateDebt(int(currencyAmount) * -1);
     }
 
-    function updateBorrowRate() public note auth {
-        if (supplyRateFixed && supplyRate > 0) {
-            if (now >= borrowRate.lastUpdated) {
-                drip();
-            }
-            uint balance = reserve.balance();
-            uint supplyRate_ = sub(supplyRate, ONE);
-            uint ratio = rdiv(add(balance, debt), debt); 
-            borrowRate.speed = add(rmul(ratio, supplyRate_), ONE);
-        }
+    function borrow(address usr, uint currencyAmount) public note auth {
+        super.borrow(usr, currencyAmount);
+        updateDebt(int(currencyAmount));
     }
 
     function updateDebt(int wad) public note auth  {
