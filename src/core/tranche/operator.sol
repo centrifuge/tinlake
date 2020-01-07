@@ -17,18 +17,18 @@ pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
 
-contract ReserveLike{
-    function balance() public view returns (uint);
-    function tokenBalanceOf(address) public view returns (uint);
-    function redeem(address, uint, uint) public;
-    function supply(address, uint, uint) public;
-    function repay(address, uint) public;
-    function borrow(address, uint) public;
-}
-
 contract SlicerLike {
    function getSlice(uint) public returns(uint);
    function getPayout(uint) public returns(uint);
+}
+
+contract TokenLike{
+    uint public totalSupply;
+    function balanceOf(address) public view returns (uint);
+    function transferFrom(address,address,uint) public;
+    function approve(address, uint) public;
+    function mint(address, uint) public;
+    function burn(address, uint) public;
 }
 
 // Operator
@@ -41,16 +41,27 @@ contract Operator is DSNote {
     modifier auth { require(wards[msg.sender] == 1); _; }
 
     // --- Data ---
-    ReserveLike public reserve;
     SlicerLike public slicer;
 
     bool public supplyActive;
     bool public redeemActive;
+    
+    // --- Data ---
+    TokenLike public token;
+    TokenLike public currency;
+    
+    
+    address public self;
 
-    constructor(address reserve_, address slicer_) public {
+    constructor(address slicer_, address token_, address currency_) public {
         wards[msg.sender] = 1;
         slicer = SlicerLike(slicer_);
-        reserve = ReserveLike(reserve_);
+
+        token = TokenLike(token_);
+        currency = TokenLike(currency_);
+
+        self = address(this);
+        
         supplyActive = true;
         redeemActive = true;
     }
@@ -61,30 +72,53 @@ contract Operator is DSNote {
     }
     
     function balance() public returns (uint) {
-        return reserve.balance();
+        return currency.balanceOf(self);
     }
 
+    function tokenSupply() public returns (uint) {
+        return token.totalSupply();
+    }
+    
+    function tokenBalanceOf(address usr) public returns (uint) {
+        return token.balanceOf(address(usr));
+    }
+
+    // -- Lender Side --
+    
     function supply(address usr, uint currencyAmount) public note auth {
         require (supplyActive);
         uint tokenAmount = slicer.getSlice(currencyAmount);
-        reserve.supply(usr, tokenAmount, currencyAmount);
+        supplyTransfers(usr, tokenAmount, currencyAmount);
+    }
+
+    function supplyTransfers(address usr, uint tokenAmount, uint currencyAmount) internal {
+        currency.transferFrom(usr, self, currencyAmount);
+        token.mint(usr, tokenAmount);
     }
 
     function redeem(address usr, uint tokenAmount) public note auth {
         require (redeemActive);
-        uint slice = reserve.tokenBalanceOf(usr); 
+        uint slice = tokenBalanceOf(usr); 
          if (slice < tokenAmount) {
             tokenAmount = slice;
         }
         uint currencyAmount = slicer.getPayout(tokenAmount);
-        reserve.redeem(usr, tokenAmount, currencyAmount);
+        redeemTransfers(usr, tokenAmount, currencyAmount);
     }
 
+    function redeemTransfers(address usr, uint tokenAmount, uint currencyAmount) internal {
+        token.transferFrom(usr, self, tokenAmount);
+        token.burn(self, tokenAmount);
+        currency.transferFrom(self, usr, currencyAmount);
+    }
+
+    
+    // -- Borrow Side --
     function repay(address usr, uint currencyAmount) public note auth {
-        reserve.repay(usr, currencyAmount);
+        currency.transferFrom(usr, self, currencyAmount);
     }
 
     function borrow(address usr, uint currencyAmount) public note auth {
-        reserve.borrow(usr, currencyAmount);
+        currency.transferFrom(self, usr, currencyAmount);
     }
 }

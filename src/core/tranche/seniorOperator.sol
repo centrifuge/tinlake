@@ -30,7 +30,7 @@ contract SeniorOperator is Operator {
     Rate public borrowRate;
     uint public debt;
 
-    constructor(address reserve_, address slicer_) Operator(reserve_, slicer_) public {
+    constructor(address slicer_, address token_, address currency_) Operator(slicer_, token_ ,currency_) public {
         borrowRate.index = ONE;
         borrowRate.speed = ONE;
     }
