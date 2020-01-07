@@ -1,4 +1,4 @@
-// Copyright (C) 2019 lucasvo
+// Copyright (C) 2019 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -59,7 +59,7 @@ contract OperatorTest is DSTest {
 
         reserve.setTokenBalanceReturn(usrSlice);
         slicer.setPayoutReturn(currencyAmount);
-        
+
         operator.redeem(address(this), tokenAmount);
         assertEq(slicer.callsGetPayout(), 1);
         assertEq(reserve.callsRedeem(), 1);
@@ -78,7 +78,7 @@ contract OperatorTest is DSTest {
 
     function borrow(uint currencyAmount) internal {
         operator.borrow(address(this), currencyAmount);
-        
+
         assertEq(reserve.callsBorrow(), 1);
         assertEq(reserve.usr(), address(this));
         assertEq(reserve.currencyAmount(), currencyAmount);
@@ -112,7 +112,7 @@ contract OperatorTest is DSTest {
         redeem(tokenAmount, usrSlice, tokenAmount);
     }
 
-    function testRedeemMax() public {        
+    function testRedeemMax() public {
         uint tokenAmount = 200;
         uint usrSlice = 150;
         redeem(tokenAmount, usrSlice, usrSlice);

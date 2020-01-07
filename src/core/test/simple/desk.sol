@@ -9,13 +9,6 @@ contract PileLike {
     function want() public returns (int);
 }
 
-contract DeskFab {
-    function deploy(address pile_, address token_) public returns (address) {
-        Desk desk = new Desk(pile_, token_);
-        return address(desk);
-    }
-}
-
 contract Desk {
 
     // --- Data ---
@@ -32,7 +25,6 @@ contract Desk {
         int wad = pile.want();
         if (wad > 0) {
             give(address(pile), uint(wad));
-
         } else {
             take(address(pile), uint(wad*-1));
         }
