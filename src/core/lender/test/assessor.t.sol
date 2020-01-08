@@ -1,33 +1,33 @@
-//// Copyright (C) 2019  Centrifuge
+// Copyright (C) 2019  Centrifuge
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-//// This program is free software: you can redistribute it and/or modify
-//// it under the terms of the GNU Affero General Public License as published by
-//// the Free Software Foundation, either version 3 of the License, or
-//// (at your option) any later version.
-////
-//// This program is distributed in the hope that it will be useful,
-//// but WITHOUT ANY WARRANTY; without even the implied warranty of
-//// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//// GNU Affero General Public License for more details.
-////
-//// You should have received a copy of the GNU Affero General Public License
-//// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-//pragma solidity >=0.4.23;
-//
-//import "ds-test/test.sol";
-//
-//import "../assessor.sol";
-//import "../../test/mock/trancheManager.sol";
-//import "../../test/mock/operator.sol";
-//
-//contract AssessorTest is DSTest {
-//
-//    Assessor assessor;
-//    TrancheManagerMock trancheManager;
-//    OperatorMock seniorOperator = new OperatorMock();
-//    OperatorMock juniorOperator = new OperatorMock();
-//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+pragma solidity >=0.4.23;
+
+import "ds-test/test.sol";
+
+import "../assessor.sol";
+import "../../test/mock/trancheManager.sol";
+import "./mock/tranche.sol";
+
+contract AssessorTest is DSTest {
+
+    Assessor assessor;
+    TrancheManagerMock trancheManager;
+    TrancheMock seniorTranche = new TrancheMock();
+    TrancheMock juniorTranche = new TrancheMock();
+
 //    function setUp() public {
 //        trancheManager = new TrancheManagerMock();
 //        assessor = new Assessor(address(trancheManager));
@@ -99,4 +99,4 @@
 //        uint assetValue = getAssetValueFor(address(juniorOperator), seniorTrancheDebt, seniorTrancheReserve, juniorTrancheDebt, juniorTrancheReserve, poolValue);
 //        assertEq(assetValue, 0);
 //    }
-//}
+}
