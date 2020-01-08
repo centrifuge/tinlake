@@ -18,7 +18,7 @@ pragma solidity >=0.4.23;
 import "ds-test/test.sol";
 
 import "./mock/tranche.sol";
-import "../../test/mock/distributor.sol";
+import "./mock/distributor.sol";
 import "../../test/mock/pile.sol";
 import "../manager.sol";
 
