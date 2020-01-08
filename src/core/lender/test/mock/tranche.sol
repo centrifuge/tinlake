@@ -15,7 +15,7 @@
 
 pragma solidity >=0.4.24;
 
-contract OperatorMock {
+contract TrancheMock {
 
     uint public callsBalance;
     uint public callsBorrow;
