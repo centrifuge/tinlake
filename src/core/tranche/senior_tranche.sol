@@ -53,14 +53,15 @@ contract SeniorTranche is Tranche {
 
     function repay(address usr, uint currencyAmount) public note auth {
         drip();
-        super.repay(usr, currencyAmount);
         pie = sub(pie, toPie(currencyAmount));
+        super.repay(usr, currencyAmount);
+
     }
 
     function borrow(address usr, uint currencyAmount) public note auth {
         drip();
-        super.borrow(usr, currencyAmount);
         pie = add(pie, toPie(currencyAmount));
+        super.borrow(usr, currencyAmount);
     }
 
     function drip() internal {
