@@ -28,7 +28,7 @@ contract TokenLike{
 }
 
 contract AssessorLike {
-    function getAssetValue() public returns(uint);
+    function calcTokenPrice() public returns(uint);
 }
 
 // Tranche
@@ -68,7 +68,7 @@ contract Tranche is DSNote, DSMath {
 
     // -- Lender Side --
     function supply(address usr, uint currencyAmount) public note auth {
-        uint tokenAmount = rdiv(currencyAmount, getTokenPrice());
+        uint tokenAmount = rdiv(currencyAmount, assessor.calcTokenPrice());
 
         currency.transferFrom(usr, self, currencyAmount);
         token.mint(usr, tokenAmount);
@@ -79,7 +79,7 @@ contract Tranche is DSNote, DSMath {
          if (slice < tokenAmount) {
             tokenAmount = slice;
         }
-        uint currencyAmount = rmul(tokenAmount, getTokenPrice());
+        uint currencyAmount = rmul(tokenAmount, assessor.calcTokenPrice());
 
         token.transferFrom(usr, self, tokenAmount);
         token.burn(self, tokenAmount);
@@ -95,7 +95,4 @@ contract Tranche is DSNote, DSMath {
         currency.transferFrom(self, usr, currencyAmount);
     }
 
-    function getTokenPrice() internal returns (uint) {
-        return rdiv(assessor.getAssetValue(), tokenSupply());
-    }
 }
