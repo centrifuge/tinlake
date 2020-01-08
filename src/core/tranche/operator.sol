@@ -68,7 +68,7 @@ contract Operator is DSNote, DSMath {
 
     // -- Lender Side --
     function supply(address usr, uint currencyAmount) public note auth {
-        uint tokenAmount =rdiv(currencyAmount, getTokenPrice());
+        uint tokenAmount = rdiv(currencyAmount, getTokenPrice());
 
         currency.transferFrom(usr, self, currencyAmount);
         token.mint(usr, tokenAmount);
@@ -94,7 +94,6 @@ contract Operator is DSNote, DSMath {
     function borrow(address usr, uint currencyAmount) public note auth {
         currency.transferFrom(self, usr, currencyAmount);
     }
-
 
     function getTokenPrice() internal returns (uint) {
         return rdiv(assessor.getAssetValue(), tokenSupply());
