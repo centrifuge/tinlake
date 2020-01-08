@@ -31,9 +31,9 @@ contract AssessorLike {
     function getAssetValue() public returns(uint);
 }
 
-// Operator
+// Tranche
 // Interface of a tranche. Coordinates investments and borrows to/from the tranche.
-contract Operator is DSNote, DSMath {
+contract Tranche is DSNote, DSMath {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth note { wards[usr] = 1; }
