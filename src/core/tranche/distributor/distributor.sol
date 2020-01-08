@@ -57,60 +57,67 @@ contract Distributor is DSNote {
     }
 
     function balance() public {
-        (uint action, uint amount) = manager.requestAction();
+        (uint action, uint currencyAmount) = manager.requestAction();
 
         if (action == manager.ActionBorrow()) {
-            borrowTranches(amount);
+            borrowTranches(currencyAmount);
         }
 
         if (action == manager.ActionRepay()) {
-            repayTranches(amount);
+            repayTranches(currencyAmount);
         }
     }
 
     // -- Borrow Tranches ---
-    function borrowTranches(uint requestCurrency) internal  {
-        requestCurrency = borrow(manager.junior(), requestCurrency);
+    function borrowTranches(uint currencyAmount) internal  {
+        currencyAmount = currencyAmount - borrow(manager.junior(), currencyAmount);
 
-        if (requestCurrency > 0) {
-            requestCurrency = borrow(manager.senior(), requestCurrency);
+        if (currencyAmount > 0) {
+            currencyAmount = currencyAmount - borrow(manager.senior(), currencyAmount);
         }
 
-        if (requestCurrency > 0) {
+        if (currencyAmount > 0) {
             revert("requested currency amount too high");
         }
     }
 
-    function borrow(address tranche, uint requestCurrency) internal returns(uint left) {
+    function borrow(address tranche, uint currencyAmount) internal returns(uint) {
         OperatorLike tranche = OperatorLike(tranche);
 
-        uint borrowAmount = tranche.balance();
-        if (borrowAmount >= requestCurrency) {
-            borrowAmount = requestCurrency;
+        uint available = tranche.balance();
+        if (currencyAmount > available) {
+            currencyAmount = available;
         }
 
-        tranche.borrow(address(manager.pile()), borrowAmount);
-        return requestCurrency - borrowAmount;
+        tranche.borrow(address(manager.pile()), currencyAmount);
+        return currencyAmount;
     }
 
-    // -- Repay Tranches ---
-    function repayTranches(uint availableCurrency) public auth {
-        availableCurrency = repay(manager.senior(), availableCurrency);
+    //  method      repayTranches
+    //  available   total available currency for repaying the tranches
+    function repayTranches(uint available) public auth {
+        available = available - repay(manager.senior(), available);
 
-        if (availableCurrency > 0) {
+        if (available > 0) {
             // junior gets the rest
-            OperatorLike(manager.junior()).repay(manager.pile(), availableCurrency);
+            OperatorLike(manager.junior()).repay(manager.pile(), available);
         }
     }
 
-    function repay(address tranche, uint availableCurrency) internal returns(uint left) {
+
+    /// repays the debt of a single tranche if enough currency is available
+    /// @param `tranche` address of the tranche contract
+    /// @param `available` total available currency to repay a tranche
+    /// @return repaid currencyAmount
+    /// @dev `available` and `currencyAmount` denominated in WAD (10^18)
+    function repay(address tranche, uint available) internal returns(uint) {
         OperatorLike tranche = OperatorLike(tranche);
-        uint repayAmount = tranche.debt();
-        if (availableCurrency < tranche.debt()) {
-            repayAmount = availableCurrency;
+        uint currencyAmount = tranche.debt();
+        if (available < currencyAmount) {
+            currencyAmount = available;
         }
 
-        tranche.repay(address(manager.pile()), repayAmount);
-        return availableCurrency - repayAmount;
+        tranche.repay(address(manager.pile()), currencyAmount);
+        return currencyAmount;
     }
 }
