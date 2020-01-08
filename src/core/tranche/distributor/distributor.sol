@@ -57,40 +57,40 @@ contract Distributor is DSNote {
     }
 
     function balance() public {
-        (uint action, uint amount) = manager.requestAction();
+        (uint action, uint currencyAmount) = manager.requestAction();
 
         if (action == manager.ActionBorrow()) {
-            borrowTranches(amount);
+            borrowTranches(currencyAmount);
         }
 
         if (action == manager.ActionRepay()) {
-            repayTranches(amount);
+            repayTranches(currencyAmount);
         }
     }
 
     // -- Borrow Tranches ---
-    function borrowTranches(uint amount) internal  {
-        amount = amount - borrow(manager.junior(), amount);
+    function borrowTranches(uint currencyAmount) internal  {
+        currencyAmount = currencyAmount - borrow(manager.junior(), currencyAmount);
 
-        if (amount > 0) {
-            amount = amount - borrow(manager.senior(), amount);
+        if (currencyAmount > 0) {
+            currencyAmount = currencyAmount - borrow(manager.senior(), currencyAmount);
         }
 
-        if (amount > 0) {
+        if (currencyAmount > 0) {
             revert("requested currency amount too high");
         }
     }
 
-    function borrow(address tranche, uint amount) internal returns(uint) {
+    function borrow(address tranche, uint currencyAmount) internal returns(uint) {
         OperatorLike tranche = OperatorLike(tranche);
 
         uint available = tranche.balance();
-        if (amount > available) {
-            amount = available;
+        if (currencyAmount > available) {
+            currencyAmount = available;
         }
 
-        tranche.borrow(address(manager.pile()), amount);
-        return amount;
+        tranche.borrow(address(manager.pile()), currencyAmount);
+        return currencyAmount;
     }
 
     //  method      repayTranches
@@ -108,16 +108,16 @@ contract Distributor is DSNote {
     /// repays the debt of a single tranche if enough currency is available
     /// @param `tranche` address of the tranche contract
     /// @param `available` total available currency to repay a tranche
-    /// @return repaid amount
-    /// @dev `available` and `amount` denominated in WAD (10^18)
+    /// @return repaid currencyAmount
+    /// @dev `available` and `currencyAmount` denominated in WAD (10^18)
     function repay(address tranche, uint available) internal returns(uint) {
         OperatorLike tranche = OperatorLike(tranche);
-        uint amount = tranche.debt();
-        if (available < amount) {
-            amount = available;
+        uint currencyAmount = tranche.debt();
+        if (available < currencyAmount) {
+            currencyAmount = available;
         }
 
-        tranche.repay(address(manager.pile()), amount);
-        return amount;
+        tranche.repay(address(manager.pile()), currencyAmount);
+        return currencyAmount;
     }
 }
