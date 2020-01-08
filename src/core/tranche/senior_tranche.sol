@@ -21,11 +21,11 @@ import "./tranche.sol";
 // Interface to the senior tranche. keeps track of the current debt towards the tranche. 
 contract SeniorTranche is Tranche {
     
-    uint internal chi;           // accumulated interest over time
-    uint public ratePerSecond; // interest rate per second in RAD (10^27)
-    uint public lastUpdated; // Last time the accumlated rate has been updated
+    uint internal chi;              // accumulated interest over time
+    uint public ratePerSecond;      // interest rate per second in RAD (10^27)
+    uint public lastUpdated;        // Last time the accumlated rate has been updated
 
-    uint internal pie;    // denominated as debt/chi. denominated in RAD (10^27)
+    uint internal pie;              // denominated as debt/chi. denominated in RAD (10^27)
 
     uint256 constant ONE = 10 ** 27;
 
