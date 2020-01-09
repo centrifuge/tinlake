@@ -27,7 +27,6 @@ contract TokenLike{
     function burn(address, uint) public;
 }
 
-
 // Tranche
 // Interface of a tranche. Coordinates investments and borrows to/from the tranche.
 contract Tranche is DSNote, DSMath {
@@ -86,5 +85,4 @@ contract Tranche is DSNote, DSMath {
     function borrow(address usr, uint currencyAmount) public note auth {
         currency.transferFrom(self, usr, currencyAmount);
     }
-
 }
