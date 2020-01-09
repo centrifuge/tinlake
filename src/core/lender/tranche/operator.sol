@@ -38,7 +38,7 @@ contract Operator is DSNote,DSMath {
     // -- Users --
     function addUser(address usr) public auth note { wards[usr] = 2; }
     function denyUser(address usr) public auth note { wards[usr] = 0; }
-    modifier onlyUsers { require(wards[msg.sender] == 2); _; }
+    modifier auth_external { require(wards[msg.sender] != 0); _; }
 
     TrancheLike public tranche;
     AssessorLike public assessor;
@@ -55,12 +55,12 @@ contract Operator is DSNote,DSMath {
         else revert();
     }
 
-    function supply(uint currencyAmount) public onlyUsers {
+    function supply(uint currencyAmount) public auth_external {
         tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, assessor.calcTokenPrice()));
 
     }
 
-    function redeem(uint tokenAmount) public onlyUsers {
+    function redeem(uint tokenAmount) public auth_external {
         tranche.redeem(msg.sender, rmul(tokenAmount, assessor.calcTokenPrice()), tokenAmount);
     }
 }
