@@ -20,8 +20,6 @@ import "ds-math/math.sol";
 
 import "../senior_tranche.sol";
 import "../../../test/simple/token.sol";
-import "../../test/mock/assessor.sol";
-
 
 contract Hevm {
     function warp(uint256) public;
@@ -32,7 +30,6 @@ contract SeniorTrancheTest is DSTest, DSMath {
     address senior_;
     SimpleToken token;
     SimpleToken currency;
-    AssessorMock assessor;
 
     Hevm hevm;
 
@@ -42,9 +39,8 @@ contract SeniorTrancheTest is DSTest, DSMath {
         // Simple ERC20
         token = new SimpleToken("TIN", "Tranche", "1", 0);
         currency = new SimpleToken("CUR", "Currency", "1", 0);
-        assessor = new AssessorMock();
 
-        senior = new SeniorTranche(address(token), address(currency), address(assessor));
+        senior = new SeniorTranche(address(token), address(currency));
         senior_ = address(senior);
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);

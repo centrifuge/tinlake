@@ -27,9 +27,6 @@ contract TokenLike{
     function burn(address, uint) public;
 }
 
-contract AssessorLike {
-    function calcTokenPrice() public returns(uint);
-}
 
 // Tranche
 // Interface of a tranche. Coordinates investments and borrows to/from the tranche.
@@ -41,21 +38,24 @@ contract Tranche is DSNote, DSMath {
     modifier auth { require(wards[msg.sender] == 1); _; }
 
     // --- Data ---
-    TokenLike public token;
     TokenLike public currency;
-
-    AssessorLike public assessor;
+    TokenLike public token;
 
     address public self;
 
-    constructor(address token_, address currency_, address assessor_) public {
+    constructor(address token_, address currency_) public {
         wards[msg.sender] = 1;
 
         token = TokenLike(token_);
         currency = TokenLike(currency_);
-        assessor = AssessorLike(assessor_);
 
         self = address(this);
+    }
+
+    function depend(bytes32 what, address addr) public auth {
+        if (what == "currency") { currency = TokenLike(addr); }
+        else if (what == "token") { token = TokenLike(addr); }
+        else revert();
     }
 
     function balance() public returns (uint) {
@@ -67,20 +67,12 @@ contract Tranche is DSNote, DSMath {
     }
 
     // -- Lender Side --
-    function supply(address usr, uint currencyAmount) public note auth {
-        uint tokenAmount = rdiv(currencyAmount, assessor.calcTokenPrice());
-
+    function supply(address usr, uint currencyAmount, uint tokenAmount) public note auth {
         currency.transferFrom(usr, self, currencyAmount);
         token.mint(usr, tokenAmount);
     }
 
-    function redeem(address usr, uint tokenAmount) public note auth {
-        uint slice = token.balanceOf(usr);
-         if (slice < tokenAmount) {
-            tokenAmount = slice;
-        }
-        uint currencyAmount = rmul(tokenAmount, assessor.calcTokenPrice());
-
+    function redeem(address usr, uint currencyAmount, uint tokenAmount) public note auth {
         token.transferFrom(usr, self, tokenAmount);
         token.burn(self, tokenAmount);
         currency.transferFrom(self, usr, currencyAmount);

@@ -38,7 +38,7 @@ contract SeniorTranche is Tranche {
         return rdiv(amount, chi);
     }
 
-    constructor(address token_, address currency_, address assessor_) Tranche(token_ ,currency_, assessor_) public {
+    constructor(address token_, address currency_) Tranche(token_ ,currency_) public {
         chi = ONE;
         ratePerSecond = ONE;
         lastUpdated = now;
