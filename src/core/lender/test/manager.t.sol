@@ -17,22 +17,22 @@ pragma solidity >=0.4.23;
 
 import "ds-test/test.sol";
 
-import "../../test/mock/operator.sol";
-import "../../test/mock/distributor.sol";
+import "./mock/tranche.sol";
+import "./mock/distributor.sol";
 import "../../test/mock/pile.sol";
 import "../manager.sol";
 
 contract TrancheManagerTest is DSTest {
 
-    OperatorMock senior;
-    OperatorMock junior;
+    TrancheMock senior;
+    TrancheMock junior;
     DistributorMock distributor;
     PileMock pile;
     TrancheManager manager;
 
     function setUp() public {
-        senior = new OperatorMock();
-        junior = new OperatorMock();
+        senior = new TrancheMock();
+        junior = new TrancheMock();
         distributor = new DistributorMock();
         pile = new PileMock();
         manager = new TrancheManager(address(pile));

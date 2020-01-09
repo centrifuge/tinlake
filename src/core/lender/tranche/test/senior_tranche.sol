@@ -19,7 +19,7 @@ import "ds-test/test.sol";
 import "ds-math/math.sol";
 
 import "../senior_tranche.sol";
-import "../../test/simple/token.sol";
+import "../../../test/simple/token.sol";
 import "../../test/mock/assessor.sol";
 
 
