@@ -16,39 +16,27 @@
 pragma solidity >=0.4.24;
 
 contract TrancheMock {
+    mapping (bytes32 => uint) calls;
+    mapping (bytes32 => uint) returnValues;
 
-    uint public callsBalance;
-    uint public callsBorrow;
-    uint public callsRepay;
-    uint public callsDebt;
+    function setReturn(bytes32 name, uint returnValue) public {
+        returnValues[name] = returnValue;
+    }
 
-    uint public debtOf; function setDebtOf(uint debt_) public {debtOf=debt_;}
-    uint public balanceOf; function setBalance(uint balance_) public {balanceOf=balance_;}
-
-    uint public supplyRate;
-    uint public rate;
-    uint public reserve;
-    int public loanAmount;
+    function funcBody(bytes32 name) internal returns (uint) {
+        calls[name]++;
+        return returnValues[name];
+    }
 
     function debt() public returns (uint) {
-        callsDebt++;
-        return debtOf;
+       return funcBody("debt");
     }
 
     function balance() public returns (uint) {
-        callsBalance++;
-        return balanceOf;
-    }
+        return funcBody("balance");
 
-    function repay(address usr, uint currencyAmount) public {
-        callsRepay++;
-        balanceOf = balanceOf + currencyAmount;
-        debtOf = debtOf - currencyAmount;
     }
-
-    function borrow(address usr, uint borrowAmount) public {
-        callsBorrow++;
-        balanceOf = balanceOf - borrowAmount;
-        debtOf = debtOf + borrowAmount;
+    function tokenSupply() public returns (uint) {
+        return funcBody("tokenSupply");
     }
 }
