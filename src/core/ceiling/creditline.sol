@@ -27,7 +27,7 @@ contract PileLike {
     function decDebt(uint, uint) public;
 }
 
-// CreditLine is an implementation of the Ceiling module that defines the max amoutn a user can borrow.
+// CreditLine is an implementation of the Ceiling module that defines the max amount a user can borrow.
 // Borrowers can always repay and borrow new money as long as the total borrowed amount stays under the defined line of credit. Accrued interst is considered.
 contract CreditLine is DSNote {
     // --- Auth ---

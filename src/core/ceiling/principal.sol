@@ -19,7 +19,7 @@ pragma experimental ABIEncoderV2;
 
 import "ds-note/note.sol";
 
-// Principal is an implementation of the Ceiling module that defines the max amoutn a user can borrow.
+// Principal is an implementation of the Ceiling module that defines the max amount a user can borrow.
 // The principal of each loan is decreased with borrow transactions. Accrued interest is ignored.
 contract Principal is DSNote {
     // --- Auth ---
