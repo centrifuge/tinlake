@@ -16,6 +16,7 @@
 pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
+import "tinlake-math/math.sol";
 
 contract TrancheLike {
     function borrow(address, uint) public;
@@ -30,7 +31,7 @@ contract ShelfLike {
     function requestAction() public returns (uint, uint);
 }
 
-contract Distributor is DSNote {
+contract Distributor is DSNote, Math {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth note { wards[usr] = 1; }
@@ -70,7 +71,7 @@ contract Distributor is DSNote {
     // -- Borrow Tranches ---
     function borrowTranches(uint currencyAmount) internal  {
         // safe math not required
-        currencyAmount = currencyAmount - borrow(junior, currencyAmount);
+        currencyAmount = sub(currencyAmount, borrow(junior, currencyAmount));
 
         if (currencyAmount > 0) {
             currencyAmount = currencyAmount - borrow(senior, currencyAmount);
@@ -95,7 +96,7 @@ contract Distributor is DSNote {
     //  available   total available currency for repaying the tranches
     function repayTranches(uint available) public auth {
         // safe math not required
-        available = available - repay(senior, available);
+        available = sub(available,repay(senior, available));
 
         if (available > 0) {
             // junior gets the rest
