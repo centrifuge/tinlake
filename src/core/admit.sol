@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pragma solidity >=0.4.24;
-import "ds-test/test.sol";
+
 contract TitleLike {
     function issue (address usr) public returns (uint);
 }
@@ -32,7 +32,7 @@ contract CeilingLike {
 }
 
 // Admit can add whitelist a token and set the amount that can be borrowed against it. It also sets the borrowers rate in the Pile.
-contract Admit is DSTest {
+contract Admit {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth { wards[usr] = 1; }
