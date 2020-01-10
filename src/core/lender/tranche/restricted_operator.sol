@@ -56,7 +56,6 @@ contract RestrictedOperator is Operator {
             allowance[msg.sender].maxCurrency = sub(allowance[msg.sender].maxCurrency, currencyAmount);
         }
         super.supply(currencyAmount);
-
     }
 
     function redeem(uint tokenAmount) public auth_external {
