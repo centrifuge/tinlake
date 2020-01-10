@@ -29,7 +29,7 @@ contract PileLike {
 
 // ## Interst Group based Pile
 // The following is one implementation of a debt module. It keeps track of different buckets of interest rates and is optimized for many loans per interest bucket. It keeps track of interest
-// rate accumulators (chi values) for all interest rate categories. It Calculates debt each
+// rate accumulators (chi values) for all interest rate categories. It calculates debt each
 // loan according to its interest rate category and pie value.
 contract Pile is DSNote {
     // --- Auth ---

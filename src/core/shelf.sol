@@ -72,6 +72,10 @@ contract Shelf is DSNote, TitleOwned {
 
     function depend (bytes32 what, address addr) public auth {
         if (what == "lender") { lender = addr; }
+        else if (what == "token") { tkn = TokenLike(addr); }
+        else if (what == "title") { title = Title(addr); }
+        else if (what == "pile") { pile = PileLike(addr); }
+        else if (what == "ceiling") { ceiling = CeilingLike(addr); }
         else revert();
     }
 
@@ -171,7 +175,6 @@ contract Shelf is DSNote, TitleOwned {
     }
 
     function claim(uint loan, address usr) public auth {
-        // TODO: need to update pile/shelf to let it know it's gone.
         NFTLike(shelf[loan].registry).transferFrom(address(this), usr, shelf[loan].tokenId);
     }
 

@@ -115,8 +115,6 @@ contract CollectorTest is DSTest {
         seize(loan);
         collect(loan, tokenId, price);
     }
-    // TODO: Missing test cases
-    // * test reentrancy, this code is not secure
 }
 
 
