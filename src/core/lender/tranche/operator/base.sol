@@ -49,12 +49,12 @@ contract BaseOperator is DSNote, DSMath {
         else revert();
     }
 
-    function supplyInternal(uint currencyAmount) internal {
+    function _supply(uint currencyAmount) internal {
         tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, assessor.calcTokenPrice()));
 
     }
 
-    function redeemInternal(uint tokenAmount) internal {
+    function _redeem(uint tokenAmount) internal {
         tranche.redeem(msg.sender, rmul(tokenAmount, assessor.calcTokenPrice()), tokenAmount);
     }
 }

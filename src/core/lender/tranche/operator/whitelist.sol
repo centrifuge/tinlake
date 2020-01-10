@@ -22,15 +22,15 @@ contract WhitelistOperator is BaseOperator {
     mapping (address => uint) public investors;
     function relyInvestor(address usr) public auth note { investors[usr] = 1; }
     function denyInvestor(address usr) public auth note { investors[usr] = 0; }
-    modifier auth_investor { require(wards[msg.sender] == 1); _; }
+    modifier auth_investor { require(investors[msg.sender] == 1); _; }
 
     constructor(address tranche_, address assessor_) BaseOperator(tranche_, assessor_) public {}
 
     function supply(uint currencyAmount) public auth_investor {
-        supplyInternal(currencyAmount);
+        _supply(currencyAmount);
     }
 
     function redeem(uint tokenAmount) public auth_investor {
-        redeemInternal(tokenAmount);
+        _redeem(tokenAmount);
     }
 }

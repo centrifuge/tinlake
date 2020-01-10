@@ -17,7 +17,7 @@ pragma solidity >=0.4.24;
 
 import "./base.sol";
 
-// RestrictedOperator restricts the allowance of users
+// AllowanceOperator sets allowances for investors
 contract AllowanceOperator is BaseOperator {
     mapping (address => uint) maxCurrency;  // uint(-1) unlimited access by convention
     mapping (address => uint) maxToken;     // uint(-1) unlimited access by convention
@@ -35,7 +35,7 @@ contract AllowanceOperator is BaseOperator {
             require(maxCurrency[msg.sender] >= currencyAmount);
             maxCurrency[msg.sender] = maxCurrency[msg.sender] - currencyAmount;
         }
-        supplyInternal(currencyAmount);
+        _supply(currencyAmount);
     }
 
     function redeem(uint tokenAmount) public  {
@@ -43,6 +43,6 @@ contract AllowanceOperator is BaseOperator {
             require(maxToken[msg.sender] >= tokenAmount);
             maxToken[msg.sender] = maxToken[msg.sender] - tokenAmount;
         }
-        redeemInternal(tokenAmount);
+        _redeem(tokenAmount);
     }
 }
