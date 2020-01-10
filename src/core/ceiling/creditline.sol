@@ -18,7 +18,14 @@ pragma solidity >=0.4.24;
 pragma experimental ABIEncoderV2;
 
 import "ds-note/note.sol";
-import { PileLike } from "../pile.sol";
+
+contract PileLike {
+    uint public total;
+    function debt(uint) public view returns (uint);
+    function accrue(uint) public;
+    function incDebt(uint, uint) public;
+    function decDebt(uint, uint) public;
+}
 
 // CreditLine is an implementation of the Ceiling module that defines the max amoutn a user can borrow.
 // Borrowers can always repay and borrow new money as long as the total borrowed amount stays under the defined line of credit. Accrued interst is considered.

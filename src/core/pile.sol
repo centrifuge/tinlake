@@ -17,16 +17,6 @@ pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
 
-
-// ## PileLike the interface for any debt module.
-contract PileLike {
-    uint public total;
-    function debt(uint) public view returns (uint);
-    function accrue(uint) public;
-    function incDebt(uint, uint) public;
-    function decDebt(uint, uint) public;
-}
-
 // ## Interst Group based Pile
 // The following is one implementation of a debt module. It keeps track of different buckets of interest rates and is optimized for many loans per interest bucket. It keeps track of interest
 // rate accumulators (chi values) for all interest rate categories. It calculates debt each

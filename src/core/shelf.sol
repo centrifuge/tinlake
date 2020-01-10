@@ -19,7 +19,6 @@ pragma experimental ABIEncoderV2;
 
 import "ds-note/note.sol";
 import { Title, TitleOwned } from "tinlake-title/title.sol";
-import { PileLike } from "./pile.sol";
 
 contract NFTLike {
     function ownerOf(uint256 tokenId) public view returns (address owner);
@@ -31,6 +30,14 @@ contract TokenLike{
     function balanceOf(address) public view returns (uint);
     function transferFrom(address,address,uint) public;
     function approve(address, uint) public;
+}
+
+contract PileLike {
+    uint public total;
+    function debt(uint) public view returns (uint);
+    function accrue(uint) public;
+    function incDebt(uint, uint) public;
+    function decDebt(uint, uint) public;
 }
 
 contract CeilingLike {
@@ -105,7 +112,7 @@ contract Shelf is DSNote, TitleOwned {
     }
 
     function close(uint loan) public owner(loan) {
-        require(pile.debt(loan) == 0, "outstanding-debt"); // TODO: only allow closing of a loan that isn't active anymore. maybe there is a better criteria
+        require(pile.debt(loan) == 0, "outstanding-debt");
         title.close(loan);
         bytes32 nft = keccak256(abi.encodePacked(shelf[loan].registry, shelf[loan].tokenId));
         nftlookup[nft] = 0;
@@ -113,7 +120,7 @@ contract Shelf is DSNote, TitleOwned {
 
     // --- Currency actions ---
     function want() public view returns (int) {
-        return int(balance) - int(tkn.balanceOf(address(this))); // safemath
+        return int(balance) - int(tkn.balanceOf(address(this)));
     }
 
     function borrow(uint loan, uint wad) public owner(loan) {
@@ -160,7 +167,6 @@ contract Shelf is DSNote, TitleOwned {
     }
 
     // --- NFT actions ---
-    // deposit = lock
     function lock(uint loan, address usr) public owner(loan) {
         NFTLike(shelf[loan].registry).transferFrom(usr, address(this), shelf[loan].tokenId);
     }
