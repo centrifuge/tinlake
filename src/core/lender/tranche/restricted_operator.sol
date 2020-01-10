@@ -18,8 +18,6 @@ pragma solidity >=0.4.24;
 import "./operator.sol";
 
 // RestrictedOperator restricts the allowance of users
-// the allowanceActive flag actives the restriction
-// openAccess by default deactivated
 contract RestrictedOperator is Operator {
     mapping (address => uint) maxCurrency;  // uint(-1) unlimited access by convention
     mapping (address => uint) maxToken;     // uint(-1) unlimited access by convention
