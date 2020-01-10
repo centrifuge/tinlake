@@ -43,7 +43,7 @@ contract TrancheTest is DSTest, DSMath {
         currency = new SimpleToken("CUR", "Currency", "1", 0);
         assessor = new AssessorMock();
 
-        tranche = new SeniorTranche(address(token), address(currency), address(assessor));
+        tranche = new SeniorTranche(address(token), address(currency));
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
 
