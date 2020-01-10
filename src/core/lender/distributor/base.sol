@@ -26,9 +26,9 @@ contract TrancheLike {
 }
 
 contract ShelfLike {
-    function ActionBorrow() public returns (uint);
-    function ActionRepay() public returns (uint);
-    function requestAction() public returns (uint, uint);
+    uint public RequestWant;
+    uint public RequestTake;
+    function balanceRequest() public returns (uint, uint);
 }
 
 contract Distributor is DSNote, Math {
@@ -57,13 +57,13 @@ contract Distributor is DSNote, Math {
     }
 
     function balance() public {
-        (uint action, uint currencyAmount) = shelf.requestAction();
+        (uint request, uint currencyAmount) = shelf.balanceRequest();
 
-        if (action == shelf.ActionBorrow()) {
+        if (request == shelf.RequestWant()) {
             borrowTranches(currencyAmount);
         }
 
-        if (action == shelf.ActionRepay()) {
+        if (request == shelf.RequestTake()) {
             repayTranches(currencyAmount);
         }
     }
