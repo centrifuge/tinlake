@@ -123,4 +123,13 @@ contract AssessorTest is DSTest,DSMath {
         tokenPrice = senior.doCalcTokenPrice(assessor_);
         assertEq(tokenPrice, rdiv(assetValue, tokenSupply));
     }
+
+    function testFailBankrupt() public {
+        uint poolValue = 0;
+        pile.setDebtReturn(poolValue);
+        senior.setReturn("tokenSupply", 10 ether);
+        uint assetValue = assessor.calcAssetValue(address(senior));
+        assertEq(assetValue, 0);
+        uint tokenPrice = senior.doCalcTokenPrice(assessor_);
+    }
 }

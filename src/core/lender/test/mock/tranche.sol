@@ -12,23 +12,25 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 pragma solidity >=0.4.24;
-contract TrancheMock {
+import "ds-test/test.sol";
+
+contract TrancheMock is DSTest {
     mapping (bytes32 => uint) calls;
     mapping (bytes32 => uint) returnValues;
     function setReturn(bytes32 name, uint returnValue) public {
         returnValues[name] = returnValue;
     }
-    function funcBody(bytes32 name) internal returns (uint) {
+    function call(bytes32 name) internal returns (uint) {
         calls[name]++;
         return returnValues[name];
     }
     function debt() public returns (uint) {
-        return funcBody("debt");
+        return call("debt");
     }
     function balance() public returns (uint) {
-        return funcBody("balance");
+        return call("balance");
     }
     function tokenSupply() public returns (uint) {
-        return funcBody("tokenSupply");
+        return call("tokenSupply");
     }
 }
