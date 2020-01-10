@@ -15,37 +15,34 @@
 
 pragma solidity >=0.4.24;
 
-import "./operator.sol";
+import "./base.sol";
 
 // RestrictedOperator restricts the allowance of users
-contract RestrictedOperator is Operator {
+contract AllowanceOperator is BaseOperator {
     mapping (address => uint) maxCurrency;  // uint(-1) unlimited access by convention
     mapping (address => uint) maxToken;     // uint(-1) unlimited access by convention
 
     constructor(address tranche_, address assessor_)
-    Operator(tranche_, assessor_) public {}
+    BaseOperator(tranche_, assessor_) public {}
 
     function approve(address usr, uint maxToken_, uint maxCurrency_) public auth {
-        if(investors[usr] == 0) {
-            investors[usr] = 1;
-        }
-        maxCurrency[msg.sender] = maxCurrency_;
-        maxToken[msg.sender] = maxToken_;
+        maxCurrency[usr] = maxCurrency_;
+        maxToken[usr] = maxToken_;
     }
 
-    function supply(uint currencyAmount) public auth_investor {
+    function supply(uint currencyAmount) public  {
         if (maxCurrency[msg.sender] != uint(-1)) {
             require(maxCurrency[msg.sender] >= currencyAmount);
             maxCurrency[msg.sender] = maxCurrency[msg.sender] - currencyAmount;
         }
-        super.supply(currencyAmount);
+        supplyInternal(currencyAmount);
     }
 
-    function redeem(uint tokenAmount) public auth_investor {
+    function redeem(uint tokenAmount) public  {
         if (maxToken[msg.sender] != uint(-1)) {
             require(maxToken[msg.sender] >= tokenAmount);
             maxToken[msg.sender] = maxToken[msg.sender] - tokenAmount;
         }
-        super.redeem(tokenAmount);
+        redeemInternal(tokenAmount);
     }
 }
