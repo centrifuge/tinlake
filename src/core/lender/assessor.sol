@@ -69,7 +69,7 @@ contract Assessor is DSNote,DSMath {
         }
         return calcSeniorAssetValue(poolValue, trancheReserve, SeniorTrancheLike(tranche).debt(), juniorReserve());
     }
-    
+
     function calcTokenPrice() public returns (uint) {
         uint tokenSupply = TrancheLike(msg.sender).tokenSupply();
         uint assetValue = calcAssetValue(msg.sender);
@@ -94,7 +94,7 @@ contract Assessor is DSNote,DSMath {
     }
 
     function juniorReserve() internal returns (uint) {
-      return TrancheLike(junior).balance();
+        return TrancheLike(junior).balance();
     }
 
     function seniorDebt() internal returns (uint) {
