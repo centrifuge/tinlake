@@ -16,7 +16,7 @@
 pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
-import "ds-math/math.sol";
+import "tinlake-math/math.sol";
 
 contract TrancheLike {
     function supply(address usr, uint currencyAmount, uint tokenAmount) public;
@@ -27,7 +27,7 @@ contract AssessorLike {
     function calcTokenPrice() public returns(uint);
 }
 // Abstract Contract
-contract BaseOperator is DSNote, DSMath {
+contract BaseOperator is DSNote, Math {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth note { wards[usr] = 1; }
