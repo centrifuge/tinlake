@@ -3,7 +3,7 @@ pragma solidity >=0.4.24;
 contract CeilingMock {
     uint public callsBorrow;
     uint public callsFile;
-    bool public celeingReached; function setCeilingReached(bool celeingReached_) public {celeingReached=celeingReached_;}
+    bool public ceilingReached; function setCeilingReached(bool ceilingReached_) public {ceilingReached=ceilingReached_;}
     uint public ceilingReturn; function setCeilingReturn(uint ceiling) public {ceilingReturn=ceiling;}
 
     uint public amount;
@@ -18,7 +18,7 @@ contract CeilingMock {
        callsBorrow++;
        amount = amount_;
        loan = loan_;
-       require(!celeingReached);
+       require(!ceilingReached);
     }
     
     function file(uint loan_, uint wad_) public {
