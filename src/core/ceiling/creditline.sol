@@ -1,4 +1,4 @@
-// store.sol
+// cerditline.sol
 // Copyright (C) 2019 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
