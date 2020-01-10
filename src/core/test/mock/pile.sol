@@ -20,6 +20,7 @@ contract PileMock {
     uint public getCurrentDebtReturn; function setBurdenReturn(uint getCurrentDebtReturn_) public {getCurrentDebtReturn=getCurrentDebtReturn_;}
     uint public totalDebtReturn; function setTotalDebtReturn(uint totalDebtReturn_) public {totalDebtReturn=totalDebtReturn_;} 
     Rate public rateReturn; function setRateReturn(uint pie, uint chi, uint speed, uint48 rho) public {rateReturn = Rate(pie, chi, speed, rho);}
+    uint public debtReturn; function setDebtReturn(uint debtReturn_) public {debtReturn=debtReturn_;}
 
     address public usr;
     uint public loan;
@@ -47,6 +48,10 @@ contract PileMock {
 
     function debt(uint loan) public returns(uint) {
         return loanDebtReturn;
+    }
+
+    function debt() public returns(uint) {
+        return debtReturn;
     }
 
     function incDebt(uint loan_, uint wad_) public {
