@@ -32,13 +32,13 @@ contract RestrictedOperator is Operator {
 
     mapping (address => Restriction) allowance;
 
-    bool constant allowanceActive;
+    bool allowanceActive;
 
     constructor(address tranche_, address assessor_)
     Operator(tranche_, assessor_, false) public {
         supplyActive = true;
         redeemActive = true;
-        activeRestriction = true;
+        allowanceActive = true;
     }
 
     function file(bytes32 what, bool value) public auth {
