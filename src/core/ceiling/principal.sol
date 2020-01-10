@@ -42,12 +42,12 @@ contract Principal is DSNote {
         values[loan] = principal;
     }
 
-    function borrow(uint loan, uint amount) public note auth {
+    function borrow(uint loan, uint amount) public auth {
         require(values[loan] >= amount);
         values[loan] = sub(values[loan], amount);
     }
 
-    function repay(uint loan, uint amount) public note auth {
+    function repay(uint loan, uint amount) public auth {
     }
 
     function sub(uint x, uint y) internal pure returns (uint z) {
