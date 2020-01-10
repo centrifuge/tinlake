@@ -16,6 +16,7 @@
 pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
+import "ds-math/math.sol";
 
 contract TokenLike{
     uint public totalSupply;
@@ -26,10 +27,9 @@ contract TokenLike{
     function burn(address, uint) public;
 }
 
-// Reserve
-// Manages the token balances & transfers
-// Currency & Token amounts are denominated in wad
-contract Reserve is DSNote {
+// Tranche
+// Interface of a tranche. Coordinates investments and borrows to/from the tranche.
+contract Tranche is DSNote, DSMath {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth note { wards[usr] = 1; }
@@ -37,43 +37,52 @@ contract Reserve is DSNote {
     modifier auth { require(wards[msg.sender] == 1); _; }
 
     // --- Data ---
-    TokenLike public token;
     TokenLike public currency;
+    TokenLike public token;
+
+    address public self;
 
     constructor(address token_, address currency_) public {
         wards[msg.sender] = 1;
+
         token = TokenLike(token_);
         currency = TokenLike(currency_);
+
+        self = address(this);
+    }
+
+    function depend(bytes32 what, address addr) public auth {
+        if (what == "currency") { currency = TokenLike(addr); }
+        else if (what == "token") { token = TokenLike(addr); }
+        else revert();
     }
 
     function balance() public returns (uint) {
-        return currency.balanceOf(address(this));
+        return currency.balanceOf(self);
     }
 
     function tokenSupply() public returns (uint) {
         return token.totalSupply();
     }
 
-    function tokenBalanceOf(address usr) public returns (uint) {
-        return token.balanceOf(address(usr));
-    }
-    
-    function supply(address usr, uint tokenAmount, uint currencyAmount) public note auth {
-        currency.transferFrom(usr, address(this), currencyAmount);
+    // -- Lender Side --
+    function supply(address usr, uint currencyAmount, uint tokenAmount) public note auth {
+        currency.transferFrom(usr, self, currencyAmount);
         token.mint(usr, tokenAmount);
     }
 
-    function redeem(address usr, uint tokenAmount, uint currencyAmount) public note auth {
-        token.transferFrom(usr, address(this), tokenAmount);
-        token.burn(address(this), tokenAmount);
-        currency.transferFrom(address(this), usr, currencyAmount);
+    function redeem(address usr, uint currencyAmount, uint tokenAmount) public note auth {
+        token.transferFrom(usr, self, tokenAmount);
+        token.burn(self, tokenAmount);
+        currency.transferFrom(self, usr, currencyAmount);
     }
 
+    // -- Borrow Side --
     function repay(address usr, uint currencyAmount) public note auth {
-        currency.transferFrom(usr, address(this), currencyAmount);
+        currency.transferFrom(usr, self, currencyAmount);
     }
 
     function borrow(address usr, uint currencyAmount) public note auth {
-        currency.transferFrom(address(this), usr, currencyAmount);
+        currency.transferFrom(self, usr, currencyAmount);
     }
 }

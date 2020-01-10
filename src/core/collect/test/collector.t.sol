@@ -19,7 +19,7 @@ pragma experimental ABIEncoderV2;
 import "ds-test/test.sol";
 
 import "../../test/mock/shelf.sol";
-import "../../test/mock/desk.sol";
+import "../../test/mock/trancheManager.sol";
 import "../../test/mock/nft.sol";
 import "../../test/mock/pile.sol";
 
@@ -31,7 +31,7 @@ import "../collector.sol";
 contract CollectorTest is DSTest {
     ShelfMock shelf;
     PileMock pile;
-    DeskMock  desk;
+    TrancheManagerMock trancheManager;
     NFTMock   nft;
 
     Collector    collector;
@@ -41,10 +41,10 @@ contract CollectorTest is DSTest {
         nft = new NFTMock();
         shelf = new ShelfMock();
         pile = new PileMock();
-        desk = new DeskMock();
+        trancheManager = new TrancheManagerMock();
 
         threshold = new PushRegistry();
-        collector = new Collector(address(desk), address(shelf), address(pile), address(threshold));
+        collector = new Collector(address(trancheManager), address(shelf), address(pile), address(threshold));
     }
 
     function collect(uint loan, uint tokenId, uint price) internal {
