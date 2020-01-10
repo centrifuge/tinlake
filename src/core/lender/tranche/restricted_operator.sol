@@ -17,28 +17,36 @@ pragma solidity >=0.4.24;
 
 import "./operator.sol";
 
+// RestrictedOperator restricts the allowance of users
+// the allowanceActive flag actives the restriction
+// openAccess by default deactivated
 contract RestrictedOperator is Operator {
 
     bool public supplyActive;
     bool public redeemActive;
 
     struct Restriction {
-        uint maxCurrency;
-        uint maxToken;
+        uint maxCurrency;   // uint(-1) unlimited access by convention
+        uint maxToken;      // uint(-1) unlimited access by convention
     }
 
     mapping (address => Restriction) allowance;
 
-    constructor(address tranche_, address assessor_, bool openAccess_)
-    Operator(tranche_,assessor_,openAccess_) public {
+    bool constant allowanceActive;
+
+    constructor(address tranche_, address assessor_)
+    Operator(tranche_, assessor_, false) public {
         supplyActive = true;
         redeemActive = true;
+        activeRestriction = true;
     }
 
     function file(bytes32 what, bool value) public auth {
         if (what == "supplyActive") { supplyActive = value; }
         else if (what == "redeemActive") { redeemActive = value; }
-        else super.file(what, value);
+        else if (what == "allowanceActive") { allowanceActive = value; }
+        // openAccess by default always false
+        else { revert(); }
     }
 
     function approve(address usr, uint maxToken, uint maxCurrency) public auth {
@@ -51,7 +59,7 @@ contract RestrictedOperator is Operator {
 
     function supply(uint currencyAmount) public auth_external {
         require(supplyActive);
-        if (allowance[msg.sender].maxCurrency != uint(-1)) {
+        if (allowanceActive && allowance[msg.sender].maxCurrency != uint(-1)) {
             require(allowance[msg.sender].maxCurrency >= currencyAmount);
             allowance[msg.sender].maxCurrency = sub(allowance[msg.sender].maxCurrency, currencyAmount);
         }
@@ -60,7 +68,7 @@ contract RestrictedOperator is Operator {
 
     function redeem(uint tokenAmount) public auth_external {
         require(redeemActive);
-        if (allowance[msg.sender].maxToken != uint(-1)) {
+        if (allowanceActive && allowance[msg.sender].maxToken != uint(-1)) {
             require(allowance[msg.sender].maxToken >= tokenAmount);
             allowance[msg.sender].maxToken = sub(allowance[msg.sender].maxToken, tokenAmount);
         }

@@ -47,6 +47,7 @@ contract Operator is DSNote,DSMath {
     TrancheLike public tranche;
     AssessorLike public assessor;
 
+    // opens the contract to allow anybody to supply and redeem
     bool public openAccess;
 
     constructor(address tranche_, address assessor_, bool openAccess_) public {
