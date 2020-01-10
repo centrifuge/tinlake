@@ -47,12 +47,12 @@ contract TraditionalDistributor is Distributor {
 
     function balance() public {
         if(poolClosing == true) {
-            uint repayAmount = currency.balanceOf(shelf);
+            uint repayAmount = currency.balanceOf(address(shelf));
             repayTranches(repayAmount);
             return;
         }
 
-        uint currencyAmount = TrancheLike(senior).balance() + TrancheLike(junior).balance();
+        uint currencyAmount = senior.balance() + junior.balance();
         borrowTranches(currencyAmount);
     }
 }

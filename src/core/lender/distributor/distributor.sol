@@ -37,32 +37,32 @@ contract Distributor is DSNote {
     function deny(address usr) public auth note { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
 
-    address public shelf;
+    ShelfLike public shelf;
 
     // --- Tranches ---
-    address public senior;
-    address public junior;
+    TrancheLike public senior;
+    TrancheLike public junior;
 
     constructor(address shelf_)  public {
         wards[msg.sender] = 1;
-        shelf = shelf_;
+        shelf = ShelfLike(shelf_);
     }
 
     function depend (bytes32 what, address addr) public auth {
-        if (what == "shelf") { shelf = addr; }
-        if (what == "junior") { junior = addr; }
-        else if (what == "senior") { senior = addr;}
+        if (what == "shelf") { shelf = ShelfLike(addr); }
+        if (what == "junior") { junior = TrancheLike(addr); }
+        else if (what == "senior") { senior = TrancheLike(addr); }
         else revert();
     }
 
     function balance() public {
-        (uint action, uint currencyAmount) = ShelfLike(shelf).requestAction();
+        (uint action, uint currencyAmount) = shelf.requestAction();
 
-        if (action == ShelfLike(shelf).ActionBorrow()) {
+        if (action == shelf.ActionBorrow()) {
             borrowTranches(currencyAmount);
         }
 
-        if (action == ShelfLike(shelf).ActionRepay()) {
+        if (action == shelf.ActionRepay()) {
             repayTranches(currencyAmount);
         }
     }
@@ -80,15 +80,13 @@ contract Distributor is DSNote {
         }
     }
 
-    function borrow(address tranche, uint currencyAmount) internal returns(uint) {
-        TrancheLike tranche = TrancheLike(tranche);
-
+    function borrow(TrancheLike tranche, uint currencyAmount) internal returns(uint) {
         uint available = tranche.balance();
         if (currencyAmount > available) {
             currencyAmount = available;
         }
 
-        tranche.borrow(shelf, currencyAmount);
+        tranche.borrow(address(shelf), currencyAmount);
         return currencyAmount;
     }
 
@@ -99,7 +97,7 @@ contract Distributor is DSNote {
 
         if (available > 0) {
             // junior gets the rest
-            TrancheLike(junior).repay(shelf, available);
+            junior.repay(address(shelf), available);
         }
     }
 
@@ -108,14 +106,13 @@ contract Distributor is DSNote {
     /// @param `available` total available currency to repay a tranche
     /// @return repaid currencyAmount
     /// @dev `available` and `currencyAmount` denominated in WAD (10^18)
-    function repay(address tranche, uint available) internal returns(uint) {
-        TrancheLike tranche = TrancheLike(tranche);
+    function repay(TrancheLike tranche, uint available) internal returns(uint) {
         uint currencyAmount = tranche.debt();
         if (available < currencyAmount) {
             currencyAmount = available;
         }
 
-        tranche.repay(shelf, currencyAmount);
+        tranche.repay(address(shelf), currencyAmount);
         return currencyAmount;
     }
 }
