@@ -36,17 +36,29 @@ contract Operator is DSNote,DSMath {
     modifier auth { require(wards[msg.sender] == 1); _; }
 
     // -- Users --
-    function addUser(address usr) public auth note { wards[usr] = 2; }
+    uint constant UserAccess = 2;
+    function addUser(address usr) public auth note { wards[usr] = UserAccess; }
     function denyUser(address usr) public auth note { wards[usr] = 0; }
-    modifier auth_external { require(wards[msg.sender] != 0); _; }
+
+    // auth_external controls supply and redeem access
+    // either openAccess or only for admins and users
+    modifier auth_external { require(openAccess || wards[msg.sender] != 0); _; }
 
     TrancheLike public tranche;
     AssessorLike public assessor;
 
-    constructor(address tranche_, address assessor_) public {
+    bool public openAccess;
+
+    constructor(address tranche_, address assessor_, bool openAccess_) public {
         wards[msg.sender] = 1;
         tranche = TrancheLike(tranche);
         assessor = AssessorLike(assessor_);
+        openAccess = openAccess_;
+    }
+
+    function file(bytes32 what, bool value) public auth {
+        if (what == "openAccess") { openAccess = value; }
+        else revert();
     }
 
     function depend(bytes32 what, address addr) public auth {
