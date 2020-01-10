@@ -27,20 +27,32 @@ contract TraditionalDistributor is Distributor {
     // ERC20
     CurrencyLike public currency;
 
-    function file(bytes32 what, address addr) public {
+    constructor(address shelf_) Distributor(shelf_)  public {
+        poolClosing = false;
+    }
+
+    bool public poolClosing;
+
+    function file(bytes32 what, bool flag) public auth {
+        if (what == "poolClosing") {
+            poolClosing = flag;
+        }  else revert();
+    }
+
+    function file(bytes32 what, address addr) public auth {
         if (what == "currency") {
             currency = CurrencyLike(currency);
         }  else revert();
     }
 
     function balance() public {
-        if(manager.poolClosing() == true) {
-            uint repayAmount = currency.balanceOf(manager.pile());
+        if(poolClosing == true) {
+            uint repayAmount = currency.balanceOf(shelf);
             repayTranches(repayAmount);
             return;
         }
 
-        uint take = OperatorLike(manager.senior()).balance() + OperatorLike(manager.junior()).balance();
-        borrowTranches(take);
+        uint currencyAmount = TrancheLike(senior).balance() + TrancheLike(junior).balance();
+        borrowTranches(currencyAmount);
     }
 }
