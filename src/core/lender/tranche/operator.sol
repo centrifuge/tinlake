@@ -28,38 +28,26 @@ contract AssessorLike {
 }
 
 // Tranche
-contract Operator is DSNote,DSMath {
+contract Operator is DSNote, DSMath {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth note { wards[usr] = 1; }
     function deny(address usr) public auth note { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
 
-    // -- Users --
-    uint constant UserAccess = 2;
-    function addUser(address usr) public auth note { wards[usr] = UserAccess; }
-    function denyUser(address usr) public auth note { wards[usr] = 0; }
-
-    // auth_external controls supply and redeem access
-    // either openAccess or only for admins and users
-    modifier auth_external { require(openAccess || wards[msg.sender] != 0); _; }
+    // -- Investors --
+    mapping (address => uint) public investors;
+    function relyInvestor(address usr) public auth note { investors[usr] = 1; }
+    function denyInvestor(address usr) public auth note { investors[usr] = 0; }
+    modifier auth_investor { require(wards[msg.sender] == 1); _; }
 
     TrancheLike public tranche;
     AssessorLike public assessor;
 
-    // opens the contract to allow anybody to supply and redeem
-    bool public openAccess;
-
-    constructor(address tranche_, address assessor_, bool openAccess_) public {
+    constructor(address tranche_, address assessor_) public {
         wards[msg.sender] = 1;
         tranche = TrancheLike(tranche);
         assessor = AssessorLike(assessor_);
-        openAccess = openAccess_;
-    }
-
-    function file(bytes32 what, bool value) public auth {
-        if (what == "openAccess") { openAccess = value; }
-        else revert();
     }
 
     function depend(bytes32 what, address addr) public auth {
@@ -68,12 +56,12 @@ contract Operator is DSNote,DSMath {
         else revert();
     }
 
-    function supply(uint currencyAmount) public auth_external {
+    function supply(uint currencyAmount) public auth_investor {
         tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, assessor.calcTokenPrice()));
 
     }
 
-    function redeem(uint tokenAmount) public auth_external {
+    function redeem(uint tokenAmount) public auth_investor {
         tranche.redeem(msg.sender, rmul(tokenAmount, assessor.calcTokenPrice()), tokenAmount);
     }
 }

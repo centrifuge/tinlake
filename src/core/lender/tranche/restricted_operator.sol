@@ -21,61 +21,33 @@ import "./operator.sol";
 // the allowanceActive flag actives the restriction
 // openAccess by default deactivated
 contract RestrictedOperator is Operator {
-
-    bool public supplyActive;
-    bool public redeemActive;
-
-    struct Restriction {
-        uint maxCurrency;   // uint(-1) unlimited access by convention
-        uint maxToken;      // uint(-1) unlimited access by convention
-    }
-
-    mapping (address => Restriction) allowance;
-
-    bool allowanceActive;
+    mapping (address => uint) maxCurrency;  // uint(-1) unlimited access by convention
+    mapping (address => uint) maxToken;     // uint(-1) unlimited access by convention
 
     constructor(address tranche_, address assessor_)
-    Operator(tranche_, assessor_, false) public {
-        supplyActive = true;
-        redeemActive = true;
-        allowanceActive = true;
-    }
+    Operator(tranche_, assessor_) public {}
 
-    function file(bytes32 what, bool value) public auth {
-        if (what == "supplyActive") { supplyActive = value; }
-        else if (what == "redeemActive") { redeemActive = value; }
-        else if (what == "allowanceActive") { allowanceActive = value; }
-        // openAccess by default always false
-        else { revert(); }
-    }
-
-    function approve(address usr, uint maxToken, uint maxCurrency) public auth {
-        if(wards[usr] == 0) {
-            wards[usr] = UserAccess;
+    function approve(address usr, uint maxToken_, uint maxCurrency_) public auth {
+        if(investors[usr] == 0) {
+            investors[usr] = 1;
         }
-        allowance[msg.sender].maxCurrency = maxCurrency;
-        allowance[msg.sender].maxToken = maxToken;
+        maxCurrency[msg.sender] = maxCurrency_;
+        maxToken[msg.sender] = maxToken_;
     }
 
-    function supply(uint currencyAmount) public auth_external {
-        require(supplyActive);
-        if (allowanceActive && allowance[msg.sender].maxCurrency != uint(-1)) {
-            require(allowance[msg.sender].maxCurrency >= currencyAmount);
-            allowance[msg.sender].maxCurrency = sub(allowance[msg.sender].maxCurrency, currencyAmount);
+    function supply(uint currencyAmount) public auth_investor {
+        if (maxCurrency[msg.sender] != uint(-1)) {
+            require(maxCurrency[msg.sender] >= currencyAmount);
+            maxCurrency[msg.sender] = maxCurrency[msg.sender] - currencyAmount;
         }
         super.supply(currencyAmount);
     }
 
-    function redeem(uint tokenAmount) public auth_external {
-        require(redeemActive);
-        if (allowanceActive && allowance[msg.sender].maxToken != uint(-1)) {
-            require(allowance[msg.sender].maxToken >= tokenAmount);
-            allowance[msg.sender].maxToken = sub(allowance[msg.sender].maxToken, tokenAmount);
+    function redeem(uint tokenAmount) public auth_investor {
+        if (maxToken[msg.sender] != uint(-1)) {
+            require(maxToken[msg.sender] >= tokenAmount);
+            maxToken[msg.sender] = maxToken[msg.sender] - tokenAmount;
         }
         super.redeem(tokenAmount);
-    }
-
-    function sub(uint x, uint y) internal pure returns (uint z) {
-        require((z = x - y) <= x);
     }
 }
