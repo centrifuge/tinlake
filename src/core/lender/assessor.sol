@@ -27,10 +27,13 @@ contract SeniorTrancheLike {
 }
 
 contract PileLike {
-    function Debt() public returns(uint);
+    function debt() public returns(uint);
 }
 
 contract Assessor is DSNote,DSMath {
+
+    uint256 constant ONE = 10 ** 27;
+
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth note { wards[usr] = 1; }
@@ -58,18 +61,25 @@ contract Assessor is DSNote,DSMath {
         else revert();
     }
 
-    function calcAssetValue() public returns(uint) {
-        address tranche = msg.sender;
+    function calcAssetValue(address tranche) public returns(uint) {
         uint trancheReserve = TrancheLike(tranche).balance();
-        uint poolValue = pile.Debt();
+        uint poolValue = pile.debt();
         if (tranche == junior) {
             return calcJuniorAssetValue(poolValue, trancheReserve, seniorDebt());
         }
         return calcSeniorAssetValue(poolValue, trancheReserve, SeniorTrancheLike(tranche).debt(), juniorReserve());
     }
-    
+
     function calcTokenPrice() public returns (uint) {
-        return rdiv(calcAssetValue(), TrancheLike(msg.sender).tokenSupply());
+        uint tokenSupply = TrancheLike(msg.sender).tokenSupply();
+        uint assetValue = calcAssetValue(msg.sender);
+        if (tokenSupply == 0) {
+            return ONE;
+        }
+        if (assetValue == 0) {
+            revert("tranche is bankrupt");
+        }
+        return rdiv(assetValue, tokenSupply);
     }
 
     // Tranche.assets (Junior) = (Pool.value + Tranche.reserve - Senior.debt) > 0 && (Pool.value - Tranche.reserve - Senior.debt) || 0
@@ -84,7 +94,7 @@ contract Assessor is DSNote,DSMath {
     }
 
     function juniorReserve() internal returns (uint) {
-      return TrancheLike(junior).balance();
+        return TrancheLike(junior).balance();
     }
 
     function seniorDebt() internal returns (uint) {
