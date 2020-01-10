@@ -69,6 +69,7 @@ contract Distributor is DSNote {
 
     // -- Borrow Tranches ---
     function borrowTranches(uint currencyAmount) internal  {
+        // safe math not required
         currencyAmount = currencyAmount - borrow(junior, currencyAmount);
 
         if (currencyAmount > 0) {
@@ -93,6 +94,7 @@ contract Distributor is DSNote {
     //  method      repayTranches
     //  available   total available currency for repaying the tranches
     function repayTranches(uint available) public auth {
+        // safe math not required
         available = available - repay(senior, available);
 
         if (available > 0) {
