@@ -47,11 +47,11 @@ contract CreditLine is DSNote {
         else revert();
     }
 
-    function file(uint loan, uint creditLine) public note auth {
+    function file(uint loan, uint creditLine) public auth {
         values[loan] = creditLine;
     }
 
-    function borrow(uint loan, uint amount) public note auth {
+    function borrow(uint loan, uint amount) public auth {
         require(values[loan] >= add(pile.debt(loan), amount));
     }
 

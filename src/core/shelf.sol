@@ -119,14 +119,14 @@ contract Shelf is DSNote, TitleOwned {
         pile.incDebt(loan, wad);
 
         balances[loan] = add(balances[loan], wad);
-        balance += wad;
+        balance = add(balance, wad);
     }
 
     function withdraw(uint loan, uint wad, address usr) public owner(loan) note {
         require(nftLocked(loan), "nft-not-locked");
         require(wad <= balances[loan], "amount-too-high");
-        balances[loan] -= wad;
-        balance -= wad;
+        balances[loan] = sub(balances[loan], wad);
+        balance = sub(balance, wad);
         tkn.transferFrom(address(this), usr, wad);
     }
 
@@ -178,5 +178,9 @@ contract Shelf is DSNote, TitleOwned {
     // --- Math ---
     function add(uint x, uint y) internal pure returns (uint z) {
         require((z = x + y) >= x);
+    }
+
+    function sub(uint x, uint y) internal pure returns (uint z) {
+        require((z = x - y) <= x);
     }
 }
