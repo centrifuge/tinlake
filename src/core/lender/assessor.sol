@@ -58,19 +58,18 @@ contract Assessor is DSNote,DSMath {
         else revert();
     }
 
-    function calcTokenPrice() public returns (uint) {
-        address tranche_ = msg.sender;
-        uint trancheReserve = TrancheLike(tranche_).balance();
+    function calcAssetValue() public returns(uint) {
+        address tranche = msg.sender;
+        uint trancheReserve = TrancheLike(tranche).balance();
         uint poolValue = pile.Debt();
-
-        uint assetValue;
-        if (tranche_ == junior) {
-            assetValue =  calcJuniorAssetValue(poolValue, trancheReserve, seniorDebt());
-        } else {
-            assetValue =  calcSeniorAssetValue(poolValue, trancheReserve, SeniorTrancheLike(tranche_).debt(), juniorReserve());
+        if (tranche == junior) {
+            return calcJuniorAssetValue(poolValue, trancheReserve, seniorDebt());
         }
-
-        return rdiv(assetValue, TrancheLike(tranche_).tokenSupply());
+        return calcSeniorAssetValue(poolValue, trancheReserve, SeniorTrancheLike(tranche).debt(), juniorReserve());
+    }
+    
+    function calcTokenPrice() public returns (uint) {
+        return rdiv(calcAssetValue(), TrancheLike(msg.sender).tokenSupply());
     }
 
     // Tranche.assets (Junior) = (Pool.value + Tranche.reserve - Senior.debt) > 0 && (Pool.value - Tranche.reserve - Senior.debt) || 0
