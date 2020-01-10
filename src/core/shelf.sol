@@ -138,7 +138,6 @@ contract Shelf is DSNote, TitleOwned {
 
     function recover(uint loan, address usr, uint wad) public auth {
         doRepay(loan, usr, wad);
-        // TODO: do we need to decrease the loan balance here? There might be some
         uint loss = pile.debt(loan);
         pile.decDebt(loan, loss);
     }

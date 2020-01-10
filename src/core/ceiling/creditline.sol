@@ -51,8 +51,11 @@ contract CreditLine is DSNote {
         values[loan] = creditLine;
     }
 
-    function borrow(uint loan, uint currencyAmount) public note auth {
-        require(values[loan] >= add(pile.debt(loan), currencyAmount));
+    function borrow(uint loan, uint amount) public note auth {
+        require(values[loan] >= add(pile.debt(loan), amount));
+    }
+
+    function repay(uint loan, uint amount) public note auth {
     }
 
     function add(uint x, uint y) internal pure returns (uint z) {

@@ -87,12 +87,12 @@ contract Collector {
         shelf.claim(loan, address(this));
     }
 
-    function collect(uint loan) public auth {
-        require(msg.sender == tags[loan].usr || tags[loan].usr == address(0));
+    function collect(uint loan, address usr) public auth {
+        require(usr == tags[loan].usr || tags[loan].usr == address(0));
         // TODO: reentrancy?
         (address registry, uint nft) = shelf.token(loan);
-        NFTLike(registry).transferFrom(address(this), msg.sender, nft);
-        shelf.recover(loan, msg.sender, tags[loan].wad);
+        NFTLike(registry).transferFrom(address(this), usr, nft);
+        shelf.recover(loan, usr, tags[loan].wad);
         desk.balance();
     }
 }

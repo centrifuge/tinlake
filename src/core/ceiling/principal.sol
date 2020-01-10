@@ -47,6 +47,9 @@ contract Principal is DSNote {
         values[loan] = sub(values[loan], amount);
     }
 
+    function repay(uint loan, uint amount) public note auth {
+    }
+
     function sub(uint x, uint y) internal pure returns (uint z) {
         require((z = x - y) <= x);
     }
