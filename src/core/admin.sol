@@ -23,16 +23,14 @@ contract AdmitLike {
 }
 
 contract AppraiserLike {
-    function file (uint loan, uint value) public;
+    function file(uint loan, uint value) public;
 }
 
 contract PileLike {
-    function file(uint loan, uint rate_, uint balance_) public;
-}
-
-contract DebtRegisterLike {
     function file(uint rate, uint speed_) public;
     function rates(uint) public view returns(uint, uint, uint, uint);
+    function setRate(uint loan, uint rate) public;
+    function changeRate(uint loan, uint rate) public;
 }
 
 // Admin can add whitelist a token and set the amount that can be borrowed against it. It also sets the borrowers rate in the Pile.
@@ -47,23 +45,20 @@ contract Admin {
     AdmitLike admit;
     AppraiserLike appraiser;
     PileLike pile;
-    DebtRegisterLike debtRegister;
 
     event Whitelisted(uint loan);
 
-    constructor (address admit_, address appraiser_, address pile_, address debtRegister_) public {
+    constructor (address admit_, address appraiser_, address pile_) public {
         wards[msg.sender] = 1;
         admit = AdmitLike(admit_);
         appraiser = AppraiserLike(appraiser_);
         pile = PileLike(pile_);
-        debtRegister = DebtRegisterLike(debtRegister_);
     }
 
-    function depend (bytes32 what, address addr) public auth {
+    function depend(bytes32 what, address addr) public auth {
         if (what == "pile") { pile = PileLike(addr); }
         else if (what == "admit") { admit = AdmitLike(addr); }
         else if (what == "appraiser") { appraiser = AppraiserLike(addr); }
-        else if (what == "debtRegister") { debtRegister = DebtRegisterLike(addr); }
         else revert();
     }
 
@@ -72,22 +67,22 @@ contract Admin {
         uint loan = admit.admit(registry, nft, principal, usr);
         appraiser.file(loan, appraisal);
 
-        (,, uint speed,) = debtRegister.rates(rate);
+        (,, uint speed,) = pile.rates(rate);
         require(speed != 0);
-
-        pile.file(loan, rate, 0);
+        
+        pile.setRate(loan, rate);
         emit Whitelisted(loan);
         return loan;
     }
 
     function file(uint rate, uint speed) public auth {
-        debtRegister.file(rate, speed);
+        pile.file(rate, speed);
     }
 
     function update(uint loan, address registry, uint nft, uint principal, uint appraisal, uint rate) public auth {
         admit.update(loan, registry, nft, principal);
         appraiser.file(loan, appraisal);
-        pile.file(loan, rate, 0);
+        pile.changeRate(loan, rate);
     }
 
     function update(uint loan, uint principal, uint appraisal) public auth  {
@@ -98,7 +93,7 @@ contract Admin {
     function blacklist(uint loan) public auth {
         admit.update(loan, address(0), 0, 0);
         appraiser.file(loan, 0);
-        pile.file(loan, 0, 0);
+        pile.changeRate(loan, 0);
     }
 }
 

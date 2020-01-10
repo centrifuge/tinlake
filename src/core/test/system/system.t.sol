@@ -30,26 +30,24 @@ contract ERC20Like {
     function balanceOf(address usr) public returns (uint);
 }
 
-contract User {
+contract User is DSTest{
     ERC20Like tkn;
-    Pile pile;
     Shelf shelf;
     Desk desk;
+    Pile pile;
 
-    constructor (address pile_, address shelf_, address desk_, address tkn_) public {
-        pile = Pile(pile_);
+    constructor (address shelf_, address desk_, address tkn_, address pile_) public {
         shelf = Shelf(shelf_);
         desk = Desk(desk_);
         tkn = ERC20Like(tkn_);
+        pile = Pile(pile_);
     }
 
-    function doBorrow (uint loan) public {
-        shelf.deposit(loan, address(this));
+    function doBorrow (uint loan, uint amount) public {
+        shelf.lock(loan, address(this));
+        shelf.borrow(loan, amount);
         desk.balance();
-
-//        // borrow max amount
-        uint wad = pile.balanceOf(loan);
-        pile.withdraw(loan, wad, address(this));
+        shelf.withdraw(loan, amount, address(this));
     }
 
     function doApproveNFT(SimpleNFT nft, address usr) public {
@@ -57,14 +55,16 @@ contract User {
     }
 
     function doRepay(uint loan, uint wad, address usr) public {
-        pile.repay(loan, wad);
+        emit log_named_uint("loan", wad);
+        shelf.repay(loan, wad);
+         emit log_named_uint("loan", wad);
         shelf.unlock(loan);
+         emit log_named_uint("loan", wad);
         desk.balance();
     }
 
     function doClose(uint loan, address usr) public {
-        pile.collect(loan);
-        uint debt = pile.debtOf(loan);
+        uint debt = pile.debt(loan);
         doRepay(loan, debt, usr);
     }
 
@@ -73,7 +73,7 @@ contract User {
     }
 }
 
-contract AdminUser {
+contract AdminUser is DSTest{
     // --- Data ---
     Deployer    deployer;
     Appraiser appraiser;
@@ -96,8 +96,8 @@ contract AdminUser {
         deployer.admin().file(rate, speed);
     }
 
-    function doAddRate(uint loan, uint rate, uint balance) public {
-        deployer.pile().file(loan, rate, balance);
+    function doAddRate(uint loan, uint rate) public {
+        deployer.pile().setRate(loan, rate);
     }
 
     function addKeeper(address usr) public {
@@ -122,6 +122,10 @@ contract Hevm {
 
 contract ShelfLike {
     function shelf(uint loan) public returns(address registry,uint256 tokenId,uint price,uint principal, uint initial);
+}
+
+contract CeilingLike {
+        function values(uint) public view returns(uint);
 }
 
 contract SystemTest is DSTest {
@@ -150,27 +154,26 @@ contract SystemTest is DSTest {
 
         TitleFab titlefab = new TitleFab();
         LightSwitchFab lightswitchfab = new LightSwitchFab();
-        PileFab pilefab = new PileFab();
         ShelfFab shelffab = new ShelfFab();
         DeskFab deskfab = new DeskFab();
         AdmitFab admitfab = new AdmitFab();
         AdminFab adminfab = new AdminFab();
-        DebtRegisterFab debtRegisterfab = new DebtRegisterFab();
+        PileFab pileFab = new PileFab();
+        PrincipalFab principalFab = new PrincipalFab();
         appraiser = new Appraiser();
 
         admin = new AdminUser(appraiser);
         admin_ = address(admin);
-
-        deployer = new Deployer(admin_, titlefab, lightswitchfab, pilefab, shelffab, deskfab, admitfab, adminfab, debtRegisterfab);
+        deployer = new Deployer(admin_, titlefab, lightswitchfab, shelffab, deskfab, admitfab, adminfab, pileFab, principalFab);
 
         appraiser.rely(admin_);
         appraiser.rely(address(deployer));
-
+         
         deployer.deployLightSwitch();
         deployer.deployTitle("Tinlake Loan", "TLNT");
-        deployer.deployDebtRegister();
-        deployer.deployPile(tkn_);
-        deployer.deployShelf();
+        deployer.deployPile();
+        deployer.deployPrincipal();
+        deployer.deployShelf(tkn_);
         deployer.deployDesk(tkn_);
         deployer.deployAdmit();
         deployer.deployAdmin(address(appraiser));
@@ -179,9 +182,10 @@ contract SystemTest is DSTest {
 
         deployer.deploy();
 
-        borrower = new User(address(deployer.pile()), address(deployer.shelf()), address(deployer.desk()), tkn_);
+        borrower = new User(address(deployer.shelf()), address(deployer.desk()), tkn_, address(deployer.pile()));
         borrower_ = address(borrower);
         admin.file(deployer);
+
     }
 
     function deployCollect() public {
@@ -197,7 +201,7 @@ contract SystemTest is DSTest {
 
     function checkAfterRepay(uint loan, uint tokenId, uint tTotal, uint tLender) public {
         assertEq(nft.ownerOf(tokenId), borrower_);
-        assertEq(deployer.pile().debtOf(loan), 0);
+        assertEq(deployer.pile().debt(loan), 0);
         assertEq(tkn.balanceOf(borrower_), tTotal - tLender);
         assertEq(tkn.balanceOf(address(deployer.pile())), 0);
     }
@@ -205,12 +209,11 @@ contract SystemTest is DSTest {
     function whitelist(uint tokenId, address nft_, uint principal, uint appraisal, address borrower_, uint rate) public returns (uint) {
         // define rate
         admin.doInitRate(rate, rate);
-
         // nft whitelist
         uint loan = admin.doAdmit(nft_, tokenId, principal, appraisal, borrower_);
-
+        
         // add rate for loan
-        admin.doAddRate(loan, rate, 0);
+        admin.doAddRate(loan, rate);
         return loan;
     }
 
@@ -218,7 +221,7 @@ contract SystemTest is DSTest {
         borrower.doApproveNFT(nft, address(deployer.shelf()));
 
         // borrow transaction
-        borrower.doBorrow(loan);
+        borrower.doBorrow(loan, principal);
         checkAfterBorrow(tokenId, principal);
     }
 
@@ -248,7 +251,7 @@ contract SystemTest is DSTest {
         tkn.mint(borrower_, extra);
 
         // allow pile full control over borrower tokens
-        borrower.doApproveCurrency(address(deployer.pile()), uint(-1));
+        borrower.doApproveCurrency(address(deployer.shelf()), uint(-1));
 
         return extra;
     }
@@ -259,26 +262,25 @@ contract SystemTest is DSTest {
     }
 
     function borrowRepay(uint tokenId, uint principal, uint appraisal, uint rate) public {
+        ShelfLike shelf_ = ShelfLike(address(deployer.shelf()));
+        CeilingLike ceiling_ = CeilingLike(address(deployer.principal()));
+        
         // create borrower collateral nft
         nft.mint(borrower_, tokenId);
         uint loan = whitelist(tokenId, nft_, principal, appraisal, borrower_, rate);
-
-        ShelfLike shelf_ = ShelfLike(address(deployer.shelf()));
-        ( , , , uint p_, uint i_) = shelf_.shelf(loan);
-        assertEq(p_, i_);
-
+    
+        assertEq(ceiling_.values(loan), principal);
         borrow(loan, tokenId, principal);
 
-        ( , , , uint p2, uint i2) = shelf_.shelf(loan);
-        assertEq(p2, 0);
-        assertEq(i2, p_);
+
+        assertEq(ceiling_.values(loan), 0);
 
         hevm.warp(now + 10 days);
 
         // borrower needs some currency to pay rate
         setupRepayReq();
-        uint deskShould = deployer.pile().getCurrentDebt(loan) + currDeskBal();
-
+        uint deskShould = deployer.pile().debt(loan) + currDeskBal();
+       
         // close without defined amount
         borrower.doClose(loan, borrower_);
         uint totalT = uint(tkn.totalSupply());
@@ -297,16 +299,16 @@ contract SystemTest is DSTest {
         nft.mint(borrower_, tokenId);
         uint loan = admin.doAdmit(nft_, tokenId, principal, appraisal, borrower_);
         borrower.doApproveNFT(nft, address(deployer.shelf()));
-        borrower.doBorrow(loan);
+        borrower.doBorrow(loan, principal);
 
         checkAfterBorrow(tokenId, principal);
     }
 
     function testBorrowAndRepay() public {
         (uint tokenId, uint principal, uint appraisal, uint rate) = defaultLoan();
-
         borrowRepay(tokenId, principal, appraisal, rate);
     }
+
 
     function testMediumSizeLoans() public {
         (uint tokenId, uint principal, uint appraisal, uint rate) = defaultLoan();
@@ -332,7 +334,7 @@ contract SystemTest is DSTest {
 
         // borrower needs some currency to pay rate
         setupRepayReq();
-        uint deskShould = deployer.pile().getCurrentDebt(loan) + currDeskBal();
+        uint deskShould = deployer.pile().debt(loan) + currDeskBal();
 
         // close without defined amount
         borrower.doClose(loan, borrower_);
@@ -350,7 +352,7 @@ contract SystemTest is DSTest {
         // borrower needs some currency to pay rate
         setupRepayReq();
 
-        uint deskShould = deployer.pile().getCurrentDebt(loan) + currDeskBal();
+        uint deskShould = deployer.pile().debt(loan) + currDeskBal();
 
         // close without defined amount
         borrower.doClose(loan, borrower_);
@@ -362,42 +364,44 @@ contract SystemTest is DSTest {
     function testMultipleBorrowAndRepay () public {
         uint principal = 100;
         uint appraisal = 120;
+        uint rate = uint(1000000564701133626865910626);
 
         uint tBorrower = 0;
-
+        uint tokenId;
         // borrow
-        for (uint i = 0; i < 10; i++) {
-            appraisal = (i+1)*100;
+        for (uint i = 1; i <= 10; i++) {
+            
+            tokenId = i;
+            appraisal = (i)*100;
             principal = appraisal/100 * 80;
 
             // create borrower collateral nft
-            nft.mint(borrower_, i);
-
+            nft.mint(borrower_, tokenId);
+            uint loan = whitelist(tokenId, nft_, principal, appraisal, borrower_, rate);
             // nft whitelist
-            admin.doAdmit(nft_, i, principal, appraisal, borrower_);
+        
             borrower.doApproveNFT(nft, address(deployer.shelf()));
-
-            // borrow transaction
-            borrower.doBorrow(i);
+            borrower.doBorrow(loan, principal);
             tBorrower += principal;
+            emit log_named_uint("total", tBorrower);
             checkAfterBorrow(i, tBorrower);
         }
 
         // repay
-
         uint tTotal = tkn.totalSupply();
 
         // allow pile full control over borrower tokens
-        borrower.doApproveCurrency(address(deployer.pile()), uint(-1));
+        borrower.doApproveCurrency(address(deployer.shelf()), uint(-1));
 
         uint deskBalance = tkn.balanceOf(address(deployer.desk()));
-
-        for (uint i = 0; i < 10; i++) {
-            appraisal = (i+1)*100;
+        for (uint i = 1; i <= 10; i++) {
+            appraisal = i*100;
             principal = appraisal/100 * 80;
 
             // repay transaction
+            emit log_named_uint("repay", principal);
             borrower.doRepay(i, principal, borrower_);
+            
             deskBalance += principal;
             checkAfterRepay(i, i, tTotal, deskBalance);
         }
@@ -413,28 +417,28 @@ contract SystemTest is DSTest {
         nft.mint(borrower_, tokenId);
         uint loan = admin.doAdmit(nft_, tokenId, principal, appraisal, borrower_);
         borrower.doApproveNFT(nft, address(deployer.shelf()));
-        borrower.doBorrow(loan);
+        borrower.doBorrow(loan, principal);
         checkAfterBorrow(tokenId, principal);
 
         // should fail
-        borrower.doBorrow(loan);
+        borrower.doBorrow(loan, principal);
     }
 
     function testFailBorrowNonExistingToken() public {
-        borrower.doBorrow(42);
+        borrower.doBorrow(42, 100);
         assertEq(tkn.balanceOf(borrower_), 0);
     }
 
     function testFailBorrowNotWhitelisted() public {
         uint nft_tokenId = 1;
         nft.mint(borrower_, nft_tokenId);
-        borrower.doBorrow(1);
+        borrower.doBorrow(1, 100);
         assertEq(tkn.balanceOf(borrower_), 0);
     }
 
     function testFailAdmitNonExistingNFT() public {
         uint loan = admin.doAdmit(nft_, 1, 100, 120, borrower_);
-        borrower.doBorrow(loan);
+        borrower.doBorrow(loan, 100);
         assertEq(tkn.balanceOf(borrower_), 0);
     }
 
@@ -442,7 +446,7 @@ contract SystemTest is DSTest {
         uint nft_tokenId = 1;
         nft.mint(borrower_, nft_tokenId);
         uint loan = admin.doAdmit(nft_, nft_tokenId, 100, 120, borrower_);
-        borrower.doBorrow(loan);
+        borrower.doBorrow(loan, 100);
         assertEq(tkn.balanceOf(borrower_), 100);
     }
 }

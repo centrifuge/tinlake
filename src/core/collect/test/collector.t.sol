@@ -18,10 +18,10 @@ pragma experimental ABIEncoderV2;
 
 import "ds-test/test.sol";
 
-import "../../test/mock/pile.sol";
 import "../../test/mock/shelf.sol";
 import "../../test/mock/desk.sol";
 import "../../test/mock/nft.sol";
+import "../../test/mock/pile.sol";
 
 import "tinlake-registry/registry.sol";
 import "../collector.sol";
@@ -29,8 +29,8 @@ import "../collector.sol";
 
 
 contract CollectorTest is DSTest {
-    PileMock  pile;
     ShelfMock shelf;
+    PileMock pile;
     DeskMock  desk;
     NFTMock   nft;
 
@@ -39,53 +39,83 @@ contract CollectorTest is DSTest {
 
     function setUp() public {
         nft = new NFTMock();
-        pile = new PileMock();
         shelf = new ShelfMock();
+        pile = new PileMock();
         desk = new DeskMock();
 
         threshold = new PushRegistry();
-        collector = new Collector(address(desk), address(pile), address(shelf), address(threshold));
+        collector = new Collector(address(desk), address(shelf), address(pile), address(threshold));
     }
 
-    function setUpLoan(uint loan, uint tokenId, uint debt) public {
-        // defines price and token Id
-        shelf.setShelfReturn(address(nft), tokenId, 0, 0);
-        // define debt
-        pile.setDebtOfReturn(debt);
+    function collect(uint loan, uint tokenId, uint price) internal {
+        collector.collect(loan);
+        assertEq(nft.transferFromCalls(), 1);
+        assertEq(nft.to(), address(this));
+        assertEq(nft.tokenId(), tokenId);
+        assertEq(shelf.callsRecover(), 1);
+        assertEq(shelf.wad(), price);
+        assertEq(shelf.usr(), address(this));
     }
-
-    function testSeizeFail() public {
-        uint loan = 1; uint tokenId = 123;
-        uint debt = 100;
-        setUpLoan(loan,tokenId, debt);
-
-        threshold.set(loan, debt-1);
+   
+    function seize(uint loan) internal {
         collector.seize(loan);
+        assertEq(shelf.callsClaim(), 1);
+        assertEq(shelf.loan(), loan);
+        assertEq(shelf.usr(), address(collector));   
+    }
+    
+    function setUpLoan(uint loan, uint tokenId, uint debt) public {
+        shelf.setLoanReturn(address(nft), tokenId);
+        pile.setLoanDebtReturn(debt);
     }
 
     function testSeizeCollect() public {
         uint loan = 1; uint tokenId = 123;
         uint debt = 100;
+        uint price = debt-1;
         setUpLoan(loan, tokenId, debt);
 
-        threshold.set(loan, debt);
-        collector.file(loan, address(this), debt-1);
-        collector.seize(loan);
-        assertEq(shelf.claimCalls(), 1);
-        assertEq(shelf.loan(), loan);
-        assertEq(shelf.usr(), address(collector));
-
-        collector.collect(loan);
-        assertEq(nft.transferFromCalls(), 1);
-        assertEq(nft.to(), address(this));
-        assertEq(nft.tokenId(), tokenId);
-        assertEq(pile.callsRecovery(), 1);
-        assertEq(pile.wad(), debt-1);
-        assertEq(pile.usr(), address(this));
+        threshold.set(loan, debt-1);
+        collector.file(loan, address(this), price);
+        seize(loan);  
+        collect(loan, tokenId, price);  
     }
-    // TODO: Missing test cases:
-    // * disallow collect from unauthorized user
-    // * allow collect from any user if Tag.usr is 0
+
+    function testSeizeCollectAnyUser() public {
+        uint loan = 1; uint tokenId = 123;
+        uint debt = 100;
+        uint price = debt-1;
+        setUpLoan(loan, tokenId, debt);
+        
+        collector.file(loan, address(0), price);
+        threshold.set(loan, debt-1);
+        seize(loan);
+        collect(loan, tokenId, price);       
+    }
+
+    function testFailSeizeThresholdNotReached() public {
+        uint loan = 1; uint tokenId = 123;
+        uint debt = 100;
+        uint price = debt-1;
+        setUpLoan(loan, tokenId, debt);
+
+        threshold.set(loan, debt+1);
+        collector.file(loan, address(this), price);
+        seize(loan);
+    }
+
+    function testFailSeizeCollectUnauthorizedUser() public {
+        uint loan = 1; uint tokenId = 123;
+        uint debt = 100;
+        uint price = debt-1;
+        setUpLoan(loan, tokenId, debt);
+
+        threshold.set(loan, debt+1);
+        collector.file(loan, address(1), price);
+        seize(loan);
+        collect(loan, tokenId, price);
+    }
+    // TODO: Missing test cases
     // * test reentrancy, this code is not secure
 }
 

@@ -41,13 +41,12 @@ contract DeployerTest is DSTest {
     Appraiser appraiser;
     TitleFab titlefab;
     LightSwitchFab lightswitchfab;
-    PileFab pilefab;
     ShelfFab shelffab;
     DeskFab deskfab;
     AdmitFab admitfab;
     AdminFab adminfab;
-    DebtRegisterFab debtRegisterfab;
-
+    PileFab pilefab;
+    PrincipalFab principalFab;
     Title title;
 
     function setUp() public {
@@ -56,30 +55,30 @@ contract DeployerTest is DSTest {
         appraiser = new Appraiser();
         titlefab = new TitleFab();
         lightswitchfab = new LightSwitchFab();
-        pilefab = new PileFab();
         shelffab = new ShelfFab();
         deskfab = new DeskFab();
         admitfab = new AdmitFab();
         adminfab = new AdminFab();
-        debtRegisterfab = new DebtRegisterFab();
+        pilefab = new PileFab();
+        principalFab = new PrincipalFab();
    }
 
     function testDeploy() public logs_gas {
-        Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, pilefab, shelffab, deskfab, admitfab, adminfab, debtRegisterfab);
+        Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, shelffab, deskfab, admitfab, adminfab, pilefab, principalFab);
 
         appraiser.rely(address(deployer));
 
         deployer.deployTitle("Test", "TEST");
-        deployer.deployDebtRegister();
+        deployer.deployPile();
+        deployer.deployPrincipal();
         deployer.deployLightSwitch();
-        deployer.deployPile(address(dai));
-        deployer.deployShelf();
+        deployer.deployShelf(address(dai));
         deployer.deployDesk(address(dai));
         deployer.deployAdmit();
         deployer.deployAdmin(address(appraiser));
 
         MockCollectDeployer collectDeployer = new MockCollectDeployer();
-        deployer.deployCollect(address(collectDeployer) ,0);
+        deployer.deployCollect(address(collectDeployer), 0);
         deployer.deploy();
     }
 }

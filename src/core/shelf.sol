@@ -19,7 +19,7 @@ pragma experimental ABIEncoderV2;
 
 import "ds-note/note.sol";
 import { Title, TitleOwned } from "tinlake-title/title.sol";
-import { DebtLike } from "./debt_register.sol";
+import { PileLike } from "./pile.sol";
 
 contract NFTLike {
     function ownerOf(uint256 tokenId) public view returns (address owner);
@@ -47,7 +47,7 @@ contract Shelf is DSNote, TitleOwned {
     // --- Data ---
     Title public title;
     CeilingLike public ceiling;
-    DebtLike public debt;
+    PileLike public pile;
     TokenLike public tkn;
 
     struct Loan {
@@ -58,26 +58,21 @@ contract Shelf is DSNote, TitleOwned {
     mapping (uint => uint) public balances;
     mapping (uint => Loan) public shelf;
     mapping (bytes32 => uint) public nftlookup;
-    uint public Balance;
+    
+    uint public balance;
     address public lender;
 
-    constructor(address tkn_, address title_, address debt_, address ceiling_) TitleOwned(title_) public {
+    constructor(address tkn_, address title_, address pile_, address ceiling_) TitleOwned(title_) public {
         wards[msg.sender] = 1;
-        tkn = new TokenLike(tkn_);
+        tkn = TokenLike(tkn_);
         title = Title(title_);
-        debt = DebtLike(addr);
+        pile = PileLike(pile_);
         ceiling = CeilingLike(ceiling_);
-
     }
 
     function depend (bytes32 what, address addr) public auth {
         if (what == "lender") { lender = addr; }
         else revert();
-    }
-
-    // --- Math ---
-    function add(uint x, uint y) internal pure returns (uint z) {
-        require((z = x + y) >= x);
     }
 
     function file(uint loan, address registry_, uint nft_) public auth {
@@ -105,34 +100,33 @@ contract Shelf is DSNote, TitleOwned {
         return loan;
     }
 
-/*
     function close(uint loan) public owner(loan) {
-        require(debt.debt(loan) == 0, "outstanding-debt"); // TODO: only allow closing of a loan that isn't active anymore. maybe there is a better criteria
+        require(pile.debt(loan) == 0, "outstanding-debt"); // TODO: only allow closing of a loan that isn't active anymore. maybe there is a better criteria
         title.close(loan);
         bytes32 nft = keccak256(abi.encodePacked(shelf[loan].registry, shelf[loan].tokenId));
         nftlookup[nft] = 0;
     }
-    */
 
     // --- Currency actions ---
     function want() public view returns (int) {
-        return int(Balance) - int(tkn.balanceOf(address(this))); // safemath
+        return int(balance) - int(tkn.balanceOf(address(this))); // safemath
     }
 
     function borrow(uint loan, uint wad) public owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
-        principal.borrow(loan, wad);
-        debt.accrue(loan);
-        debt.increase(loan, wad);
+        ceiling.borrow(loan, wad);
+        pile.accrue(loan);
+        pile.incDebt(loan, wad);
+
         balances[loan] = add(balances[loan], wad);
-        Balance += wad;
+        balance += wad;
     }
 
     function withdraw(uint loan, uint wad, address usr) public owner(loan) note {
         require(nftLocked(loan), "nft-not-locked");
         require(wad <= balances[loan], "amount-too-high");
         balances[loan] -= wad;
-        Balance -= wad;
+        balance -= wad;
         tkn.transferFrom(address(this), usr, wad);
     }
 
@@ -144,26 +138,22 @@ contract Shelf is DSNote, TitleOwned {
 
     function recover(uint loan, address usr, uint wad) public auth {
         doRepay(loan, usr, wad);
-        uint loss = debt.debt(loan);
-        debt.decrease(loan, loss);
+        // TODO: do we need to decrease the loan balance here? There might be some
+        uint loss = pile.debt(loan);
+        pile.decDebt(loan, loss);
     }
 
     function doRepay(uint loan, address usr, uint wad) internal {
-        debt.accrue(loan);
-        uint loanDebt = debt.debt(loan);
-
+        pile.accrue(loan);
+        uint loanDebt = pile.debt(loan);
         // only repay max loan debt
         if (wad > loanDebt) {
             wad = loanDebt;
-        }
+        } 
 
         tkn.transferFrom(usr, address(this), wad);
-        debt.decrease(loan, wad);
+        pile.decDebt(loan, wad);
         tkn.approve(lender, wad);
-    }
-
-    function balanceOf(uint loan) public view returns (uint) {
-        return balances[loan];
     }
 
     // --- NFT actions ---
@@ -173,7 +163,7 @@ contract Shelf is DSNote, TitleOwned {
     }
  
     function unlock(uint loan) public owner(loan) {
-        require(debt.debt(loan) == 0, "has-debt");
+        require(pile.debt(loan) == 0, "has-debt");
         NFTLike(shelf[loan].registry).transferFrom(address(this), msg.sender, shelf[loan].tokenId);
     }
 
@@ -181,9 +171,13 @@ contract Shelf is DSNote, TitleOwned {
         return NFTLike(shelf[loan].registry).ownerOf(shelf[loan].tokenId) == address(this);
     }
 
-    // Used by the collector
     function claim(uint loan, address usr) public auth {
         // TODO: need to update pile/shelf to let it know it's gone.
         NFTLike(shelf[loan].registry).transferFrom(address(this), usr, shelf[loan].tokenId);
+    }
+
+    // --- Math ---
+    function add(uint x, uint y) internal pure returns (uint z) {
+        require((z = x + y) >= x);
     }
 }

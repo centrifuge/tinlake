@@ -19,6 +19,8 @@ pragma experimental ABIEncoderV2;
 
 import "ds-note/note.sol";
 
+// Principal is an implementation of the Ceiling module that defines the max amoutn a user can borrow.
+// The principal of each loan is decreased with borrow transactions. Accrued interest is ignored.
 contract Principal is DSNote {
     // --- Auth ---
     mapping (address => uint) public wards;
@@ -26,19 +28,27 @@ contract Principal is DSNote {
     function deny(address usr) public auth { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
     
-    mapping (uint => uint) public principals;
+    mapping (uint => uint) public values;
 
     constructor() public {
         wards[msg.sender] = 1;
     }
 
-    function file(uint loan, uint principal) public note auth {
-        principals[loan] = principal;
+    function ceiling(uint loan) public returns(uint) {
+        return values[loan];
     }
 
-    function borrow(uint loan, uint currencyAmount) public note auth{
-        require(principals[loan] >= currencyAmount);
-        principals[loan] -= currencyAmount;
+    function file(uint loan, uint principal) public note auth {
+        values[loan] = principal;
+    }
+
+    function borrow(uint loan, uint amount) public note auth {
+        require(values[loan] >= amount);
+        values[loan] = sub(values[loan], amount);
+    }
+
+    function sub(uint x, uint y) internal pure returns (uint z) {
+        require((z = x - y) <= x);
     }
 
 }

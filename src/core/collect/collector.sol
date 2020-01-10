@@ -27,18 +27,18 @@ contract DeskLike {
     function balance() public;
 }
 
-contract PileLike {
-    function loans(uint loan) public returns (uint, uint, uint);
-    function recovery(uint loan, address usr, uint wad) public;
-}
-
 contract RegistryLike {
     function get(uint) public returns (uint);
+}
+
+contract PileLike {
+    function debt(uint) public returns (uint);
 }
 
 contract ShelfLike {
     function claim(uint, address) public;
     function token(uint loan) public returns (address, uint);
+    function recover(uint loan, address usr, uint wad) public;
 }
 
 contract Collector {
@@ -57,13 +57,13 @@ contract Collector {
     mapping (uint => Lot) public tags;
 
     DeskLike  desk;
-    PileLike  pile;
     ShelfLike shelf;
+    PileLike pile;
 
-    constructor (address desk_, address pile_, address shelf_, address threshold_) public {
+    constructor (address desk_, address shelf_, address pile_, address threshold_) public {
         desk = DeskLike(desk_);
-        pile = PileLike(pile_);
         shelf = ShelfLike(shelf_);
+        pile = PileLike(pile_);
         threshold = RegistryLike(threshold_);
         wards[msg.sender] = 1;
     }
@@ -82,7 +82,7 @@ contract Collector {
     }
 
     function seize(uint loan) public {
-        (uint debt,,) = pile.loans(loan); // TODO: call debt registry or similar
+        uint debt = pile.debt(loan);
         require((threshold.get(loan) <= debt), "threshold-not-reached");
         shelf.claim(loan, address(this));
     }
@@ -92,7 +92,7 @@ contract Collector {
         // TODO: reentrancy?
         (address registry, uint nft) = shelf.token(loan);
         NFTLike(registry).transferFrom(address(this), msg.sender, nft);
-        pile.recovery(loan, msg.sender, tags[loan].wad);
+        shelf.recover(loan, msg.sender, tags[loan].wad);
         desk.balance();
     }
 }

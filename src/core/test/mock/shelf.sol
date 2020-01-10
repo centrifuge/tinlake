@@ -3,80 +3,64 @@ pragma solidity >=0.4.24;
 contract ShelfMock {
 
     //calls
-    uint public releaseCalls;
-    uint public depositCalls;
-    uint public fileCalls;
-    uint public adjustCalls;
-    uint public claimCalls;
-
-    uint public bags = 0; function setBags(uint bags_) public {bags=bags_;}
+    uint public callsIssue;
+    uint public callsLock;
+    uint public callsUnlock;
+    uint public callsFile;
+    uint public callsClaim;
+    uint public callsBorrow;
+    uint public callsWithdraw;
+    uint public callsRepay;
+    uint public callsRecover;
 
     uint public    loan;
     address public usr;
     address public registry;
     uint public    nft;
-    uint public    principal;
-    uint public    initial;
-    uint public    price;
+    uint public wad;
 
-    function setShelfReturn(address registry_, uint nft_,uint price_, uint principal_) public {
+    function setLoanReturn(address registry_, uint nft_) public {
         registry = registry_;
         nft = nft_;
-        price = price_;
-        principal = principal_;
     }
 
-    function shelf(uint loan) public returns (address, uint, uint, uint)  {
-        return (registry, nft, price, principal);
+    function shelf(uint loan) public returns (address, uint)  {
+        return (registry, nft);
     }
 
     function token(uint loan) public returns (address, uint) {
         return (registry, nft);
     }
 
-    function adjust(uint loan_) public {
-        loan = loan_;
-        adjustCalls++;
-    }
-
-    function release (uint loan_, address usr_) public {
+    function recover (uint loan_, address usr_, uint wad_) public {
         loan = loan_;
         usr = usr_;
-        releaseCalls++;
+        wad = wad_;
+        callsRecover++;
     }
 
-    function deposit (uint loan_, address usr_) public {
+    function lock(uint loan_, address usr_) public {
         loan = loan_;
         usr = usr_;
-        depositCalls++;
+        callsLock++;
     }
 
-    function file(uint loan_, address registry_, uint nft_) public  {
-        revert();
+    function unlock(uint loan_, address usr_) public {
         loan = loan_;
-        registry = registry_;
-        nft = nft_;
-        fileCalls++;
-    }
-
-    function file(uint loan_, address registry_, uint nft_, uint principal_) public  {
-        loan = loan_;
-        registry = registry_;
-        nft = nft_;
-        principal = principal_;
-        initial = principal_;
-        fileCalls++;
-    }
-
-    function file(uint loan_, uint principal_) public {
-        principal = principal_;
-        initial = principal;
-        fileCalls++;
+        usr = usr_;
+        callsUnlock++;
     }
 
     function claim(uint loan_, address usr_) public {
         loan = loan_;
         usr = usr_;
-        claimCalls++;
+        callsClaim++;
+    }
+
+    function file(uint loan_, address registry_, uint nft_) public  {
+        loan = loan_;
+        registry = registry_;
+        nft = nft_;
+        callsFile++;
     }
 }

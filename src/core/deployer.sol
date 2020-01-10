@@ -21,8 +21,9 @@ import { Shelf } from "./shelf.sol";
 import { Desk } from "./test/simple/desk.sol";
 import { Admit } from "./admit.sol";
 import { Admin } from "./admin.sol";
-import { DebtRegister } from "./debt_register.sol";
+import { Pile } from "./pile.sol";
 import { Collector } from "./collect/collector.sol";
+import { Principal } from "./ceiling/principal.sol";
 
 contract LenderFabLike {
     function deploy(address,address,address) public returns (address);
@@ -37,11 +38,11 @@ contract WardsLike {
     function rely(address) public;
 }
 
-contract DebtRegisterFab {
-    function newDebtRegister() public returns (DebtRegister debtRegister) {
-        debtRegister = new DebtRegister();
-        debtRegister.rely(msg.sender);
-        debtRegister.deny(address(this));
+contract PileFab {
+    function newPile() public returns (Pile pile) {
+        pile = new Pile();
+        pile.rely(msg.sender);
+        pile.deny(address(this));
     }
 }
 
@@ -62,8 +63,8 @@ contract LightSwitchFab {
 }
 
 contract ShelfFab {
-   function newShelf(address tkn_, address title_, address debt_, address ceiling_) public returns (Shelf shelf) {
-        shelf = new Shelf(tkn_, title_, debt_, ceiling_);
+   function newShelf(address tkn_, address title_, address debt_, address Principal_) public returns (Shelf shelf) {
+        shelf = new Shelf(tkn_, title_, debt_, Principal_);
         shelf.rely(msg.sender);
         shelf.deny(address(this));
     }
@@ -78,26 +79,35 @@ contract DeskFab {
 }
 
 contract AdmitFab {
-    function newAdmit(address title, address shelf) public returns (Admit admit) {
-        admit = new Admit(title, shelf);
+    function newAdmit(address title, address shelf, address principal) public returns (Admit admit) {
+        admit = new Admit(title, shelf, principal);
         admit.rely(msg.sender);
         admit.deny(address(this));
     }
 }
 
 contract AdminFab {
-    function newAdmin(address admit, address appraiser, address pile, address debtRegister) public returns(Admin admin) {
-        admin = new Admin(admit, appraiser, pile, debtRegister);
+    function newAdmin(address admit, address appraiser, address pile) public returns(Admin admin) {
+        admin = new Admin(admit, appraiser, pile);
         admin.rely(msg.sender);
         admin.deny(address(this));
     }
 }
 
 contract CollectorFab {
-    function newCollector(address desk, address shelf, address liquidation) public returns (Collector collector) {
-        collector = new Collector(desk, shelf, liquidation);
+    function newCollector(address desk, address shelf, address pile, address liquidation) public returns (Collector collector) {
+        collector = new Collector(desk, shelf, pile, liquidation);
         collector.rely(msg.sender);
         collector.deny(address(this));
+    }
+}
+
+
+contract PrincipalFab {
+    function newPrincipal() public returns (Principal principal) {
+        principal = new Principal();
+        principal.rely(msg.sender);
+        principal.deny(address(this));
     }
 }
 
@@ -108,7 +118,8 @@ contract Deployer {
     DeskFab           deskfab;
     AdmitFab          admitfab;
     AdminFab          adminfab;
-    DebtRegisterFab   debtRegisterfab;
+    PileFab           pilefab;
+    PrincipalFab      principalFab;
     CollectorFab      collectorFab;
 
     address     public god;
@@ -121,10 +132,11 @@ contract Deployer {
     Admit       public admit;
     Admin       public admin;
     LenderLike  public lender;
-    DebtRegister       public debtRegister;
+    Pile        public pile;
+    Principal   public principal;
 
 
-    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, ShelfFab shelffab_, DeskFab deskfab_, AdmitFab admitfab_, AdminFab adminfab_, DebtRegisterFab debtRegisterfab_) public {
+    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, ShelfFab shelffab_, DeskFab deskfab_, AdmitFab admitfab_, AdminFab adminfab_, PileFab pilefab_, PrincipalFab principalFab_) public {
         god = god_;
 
         titlefab = titlefab_;
@@ -133,17 +145,18 @@ contract Deployer {
         deskfab = deskfab_;
         admitfab = admitfab_;
         adminfab = adminfab_;
-        debtRegisterfab = debtRegisterfab_;
+        pilefab = pilefab_;
+        principalFab = principalFab_;
     }
 
-    function deployCollect(address collectDeployer_ ,uint threshold_) public {
+    function deployCollect(address collectDeployer_ , uint threshold_) public {
         //collectDeployer = CollectDeployerLike(collectDeployer_);
-        //collectDeployer.deploy(address(pile), address(shelf), address(desk), threshold_);
+        //collectDeployer.deploy(address(pile), address(shelf), address(pile), address(desk), threshold_);
     }
 
-    function deployDebtRegister() public {
-        debtRegister = debtRegisterfab.newDebtRegister();
-        debtRegister.rely(god);
+    function deployPile() public {
+        pile = pilefab.newPile();
+        pile.rely(god);
     }
 
     function deployTitle(string memory name, string memory symbol) public {
@@ -156,8 +169,8 @@ contract Deployer {
         lightswitch.rely(god);
     }
 
-    function deployShelf() public {
-        shelf = shelffab.newShelf(address(shelf), address(title));
+    function deployShelf(address currency_) public {
+        shelf = shelffab.newShelf(currency_, address(title), address(pile), address(principal));
         shelf.rely(god);
     }
 
@@ -169,39 +182,47 @@ contract Deployer {
     }
 
     function deployAdmit() public {
-        admit = admitfab.newAdmit(address(title), address(shelf));
+        admit = admitfab.newAdmit(address(title), address(shelf), address(principal));
         admit.rely(god);
     }
 
     function deployAdmin(address appraiser) public {
         appraiser_ = appraiser;
-        admin = adminfab.newAdmin(address(admit), appraiser_, address(pile), address(debtRegister));
+        admin = adminfab.newAdmin(address(admit), appraiser_, address(pile));
         admin.rely(god);
+    }
+
+    function deployPrincipal() public {
+        principal = principalFab.newPrincipal();
+        principal.rely(god);
     }
 
     function deploy() public {
         address desk_ = address(desk);
         address admit_ = address(admit);
         address admin_ = address(admin);
+        address shelf_ = address(shelf);
 
         // desk allowed to call
         shelf.rely(desk_);
+        
 
         // admit allowed to call
         title.rely(admit_);
         shelf.rely(admit_);
+        principal.rely(admit_);
 
-        // admin allowed to call
+        //admin allowed to call
         admit.rely(admin_);
-        //pile.rely(admin_);
-        debtRegister.rely(admin_);
+        shelf.rely(admin_);
+        pile.rely(admin_);
 
-        // pile allowed to call
-        debtRegister.rely(shelf_);
+        // shelf allowed to call
+        pile.rely(shelf_);
+        principal.rely(shelf_);
 
         // collect contracts
-        // TODO: shelf.rely(address(collectDeployer.spotter()));
-        // TODO: pile.rely(address(collectDeployer.collector()));
+        // TODO: shelf.rely(address(collectDeployer.collector()));
 
         WardsLike(appraiser_).rely(admin_);
     }
