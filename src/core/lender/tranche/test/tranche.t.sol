@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Centrifuge
+// Copyright (C) 2020 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -16,7 +16,6 @@
 pragma solidity >=0.4.23;
 
 import "ds-test/test.sol";
-import "ds-math/math.sol";
 
 import "../tranche.sol";
 import "../../../test/simple/token.sol";
@@ -25,7 +24,7 @@ contract Hevm {
     function warp(uint256) public;
 }
 
-contract TrancheTest is DSTest, DSMath {
+contract TrancheTest is DSTest {
     Tranche tranche;
     address tranche_;
     SimpleToken token;
@@ -53,6 +52,7 @@ contract TrancheTest is DSTest, DSMath {
         uint b = tranche.balance();
         assertEq(b, 100);
     }
+
     function testTokenSupply() public {
         token.mint(tranche_, 100);
         uint s = tranche.tokenSupply();
@@ -67,6 +67,7 @@ contract TrancheTest is DSTest, DSMath {
         assertEq(currency.balanceOf(self), 50);
         assertEq(tranche.tokenSupply(), 25);
     }
+
     function testRedeem() public {
         currency.mint(tranche_, 100);
         currency.approve(tranche_, uint(-1));
@@ -93,32 +94,4 @@ contract TrancheTest is DSTest, DSMath {
         assertEq(currency.balanceOf(tranche_), 0);
         assertEq(currency.balanceOf(self), 100);
     }
-
-
-    //    // --- Math ---
-    uint256 constant ONE = 10 ** 27;
-    function rpow(uint x, uint n, uint base) internal pure returns (uint z) {
-        assembly {
-            switch x case 0 {switch n case 0 {z := base} default {z := 0}}
-            default {
-                switch mod(n, 2) case 0 { z := base } default { z := x }
-                let half := div(base, 2)  // for rounding.
-                for { n := div(n, 2) } n { n := div(n,2) } {
-                let xx := mul(x, x)
-                if iszero(eq(div(xx, x), x)) { revert(0,0) }
-                let xxRound := add(xx, half)
-                if lt(xxRound, xx) { revert(0,0) }
-                x := div(xxRound, base)
-                if mod(n,2) {
-                    let zx := mul(z, x)
-                    if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0,0) }
-                    let zxRound := add(zx, half)
-                    if lt(zxRound, zx) { revert(0,0) }
-                    z := div(zxRound, base)
-                }
-            }
-            }
-        }
-    }
-
 }
