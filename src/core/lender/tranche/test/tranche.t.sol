@@ -30,8 +30,6 @@ contract TrancheTest is DSTest {
     SimpleToken token;
     SimpleToken currency;
 
-    Hevm hevm;
-
     address self;
 
     function setUp() public {
@@ -40,8 +38,6 @@ contract TrancheTest is DSTest {
         currency = new SimpleToken("CUR", "Currency", "1", 0);
         tranche = new Tranche(address(token), address(currency));
         tranche_ = address(tranche);
-        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-        hevm.warp(1234567);
 
         self = address(this);
     }
