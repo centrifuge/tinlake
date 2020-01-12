@@ -15,8 +15,8 @@ pragma solidity >=0.4.24;
 import "ds-test/test.sol";
 
 contract TrancheMock is DSTest {
-    mapping (bytes32 => uint) calls;
-    mapping (bytes32 => uint) returnValues;
+    mapping (bytes32 => uint) public calls;
+    mapping (bytes32 => uint) public returnValues;
     function setReturn(bytes32 name, uint returnValue) public {
         returnValues[name] = returnValue;
     }
@@ -29,6 +29,12 @@ contract TrancheMock is DSTest {
     }
     function balance() public returns (uint) {
         return call("balance");
+    }
+    function supply(address usr, uint currencyAmount, uint tokenAmount) public {
+        calls["supply"]++;
+    }
+    function redeem(address usr, uint currencyAmount, uint tokenAmount) public {
+        calls["redeem"]++;
     }
     function tokenSupply() public returns (uint) {
         return call("tokenSupply");

@@ -51,7 +51,6 @@ contract Assessor is DSNote,DSMath {
     constructor(address pile_) public {
         wards[msg.sender] = 1;
         pile = PileLike(pile_);
-
     }
 
     // --- Calls ---

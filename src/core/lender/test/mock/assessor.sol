@@ -9,29 +9,21 @@ contract AssessorMock is DSMath {
     address public senior;
     address public junior;
 
-    mapping (bytes32 => uint) calls;
-    mapping (bytes32 => uint) returnValues;
+    mapping (bytes32 => uint) public calls;
+    mapping (bytes32 => uint) public returnValues;
 
 
     function setReturn(bytes32 name, uint returnValue) public {
         returnValues[name] = returnValue;
     }
 
-    function funcBody(bytes32 name) internal returns (uint) {
+    function call(bytes32 name) internal returns (uint) {
         calls[name]++;
         return returnValues[name];
     }
 
     function calcTokenPrice () public returns (uint) {
-        uint tokenSupply = funcBody("tokenSupply");
-        uint assetValue = funcBody("assetValue");
-        if (tokenSupply == 0) {
-            return ONE;
-        }
-        if (assetValue == 0) {
-            revert("tranche is bankrupt");
-        }
-        return rdiv(assetValue, tokenSupply);
+        return call("tokenPrice");
     }
 
     function calcAssetValue(address tranche) public returns (uint) {
@@ -57,9 +49,9 @@ contract AssessorMock is DSMath {
         return ((poolValue + juniorReserve) >= trancheDebt) ? (trancheDebt + trancheReserve) : (poolValue + juniorReserve + trancheReserve);
     }
     function juniorReserve() internal returns (uint) {
-        return funcBody("juniorReserve");
+        return call("juniorReserve");
     }
     function seniorDebt() internal returns (uint) {
-        return funcBody("seniorDebt");
+        return call("seniorDebt");
     }
 }

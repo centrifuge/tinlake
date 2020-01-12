@@ -21,6 +21,7 @@ import "ds-math/math.sol";
 contract TrancheLike {
     function supply(address usr, uint currencyAmount, uint tokenAmount) public;
     function redeem(address usr, uint currencyAmount, uint tokenAmount ) public;
+    function mock(uint t) public;
 }
 
 contract AssessorLike {
@@ -57,7 +58,6 @@ contract Operator is DSNote,DSMath {
 
     function supply(uint currencyAmount) public auth_external {
         tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, assessor.calcTokenPrice()));
-
     }
 
     function redeem(uint tokenAmount) public auth_external {
