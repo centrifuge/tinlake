@@ -89,7 +89,6 @@ contract Collector {
 
     function collect(uint loan, address usr) public auth {
         require(usr == tags[loan].usr || tags[loan].usr == address(0));
-        // TODO: reentrancy?
         (address registry, uint nft) = shelf.token(loan);
         NFTLike(registry).transferFrom(address(this), usr, nft);
         shelf.recover(loan, usr, tags[loan].wad);

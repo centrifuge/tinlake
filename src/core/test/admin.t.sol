@@ -61,7 +61,7 @@ contract AdminTest is DSTest {
         assertEq(appraiser.loan(), loan);
     }
 
-    function doWhitelist(uint loan, uint rate) internal {
+    function _doWhitelist(uint loan, uint rate) internal {
         uint nft = 1;
         address registry = 0x29C76e6aD8f28BB1004902578Fb108c507Be341b;
         uint principal = 500 ether;
@@ -74,13 +74,13 @@ contract AdminTest is DSTest {
         uint loan = 5;
         uint rate = uint(1000000564701133626865910626); // 5 % / daily
         pile.setRateReturn(0, 0, rate, 0);
-        doWhitelist(loan, rate);
+        _doWhitelist(loan, rate);
     }
     // --Tests--
     function testFailWhitelist() public {
         uint loan = 5;
         uint rate = uint(1000000564701133626865910626); // 5 % / daily
-        doWhitelist(loan, rate);
+        _doWhitelist(loan, rate);
     }
 
     function testFileRate() public {
@@ -95,7 +95,7 @@ contract AdminTest is DSTest {
         uint loan = 5;
         uint rate = uint(1000000564701133626865910626); // 5 % / daily
         pile.setRateReturn(0, 0, rate, 0);
-        doWhitelist(loan, rate);
+        _doWhitelist(loan, rate);
 
         // first update
         uint principal = 1500 ether;

@@ -32,7 +32,7 @@ contract PileTest is DSTest {
         pile = new Pile();
     }
 
-    function setUpLoan(uint loan, uint rate) internal {
+    function _setUpLoan(uint loan, uint rate) internal {
         pile.file(rate, rate);
         pile.setRate(loan, rate);
     }
@@ -41,8 +41,8 @@ contract PileTest is DSTest {
         uint loan = 1;
         uint amount = 66 ether;
         // 12 % per year compound in seconds
-        setUpLoan(loan, 1000000003593629043335673583);
-        increaseDebt(loan, amount);
+        _setUpLoan(loan, 1000000003593629043335673583);
+        _increaseDebt(loan, amount);
         
         hevm.warp(now + 365 days);
         pile.accrue(loan);
@@ -50,13 +50,13 @@ contract PileTest is DSTest {
         assertDebt(loan, 73.92 ether); 
     }
 
-    function increaseDebt(uint loan, uint amount) internal {
+    function _increaseDebt(uint loan, uint amount) internal {
         pile.incDebt(loan, amount);
         assertEq(pile.total(), amount);
         assertEq(pile.debt(loan), amount);  
     }
 
-    function decreaseDebt(uint loan, uint amount) internal {
+    function _decreaseDebt(uint loan, uint amount) internal {
         uint total = pile.total();
         uint loanDebt = pile.debt(loan);
         pile.decDebt(loan, amount);
@@ -64,46 +64,78 @@ contract PileTest is DSTest {
         assertEq(pile.debt(loan), loanDebt - amount);  
     }
 
+    function _calculateDebt(uint rate, uint principal, uint time) internal pure returns(uint z) {
+        return rmul(principal, rpow(rate, time, ONE));
+    }
+
+    function _initRateGroup(uint rate_, uint speed_) internal {
+        pile.file(rate_, speed_);
+        (, uint chi , uint speed,) = pile.rates(rate_);
+        assertEq(speed, speed_);
+        assertEq(chi, ONE);
+    }
+
     function testIncDebt() public {
         uint loan = 1;
         uint amount = 66 ether;
         // 12 % per year compound in seconds
-        setUpLoan(loan, 1000000003593629043335673583);
-        increaseDebt(loan, amount); 
+        _setUpLoan(loan, 1000000003593629043335673583);
+        _increaseDebt(loan, amount); 
 
         hevm.warp(now + 1 days);
     }
+
+    function testInitRateGroup() public {
+        uint rate = 1000000003593629043335673583;
+        uint speed = rate;
+        _initRateGroup(rate, speed);  
+    }
+
+    function testUpdateRateGroup() public {
+        uint rate = 1000000003593629043335673583;
+        uint initSpeed = rate;
+        _initRateGroup(rate, initSpeed);
+        
+        hevm.warp(now + 1 days);
+        
+        uint newSpeed = 1000000564701133626865910626;
+        pile.file(rate, newSpeed);
+        (, uint chi, uint speed,) = pile.rates(rate);
+        assertEq(speed, 1000000564701133626865910626); 
+        assertEq(chi, 1000310537755655376744337012);  
+    }
+
 
     function testFailIncDebtNoAccrue() public {
         uint loan = 1;
         uint amount = 66 ether;
         // 12 % per year compound in seconds
-        setUpLoan(loan, 1000000003593629043335673583);
+        _setUpLoan(loan, 1000000003593629043335673583);
 
         hevm.warp(now + 1 days);
 
-        increaseDebt(loan, amount);
+        _increaseDebt(loan, amount);
     }
 
     function testDecDebt() public {
         uint loan = 1;
         uint amount = 66 ether;
         // 12 % per year compound in seconds
-        setUpLoan(loan, 1000000003593629043335673583);
-        increaseDebt(loan, amount); 
-        decreaseDebt(loan, amount);
+        _setUpLoan(loan, 1000000003593629043335673583);
+        _increaseDebt(loan, amount); 
+        _decreaseDebt(loan, amount);
     }
 
     function testFailDecDebtNoAccrue() public {
         uint loan = 1;
         uint amount = 66 ether;
         // 12 % per year compound in seconds
-        setUpLoan(loan, 1000000003593629043335673583);
-        increaseDebt(loan, amount);
+        _setUpLoan(loan, 1000000003593629043335673583);
+        _increaseDebt(loan, amount);
 
         hevm.warp(now + 1 days);
 
-        decreaseDebt(loan, amount); 
+        _decreaseDebt(loan, amount); 
     }
 
     function testChangeRate() public {
@@ -173,7 +205,7 @@ contract PileTest is DSTest {
         // one day later
         hevm.warp(now + 1 days);
         pile.drip(rate);
-        uint should = calculateDebt(rate, principal, uint(3600*24));
+        uint should = _calculateDebt(rate, principal, uint(3600*24));
         assertDebt(loan, should);
     }
 
@@ -311,10 +343,6 @@ contract PileTest is DSTest {
         pile.drip(rate);
     }
 
-    function calculateDebt(uint rate, uint principal, uint time) internal pure returns(uint z) {
-        z = rmul(principal, rpow(rate, time, ONE));
-    }
-
     function rad(uint wad_) internal pure returns (uint) {
         return wad_ * 10 ** 27;
     }
@@ -355,10 +383,6 @@ contract PileTest is DSTest {
 
     function add(uint x, uint y) internal pure returns (uint z) {
         require((z = x + y) >= x);
-    }
-
-    function sub(uint x, uint y) internal pure returns (uint z) {
-        require((z = x - y) <= x);
     }
 
     function mul(uint x, uint y) internal pure returns (uint z) {

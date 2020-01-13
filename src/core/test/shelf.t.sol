@@ -41,7 +41,7 @@ contract ShelfTest is DSTest {
         shelf = new Shelf(address(tkn), address(title), address(pile), address(ceiling));
     }
 
-    function issue(uint256 tokenId_, uint loan_) internal {
+    function _issue(uint256 tokenId_, uint loan_) internal {
         title.setIssueReturn(loan_);
         title.setOwnerOfReturn(address(this));
     
@@ -50,7 +50,7 @@ contract ShelfTest is DSTest {
         assertEq(shelf.nftlookup(keccak256(abi.encodePacked(address(nft), tokenId_))), loan_);
     }
 
-    function lock(uint256 tokenId_, uint loan_) internal {
+    function _lock(uint256 tokenId_, uint loan_) internal {
         shelf.lock(loan_, address(this));
 
         assertEq(nft.transferFromCalls(), 1);
@@ -59,7 +59,7 @@ contract ShelfTest is DSTest {
         assertEq(nft.tokenId(), tokenId_);
     }
 
-    function borrow(uint loan_, uint wad_) internal {
+    function _borrow(uint loan_, uint wad_) internal {
         shelf.borrow(loan_, wad_);
         
         assertEq(ceiling.callsBorrow(), 1);
@@ -70,7 +70,7 @@ contract ShelfTest is DSTest {
         assertEq(loanBalance, wad_);
     }
     
-    function withdraw(uint loan_, uint wad_) internal {
+    function _withdraw(uint loan_, uint wad_) internal {
         uint totalBalance = shelf.balance();
         uint loanBalance = shelf.balances(loan_);
         assertEq(totalBalance, wad_);
@@ -87,7 +87,7 @@ contract ShelfTest is DSTest {
         assertEq(tkn.wad(), wad_);
     }
 
-    function repay(uint loan_, uint wad_) internal {
+    function _repay(uint loan_, uint wad_) internal {
         pile.setLoanDebtReturn(wad_);
         shelf.repay(loan_, wad_);
 
@@ -95,13 +95,14 @@ contract ShelfTest is DSTest {
         assertEq(pile.callsDecDebt(), 1);
         assertEq(shelf.balance(), 0);
         assertEq(shelf.balances(loan_), 0);
+        assertEq(ceiling.callsRepay(), 1);
         assertEq(tkn.transferFromCalls(),2);
         assertEq(tkn.dst(),address(this));
         assertEq(tkn.src(),address(shelf));
         assertEq(tkn.wad(),wad_);
     }
 
-    function recover(uint loan_, address usr_, uint wad_, uint debt_) internal {
+    function _recover(uint loan_, address usr_, uint wad_, uint debt_) internal {
         pile.setLoanDebtReturn(debt_);
         shelf.recover(loan_, usr_, wad_);
 
@@ -121,75 +122,75 @@ contract ShelfTest is DSTest {
     function testBorrow() public {
         testLock();
         ceiling.setCeilingReached(false);
-        borrow(loan, wad);
+        _borrow(loan, wad);
     }
 
     function testFailBorrowCeilingReached() public {
         testLock();
         ceiling.setCeilingReached(true);
-        borrow(loan, wad);
+        _borrow(loan, wad);
     }
 
     function testFailBorrowNFTNotLocked() public {
         nft.setOwnerOfReturn(address(this));
-        issue(tokenId,loan);
+        _issue(tokenId,loan);
         ceiling.setCeilingReached(false);
-        borrow(loan, wad);
+        _borrow(loan, wad);
     }
 
     function testWithdraw() public {
         testLock();
         ceiling.setCeilingReached(false);
-        borrow(loan, wad);
-        withdraw(loan, wad);
+        _borrow(loan, wad);
+        _withdraw(loan, wad);
     }
 
     function testFailWithdrawNFTNotLocked() public {
         nft.setOwnerOfReturn(address(this));
-        issue(tokenId,loan);
+        _issue(tokenId,loan);
         ceiling.setCeilingReached(false);
-        borrow(loan, wad);
+        _borrow(loan, wad);
         shelf.claim(loan, address(1));
-        withdraw(loan, wad);
+        _withdraw(loan, wad);
     }
 
     function testFailWithdrawNoBalance() public {
         testLock();
         ceiling.setCeilingReached(false);
-        withdraw(loan, wad);
+        _withdraw(loan, wad);
     }
 
     function testRepay() public {
         testLock();
         ceiling.setCeilingReached(false);
-        borrow(loan, wad);
-        withdraw(loan, wad);
-        repay(loan, wad);
+        _borrow(loan, wad);
+        _withdraw(loan, wad);
+        _repay(loan, wad);
     }
 
     function testRecover() public {
         testLock();
         ceiling.setCeilingReached(false);
-        borrow(loan, wad);
-        withdraw(loan, wad);
-        recover(loan, address(1), wad-10, wad);
+        _borrow(loan, wad);
+        _withdraw(loan, wad);
+        _recover(loan, address(1), wad-10, wad);
     }
 
     function testFailRepayNFTNotLocked() public {
         nft.setOwnerOfReturn(address(this));
-        issue(tokenId,loan);
+        _issue(tokenId,loan);
         ceiling.setCeilingReached(false);
-        borrow(loan, wad);
-        withdraw(loan, wad);
+        _borrow(loan, wad);
+        _withdraw(loan, wad);
         shelf.claim(loan, address(1));
-        repay(loan, wad);
+        _repay(loan, wad);
     }
 
     function testFailRepayNFTNoWithdraw() public {
         testLock();
         ceiling.setCeilingReached(false);
-        borrow(loan, wad);
-        repay(loan, wad);
+        _borrow(loan, wad);
+        _repay(loan, wad);
     }
 
     function testSetupPrecondition() public {
@@ -199,51 +200,51 @@ contract ShelfTest is DSTest {
 
     function testIssue() public {
        nft.setOwnerOfReturn(address(this));
-       issue(tokenId, loan);
+       _issue(tokenId, loan);
     }
 
-    function testMultipleIssue() public {
+    function testMultiple_Issue() public {
         uint secondLoan = 2;
         nft.setOwnerOfReturn(address(this));
 
-        issue(tokenId, loan);
+        _issue(tokenId, loan);
 
         shelf.close(loan);
         assertEq(shelf.nftlookup(keccak256(abi.encodePacked(address(nft), tokenId))), 0);
         assertEq(title.closeCalls(), 1);
         assertEq(title.tkn(), 1);
 
-        issue(tokenId, secondLoan);
+        _issue(tokenId, secondLoan);
     }
 
-    function testFailMultipleIssue() public {
+    function testFailMultiple_Issue() public {
         uint secondLoan = 2;
         nft.setOwnerOfReturn(address(this));
 
-        issue(tokenId, loan);
-        issue(tokenId, secondLoan);
+        _issue(tokenId, loan);
+        _issue(tokenId, secondLoan);
     }
 
     function testLock() public {
         nft.setOwnerOfReturn(address(this));
-        issue(tokenId, loan);
-        lock(tokenId, loan);
+        _issue(tokenId, loan);
+        _lock(tokenId, loan);
     }
 
     function testFailLockNoWhiteList() public {
-        lock(tokenId, loan);
+        _lock(tokenId, loan);
     }
 
     function testFailLockInvalidNFT() public {
         shelf.file(loan, address(1), tokenId);
-        lock(tokenId, loan);
+        _lock(tokenId, loan);
     }
 
     function testFailDepositNotNFTOwner() public {
         // tokenId minted at some address
         nft.setOwnerOfReturn(address(1));
         shelf.file(loan, address(nft), tokenId);
-        lock(tokenId, loan);
+        _lock(tokenId, loan);
     }
 
     function testUnlock() public {

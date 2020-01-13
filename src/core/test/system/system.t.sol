@@ -43,7 +43,7 @@ contract User is DSTest{
         pile = Pile(pile_);
     }
 
-    function doBorrow (uint loan, uint amount) public {
+    function doBorrow(uint loan, uint amount) public {
         shelf.lock(loan, address(this));
         shelf.borrow(loan, amount);
         desk.balance();

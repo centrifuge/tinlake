@@ -18,14 +18,19 @@ pragma solidity >=0.4.24;
 pragma experimental ABIEncoderV2;
 
 import "ds-note/note.sol";
-import { Title, TitleOwned } from "tinlake-title/title.sol";
+import { TitleOwned } from "tinlake-title/title.sol";
 
 contract NFTLike {
     function ownerOf(uint256 tokenId) public view returns (address owner);
     function transferFrom(address from, address to, uint256 tokenId) public;
 }
 
-contract TokenLike{
+contract TitleLike {
+    function issue(address) public returns (uint);
+    function close(uint) public;
+}
+
+contract TokenLike {
     uint public totalSupply;
     function balanceOf(address) public view returns (uint);
     function transferFrom(address,address,uint) public;
@@ -42,6 +47,7 @@ contract PileLike {
 
 contract CeilingLike {
     function borrow(uint loan, uint currencyAmount) public;
+    function repay(uint loan, uint currencyAmount) public;
 }
 
 contract Shelf is DSNote, TitleOwned {
@@ -52,7 +58,7 @@ contract Shelf is DSNote, TitleOwned {
     modifier auth { require(wards[msg.sender] == 1); _; }
 
     // --- Data ---
-    Title public title;
+    TitleLike public title;
     CeilingLike public ceiling;
     PileLike public pile;
     TokenLike public tkn;
@@ -72,7 +78,7 @@ contract Shelf is DSNote, TitleOwned {
     constructor(address tkn_, address title_, address pile_, address ceiling_) TitleOwned(title_) public {
         wards[msg.sender] = 1;
         tkn = TokenLike(tkn_);
-        title = Title(title_);
+        title = TitleLike(title_);
         pile = PileLike(pile_);
         ceiling = CeilingLike(ceiling_);
     }
@@ -80,7 +86,7 @@ contract Shelf is DSNote, TitleOwned {
     function depend (bytes32 what, address addr) public auth {
         if (what == "lender") { lender = addr; }
         else if (what == "token") { tkn = TokenLike(addr); }
-        else if (what == "title") { title = Title(addr); }
+        else if (what == "title") { title = TitleLike(addr); }
         else if (what == "pile") { pile = PileLike(addr); }
         else if (what == "ceiling") { ceiling = CeilingLike(addr); }
         else revert();
@@ -124,7 +130,7 @@ contract Shelf is DSNote, TitleOwned {
     }
 
     function borrow(uint loan, uint wad) public owner(loan) {
-        require(nftLocked(loan), "nft-not-locked");
+        require(_nftLocked(loan), "nft-not-locked");
         ceiling.borrow(loan, wad);
         pile.accrue(loan);
         pile.incDebt(loan, wad);
@@ -134,7 +140,7 @@ contract Shelf is DSNote, TitleOwned {
     }
 
     function withdraw(uint loan, uint wad, address usr) public owner(loan) note {
-        require(nftLocked(loan), "nft-not-locked");
+        require(_nftLocked(loan), "nft-not-locked");
         require(wad <= balances[loan], "amount-too-high");
         balances[loan] = sub(balances[loan], wad);
         balance = sub(balance, wad);
@@ -142,18 +148,18 @@ contract Shelf is DSNote, TitleOwned {
     }
 
     function repay(uint loan, uint wad) public owner(loan) note {
-        require(nftLocked(loan), "nft-not-locked");
+        require(_nftLocked(loan), "nft-not-locked");
         require(balances[loan] == 0,"before repay loan needs to be withdrawn");
-        doRepay(loan, msg.sender, wad);
+        _repay(loan, msg.sender, wad);
     }
 
     function recover(uint loan, address usr, uint wad) public auth {
-        doRepay(loan, usr, wad);
+        _repay(loan, usr, wad);
         uint loss = pile.debt(loan);
         pile.decDebt(loan, loss);
     }
 
-    function doRepay(uint loan, address usr, uint wad) internal {
+    function _repay(uint loan, address usr, uint wad) internal {
         pile.accrue(loan);
         uint loanDebt = pile.debt(loan);
         // only repay max loan debt
@@ -162,6 +168,7 @@ contract Shelf is DSNote, TitleOwned {
         } 
 
         tkn.transferFrom(usr, address(this), wad);
+        ceiling.repay(loan, wad);
         pile.decDebt(loan, wad);
         tkn.approve(lender, wad);
     }
@@ -176,7 +183,7 @@ contract Shelf is DSNote, TitleOwned {
         NFTLike(shelf[loan].registry).transferFrom(address(this), msg.sender, shelf[loan].tokenId);
     }
 
-    function nftLocked(uint loan) internal returns (bool) {
+    function _nftLocked(uint loan) internal returns (bool) {
         return NFTLike(shelf[loan].registry).ownerOf(shelf[loan].tokenId) == address(this);
     }
 

@@ -58,7 +58,7 @@ contract Pile is DSNote {
     function incDebt(uint loan, uint wad) public auth note {
         uint rate = group[loan];
         require(now <= rates[rate].rho);
-        uint delta = toPie(rates[rate].chi, wad);
+        uint delta = _toPie(rates[rate].chi, wad);
         pie[loan] = add(pie[loan], delta);
         rates[rate].pie = add(rates[rate].pie, delta);
         total = add(total, wad);
@@ -68,7 +68,7 @@ contract Pile is DSNote {
     function decDebt(uint loan, uint wad) public auth note {
         uint rate = group[loan];
         require(now <= rates[rate].rho);
-        uint delta = toPie(rates[rate].chi, wad);
+        uint delta = _toPie(rates[rate].chi, wad);
         pie[loan] = sub(pie[loan], delta);
         rates[rate].pie = sub(rates[rate].pie, delta);
         total = sub(total, wad);
@@ -78,9 +78,9 @@ contract Pile is DSNote {
         uint rate = group[loan];
         uint chi = rates[rate].chi;
         if (now >= rates[rate].rho) {
-            (chi,) = compound(rate);
+            (chi,) = _compound(rate);
         }
-        return fromPie(chi, pie[loan]);
+        return _fromPie(chi, pie[loan]);
     }
 
     function rateDebt(uint rate) public view returns (uint) {
@@ -88,9 +88,9 @@ contract Pile is DSNote {
         uint pie = rates[rate].pie;
         
         if (now >= rates[rate].rho) {
-            (chi,) = compound(rate);
+            (chi,) = _compound(rate);
         } 
-        return fromPie(chi, pie);
+        return _fromPie(chi, pie);
     } 
 
     // --- Interest Rate Group Implementation ---
@@ -107,9 +107,9 @@ contract Pile is DSNote {
         drip(currentRate);
         drip(newRate);
         uint pie_ = pie[loan];
-        uint debt = fromPie(rates[currentRate].chi, pie_);
+        uint debt = _fromPie(rates[currentRate].chi, pie_);
         rates[currentRate].pie = sub(rates[currentRate].pie, pie_);
-        pie[loan] = toPie(rates[newRate].chi, debt);
+        pie[loan] = _toPie(rates[newRate].chi, debt);
         rates[newRate].pie = add(rates[newRate].pie, pie[loan]);
         group[loan] = newRate;
     }
@@ -117,10 +117,14 @@ contract Pile is DSNote {
     // set/change the interest rate of a rate category
     function file(uint rate, uint speed_) public auth {
         require(speed_ != 0);
-        rates[rate].speed = speed_;
-        rates[rate].chi = ONE;
-        rates[rate].rho = uint48(now);
-        drip(rate);
+
+        if (rates[rate].chi == 0) { 
+            rates[rate].chi = ONE;
+            rates[rate].rho = uint48(now);
+        } else { 
+            drip(rate);
+        }
+        rates[rate].speed = speed_; 
     }
 
     // accrue neeeds to be called before any debt amounts are modified by an external component
@@ -129,17 +133,17 @@ contract Pile is DSNote {
     }
     
     // compound calculates the new chi, the delta between old and new chi and the delta of debt
-    function compound(uint rate) internal view returns (uint chi, uint delta) {
+    function _compound(uint rate) internal view returns (uint chi, uint delta) {
         uint48 rho = rates[rate].rho;
         uint speed = rates[rate].speed;
         uint chi = rates[rate].chi;
         uint pie = rates[rate].pie;
-        uint debt = fromPie(chi, pie);
+        uint debt = _fromPie(chi, pie);
 
         // compounding in seconds
         uint chi_ = rmul(rpow(speed, now - rho, ONE), chi);
         require(chi != 0);
-        delta = fromPie(chi_, pie) - debt;
+        delta = _fromPie(chi_, pie) - debt;
 
         return (chi_, delta);
     }
@@ -148,7 +152,7 @@ contract Pile is DSNote {
     // updates the total debt
     function drip(uint rate) public {
         if (now >= rates[rate].rho) {
-            (uint chi, uint delta) = compound(rate);
+            (uint chi, uint delta) = _compound(rate);
             rates[rate].chi = chi;
             rates[rate].rho = uint48(now);
             total = add(total, delta);
@@ -156,12 +160,12 @@ contract Pile is DSNote {
     }
 
     // convert debt amount to pie
-    function toPie(uint chi, uint pie) internal view returns (uint) {
+    function _toPie(uint chi, uint pie) internal view returns (uint) {
         return rdiv(pie, chi);
     }
 
     // convert pie to debt amount
-    function fromPie(uint chi, uint pie) internal view returns (uint) {
+    function _fromPie(uint chi, uint pie) internal view returns (uint) {
         return rmul(pie, chi);
     }
 
