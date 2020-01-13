@@ -24,34 +24,34 @@ contract CurrencyLike {
 }
 
 contract SwitchableDistributor is Distributor {
-    // ERC20
-    CurrencyLike public currency;
-
-    constructor(address shelf_) Distributor(shelf_)  public {
-        borrowFromTranches = false;
-    }
-
-    bool public borrowFromTranches;
-
-    function file(bytes32 what, bool flag) public auth {
-        if (what == "borrowFromTranches") {
-            borrowFromTranches = flag;
-        }  else revert();
-    }
-
-    function depend(bytes32 what, address addr) public auth {
-        if (what == "currency") {
-            currency = CurrencyLike(currency);
-        }  else revert();
-    }
-
-    function balance() public {
-        if(borrowFromTranches) {
-            uint currencyAmount = add(senior.balance(), junior.balance());
-            borrowTranches(currencyAmount);
-            return;
-        }
-        uint repayAmount = currency.balanceOf(address(shelf));
-        repayTranches(repayAmount);
-    }
+//    // ERC20
+//    CurrencyLike public currency;
+//
+//    constructor(address shelf_) Distributor(shelf_)  public {
+//        borrowFromTranches = false;
+//    }
+//
+//    bool public borrowFromTranches;
+//
+//    function file(bytes32 what, bool flag) public auth {
+//        if (what == "borrowFromTranches") {
+//            borrowFromTranches = flag;
+//        }  else revert();
+//    }
+//
+//    function depend(bytes32 what, address addr) public auth {
+//        if (what == "currency") {
+//            currency = CurrencyLike(currency);
+//        }  else revert();
+//    }
+//
+//    function balance() public {
+//        if(borrowFromTranches) {
+//            uint currencyAmount = add(senior.balance(), junior.balance());
+//            borrowTranches(currencyAmount);
+//            return;
+//        }
+//        uint repayAmount = currency.balanceOf(address(shelf));
+//        repayTranches(repayAmount);
+//    }
 }
