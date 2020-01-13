@@ -79,7 +79,7 @@ contract Distributor is DSNote, Math {
         currencyAmount = sub(currencyAmount, borrow(junior, currencyAmount));
 
         if (currencyAmount > 0 && address(senior) != address(0)) {
-            currencyAmount = currencyAmount - borrow(senior, currencyAmount);
+            currencyAmount = sub(currencyAmount, borrow(senior, currencyAmount));
         }
 
         if (currencyAmount > 0) {
@@ -125,7 +125,7 @@ contract Distributor is DSNote, Math {
     /// @param tranche address of the tranche contract
     /// @param available total available currency to repay a tranche
     /// @return actual repaid currencyAmount
-    /// @dev available and `urrencyAmount denominated in WAD (10^18)
+    /// @dev available and currency Amount denominated in WAD (10^18)
     function repay(TrancheLike tranche, uint available) internal returns(uint) {
         uint currencyAmount = tranche.debt();
         if (available < currencyAmount) {
