@@ -21,7 +21,6 @@ import "ds-math/math.sol";
 contract TrancheLike {
     function supply(address usr, uint currencyAmount, uint tokenAmount) public;
     function redeem(address usr, uint currencyAmount, uint tokenAmount ) public;
-    function mock(uint t) public;
 }
 
 contract AssessorLike {
