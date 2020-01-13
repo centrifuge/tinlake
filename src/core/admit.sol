@@ -70,7 +70,7 @@ contract Admit {
     function update(uint loan, address registry_, uint nft_, uint principal_) public auth {
         uint principal = ceiling.values(loan);
 
-        // loan status should be admitted
+        // loan status should be whitelisted
         require(principal != 0, "loan not whitelisted");
         shelf.file(loan, registry_, nft_);
         ceiling.file(loan, principal);
@@ -79,7 +79,7 @@ contract Admit {
     function update(uint loan, uint principal_) public auth {
         uint principal = ceiling.values(loan);
 
-        // loan status should be admitted
+        // loan status should be whitelisted
         require(principal != 0, "loan not whitelisted");
         ceiling.file(loan, principal_);
     }
