@@ -65,9 +65,9 @@ contract Assessor is DSNote,DSMath {
         uint trancheReserve = TrancheLike(tranche).balance();
         uint poolValue = pile.debt();
         if (tranche == junior) {
-            return _calcJuniorAssetValue(poolValue, trancheReserve, seniorDebt());
+            return _calcJuniorAssetValue(poolValue, trancheReserve, _seniorDebt());
         }
-        return _calcSeniorAssetValue(poolValue, trancheReserve, SeniorTrancheLike(tranche).debt(), juniorReserve());
+        return _calcSeniorAssetValue(poolValue, trancheReserve, SeniorTrancheLike(tranche).debt(), _juniorReserve());
     }
 
     function calcTokenPrice() public returns (uint) {
@@ -93,11 +93,11 @@ contract Assessor is DSNote,DSMath {
         return ((poolValue + juniorReserve) >= trancheDebt) ? (trancheDebt + trancheReserve) : (poolValue + juniorReserve + trancheReserve);
     }
 
-    function juniorReserve() internal returns (uint) {
+    function _juniorReserve() internal returns (uint) {
         return TrancheLike(junior).balance();
     }
 
-    function seniorDebt() internal returns (uint) {
+    function _seniorDebt() internal returns (uint) {
         return (senior != address(0x0)) ? SeniorTrancheLike(senior).debt() : 0;
     }
 }
