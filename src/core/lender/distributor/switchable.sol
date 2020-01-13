@@ -47,12 +47,11 @@ contract SwitchableDistributor is Distributor {
 
     function balance() public {
         if(borrowFromTranches) {
-            uint repayAmount = currency.balanceOf(address(shelf));
-            repayTranches(repayAmount);
+            uint currencyAmount = add(senior.balance(), junior.balance());
+            borrowTranches(currencyAmount);
             return;
         }
-
-        uint currencyAmount = add(senior.balance(), junior.balance());
-        borrowTranches(currencyAmount);
+        uint repayAmount = currency.balanceOf(address(shelf));
+        repayTranches(repayAmount);
     }
 }
