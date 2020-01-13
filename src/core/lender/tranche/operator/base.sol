@@ -16,34 +16,28 @@
 pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
-import "ds-math/math.sol";
+import "tinlake-math/math.sol";
 
 contract TrancheLike {
     function supply(address usr, uint currencyAmount, uint tokenAmount) public;
-    function redeem(address usr, uint currencyAmount, uint tokenAmount ) public;
+    function redeem(address usr, uint currencyAmount, uint tokenAmount) public;
 }
 
 contract AssessorLike {
     function calcTokenPrice() public returns(uint);
 }
-
-// Tranche
-contract Operator is DSNote,DSMath {
+// Abstract Contract
+contract BaseOperator is DSNote, Math {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth note { wards[usr] = 1; }
     function deny(address usr) public auth note { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
 
-    // -- Users --
-    function addUser(address usr) public auth note { wards[usr] = 2; }
-    function denyUser(address usr) public auth note { wards[usr] = 0; }
-    modifier auth_external { require(wards[msg.sender] != 0); _; }
-
     TrancheLike public tranche;
     AssessorLike public assessor;
 
-    constructor(address tranche_, address assessor_) public {
+    constructor(address tranche_, address assessor_) internal {
         wards[msg.sender] = 1;
         tranche = TrancheLike(tranche);
         assessor = AssessorLike(assessor_);
@@ -55,12 +49,12 @@ contract Operator is DSNote,DSMath {
         else revert();
     }
 
-    function supply(uint currencyAmount) public auth_external {
+    function _supply(uint currencyAmount) internal {
         tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, assessor.calcTokenPrice()));
 
     }
 
-    function redeem(uint tokenAmount) public auth_external {
+    function _redeem(uint tokenAmount) internal {
         tranche.redeem(msg.sender, rmul(tokenAmount, assessor.calcTokenPrice()), tokenAmount);
     }
 }
