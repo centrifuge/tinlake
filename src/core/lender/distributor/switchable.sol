@@ -39,14 +39,14 @@ contract SwitchableDistributor is Distributor {
         }  else revert();
     }
 
-    function file(bytes32 what, address addr) public auth {
+    function depend(bytes32 what, address addr) public auth {
         if (what == "currency") {
             currency = CurrencyLike(currency);
         }  else revert();
     }
 
     function balance() public {
-        if(borrowFromTranches == true) {
+        if(borrowFromTranches) {
             uint repayAmount = currency.balanceOf(address(shelf));
             repayTranches(repayAmount);
             return;
