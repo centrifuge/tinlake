@@ -43,34 +43,34 @@ contract TrancheTest is DSTest {
     }
 
     function testBalance() public {
-        currency.mint(tranche_, 100);
-        currency.mint(self, 100);
+        currency.mint(tranche_, 100 ether);
+        currency.mint(self, 100 ether);
         uint b = tranche.balance();
-        assertEq(b, 100);
+        assertEq(b, 100 ether);
     }
 
     function testTokenSupply() public {
-        token.mint(tranche_, 100);
+        token.mint(tranche_, 100 ether);
         uint s = tranche.tokenSupply();
-        assertEq(s, 100);
+        assertEq(s, 100 ether);
     }
 
     function testSupply() public {
-        currency.mint(self, 100);
+        currency.mint(self, 100 ether);
         currency.approve(tranche_, uint(-1));
-        tranche.supply(self, 50, 25);
-        assertEq(currency.balanceOf(tranche_), 50);
-        assertEq(currency.balanceOf(self), 50);
-        assertEq(tranche.tokenSupply(), 25);
+        tranche.supply(self, 50 ether, 25 ether);
+        assertEq(currency.balanceOf(tranche_), 50 ether);
+        assertEq(currency.balanceOf(self), 50 ether);
+        assertEq(tranche.tokenSupply(), 25 ether);
     }
 
     function testRedeem() public {
-        currency.mint(tranche_, 100);
+        currency.mint(tranche_, 100 ether);
         currency.approve(tranche_, uint(-1));
         token.approve(tranche_, uint(-1));
-        token.mint(self, 50);
-        tranche.redeem(self, 100, 50);
-        assertEq(currency.balanceOf(self), 100);
+        token.mint(self, 50 ether);
+        tranche.redeem(self, 100 ether, 50 ether);
+        assertEq(currency.balanceOf(self), 100 ether);
         assertEq(token.balanceOf(self), 0);
     }
 
