@@ -31,3 +31,6 @@
 [submodule "lib/tinlake-math"]
 	path = lib/tinlake-math
 	url = https://github.com/centrifuge/tinlake-math
+[submodule "lib/tinlake-auth"]
+	path = lib/tinlake-auth
+	url = https://github.com/centrifuge/tinlake-auth
