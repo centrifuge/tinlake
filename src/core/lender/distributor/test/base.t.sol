@@ -71,7 +71,6 @@ contract SingleTrancheTest is DSTest, Math {
         shelf = new ShelfMock(); shelf_ = address(shelf);
 
         distributor = new BaseDistributor(shelf_);
-        distributor = new BaseDistributor(shelf_);
         distributor.depend("junior", junior_);
     }
 
@@ -170,6 +169,24 @@ contract TwoTranchesTest is DSTest, Math {
         assertEq(address(distributor.senior()), senior_);
         assertEq(address(distributor.junior()), junior_);
         assertEq(address(distributor.shelf()), shelf_);
+    }
+
+    function testBorrowZero() public {
+        shelf.setReturn("balanceRequest", requestWant, 0);
+        junior.setReturn("balance", 100 ether);
+
+        distributor.balance();
+        // no senior calls
+        assertEq(senior.calls("borrow"), 0);
+    }
+
+    function testRepayZero() public {
+        shelf.setReturn("balanceRequest", !requestWant, 0);
+        senior.setReturn("debt", 100 ether);
+
+        distributor.balance();
+        // no senior calls
+        assertEq(senior.calls("repay"), 0);
     }
 
     function testBorrowOnlyJunior() public {

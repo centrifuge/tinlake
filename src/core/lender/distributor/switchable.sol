@@ -26,12 +26,12 @@ contract CurrencyLike {
 contract SwitchableDistributor is BaseDistributor {
     // ERC20
     CurrencyLike public currency;
-
-    constructor(address shelf_) BaseDistributor(shelf_)  public {
-        borrowFromTranches = false;
-    }
-
     bool public borrowFromTranches;
+
+    constructor(address shelf_, address currency_) BaseDistributor(shelf_)  public {
+        currency = CurrencyLike(currency_);
+        borrowFromTranches = true;
+    }
 
     function file(bytes32 what, bool flag) public auth {
         if (what == "borrowFromTranches") {
@@ -42,16 +42,20 @@ contract SwitchableDistributor is BaseDistributor {
     function depend(bytes32 what, address addr) public auth {
         if (what == "currency") {
             currency = CurrencyLike(currency);
-        }  else revert();
+        }  else super.depend(what, addr);
     }
 
     function balance() public {
         if(borrowFromTranches) {
-            uint currencyAmount = add(senior.balance(), junior.balance());
-            borrowTranches(currencyAmount);
+            uint currencyAmount = junior.balance();
+            if (address(senior) != address(0)) {
+                currencyAmount = add(currencyAmount, senior.balance());
+            }
+            _borrowTranches(currencyAmount);
             return;
         }
         uint repayAmount = currency.balanceOf(address(shelf));
-        repayTranches(repayAmount);
+        _balanceTranches();
+        _repayTranches(repayAmount);
     }
 }
