@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.4.23;
+pragma solidity >=0.5.12;
 
 import "ds-test/test.sol";
 
@@ -84,7 +84,6 @@ contract TrancheTest is DSTest {
 
     function testBorrow() public {
         currency.mint(tranche_, 100);
-        currency.approve(tranche_, uint(-1));
         assertEq(currency.balanceOf(tranche_), 100);
         tranche.borrow(self, 100);
         assertEq(currency.balanceOf(tranche_), 0);
