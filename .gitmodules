@@ -31,9 +31,6 @@
 [submodule "lib/tinlake-math"]
 	path = lib/tinlake-math
 	url = https://github.com/centrifuge/tinlake-math
-[submodule "lib/openzeppelin-contracts"]
-	path = lib/openzeppelin-contracts
-	url = https://github.com/OpenZeppelin/openzeppelin-contracts
 [submodule "lib/tinlake-simple-nft"]
 	path = lib/tinlake-simple-nft
 	url = https://github.com/centrifuge/tinlake-simple-nft
