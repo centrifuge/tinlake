@@ -23,11 +23,11 @@ contract CurrencyLike {
     function balanceOf(address) public returns(uint);
 }
 
-contract SwitchableDistributor is Distributor {
+contract SwitchableDistributor is BaseDistributor {
     // ERC20
     CurrencyLike public currency;
 
-    constructor(address shelf_) Distributor(shelf_)  public {
+    constructor(address shelf_) BaseDistributor(shelf_)  public {
         borrowFromTranches = false;
     }
 
