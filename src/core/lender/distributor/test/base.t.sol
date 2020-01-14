@@ -117,7 +117,6 @@ contract SingleTrancheTest is DSTest, Math {
 
 }
 
-
 contract TwoTranchesTest is DSTest, Math {
     BaseDistributor distributor;
 
@@ -130,6 +129,8 @@ contract TwoTranchesTest is DSTest, Math {
 
     Hevm hevm;
 
+    bool requestWant = true;
+
     function setUp() public {
         junior = new TrancheMock(); junior_ = address(junior);
         senior = new TrancheMock(); senior_ = address(senior);
@@ -141,10 +142,75 @@ contract TwoTranchesTest is DSTest, Math {
 
     }
 
+    function balanceExpectBorrow(uint juniorAmount, uint seniorAmount) public {
+        distributor.balance();
+
+        assertEq(junior.calls("borrow"), 1);
+        assertEq(junior.values_uint("borrow_amount"), juniorAmount);
+        assertEq(junior.values_address("borrow_usr"), shelf_);
+
+        assertEq(senior.calls("borrow"), 1);
+        assertEq(senior.values_uint("borrow_amount"), seniorAmount);
+        assertEq(senior.values_address("borrow_usr"), shelf_);
+
+    }
+
+    // --- Tests ---
     function testSetupCheck() public {
         assertEq(address(distributor.senior()), senior_);
         assertEq(address(distributor.junior()), junior_);
         assertEq(address(distributor.shelf()), shelf_);
+    }
+
+    function testBorrowOnlyJunior() public {
+        uint amount = 100 ether;
+        shelf.setReturn("balanceRequest", requestWant, amount);
+        junior.setReturn("balance", 100 ether);
+        // doesn't matter
+        senior.setReturn("balance", 200 ether);
+
+        distributor.balance();
+
+        assertEq(junior.calls("borrow"), 1);
+        assertEq(junior.values_uint("borrow_amount"), amount);
+        assertEq(junior.values_address("borrow_usr"), shelf_);
+
+        // no senior calls
+        assertEq(senior.calls("borrow"), 0);
+    }
+
+    function testBorrowFromBoth() public {
+        uint amount = 150 ether;
+        shelf.setReturn("balanceRequest", requestWant, amount);
+        junior.setReturn("balance", 100 ether);
+        // doesn't matter
+        senior.setReturn("balance", 200 ether);
+
+        // borrow junior: 100, senior: 50
+        balanceExpectBorrow(100 ether, 50 ether);
+
+    }
+
+    function testBorrowTakeAll() public {
+        uint amount = 300 ether;
+        shelf.setReturn("balanceRequest", requestWant, amount);
+        junior.setReturn("balance", 100 ether);
+        // doesn't matter
+        senior.setReturn("balance", 200 ether);
+
+        // borrow junior: 100, senior: 200
+        balanceExpectBorrow(100 ether, 50 ether);
+    }
+
+    function testFailBorrowTooHigh() public {
+        uint amount = 301 ether;
+        shelf.setReturn("balanceRequest", requestWant, amount);
+        junior.setReturn("balance", 100 ether);
+        // doesn't matter
+        senior.setReturn("balance", 200 ether);
+
+        // borrow junior: 100, senior: 200
+        balanceExpectBorrow(100 ether, 50 ether);
     }
 
 }
