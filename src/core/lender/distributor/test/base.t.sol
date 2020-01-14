@@ -42,6 +42,18 @@ contract ShelfMock {
     }
 }
 
+contract SeniorMock is TrancheMock  {
+    // support different return based on called
+    function debt() public returns (uint) {
+        uint called = calls["debt"];
+        if(called == 0) {
+            return call("debt");
+        }
+        calls["debt"]++;
+        return values_return["debt_2"];
+    }
+}
+
 contract SingleTrancheTest is DSTest, Math {
     BaseDistributor distributor;
 
@@ -133,7 +145,7 @@ contract TwoTranchesTest is DSTest, Math {
 
     function setUp() public {
         junior = new TrancheMock(); junior_ = address(junior);
-        senior = new TrancheMock(); senior_ = address(senior);
+        senior = new SeniorMock(); senior_ = address(senior);
         shelf = new ShelfMock(); shelf_ = address(shelf);
         distributor = new BaseDistributor(shelf_);
 
@@ -199,7 +211,7 @@ contract TwoTranchesTest is DSTest, Math {
         senior.setReturn("balance", 200 ether);
 
         // borrow junior: 100, senior: 200
-        balanceExpectBorrow(100 ether, 50 ether);
+        balanceExpectBorrow(100 ether, 200 ether);
     }
 
     function testFailBorrowTooHigh() public {
@@ -211,6 +223,124 @@ contract TwoTranchesTest is DSTest, Math {
 
         // borrow junior: 100, senior: 200
         balanceExpectBorrow(100 ether, 50 ether);
+    }
+
+    function testRepayOnlySenior() public {
+        uint amount = 50 ether;
+        shelf.setReturn("balanceRequest", !requestWant, amount);
+
+        senior.setReturn("debt", 100 ether);
+
+        distributor.balance();
+
+        assertEq(senior.calls("repay"), 1);
+        assertEq(senior.values_uint("repay_amount"), amount);
+        assertEq(senior.values_address("repay_usr"), shelf_);
+
+        assertEq(junior.calls("repay"), 0);
+    }
+
+    function testRepayOnlyJunior() public {
+        uint amount = 50 ether;
+        shelf.setReturn("balanceRequest", !requestWant, amount);
+
+        senior.setReturn("debt", 0);
+
+        distributor.balance();
+
+        assertEq(junior.calls("repay"), 1);
+        assertEq(junior.values_uint("repay_amount"), amount);
+        assertEq(junior.values_address("repay_usr"), shelf_);
+
+        assertEq(senior.calls("repay"), 0);
+    }
+
+    function testRepayOnlyJuniorWithBalance() public {
+        uint amount = 50 ether;
+        shelf.setReturn("balanceRequest", !requestWant, amount);
+
+        senior.setReturn("debt", 0);
+        junior.setReturn("balance", 100 ether);
+
+        distributor.balance();
+
+        assertEq(junior.calls("repay"), 1);
+        assertEq(junior.values_uint("repay_amount"), amount);
+        assertEq(junior.values_address("repay_usr"), shelf_);
+
+        assertEq(senior.calls("repay"), 0);
+    }
+
+    function testRepayBothTranches() public {
+        uint amount = 150 ether;
+        shelf.setReturn("balanceRequest", !requestWant, amount);
+
+        senior.setReturn("debt", 50 ether);
+
+        distributor.balance();
+
+        assertEq(senior.calls("repay"), 1);
+        assertEq(senior.values_uint("repay_amount"), 50 ether);
+        assertEq(senior.values_address("repay_usr"), shelf_);
+
+        assertEq(junior.calls("repay"), 1);
+        assertEq(junior.values_uint("repay_amount"), 100 ether);
+        assertEq(junior.values_address("repay_usr"), shelf_);
+    }
+
+    function testRepaySeniorCoveredByJuniorReserve() public {
+        uint amount = 100 ether;
+        uint debtSenior = 50 ether;
+        uint balanceJunior = 50 ether;
+        shelf.setReturn("balanceRequest", !requestWant, amount);
+
+        senior.setReturn("debt", debtSenior);
+        // second debt call the debt is already repaid
+        senior.setReturn("debt_2", 0 ether);
+        junior.setReturn("balance", balanceJunior);
+
+        // junior -> senior 50 ether
+        // available -> junior 100 ether
+        distributor.balance();
+
+        assertEq(senior.calls("repay"), 1);
+        assertEq(senior.values_uint("repay_amount"), 50 ether);
+        assertEq(senior.values_address("repay_usr"), junior_);
+
+        assertEq(junior.calls("repay"), 1);
+        assertEq(junior.values_uint("repay_amount"), 100 ether);
+        assertEq(junior.values_address("repay_usr"), shelf_);
+
+    }
+
+    function testRepaySeniorWithJuniorAndAvailable() public {
+        uint amount = 100 ether;
+        uint juniorBalance = 10 ether;
+        uint debtSenior = 50 ether;
+        shelf.setReturn("balanceRequest", !requestWant, amount);
+
+        senior.setReturn("debt", debtSenior);
+        // second debt call return should be 40 ether
+        senior.setReturn("debt_2", debtSenior - juniorBalance);
+
+        junior.setReturn("balance", juniorBalance);
+
+        // debt from senior is repaid with junior reserve and available
+        // junior -> senior 10 ether
+        // available -> senior 40 ether (senior debt repaid)
+        // available -> junior 60 ether (the rest)
+        distributor.balance();
+
+        assertEq(senior.calls("repay"), 2);
+
+        // from second repay call
+        //debtSenior - juniorBalance
+        assertEq(senior.values_uint("repay_amount"), 40 ether);
+        assertEq(senior.values_address("repay_usr"), shelf_);
+
+        assertEq(junior.calls("repay"), 1);
+        assertEq(junior.values_uint("repay_amount"), 60 ether);
+        assertEq(junior.values_address("repay_usr"), shelf_);
     }
 
 }

@@ -131,8 +131,9 @@ contract BaseDistributor is DSNote, Math {
         if (available < currencyAmount) {
             currencyAmount = available;
         }
-
-        tranche.repay(address(shelf), currencyAmount);
+        if (currencyAmount > 0) {
+            tranche.repay(address(shelf), currencyAmount);
+        }
         return currencyAmount;
     }
 }
