@@ -17,12 +17,11 @@ pragma solidity >=0.4.23;
 pragma experimental ABIEncoderV2;
 
 import "ds-test/test.sol";
+import{ SimpleNFT } from "tinlake-simple-nft/simple.sol";
 
 import "../../test/mock/pile.sol";
 import "../../test/mock/shelf.sol";
 import "../../test/mock/trancheManager.sol";
-
-import "../../test/simple/nft.sol";
 
 import "../collector.sol";
 

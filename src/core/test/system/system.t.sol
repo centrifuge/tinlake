@@ -16,10 +16,10 @@
 pragma solidity >=0.4.23;
 
 import "ds-test/test.sol";
+import { SimpleNFT } from "tinlake-simple-nft/simple.sol";
 
 import "../../deployer.sol";
 import "../../appraiser.sol";
-import "../simple/nft.sol";
 import "../simple/token.sol";
 import "../../collect/deployer.sol";
 
