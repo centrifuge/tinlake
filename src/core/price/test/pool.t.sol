@@ -31,5 +31,8 @@ contract PricePoolTest is DSTest {
     function testPriceValue() public {
         pile.setTotalReturn(100 ether);
         assertEq(pricePool.totalValue(), 100 ether);
+        // assume 10% defaults
+        pricePool.file("riskscore", 9 * 10**26);
+        assertEq(pricePool.totalValue(), 90 ether);
     }
 }
