@@ -59,8 +59,6 @@ contract SingleTrancheTest is DSTest, Math {
 
     TrancheMock junior;
     address junior_;
-    TrancheMock senior;
-    address senior_;
     address shelf_;
     ShelfMock shelf;
 
