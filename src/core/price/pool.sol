@@ -23,7 +23,7 @@ contract PileLike {
 }
 
 contract PricePool is Auth, Math {
-    uint riskScore;
+    uint public riskScore;
     PileLike pile;
     constructor(address pile_) public {
         wards[msg.sender] = 1;
