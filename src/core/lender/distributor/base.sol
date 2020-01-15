@@ -66,13 +66,14 @@ contract BaseDistributor is DSNote, Math {
             return;
         }
 
-        if(junior.balance() > 0 && senior.debt() > 0) {
-            // move junior reserve to senior
-            uint amount = senior.debt();
+        uint seniorDebt = senior.debt();
+        if(junior.balance() > 0 && seniorDebt > 0) {
+            uint amount = seniorDebt;
             if (amount > junior.balance()) {
                 amount = junior.balance();
             }
-            senior.repay(address(junior), junior.balance());
+            // move junior reserve to senior
+            senior.repay(address(junior), amount);
         }
     }
 
