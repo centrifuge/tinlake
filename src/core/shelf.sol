@@ -28,6 +28,7 @@ contract NFTLike {
 contract TitleLike {
     function issue(address) public returns (uint);
     function close(uint) public;
+    function ownerOf (uint) public returns (address);
 }
 
 contract TokenLike {
@@ -117,13 +118,15 @@ contract Shelf is DSNote, TitleOwned {
         return loan;
     }
 
-    function close(uint loan) public owner(loan) {
+    function close(uint loan) public {
         require(pile.debt(loan) == 0, "outstanding-debt");
+        (address registry, uint tokenId) = token(loan);
+        require(title.ownerOf(loan) == msg.sender || NFTLike(registry).ownerOf(tokenId) == msg.sender, "not loan or nft owner");
         title.close(loan);
         bytes32 nft = keccak256(abi.encodePacked(shelf[loan].registry, shelf[loan].tokenId));
         nftlookup[nft] = 0;
     }
-
+    
     // --- Currency actions ---
     function balanceRequest() public returns (bool, uint) {
         if (balance > 0) {
