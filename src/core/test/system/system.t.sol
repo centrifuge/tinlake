@@ -32,12 +32,12 @@ contract ERC20Like {
 contract User is DSTest{
     ERC20Like tkn;
     Shelf shelf;
-    Desk desk;
+    TrancheManager trancheManager;
     Pile pile;
 
-    constructor (address shelf_, address desk_, address tkn_, address pile_) public {
+    constructor (address shelf_, address trancheManager_, address tkn_, address pile_) public {
         shelf = Shelf(shelf_);
-        desk = Desk(desk_);
+        trancheManager = TrancheManager(trancheManager_);
         tkn = ERC20Like(tkn_);
         pile = Pile(pile_);
     }
@@ -45,7 +45,7 @@ contract User is DSTest{
     function doBorrow(uint loan, uint amount) public {
         shelf.lock(loan, address(this));
         shelf.borrow(loan, amount);
-        desk.balance();
+        trancheManager.balance();
         shelf.withdraw(loan, amount, address(this));
     }
 
@@ -59,7 +59,7 @@ contract User is DSTest{
          emit log_named_uint("loan", wad);
         shelf.unlock(loan);
          emit log_named_uint("loan", wad);
-        desk.balance();
+        trancheManager.balance();
     }
 
     function doClose(uint loan, address usr) public {
@@ -142,30 +142,32 @@ contract SystemTest is DSTest {
         TitleFab titlefab = new TitleFab();
         LightSwitchFab lightswitchfab = new LightSwitchFab();
         ShelfFab shelffab = new ShelfFab();
-        DeskFab deskfab = new DeskFab();
+        TrancheManagerFab trancheManagerfab = new TrancheManagerFab();
         AdmitFab admitfab = new AdmitFab();
         AdminFab adminfab = new AdminFab();
         PileFab pileFab = new PileFab();
         PrincipalFab principalFab = new PrincipalFab();
+        CollectorFab collectorFab = new CollectorFab();
+        ThresholdFab thresholdFab = new ThresholdFab();
 
         admin = new AdminUser();
         admin_ = address(admin);
-        deployer = new Deployer(admin_, titlefab, lightswitchfab, shelffab, deskfab, admitfab, adminfab, pileFab, principalFab);
+        deployer = new Deployer(admin_, titlefab, lightswitchfab, shelffab, trancheManagerfab, admitfab, adminfab, pileFab, principalFab, collectorFab, thresholdFab);
          
         deployer.deployLightSwitch();
         deployer.deployTitle("Tinlake Loan", "TLNT");
         deployer.deployPile();
         deployer.deployPrincipal();
         deployer.deployShelf(tkn_);
-        deployer.deployDesk(tkn_);
+        deployer.deployTrancheManager(tkn_);
+        deployer.deployThreshold();
+        deployer.deployCollector();
         deployer.deployAdmit();
         deployer.deployAdmin();
 
-        deployCollect();
-
         deployer.deploy();
 
-        borrower = new User(address(deployer.shelf()), address(deployer.desk()), tkn_, address(deployer.pile()));
+        borrower = new User(address(deployer.shelf()), address(deployer.trancheManager()), tkn_, address(deployer.pile()));
         borrower_ = address(borrower);
         admin.file(deployer);
 
@@ -238,9 +240,9 @@ contract SystemTest is DSTest {
         return extra;
     }
 
-    // note: this method will be refactored with the new lender side contracts, as the Desk should not hold any currency
-    function currDeskBal() public returns(uint) {
-        return tkn.balanceOf(address(deployer.desk()));
+    // note: this method will be refactored with the new lender side contracts, as the trancheManager should not hold any currency
+    function currTrancheManagerBal() public returns(uint) {
+        return tkn.balanceOf(address(deployer.trancheManager()));
     }
 
     function borrowRepay(uint tokenId, uint principal, uint rate) public {
@@ -261,12 +263,12 @@ contract SystemTest is DSTest {
 
         // borrower needs some currency to pay rate
         setupRepayReq();
-        uint deskShould = deployer.pile().debt(loan) + currDeskBal();
+        uint trancheManagerShould = deployer.pile().debt(loan) + currTrancheManagerBal();
        
         // close without defined amount
         borrower.doClose(loan, borrower_);
         uint totalT = uint(tkn.totalSupply());
-        checkAfterRepay(loan, tokenId, totalT, deskShould);
+        checkAfterRepay(loan, tokenId, totalT, trancheManagerShould);
     }
 
     // --- Tests ---
@@ -313,13 +315,13 @@ contract SystemTest is DSTest {
 
         // borrower needs some currency to pay rate
         setupRepayReq();
-        uint deskShould = deployer.pile().debt(loan) + currDeskBal();
+        uint trancheManagerShould = deployer.pile().debt(loan) + currTrancheManagerBal();
 
         // close without defined amount
         borrower.doClose(loan, borrower_);
 
         uint totalT = uint(tkn.totalSupply());
-        checkAfterRepay(loan, tokenId, totalT, deskShould);
+        checkAfterRepay(loan, tokenId, totalT, trancheManagerShould);
     }
 
     function testLongOngoing() public {
@@ -331,13 +333,13 @@ contract SystemTest is DSTest {
         // borrower needs some currency to pay rate
         setupRepayReq();
 
-        uint deskShould = deployer.pile().debt(loan) + currDeskBal();
+        uint trancheManagerShould = deployer.pile().debt(loan) + currTrancheManagerBal();
 
         // close without defined amount
         borrower.doClose(loan, borrower_);
 
         uint totalT = uint(tkn.totalSupply());
-        checkAfterRepay(loan, tokenId, totalT, deskShould);
+        checkAfterRepay(loan, tokenId, totalT, trancheManagerShould);
     }
 
     function testMultipleBorrowAndRepay () public {
@@ -370,7 +372,7 @@ contract SystemTest is DSTest {
         // allow pile full control over borrower tokens
         borrower.doApproveCurrency(address(deployer.shelf()), uint(-1));
 
-        uint deskBalance = tkn.balanceOf(address(deployer.desk()));
+        uint trancheManagerBalance = tkn.balanceOf(address(deployer.trancheManager()));
         for (uint i = 1; i <= 10; i++) {
             principal = i * 80;
 
@@ -378,8 +380,8 @@ contract SystemTest is DSTest {
             emit log_named_uint("repay", principal);
             borrower.doRepay(i, principal, borrower_);
             
-            deskBalance += principal;
-            checkAfterRepay(i, i, tTotal, deskBalance);
+            trancheManagerBalance += principal;
+            checkAfterRepay(i, i, tTotal, trancheManagerBalance);
         }
     }
 

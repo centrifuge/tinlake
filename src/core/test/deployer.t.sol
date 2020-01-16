@@ -40,11 +40,13 @@ contract DeployerTest is DSTest {
     TitleFab titlefab;
     LightSwitchFab lightswitchfab;
     ShelfFab shelffab;
-    DeskFab deskfab;
+    TrancheManagerFab trancheManagerFab;
     AdmitFab admitfab;
     AdminFab adminfab;
     PileFab pilefab;
     PrincipalFab principalFab;
+    CollectorFab collectorFab;
+    ThresholdFab thresholdFab;
     Title title;
 
     function setUp() public {
@@ -53,27 +55,29 @@ contract DeployerTest is DSTest {
         titlefab = new TitleFab();
         lightswitchfab = new LightSwitchFab();
         shelffab = new ShelfFab();
-        deskfab = new DeskFab();
+        trancheManagerFab = new TrancheManagerFab();
         admitfab = new AdmitFab();
         adminfab = new AdminFab();
         pilefab = new PileFab();
         principalFab = new PrincipalFab();
+        collectorFab = new CollectorFab();
+        thresholdFab = new ThresholdFab();
    }
 
     function testDeploy() public logs_gas {
-        Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, shelffab, deskfab, admitfab, adminfab, pilefab, principalFab);
+        Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, shelffab, trancheManagerFab, admitfab, adminfab, pilefab, principalFab, collectorFab, thresholdFab);
 
         deployer.deployTitle("Test", "TEST");
         deployer.deployPile();
         deployer.deployPrincipal();
         deployer.deployLightSwitch();
         deployer.deployShelf(address(dai));
-        deployer.deployDesk(address(dai));
+        deployer.deployTrancheManager(address(dai));
         deployer.deployAdmit();
         deployer.deployAdmin();
+        deployer.deployThreshold();
+        deployer.deployCollector();
 
-        MockCollectDeployer collectDeployer = new MockCollectDeployer();
-        deployer.deployCollect(address(collectDeployer), 0);
         deployer.deploy();
     }
 }
