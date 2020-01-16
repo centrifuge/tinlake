@@ -23,7 +23,7 @@ import { Pile } from "./pile.sol";
 import { Admit } from "./admit.sol";
 import { Admin } from "./admin.sol";
 import { DebtRegister } from "./debt_register.sol";
-import {CollectDeployer} from "./collect/deployer.sol";
+import { CollectDeployer } from "./collect/deployer.sol";
 
 contract LenderFabLike {
     function deploy(address,address,address) public returns (address);
