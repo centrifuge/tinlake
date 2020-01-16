@@ -1,7 +1,6 @@
 pragma solidity >=0.4.24;
 
 contract NFTMock {
-
     //calls
     uint public transferFromCalls;
     uint public mintCalls;
@@ -10,7 +9,7 @@ contract NFTMock {
     address public from;
     address public to;
     address public owner;
-    
+
     function reset() public {
         transferFromCalls = 0;
         mintCalls = 0;
@@ -24,7 +23,6 @@ contract NFTMock {
     address public ownerOfReturn; function setOwnerOfReturn(address ownerOfReturn_) public {ownerOfReturn=ownerOfReturn_;}
 
     function ownerOf(uint256 tokenId_) public view returns (address) {
-
         return ownerOfReturn;
 
     }

@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.4.24;
+pragma solidity >=0.5.12;
 
 import "ds-note/note.sol";
 import "ds-math/math.sol";
@@ -65,9 +65,9 @@ contract Assessor is DSNote,DSMath {
         uint trancheReserve = TrancheLike(tranche).balance();
         uint poolValue = pile.debt();
         if (tranche == junior) {
-            return calcJuniorAssetValue(poolValue, trancheReserve, seniorDebt());
+            return _calcJuniorAssetValue(poolValue, trancheReserve, _seniorDebt());
         }
-        return calcSeniorAssetValue(poolValue, trancheReserve, SeniorTrancheLike(tranche).debt(), juniorReserve());
+        return _calcSeniorAssetValue(poolValue, trancheReserve, SeniorTrancheLike(tranche).debt(), _juniorReserve());
     }
 
     function calcTokenPrice() public returns (uint) {
@@ -83,21 +83,21 @@ contract Assessor is DSNote,DSMath {
     }
 
     // Tranche.assets (Junior) = (Pool.value + Tranche.reserve - Senior.debt) > 0 && (Pool.value - Tranche.reserve - Senior.debt) || 0
-    function calcJuniorAssetValue(uint poolValue, uint trancheReserve, uint seniorDebt) internal returns (uint) {
+    function _calcJuniorAssetValue(uint poolValue, uint trancheReserve, uint seniorDebt) internal returns (uint) {
         int assetValue = int(poolValue + trancheReserve - seniorDebt);
         return (assetValue > 0) ? uint(assetValue) : 0;
     }
 
     // Tranche.assets (Senior) = (Tranche.debt < (Pool.value + Junior.reserve)) && (Senior.debt + Tranche.reserve) || (Pool.value + Junior.reserve + Tranche.reserve)
-    function calcSeniorAssetValue(uint poolValue, uint trancheReserve, uint trancheDebt, uint juniorReserve) internal returns (uint) {
+    function _calcSeniorAssetValue(uint poolValue, uint trancheReserve, uint trancheDebt, uint juniorReserve) internal returns (uint) {
         return ((poolValue + juniorReserve) >= trancheDebt) ? (trancheDebt + trancheReserve) : (poolValue + juniorReserve + trancheReserve);
     }
 
-    function juniorReserve() internal returns (uint) {
+    function _juniorReserve() internal returns (uint) {
         return TrancheLike(junior).balance();
     }
 
-    function seniorDebt() internal returns (uint) {
+    function _seniorDebt() internal returns (uint) {
         return (senior != address(0x0)) ? SeniorTrancheLike(senior).debt() : 0;
     }
 }
