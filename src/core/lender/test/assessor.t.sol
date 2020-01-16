@@ -138,7 +138,7 @@ contract AssessorTest is DSTest,DSMath {
         uint debt = poolValue;
 
         uint initialNAV = 100;
-        assessor.file("initialNAV", initialNAV);
+        assessor.file("tokenAmountForONE", initialNAV);
 
         pile.setDebtReturn(poolValue);
         senior.setReturn("debt", debt);
