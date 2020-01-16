@@ -87,8 +87,8 @@ contract AdmitFab {
 }
 
 contract AdminFab {
-    function newAdmin(address admit, address appraiser, address pile) public returns(Admin admin) {
-        admin = new Admin(admit, appraiser, pile);
+    function newAdmin(address admit, address pile) public returns(Admin admin) {
+        admin = new Admin(admit, pile);
         admin.rely(msg.sender);
         admin.deny(address(this));
     }
@@ -123,7 +123,6 @@ contract Deployer {
     CollectorFab      collectorFab;
 
     address     public god;
-    address     public appraiser_;
 
     Title       public title;
     LightSwitch public lightswitch;
@@ -186,9 +185,8 @@ contract Deployer {
         admit.rely(god);
     }
 
-    function deployAdmin(address appraiser) public {
-        appraiser_ = appraiser;
-        admin = adminfab.newAdmin(address(admit), appraiser_, address(pile));
+    function deployAdmin() public {
+        admin = adminfab.newAdmin(address(admit), address(pile));
         admin.rely(god);
     }
 
@@ -223,8 +221,6 @@ contract Deployer {
 
         // collect contracts
         // TODO: shelf.rely(address(collectDeployer.collector()));
-
-        WardsLike(appraiser_).rely(admin_);
     }
 }
 

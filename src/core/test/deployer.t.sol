@@ -18,7 +18,6 @@ pragma solidity >=0.4.23;
 import "ds-test/test.sol";
 
 import "../deployer.sol";
-import "../appraiser.sol";
 import { SimpleNFT } from "./simple/nft.sol";
 import { SimpleToken } from "./simple/token.sol";
 
@@ -38,7 +37,6 @@ contract MockCollectDeployer {
 contract DeployerTest is DSTest {
     SimpleNFT nft;
     SimpleToken dai;
-    Appraiser appraiser;
     TitleFab titlefab;
     LightSwitchFab lightswitchfab;
     ShelfFab shelffab;
@@ -52,7 +50,6 @@ contract DeployerTest is DSTest {
     function setUp() public {
         nft = new SimpleNFT();
         dai = new SimpleToken("DDAI", "Dummy Dai", "1", 0);
-        appraiser = new Appraiser();
         titlefab = new TitleFab();
         lightswitchfab = new LightSwitchFab();
         shelffab = new ShelfFab();
@@ -66,8 +63,6 @@ contract DeployerTest is DSTest {
     function testDeploy() public logs_gas {
         Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, shelffab, deskfab, admitfab, adminfab, pilefab, principalFab);
 
-        appraiser.rely(address(deployer));
-
         deployer.deployTitle("Test", "TEST");
         deployer.deployPile();
         deployer.deployPrincipal();
@@ -75,7 +70,7 @@ contract DeployerTest is DSTest {
         deployer.deployShelf(address(dai));
         deployer.deployDesk(address(dai));
         deployer.deployAdmit();
-        deployer.deployAdmin(address(appraiser));
+        deployer.deployAdmin();
 
         MockCollectDeployer collectDeployer = new MockCollectDeployer();
         deployer.deployCollect(address(collectDeployer), 0);

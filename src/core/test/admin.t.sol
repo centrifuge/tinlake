@@ -19,14 +19,12 @@ pragma experimental ABIEncoderV2;
 import "ds-test/test.sol";
 
 import { Admin } from "../admin.sol";
-import "./mock/appraiser.sol";
 import "./mock/admit.sol";
 import "./mock/shelf.sol";
 import "./mock/pile.sol";
 
 contract AdminTest is DSTest {
     AdmitMock admit;
-    AppraiserMock appraiser;
     PileMock pile;
     Admin admin;
 
@@ -36,12 +34,11 @@ contract AdminTest is DSTest {
         self = address(this);
         admit = new AdmitMock();
         pile = new PileMock();
-        appraiser = new AppraiserMock();
-        admin = new Admin(address(admit), address(appraiser), address(pile));
+        admin = new Admin(address(admit), address(pile));
     }
 
-    function whitelist(uint nft, address registry, uint principal, uint appraisal, uint rate, uint loan) public {
-        admin.whitelist(registry, nft, principal, appraisal, rate, self);
+    function whitelist(uint nft, address registry, uint principal, uint rate, uint loan) public {
+        admin.whitelist(registry, nft, principal, rate, self);
 
         // check admit
         assertEq(admit.callsAdmit(),1);
@@ -54,20 +51,14 @@ contract AdminTest is DSTest {
         assertEq(pile.callsSetRate(), 1);
         assertEq(pile.rate(), rate);
         assertEq(pile.loan(), loan);
-
-        // check appraisal
-        assertEq(appraiser.callsFile(), 1);
-        assertEq(appraiser.value(), appraisal);
-        assertEq(appraiser.loan(), loan);
     }
 
     function _doWhitelist(uint loan, uint rate) internal {
         uint nft = 1;
         address registry = 0x29C76e6aD8f28BB1004902578Fb108c507Be341b;
         uint principal = 500 ether;
-        uint appraisal = 600 ether;
         admit.setAdmitReturn(loan);
-        whitelist(nft, registry, principal, appraisal, rate, loan);
+        whitelist(nft, registry, principal, rate, loan);
     }
 
     function testWhitelist() public {
@@ -99,31 +90,23 @@ contract AdminTest is DSTest {
 
         // first update
         uint principal = 1500 ether;
-        uint appraisal = 2000 ether;
 
-        admin.update(loan, principal, appraisal);
+        admin.update(loan, principal);
 
         assertEq(admit.callsUpdate(), 1);
         assertEq(admit.principal(), principal);
 
-        assertEq(appraiser.value(), appraisal);
-        assertEq(appraiser.callsFile(), 2);
-
         // second update
         principal = 1000 ether;
-        appraisal = 2500 ether;
         uint nft = 13;
         address registry = address(1);
 
-        admin.update(loan, registry, nft, principal, appraisal, rate);
+        admin.update(loan, registry, nft, principal, rate);
         assertEq(admit.callsUpdate(), 2);
         assertEq(admit.principal(),principal);
         assertEq(admit.nft(), nft);
         assertEq(admit.registry(), registry);
         assertEq(pile.rate(), rate);
-
-        assertEq(appraiser.value(), appraisal);
-        assertEq(appraiser.callsFile(), 3);
 
         // blacklist
         admin.blacklist(loan);
@@ -132,9 +115,7 @@ contract AdminTest is DSTest {
         assertEq(admit.principal(), 0);
         assertEq(admit.nft(), 0);
         assertEq(admit.registry(), address(0));
-
-        assertEq(appraiser.value(), 0);
-        assertEq(appraiser.callsFile(), 4);
+        
         assertEq(pile.rate(), 0);
     }
 }
