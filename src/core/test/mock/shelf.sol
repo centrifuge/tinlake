@@ -22,6 +22,11 @@ contract ShelfMock {
     uint public    nft;
     uint public wad;
 
+    function setReturn(bytes32 name, bool requestWant, uint amount) public {
+        returnRequestWant = requestWant;
+        returnAmount = amount;
+    }
+    
     function setLoanReturn(address registry_, uint nft_) public {
         registry = registry_;
         nft = nft_;
@@ -71,8 +76,4 @@ contract ShelfMock {
      return (returnRequestWant, returnAmount);
     }
 
-    function setReturn(bytes32 name, bool requestWant, uint amount) public {
-        returnRequestWant = requestWant;
-        returnAmount = amount;
-    }
 }

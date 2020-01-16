@@ -195,7 +195,6 @@ contract ShelfTest is DSTest {
 
     function testSetupPrecondition() public {
         tkn.setBalanceOfReturn(0);
-        assertEq(shelf.want(),0);
     }
 
     function testIssue() public {

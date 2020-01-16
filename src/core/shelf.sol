@@ -125,13 +125,13 @@ contract Shelf is DSNote, TitleOwned {
     }
 
     // --- Currency actions ---
-    function want() public view returns (int) {
-        return int(balance) - int(tkn.balanceOf(address(this)));
+    function balanceRequest() public returns (bool, uint) {
+        if (balance > 0) {
+            return (true, balance);
+        } else {
+            return (false, tkn.balanceOf(address(this)));
+        }
     }
-
-    /*function balanceRequest() public returns (bool, uint) {
-     return (returnRequestWant, returnAmount);
-    }*/
 
     function borrow(uint loan, uint wad) public owner(loan) {
         require(_nftLocked(loan), "nft-not-locked");

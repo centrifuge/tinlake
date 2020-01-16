@@ -23,7 +23,7 @@ contract NFTLike {
     function transferFrom(address from, address to, uint256 tokenId) public;
 }
 
-contract DeskLike {
+contract Distributor {
     function balance() public;
 }
 
@@ -56,12 +56,12 @@ contract Collector {
     }
     mapping (uint => Lot) public tags;
 
-    DeskLike  desk;
+    Distributor trancheManager;
     ShelfLike shelf;
     PileLike pile;
 
-    constructor (address desk_, address shelf_, address pile_, address threshold_) public {
-        desk = DeskLike(desk_);
+    constructor (address trancheManager_, address shelf_, address pile_, address threshold_) public {
+        trancheManager = Distributor(trancheManager_);
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
         threshold = RegistryLike(threshold_);
@@ -69,7 +69,7 @@ contract Collector {
     }
 
     function depend(bytes32 what, address addr) public auth {
-        if (what == "desk") desk = DeskLike(addr);
+        if (what == "trancheManager") trancheManager = Distributor(addr);
         else if (what == "shelf") shelf = ShelfLike(addr);
         else if (what == "pile") pile = PileLike(addr);
         else if (what == "threshold") threshold = RegistryLike(addr);
@@ -92,6 +92,6 @@ contract Collector {
         (address registry, uint nft) = shelf.token(loan);
         NFTLike(registry).transferFrom(address(this), usr, nft);
         shelf.recover(loan, usr, tags[loan].wad);
-        desk.balance();
+        trancheManager.balance();
     }
 }
