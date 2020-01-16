@@ -90,8 +90,8 @@ contract Collector {
     function collect(uint loan, address usr) public auth {
         require(usr == tags[loan].usr || tags[loan].usr == address(0));
         (address registry, uint nft) = shelf.token(loan);
-        NFTLike(registry).transferFrom(address(this), usr, nft);
         shelf.recover(loan, usr, tags[loan].wad);
+        NFTLike(registry).transferFrom(address(this), usr, nft);
         trancheManager.balance();
     }
 }
