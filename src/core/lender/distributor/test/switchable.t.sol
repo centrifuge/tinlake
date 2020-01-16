@@ -43,7 +43,8 @@ contract SwitchableSingleTrancheTest is DSTest, Math {
         senior = new TrancheMock(); senior_ = address(senior);
         currency = new TokenMock();
 
-        distributor = new SwitchableDistributor(shelf_, address(currency));
+        distributor = new SwitchableDistributor(address(currency));
+        distributor.depend("shelf", shelf_);
         distributor.depend("junior", junior_);
         distributor.depend("senior", address(0));
     }

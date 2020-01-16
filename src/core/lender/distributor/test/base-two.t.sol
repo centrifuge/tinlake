@@ -94,7 +94,8 @@ contract BaseDistributorTwoTranches is DSTest, Math {
         junior = new JuniorMock(); junior_ = address(junior);
         senior = new SeniorMock(); senior_ = address(senior);
         shelf = new ShelfMock(); shelf_ = address(shelf);
-        distributor = new BaseDistributor(shelf_);
+        distributor = new BaseDistributor();
+        distributor.depend("shelf", shelf_);
 
         distributor.depend("senior", senior_);
         distributor.depend("junior", junior_);
@@ -225,6 +226,7 @@ contract BaseDistributorTwoTranches is DSTest, Math {
         uint amount = 300 ether;
         shelf.setReturn("balanceRequest", requestWant, amount);
         junior.setReturn("balance", 100 ether);
+        junior.setReturn("balance_2", 100 ether);
         // doesn't matter
         senior.setReturn("balance", 200 ether);
 

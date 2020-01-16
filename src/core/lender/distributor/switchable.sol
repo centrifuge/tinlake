@@ -28,7 +28,7 @@ contract SwitchableDistributor is BaseDistributor {
     CurrencyLike public currency;
     bool public borrowFromTranches;
 
-    constructor(address shelf_, address currency_) BaseDistributor(shelf_)  public {
+    constructor(address currency_) BaseDistributor()  public {
         currency = CurrencyLike(currency_);
         borrowFromTranches = true;
     }

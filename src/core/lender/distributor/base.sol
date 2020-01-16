@@ -47,14 +47,13 @@ contract BaseDistributor is DSNote, Math {
     TrancheLike public senior;
     TrancheLike public junior;
 
-    constructor(address shelf_)  public {
+    constructor() public {
         wards[msg.sender] = 1;
-        shelf = ShelfLike(shelf_);
     }
 
     function depend (bytes32 what, address addr) public auth {
         if (what == "shelf") { shelf = ShelfLike(addr); }
-        if (what == "junior") { junior = TrancheLike(addr); }
+        else if (what == "junior") { junior = TrancheLike(addr); }
         else if (what == "senior") { senior = TrancheLike(addr); }
         else revert();
     }

@@ -58,7 +58,8 @@ contract BastDistributorSingleTrancheTest is DSTest, Math {
         junior = new TrancheMock(); junior_ = address(junior);
         shelf = new ShelfMock(); shelf_ = address(shelf);
 
-        distributor = new BaseDistributor(shelf_);
+        distributor = new BaseDistributor();
+        distributor.depend("shelf", shelf_);
         distributor.depend("junior", junior_);
     }
 
