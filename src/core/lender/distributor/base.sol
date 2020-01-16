@@ -71,7 +71,7 @@ contract BaseDistributor is DSNote, Math {
         if(juniorBalance > 0 && seniorDebt > 0) {
             uint amount = seniorDebt;
             if (amount > juniorBalance) {
-                amount = junior.balance();
+                amount = juniorBalance;
             }
             // move junior reserve to senior
             senior.repay(address(junior), amount);
