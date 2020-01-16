@@ -16,14 +16,13 @@
 pragma solidity >=0.4.23;
 
 import "ds-test/test.sol";
-import { SimpleNFT } from "tinlake-simple-nft/simple.sol";
+import { Title } from "tinlake-title/title.sol";
 
 import "../deployer.sol";
-import "../appraiser.sol";
 import { SimpleToken } from "./simple/token.sol";
 
 contract DeployerTest is DSTest {
-    SimpleNFT nft;
+    Title nft;
     SimpleToken dai;
     TitleFab titlefab;
     LightSwitchFab lightswitchfab;
@@ -38,7 +37,7 @@ contract DeployerTest is DSTest {
     Title title;
 
     function setUp() public {
-        nft = new SimpleNFT();
+        nft = new Title("SimpleNFT", "NFT");
         dai = new SimpleToken("DDAI", "Dummy Dai", "1", 0);
         titlefab = new TitleFab();
         lightswitchfab = new LightSwitchFab();

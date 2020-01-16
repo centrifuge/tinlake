@@ -31,6 +31,3 @@
 [submodule "lib/tinlake-math"]
 	path = lib/tinlake-math
 	url = https://github.com/centrifuge/tinlake-math
-[submodule "lib/tinlake-simple-nft"]
-	path = lib/tinlake-simple-nft
-	url = https://github.com/centrifuge/tinlake-simple-nft
