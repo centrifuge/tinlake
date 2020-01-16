@@ -181,7 +181,7 @@ contract Shelf is DSNote, TitleOwned {
 
     // --- NFT actions ---
     function lock(uint loan, address usr) public owner(loan) {
-        NFTLike(shelf[loan].registry).transferFrom(usr, address(this), shelf[loan].tokenId);
+        NFTLike(shelf[loan].registry).transferFrom(msg.sender, address(this), shelf[loan].tokenId);
     }
  
     function unlock(uint loan) public owner(loan) {

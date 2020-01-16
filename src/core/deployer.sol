@@ -64,8 +64,8 @@ contract LightSwitchFab {
 }
 
 contract ShelfFab {
-   function newShelf(address tkn_, address title_, address debt_, address Principal_) public returns (Shelf shelf) {
-        shelf = new Shelf(tkn_, title_, debt_, Principal_);
+   function newShelf(address tkn_, address title_, address debt_, address principal_) public returns (Shelf shelf) {
+        shelf = new Shelf(tkn_, title_, debt_, principal_);
         shelf.rely(msg.sender);
         shelf.deny(address(this));
     }
