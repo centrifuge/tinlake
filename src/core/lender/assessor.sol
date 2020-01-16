@@ -46,18 +46,26 @@ contract Assessor is DSNote,DSMath {
 
     PileLike pile;
 
+    // initial net asset value
+    uint public initialNAV;
+
     // --- Assessor ---
     // computes the current asset value for tranches.
     constructor(address pile_) public {
         wards[msg.sender] = 1;
         pile = PileLike(pile_);
-
+        initialNAV = 1;
     }
 
     // --- Calls ---
     function file(bytes32 what, address addr_) public auth {
         if (what == "junior") { junior = addr_; }
         else if (what == "senior") { senior = addr_; }
+        else revert();
+    }
+
+    function file(bytes32 what, uint value) public auth {
+        if (what == "initialNAV") { initialNAV = value; }
         else revert();
     }
 
@@ -71,6 +79,10 @@ contract Assessor is DSNote,DSMath {
     }
 
     function calcTokenPrice() public returns (uint) {
+        return mul(_calcTokenPrice(), initialNAV);
+    }
+
+    function _calcTokenPrice() internal returns (uint) {
         uint tokenSupply = TrancheLike(msg.sender).tokenSupply();
         uint assetValue = calcAssetValue(msg.sender);
         if (tokenSupply == 0) {
