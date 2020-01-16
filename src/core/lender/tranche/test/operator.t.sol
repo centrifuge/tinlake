@@ -115,6 +115,8 @@ contract OperatorTest is DSTest {
         investor.doSupply(address(allowance), 100 ether);
         assertEq(tranche.calls("supply"), 1);
         assertEq(assessor.calls("tokenPrice"), 1);
+        assertEq(tranche.returnValues("currencyAmount"), 100 ether);
+        assertEq(tranche.returnValues("tokenAmount"), 100 ether);
     }
 
     function testAllowanceRedeem() public {
@@ -122,6 +124,8 @@ contract OperatorTest is DSTest {
         investor.doRedeem(address(allowance), 100 ether);
         assertEq(tranche.calls("redeem"), 1);
         assertEq(assessor.calls("tokenPrice"), 1);
+        assertEq(tranche.returnValues("currencyAmount"), 100 ether);
+        assertEq(tranche.returnValues("tokenAmount"), 100 ether);
     }
 
     function testFailAllowanceSupply() public {
