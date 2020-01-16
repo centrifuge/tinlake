@@ -32,9 +32,13 @@ contract TrancheMock is DSTest {
     }
     function supply(address usr, uint currencyAmount, uint tokenAmount) public {
         calls["supply"]++;
+        setReturn("currencyAmount", currencyAmount);
+        setReturn("tokenAmount", tokenAmount);
     }
     function redeem(address usr, uint currencyAmount, uint tokenAmount) public {
         calls["redeem"]++;
+        setReturn("currencyAmount", currencyAmount);
+        setReturn("tokenAmount", tokenAmount);
     }
     function tokenSupply() public returns (uint) {
         return call("tokenSupply");

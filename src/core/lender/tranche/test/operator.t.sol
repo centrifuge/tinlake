@@ -81,6 +81,8 @@ contract OperatorTest is DSTest {
         investor.doSupply(address(whitelist), 100 ether);
         assertEq(tranche.calls("supply"), 1);
         assertEq(assessor.calls("tokenPrice"), 1);
+        assertEq(tranche.returnValues("currencyAmount"), 100 ether);
+        assertEq(tranche.returnValues("tokenAmount"), 100 ether);
     }
 
     function testWhitelistRedeemInvestor() public {
@@ -88,6 +90,8 @@ contract OperatorTest is DSTest {
         investor.doRedeem(address(whitelist), 100 ether);
         assertEq(tranche.calls("redeem"), 1);
         assertEq(assessor.calls("tokenPrice"), 1);
+        assertEq(tranche.returnValues("currencyAmount"), 100 ether);
+        assertEq(tranche.returnValues("tokenAmount"), 100 ether);
     }
 
     function testFailWhitelistSupply() public {
@@ -102,33 +106,32 @@ contract OperatorTest is DSTest {
         whitelist.redeem(100 ether);
     }
 
-
     function testFailWhitelistRedeemInvestor() public {
         investor.doRedeem(address(whitelist), 100 ether);
     }
 
     function testAllowanceSupply() public {
-        allowance.approve(address(this), 100 ether, 100 ether);
-        allowance.supply(100 ether);
+        allowance.approve(address(investor), 100 ether, 100 ether);
+        investor.doSupply(address(allowance), 100 ether);
         assertEq(tranche.calls("supply"), 1);
         assertEq(assessor.calls("tokenPrice"), 1);
     }
 
     function testAllowanceRedeem() public {
-        allowance.approve(address(this), 100 ether, 100 ether);
-        allowance.redeem(100 ether);
+        allowance.approve(address(investor), 100 ether, 100 ether);
+        investor.doRedeem(address(allowance), 100 ether);
         assertEq(tranche.calls("redeem"), 1);
         assertEq(assessor.calls("tokenPrice"), 1);
     }
 
     function testFailAllowanceSupply() public {
-        allowance.approve(address(this), 50 ether, 100 ether);
-        allowance.supply(100 ether);
+        allowance.approve(address(investor), 50 ether, 100 ether);
+        investor.doSupply(address(allowance), 100 ether);
     }
 
     function testFailAllowanceRedeem() public {
         assessor.setReturn("tokenPrice", 1 ether);
-        allowance.approve(address(this), 100 ether, 50 ether);
-        allowance.redeem(100 ether);
+        allowance.approve(address(investor), 100 ether, 50 ether);
+        investor.doRedeem(address(allowance), 100 ether);
     }
 }
