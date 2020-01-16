@@ -23,12 +23,16 @@ contract TrancheLike {
     function borrow(address, uint) public;
     function debt() public returns (uint);
     function repay(address, uint) public;
-    function balance() public returns (uint);
 }
 
 contract ShelfLike {
     function balanceRequest() public returns (bool requestWant, uint amount);
 }
+
+contract CurrencyLike {
+    function balanceOf(address) public returns(uint);
+}
+
 
 /// The Distributor contract borrows and repays from tranches
 /// In the base implementation the requested `currencyAmount` always is taken from the
@@ -42,20 +46,23 @@ contract Distributor is DSNote, Math {
     modifier auth { require(wards[msg.sender] == 1); _; }
 
     ShelfLike public shelf;
+    CurrencyLike public currency;
 
     // --- Tranches ---
     TrancheLike public senior;
     TrancheLike public junior;
 
-    constructor(address shelf_)  public {
+    constructor(address shelf_, address currency_)  public {
         wards[msg.sender] = 1;
         shelf = ShelfLike(shelf_);
+        currency = CurrencyLike(currency_);
     }
 
     function depend (bytes32 what, address addr) public auth {
         if (what == "shelf") { shelf = ShelfLike(addr); }
-        if (what == "junior") { junior = TrancheLike(addr); }
+        else if (what == "junior") { junior = TrancheLike(addr); }
         else if (what == "senior") { senior = TrancheLike(addr); }
+        else if (what == "currency") { currency = CurrencyLike(addr); }
         else revert();
     }
 
@@ -93,7 +100,7 @@ contract Distributor is DSNote, Math {
     /// @return actual borrowed currencyAmount
     /// @dev currencyAmount denominated in WAD (10^18)
     function borrow(TrancheLike tranche, uint currencyAmount) internal returns(uint) {
-        uint available = tranche.balance();
+        uint available = currency.balanceOf(address(tranche));
         if (currencyAmount > available) {
             currencyAmount = available;
         }
@@ -108,9 +115,10 @@ contract Distributor is DSNote, Math {
     function repayTranches(uint available) public auth {
         // repay senior always first
         if(address(senior) != address(0)) {
-            if(junior.balance() > 0 && senior.debt() > 0) {
+            uint juniorBalance = currency.balanceOf(address(junior));
+            if(juniorBalance > 0 && senior.debt() > 0) {
                 // move junior reserve to senior
-                senior.repay(address(junior), junior.balance());
+                senior.repay(address(junior), juniorBalance);
             }
             available = sub(available, repay(senior, available));
         }

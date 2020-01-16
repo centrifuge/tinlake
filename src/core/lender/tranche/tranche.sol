@@ -57,10 +57,6 @@ contract Tranche is DSNote, DSMath {
         else revert();
     }
 
-    function balance() public returns (uint) {
-        return currency.balanceOf(self);
-    }
-
     function tokenSupply() public returns (uint) {
         return token.totalSupply();
     }

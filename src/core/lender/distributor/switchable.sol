@@ -16,18 +16,14 @@
 pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
-import "./base.sol";
+import { CurrencyLike, Distributor, TrancheLike } from "./base.sol";
 
-
-contract CurrencyLike {
-    function balanceOf(address) public returns(uint);
-}
 
 contract SwitchableDistributor is Distributor {
     // ERC20
     CurrencyLike public currency;
 
-    constructor(address shelf_) Distributor(shelf_)  public {
+    constructor(address shelf_, address currency_) Distributor(shelf_, currency_)  public {
         borrowFromTranches = false;
     }
 
@@ -39,15 +35,9 @@ contract SwitchableDistributor is Distributor {
         }  else revert();
     }
 
-    function depend(bytes32 what, address addr) public auth {
-        if (what == "currency") {
-            currency = CurrencyLike(currency);
-        }  else revert();
-    }
-
     function balance() public {
         if(borrowFromTranches) {
-            uint currencyAmount = add(senior.balance(), junior.balance());
+            uint currencyAmount = add(currency.balanceOf(address(senior)), currency.balanceOf(address(junior)));
             borrowTranches(currencyAmount);
             return;
         }
