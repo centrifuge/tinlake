@@ -1,103 +1,80 @@
 pragma solidity >=0.4.24;
-pragma experimental ABIEncoderV2;
 
 contract PileMock {
-    // calls
-    uint public callsTotalBalance;
-    uint public callsBorrow;
-    uint public callsRepay;
-    uint public callsWithdraw;
-    uint public callsFile;
-    uint public callsCollect;
-    uint public callsRecovery;
 
-    struct Loan {
-        uint debt;
-        uint balance;
-        uint rate;
+    uint public callsIncDebt;
+    uint public callsDecDebt;
+    uint public callsAccrue;
+    uint public callsFile;
+    uint public callsSetRate;
+    uint public callsChangeRate;
+
+    struct Rate {
+        uint pie;
+        uint chi;
+        uint speed;
+        uint48 rho;
     }
 
-    // returns
-    uint public debtReturn; function setDebtReturn(uint debtReturn_) public {debtReturn=debtReturn_;}
     uint public loanDebtReturn; function setLoanDebtReturn(uint loanDebtReturn_) public {loanDebtReturn=loanDebtReturn_;}
-    uint public debtOfReturn; function setDebtOfReturn(uint debtOfReturn_) public {debtOfReturn=debtOfReturn_;}
-    uint public balanceReturn; function setBalanceReturn(uint balanceReturn_) public {balanceReturn=balanceReturn_;}
-    uint public totalBalanceReturn; function setTotalBalanceReturn(uint totalBalanceReturn_) public {totalBalanceReturn=totalBalanceReturn_;}
-    int public wantReturn; function setWantReturn(int wantReturn_) public {wantReturn=wantReturn_;}
-    Loan public loanReturn; function setLoanReturn(uint debt, uint balance, uint rate) public {loanReturn=Loan(debt,balance,rate);}
+    uint public getCurrentDebtReturn; function setBurdenReturn(uint getCurrentDebtReturn_) public {getCurrentDebtReturn=getCurrentDebtReturn_;}
+    uint public totalDebtReturn; function setTotalDebtReturn(uint totalDebtReturn_) public {totalDebtReturn=totalDebtReturn_;} 
+    Rate public rateReturn; function setRateReturn(uint pie, uint chi, uint speed, uint48 rho) public {rateReturn = Rate(pie, chi, speed, rho);}
+    uint public debtReturn; function setDebtReturn(uint debtReturn_) public {debtReturn=debtReturn_;}
 
+    address public usr;
     uint public loan;
     uint public wad;
     uint public rate;
-    address public usr;
-    uint public balance;
+    uint public speed;
 
-    function totalBalance() public returns (uint) {
-        callsTotalBalance++;
-        return totalBalanceReturn;
+    function rates(uint loan) public view returns(uint, uint, uint, uint) {
+        return (rateReturn.pie, rateReturn.chi, rateReturn.speed, rateReturn.rho);
     }
 
-    function debtOf(uint loan) public returns (uint) {
-        return debtOfReturn;
-    }
-
-
-    function recovery(uint loan_, address usr_, uint wad_) public  {
+    function setRate(uint loan_, uint rate_) public {
         loan = loan_;
-        wad = wad_;
-        usr = usr_;
-        callsRecovery++;
+        rate = rate_;
+        callsSetRate++;
+
     }
 
-    function borrow(uint loan_, uint wad_) public  {
+    function changeRate(uint loan_, uint rate_) public {
         loan = loan_;
-        wad = wad_;
-        callsBorrow++;
+        rate = rate_;
+        callsChangeRate++;
+
     }
 
-    function collect(uint loan_) public {
-        loan = loan_;
-        callsCollect++;
-    }
-
-    function repay(uint loan_, uint wad_) public {
-        loan = loan_;
-        wad = wad_;
-        callsRepay++;
-    }
-
-    function withdraw(uint loan_, uint wad_, address usr_) public  {
-        loan = loan_;
-        wad = wad_;
-        usr = usr_;
-        callsWithdraw++;
-    }
-
-    function debt(uint loan_) public returns (uint) {
-        loan = loan_;
+    function debt(uint loan) public returns(uint) {
         return loanDebtReturn;
     }
 
-    function debt() public returns (uint) {
+    function debt() public returns(uint) {
         return debtReturn;
     }
 
-    function balanceOf(uint loan_) public returns (uint) {
-        return balanceReturn;
+    function incDebt(uint loan_, uint wad_) public {
+       loan = loan_;
+       wad = wad_;
+       callsIncDebt++;
     }
 
-    function loans(uint loan_) public returns (Loan memory) {
-        return loanReturn;
+    function decDebt(uint loan_, uint wad_) public {
+       loan = loan_;
+       wad = wad_;
+       callsDecDebt++;
     }
 
-    function want() public view returns (int) {
-       return wantReturn;
-    }
-
-    function file(uint loan_, uint rate_, uint balance_) public {
-        callsFile++;
+    function accrue(uint loan_) public {
         loan = loan_;
-        rate = rate_;
-        balance = balance_;
+        callsAccrue++;
     }
+
+    function file(uint rate_, uint speed_) public {
+        callsFile++;
+        rate = rate_;
+        speed = speed_;
+    }
+
 }

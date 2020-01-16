@@ -20,42 +20,43 @@ import "ds-test/test.sol";
 import { Admit } from "../admit.sol";
 import "./mock/title.sol";
 import "./mock/shelf.sol";
+import "./mock/ceiling.sol";
 
 contract AdmitTest is DSTest {
     Admit admit;
     TitleMock title;
     ShelfMock shelf;
+    CeilingMock ceiling;
 
     address self;
 
     function setUp() public {
         self = address(this);
-
         title = new TitleMock();
         shelf = new ShelfMock();
-
-        admit = new Admit(address(title),address(shelf));
+        ceiling = new CeilingMock();
+        admit = new Admit(address(title), address(shelf), address(ceiling));
     }
 
     function doAdmit(uint loan, address registry, uint nft, uint principal) public {
-        uint loanR = admit.admit(registry, nft, principal, self);
-
-        assertEq(shelf.fileCalls(), 1);
+        uint loanId = admit.admit(registry, nft, principal, self);
+        assertEq(shelf.callsFile(), 1);
         assertEq(shelf.nft(), nft);
         assertEq(shelf.registry(), registry);
-        assertEq(shelf.principal(), principal);
         assertEq(title.usr(), self);
         assertEq(title.issueCalls(), 1);
-        assertEq(loanR, loan);
+        assertEq(ceiling.callsFile(), 1);
+        assertEq(ceiling.wad(), principal);
+        assertEq(loanId, loan);
     }
 
     function testAdmit() public {
         uint loan = 97;
         address registry = address(1);
+
         uint nft = 2;
         uint principal = 3;
         title.setIssueReturn(loan);
-
         doAdmit(loan, registry, nft, principal);
     }
 
@@ -64,18 +65,17 @@ contract AdmitTest is DSTest {
         address registry = address(1);
         uint nft = 2;
         uint principal = 3;
-
         title.setIssueReturn(loan);
-        shelf.setShelfReturn(registry, nft, 0, principal);
-
+        shelf.setLoanReturn(registry, nft);
         doAdmit(loan, registry, nft, principal);
-
+    
         // update
         principal = 4;
+        ceiling.setCeilingReturn(principal);
         admit.update(loan, principal);
-        assertEq(shelf.principal(), principal);
-        assertEq(shelf.initial(), principal);
-        assertEq(shelf.fileCalls(), 2);
+    
+        assertEq(ceiling.wad(), principal);
+        assertEq(ceiling.callsFile(), 2);
     }
 
     function testFullUpdate() public {
@@ -85,17 +85,19 @@ contract AdmitTest is DSTest {
         uint principal = 3;
 
         title.setIssueReturn(loan);
-        shelf.setShelfReturn(registry, nft, 0, principal);
+        shelf.setLoanReturn(registry, nft);
 
         doAdmit(loan, registry, nft, principal);
 
         principal = 4;
         nft = 12;
         registry = address(2);
+        ceiling.setCeilingReturn(principal);
         admit.update(loan, registry, nft, principal);
-        assertEq(shelf.principal(), principal);
-        assertEq(shelf.initial(), principal);
-        assertEq(shelf.fileCalls(), 2);
+       
+        assertEq(ceiling.wad(), principal);
+        assertEq(ceiling.callsFile(), 2);
+        assertEq(shelf.callsFile(), 2);
     }
 
     function testFailUpdate() public {
