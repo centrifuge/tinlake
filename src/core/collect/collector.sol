@@ -16,62 +16,82 @@
 
 pragma solidity >=0.4.24;
 
-contract SpotterLike {
-    function collectable(uint loan) public returns(bool);
-    function seizure(uint loan) public;
-    function free(uint loan, address usr) public;
+import 'tinlake-registry/registry.sol';
+
+contract NFTLike {
+    function ownerOf(uint256 tokenId) public view returns (address owner);
+    function transferFrom(address from, address to, uint256 tokenId) public;
 }
 
-contract TagLike {
-    function price(uint loan) public returns(uint);
-}
-
-contract DeskLike {
+contract Distributor {
     function balance() public;
 }
 
+contract RegistryLike {
+    function get(uint) public returns (uint);
+}
+
 contract PileLike {
-    function recovery(uint loan, address usr, uint wad) public;
+    function debt(uint) public returns (uint);
+}
+
+contract ShelfLike {
+    function claim(uint, address) public;
+    function token(uint loan) public returns (address, uint);
+    function recover(uint loan, address usr, uint wad) public;
 }
 
 contract Collector {
-
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth { wards[usr] = 1; }
     function deny(address usr) public auth { wards[usr] = 0; }
     modifier auth { require(wards[msg.sender] == 1); _; }
 
-    SpotterLike spotter;
-    TagLike tag;
-    DeskLike desk;
+    // --- Data ---
+    RegistryLike threshold;
+    struct Lot {
+        address usr;
+        uint    wad;
+    }
+    mapping (uint => Lot) public tags;
+
+    Distributor trancheManager;
+    ShelfLike shelf;
     PileLike pile;
 
-    constructor (address spotter_, address tag_, address desk_, address pile_) public {
-        spotter = SpotterLike(spotter_);
-        tag = TagLike(tag_);
-        desk = DeskLike(desk_);
+    constructor (address trancheManager_, address shelf_, address pile_, address threshold_) public {
+        trancheManager = Distributor(trancheManager_);
+        shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
+        threshold = RegistryLike(threshold_);
         wards[msg.sender] = 1;
     }
 
     function depend(bytes32 what, address addr) public auth {
-        if (what == "spotter") spotter = SpotterLike(addr);
-        else if (what == "tag") tag = TagLike(addr);
-        else if (what == "desk") desk = DeskLike(desk);
-        else if (what == "pile") pile = PileLike(pile);
+        if (what == "trancheManager") trancheManager = Distributor(addr);
+        else if (what == "shelf") shelf = ShelfLike(addr);
+        else if (what == "pile") pile = PileLike(addr);
+        else if (what == "threshold") threshold = RegistryLike(addr);
         else revert();
     }
 
-    function collect(uint loan, address usr) public auth  {
-        if(spotter.collectable(loan) == false){
-            spotter.seizure(loan);
-        }
+    // --- Collector ---
+    function file(uint loan, address usr, uint wad) public auth {
+        tags[loan] = Lot(usr, wad);
+    }
 
-        uint wad = tag.price(loan);
+    function seize(uint loan) public {
+        uint debt = pile.debt(loan);
+        require((threshold.get(loan) <= debt), "threshold-not-reached");
+        shelf.claim(loan, address(this));
+    }
 
-        pile.recovery(loan, msg.sender, wad);
-        spotter.free(loan, usr);
-        desk.balance();
+    function collect(uint loan, address usr) public auth {
+        require(usr == tags[loan].usr || tags[loan].usr == address(0));
+        (address registry, uint nft) = shelf.token(loan);
+        shelf.recover(loan, usr, tags[loan].wad);
+        NFTLike(registry).transferFrom(address(this), usr, nft);
+        trancheManager.balance();
     }
 }

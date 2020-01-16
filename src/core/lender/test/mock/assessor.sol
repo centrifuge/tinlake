@@ -1,14 +1,36 @@
-pragma solidity >=0.4.24;
+pragma solidity >=0.5.12;
 
 contract AssessorMock {
 
-    uint public assetReturn; function setAssetReturn(uint assetAmount_) public {assetReturn=assetAmount_;}
-    
-    uint public wad;
-    address public tranche;
+    address public senior;
+    address public junior;
 
-    function getAssetValueFor(address tranche_) public returns (uint) {
-        tranche = tranche_;
-        return assetReturn;
+    mapping (bytes32 => uint) calls;
+    mapping (bytes32 => uint) returnValues;
+
+
+    function setReturn(bytes32 name, uint returnValue) public {
+        returnValues[name] = returnValue;
+    }
+
+    function call(bytes32 name) internal returns (uint) {
+        calls[name]++;
+        return returnValues[name];
+    }
+
+    function calcTokenPrice () public returns (uint) {
+        return call("tokenPrice");
+    }
+
+    function calcAssetValue(address tranche) public returns (uint) {
+        return call("assetValue");
+    }
+
+    function juniorReserve() internal returns (uint) {
+        return call("juniorReserve");
+    }
+
+    function seniorDebt() internal returns (uint) {
+        return call("seniorDebt");
     }
 }
