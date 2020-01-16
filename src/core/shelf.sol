@@ -129,12 +129,15 @@ contract Shelf is DSNote, TitleOwned {
         return int(balance) - int(tkn.balanceOf(address(this)));
     }
 
+    /*function balanceRequest() public returns (bool, uint) {
+     return (returnRequestWant, returnAmount);
+    }*/
+
     function borrow(uint loan, uint wad) public owner(loan) {
         require(_nftLocked(loan), "nft-not-locked");
-        ceiling.borrow(loan, wad);
         pile.accrue(loan);
+        ceiling.borrow(loan, wad);
         pile.incDebt(loan, wad);
-
         balances[loan] = add(balances[loan], wad);
         balance = add(balance, wad);
     }

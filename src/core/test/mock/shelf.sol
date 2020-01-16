@@ -12,6 +12,9 @@ contract ShelfMock {
     uint public callsWithdraw;
     uint public callsRepay;
     uint public callsRecover;
+    uint calls;
+    bool returnRequestWant;
+    uint returnAmount;
 
     uint public    loan;
     address public usr;
@@ -62,5 +65,14 @@ contract ShelfMock {
         registry = registry_;
         nft = nft_;
         callsFile++;
+    }
+
+    function balanceRequest() public returns (bool, uint) {
+     return (returnRequestWant, returnAmount);
+    }
+
+    function setReturn(bytes32 name, bool requestWant, uint amount) public {
+        returnRequestWant = requestWant;
+        returnAmount = amount;
     }
 }
