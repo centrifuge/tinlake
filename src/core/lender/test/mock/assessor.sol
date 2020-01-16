@@ -1,8 +1,6 @@
-pragma solidity >=0.4.24;
+pragma solidity >=0.5.12;
 
-import "ds-math/math.sol";
-
-contract AssessorMock is DSMath {
+contract AssessorMock {
 
     address public senior;
     address public junior;

@@ -18,6 +18,7 @@ pragma solidity >=0.4.24;
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
 
+/// Interfaces
 contract TrancheLike {
     function borrow(address, uint) public;
     function debt() public returns (uint);
@@ -29,6 +30,10 @@ contract ShelfLike {
     function balanceRequest() public returns (bool requestWant, uint amount);
 }
 
+/// The Distributor contract borrows and repays from tranches
+/// In the base implementation the requested `currencyAmount` always is taken from the
+/// junior tranche first. For repayment senior comes first.
+/// This implementation can handle one or two tranches.
 contract Distributor is DSNote, Math {
     // --- Auth ---
     mapping (address => uint) public wards;
@@ -54,9 +59,10 @@ contract Distributor is DSNote, Math {
         else revert();
     }
 
+
+    /// handles requests from the shelf contract (borrower side)
     function balance() public {
         (bool requestWant, uint currencyAmount) = shelf.balanceRequest();
-
         if (requestWant) {
             borrowTranches(currencyAmount);
             return;
@@ -65,12 +71,15 @@ contract Distributor is DSNote, Math {
         repayTranches(currencyAmount);
     }
 
-    // -- Borrow Tranches ---
+    /// borrows currency from the tranches.
+    /// @param currencyAmount request amount to borrow
+    /// @dev currencyAmount denominated in WAD (10^18)
     function borrowTranches(uint currencyAmount) internal  {
+        // take from junior first
         currencyAmount = sub(currencyAmount, borrow(junior, currencyAmount));
 
-        if (currencyAmount > 0) {
-            currencyAmount = currencyAmount - borrow(senior, currencyAmount);
+        if (currencyAmount > 0 && address(senior) != address(0)) {
+            currencyAmount = sub(currencyAmount, borrow(senior, currencyAmount));
         }
 
         if (currencyAmount > 0) {
@@ -78,6 +87,11 @@ contract Distributor is DSNote, Math {
         }
     }
 
+    /// borrows up to the max amount from one tranche
+    /// @param tranche reference to the tranche contract
+    /// @param currencyAmount request amount to borrow
+    /// @return actual borrowed currencyAmount
+    /// @dev currencyAmount denominated in WAD (10^18)
     function borrow(TrancheLike tranche, uint currencyAmount) internal returns(uint) {
         uint available = tranche.balance();
         if (currencyAmount > available) {
@@ -88,10 +102,18 @@ contract Distributor is DSNote, Math {
         return currencyAmount;
     }
 
-    //  method      repayTranches
-    //  available   total available currency for repaying the tranches
+    /// repays according to a waterfall model
+    /// @param available total available currency to repay the tranches
+    /// @dev available denominated in WAD (10^18)
     function repayTranches(uint available) public auth {
-        available = sub(available, repay(senior, available));
+        // repay senior always first
+        if(address(senior) != address(0)) {
+            if(junior.balance() > 0 && senior.debt() > 0) {
+                // move junior reserve to senior
+                senior.repay(address(junior), junior.balance());
+            }
+            available = sub(available, repay(senior, available));
+        }
 
         if (available > 0) {
             // junior gets the rest
@@ -100,10 +122,10 @@ contract Distributor is DSNote, Math {
     }
 
     /// repays the debt of a single tranche if enough currency is available
-    /// @param `tranche` address of the tranche contract
-    /// @param `available` total available currency to repay a tranche
-    /// @return repaid currencyAmount
-    /// @dev `available` and `currencyAmount` denominated in WAD (10^18)
+    /// @param tranche address of the tranche contract
+    /// @param available total available currency to repay a tranche
+    /// @return actual repaid currencyAmount
+    /// @dev available and currency Amount denominated in WAD (10^18)
     function repay(TrancheLike tranche, uint available) internal returns(uint) {
         uint currencyAmount = tranche.debt();
         if (available < currencyAmount) {
