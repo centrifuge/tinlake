@@ -31,7 +31,7 @@ contract TrancheFab {
     }
 }
 
-contract SeniorTrancheFab {
+contract SeniorFab {
     function newSeniorTranche(address currency, address token) public returns (SeniorTranche tranche) {
         tranche = new SeniorTranche(currency, token);
         tranche.rely(msg.sender);
@@ -47,7 +47,7 @@ contract AssessorFab {
     }
 }
 
-contract AllowanceOperatorFab {
+contract AllowanceFab {
     function newAllowanceOperator(address tranche, address assessor) public returns (AllowanceOperator operator) {
         operator = new AllowanceOperator(tranche, assessor);
         operator.rely(msg.sender);
@@ -55,7 +55,7 @@ contract AllowanceOperatorFab {
     }
 }
 
-contract WhitelistOperatorFab {
+contract WhitelistFab {
     function newWhitelistOperator(address tranche, address assessor) public returns (WhitelistOperator operator) {
         operator = new WhitelistOperator(tranche, assessor);
         operator.rely(msg.sender);
@@ -73,7 +73,33 @@ contract DistributorFab {
 
 contract LenderDeployer {
     TrancheFab tranchefab;
+    SeniorFab seniorfab;
     AssessorFab assessorfab;
-    AllowanceOperatorFab allowanceoperatorfab;
+    AllowanceFab allowancefab;
+    WhitelistFab whitelistfab;
+    DistributorFab distributorfab;
 
+    address god;
+
+    Tranche public tranche;
+    SeniorTranche public senior;
+    Assessor public assessor;
+    AllowanceOperator public allowance;
+    WhitelistOperator public whitelist;
+    Distributor public distributor;
+
+    constructor(address god_, TrancheFab trancheFab_, SeniorFab seniorFab_, AssessorFab assessorFab_, AllowanceFab allowanceFab_,
+    WhitelistFab whitelistFab_, DistributorFab distributorFab_) public {
+        god = god_;
+        tranchefab = trancheFab_;
+        seniorfab = seniorFab_;
+        assessorfab = assessorFab_;
+        allowancefab = allowanceFab_;
+        whitelistfab = whitelistFab_;
+        distributorfab = distributorFab_;
+    }
+
+    function elect(){}
+
+    function impeach(){}
 }
