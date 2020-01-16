@@ -16,13 +16,14 @@
 pragma solidity >=0.4.23;
 
 import "ds-test/test.sol";
+import "tinlake-math/math.sol";
 import "../pile.sol";
 
 contract Hevm {
     function warp(uint256) public;
 }
 
-contract PileTest is DSTest {
+contract PileTest is Math, DSTest {
     Pile pile;
     Hevm hevm;
 
@@ -375,17 +376,5 @@ contract PileTest is DSTest {
             }
             }
         }
-    }
-
-    function rmul(uint x, uint y) internal pure returns (uint z) {
-        z = mul(x, y) / ONE;
-    }
-
-    function add(uint x, uint y) internal pure returns (uint z) {
-        require((z = x + y) >= x);
-    }
-
-    function mul(uint x, uint y) internal pure returns (uint z) {
-        require(y == 0 || (z = x * y) / y == x);
     }
 }

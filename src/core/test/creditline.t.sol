@@ -16,10 +16,11 @@
 pragma solidity >=0.4.23;
 
 import "ds-test/test.sol";
+import "tinlake-math/math.sol";
 import "../ceiling/creditline.sol";
 import "./mock/pile.sol";
 
-contract CreditLineTest is DSTest {
+contract CreditLineTest is Math, DSTest {
     CreditLine creditLine;
     PileMock pile;
 
@@ -53,13 +54,4 @@ contract CreditLineTest is DSTest {
         uint borrowAmount = add(initial, 10);
         creditLine.borrow(loanId, borrowAmount);
     }
-
-    function add(uint x, uint y) internal pure returns (uint z) {
-        require((z = x + y) >= x);
-    }
-
-    function sub(uint x, uint y) internal pure returns (uint z) {
-        require((z = x - y) <= x);
-    }
-
 }

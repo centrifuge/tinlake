@@ -18,10 +18,11 @@ pragma solidity >=0.4.24;
 pragma experimental ABIEncoderV2;
 
 import "ds-note/note.sol";
+import "tinlake-math/math.sol";
 
 // Principal is an implementation of the Ceiling module that defines the max amount a user can borrow.
 // The principal of each loan is decreased with borrow transactions. Accrued interest is ignored.
-contract Principal is DSNote {
+contract Principal is Math, DSNote {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth { wards[usr] = 1; }
@@ -49,9 +50,4 @@ contract Principal is DSNote {
 
     function repay(uint loan, uint amount) public auth {
     }
-
-    function sub(uint x, uint y) internal pure returns (uint z) {
-        require((z = x - y) <= x);
-    }
-
 }

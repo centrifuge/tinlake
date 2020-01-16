@@ -18,6 +18,7 @@ pragma solidity >=0.4.24;
 pragma experimental ABIEncoderV2;
 
 import "ds-note/note.sol";
+import "tinlake-math/math.sol";
 import { TitleOwned } from "tinlake-title/title.sol";
 
 contract NFTLike {
@@ -51,7 +52,7 @@ contract CeilingLike {
     function repay(uint loan, uint currencyAmount) public;
 }
 
-contract Shelf is DSNote, TitleOwned {
+contract Shelf is DSNote, TitleOwned, Math {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth { wards[usr] = 1; }
@@ -195,14 +196,5 @@ contract Shelf is DSNote, TitleOwned {
 
     function claim(uint loan, address usr) public auth {
         NFTLike(shelf[loan].registry).transferFrom(address(this), usr, shelf[loan].tokenId);
-    }
-
-    // --- Math ---
-    function add(uint x, uint y) internal pure returns (uint z) {
-        require((z = x + y) >= x);
-    }
-
-    function sub(uint x, uint y) internal pure returns (uint z) {
-        require((z = x - y) <= x);
     }
 }

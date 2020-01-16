@@ -18,6 +18,7 @@ pragma solidity >=0.4.24;
 pragma experimental ABIEncoderV2;
 
 import "ds-note/note.sol";
+import "tinlake-math/math.sol";
 
 contract PileLike {
     uint public total;
@@ -29,7 +30,7 @@ contract PileLike {
 
 // CreditLine is an implementation of the Ceiling module that defines the max amount a user can borrow.
 // Borrowers can always repay and borrow new money as long as the total borrowed amount stays under the defined line of credit. Accrued interst is considered.
-contract CreditLine is DSNote {
+contract CreditLine is Math, DSNote{
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth { wards[usr] = 1; }
@@ -49,12 +50,12 @@ contract CreditLine is DSNote {
         return sub(values[loan], pile.debt(loan));
     }
 
-    function depend(bytes32 what, address addr) public auth {
+    function depend(bytes32 what, address addr) public note auth {
         if (what == "pile") { pile = PileLike(addr); }
         else revert();
     }
 
-    function file(uint loan, uint creditLine) public auth {
+    function file(uint loan, uint creditLine) public note auth {
         values[loan] = creditLine;
     }
 
@@ -62,14 +63,6 @@ contract CreditLine is DSNote {
         require(values[loan] >= add(pile.debt(loan), amount));
     }
 
-    function repay(uint loan, uint amount) public note auth {
-    }
-
-    function add(uint x, uint y) internal pure returns (uint z) {
-        require((z = x + y) >= x);
-    }
-
-    function sub(uint x, uint y) internal pure returns (uint z) {
-        require((z = x - y) <= x);
+    function repay(uint loan, uint amount) public auth {
     }
 }

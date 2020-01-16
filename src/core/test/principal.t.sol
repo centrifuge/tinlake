@@ -19,7 +19,7 @@ import "ds-test/test.sol";
 import "../ceiling/principal.sol";
 
 
-contract PrincipalTest is DSTest {
+contract PrincipalTest is Math, DSTest {
     Principal principal;
 
     function setUp() public {
@@ -45,13 +45,4 @@ contract PrincipalTest is DSTest {
         uint borrowAmount = add(initial, 20);
         principal.borrow(loanId, borrowAmount);
     }
-
-    function add(uint x, uint y) internal pure returns (uint z) {
-        require((z = x + y) >= x);
-    }
-
-    function sub(uint x, uint y) internal pure returns (uint z) {
-        require((z = x - y) <= x);
-    }
-
 }
