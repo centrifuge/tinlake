@@ -79,7 +79,7 @@ contract Pile is DSNote, Interest {
         uint rate = group[loan];
         uint chi = rates[rate].chi;
         if (now >= rates[rate].rho) {
-            (chi, ) = compounding(rates[rate].chi, rates[rate].speed, rates[rate].rho, rates[rate].pie);
+            (chi,) = compounding(rates[rate].chi, rates[rate].speed, rates[rate].rho, rates[rate].pie);
         }
         return toAmount(chi, pie[loan]);
     }
