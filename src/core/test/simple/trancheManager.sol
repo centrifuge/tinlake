@@ -5,28 +5,33 @@ contract TokenLike {
     function mint(address, uint) public;
 }
 
-contract PileLike {
-    function want() public returns (int);
+contract ShelfLike {
+    function balanceRequest() public returns (bool, uint);
 }
 
-contract Desk {
+contract TrancheManager {
 
     // --- Data ---
-    PileLike public pile;
+    ShelfLike public shelf;
     // simple tranche manager = 1 tranche/1 operator for now
     TokenLike public token;
-    constructor (address pile_, address token_) public {
+    constructor (address shelf_, address token_) public {
         token = TokenLike(token_);
-        pile = PileLike(pile_);
+        shelf = ShelfLike(shelf_);
     }
 
     // --- Calls ---
     function balance() public {
-        int wad = pile.want();
-        if (wad > 0) {
-            give(address(pile), uint(wad));
+        (bool want, uint wad)  = shelf.balanceRequest();
+        
+        if (wad == 0) {
+            return;
+        }
+
+        if (want) {
+            give(address(shelf), wad);
         } else {
-            take(address(pile), uint(wad*-1));
+            take(address(shelf), wad);
         }
     }
 

@@ -18,157 +18,248 @@ pragma solidity >= 0.5.12;
 import "ds-test/test.sol";
 
 import "../shelf.sol";
-import "./mock/pile.sol";
 import "./mock/title.sol";
 import "./mock/nft.sol";
-import "../appraiser.sol";
-
+import "./mock/token.sol";
+import "./mock/pile.sol";
+import "./mock/ceiling.sol";
 
 contract ShelfTest is DSTest {
     Shelf shelf;
-    PileMock pile;
     NFTMock nft;
-    Appraiser appraiser;
     TitleMock title;
-
-    uint loan = 1;
-    uint secondLoan = 2;
-
-    uint principal = 5000;
-    uint debt = 5500;
-    uint appraisal = 6000;
-    address someAddr = address(1);
-
+    TokenMock tkn;
+    PileMock pile;
+    CeilingMock ceiling;
 
     function setUp() public {
-        pile = new PileMock();
         nft = new NFTMock();
-        appraiser = new Appraiser();
         title = new TitleMock();
-        shelf = createShelf(address(pile), address(appraiser), address(title));
+        tkn = new TokenMock();
+        pile = new PileMock();
+        ceiling = new CeilingMock();
+        shelf = new Shelf(address(tkn), address(title), address(pile), address(ceiling));
     }
 
-    function createShelf(address pile_, address appraiser_, address title_) internal returns (Shelf) {
-        return new Shelf(pile_, appraiser_, title_);
-    }
-
-    function testSetupPrecondition() public {
-        assertEq(shelf.bags(),0);
-    }
-
-    function testDeposit() public {
-        uint256 tokenId = 55;
-        nft.setOwnerOfReturn(address(this));
-        appraiser.file(loan, appraisal);
-        shelf.file(loan, address(nft), tokenId, principal);
-
+    function _issue(uint256 tokenId_, uint loan_) internal {
+        title.setIssueReturn(loan_);
         title.setOwnerOfReturn(address(this));
-        shelf.deposit(loan, address(this));
+    
+        uint loanId = shelf.issue(address(nft), tokenId_);
+        assertEq(loanId, loan_);
+        assertEq(shelf.nftlookup(keccak256(abi.encodePacked(address(nft), tokenId_))), loan_);
+    }
 
-        // check correct call nft.transferFrom
+    function _lock(uint256 tokenId_, uint loan_) internal {
+        shelf.lock(loan_, address(this));
+
         assertEq(nft.transferFromCalls(), 1);
         assertEq(nft.from(), address(this));
         assertEq(nft.to(), address(shelf));
-        assertEq(nft.tokenId(), tokenId);
-
-        assertEq(shelf.bags(), appraisal);
-
-        // check correct call pile.borrow
-        assertEq(pile.wad(), principal);
-        assertEq(pile.callsBorrow(),1);
-    }
-    function testFailDepositNoWhiteList() public {
-        // loan is not whitelisted in shelf
-        shelf.deposit(loan, msg.sender);
-        assertEq(shelf.bags(), 0);
-        assertEq(pile.wad(), 0);
-        assertEq(pile.callsBorrow(),0);
+        assertEq(nft.tokenId(), tokenId_);
     }
 
-    function testFailDepositInvalidNFT() public {
-        uint256 tokenId = 55;
-        // invalid nft registry addr
-        shelf.file(loan, someAddr, tokenId, principal);
-        shelf.deposit(loan, msg.sender);
-        assertEq(shelf.bags(), 0);
-        assertEq(pile.wad(), 0);
-        assertEq(pile.callsBorrow(),0);
+    function _borrow(uint loan_, uint wad_) internal {
+        shelf.borrow(loan_, wad_);
+        
+        assertEq(ceiling.callsBorrow(), 1);
+        assertEq(pile.callsAccrue(), 1);
+        assertEq(pile.callsIncDebt(), 1);
+        assertEq(shelf.balance(), wad_);
+        uint loanBalance = shelf.balances(loan_);
+        assertEq(loanBalance, wad_);
+    }
+    
+    function _withdraw(uint loan_, uint wad_) internal {
+        uint totalBalance = shelf.balance();
+        uint loanBalance = shelf.balances(loan_);
+        assertEq(totalBalance, wad_);
+        assertEq(loanBalance, wad_);
+        assertEq(pile.wad(), wad_);
+        
+        shelf.withdraw(loan_, wad_, address(this));
+
+        assertEq(totalBalance-wad_, shelf.balance());
+        assertEq(loanBalance-wad_, shelf.balances(loan_));
+        assertEq(tkn.transferFromCalls(), 1);
+        assertEq(tkn.dst(), address(shelf));
+        assertEq(tkn.src(), address(this));
+        assertEq(tkn.wad(), wad_);
+    }
+
+    function _repay(uint loan_, uint wad_) internal {
+        pile.setLoanDebtReturn(wad_);
+        shelf.repay(loan_, wad_);
+
+        assertEq(pile.callsAccrue(), 2);
+        assertEq(pile.callsDecDebt(), 1);
+        assertEq(shelf.balance(), 0);
+        assertEq(shelf.balances(loan_), 0);
+        assertEq(ceiling.callsRepay(), 1);
+        assertEq(tkn.transferFromCalls(),2);
+        assertEq(tkn.dst(),address(this));
+        assertEq(tkn.src(),address(shelf));
+        assertEq(tkn.wad(),wad_);
+    }
+
+    function _recover(uint loan_, address usr_, uint wad_, uint debt_) internal {
+        pile.setLoanDebtReturn(debt_);
+        shelf.recover(loan_, usr_, wad_);
+
+        assertEq(pile.callsAccrue(), 2);
+        assertEq(pile.callsDecDebt(), 2);
+
+        assertEq(tkn.transferFromCalls(), 2);
+        assertEq(tkn.dst(), usr_);
+        assertEq(tkn.src(), address(shelf));
+        assertEq(tkn.wad(), wad_);
+    }
+
+    uint loan  = 1;
+    uint wad = 100;
+    uint256 tokenId = 55;
+
+    function testBorrow() public {
+        testLock();
+        ceiling.setCeilingReached(false);
+        _borrow(loan, wad);
+    }
+
+    function testFailBorrowCeilingReached() public {
+        testLock();
+        ceiling.setCeilingReached(true);
+        _borrow(loan, wad);
+    }
+
+    function testFailBorrowNFTNotLocked() public {
+        nft.setOwnerOfReturn(address(this));
+        _issue(tokenId,loan);
+        ceiling.setCeilingReached(false);
+        _borrow(loan, wad);
+    }
+
+    function testWithdraw() public {
+        testLock();
+        ceiling.setCeilingReached(false);
+        _borrow(loan, wad);
+        _withdraw(loan, wad);
+    }
+
+    function testFailWithdrawNFTNotLocked() public {
+        nft.setOwnerOfReturn(address(this));
+        _issue(tokenId,loan);
+        ceiling.setCeilingReached(false);
+        _borrow(loan, wad);
+        shelf.claim(loan, address(1));
+        _withdraw(loan, wad);
+    }
+
+    function testFailWithdrawNoBalance() public {
+        testLock();
+        ceiling.setCeilingReached(false);
+        _withdraw(loan, wad);
+    }
+
+    function testRepay() public {
+        testLock();
+        ceiling.setCeilingReached(false);
+        _borrow(loan, wad);
+        _withdraw(loan, wad);
+        _repay(loan, wad);
+    }
+
+    function testRecover() public {
+        testLock();
+        ceiling.setCeilingReached(false);
+        _borrow(loan, wad);
+        _withdraw(loan, wad);
+        _recover(loan, address(1), wad-10, wad);
+    }
+
+    function testFailRepayNFTNotLocked() public {
+        nft.setOwnerOfReturn(address(this));
+        _issue(tokenId,loan);
+        ceiling.setCeilingReached(false);
+        _borrow(loan, wad);
+        _withdraw(loan, wad);
+        shelf.claim(loan, address(1));
+        _repay(loan, wad);
+    }
+
+    function testFailRepayNFTNoWithdraw() public {
+        testLock();
+        ceiling.setCeilingReached(false);
+        _borrow(loan, wad);
+        _repay(loan, wad);
+    }
+
+    function testSetupPrecondition() public {
+        tkn.setBalanceOfReturn(0);
+    }
+
+    function testIssue() public {
+       nft.setOwnerOfReturn(address(this));
+       _issue(tokenId, loan);
+    }
+
+    function testMultiple_Issue() public {
+        uint secondLoan = 2;
+        nft.setOwnerOfReturn(address(this));
+
+        _issue(tokenId, loan);
+
+        shelf.close(loan);
+        assertEq(shelf.nftlookup(keccak256(abi.encodePacked(address(nft), tokenId))), 0);
+        assertEq(title.closeCalls(), 1);
+        assertEq(title.tkn(), 1);
+
+        _issue(tokenId, secondLoan);
+    }
+
+    function testFailMultiple_Issue() public {
+        uint secondLoan = 2;
+        nft.setOwnerOfReturn(address(this));
+
+        _issue(tokenId, loan);
+        _issue(tokenId, secondLoan);
+    }
+
+    function testLock() public {
+        nft.setOwnerOfReturn(address(this));
+        _issue(tokenId, loan);
+        _lock(tokenId, loan);
+    }
+
+    function testFailLockNoWhiteList() public {
+        _lock(tokenId, loan);
+    }
+
+    function testFailLockInvalidNFT() public {
+        shelf.file(loan, address(1), tokenId);
+        _lock(tokenId, loan);
     }
 
     function testFailDepositNotNFTOwner() public {
-        uint256 tokenId = 55;
         // tokenId minted at some address
-        nft.setOwnerOfReturn(someAddr);
-        shelf.file(loan, address(nft), tokenId, principal);
-        shelf.deposit(loan, msg.sender);
-        assertEq(shelf.bags(), 0);
-        assertEq(pile.wad(), 0);
-        assertEq(pile.callsBorrow(),0);
+        nft.setOwnerOfReturn(address(1));
+        shelf.file(loan, address(nft), tokenId);
+        _lock(tokenId, loan);
     }
 
-    function testFailRelease() public {
-        // debt not repaid in pile
-        pile.setLoanDebtReturn(100);
-        shelf.release(loan, address(this));
-
-    }
-    function testRelease() public {
-        testDeposit();
+    function testUnlock() public {
+        testLock();
         nft.reset();
-        pile.setLoanReturn(0, 0, 0);
-        shelf.release(1, address(this));
+        pile.setLoanDebtReturn(0);
+        shelf.unlock(1);
         assertEq(nft.from(), address(shelf));
         assertEq(nft.to(), address(this));
         assertEq(nft.transferFromCalls(), 1);
     }
-    function testAdjust() public {
-        // first nft
-        uint256 token1 = 55;
-        uint256 token2 = 44;
 
-        nft.setOwnerOfReturn(address(shelf));
-        shelf.file(loan, address(nft), token1, principal);
-        appraiser.file(loan, 6000);
-        assertEq(shelf.bags(), 0);
+    function testFailUnlock() public {
+        // debt not repaid in pile
+        pile.setLoanDebtReturn(100);
+        shelf.unlock(loan);
 
-        // initial
-        shelf.adjust(loan);
-        assertEq(shelf.bags(), 6000);
-
-        //  no change
-        shelf.adjust(loan);
-        assertEq(shelf.bags(), 6000);
-
-        // decrease
-        appraiser.file(loan, 5000);
-        shelf.adjust(loan);
-        assertEq(shelf.bags(), 5000);
-
-        // increase
-        appraiser.file(loan, 7000);
-        shelf.adjust(loan);
-        assertEq(shelf.bags(), 7000);
-
-        // second nft
-        uint apprFirstNFT = 7000;
-        shelf.file(secondLoan, address(nft), token2, principal);
-        appraiser.file(secondLoan, 10000);
-        // not adjusted only nft 1 value
-        assertEq(shelf.bags(), apprFirstNFT);
-
-        // together with second
-        shelf.adjust(secondLoan);
-        assertEq(shelf.bags(), 10000 + apprFirstNFT);
-
-        // decrease second nft
-        appraiser.file(secondLoan, 8000);
-        shelf.adjust(secondLoan);
-        assertEq(shelf.bags(), 8000 + apprFirstNFT);
-
-
-        // remove ownership for nft
-        nft.setOwnerOfReturn(address(someAddr));
-        shelf.adjust(secondLoan);
-        assertEq(shelf.bags(),apprFirstNFT);
     }
 }

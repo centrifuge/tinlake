@@ -18,68 +18,53 @@ pragma solidity >=0.4.23;
 import "ds-test/test.sol";
 
 import "../deployer.sol";
-import "../appraiser.sol";
 import { SimpleNFT } from "./simple/nft.sol";
 import { SimpleToken } from "./simple/token.sol";
-
-contract MockCollectDeployer {
-    function deploy(address pile_, address shelf_, address desk_, uint threshold_) public {
-
-    }
-    function spotter() public returns(address) {
-        return address(123);
-    }
-
-    function collector() public returns(address) {
-        return address(123);
-    }
-}
 
 contract DeployerTest is DSTest {
     SimpleNFT nft;
     SimpleToken dai;
-    Appraiser appraiser;
     TitleFab titlefab;
     LightSwitchFab lightswitchfab;
-    PileFab pilefab;
     ShelfFab shelffab;
-    DeskFab deskfab;
+    TrancheManagerFab trancheManagerFab;
     AdmitFab admitfab;
     AdminFab adminfab;
-    DebtRegisterFab debtRegisterfab;
-
+    PileFab pilefab;
+    PrincipalFab principalFab;
+    CollectorFab collectorFab;
+    ThresholdFab thresholdFab;
     Title title;
 
     function setUp() public {
         nft = new SimpleNFT();
         dai = new SimpleToken("DDAI", "Dummy Dai", "1", 0);
-        appraiser = new Appraiser();
         titlefab = new TitleFab();
         lightswitchfab = new LightSwitchFab();
-        pilefab = new PileFab();
         shelffab = new ShelfFab();
-        deskfab = new DeskFab();
+        trancheManagerFab = new TrancheManagerFab();
         admitfab = new AdmitFab();
         adminfab = new AdminFab();
-        debtRegisterfab = new DebtRegisterFab();
+        pilefab = new PileFab();
+        principalFab = new PrincipalFab();
+        collectorFab = new CollectorFab();
+        thresholdFab = new ThresholdFab();
    }
-    
-    function testDeploy() public logs_gas {
-        Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, pilefab, shelffab, deskfab, admitfab, adminfab, debtRegisterfab);
 
-        appraiser.rely(address(deployer));
+    function testDeploy() public logs_gas {
+        Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, shelffab, trancheManagerFab, admitfab, adminfab, pilefab, principalFab, collectorFab, thresholdFab);
 
         deployer.deployTitle("Test", "TEST");
-        deployer.deployDebtRegister();
+        deployer.deployPile();
+        deployer.deployPrincipal();
         deployer.deployLightSwitch();
-        deployer.deployPile(address(dai));
-        deployer.deployShelf(address(appraiser));
-        deployer.deployDesk(address(dai));
+        deployer.deployShelf(address(dai));
+        deployer.deployTrancheManager(address(dai));
         deployer.deployAdmit();
-        deployer.deployAdmin(address(appraiser));
+        deployer.deployAdmin();
+        deployer.deployThreshold();
+        deployer.deployCollector();
 
-        MockCollectDeployer collectDeployer = new MockCollectDeployer();
-        deployer.deployCollect(address(collectDeployer) ,0);
         deployer.deploy();
     }
 }
