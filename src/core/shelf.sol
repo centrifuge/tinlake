@@ -134,7 +134,7 @@ contract Shelf is DSNote, TitleOwned {
     }
 
     function borrow(uint loan, uint wad) public owner(loan) {
-        require(_nftLocked(loan), "nft-not-locked");
+        require(nftLocked(loan), "nft-not-locked");
         pile.accrue(loan);
         ceiling.borrow(loan, wad);
         pile.incDebt(loan, wad);
@@ -143,7 +143,7 @@ contract Shelf is DSNote, TitleOwned {
     }
 
     function withdraw(uint loan, uint wad, address usr) public owner(loan) note {
-        require(_nftLocked(loan), "nft-not-locked");
+        require(nftLocked(loan), "nft-not-locked");
         require(wad <= balances[loan], "amount-too-high");
         balances[loan] = sub(balances[loan], wad);
         balance = sub(balance, wad);
@@ -151,7 +151,7 @@ contract Shelf is DSNote, TitleOwned {
     }
 
     function repay(uint loan, uint wad) public owner(loan) note {
-        require(_nftLocked(loan), "nft-not-locked");
+        require(nftLocked(loan), "nft-not-locked");
         require(balances[loan] == 0,"before repay loan needs to be withdrawn");
         _repay(loan, msg.sender, wad);
     }
@@ -186,7 +186,7 @@ contract Shelf is DSNote, TitleOwned {
         NFTLike(shelf[loan].registry).transferFrom(address(this), msg.sender, shelf[loan].tokenId);
     }
 
-    function _nftLocked(uint loan) internal returns (bool) {
+    function nftLocked(uint loan) public returns (bool) {
         return NFTLike(shelf[loan].registry).ownerOf(shelf[loan].tokenId) == address(this);
     }
 
