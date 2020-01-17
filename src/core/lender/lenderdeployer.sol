@@ -110,13 +110,13 @@ contract LenderDeployer {
         assessor.rely(god);
     }
 
-    function deployWhitelistOperator(address tranche, address assessor) public {
-        whitelist = whitelistfab.newOperator(tranche, assessor);
+    function deployWhitelistOperator(address tranche, address assessor, address distributor) public {
+        whitelist = whitelistfab.newOperator(tranche, assessor, distributor);
         whitelist.rely(god);
     }
 
-    function deployAllowanceOperator(address tranche, address assessor) public {
-        allowance = allowancefab.newOperator(tranche, assessor);
+    function deployAllowanceOperator(address tranche, address assessor, address distributor) public {
+        allowance = allowancefab.newOperator(tranche, assessor, distributor);
         allowance.rely(god);
     }
 
@@ -130,9 +130,12 @@ contract LenderDeployer {
         deployTranche(currency, token);
         deployDistributor(currency);
         deployAssessor(pool);
-        deployWhitelistOperator(address(tranche), address(assessor));
+        deployWhitelistOperator(address(tranche), address(assessor), address(distributor));
 
         tranche.rely(whitelist);
         tranche.rely(distributor);
+
+        distributor.depend("junior", address(tranche));
+        //distributor also needs to depend on shelf
     }
 }
