@@ -71,6 +71,10 @@ contract DistributorFab {
     }
 }
 
+contract CurrencyLike {
+    function balanceOf(address) public returns(uint);
+}
+
 contract LenderDeployer {
     TrancheFab tranchefab;
     SeniorFab seniorfab;
@@ -98,6 +102,13 @@ contract LenderDeployer {
         whitelistfab = whitelistFab_;
         distributorfab = distributorFab_;
     }
+
+    function deployTranche(address currency, address token) public {
+        tranche = tranchefab.newTranche(currency, token);
+        tranche.rely(god);
+    }
+
+    function deployAssessor(address pile)
 
     function elect(){}
 
