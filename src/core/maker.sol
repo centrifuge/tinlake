@@ -15,6 +15,7 @@
 pragma solidity >=0.5.12;
 pragma experimental ABIEncoderV2;
 
+import "tinlake-auth/auth.sol";
 import "ds-note/note.sol";
 
 contract TokenLike {
@@ -79,12 +80,7 @@ contract MakerLenderFab {
 // could want to draw)
 // It makes use of https://github.com/makerdao/dss-proxy-actions/blob/master/src/DssProxyActions.sol and
 // https://github.com/makerdao/dss-cdp-manager/blob/master/src/DssCdpManager.sol to interact with the CDP.
-contract MakerAdapter is DSNote {
-    // --- Auth ---
-    mapping (address => uint) public wards;
-    function rely(address usr) public auth note { wards[usr] = 1; }
-    function deny(address usr) public auth note { wards[usr] = 0; }
-    modifier auth { require(wards[msg.sender] == 1); _; }
+contract MakerAdapter is DSNote, Auth {
 
     // --- Data ---
     TokenLike           public tkn;

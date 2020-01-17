@@ -19,16 +19,11 @@ pragma experimental ABIEncoderV2;
 
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
+import "tinlake-auth/auth.sol";
 
 // Principal is an implementation of the Ceiling module that defines the max amount a user can borrow.
 // The principal of each loan is decreased with borrow transactions. Accrued interest is ignored.
-contract Principal is Math, DSNote {
-    // --- Auth ---
-    mapping (address => uint) public wards;
-    function rely(address usr) public auth { wards[usr] = 1; }
-    function deny(address usr) public auth { wards[usr] = 0; }
-    modifier auth { require(wards[msg.sender] == 1); _; }
-    
+contract Principal is DSNote, Auth, Math {
     mapping (uint => uint) public values;
 
     constructor() public {

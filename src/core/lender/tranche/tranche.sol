@@ -17,6 +17,7 @@ pragma solidity >=0.5.12;
 
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
+import "tinlake-auth/auth.sol";
 
 contract TokenLike{
     uint public totalSupply;
@@ -29,12 +30,7 @@ contract TokenLike{
 
 // Tranche
 // Interface of a tranche. Coordinates investments and borrows to/from the tranche.
-contract Tranche is DSNote {
-    // --- Auth ---
-    mapping (address => uint) public wards;
-    function rely(address usr) public auth note { wards[usr] = 1; }
-    function deny(address usr) public auth note { wards[usr] = 0; }
-    modifier auth { require(wards[msg.sender] == 1); _; }
+contract Tranche is DSNote, Auth {
 
     // --- Data ---
     TokenLike public currency;
