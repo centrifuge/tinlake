@@ -21,9 +21,14 @@ contract TitleLike {
 }
 
 contract ShelfLike {
-    function file(uint loan, address registry, uint nft, uint principal) public;
-    function file(uint loan, uint principal) public;
-    function shelf(uint loan) public returns(address registry,uint256 tokenId,uint price,uint principal);
+    function file(uint loan, address registry, uint nft) public;
+    function shelf(uint loan) public returns(address registry, uint256 tokenId);
+}
+
+//e.g principal or credit-line
+contract CeilingLike {
+    function values(uint) public view returns(uint);
+    function file(uint loan, uint ceiling) public;
 }
 
 // Admit can add whitelist a token and set the amount that can be borrowed against it. It also sets the borrowers rate in the Pile.
@@ -37,43 +42,46 @@ contract Admit {
     // --- Data ---
     TitleLike title;
     ShelfLike shelf;
+    CeilingLike ceiling;
 
     event Created(uint loan); 
 
-    constructor (address title_, address shelf_) public {
+    constructor (address title_, address shelf_, address ceiling_) public {
         wards[msg.sender] = 1;
         title = TitleLike(title_);
         shelf = ShelfLike(shelf_);
+        ceiling = CeilingLike(ceiling_);
     }
 
-    function depend (bytes32 what, address addr) public auth {
+    function depend(bytes32 what, address addr) public auth {
         if (what == "shelf") { shelf = ShelfLike(addr); }
+        if (what == "ceiling") { ceiling = CeilingLike(addr); }
         else revert();
     }
     
     // --- Admit ---
-    function admit (address registry, uint nft, uint principal, address usr) public auth returns (uint) {
+    function admit(address registry, uint nft, uint principal, address usr) public auth returns (uint) {
         uint loan = title.issue(usr);
-        shelf.file(loan, registry, nft, principal);
-        emit Created(loan);
+        ceiling.file(loan, principal);
+        shelf.file(loan, registry, nft);
         return loan;
     }
 
     function update(uint loan, address registry_, uint nft_, uint principal_) public auth {
-        (, , ,uint principal) = shelf.shelf(loan);
+        uint principal = ceiling.values(loan);
 
         // loan status should be whitelisted
-        require(principal != 0);
-        shelf.file(loan, registry_, nft_, principal_);
-
+        require(principal != 0, "loan not whitelisted");
+        shelf.file(loan, registry_, nft_);
+        ceiling.file(loan, principal);
     }
 
     function update(uint loan, uint principal_) public auth {
-        (, , ,uint principal) = shelf.shelf(loan);
+        uint principal = ceiling.values(loan);
 
         // loan status should be whitelisted
-        require(principal != 0);
-        shelf.file(loan, principal_);
+        require(principal != 0, "loan not whitelisted");
+        ceiling.file(loan, principal_);
     }
 }
 

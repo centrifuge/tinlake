@@ -24,6 +24,7 @@ contract TokenMock {
     function balanceOf(address addr_) public view returns (uint) {
         return balanceOfReturn;
     }
+    
     function mint(address addr_,uint wad_) public {
         addr = addr_;
         wad = wad_;

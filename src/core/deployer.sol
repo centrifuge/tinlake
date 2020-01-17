@@ -18,21 +18,16 @@ pragma solidity >=0.4.24;
 import { Title } from "tinlake-title/title.sol";
 import { LightSwitch } from "./lightswitch.sol";
 import { Shelf } from "./shelf.sol";
-import { Desk } from "./test/simple/desk.sol";
-import { Pile } from "./pile.sol";
+import { TrancheManager } from "./test/simple/trancheManager.sol";
 import { Admit } from "./admit.sol";
 import { Admin } from "./admin.sol";
-import { DebtRegister } from "./debt_register.sol";
-import {CollectDeployer} from "./collect/deployer.sol";
+import { Pile } from "./pile.sol";
+import { Collector } from "./collect/collector.sol";
+import { Principal } from "./ceiling/principal.sol";
+import { PushRegistry } from 'tinlake-registry/registry.sol';
 
 contract LenderFabLike {
     function deploy(address,address,address) public returns (address);
-}
-
-contract CollectDeployerLike {
-    function deploy(address pile_, address shelf_, address desk_, uint threshold_) public;
-    function spotter() public returns(address);
-    function collector() public returns(address);
 }
 
 contract LenderLike {
@@ -44,11 +39,11 @@ contract WardsLike {
     function rely(address) public;
 }
 
-contract DebtRegisterFab {
-    function newDebtRegister() public returns (DebtRegister debtRegister) {
-        debtRegister = new DebtRegister();
-        debtRegister.rely(msg.sender);
-        debtRegister.deny(address(this));
+contract PileFab {
+    function newPile() public returns (Pile pile) {
+        pile = new Pile();
+        pile.rely(msg.sender);
+        pile.deny(address(this));
     }
 }
 
@@ -68,93 +63,117 @@ contract LightSwitchFab {
     }
 }
 
-contract PileFab {
-   function newPile(address tkn, address title, address debtRegister) public returns (Pile pile) {
-        pile = new Pile(tkn, title, debtRegister);
-        pile.rely(msg.sender);
-        pile.deny(address(this));
-    }
-}
-
 contract ShelfFab {
-   function newShelf(address pile, address appraiser, address title) public returns (Shelf shelf) {
-        shelf = new Shelf(pile, appraiser, title);
+   function newShelf(address tkn_, address title_, address debt_, address principal_) public returns (Shelf shelf) {
+        shelf = new Shelf(tkn_, title_, debt_, principal_);
         shelf.rely(msg.sender);
         shelf.deny(address(this));
     }
 }
 
-contract DeskFab {
-    // note: this is the mock Desk, which will interface with the lender/tranche side of Tinlake, and does not require auth for now.
-    function newDesk(address pile_, address token_) public returns (Desk desk) {
-        desk = new Desk(pile_, token_);
-        return desk;
+contract TrancheManagerFab {
+    // note: this is the mock TrancheManager, which will interface with the lender/tranche side of Tinlake, and does not require auth for now.
+    function newTrancheManager(address shelf_, address token_) public returns (TrancheManager trancheManager) {
+        trancheManager = new TrancheManager(shelf_, token_);
+        return trancheManager;
     }
 }
 
 contract AdmitFab {
-    function newAdmit(address title, address shelf) public returns (Admit admit) {
-        admit = new Admit(title, shelf);
+    function newAdmit(address title, address shelf, address principal) public returns (Admit admit) {
+        admit = new Admit(title, shelf, principal);
         admit.rely(msg.sender);
         admit.deny(address(this));
     }
 }
 
 contract AdminFab {
-    function newAdmin(address admit, address appraiser, address pile, address debtRegister) public returns(Admin admin) {
-        admin = new Admin(admit, appraiser, pile, debtRegister);
+    function newAdmin(address admit, address pile) public returns(Admin admin) {
+        admin = new Admin(admit, pile);
         admin.rely(msg.sender);
         admin.deny(address(this));
     }
 }
 
-contract Deployer {
-    TitleFab titlefab;
-    LightSwitchFab lightswitchfab;
-    PileFab pilefab;
-    ShelfFab shelffab;
-    DeskFab deskfab;
-    AdmitFab admitfab;
-    AdminFab adminfab;
-    DebtRegisterFab debtRegisterfab;
+contract CollectorFab {
+    function newCollector(address trancheManager, address shelf, address pile, address threshold) public returns (Collector collector) {
+        collector = new Collector(trancheManager, shelf, pile, threshold);
+        collector.rely(msg.sender);
+        collector.deny(address(this));
+    }
+}
 
-    CollectDeployerLike public collectDeployer;
+contract PrincipalFab {
+    function newPrincipal() public returns (Principal principal) {
+        principal = new Principal();
+        principal.rely(msg.sender);
+        principal.deny(address(this));
+    }
+}
+
+contract ThresholdFab {
+    function newThreshold() public returns (PushRegistry threshold) {
+        threshold = new PushRegistry();
+        threshold.rely(msg.sender);
+        threshold.deny(address(this));
+    }
+}
+
+contract Deployer {
+    TitleFab          titlefab;
+    LightSwitchFab    lightswitchfab;
+    ShelfFab          shelffab;
+    TrancheManagerFab    trancheManagerFab;
+    AdmitFab          admitfab;
+    AdminFab          adminfab;
+    PileFab           pilefab;
+    PrincipalFab      principalFab;
+    CollectorFab      collectorFab;
+    ThresholdFab      thresholdFab;
 
     address     public god;
-    address     public appraiser_;
 
     Title       public title;
     LightSwitch public lightswitch;
-    Pile        public pile;
     Shelf       public shelf;
-    Desk        public desk;
+    TrancheManager  public trancheManager;
     Admit       public admit;
     Admin       public admin;
     LenderLike  public lender;
-    DebtRegister       public debtRegister;
+    Pile        public pile;
+    Principal   public principal;
+    Collector   public collector;
+    PushRegistry public threshold;
 
 
-    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, PileFab pilefab_, ShelfFab shelffab_, DeskFab deskfab_, AdmitFab admitfab_, AdminFab adminfab_, DebtRegisterFab debtRegisterfab_) public {
+    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, ShelfFab shelffab_, TrancheManagerFab trancheManagerFab_, AdmitFab admitfab_, AdminFab adminfab_, PileFab pilefab_, PrincipalFab principalFab_, CollectorFab collectorFab_, ThresholdFab thresholdFab_) public {
         god = god_;
 
         titlefab = titlefab_;
         lightswitchfab = lightswitchfab_;
-        pilefab = pilefab_;
         shelffab = shelffab_;
-        deskfab = deskfab_;
+        trancheManagerFab = trancheManagerFab_;
         admitfab = admitfab_;
         adminfab = adminfab_;
-        debtRegisterfab = debtRegisterfab_;
+        pilefab = pilefab_;
+        principalFab = principalFab_;
+        collectorFab = collectorFab_;
+        thresholdFab = thresholdFab_;
     }
 
-    function deployCollect(address collectDeployer_ ,uint threshold_) public {
-        collectDeployer = CollectDeployerLike(collectDeployer_);
-        collectDeployer.deploy(address(pile), address(shelf), address(desk), threshold_);
+    function deployThreshold() public {
+        threshold = thresholdFab.newThreshold();
+        threshold.rely(god);
+
+    }
+    function deployCollector() public {
+        collector = collectorFab.newCollector(address(trancheManager), address(shelf), address(pile), address(threshold));
+        collector.rely(god);
     }
 
-    function deployDebtRegister() public {
-        debtRegister = debtRegisterfab.newDebtRegister();
-        debtRegister.rely(god);
+    function deployPile() public {
+        pile = pilefab.newPile();
+        pile.rely(god);
     }
 
     function deployTitle(string memory name, string memory symbol) public {
@@ -167,62 +186,59 @@ contract Deployer {
         lightswitch.rely(god);
     }
 
-    function deployPile(address currency_) public {
-        pile = pilefab.newPile(currency_, address(title), address(debtRegister));
-        pile.rely(god);
-    }
-
-    function deployShelf(address appraiser) public {
-        appraiser_ = appraiser;
-        shelf = shelffab.newShelf(address(pile), appraiser_, address(title));
+    function deployShelf(address currency_) public {
+        shelf = shelffab.newShelf(currency_, address(title), address(pile), address(principal));
         shelf.rely(god);
-        pile.rely(address(shelf));
     }
 
     // note: this method will be refactored with the new lender side contracts, we will rely on God once more
-    //and the Pile should articulate that it depends on the Desk, not a generic "lender".
-    function deployDesk(address currency_) public {
-        desk = deskfab.newDesk(address(pile), currency_);
-        pile.depend("lender", address(desk));
+    //and the Pile should articulate that it depends on the TrancheManager, not a generic "lender".
+    function deployTrancheManager(address currency_) public {
+        trancheManager = trancheManagerFab.newTrancheManager(address(shelf), currency_);
+        shelf.depend("lender", address(trancheManager));
     }
 
     function deployAdmit() public {
-        admit = admitfab.newAdmit(address(title), address(shelf));
+        admit = admitfab.newAdmit(address(title), address(shelf), address(principal));
         admit.rely(god);
     }
 
-    function deployAdmin(address appraiser) public {
-        appraiser_ = appraiser;
-        admin = adminfab.newAdmin(address(admit), appraiser_, address(pile), address(debtRegister));
+    function deployAdmin() public {
+        admin = adminfab.newAdmin(address(admit), address(pile));
         admin.rely(god);
     }
 
+    function deployPrincipal() public {
+        principal = principalFab.newPrincipal();
+        principal.rely(god);
+    }
+
     function deploy() public {
-        address pile_ = address(pile);
-        address desk_ = address(desk);
+        address trancheManager_ = address(trancheManager);
         address admit_ = address(admit);
         address admin_ = address(admin);
+        address shelf_ = address(shelf);
+        address collector_ = address(collector);
 
-        // desk allowed to call
-        pile.rely(desk_);
-
+        // trancheManager allowed to call
+        shelf.rely(trancheManager_);
+      
         // admit allowed to call
         title.rely(admit_);
         shelf.rely(admit_);
+        principal.rely(admit_);
 
-        // admin allowed to call
+        //admin allowed to call
         admit.rely(admin_);
+        shelf.rely(admin_);
         pile.rely(admin_);
-        debtRegister.rely(admin_);
 
-        // pile allowed to call
-        debtRegister.rely(pile_);
+        // shelf allowed to call
+        pile.rely(shelf_);
+        principal.rely(shelf_);
 
-        // collect contracts
-        shelf.rely(address(collectDeployer.spotter()));
-        pile.rely(address(collectDeployer.collector()));
-
-        WardsLike(appraiser_).rely(admin_);
+        // collector allowed to call
+        shelf.rely(collector_);
     }
 }
 

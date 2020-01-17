@@ -34,7 +34,7 @@ contract ShelfLike {
 /// In the base implementation the requested `currencyAmount` always is taken from the
 /// junior tranche first. For repayment senior comes first.
 /// This implementation can handle one or two tranches.
-contract Distributor is DSNote, Math {
+contract BaseDistributor is DSNote, Math {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth note { wards[usr] = 1; }
@@ -47,39 +47,63 @@ contract Distributor is DSNote, Math {
     TrancheLike public senior;
     TrancheLike public junior;
 
-    constructor(address shelf_)  public {
+    constructor() public {
         wards[msg.sender] = 1;
-        shelf = ShelfLike(shelf_);
     }
 
     function depend (bytes32 what, address addr) public auth {
         if (what == "shelf") { shelf = ShelfLike(addr); }
-        if (what == "junior") { junior = TrancheLike(addr); }
+        else if (what == "junior") { junior = TrancheLike(addr); }
         else if (what == "senior") { senior = TrancheLike(addr); }
         else revert();
     }
 
-
-    /// handles requests from the shelf contract (borrower side)
-    function balance() public {
-        (bool requestWant, uint currencyAmount) = shelf.balanceRequest();
-        if (requestWant) {
-            borrowTranches(currencyAmount);
+    /// moves balance from junior tranche to senior.
+    /// if senior tranche has a debt.
+    function _balanceTranches() internal {
+        if(address(senior) == address(0)) {
             return;
         }
 
-        repayTranches(currencyAmount);
+        uint seniorDebt = senior.debt();
+        uint juniorBalance = junior.balance();
+        if(juniorBalance > 0 && seniorDebt > 0) {
+            uint amount = seniorDebt;
+            if (amount > juniorBalance) {
+                amount = juniorBalance;
+            }
+            // move junior reserve to senior
+            senior.repay(address(junior), amount);
+        }
+    }
+
+    /// handles requests from the shelf contract (borrower side)
+    function balance() public {
+        _balanceTranches();
+
+        (bool requestWant, uint currencyAmount) = shelf.balanceRequest();
+
+        if (requestWant) {
+            _borrowTranches(currencyAmount);
+            return;
+        }
+
+        _repayTranches(currencyAmount);
     }
 
     /// borrows currency from the tranches.
     /// @param currencyAmount request amount to borrow
     /// @dev currencyAmount denominated in WAD (10^18)
-    function borrowTranches(uint currencyAmount) internal  {
+    function _borrowTranches(uint currencyAmount) internal  {
+        if(currencyAmount == 0) {
+            return;
+        }
+
         // take from junior first
-        currencyAmount = sub(currencyAmount, borrow(junior, currencyAmount));
+        currencyAmount = sub(currencyAmount, _borrow(junior, currencyAmount));
 
         if (currencyAmount > 0 && address(senior) != address(0)) {
-            currencyAmount = sub(currencyAmount, borrow(senior, currencyAmount));
+            currencyAmount = sub(currencyAmount, _borrow(senior, currencyAmount));
         }
 
         if (currencyAmount > 0) {
@@ -92,7 +116,7 @@ contract Distributor is DSNote, Math {
     /// @param currencyAmount request amount to borrow
     /// @return actual borrowed currencyAmount
     /// @dev currencyAmount denominated in WAD (10^18)
-    function borrow(TrancheLike tranche, uint currencyAmount) internal returns(uint) {
+    function _borrow(TrancheLike tranche, uint currencyAmount) internal returns(uint) {
         uint available = tranche.balance();
         if (currencyAmount > available) {
             currencyAmount = available;
@@ -105,14 +129,14 @@ contract Distributor is DSNote, Math {
     /// repays according to a waterfall model
     /// @param available total available currency to repay the tranches
     /// @dev available denominated in WAD (10^18)
-    function repayTranches(uint available) public auth {
+    function _repayTranches(uint available) public auth {
+        if(available == 0) {
+            return;
+        }
+
         // repay senior always first
         if(address(senior) != address(0)) {
-            if(junior.balance() > 0 && senior.debt() > 0) {
-                // move junior reserve to senior
-                senior.repay(address(junior), junior.balance());
-            }
-            available = sub(available, repay(senior, available));
+            available = sub(available, _repay(senior, available));
         }
 
         if (available > 0) {
@@ -126,13 +150,14 @@ contract Distributor is DSNote, Math {
     /// @param available total available currency to repay a tranche
     /// @return actual repaid currencyAmount
     /// @dev available and currency Amount denominated in WAD (10^18)
-    function repay(TrancheLike tranche, uint available) internal returns(uint) {
+    function _repay(TrancheLike tranche, uint available) internal returns(uint) {
         uint currencyAmount = tranche.debt();
         if (available < currencyAmount) {
             currencyAmount = available;
         }
-
-        tranche.repay(address(shelf), currencyAmount);
+        if (currencyAmount > 0) {
+            tranche.repay(address(shelf), currencyAmount);
+        }
         return currencyAmount;
     }
 }
