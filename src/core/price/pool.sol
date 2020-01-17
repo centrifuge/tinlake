@@ -25,10 +25,14 @@ contract PileLike {
 contract PricePool is Auth, Math {
     uint public riskScore;
     PileLike pile;
-    constructor(address pile_) public {
+    constructor() public {
         wards[msg.sender] = 1;
-        pile = PileLike(pile_);
         riskScore = ONE;
+    }
+
+    function depend(bytes32 what, address addr) public auth {
+        if (what == "pile") { pile = PileLike(addr); }
+        else revert();
     }
 
     function file(bytes32 what, uint value) public auth {

@@ -25,7 +25,8 @@ contract PricePoolTest is DSTest {
 
     function setUp() public {
         pile = new PileMock();
-        pricePool = new PricePool(address(pile));
+        pricePool = new PricePool();
+        pricePool.depend("pile", address(pile));
     }
 
     function testPriceValue() public {
