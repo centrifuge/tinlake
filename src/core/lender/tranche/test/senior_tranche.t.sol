@@ -16,7 +16,7 @@
 pragma solidity >=0.4.23;
 
 import "ds-test/test.sol";
-import "ds-math/math.sol";
+import "tinlake-math/math.sol";
 
 import "../senior_tranche.sol";
 import "../../../test/simple/token.sol";
@@ -25,7 +25,7 @@ contract Hevm {
     function warp(uint256) public;
 }
 
-contract SeniorTrancheTest is DSTest, DSMath {
+contract SeniorTrancheTest is DSTest, Math {
     SeniorTranche senior;
     address senior_;
     SimpleToken token;
