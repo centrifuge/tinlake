@@ -19,7 +19,7 @@ import "ds-test/test.sol";
 import "tinlake-math/math.sol";
 
 import "../../test/mock/tranche.sol";
-import "../../../test/mock/token.sol";
+import "../../../borrower/test/mock/token.sol";
 import "../switchable.sol";
 
 
