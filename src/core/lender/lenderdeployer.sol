@@ -63,7 +63,7 @@ contract WhitelistFab {
     }
 }
 
-contract DistributorFab {
+contract SwitchableDistributorFab {
     function newDistributor(address currency) public returns (SwitchableDistributor distributor) {
         distributor = new SwitchableDistributor(currency);
         distributor.rely(msg.sender);
@@ -77,55 +77,55 @@ contract LenderDeployer {
     AssessorFab assessorfab;
     AllowanceFab allowancefab;
     WhitelistFab whitelistfab;
-    DistributorFab distributorfab;
+    SwitchableDistributorFab switchablefab;
 
-    address god;
+    address mainDeployer;
 
     Tranche public tranche;
     SeniorTranche public senior;
     Assessor public assessor;
     AllowanceOperator public allowance;
     WhitelistOperator public whitelist;
-    SwitchableDistributor public distributor;
+    SwitchableDistributor public switchable;
 
-    constructor(address god_, TrancheFab trancheFab_, SeniorFab seniorFab_, AssessorFab assessorFab_, AllowanceFab allowanceFab_,
-    WhitelistFab whitelistFab_, DistributorFab distributorFab_) public {
-        god = god_;
+    constructor(address mainDeployer_, TrancheFab trancheFab_, SeniorFab seniorFab_, AssessorFab assessorFab_, AllowanceFab allowanceFab_,
+    WhitelistFab whitelistFab_, SwitchableDistributorFab switchableFab_) public {
+        mainDeployer = mainDeployer_;
         tranchefab = trancheFab_;
         seniorfab = seniorFab_;
         assessorfab = assessorFab_;
         allowancefab = allowanceFab_;
         whitelistfab = whitelistFab_;
-        distributorfab = distributorFab_;
+        switchablefab = switchableFab_;
     }
 
-    function deployTranche(address currency, address token) public {
+    function deployTranche(address currency, address token) public auth {
         tranche = tranchefab.newTranche(currency, token);
-        tranche.rely(god);
+        tranche.rely(mainDeployer);
     }
 
-    function deployAssessor(address pool) public {
+    function deployAssessor(address pool) public auth {
         assessor = assessorfab.newAssessor(pool);
-        assessor.rely(god);
+        assessor.rely(mainDeployer);
     }
 
-    function deployWhitelistOperator(address tranche, address assessor, address distributor) public {
+    function deployWhitelistOperator(address tranche, address assessor, address distributor) public auth {
         whitelist = whitelistfab.newOperator(tranche, assessor, distributor);
-        whitelist.rely(god);
+        whitelist.rely(mainDeployer);
     }
 
-    function deployAllowanceOperator(address tranche, address assessor, address distributor) public {
+    function deployAllowanceOperator(address tranche, address assessor, address distributor) public auth {
         allowance = allowancefab.newOperator(tranche, assessor, distributor);
-        allowance.rely(god);
+        allowance.rely(mainDeployer);
     }
 
-    function deployDistributor(address currency) public {
-        distributor = distributorfab.newDistributor(currency);
-        distributor.rely(god);
+    function deployDistributor(address currency) public auth {
+        distributor = switchablefab.newDistributor(currency);
+        distributor.rely(mainDeployer);
     }
 
     // only default deployment setup for now
-    function deployDefaultLenderDeployment(address currency, address token, address pool) public {
+    function deployDefaultLenderDeployment(address currency, address token, address pool) public auth {
         deployTranche(currency, token);
         deployDistributor(currency);
         deployAssessor(pool);
@@ -136,5 +136,14 @@ contract LenderDeployer {
 
         distributor.depend("junior", address(tranche));
         //distributor also needs to depend on shelf
+
+        removeDefaultDeployPermissions();
+    }
+
+    function removeDefaultDeployPermissions() public auth {
+        tranche.deny(address(this));
+        distributor.deny(address(this));
+        assessor.deny(address(this));
+        whitelist.deny(address(this));
     }
 }
