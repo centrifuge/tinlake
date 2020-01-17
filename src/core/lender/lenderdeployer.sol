@@ -22,7 +22,6 @@ import {WhitelistOperator} from "./tranche/operator/whitelist.sol";
 import {Tranche} from "./tranche/tranche.sol";
 import {SeniorTranche} from "./tranche/senior_tranche.sol";
 import {SwitchableDistributor} from "./distributor/switchable.sol";
-import {PricePool} from "../price/pool.sol";
 
 contract TrancheFab {
     function newTranche(address currency, address token) public returns (Tranche tranche) {

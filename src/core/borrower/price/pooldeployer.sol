@@ -15,7 +15,7 @@
 
 pragma solidity >=0.5.12;
 
-import {PricePool} from "../price/pool.sol";
+import {PricePool} from "./pool.sol";
 
 contract PoolFab {
     function newPool() public returns (PricePool pool) {
