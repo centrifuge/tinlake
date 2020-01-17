@@ -13,7 +13,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.4.24;
+pragma solidity >=0.5.12;
+
+import "tinlake-math/math.sol";
+import "tinlake-auth/auth.sol";
 
 contract DistributorMock {
 

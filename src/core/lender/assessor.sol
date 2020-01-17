@@ -16,7 +16,8 @@
 pragma solidity >=0.5.12;
 
 import "ds-note/note.sol";
-import "ds-math/math.sol";
+import "tinlake-math/math.sol";
+import "tinlake-auth/auth.sol";
 
 contract TrancheLike {
     function balance() public returns(uint);
@@ -34,16 +35,7 @@ contract PoolLike {
     function totalValue() public returns(uint);
 }
 
-contract Assessor is DSNote,DSMath {
-
-    uint256 constant ONE = 10 ** 27;
-
-    // --- Auth ---
-    mapping (address => uint) public wards;
-    function rely(address usr) public auth note { wards[usr] = 1; }
-    function deny(address usr) public auth note { wards[usr] = 0; }
-    modifier auth { require(wards[msg.sender] == 1); _; }
-
+contract Assessor is DSNote,Math,Auth {
     // --- Tranches ---
     address public senior;
     address public junior;
