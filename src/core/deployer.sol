@@ -16,12 +16,12 @@
 pragma solidity >=0.5.12;
 
 import { Title } from "tinlake-title/title.sol";
-import { LightSwitch } from "./lightswitch.sol";
-import { Shelf } from "./shelf.sol";
+import { LightSwitch } from "./borrower/lightswitch.sol";
+import { Shelf } from "./borrower/shelf.sol";
 import { TrancheManager } from "./test/simple/trancheManager.sol";
-import { Pile } from "./pile.sol";
-import { Collector } from "./collect/collector.sol";
-import { Principal } from "./ceiling/principal.sol";
+import { Pile } from "./borrower/pile.sol";
+import { Collector } from "./borrower/collect/collector.sol";
+import { Principal } from "./borrower/ceiling/principal.sol";
 import { PushRegistry } from 'tinlake-registry/registry.sol';
 
 contract LenderFabLike {
