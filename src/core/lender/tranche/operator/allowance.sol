@@ -22,8 +22,8 @@ contract AllowanceOperator is BaseOperator {
     mapping (address => uint) maxCurrency;  // uint(-1) unlimited access by convention
     mapping (address => uint) maxToken;     // uint(-1) unlimited access by convention
 
-    constructor(address tranche_, address assessor_)
-    BaseOperator(tranche_, assessor_) public {}
+    constructor(address tranche_, address assessor_, address distributor_)
+    BaseOperator(tranche_, assessor_, distributor_) public {}
 
     function approve(address usr, uint maxCurrency_, uint maxToken_) public auth {
         maxCurrency[usr] = maxCurrency_;

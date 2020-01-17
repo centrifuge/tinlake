@@ -14,16 +14,9 @@
 pragma solidity >=0.5.12;
 import "ds-test/test.sol";
 
-contract PoolMock {
-    mapping (bytes32 => uint) calls;
-    mapping (bytes32 => uint) returnValues;
-    function setReturn(bytes32 name, uint returnValue) public {
-        returnValues[name] = returnValue;
-    }
-    function call(bytes32 name) internal returns (uint) {
-        calls[name]++;
-        return returnValues[name];
-    }
+import "./mock.sol";
+
+contract PoolMock is Mock {
     function totalValue() public returns (uint) {
         return call("totalValue");
     }
