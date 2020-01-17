@@ -30,6 +30,10 @@ contract PileLike {
     function debt() public returns(uint);
 }
 
+contract PoolLike {
+    function totalValue() public returns(uint);
+}
+
 contract Assessor is DSNote,DSMath {
 
     uint256 constant ONE = 10 ** 27;
@@ -44,7 +48,10 @@ contract Assessor is DSNote,DSMath {
     address public senior;
     address public junior;
 
-    PileLike pile;
+    PoolLike public pool;
+
+    // initial net asset value
+    uint public initialNAV;
 
     // amounts of token for a token price of ONE
     // constant factor multiplied with the token price
@@ -52,9 +59,9 @@ contract Assessor is DSNote,DSMath {
 
     // --- Assessor ---
     // computes the current asset value for tranches.
-    constructor(address pile_) public {
+    constructor(address pool_) public {
         wards[msg.sender] = 1;
-        pile = PileLike(pile_);
+        pool = PoolLike(pool_);
         tokenAmountForONE = 1;
     }
 
@@ -72,7 +79,7 @@ contract Assessor is DSNote,DSMath {
 
     function calcAssetValue(address tranche) public returns(uint) {
         uint trancheReserve = TrancheLike(tranche).balance();
-        uint poolValue = pile.debt();
+        uint poolValue = pool.totalValue();
         if (tranche == junior) {
             return _calcJuniorAssetValue(poolValue, trancheReserve, _seniorDebt());
         }

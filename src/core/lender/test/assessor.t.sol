@@ -15,7 +15,7 @@ pragma solidity >=0.5.12;
 import "ds-test/test.sol";
 import "ds-math/math.sol";
 import "../assessor.sol";
-import "../../test/mock/pile.sol";
+import "./mock/pool.sol";
 import "./mock/tranche.sol";
 contract AssessorLike {
     function calcTokenPrice() public returns (uint);
@@ -29,12 +29,12 @@ contract AssessorTest is DSTest,DSMath {
     uint256 constant ONE = 10 ** 27;
     Assessor assessor;
     address assessor_;
-    PileMock pile;
+    PoolMock pool;
     TestTranche senior = new TestTranche();
     TestTranche junior = new TestTranche();
     function setUp() public {
-        pile = new PileMock();
-        assessor = new Assessor(address(pile));
+        pool = new PoolMock();
+        assessor = new Assessor(address(pool));
         assessor_ = address(assessor);
         assessor.file("junior", address(junior));
         assessor.file("senior", address(senior));
@@ -42,7 +42,7 @@ contract AssessorTest is DSTest,DSMath {
         assessor.rely(address(senior));
     }
     function calcAssetValue(address tranche, uint seniorTrancheDebt, uint seniorTrancheReserve, uint juniorTrancheDebt, uint juniorTrancheReserve, uint poolValue) internal returns (uint) {
-        pile.setDebtReturn(poolValue);
+        pool.setReturn("totalValue", poolValue);
         senior.setReturn("balance",seniorTrancheReserve);
         senior.setReturn("debt", seniorTrancheDebt);
         junior.setReturn("balance", juniorTrancheReserve);
@@ -89,7 +89,7 @@ contract AssessorTest is DSTest,DSMath {
     function testCalcTokenPrice() public {
         uint poolValue = 100 ether;
         uint debt = poolValue;
-        pile.setDebtReturn(poolValue);
+        pool.setReturn("totalValue",poolValue);
         senior.setReturn("balance", 0);
         senior.setReturn("debt", debt);
         senior.setReturn("tokenSupply", debt);
@@ -115,7 +115,7 @@ contract AssessorTest is DSTest,DSMath {
         tokenSupply = 2.7182818284590452 ether;
         debt = 3.14159265359 ether;
         senior.setReturn("debt", debt);
-        pile.setDebtReturn(debt);
+        pool.setReturn("totalValue", debt);
         assetValue = assessor.calcAssetValue(address(senior));
         // sanity check
         assertEq(assetValue, debt);
@@ -126,7 +126,7 @@ contract AssessorTest is DSTest,DSMath {
 
     function testFailBankrupt() public {
         uint poolValue = 0;
-        pile.setDebtReturn(poolValue);
+        pool.setReturn("totalValue", poolValue);
         senior.setReturn("tokenSupply", 10 ether);
         uint assetValue = assessor.calcAssetValue(address(senior));
         assertEq(assetValue, 0);
@@ -140,7 +140,7 @@ contract AssessorTest is DSTest,DSMath {
         uint initialNAV = 100;
         assessor.file("tokenAmountForONE", initialNAV);
 
-        pile.setDebtReturn(poolValue);
+        pool.setReturn("totalValue", poolValue);
         senior.setReturn("debt", debt);
         senior.setReturn("tokenSupply", debt);
 
@@ -154,4 +154,5 @@ contract AssessorTest is DSTest,DSMath {
         tokenPrice = senior.doCalcTokenPrice(assessor_);
         assertEq(tokenPrice, ONE * initialNAV*2);
     }
+
 }
