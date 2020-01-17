@@ -21,7 +21,7 @@ contract CollectorLike {
     function collect(uint loan, address usr) public;
 }
 
-contract Guard is Auth {
+contract CollectOperator is Auth {
 
     CollectorLike collector;
 
