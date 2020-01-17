@@ -1,4 +1,5 @@
-// Copyright (C) 2019  Centrifuge
+// Copyright (C) 2019 Centrifuge
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -11,9 +12,11 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 pragma solidity >=0.5.12;
+
 import "ds-test/test.sol";
-import "ds-math/math.sol";
+import "tinlake-math/math.sol";
 import "../assessor.sol";
 import "./mock/pool.sol";
 import "./mock/tranche.sol";
@@ -25,7 +28,7 @@ contract TestTranche is TrancheMock {
         return AssessorLike(assessor_).calcTokenPrice();
     }
 }
-contract AssessorTest is DSTest,DSMath {
+contract AssessorTest is DSTest,Math {
     uint256 constant ONE = 10 ** 27;
     Assessor assessor;
     address assessor_;
