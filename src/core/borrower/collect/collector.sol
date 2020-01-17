@@ -17,6 +17,7 @@
 pragma solidity >=0.5.12;
 
 import 'tinlake-registry/registry.sol';
+import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
 
 contract NFTLike {
@@ -42,7 +43,7 @@ contract ShelfLike {
     function recover(uint loan, address usr, uint wad) public;
 }
 
-contract Collector is Auth {
+contract Collector is DSNote, Auth {
     
      // -- Collectors --
     mapping (address => uint) public collectors;
