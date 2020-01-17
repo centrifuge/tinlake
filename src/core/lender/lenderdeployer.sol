@@ -125,6 +125,7 @@ contract LenderDeployer {
         distributor.rely(god);
     }
 
+    // only default deployment setup for now
     function deployDefaultLenderDeployment(address currency, address token, address pool) public {
         deployTranche(currency, token);
         deployDistributor(currency);

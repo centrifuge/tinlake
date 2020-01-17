@@ -34,7 +34,6 @@ contract PoolDeployer {
 
     PricePool public pool;
 
-
     constructor(address god_, PoolFab poolFab_) public {
         poolfab = poolFab_;
     }
@@ -44,8 +43,4 @@ contract PoolDeployer {
         // pile needs to be added here;
         pool.rely(god);
     }
-
-    function elect(){}
-
-    function impeach(){}
 }
