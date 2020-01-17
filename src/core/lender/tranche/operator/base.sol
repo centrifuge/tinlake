@@ -26,6 +26,10 @@ contract TrancheLike {
 contract AssessorLike {
     function calcTokenPrice() public returns(uint);
 }
+
+contract DistributorLike {
+    function balance() public;
+}
 // Abstract Contract
 contract BaseOperator is DSNote, Math {
     // --- Auth ---
@@ -36,24 +40,30 @@ contract BaseOperator is DSNote, Math {
 
     TrancheLike public tranche;
     AssessorLike public assessor;
+    DistributorLike public distributor;
 
-    constructor(address tranche_, address assessor_) internal {
+
+    constructor(address tranche_, address assessor_, address distributor_) internal {
         wards[msg.sender] = 1;
         tranche = TrancheLike(tranche);
         assessor = AssessorLike(assessor_);
+        distributor = DistributorLike(distributor_);
     }
 
     function depend(bytes32 what, address addr) public auth {
         if (what == "tranche") { tranche = TrancheLike(addr); }
         else if (what == "assessor") { assessor = AssessorLike(addr); }
+        else if (what == "distributor") { distributor = DistributorLike(addr); }
         else revert();
     }
 
     function _supply(uint currencyAmount) internal {
         tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, assessor.calcTokenPrice()));
+        distributor.balance();
     }
 
     function _redeem(uint tokenAmount) internal {
         tranche.redeem(msg.sender, rmul(tokenAmount, assessor.calcTokenPrice()), tokenAmount);
+        distributor.balance();
     }
 }
