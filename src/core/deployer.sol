@@ -19,8 +19,6 @@ import { Title } from "tinlake-title/title.sol";
 import { LightSwitch } from "./lightswitch.sol";
 import { Shelf } from "./shelf.sol";
 import { TrancheManager } from "./test/simple/trancheManager.sol";
-import { Admit } from "./admit.sol";
-import { Admin } from "./admin.sol";
 import { Pile } from "./pile.sol";
 import { Collector } from "./collect/collector.sol";
 import { Principal } from "./ceiling/principal.sol";
@@ -79,22 +77,6 @@ contract TrancheManagerFab {
     }
 }
 
-contract AdmitFab {
-    function newAdmit(address title, address shelf, address principal) public returns (Admit admit) {
-        admit = new Admit(title, shelf, principal);
-        admit.rely(msg.sender);
-        admit.deny(address(this));
-    }
-}
-
-contract AdminFab {
-    function newAdmin(address admit, address pile) public returns(Admin admin) {
-        admin = new Admin(admit, pile);
-        admin.rely(msg.sender);
-        admin.deny(address(this));
-    }
-}
-
 contract CollectorFab {
     function newCollector(address trancheManager, address shelf, address pile, address threshold) public returns (Collector collector) {
         collector = new Collector(trancheManager, shelf, pile, threshold);
@@ -124,8 +106,6 @@ contract Deployer {
     LightSwitchFab    lightswitchfab;
     ShelfFab          shelffab;
     TrancheManagerFab    trancheManagerFab;
-    AdmitFab          admitfab;
-    AdminFab          adminfab;
     PileFab           pilefab;
     PrincipalFab      principalFab;
     CollectorFab      collectorFab;
@@ -137,8 +117,6 @@ contract Deployer {
     LightSwitch public lightswitch;
     Shelf       public shelf;
     TrancheManager  public trancheManager;
-    Admit       public admit;
-    Admin       public admin;
     LenderLike  public lender;
     Pile        public pile;
     Principal   public principal;
@@ -146,15 +124,13 @@ contract Deployer {
     PushRegistry public threshold;
 
 
-    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, ShelfFab shelffab_, TrancheManagerFab trancheManagerFab_, AdmitFab admitfab_, AdminFab adminfab_, PileFab pilefab_, PrincipalFab principalFab_, CollectorFab collectorFab_, ThresholdFab thresholdFab_) public {
+    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, ShelfFab shelffab_, TrancheManagerFab trancheManagerFab_, PileFab pilefab_, PrincipalFab principalFab_, CollectorFab collectorFab_, ThresholdFab thresholdFab_) public {
         god = god_;
 
         titlefab = titlefab_;
         lightswitchfab = lightswitchfab_;
         shelffab = shelffab_;
         trancheManagerFab = trancheManagerFab_;
-        admitfab = admitfab_;
-        adminfab = adminfab_;
         pilefab = pilefab_;
         principalFab = principalFab_;
         collectorFab = collectorFab_;
@@ -198,16 +174,6 @@ contract Deployer {
         shelf.depend("lender", address(trancheManager));
     }
 
-    function deployAdmit() public {
-        admit = admitfab.newAdmit(address(title), address(shelf), address(principal));
-        admit.rely(god);
-    }
-
-    function deployAdmin() public {
-        admin = adminfab.newAdmin(address(admit), address(pile));
-        admin.rely(god);
-    }
-
     function deployPrincipal() public {
         principal = principalFab.newPrincipal();
         principal.rely(god);
@@ -215,24 +181,12 @@ contract Deployer {
 
     function deploy() public {
         address trancheManager_ = address(trancheManager);
-        address admit_ = address(admit);
-        address admin_ = address(admin);
         address shelf_ = address(shelf);
         address collector_ = address(collector);
 
         // trancheManager allowed to call
         shelf.rely(trancheManager_);
       
-        // admit allowed to call
-        title.rely(admit_);
-        shelf.rely(admit_);
-        principal.rely(admit_);
-
-        //admin allowed to call
-        admit.rely(admin_);
-        shelf.rely(admin_);
-        pile.rely(admin_);
-
         // shelf allowed to call
         pile.rely(shelf_);
         principal.rely(shelf_);

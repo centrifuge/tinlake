@@ -28,8 +28,6 @@ contract DeployerTest is DSTest {
     LightSwitchFab lightswitchfab;
     ShelfFab shelffab;
     TrancheManagerFab trancheManagerFab;
-    AdmitFab admitfab;
-    AdminFab adminfab;
     PileFab pilefab;
     PrincipalFab principalFab;
     CollectorFab collectorFab;
@@ -43,8 +41,6 @@ contract DeployerTest is DSTest {
         lightswitchfab = new LightSwitchFab();
         shelffab = new ShelfFab();
         trancheManagerFab = new TrancheManagerFab();
-        admitfab = new AdmitFab();
-        adminfab = new AdminFab();
         pilefab = new PileFab();
         principalFab = new PrincipalFab();
         collectorFab = new CollectorFab();
@@ -52,7 +48,7 @@ contract DeployerTest is DSTest {
    }
 
     function testDeploy() public logs_gas {
-        Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, shelffab, trancheManagerFab, admitfab, adminfab, pilefab, principalFab, collectorFab, thresholdFab);
+        Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, shelffab, trancheManagerFab, pilefab, principalFab, collectorFab, thresholdFab);
 
         deployer.deployTitle("Test", "TEST");
         deployer.deployPile();
@@ -60,8 +56,6 @@ contract DeployerTest is DSTest {
         deployer.deployLightSwitch();
         deployer.deployShelf(address(dai));
         deployer.deployTrancheManager(address(dai));
-        deployer.deployAdmit();
-        deployer.deployAdmin();
         deployer.deployThreshold();
         deployer.deployCollector();
 
