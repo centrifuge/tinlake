@@ -1,5 +1,5 @@
-// Copyright (C) 2020 Centrifuge
-//
+// Copyright (C) 2019 Centrifuge
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -15,22 +15,17 @@
 
 pragma solidity >=0.5.12;
 
-import "./base.sol";
+contract Mock {
+    mapping (bytes32 => uint) public calls;
+    mapping (bytes32 => uint) public values_return;
+    mapping (bytes32 => uint) public values_uint;
+    mapping (bytes32 => address) public values_address;
 
-contract WhitelistOperator is BaseOperator {
-    // -- Investors --
-    mapping (address => uint) public investors;
-    function relyInvestor(address usr) public auth note { investors[usr] = 1; }
-    function denyInvestor(address usr) public auth note { investors[usr] = 0; }
-    modifier auth_investor { require(investors[msg.sender] == 1); _; }
+    // function values(bytes32 name) public returns (uint) {return values_uint[name];}
+    // function values(bytes32 name) public returns (address) {return values_address[name];}
 
-    constructor(address tranche_, address assessor_) BaseOperator(tranche_, assessor_) public {}
-
-    function supply(uint currencyAmount) public auth_investor {
-        _supply(currencyAmount);
-    }
-
-    function redeem(uint tokenAmount) public auth_investor {
-        _redeem(tokenAmount);
+    function call(bytes32 name) internal returns (uint) {
+        calls[name]++;
+        return values_return[name];
     }
 }

@@ -47,7 +47,7 @@ contract PileTest is Math, DSTest {
         
         hevm.warp(now + 365 days);
         pile.accrue(loan);
-        
+
         assertDebt(loan, 73.92 ether); 
     }
 

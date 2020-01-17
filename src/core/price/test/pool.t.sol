@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Centrifuge
+// Copyright (C) 2019 lucasvo
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -13,25 +13,27 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity >=0.4.23;
 
-import "tinlake-math/math.sol";
-import "tinlake-auth/auth.sol";
+import "ds-test/test.sol";
+import "../pool.sol";
+import "../../test/mock/pile.sol";
 
-contract DistributorMock {
+contract PricePoolTest is DSTest {
+    PricePool pricePool;
+    PileMock pile;
 
-    // calls
-    uint public callsRepayTranches;
-    uint public callsBalance;
-
-    uint public wad;
-    address public tranche;
-
-    function balance() public {
-        callsBalance++;
+    function setUp() public {
+        pile = new PileMock();
+        pricePool = new PricePool();
+        pricePool.depend("pile", address(pile));
     }
 
-    function repayTranches(uint pileAmount) public {
-        callsRepayTranches++;
+    function testPriceValue() public {
+        pile.setTotalReturn(100 ether);
+        assertEq(pricePool.totalValue(), 100 ether);
+        // assume 10% defaults
+        pricePool.file("riskscore", 9 * 10**26);
+        assertEq(pricePool.totalValue(), 90 ether);
     }
 }

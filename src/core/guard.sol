@@ -13,24 +13,29 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity >=0.4.24;
 
-import "./base.sol";
+import "tinlake-auth/auth.sol";
 
-contract WhitelistOperator is BaseOperator {
-    // -- Investors --
-    mapping (address => uint) public investors;
-    function relyInvestor(address usr) public auth note { investors[usr] = 1; }
-    function denyInvestor(address usr) public auth note { investors[usr] = 0; }
-    modifier auth_investor { require(investors[msg.sender] == 1); _; }
+contract CollectorLike {
+    function collect(uint loan, address usr) public;
+}
 
-    constructor(address tranche_, address assessor_) BaseOperator(tranche_, assessor_) public {}
+contract CollectOperator is Auth {
 
-    function supply(uint currencyAmount) public auth_investor {
-        _supply(currencyAmount);
+    CollectorLike collector;
+
+    constructor(address collector_) public {
+        wards[msg.sender] = 1;
+        collector = CollectorLike(collector_);
     }
 
-    function redeem(uint tokenAmount) public auth_investor {
-        _redeem(tokenAmount);
+    function depend(bytes32 what, address addr) public auth {
+        if(what == "collector") { collector = CollectorLike(addr);}
+        else revert();
+    }
+
+    function collect(uint loan) public auth {
+        collector.collect(loan, msg.sender);
     }
 }

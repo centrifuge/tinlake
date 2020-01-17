@@ -372,7 +372,7 @@ contract SystemTest is DSTest {
             // repay transaction
             emit log_named_uint("repay", principal);
             borrower.doRepay(i, principal, borrower_);
-
+            
             trancheManagerBalance += principal;
             checkAfterRepay(i, i, tTotal, trancheManagerBalance);
         }
