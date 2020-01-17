@@ -28,4 +28,8 @@ contract Mock {
         calls[name]++;
         return values_return[name];
     }
+
+    function setReturn(bytes32 name, uint returnValue) public {
+        values_return[name] = returnValue;
+    }
 }

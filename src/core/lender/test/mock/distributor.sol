@@ -15,20 +15,14 @@
 
 pragma solidity >=0.4.24;
 
-contract DistributorMock {
+import "./mock.sol";
 
-    // calls
-    uint public callsRepayTranches;
-    uint public callsBalance;
-
-    uint public wad;
-    address public tranche;
-
-    function balance() public {
-        callsBalance++;
+contract DistributorMock is Mock {
+    function balance() public returns (uint) {
+        return call("balance");
     }
-
-    function repayTranches(uint pileAmount) public {
-        callsRepayTranches++;
+    function repayTranches(uint amount) public {
+        calls["repay_tranches"]++;
+        values_uint["repay_tranches_amount"] = amount;
     }
 }
