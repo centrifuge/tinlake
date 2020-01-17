@@ -43,6 +43,12 @@ contract ShelfLike {
 }
 
 contract Collector is Auth {
+    
+     // -- Collectors --
+    mapping (address => uint) public collectors;
+    function relyCollector(address usr) public auth note { collectors[usr] = 1; }
+    function denyCollector(address usr) public auth note { collectors[usr] = 0; }
+    modifier auth_collector { require(collectors[msg.sender] == 1); _; }
 
     // --- Data ---
     RegistryLike threshold;
@@ -83,7 +89,7 @@ contract Collector is Auth {
         shelf.claim(loan, address(this));
     }
 
-    function collect(uint loan, address usr) public auth {
+    function collect(uint loan, address usr) public auth_collector {
         require(usr == tags[loan].usr || tags[loan].usr == address(0));
         (address registry, uint nft) = shelf.token(loan);
         shelf.recover(loan, usr, tags[loan].wad);
