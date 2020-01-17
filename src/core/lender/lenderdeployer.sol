@@ -21,7 +21,7 @@ import {AllowanceOperator} from "./tranche/operator/allowance.sol";
 import {WhitelistOperator} from "./tranche/operator/whitelist.sol";
 import {Tranche} from "./tranche/tranche.sol";
 import {SeniorTranche} from "./tranche/senior_tranche.sol";
-import {Distributor} from "./distributor/switchable.sol";
+import {SwitchableDistributor} from "./distributor/switchable.sol";
 import {PricePool} from "../price/pool.sol";
 
 contract TrancheFab {
@@ -65,29 +65,11 @@ contract WhitelistFab {
 }
 
 contract DistributorFab {
-    function newDistributor() public returns (Distributor distributor) {
-        distributor = new Distributor();
+    function newDistributor(address currency) public returns (SwitchableDistributor distributor) {
+        distributor = new Distributor(currency);
         distributor.rely(msg.sender);
         distributor.deny(address(this));
     }
-}
-
-// pool should be separate from lender deployer, this is just for now
-contract PoolFab {
-    function newPool() public returns (PricePool pool) {
-        pool = new PricePool();
-        pool.rely(msg.sender);
-        pool.deny(address(this));
-    }
-}
-
-contract PileLike {
-    function total() public returns (uint);
-}
-
-
-contract CurrencyLike {
-    function balanceOf(address) public returns(uint);
 }
 
 contract LenderDeployer {
@@ -97,8 +79,6 @@ contract LenderDeployer {
     AllowanceFab allowancefab;
     WhitelistFab whitelistfab;
     DistributorFab distributorfab;
-    // see pool comment above
-    PoolFab poolfab;
 
     address god;
 
@@ -107,13 +87,10 @@ contract LenderDeployer {
     Assessor public assessor;
     AllowanceOperator public allowance;
     WhitelistOperator public whitelist;
-    Distributor public distributor;
-    // see pool comment above
-    PricePool public pool;
-
+    SwitchableDistributor public distributor;
 
     constructor(address god_, TrancheFab trancheFab_, SeniorFab seniorFab_, AssessorFab assessorFab_, AllowanceFab allowanceFab_,
-    WhitelistFab whitelistFab_, DistributorFab distributorFab_, PoolFab poolFab_) public {
+    WhitelistFab whitelistFab_, DistributorFab distributorFab_) public {
         god = god_;
         tranchefab = trancheFab_;
         seniorfab = seniorFab_;
@@ -121,18 +98,11 @@ contract LenderDeployer {
         allowancefab = allowanceFab_;
         whitelistfab = whitelistFab_;
         distributorfab = distributorFab_;
-        poolfab = poolFab_;
     }
 
     function deployTranche(address currency, address token) public {
         tranche = tranchefab.newTranche(currency, token);
         tranche.rely(god);
-    }
-
-    function deployPool() public {
-        pool = poolfab.newPool();
-        // pile needs to be added here;
-        pool.rely(god);
     }
 
     function deployAssessor(address pool) public {
@@ -155,7 +125,13 @@ contract LenderDeployer {
         distributor.rely(god);
     }
 
-    function elect(){}
+    function deployDefaultLenderDeployment(address currency, address token, address pool) public {
+        deployTranche(currency, token);
+        deployDistributor(currency);
+        deployAssessor(pool);
+        deployWhitelistOperator(address(tranche), address(assessor));
 
-    function impeach(){}
+        tranche.rely(whitelist);
+        tranche.rely(distributor);
+    }
 }
