@@ -61,7 +61,6 @@ contract Assessor is Math, DSNote, Auth {
     function file(bytes32 what, address addr_) public auth {
         if (what == "junior") { junior = addr_; }
         else if (what == "senior") { senior = addr_; }
-        else if (what == "pool") { pool = addr_; }
         else revert();
     }
 

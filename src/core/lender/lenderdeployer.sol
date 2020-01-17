@@ -48,16 +48,16 @@ contract AssessorFab {
 }
 
 contract AllowanceFab {
-    function newOperator(address tranche, address assessor) public returns (AllowanceOperator operator) {
-        operator = new AllowanceOperator(tranche, assessor);
+    function newOperator(address tranche, address assessor, address distributor) public returns (AllowanceOperator operator) {
+        operator = new AllowanceOperator(tranche, assessor, distributor);
         operator.rely(msg.sender);
         operator.deny(address(this));
     }
 }
 
 contract WhitelistFab {
-    function newOperator(address tranche, address assessor) public returns (WhitelistOperator operator) {
-        operator = new WhitelistOperator(tranche, assessor);
+    function newOperator(address tranche, address assessor, address distributor) public returns (WhitelistOperator operator) {
+        operator = new WhitelistOperator(tranche, assessor, distributor);
         operator.rely(msg.sender);
         operator.deny(address(this));
     }
@@ -65,7 +65,7 @@ contract WhitelistFab {
 
 contract DistributorFab {
     function newDistributor(address currency) public returns (SwitchableDistributor distributor) {
-        distributor = new Distributor(currency);
+        distributor = new SwitchableDistributor(currency);
         distributor.rely(msg.sender);
         distributor.deny(address(this));
     }
@@ -131,8 +131,8 @@ contract LenderDeployer {
         deployAssessor(pool);
         deployWhitelistOperator(address(tranche), address(assessor), address(distributor));
 
-        tranche.rely(whitelist);
-        tranche.rely(distributor);
+        tranche.rely(address(whitelist));
+        tranche.rely(address(distributor));
 
         distributor.depend("junior", address(tranche));
         //distributor also needs to depend on shelf
