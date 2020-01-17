@@ -132,4 +132,26 @@ contract AssessorTest is DSTest,DSMath {
         assertEq(assetValue, 0);
         uint tokenPrice = senior.doCalcTokenPrice(assessor_);
     }
+
+    function testTokenPriceWithInitialNAV() public {
+        uint poolValue = 100 ether;
+        uint debt = poolValue;
+
+        uint initialNAV = 100;
+        assessor.file("tokenAmountForONE", initialNAV);
+
+        pile.setDebtReturn(poolValue);
+        senior.setReturn("debt", debt);
+        senior.setReturn("tokenSupply", debt);
+
+        // assetValue 100 ether, supply 100 ether
+        uint tokenPrice = senior.doCalcTokenPrice(assessor_);
+        assertEq(tokenPrice, ONE*initialNAV);
+
+        // less token than assetValue: assetValue 100 ether, supply 50 ether
+        uint tokenSupply = debt/2;
+        senior.setReturn("tokenSupply",tokenSupply);
+        tokenPrice = senior.doCalcTokenPrice(assessor_);
+        assertEq(tokenPrice, ONE * initialNAV*2);
+    }
 }
