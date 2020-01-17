@@ -19,6 +19,7 @@ pragma experimental ABIEncoderV2;
 
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
+import "tinlake-auth/auth.sol";
 
 contract PileLike {
     uint public total;
@@ -30,12 +31,7 @@ contract PileLike {
 
 // CreditLine is an implementation of the Ceiling module that defines the max amount a user can borrow.
 // Borrowers can always repay and borrow new money as long as the total borrowed amount stays under the defined line of credit. Accrued interst is considered.
-contract CreditLine is Math, DSNote{
-    // --- Auth ---
-    mapping (address => uint) public wards;
-    function rely(address usr) public auth { wards[usr] = 1; }
-    function deny(address usr) public auth { wards[usr] = 0; }
-    modifier auth { require(wards[msg.sender] == 1); _; }
+contract CreditLine is DSNote, Auth, Math {
 
     // --- Data ---
     PileLike pile;  

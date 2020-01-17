@@ -19,6 +19,7 @@ pragma experimental ABIEncoderV2;
 
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
+import "tinlake-auth/auth.sol";
 import { TitleOwned } from "tinlake-title/title.sol";
 
 contract NFTLike {
@@ -52,12 +53,7 @@ contract CeilingLike {
     function repay(uint loan, uint currencyAmount) public;
 }
 
-contract Shelf is DSNote, TitleOwned, Math {
-    // --- Auth ---
-    mapping (address => uint) public wards;
-    function rely(address usr) public auth { wards[usr] = 1; }
-    function deny(address usr) public auth { wards[usr] = 0; }
-    modifier auth { require(wards[msg.sender] == 1); _; }
+contract Shelf is DSNote, Auth, TitleOwned, Math {
 
     // --- Data ---
     TitleLike public title;

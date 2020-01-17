@@ -17,6 +17,7 @@ pragma solidity >=0.5.12;
 
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
+import "tinlake-auth/auth.sol";
 
 /// Interfaces
 contract TrancheLike {
@@ -34,12 +35,7 @@ contract ShelfLike {
 /// In the base implementation the requested `currencyAmount` always is taken from the
 /// junior tranche first. For repayment senior comes first.
 /// This implementation can handle one or two tranches.
-contract BaseDistributor is DSNote, Math {
-    // --- Auth ---
-    mapping (address => uint) public wards;
-    function rely(address usr) public auth note { wards[usr] = 1; }
-    function deny(address usr) public auth note { wards[usr] = 0; }
-    modifier auth { require(wards[msg.sender] == 1); _; }
+contract BaseDistributor is Math, DSNote, Auth {
 
     ShelfLike public shelf;
 

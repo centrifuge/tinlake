@@ -35,7 +35,7 @@ contract PoolLike {
     function totalValue() public returns(uint);
 }
 
-contract Assessor is DSNote,Math,Auth {
+contract Assessor is Math, DSNote, Auth {
     // --- Tranches ---
     address public senior;
     address public junior;

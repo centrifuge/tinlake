@@ -15,6 +15,8 @@
 
 pragma solidity >=0.5.12;
 
+import "tinlake-auth/auth.sol";
+
 contract SwitchLike {
     function on() public returns (uint);
 }
@@ -30,12 +32,7 @@ contract Switchable {
     modifier switchable { require(lightswitch.on() == 1); _; }
 }
 
-contract LightSwitch {
-    // --- Auth ---
-    mapping (address => uint) public wards;
-    function rely(address usr) public auth { wards[usr] = 1; }
-    function deny(address usr) public auth { wards[usr] = 0; }
-    modifier auth { require(wards[msg.sender] == 1); _; }
+contract LightSwitch is Auth {
 
     // --- Data ---
     uint public on;
