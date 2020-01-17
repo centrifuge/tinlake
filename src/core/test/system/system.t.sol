@@ -80,12 +80,14 @@ contract AdminUser is DSTest{
     }
 
     function doAdmit(address registry, uint nft, uint principal, address usr) public returns (uint) {
-        uint loan = deployer.admit().admit(registry, nft, principal, usr);
+        uint loan = deployer.title().issue(usr);
+        deployer.principal().file(loan, principal);
+        deployer.shelf().file(loan, registry, nft);
         return loan;
     }
 
     function doInitRate(uint rate, uint speed) public {
-        deployer.admin().file(rate, speed);
+        deployer.pile().file(rate, speed);
     }
 
     function doAddRate(uint loan, uint rate) public {
@@ -142,8 +144,6 @@ contract SystemTest is DSTest {
         LightSwitchFab lightswitchfab = new LightSwitchFab();
         ShelfFab shelffab = new ShelfFab();
         TrancheManagerFab trancheManagerfab = new TrancheManagerFab();
-        AdmitFab admitfab = new AdmitFab();
-        AdminFab adminfab = new AdminFab();
         PileFab pileFab = new PileFab();
         PrincipalFab principalFab = new PrincipalFab();
         CollectorFab collectorFab = new CollectorFab();
@@ -151,7 +151,7 @@ contract SystemTest is DSTest {
 
         admin = new AdminUser();
         admin_ = address(admin);
-        deployer = new Deployer(admin_, titlefab, lightswitchfab, shelffab, trancheManagerfab, admitfab, adminfab, pileFab, principalFab, collectorFab, thresholdFab);
+        deployer = new Deployer(admin_, titlefab, lightswitchfab, shelffab, trancheManagerfab, pileFab, principalFab, collectorFab, thresholdFab);
 
         deployer.deployLightSwitch();
         deployer.deployTitle("Tinlake Loan", "TLNT");
@@ -161,8 +161,6 @@ contract SystemTest is DSTest {
         deployer.deployTrancheManager(tkn_);
         deployer.deployThreshold();
         deployer.deployCollector();
-        deployer.deployAdmit();
-        deployer.deployAdmin();
 
         deployer.deploy();
 
@@ -374,7 +372,7 @@ contract SystemTest is DSTest {
             // repay transaction
             emit log_named_uint("repay", principal);
             borrower.doRepay(i, principal, borrower_);
-
+            
             trancheManagerBalance += principal;
             checkAfterRepay(i, i, tTotal, trancheManagerBalance);
         }

@@ -19,11 +19,6 @@ import "ds-test/test.sol";
 import "./mock.sol";
 
 contract TrancheMock is Mock {
-
-    function setReturn(bytes32 name, uint returnValue) public {
-        values_return[name] = returnValue;
-    }
-
     function debt() public returns (uint) {
         return call("debt");
     }

@@ -15,24 +15,9 @@
 
 pragma solidity >=0.5.12;
 
-contract AssessorMock {
+import "./mock.sol";
 
-    address public senior;
-    address public junior;
-
-    mapping (bytes32 => uint) public calls;
-    mapping (bytes32 => uint) public returnValues;
-
-
-    function setReturn(bytes32 name, uint returnValue) public {
-        returnValues[name] = returnValue;
-    }
-
-    function call(bytes32 name) internal returns (uint) {
-        calls[name]++;
-        return returnValues[name];
-    }
-
+contract AssessorMock is Mock {
     function calcTokenPrice () public returns (uint) {
         return call("tokenPrice");
     }
