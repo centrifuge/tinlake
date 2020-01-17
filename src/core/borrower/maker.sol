@@ -15,6 +15,7 @@
 pragma solidity >=0.5.12;
 pragma experimental ABIEncoderV2;
 
+import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
 import "ds-note/note.sol";
 
@@ -80,7 +81,7 @@ contract MakerLenderFab {
 // could want to draw)
 // It makes use of https://github.com/makerdao/dss-proxy-actions/blob/master/src/DssProxyActions.sol and
 // https://github.com/makerdao/dss-cdp-manager/blob/master/src/DssCdpManager.sol to interact with the CDP.
-contract MakerAdapter is DSNote, Auth {
+contract MakerAdapter is DSNote, Auth, Math {
 
     // --- Data ---
     TokenLike           public tkn;
@@ -118,15 +119,6 @@ contract MakerAdapter is DSNote, Auth {
         if (what == "ilk") { ilk = data; }
     }
     
-
-    // --- Math ---
-    function add(uint x, uint y) internal pure returns (uint z) {
-        require((z = x + y) >= x);
-    }
-
-    function sub(uint x, uint y) internal pure returns (uint z) {
-        require((z = x - y) <= x);
-    }
 
     // --- Lender Methods ---
     function provide(address usrC, address usrT, uint wadC, uint wadT) public auth { 

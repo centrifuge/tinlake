@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.4.23;
+pragma solidity >=0.5.12;
 
 import "ds-test/test.sol";
 import { Title } from "tinlake-title/title.sol";
@@ -27,7 +27,7 @@ contract DeployerTest is DSTest {
     TitleFab titlefab;
     LightSwitchFab lightswitchfab;
     ShelfFab shelffab;
-    TrancheManagerFab trancheManagerFab;
+    DistributorFab distributorFab;
     PileFab pilefab;
     PrincipalFab principalFab;
     CollectorFab collectorFab;
@@ -40,7 +40,7 @@ contract DeployerTest is DSTest {
         titlefab = new TitleFab();
         lightswitchfab = new LightSwitchFab();
         shelffab = new ShelfFab();
-        trancheManagerFab = new TrancheManagerFab();
+        distributorFab = new DistributorFab();
         pilefab = new PileFab();
         principalFab = new PrincipalFab();
         collectorFab = new CollectorFab();
@@ -48,14 +48,14 @@ contract DeployerTest is DSTest {
    }
 
     function testDeploy() public logs_gas {
-        Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, shelffab, trancheManagerFab, pilefab, principalFab, collectorFab, thresholdFab);
+        Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, shelffab, distributorFab, pilefab, principalFab, collectorFab, thresholdFab);
 
         deployer.deployTitle("Test", "TEST");
         deployer.deployPile();
         deployer.deployPrincipal();
         deployer.deployLightSwitch();
         deployer.deployShelf(address(dai));
-        deployer.deployTrancheManager(address(dai));
+        deployer.deployDistributor(address(dai));
         deployer.deployThreshold();
         deployer.deployCollector();
 

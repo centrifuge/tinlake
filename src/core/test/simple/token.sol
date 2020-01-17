@@ -15,9 +15,10 @@
 
 pragma solidity >=0.5.12;
 
+import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
 
-contract SimpleToken is Auth {
+contract SimpleToken is Auth, Math {
 
     // --- ERC20 Data ---
     uint8   public decimals = 18;
@@ -32,14 +33,6 @@ contract SimpleToken is Auth {
 
     event Approval(address indexed src, address indexed usr, uint wad);
     event Transfer(address indexed src, address indexed dst, uint wad);
-
-    // --- Math ---
-    function add(uint x, uint y) internal pure returns (uint z) {
-        require((z = x + y) >= x, "math-add-overflow");
-    }
-    function sub(uint x, uint y) internal pure returns (uint z) {
-        require((z = x - y) <= x, "math-sub-underflow");
-    }
 
     // --- EIP712 niceties ---
     bytes32 public DOMAIN_SEPARATOR;

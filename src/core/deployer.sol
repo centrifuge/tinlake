@@ -18,7 +18,7 @@ pragma solidity >=0.5.12;
 import { Title } from "tinlake-title/title.sol";
 import { LightSwitch } from "./borrower/lightswitch.sol";
 import { Shelf } from "./borrower/shelf.sol";
-import { TrancheManager } from "./test/simple/trancheManager.sol";
+import { Distributor } from "./test/simple/distributor.sol";
 import { Pile } from "./borrower/pile.sol";
 import { Collector } from "./borrower/collect/collector.sol";
 import { Principal } from "./borrower/ceiling/principal.sol";
@@ -69,17 +69,17 @@ contract ShelfFab {
     }
 }
 
-contract TrancheManagerFab {
-    // note: this is the mock TrancheManager, which will interface with the lender/tranche side of Tinlake, and does not require auth for now.
-    function newTrancheManager(address shelf_, address token_) public returns (TrancheManager trancheManager) {
-        trancheManager = new TrancheManager(shelf_, token_);
-        return trancheManager;
+contract DistributorFab {
+    // note: this is the mock distributor, which will interface with the lender/tranche side of Tinlake, and does not require auth for now.
+    function newDistributor(address shelf_, address token_) public returns (Distributor distributor) {
+        distributor = new Distributor(shelf_, token_);
+        return distributor;
     }
 }
 
 contract CollectorFab {
-    function newCollector(address trancheManager, address shelf, address pile, address threshold) public returns (Collector collector) {
-        collector = new Collector(trancheManager, shelf, pile, threshold);
+    function newCollector(address distributor, address shelf, address pile, address threshold) public returns (Collector collector) {
+        collector = new Collector(distributor, shelf, pile, threshold);
         collector.rely(msg.sender);
         collector.deny(address(this));
     }
@@ -105,7 +105,7 @@ contract Deployer {
     TitleFab          titlefab;
     LightSwitchFab    lightswitchfab;
     ShelfFab          shelffab;
-    TrancheManagerFab    trancheManagerFab;
+    DistributorFab    distributorFab;
     PileFab           pilefab;
     PrincipalFab      principalFab;
     CollectorFab      collectorFab;
@@ -116,7 +116,7 @@ contract Deployer {
     Title       public title;
     LightSwitch public lightswitch;
     Shelf       public shelf;
-    TrancheManager  public trancheManager;
+    Distributor  public distributor;
     LenderLike  public lender;
     Pile        public pile;
     Principal   public principal;
@@ -124,13 +124,13 @@ contract Deployer {
     PushRegistry public threshold;
 
 
-    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, ShelfFab shelffab_, TrancheManagerFab trancheManagerFab_, PileFab pilefab_, PrincipalFab principalFab_, CollectorFab collectorFab_, ThresholdFab thresholdFab_) public {
+    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, ShelfFab shelffab_, DistributorFab distributorFab_, PileFab pilefab_, PrincipalFab principalFab_, CollectorFab collectorFab_, ThresholdFab thresholdFab_) public {
         god = god_;
 
         titlefab = titlefab_;
         lightswitchfab = lightswitchfab_;
         shelffab = shelffab_;
-        trancheManagerFab = trancheManagerFab_;
+        distributorFab = distributorFab_;
         pilefab = pilefab_;
         principalFab = principalFab_;
         collectorFab = collectorFab_;
@@ -143,7 +143,7 @@ contract Deployer {
 
     }
     function deployCollector() public {
-        collector = collectorFab.newCollector(address(trancheManager), address(shelf), address(pile), address(threshold));
+        collector = collectorFab.newCollector(address(distributor), address(shelf), address(pile), address(threshold));
         collector.rely(god);
     }
 
@@ -168,10 +168,10 @@ contract Deployer {
     }
 
     // note: this method will be refactored with the new lender side contracts, we will rely on God once more
-    //and the Pile should articulate that it depends on the TrancheManager, not a generic "lender".
-    function deployTrancheManager(address currency_) public {
-        trancheManager = trancheManagerFab.newTrancheManager(address(shelf), currency_);
-        shelf.depend("lender", address(trancheManager));
+    //and the Pile should articulate that it depends on the distributor, not a generic "lender".
+    function deployDistributor(address currency_) public {
+        distributor = distributorFab.newDistributor(address(shelf), currency_);
+        shelf.depend("lender", address(distributor));
     }
 
     function deployPrincipal() public {
@@ -180,12 +180,12 @@ contract Deployer {
     }
 
     function deploy() public {
-        address trancheManager_ = address(trancheManager);
+        address distributor_ = address(distributor);
         address shelf_ = address(shelf);
         address collector_ = address(collector);
 
-        // trancheManager allowed to call
-        shelf.rely(trancheManager_);
+        // distributor allowed to call
+        shelf.rely(distributor_);
       
         // shelf allowed to call
         pile.rely(shelf_);

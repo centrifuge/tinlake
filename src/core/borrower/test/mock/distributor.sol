@@ -1,6 +1,6 @@
 pragma solidity >=0.5.12;
 
-contract TrancheManagerMock {
+contract DistributorMock {
 
     // calls
     uint public callsBalance;
