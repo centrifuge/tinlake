@@ -87,6 +87,7 @@ contract OperatorTest is DSTest {
         assertEq(assessor.calls("tokenPrice"), 1);
         assertEq(tranche.values_return("currencyAmount"), 100 ether);
         assertEq(tranche.values_return("tokenAmount"), 100 ether);
+        assertEq(distributor.calls("balance"), 1);
     }
 
     function testWhitelistRedeemInvestor() public {
@@ -96,6 +97,7 @@ contract OperatorTest is DSTest {
         assertEq(assessor.calls("tokenPrice"), 1);
         assertEq(tranche.values_return("currencyAmount"), 100 ether);
         assertEq(tranche.values_return("tokenAmount"), 100 ether);
+        assertEq(distributor.calls("balance"), 1);
     }
 
     function testFailWhitelistSupply() public {
@@ -121,6 +123,7 @@ contract OperatorTest is DSTest {
         assertEq(assessor.calls("tokenPrice"), 1);
         assertEq(tranche.values_return("currencyAmount"), 100 ether);
         assertEq(tranche.values_return("tokenAmount"), 100 ether);
+        assertEq(distributor.calls("balance"), 1);
     }
 
     function testAllowanceRedeem() public {
@@ -130,6 +133,7 @@ contract OperatorTest is DSTest {
         assertEq(assessor.calls("tokenPrice"), 1);
         assertEq(tranche.values_return("currencyAmount"), 100 ether);
         assertEq(tranche.values_return("tokenAmount"), 100 ether);
+        assertEq(distributor.calls("balance"), 1);
     }
 
     function testFailAllowanceSupply() public {
