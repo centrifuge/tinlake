@@ -81,8 +81,8 @@ contract OperatorTest is DSTest {
         investor.doSupply(address(whitelist), 100 ether);
         assertEq(tranche.calls("supply"), 1);
         assertEq(assessor.calls("tokenPrice"), 1);
-        assertEq(tranche.returnValues("currencyAmount"), 100 ether);
-        assertEq(tranche.returnValues("tokenAmount"), 100 ether);
+        assertEq(tranche.values_return("currencyAmount"), 100 ether);
+        assertEq(tranche.values_return("tokenAmount"), 100 ether);
     }
 
     function testWhitelistRedeemInvestor() public {
@@ -90,8 +90,8 @@ contract OperatorTest is DSTest {
         investor.doRedeem(address(whitelist), 100 ether);
         assertEq(tranche.calls("redeem"), 1);
         assertEq(assessor.calls("tokenPrice"), 1);
-        assertEq(tranche.returnValues("currencyAmount"), 100 ether);
-        assertEq(tranche.returnValues("tokenAmount"), 100 ether);
+        assertEq(tranche.values_return("currencyAmount"), 100 ether);
+        assertEq(tranche.values_return("tokenAmount"), 100 ether);
     }
 
     function testFailWhitelistSupply() public {
@@ -115,8 +115,8 @@ contract OperatorTest is DSTest {
         investor.doSupply(address(allowance), 100 ether);
         assertEq(tranche.calls("supply"), 1);
         assertEq(assessor.calls("tokenPrice"), 1);
-        assertEq(tranche.returnValues("currencyAmount"), 100 ether);
-        assertEq(tranche.returnValues("tokenAmount"), 100 ether);
+        assertEq(tranche.values_return("currencyAmount"), 100 ether);
+        assertEq(tranche.values_return("tokenAmount"), 100 ether);
     }
 
     function testAllowanceRedeem() public {
@@ -124,8 +124,8 @@ contract OperatorTest is DSTest {
         investor.doRedeem(address(allowance), 100 ether);
         assertEq(tranche.calls("redeem"), 1);
         assertEq(assessor.calls("tokenPrice"), 1);
-        assertEq(tranche.returnValues("currencyAmount"), 100 ether);
-        assertEq(tranche.returnValues("tokenAmount"), 100 ether);
+        assertEq(tranche.values_return("currencyAmount"), 100 ether);
+        assertEq(tranche.values_return("tokenAmount"), 100 ether);
     }
 
     function testFailAllowanceSupply() public {
