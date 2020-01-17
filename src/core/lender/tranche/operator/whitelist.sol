@@ -24,7 +24,7 @@ contract WhitelistOperator is BaseOperator {
     function denyInvestor(address usr) public auth note { investors[usr] = 0; }
     modifier auth_investor { require(investors[msg.sender] == 1); _; }
 
-    constructor(address tranche_, address assessor_) BaseOperator(tranche_, assessor_) public {}
+    constructor(address tranche_, address assessor_, address distributor_) BaseOperator(tranche_, assessor_, distributor_) public {}
 
     function supply(uint currencyAmount) public auth_investor {
         _supply(currencyAmount);
