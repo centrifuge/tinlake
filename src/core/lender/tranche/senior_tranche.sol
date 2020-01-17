@@ -16,10 +16,11 @@
 pragma solidity >=0.5.12;
 
 import "./tranche.sol";
+import "tinlake-math/interest.sol";
 
 // SeniorTranche
 // Interface to the senior tranche. keeps track of the current debt towards the tranche. 
-contract SeniorTranche is Tranche {
+contract SeniorTranche is Tranche, Interest {
     
     uint internal chi;              // accumulated interest over time
     uint public ratePerSecond;      // interest rate per second in RAD (10^27)
@@ -68,31 +69,6 @@ contract SeniorTranche is Tranche {
         if (now >= lastUpdated) {
             chi = rmul(rpow(ratePerSecond, now - lastUpdated, ONE), chi);
             lastUpdated = now;
-        }
-    }
-
-    // todo can be removed after using Tinlake-Math
-    function rpow(uint x, uint n, uint base) internal pure returns (uint z) {
-        assembly {
-            switch x case 0 {switch n case 0 {z := base} default {z := 0}}
-            default {
-                switch mod(n, 2) case 0 { z := base } default { z := x }
-                let half := div(base, 2)  // for rounding.
-                for { n := div(n, 2) } n { n := div(n,2) } {
-                let xx := mul(x, x)
-                if iszero(eq(div(xx, x), x)) { revert(0,0) }
-                let xxRound := add(xx, half)
-                if lt(xxRound, xx) { revert(0,0) }
-                x := div(xxRound, base)
-                if mod(n,2) {
-                    let zx := mul(z, x)
-                    if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0,0) }
-                    let zxRound := add(zx, half)
-                    if lt(zxRound, zx) { revert(0,0) }
-                    z := div(zxRound, base)
-                }
-            }
-            }
         }
     }
 }

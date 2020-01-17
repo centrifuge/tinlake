@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.4.24;
+pragma solidity >=0.5.12;
 
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
@@ -51,7 +51,6 @@ contract BaseOperator is DSNote, Math {
 
     function _supply(uint currencyAmount) internal {
         tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, assessor.calcTokenPrice()));
-
     }
 
     function _redeem(uint tokenAmount) internal {

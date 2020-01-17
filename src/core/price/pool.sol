@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.4.24;
+pragma solidity >=0.5.12;
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
@@ -25,10 +25,14 @@ contract PileLike {
 contract PricePool is Auth, Math {
     uint public riskScore;
     PileLike pile;
-    constructor(address pile_) public {
+    constructor() public {
         wards[msg.sender] = 1;
-        pile = PileLike(pile_);
         riskScore = ONE;
+    }
+
+    function depend(bytes32 what, address addr) public auth {
+        if (what == "pile") { pile = PileLike(addr); }
+        else revert();
     }
 
     function file(bytes32 what, uint value) public auth {

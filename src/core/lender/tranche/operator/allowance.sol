@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.4.24;
+pragma solidity >=0.5.12;
 
 import "./base.sol";
 
@@ -25,7 +25,7 @@ contract AllowanceOperator is BaseOperator {
     constructor(address tranche_, address assessor_)
     BaseOperator(tranche_, assessor_) public {}
 
-    function approve(address usr, uint maxToken_, uint maxCurrency_) public auth {
+    function approve(address usr, uint maxCurrency_, uint maxToken_) public auth {
         maxCurrency[usr] = maxCurrency_;
         maxToken[usr] = maxToken_;
     }

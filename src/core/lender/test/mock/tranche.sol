@@ -1,4 +1,5 @@
 // Copyright (C) 2019 Centrifuge
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -11,7 +12,9 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 pragma solidity >=0.5.12;
+
 import "ds-test/test.sol";
 import "./mock.sol";
 
@@ -26,6 +29,16 @@ contract TrancheMock is Mock {
     }
     function balance() public returns (uint) {
         return call("balance");
+    }
+    function supply(address usr, uint currencyAmount, uint tokenAmount) public {
+        calls["supply"]++;
+        setReturn("currencyAmount", currencyAmount);
+        setReturn("tokenAmount", tokenAmount);
+    }
+    function redeem(address usr, uint currencyAmount, uint tokenAmount) public {
+        calls["redeem"]++;
+        setReturn("currencyAmount", currencyAmount);
+        setReturn("tokenAmount", tokenAmount);
     }
     function tokenSupply() public returns (uint) {
         return call("tokenSupply");
