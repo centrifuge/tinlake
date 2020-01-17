@@ -16,12 +16,13 @@
 pragma solidity >=0.4.24;
 
 import "ds-note/note.sol";
+import "tinlake-math/interest.sol";
 
 // ## Interest Group based Pile
 // The following is one implementation of a debt module. It keeps track of different buckets of interest rates and is optimized for many loans per interest bucket. It keeps track of interest
 // rate accumulators (chi values) for all interest rate categories. It calculates debt each
 // loan according to its interest rate category and pie value.
-contract Pile is DSNote {
+contract Pile is DSNote, Interest {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) public auth note { wards[usr] = 1; }
@@ -58,7 +59,7 @@ contract Pile is DSNote {
     function incDebt(uint loan, uint wad) public auth note {
         uint rate = group[loan];
         require(now <= rates[rate].rho);
-        uint delta = _toPie(rates[rate].chi, wad);
+        uint delta = toPie(rates[rate].chi, wad);
         pie[loan] = add(pie[loan], delta);
         rates[rate].pie = add(rates[rate].pie, delta);
         total = add(total, wad);
@@ -68,7 +69,7 @@ contract Pile is DSNote {
     function decDebt(uint loan, uint wad) public auth note {
         uint rate = group[loan];
         require(now <= rates[rate].rho);
-        uint delta = _toPie(rates[rate].chi, wad);
+        uint delta = toPie(rates[rate].chi, wad);
         pie[loan] = sub(pie[loan], delta);
         rates[rate].pie = sub(rates[rate].pie, delta);
         total = sub(total, wad);
@@ -78,9 +79,9 @@ contract Pile is DSNote {
         uint rate = group[loan];
         uint chi = rates[rate].chi;
         if (now >= rates[rate].rho) {
-            (chi,) = _compound(rate);
+            chi = updateChi(rates[rate].chi, rates[rate].speed, rates[rate].rho);
         }
-        return _fromPie(chi, pie[loan]);
+        return toAmount(chi, pie[loan]);
     }
 
     function rateDebt(uint rate) public view returns (uint) {
@@ -88,9 +89,9 @@ contract Pile is DSNote {
         uint pie = rates[rate].pie;
         
         if (now >= rates[rate].rho) {
-            (chi,) = _compound(rate);
+            chi = updateChi(rates[rate].chi, rates[rate].speed, rates[rate].rho);
         } 
-        return _fromPie(chi, pie);
+        return toAmount(chi, pie);
     } 
 
     // --- Interest Rate Group Implementation ---
@@ -107,9 +108,9 @@ contract Pile is DSNote {
         drip(currentRate);
         drip(newRate);
         uint pie_ = pie[loan];
-        uint debt = _fromPie(rates[currentRate].chi, pie_);
+        uint debt = toAmount(rates[currentRate].chi, pie_);
         rates[currentRate].pie = sub(rates[currentRate].pie, pie_);
-        pie[loan] = _toPie(rates[newRate].chi, debt);
+        pie[loan] = toPie(rates[newRate].chi, debt);
         rates[newRate].pie = add(rates[newRate].pie, pie[loan]);
         group[loan] = newRate;
     }
@@ -132,92 +133,14 @@ contract Pile is DSNote {
         drip(group[loan]);
     }
     
-    // compound calculates the new chi, the delta between old and new chi and the delta of debt
-    function _compound(uint rate) internal view returns (uint chi, uint delta) {
-        uint48 rho = rates[rate].rho;
-        uint speed = rates[rate].speed;
-        uint chi = rates[rate].chi;
-        uint pie = rates[rate].pie;
-        uint debt = _fromPie(chi, pie);
-
-        // compounding in seconds
-        uint chi_ = rmul(rpow(speed, now - rho, ONE), chi);
-        require(chi != 0);
-        delta = _fromPie(chi_, pie) - debt;
-
-        return (chi_, delta);
-    }
-
     // drip updates the chi of the rate category by compounding the interest and
     // updates the total debt
     function drip(uint rate) public {
         if (now >= rates[rate].rho) {
-            (uint chi, uint delta) = _compound(rate);
+            (uint chi, uint delta) = compounding(rates[rate].chi, rates[rate].speed, rates[rate].rho, rates[rate].pie);
             rates[rate].chi = chi;
             rates[rate].rho = uint48(now);
             total = add(total, delta);
         }
     }
-
-    // convert debt amount to pie
-    function _toPie(uint chi, uint pie) internal view returns (uint) {
-        return rdiv(pie, chi);
-    }
-
-    // convert pie to debt amount
-    function _fromPie(uint chi, uint pie) internal view returns (uint) {
-        return rmul(pie, chi);
-    }
-
-    // --- Math ---
-    uint256 constant ONE = 10 ** 27;
-    function rpow(uint x, uint n, uint base) internal pure returns (uint z) {
-        assembly {
-            switch x case 0 {switch n case 0 {z := base} default {z := 0}}
-            default {
-                switch mod(n, 2) case 0 { z := base } default { z := x }
-                let half := div(base, 2)  // for rounding.
-                for { n := div(n, 2) } n { n := div(n,2) } {
-                let xx := mul(x, x)
-                if iszero(eq(div(xx, x), x)) { revert(0,0) }
-                let xxRound := add(xx, half)
-                if lt(xxRound, xx) { revert(0,0) }
-                x := div(xxRound, base)
-                if mod(n,2) {
-                    let zx := mul(z, x)
-                    if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0,0) }
-                    let zxRound := add(zx, half)
-                    if lt(zxRound, zx) { revert(0,0) }
-                    z := div(zxRound, base)
-                }
-            }
-            }
-        }
-    }
-
-    function add(uint x, uint y) internal pure returns (uint z) {
-        require((z = x + y) >= x);
-    }
-
-    function sub(uint x, uint y) internal pure returns (uint z) {
-        require((z = x - y) <= x);
-    }
-
-    function mul(uint x, uint y) internal pure returns (uint z) {
-        require(y == 0 || (z = x * y) / y == x);
-    }
-
-    function rmul(uint x, uint y) internal pure returns (uint z) {
-        z = mul(x, y) / ONE;
-    }
-
-    function rdiv(uint x, uint y) internal pure returns (uint z) {
-        z = add(mul(x, ONE), y / 2) / y;
-    }
-
-    function div(uint x, uint y) internal pure returns (uint z) {
-        z = x / y;
-    }
-
-
 }
