@@ -25,7 +25,7 @@ contract AllowanceOperator is BaseOperator {
     constructor(address tranche_, address assessor_)
     BaseOperator(tranche_, assessor_) public {}
 
-    function approve(address usr, uint maxToken_, uint maxCurrency_) public auth {
+    function approve(address usr, uint maxCurrency_, uint maxToken_) public auth {
         maxCurrency[usr] = maxCurrency_;
         maxToken[usr] = maxToken_;
     }
