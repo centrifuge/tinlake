@@ -5,8 +5,8 @@ contract AssessorMock {
     address public senior;
     address public junior;
 
-    mapping (bytes32 => uint) calls;
-    mapping (bytes32 => uint) returnValues;
+    mapping (bytes32 => uint) public calls;
+    mapping (bytes32 => uint) public returnValues;
 
 
     function setReturn(bytes32 name, uint returnValue) public {
