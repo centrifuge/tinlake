@@ -17,6 +17,7 @@
 pragma solidity >=0.5.12;
 
 import 'tinlake-registry/registry.sol';
+import "tinlake-auth/auth.sol";
 
 contract NFTLike {
     function ownerOf(uint256 tokenId) public view returns (address owner);
@@ -41,12 +42,7 @@ contract ShelfLike {
     function recover(uint loan, address usr, uint wad) public;
 }
 
-contract Collector {
-    // --- Auth ---
-    mapping (address => uint) public wards;
-    function rely(address usr) public auth { wards[usr] = 1; }
-    function deny(address usr) public auth { wards[usr] = 0; }
-    modifier auth { require(wards[msg.sender] == 1); _; }
+contract Collector is Auth {
 
     // --- Data ---
     RegistryLike threshold;

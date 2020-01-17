@@ -15,11 +15,9 @@
 
 pragma solidity >=0.5.12;
 
-contract SimpleToken {
-    mapping (address => uint) public wards;
-    function rely(address usr) public auth { wards[usr] = 1; }
-    function deny(address usr) public auth { wards[usr] = 0; }
-    modifier auth { require(wards[msg.sender] == 1); _; }
+import "tinlake-auth/auth.sol";
+
+contract SimpleToken is Auth {
 
     // --- ERC20 Data ---
     uint8   public decimals = 18;
