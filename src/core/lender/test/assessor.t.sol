@@ -138,7 +138,7 @@ contract AssessorTest is DSTest,DSMath {
         uint debt = poolValue;
 
         uint initialNAV = 100;
-        assessor.file("initialNAV", initialNAV);
+        assessor.file("tokenAmountForONE", initialNAV);
 
         pool.setReturn("totalValue", poolValue);
         senior.setReturn("debt", debt);
@@ -154,4 +154,5 @@ contract AssessorTest is DSTest,DSMath {
         tokenPrice = senior.doCalcTokenPrice(assessor_);
         assertEq(tokenPrice, ONE * initialNAV*2);
     }
+
 }
