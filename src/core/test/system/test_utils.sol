@@ -170,8 +170,9 @@ contract TestUtils  {
         PrincipalFab principalFab = new PrincipalFab();
         CollectorFab collectorFab = new CollectorFab();
         ThresholdFab thresholdFab = new ThresholdFab();
+        PricePoolFab pricePoolFab = new PricePoolFab();
 
-        borrowerDeployer = new BorrowerDeployer(rootAdmin_, titlefab, lightswitchfab, shelffab, pileFab, principalFab, collectorFab, thresholdFab);
+        borrowerDeployer = new BorrowerDeployer(rootAdmin_, titlefab, lightswitchfab, shelffab, pileFab, principalFab, collectorFab, thresholdFab, pricePoolFab);
 
         borrowerDeployer.deployLightSwitch();
         borrowerDeployer.deployTitle("Tinlake Loan", "TLNT");
@@ -181,6 +182,7 @@ contract TestUtils  {
 
         borrowerDeployer.deployThreshold();
         borrowerDeployer.deployCollector();
+        borrowerDeployer.deployPricePool();
 
         borrowerDeployer.deploy();
 

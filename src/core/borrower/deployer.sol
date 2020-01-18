@@ -24,6 +24,7 @@ import { Pile } from "./pile.sol";
 import { Collector } from "./collect/collector.sol";
 import { Principal } from "./ceiling/principal.sol";
 import { PushRegistry } from 'tinlake-registry/registry.sol';
+import { PricePool } from "./price/pool.sol";
 
 contract LenderFabLike {
     function deploy(address,address,address) public returns (address);
@@ -94,6 +95,14 @@ contract ThresholdFab {
     }
 }
 
+contract PricePoolFab {
+    function newPricePool() public returns (PricePool pricePool) {
+        pricePool = new PricePool();
+        pricePool.rely(msg.sender);
+        pricePool.deny(address(this));
+    }
+}
+
 contract BorrowerDeployer is Auth {
     TitleFab          titlefab;
     LightSwitchFab    lightswitchfab;
@@ -102,6 +111,7 @@ contract BorrowerDeployer is Auth {
     PrincipalFab      principalFab;
     CollectorFab      collectorFab;
     ThresholdFab      thresholdFab;
+    PricePoolFab      pricePoolFab;
 
     address     public rootAdmin;
 
@@ -113,18 +123,19 @@ contract BorrowerDeployer is Auth {
     Principal   public principal;
     Collector   public collector;
     PushRegistry public threshold;
+    PricePool   public  pricePool;
 
 
     address public deployUser;
 
 
-    constructor (address rootAdmin_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, ShelfFab shelffab_, PileFab pilefab_, PrincipalFab principalFab_, CollectorFab collectorFab_, ThresholdFab thresholdFab_) public {
+    constructor (address rootAdmin_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, ShelfFab shelffab_, PileFab pilefab_,
+        PrincipalFab principalFab_, CollectorFab collectorFab_, ThresholdFab thresholdFab_, PricePoolFab pricePoolFab_) public {
         deployUser = msg.sender;
         rootAdmin = rootAdmin_;
 
         wards[deployUser] = 1;
         wards[rootAdmin] = 1;
-
 
 
         titlefab = titlefab_;
@@ -135,6 +146,7 @@ contract BorrowerDeployer is Auth {
         principalFab = principalFab_;
         collectorFab = collectorFab_;
         thresholdFab = thresholdFab_;
+        pricePoolFab = pricePoolFab_;
     }
 
     function deployThreshold() public auth {
@@ -142,6 +154,12 @@ contract BorrowerDeployer is Auth {
         threshold.rely(rootAdmin);
 
     }
+
+    function deployPricePool() public auth {
+        pricePool = pricePoolFab.newPricePool();
+        pricePool.rely(rootAdmin);
+    }
+
     function deployCollector() public auth {
         collector = collectorFab.newCollector(address(shelf), address(pile), address(threshold));
         collector.rely(rootAdmin);
