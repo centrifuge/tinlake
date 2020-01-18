@@ -23,6 +23,7 @@ import {WhitelistOperator} from "./tranche/operator/whitelist.sol";
 import {Tranche} from "./tranche/tranche.sol";
 import {SeniorTranche} from "./tranche/senior_tranche.sol";
 import {SwitchableDistributor} from "./distributor/switchable.sol";
+import "tinlake-erc20/erc20.sol";
 
 contract TrancheFab {
     function newTranche(address currency, address token) public returns (Tranche tranche) {
@@ -112,7 +113,9 @@ contract LenderDeployer is Auth {
 
     // Contracts
     Tranche public tranche;
+    ERC20 public juniorERC20;
     SeniorTranche public senior;
+    ERC20 public seniorERC20;
     Assessor public assessor;
     DistributorLike public distributor;
     OperatorLike public operator;
@@ -134,17 +137,23 @@ contract LenderDeployer is Auth {
     }
 
     function depend(bytes32 what, address addr) public auth {
+        // todo add file for seniorOperator
         if(what == "senior_fab") { seniorFab = SeniorFab(addr); }
         else revert();
     }
 
     function deployDistributor(address currency_) public auth {
         distributor = DistributorLike(distributorFab.newDistributor(currency_));
+        distributor.rely(rootAdmin);
 
     }
 
-    function deployTranche(address currency, address token) public auth {
-        tranche = trancheFab.newTranche(currency, token);
+    // todo write deploy senior method
+    function deployJuniorTranche(address currency, string memory symbol, string memory name) public auth {
+        juniorERC20 = new ERC20(symbol, name);
+        tranche = trancheFab.newTranche(currency, address(juniorERC20));
+        // tranche can mint
+        juniorERC20.rely(address(tranche));
         tranche.rely(rootAdmin);
     }
 
@@ -153,19 +162,18 @@ contract LenderDeployer is Auth {
         assessor.rely(rootAdmin);
     }
 
-    function deployOperator(address tranche, address assessor, address distributor) public auth {
-        operator = OperatorLike(operatorFab.newOperator(tranche, assessor, distributor));
+    function deployJuniorOperator() public auth {
+        require(address(assessor) != address(0));
+        require(address(tranche) != address(0));
+        operator = OperatorLike(operatorFab.newOperator(address(tranche), address(assessor), address(distributor)));
         operator.rely(rootAdmin);
     }
 
     function deploy() public auth {
-        distributor.rely(rootAdmin);
-
         tranche.rely(address(operator));
         tranche.rely(address(distributor));
 
         distributor.depend("junior", address(tranche));
-        //distributor also needs to depend on shelf
 
         // remove access of deployUser
         deny(deployUser);

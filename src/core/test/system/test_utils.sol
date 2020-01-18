@@ -23,6 +23,8 @@ import "../../root_admin.sol";
 
 import "../simple/token.sol";
 
+import "tinlake-erc20/erc20.sol";
+
 
 
 contract ERC20Like {
@@ -190,19 +192,11 @@ contract TestUtils  {
 
         lenderDeployer.deployDistributor(currency_);
 
-        deployDistributor(currency_);
-
-        deploy
+        lenderDeployer.deployAssessor();
+        lenderDeployer.deployJuniorTranche(currency_, "JUN", "Junior Tranche Token");
+        lenderDeployer.deployJuniorOperator();
 
         lenderDeployer.deploy();
-
-
-
-
-  deployTranche(address currency, address token)
-
-
-     deployAssessor()
 
     }
 }
