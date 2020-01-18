@@ -30,7 +30,7 @@ contract RootAdmin is Auth {
         else revert();
     }
 
-    function wireDepends() public auth {
+    function dependContracts() internal  {
         address distributor_ = address(lenderDeployer.distributor());
         address shelf_ = address(borrowerDeployer.shelf());
 
@@ -44,15 +44,19 @@ contract RootAdmin is Auth {
         lenderDeployer.distributor().depend("shelf", shelf_);
     }
 
-    function wireDeployment() public auth {
+    function relyModules() internal {
+        // distributor allowed to call
+        borrowerDeployer.shelf().rely(address(lenderDeployer.distributor()));
+    }
+
+    function completeDeployment() public auth {
         require(address(borrowerDeployer) != address(0));
         require(address(lenderDeployer) != address(0));
 
-
-        // distributor allowed to call
-        borrowerDeployer.shelf().rely(address(lenderDeployer.distributor()));
-
+        dependContracts();
+        relyModules();
     }
+
 
     function denyBorrowAdmin(address usr) public auth {
         borrowerDeployer.principal().deny(usr);
@@ -60,7 +64,7 @@ contract RootAdmin is Auth {
         borrowerDeployer.pile().deny(usr);
     }
 
-    function relyBorrowAdmin(address usr) public auth {
+    function relyRestrictedBorrowAdmin(address usr) public auth {
         borrowerDeployer.principal().rely(usr);
         borrowerDeployer.shelf().rely(usr);
         borrowerDeployer.pile().rely(usr);
@@ -68,7 +72,7 @@ contract RootAdmin is Auth {
 
     // todo: currently only needed for testing.
     // test wants to create a specific setup
-    function relyRootAdmin(address usr) public auth {
+    function relyBorrowAdmin(address usr) public auth {
         borrowerDeployer.title().rely(usr);
         borrowerDeployer.principal().rely(usr);
         borrowerDeployer.shelf().rely(usr);

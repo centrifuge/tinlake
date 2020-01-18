@@ -146,8 +146,7 @@ contract TestUtils  {
         rootAdmin.file("borrower", address(borrowerDeployer));
         rootAdmin.file("lender", address(lenderDeployer));
 
-        rootAdmin.wireDepends();
-        rootAdmin.wireDeployment();
+        rootAdmin.completeDeployment();
     }
 
     function baseSetup() private {
