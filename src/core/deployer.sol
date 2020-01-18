@@ -44,6 +44,8 @@ contract DeployerPermissions is Auth {
 
         // distributor needs to know shelf
         lenderDeployer.distributor().depend("shelf", shelf_);
+        borrowerDeployer.collector().depend("distributor", distributor_);
+
     }
 
     function wireDeployment() public auth {
