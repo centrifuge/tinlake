@@ -23,7 +23,7 @@ contract SystemTest is TestUtils, DSTest {
     address      admin_;
     User borrower;
     address      borrower_;
-    // todo add investor
+    // todo add investor contract
 
     // hevm
     Hevm public hevm;
@@ -47,6 +47,27 @@ contract SystemTest is TestUtils, DSTest {
         // give admin access rights to contract
         // root only for this test setup
         rootAdmin.relyBorrowAdmin(admin_);
+
+        // todo replace with investor contract
+        rootAdmin.relyLenderAdmin(address(this));
+
+        // give invest rights to test
+        WhitelistOperator juniorOperator = WhitelistOperator(address(lenderDeployer.juniorOperator()));
+        juniorOperator.relyInvestor(address(this));
+
+    }
+
+    function setupCurrencyOnLender(uint amount) public {
+        // mint currency
+        currency.mint(address(this), amount);
+        currency.approve(address(lenderDeployer.junior()), uint(-1));
+
+        // move currency into junior tranche
+        address operator_ = address(lenderDeployer.juniorOperator());
+        WhitelistOperator(operator_).supply(amount);
+
+//        // same amount of junior tokens
+        assertEq(lenderDeployer.juniorERC20().balanceOf(address(this)), amount);
     }
 
    // Checks
@@ -76,7 +97,9 @@ contract SystemTest is TestUtils, DSTest {
     function borrow(uint loan, uint tokenId, uint principal) public {
         borrower.doApproveNFT(collateralNFT, address(borrowerDeployer.shelf()));
 
-        // borrow transaction
+        setupCurrencyOnLender(principal);
+
+//        // borrow transaction
         borrower.doBorrow(loan, principal);
         checkAfterBorrow(tokenId, principal);
     }
@@ -144,16 +167,20 @@ contract SystemTest is TestUtils, DSTest {
     // --- Tests ---
 
     function testBorrowTransaction() public {
-//        // collateralNFT value
-//        uint principal = 100;
-//
-//        // create borrower collateral collateralNFT
-//        uint tokenId = collateralNFT.issue(borrower_);
-//        uint loan = admin.doAdmit(collateralNFT_, tokenId, principal, borrower_);
-//        borrower.doApproveNFT(collateralNFT, address(borrowerDeployer.shelf()));
-//        borrower.doBorrow(loan, principal);
-//
-//        checkAfterBorrow(tokenId, principal);
+        // collateralNFT value
+        uint principal = 100;
+
+        // create borrower collateral collateralNFT
+        uint tokenId = collateralNFT.issue(borrower_);
+        uint loan = admin.doAdmit(collateralNFT_, tokenId, principal, borrower_);
+
+        borrower.doApproveNFT(collateralNFT, address(borrowerDeployer.shelf()));
+
+        setupCurrencyOnLender(principal);
+
+        borrower.doBorrow(loan, principal);
+
+        checkAfterBorrow(tokenId, principal);
     }
 
     function testBorrowAndRepay() public {

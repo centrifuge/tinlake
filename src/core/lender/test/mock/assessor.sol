@@ -18,7 +18,7 @@ pragma solidity >=0.5.12;
 import "./mock.sol";
 
 contract AssessorMock is Mock {
-    function calcTokenPrice () public returns (uint) {
+    function calcTokenPrice (address tranche) public returns (uint) {
         return call("tokenPrice");
     }
 

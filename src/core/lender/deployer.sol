@@ -27,7 +27,7 @@ import "tinlake-erc20/erc20.sol";
 
 contract TrancheFab {
     function newTranche(address currency, address token) public returns (Tranche tranche) {
-        tranche = new Tranche(currency, token);
+        tranche = new Tranche(token, currency);
         tranche.rely(msg.sender);
         tranche.deny(address(this));
     }
@@ -118,7 +118,7 @@ contract LenderDeployer is Auth {
     ERC20 public seniorERC20;
     Assessor public assessor;
     DistributorLike public distributor;
-    OperatorLike public operator;
+    OperatorLike public juniorOperator;
 
     constructor(address rootAdmin_, address trancheFab_, address assessorFab_,
         address operatorFab_, address distributorFab_) public {
@@ -165,12 +165,12 @@ contract LenderDeployer is Auth {
     function deployJuniorOperator() public auth {
         require(address(assessor) != address(0));
         require(address(junior) != address(0));
-        operator = OperatorLike(operatorFab.newOperator(address(junior), address(assessor), address(distributor)));
-        operator.rely(rootAdmin);
+        juniorOperator = OperatorLike(operatorFab.newOperator(address(junior), address(assessor), address(distributor)));
+        juniorOperator.rely(rootAdmin);
     }
 
     function deploy() public auth {
-        junior.rely(address(operator));
+        junior.rely(address(juniorOperator));
         junior.rely(address(distributor));
 
         distributor.depend("junior", address(junior));

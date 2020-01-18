@@ -201,6 +201,9 @@ contract BorrowerDeployer is Auth {
         // collector allowed to call
         shelf.rely(collector_);
 
+        // pool needs pile
+        pricePool.depend("pile", address(pile));
+
         // remove access of deployUser
         deny(deployUser);
     }

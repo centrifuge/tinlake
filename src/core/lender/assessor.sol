@@ -78,13 +78,13 @@ contract Assessor is Math, DSNote, Auth {
         return _calcSeniorAssetValue(poolValue, trancheReserve, SeniorTrancheLike(tranche).debt(), _juniorReserve());
     }
 
-    function calcTokenPrice() public returns (uint) {
-        return mul(_calcTokenPrice(), tokenAmountForONE);
+    function calcTokenPrice(address tranche) public returns (uint) {
+        return mul(_calcTokenPrice(tranche), tokenAmountForONE);
     }
 
-    function _calcTokenPrice() internal returns (uint) {
-        uint tokenSupply = TrancheLike(msg.sender).tokenSupply();
-        uint assetValue = calcAssetValue(msg.sender);
+    function _calcTokenPrice(address tranche) internal returns (uint) {
+        uint tokenSupply = TrancheLike(tranche).tokenSupply();
+        uint assetValue = calcAssetValue(tranche);
         if (tokenSupply == 0) {
             return ONE;
         }

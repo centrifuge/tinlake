@@ -22,10 +22,11 @@ import "tinlake-auth/auth.sol";
 contract TrancheLike {
     function supply(address usr, uint currencyAmount, uint tokenAmount) public;
     function redeem(address usr, uint currencyAmount, uint tokenAmount) public;
+    function tokenSupply() public returns (uint);
 }
 
 contract AssessorLike {
-    function calcTokenPrice() public returns(uint);
+    function calcTokenPrice(address tranche) public returns(uint);
 }
 
 contract DistributorLike {
@@ -41,7 +42,7 @@ contract BaseOperator is Math, DSNote, Auth {
 
     constructor(address tranche_, address assessor_, address distributor_) internal {
         wards[msg.sender] = 1;
-        tranche = TrancheLike(tranche);
+        tranche = TrancheLike(tranche_);
         assessor = AssessorLike(assessor_);
         distributor = DistributorLike(distributor_);
     }
@@ -54,12 +55,13 @@ contract BaseOperator is Math, DSNote, Auth {
     }
 
     function _supply(uint currencyAmount) internal {
-        tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, assessor.calcTokenPrice()));
+        tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, assessor.calcTokenPrice(address(tranche))));
+       // tranche.supply(msg.sender, currencyAmount, currencyAmount);
         distributor.balance();
     }
 
     function _redeem(uint tokenAmount) internal {
-        tranche.redeem(msg.sender, rmul(tokenAmount, assessor.calcTokenPrice()), tokenAmount);
+        tranche.redeem(msg.sender, rmul(tokenAmount, assessor.calcTokenPrice(address(tranche))), tokenAmount);
         distributor.balance();
     }
 }

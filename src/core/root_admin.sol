@@ -75,6 +75,13 @@ contract RootAdmin is Auth {
         borrowerDeployer.shelf().rely(usr);
         borrowerDeployer.pile().rely(usr);
         borrowerDeployer.principal().rely(usr);
+    }
 
+
+    function relyLenderAdmin(address usr) public auth {
+        lenderDeployer.juniorOperator().rely(usr);
+        lenderDeployer.assessor().rely(usr);
+        lenderDeployer.distributor().rely(usr);
+        lenderDeployer.junior().rely(usr);
     }
 }
