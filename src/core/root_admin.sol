@@ -36,12 +36,16 @@ contract RootAdmin is Auth {
 
         // Borrower  Depends
         borrowerDeployer.collector().depend("distributor", distributor_);
-        // todo needs to be tranche after mock
-        borrowerDeployer.shelf().depend("lender", distributor_);
+
+        // todo currently only one address approval in shelf
+        address juniorTranche = address(lenderDeployer.junior());
+        borrowerDeployer.shelf().depend("lender", juniorTranche);
         borrowerDeployer.collector().depend("distributor", distributor_);
 
         //  Lender  depends
+        address borrowerPricePool = address(borrowerDeployer.pricePool());
         lenderDeployer.distributor().depend("shelf", shelf_);
+        lenderDeployer.assessor().depend("pool", borrowerPricePool);
     }
 
     function relyModules() internal {

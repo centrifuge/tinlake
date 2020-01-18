@@ -192,10 +192,12 @@ contract TestUtils  {
         lenderDeployer = new LenderDeployer(rootAdmin_,address(new TrancheFab()), address(new AssessorFab()),
             address(new WhitelistFab()), address(new SwitchableDistributorFab()));
 
-        lenderDeployer.deployDistributor(currency_);
+        lenderDeployer.deployJuniorTranche(currency_, "JUN", "Junior Tranche Token");
 
         lenderDeployer.deployAssessor();
-        lenderDeployer.deployJuniorTranche(currency_, "JUN", "Junior Tranche Token");
+
+        lenderDeployer.deployDistributor(currency_);
+
         lenderDeployer.deployJuniorOperator();
 
         lenderDeployer.deploy();

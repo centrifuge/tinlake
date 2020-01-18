@@ -112,7 +112,7 @@ contract LenderDeployer is Auth {
     OperatorFab operatorFab;
 
     // Contracts
-    Tranche public tranche;
+    Tranche public junior;
     ERC20 public juniorERC20;
     SeniorTranche public senior;
     ERC20 public seniorERC20;
@@ -151,10 +151,10 @@ contract LenderDeployer is Auth {
     // todo write deploy senior method
     function deployJuniorTranche(address currency, string memory symbol, string memory name) public auth {
         juniorERC20 = new ERC20(symbol, name);
-        tranche = trancheFab.newTranche(currency, address(juniorERC20));
+        junior = trancheFab.newTranche(currency, address(juniorERC20));
         // tranche can mint
-        juniorERC20.rely(address(tranche));
-        tranche.rely(rootAdmin);
+        juniorERC20.rely(address(junior));
+        junior.rely(rootAdmin);
     }
 
     function deployAssessor() public auth {
@@ -164,16 +164,17 @@ contract LenderDeployer is Auth {
 
     function deployJuniorOperator() public auth {
         require(address(assessor) != address(0));
-        require(address(tranche) != address(0));
-        operator = OperatorLike(operatorFab.newOperator(address(tranche), address(assessor), address(distributor)));
+        require(address(junior) != address(0));
+        operator = OperatorLike(operatorFab.newOperator(address(junior), address(assessor), address(distributor)));
         operator.rely(rootAdmin);
     }
 
     function deploy() public auth {
-        tranche.rely(address(operator));
-        tranche.rely(address(distributor));
+        junior.rely(address(operator));
+        junior.rely(address(distributor));
 
-        distributor.depend("junior", address(tranche));
+        distributor.depend("junior", address(junior));
+        assessor.depend("junior", address(junior));
 
         // remove access of deployUser
         deny(deployUser);
