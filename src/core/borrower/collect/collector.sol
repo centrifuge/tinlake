@@ -17,6 +17,7 @@
 pragma solidity >=0.5.12;
 
 import 'tinlake-registry/registry.sol';
+import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
 
 contract NFTLike {
@@ -42,7 +43,13 @@ contract ShelfLike {
     function recover(uint loan, address usr, uint wad) public;
 }
 
-contract Collector is Auth {
+contract Collector is DSNote, Auth {
+    
+     // -- Collectors --
+    mapping (address => uint) public collectors;
+    function relyCollector(address usr) public auth note { collectors[usr] = 1; }
+    function denyCollector(address usr) public auth note { collectors[usr] = 0; }
+    modifier auth_collector { require(collectors[msg.sender] == 1); _; }
 
     // --- Data ---
     RegistryLike threshold;
@@ -52,12 +59,12 @@ contract Collector is Auth {
     }
     mapping (uint => Lot) public tags;
 
-    Distributor trancheManager;
+    Distributor distributor;
     ShelfLike shelf;
     PileLike pile;
 
-    constructor (address trancheManager_, address shelf_, address pile_, address threshold_) public {
-        trancheManager = Distributor(trancheManager_);
+    constructor (address distributor_, address shelf_, address pile_, address threshold_) public {
+        distributor = Distributor(distributor_);
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
         threshold = RegistryLike(threshold_);
@@ -65,7 +72,7 @@ contract Collector is Auth {
     }
 
     function depend(bytes32 what, address addr) public auth {
-        if (what == "trancheManager") trancheManager = Distributor(addr);
+        if (what == "distributor") distributor = Distributor(addr);
         else if (what == "shelf") shelf = ShelfLike(addr);
         else if (what == "pile") pile = PileLike(addr);
         else if (what == "threshold") threshold = RegistryLike(addr);
@@ -83,11 +90,11 @@ contract Collector is Auth {
         shelf.claim(loan, address(this));
     }
 
-    function collect(uint loan, address usr) public auth {
+    function collect(uint loan, address usr) public auth_collector {
         require(usr == tags[loan].usr || tags[loan].usr == address(0));
         (address registry, uint nft) = shelf.token(loan);
         shelf.recover(loan, usr, tags[loan].wad);
         NFTLike(registry).transferFrom(address(this), usr, nft);
-        trancheManager.balance();
+        distributor.balance();
     }
 }

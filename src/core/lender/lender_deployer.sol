@@ -12,6 +12,7 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import "tinlake-auth/auth.sol";
 
 pragma solidity >=0.5.12;
 
@@ -71,7 +72,7 @@ contract SwitchableDistributorFab {
     }
 }
 
-contract LenderDeployer {
+contract LenderDeployer is Auth {
     TrancheFab tranchefab;
     SeniorFab seniorfab;
     AssessorFab assessorfab;
@@ -86,7 +87,7 @@ contract LenderDeployer {
     Assessor public assessor;
     AllowanceOperator public allowance;
     WhitelistOperator public whitelist;
-    SwitchableDistributor public switchable;
+    SwitchableDistributor public distributor;
 
     constructor(address mainDeployer_, TrancheFab trancheFab_, SeniorFab seniorFab_, AssessorFab assessorFab_, AllowanceFab allowanceFab_,
     WhitelistFab whitelistFab_, SwitchableDistributorFab switchableFab_) public {

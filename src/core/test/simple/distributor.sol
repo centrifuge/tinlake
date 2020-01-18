@@ -9,7 +9,7 @@ contract ShelfLike {
     function balanceRequest() public returns (bool, uint);
 }
 
-contract TrancheManager {
+contract Distributor {
 
     // --- Data ---
     ShelfLike public shelf;
