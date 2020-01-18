@@ -129,7 +129,7 @@ contract TestUtils  {
     address      public currency_;
 
     // Deployers
-    BorrowerDeployer     public borrowerDeployer;
+    BorrowerDeployer public borrowerDeployer;
     LenderDeployer lenderDeployer;
 
     MainDeployer mainDeployer;
@@ -138,7 +138,9 @@ contract TestUtils  {
 
     function deployContracts() public {
         deployMain();
+        // only admin is main deployer
         deployBorrower();
+        // onlhy admin is main deployer
         deployLender();
 
         mainDeployer.file("borrower", address(borrowerDeployer));
@@ -148,7 +150,7 @@ contract TestUtils  {
         mainDeployer.wireDeployment();
     }
 
-    function deployMain() public {
+    function deployMain() private {
         collateralNFT = new Title("Collateral NFT", "collateralNFT");
         collateralNFT_ = address(collateralNFT);
 
@@ -159,8 +161,7 @@ contract TestUtils  {
         mainDeployer_ = address(mainDeployer);
     }
 
-    function deployBorrower() public {
-
+    function deployBorrower() private {
         TitleFab titlefab = new TitleFab();
         LightSwitchFab lightswitchfab = new LightSwitchFab();
         ShelfFab shelffab = new ShelfFab();
@@ -184,7 +185,7 @@ contract TestUtils  {
 
     }
 
-    function deployLender() public {
+    function deployLender() private {
         DistributorFab distributorFab = new DistributorFab();
         lenderDeployer = new LenderDeployer(mainDeployer_,distributorFab );
 

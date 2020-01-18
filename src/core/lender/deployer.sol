@@ -27,22 +27,32 @@ contract DistributorFab {
 }
 
 // todo replace with real deployer, currently only a mockDistributor is deployed
-contract LenderDeployer {
+contract LenderDeployer is Auth {
     DistributorFab    distributorFab;
     Distributor  public distributor;
     address mainDeployer;
+    address deployUser;
 
     constructor(address mainDeployer_, DistributorFab distributorFab_) public {
+        deployUser = msg.sender;
         mainDeployer = mainDeployer_;
+
+        wards[deployUser] = 1;
+        wards[mainDeployer] = 1;
+
         distributorFab = distributorFab_;
     }
 
-    function deployDistributor(address currency_) public {
+    function deployDistributor(address currency_) public auth {
         distributor = distributorFab.newDistributor(currency_);
 
     }
 
-    function deploy() public {
+    function deploy() public auth {
         distributor.rely(mainDeployer);
+
+        // remove access of deployUser
+        deny(deployUser);
+
     }
 }

@@ -15,6 +15,8 @@
 
 pragma solidity >=0.5.12;
 
+import "tinlake-auth/auth.sol";
+
 import { Title } from "tinlake-title/title.sol";
 import { LightSwitch } from "./lightswitch.sol";
 import { Shelf } from "./shelf.sol";
@@ -92,7 +94,7 @@ contract ThresholdFab {
     }
 }
 
-contract BorrowerDeployer {
+contract BorrowerDeployer is Auth {
     TitleFab          titlefab;
     LightSwitchFab    lightswitchfab;
     ShelfFab          shelffab;
@@ -113,8 +115,17 @@ contract BorrowerDeployer {
     PushRegistry public threshold;
 
 
+    address public deployUser;
+
+
     constructor (address mainDeployer_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, ShelfFab shelffab_, PileFab pilefab_, PrincipalFab principalFab_, CollectorFab collectorFab_, ThresholdFab thresholdFab_) public {
+        deployUser = msg.sender;
         mainDeployer = mainDeployer_;
+
+        wards[deployUser] = 1;
+        wards[mainDeployer] = 1;
+
+
 
         titlefab = titlefab_;
         lightswitchfab = lightswitchfab_;
@@ -126,42 +137,42 @@ contract BorrowerDeployer {
         thresholdFab = thresholdFab_;
     }
 
-    function deployThreshold() public {
+    function deployThreshold() public auth {
         threshold = thresholdFab.newThreshold();
         threshold.rely(mainDeployer);
 
     }
-    function deployCollector() public {
+    function deployCollector() public auth {
         collector = collectorFab.newCollector(address(shelf), address(pile), address(threshold));
         collector.rely(mainDeployer);
     }
 
-    function deployPile() public {
+    function deployPile() public auth {
         pile = pilefab.newPile();
         pile.rely(mainDeployer);
     }
 
-    function deployTitle(string memory name, string memory symbol) public {
+    function deployTitle(string memory name, string memory symbol) public auth {
         title = titlefab.newTitle(name, symbol);
         title.rely(mainDeployer);
     }
 
-    function deployLightSwitch() public {
+    function deployLightSwitch() public auth {
         lightswitch = lightswitchfab.newLightSwitch();
         lightswitch.rely(mainDeployer);
     }
 
-    function deployShelf(address currency_) public {
+    function deployShelf(address currency_) public auth {
         shelf = shelffab.newShelf(currency_, address(title), address(pile), address(principal));
         shelf.rely(mainDeployer);
     }
 
-    function deployPrincipal() public {
+    function deployPrincipal() public auth {
         principal = principalFab.newPrincipal();
         principal.rely(mainDeployer);
     }
 
-    function deploy() public {
+    function deploy() public auth {
         address shelf_ = address(shelf);
         address collector_ = address(collector);
 
@@ -171,8 +182,10 @@ contract BorrowerDeployer {
 
         // collector allowed to call
         shelf.rely(collector_);
+
+        // remove access of deployUser
+        deny(deployUser);
     }
 
-    // todo give away power method
 }
 
