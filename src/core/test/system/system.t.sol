@@ -44,14 +44,10 @@ contract SystemTest is TestUtils,DSTest {
         admin.file(borrowerDeployer);
 
         // give admin access rights to contract
-
-
+        // root only for this test setup
+        mainDeployer.relyRootAdmin(admin_);
     }
 
-    function deployCollect() public {
-        CollectorFab collectorFab = new CollectorFab();
-        // TODO
-    }
 //
 //    // Checks
     function checkAfterBorrow(uint tokenId, uint tBalance) public {
@@ -154,10 +150,10 @@ contract SystemTest is TestUtils,DSTest {
         // create borrower collateral collateralNFT
         uint tokenId = collateralNFT.issue(borrower_);
         uint loan = admin.doAdmit(collateralNFT_, tokenId, principal, borrower_);
-//        borrower.doApproveNFT(collateralNFT, address(borrowerDeployer.shelf()));
-//        borrower.doBorrow(loan, principal);
-//
-//        checkAfterBorrow(tokenId, principal);
+        borrower.doApproveNFT(collateralNFT, address(borrowerDeployer.shelf()));
+        borrower.doBorrow(loan, principal);
+
+        checkAfterBorrow(tokenId, principal);
     }
 //
 //    function testBorrowAndRepay() public {

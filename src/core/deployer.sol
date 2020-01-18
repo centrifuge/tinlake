@@ -53,4 +53,26 @@ contract MainDeployer is Auth {
         borrowerDeployer.shelf().rely(address(lenderDeployer.distributor()));
 
     }
+
+    function denyBorrowAdmin(address usr) public auth {
+        borrowerDeployer.principal().deny(usr);
+        borrowerDeployer.shelf().deny(usr);
+        borrowerDeployer.pile().deny(usr);
+    }
+
+    function relyBorrowAdmin(address usr) public auth {
+        borrowerDeployer.principal().rely(usr);
+        borrowerDeployer.shelf().rely(usr);
+        borrowerDeployer.pile().rely(usr);
+    }
+
+    // todo: currently only needed for testing.
+    // test wants to create a specific setup
+    function relyRootAdmin(address usr) public auth {
+        borrowerDeployer.title().rely(usr);
+        borrowerDeployer.principal().rely(usr);
+        borrowerDeployer.shelf().rely(usr);
+        borrowerDeployer.pile().rely(usr);
+
+    }
 }
