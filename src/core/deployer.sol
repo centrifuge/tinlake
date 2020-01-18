@@ -31,7 +31,6 @@ contract DeployerPermissions is Auth {
     }
 
     function wireDepends() public auth {
-
         // lender addresses
         address distributor_ = address(lenderDeployer.distributor());
 
@@ -52,11 +51,8 @@ contract DeployerPermissions is Auth {
         require(address(lenderDeployer) != address(0));
 
 
-     //   address distributor_ = address(distributor);
-
         // distributor allowed to call
-      //  shelf.rely(distributor_);
-
+        borrowerDeployer.shelf().rely(address(lenderDeployer.distributor()));
 
     }
 }
