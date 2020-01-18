@@ -70,6 +70,7 @@ contract CollectorTest is DSTest {
     }
 
     function testSeizeCollect() public {
+        collector.relyCollector(address(this));
         uint loan = 1; uint tokenId = 123;
         uint debt = 100;
         uint price = debt-1;
@@ -82,6 +83,7 @@ contract CollectorTest is DSTest {
     }
 
     function testSeizeCollectAnyUser() public {
+        collector.relyCollector(address(this));
         uint loan = 1; uint tokenId = 123;
         uint debt = 100;
         uint price = debt-1;
