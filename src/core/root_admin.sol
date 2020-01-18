@@ -70,7 +70,7 @@ contract RootAdmin is Auth {
         borrowerDeployer.title().rely(usr);
         borrowerDeployer.shelf().rely(usr);
         borrowerDeployer.pile().rely(usr);
-        borrowerDeployer.title().rely(usr);
+        borrowerDeployer.principal().rely(usr);
 
     }
 }
