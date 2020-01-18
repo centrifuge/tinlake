@@ -34,6 +34,15 @@ contract TestDeployer  {
     address mainDeployer_;
 
 
+    function deploy() public {
+        setUp();
+        deployBorrower();
+        deployLender();
+
+        mainDeployer.wireDepends();
+        mainDeployer.wireDeployment();
+    }
+
     function setUp() public {
         collateralNFT = new Title("Collateral NFT", "collateralNFT");
         collateralNFT_ = address(collateralNFT);
