@@ -44,15 +44,19 @@ contract CeilingLike {
     function values(uint) public view returns(uint);
 }
 
+contract DistributorLike {
+    function balance() public;
+}
+
 contract User is DSTest{
     ERC20Like tkn;
     Shelf shelf;
-    Distributor distributor;
+    DistributorLike distributor;
     Pile pile;
 
     constructor (address shelf_, address distributor_, address tkn_, address pile_) public {
         shelf = Shelf(shelf_);
-        distributor = Distributor(distributor_);
+        distributor = DistributorLike(distributor_);
         tkn = ERC20Like(tkn_);
         pile = Pile(pile_);
     }
@@ -121,7 +125,6 @@ contract AdminUser is DSTest{
     }
 }
 
-
 contract TestUtils  {
     Title public collateralNFT;
     address      public collateralNFT_;
@@ -130,17 +133,17 @@ contract TestUtils  {
 
     // Deployers
     BorrowerDeployer public borrowerDeployer;
-    LenderDeployer lenderDeployer;
+    LenderDeployer public lenderDeployer;
+
 
     RootAdmin rootAdmin;
     address rootAdmin_;
-
 
     function deployContracts() public {
         baseSetup();
         // only admin is main deployer
         deployBorrower();
-        // onlhy admin is main deployer
+        // only admin is main deployer
         deployLender();
 
         rootAdmin.file("borrower", address(borrowerDeployer));
@@ -186,7 +189,7 @@ contract TestUtils  {
 
     function deployLender() private {
         DistributorFab distributorFab = new DistributorFab();
-        lenderDeployer = new LenderDeployer(rootAdmin_,distributorFab );
+        lenderDeployer = new LenderDeployer(rootAdmin_, distributorFab );
 
 
         lenderDeployer.deployDistributor(currency_);
