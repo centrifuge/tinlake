@@ -32,11 +32,7 @@ contract SeniorTranche is Tranche, Interest {
 
     function debt() public returns(uint) {
         drip();
-        return rmul(pie, chi);
-    }
-
-    function toPie(uint amount) internal returns(uint) {
-        return rdiv(amount, chi);
+        return toAmount(chi, pie);
     }
 
     constructor(address token_, address currency_) Tranche(token_ ,currency_) public {
@@ -54,20 +50,20 @@ contract SeniorTranche is Tranche, Interest {
 
     function repay(address usr, uint currencyAmount) public note auth {
         drip();
-        pie = sub(pie, toPie(currencyAmount));
+        pie = sub(pie, toPie(chi, currencyAmount));
         super.repay(usr, currencyAmount);
 
     }
 
     function borrow(address usr, uint currencyAmount) public note auth {
         drip();
-        pie = add(pie, toPie(currencyAmount));
+        pie = add(pie, toPie(chi, currencyAmount));
         super.borrow(usr, currencyAmount);
     }
 
     function drip() internal {
         if (now >= lastUpdated) {
-            chi = rmul(rpow(ratePerSecond, now - lastUpdated, ONE), chi);
+            chi = updateChi(chi, ratePerSecond, lastUpdated);
             lastUpdated = now;
         }
     }
