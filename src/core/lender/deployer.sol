@@ -30,15 +30,15 @@ contract DistributorFab {
 contract LenderDeployer is Auth {
     DistributorFab    distributorFab;
     Distributor  public distributor;
-    address mainDeployer;
+    address rootAdmin;
     address deployUser;
 
-    constructor(address mainDeployer_, DistributorFab distributorFab_) public {
+    constructor(address rootAdmin_, DistributorFab distributorFab_) public {
         deployUser = msg.sender;
-        mainDeployer = mainDeployer_;
+        rootAdmin = rootAdmin_;
 
         wards[deployUser] = 1;
-        wards[mainDeployer] = 1;
+        wards[rootAdmin] = 1;
 
         distributorFab = distributorFab_;
     }
@@ -49,7 +49,7 @@ contract LenderDeployer is Auth {
     }
 
     function deploy() public auth {
-        distributor.rely(mainDeployer);
+        distributor.rely(rootAdmin);
 
         // remove access of deployUser
         deny(deployUser);

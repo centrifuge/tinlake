@@ -19,7 +19,7 @@ import "ds-test/test.sol";
 import { Title } from "tinlake-title/title.sol";
 
 import "../deployer.sol";
-import { SimpleToken } from "./simple/token.sol";
+import { SimpleToken } from "../../test/simple/token.sol";
 
 contract DeployerTest is DSTest {
     Title nft;
@@ -27,7 +27,6 @@ contract DeployerTest is DSTest {
     TitleFab titlefab;
     LightSwitchFab lightswitchfab;
     ShelfFab shelffab;
-    DistributorFab distributorFab;
     PileFab pilefab;
     PrincipalFab principalFab;
     CollectorFab collectorFab;
@@ -40,7 +39,6 @@ contract DeployerTest is DSTest {
         titlefab = new TitleFab();
         lightswitchfab = new LightSwitchFab();
         shelffab = new ShelfFab();
-        distributorFab = new DistributorFab();
         pilefab = new PileFab();
         principalFab = new PrincipalFab();
         collectorFab = new CollectorFab();

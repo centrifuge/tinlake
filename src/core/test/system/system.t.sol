@@ -45,7 +45,7 @@ contract SystemTest is TestUtils,DSTest {
 
         // give admin access rights to contract
         // root only for this test setup
-        mainDeployer.relyRootAdmin(admin_);
+        rootAdmin.relyRootAdmin(admin_);
     }
 
    // Checks

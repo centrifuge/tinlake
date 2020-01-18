@@ -103,7 +103,7 @@ contract BorrowerDeployer is Auth {
     CollectorFab      collectorFab;
     ThresholdFab      thresholdFab;
 
-    address     public mainDeployer;
+    address     public rootAdmin;
 
     Title       public title;
     LightSwitch public lightswitch;
@@ -118,12 +118,12 @@ contract BorrowerDeployer is Auth {
     address public deployUser;
 
 
-    constructor (address mainDeployer_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, ShelfFab shelffab_, PileFab pilefab_, PrincipalFab principalFab_, CollectorFab collectorFab_, ThresholdFab thresholdFab_) public {
+    constructor (address rootAdmin_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, ShelfFab shelffab_, PileFab pilefab_, PrincipalFab principalFab_, CollectorFab collectorFab_, ThresholdFab thresholdFab_) public {
         deployUser = msg.sender;
-        mainDeployer = mainDeployer_;
+        rootAdmin = rootAdmin_;
 
         wards[deployUser] = 1;
-        wards[mainDeployer] = 1;
+        wards[rootAdmin] = 1;
 
 
 
@@ -139,37 +139,37 @@ contract BorrowerDeployer is Auth {
 
     function deployThreshold() public auth {
         threshold = thresholdFab.newThreshold();
-        threshold.rely(mainDeployer);
+        threshold.rely(rootAdmin);
 
     }
     function deployCollector() public auth {
         collector = collectorFab.newCollector(address(shelf), address(pile), address(threshold));
-        collector.rely(mainDeployer);
+        collector.rely(rootAdmin);
     }
 
     function deployPile() public auth {
         pile = pilefab.newPile();
-        pile.rely(mainDeployer);
+        pile.rely(rootAdmin);
     }
 
     function deployTitle(string memory name, string memory symbol) public auth {
         title = titlefab.newTitle(name, symbol);
-        title.rely(mainDeployer);
+        title.rely(rootAdmin);
     }
 
     function deployLightSwitch() public auth {
         lightswitch = lightswitchfab.newLightSwitch();
-        lightswitch.rely(mainDeployer);
+        lightswitch.rely(rootAdmin);
     }
 
     function deployShelf(address currency_) public auth {
         shelf = shelffab.newShelf(currency_, address(title), address(pile), address(principal));
-        shelf.rely(mainDeployer);
+        shelf.rely(rootAdmin);
     }
 
     function deployPrincipal() public auth {
         principal = principalFab.newPrincipal();
-        principal.rely(mainDeployer);
+        principal.rely(rootAdmin);
     }
 
     function deploy() public auth {

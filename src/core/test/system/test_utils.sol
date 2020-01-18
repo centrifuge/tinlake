@@ -19,7 +19,7 @@ import "ds-test/test.sol";
 import { Title } from "tinlake-title/title.sol";
 import "../../borrower/deployer.sol";
 import "../../lender/deployer.sol";
-import "../../deployer.sol";
+import "../../root_admin.sol";
 
 import "../simple/token.sol";
 
@@ -132,33 +132,33 @@ contract TestUtils  {
     BorrowerDeployer public borrowerDeployer;
     LenderDeployer lenderDeployer;
 
-    MainDeployer mainDeployer;
-    address mainDeployer_;
+    RootAdmin rootAdmin;
+    address rootAdmin_;
 
 
     function deployContracts() public {
-        deployMain();
+        baseSetup();
         // only admin is main deployer
         deployBorrower();
         // onlhy admin is main deployer
         deployLender();
 
-        mainDeployer.file("borrower", address(borrowerDeployer));
-        mainDeployer.file("lender", address(lenderDeployer));
+        rootAdmin.file("borrower", address(borrowerDeployer));
+        rootAdmin.file("lender", address(lenderDeployer));
 
-        mainDeployer.wireDepends();
-        mainDeployer.wireDeployment();
+        rootAdmin.wireDepends();
+        rootAdmin.wireDeployment();
     }
 
-    function deployMain() private {
+    function baseSetup() private {
         collateralNFT = new Title("Collateral NFT", "collateralNFT");
         collateralNFT_ = address(collateralNFT);
 
         currency = new SimpleToken("C", "Currency", "1", 0);
         currency_ = address(currency);
 
-        mainDeployer = new MainDeployer();
-        mainDeployer_ = address(mainDeployer);
+        rootAdmin = new RootAdmin();
+        rootAdmin_ = address(rootAdmin);
     }
 
     function deployBorrower() private {
@@ -170,7 +170,7 @@ contract TestUtils  {
         CollectorFab collectorFab = new CollectorFab();
         ThresholdFab thresholdFab = new ThresholdFab();
 
-        borrowerDeployer = new BorrowerDeployer(mainDeployer_, titlefab, lightswitchfab, shelffab, pileFab, principalFab, collectorFab, thresholdFab);
+        borrowerDeployer = new BorrowerDeployer(rootAdmin_, titlefab, lightswitchfab, shelffab, pileFab, principalFab, collectorFab, thresholdFab);
 
         borrowerDeployer.deployLightSwitch();
         borrowerDeployer.deployTitle("Tinlake Loan", "TLNT");
@@ -187,7 +187,7 @@ contract TestUtils  {
 
     function deployLender() private {
         DistributorFab distributorFab = new DistributorFab();
-        lenderDeployer = new LenderDeployer(mainDeployer_,distributorFab );
+        lenderDeployer = new LenderDeployer(rootAdmin_,distributorFab );
 
 
         lenderDeployer.deployDistributor(currency_);

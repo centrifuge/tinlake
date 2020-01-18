@@ -17,7 +17,7 @@ import "./lender/deployer.sol";
 
 import "tinlake-auth/auth.sol";
 
-contract MainDeployer is Auth {
+contract RootAdmin is Auth {
     BorrowerDeployer borrowerDeployer;
     LenderDeployer lenderDeployer;
 
