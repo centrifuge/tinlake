@@ -24,6 +24,7 @@ import "../../root_admin.sol";
 import "../simple/token.sol";
 
 
+
 contract ERC20Like {
     function transferFrom(address, address, uint) public;
     function mint(address, uint) public;
@@ -42,10 +43,6 @@ contract ShelfLike {
 
 contract CeilingLike {
     function values(uint) public view returns(uint);
-}
-
-contract DistributorLike {
-    function balance() public;
 }
 
 contract User is DSTest{
@@ -144,7 +141,7 @@ contract TestUtils  {
         // only admin is main deployer
         deployBorrower();
         // only admin is main deployer
-        deployLender();
+        deployDefaultLender();
 
         rootAdmin.file("borrower", address(borrowerDeployer));
         rootAdmin.file("lender", address(lenderDeployer));
@@ -187,12 +184,25 @@ contract TestUtils  {
 
     }
 
-    function deployLender() private {
-        DistributorFab distributorFab = new DistributorFab();
-        lenderDeployer = new LenderDeployer(rootAdmin_, distributorFab );
-
+    function deployDefaultLender() private {
+        lenderDeployer = new LenderDeployer(rootAdmin_,address(new TrancheFab()), address(new AssessorFab()),
+            address(new WhitelistFab()), address(new SwitchableDistributorFab()));
 
         lenderDeployer.deployDistributor(currency_);
+
+        deployDistributor(currency_);
+
+        deploy
+
         lenderDeployer.deploy();
+
+
+
+
+  deployTranche(address currency, address token)
+
+
+     deployAssessor()
+
     }
 }

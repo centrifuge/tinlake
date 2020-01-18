@@ -48,64 +48,77 @@ contract AssessorFab {
     }
 }
 
+
+// Operator Fabs
+contract OperatorFab {
+    function newOperator(address tranche, address assessor, address distributor) public returns (address);
+}
 contract AllowanceFab {
-    function newOperator(address tranche, address assessor, address distributor) public returns (AllowanceOperator operator) {
-        operator = new AllowanceOperator(tranche, assessor, distributor);
+    function newOperator(address tranche, address assessor, address distributor) public returns (address operator) {
+        AllowanceOperator operator = new AllowanceOperator(tranche, assessor, distributor);
         operator.rely(msg.sender);
         operator.deny(address(this));
     }
 }
 
 contract WhitelistFab {
-    function newOperator(address tranche, address assessor, address distributor) public returns (WhitelistOperator operator) {
-        operator = new WhitelistOperator(tranche, assessor, distributor);
+    function newOperator(address tranche, address assessor, address distributor) public returns (address operator) {
+        WhitelistOperator operator = new WhitelistOperator(tranche, assessor, distributor);
         operator.rely(msg.sender);
         operator.deny(address(this));
+        return address(operator);
     }
+}
+
+// Distributor Fabs
+contract DistributorFab {
+    function newDistributor(address currency) public returns (address);
 }
 
 contract SwitchableDistributorFab {
-    function newDistributor(address currency) public returns (SwitchableDistributor distributor) {
-        distributor = new SwitchableDistributor(currency);
+    function newDistributor(address currency) public returns (address) {
+        SwitchableDistributor distributor = new SwitchableDistributor(currency);
+
         distributor.rely(msg.sender);
         distributor.deny(address(this));
+        return address(distributor);
     }
 }
 
+contract DistributorLike {
+    function rely(address usr) public;
+    function deny(address usr) public;
+    function depend (bytes32 what, address addr) public;
+    function balance() public;
+}
 
-
-contract DistributorFab {
-    // note: this is the mock distributor, which will interface with the lender/tranche side of Tinlake, and does not require auth for now.
-    function newDistributor(address token_) public returns (SwitchableDistributor distributor) {
-        distributor = new SwitchableDistributor(token_);
-        distributor.rely(msg.sender);
-        distributor.deny(address(this));
-        return distributor;
-    }
+contract OperatorLike {
+    function rely(address usr) public;
+    function deny(address usr) public;
 }
 
 // Simple Lender only deploys a SimpleDistributor as lender module
+
 contract LenderDeployer is Auth {
     address rootAdmin;
     address deployUser;
 
-    TrancheFab tranchefab;
-    SeniorFab seniorfab;
-    AssessorFab assessorfab;
-    AllowanceFab allowancefab;
-    WhitelistFab whitelistfab;
-    SwitchableDistributorFab distributorFab;
+    // Fabs
+    TrancheFab trancheFab;
+    SeniorFab seniorFab;
+    AssessorFab assessorFab;
+    DistributorFab distributorFab;
+    OperatorFab operatorFab;
 
+    // Contracts
     Tranche public tranche;
     SeniorTranche public senior;
     Assessor public assessor;
-    AllowanceOperator public allowance;
-    WhitelistOperator public whitelist;
-    SwitchableDistributor public distributor;
+    DistributorLike public distributor;
+    OperatorLike public operator;
 
-
-    constructor(address rootAdmin_, TrancheFab trancheFab_, SeniorFab seniorFab_, AssessorFab assessorFab_, AllowanceFab allowanceFab_,
-        WhitelistFab whitelistFab_, SwitchableDistributorFab distributorFab_) public {
+    constructor(address rootAdmin_, address trancheFab_, address assessorFab_,
+        address operatorFab_, address distributorFab_) public {
 
         deployUser = msg.sender;
         rootAdmin = rootAdmin_;
@@ -113,43 +126,42 @@ contract LenderDeployer is Auth {
         wards[deployUser] = 1;
         wards[rootAdmin] = 1;
 
-        tranchefab = trancheFab_;
-        seniorfab = seniorFab_;
-        assessorfab = assessorFab_;
-        allowancefab = allowanceFab_;
-        whitelistfab = whitelistFab_;
-        distributorFab = distributorFab_;
+        trancheFab = TrancheFab(trancheFab_);
+        assessorFab = AssessorFab(assessorFab_);
+        operatorFab = OperatorFab(operatorFab_);
+
+        distributorFab = DistributorFab(distributorFab_);
+    }
+
+    function depend(bytes32 what, address addr) public auth {
+        if(what == "senior_fab") { seniorFab = SeniorFab(addr); }
+        else revert();
     }
 
     function deployDistributor(address currency_) public auth {
-        distributor = distributorFab.newDistributor(currency_);
+        distributor = DistributorLike(distributorFab.newDistributor(currency_));
 
     }
 
     function deployTranche(address currency, address token) public auth {
-        tranche = tranchefab.newTranche(currency, token);
+        tranche = trancheFab.newTranche(currency, token);
         tranche.rely(rootAdmin);
     }
 
     function deployAssessor() public auth {
-        assessor = assessorfab.newAssessor();
+        assessor = assessorFab.newAssessor();
         assessor.rely(rootAdmin);
     }
 
-    function deployWhitelistOperator(address tranche, address assessor, address distributor) public auth {
-        whitelist = whitelistfab.newOperator(tranche, assessor, distributor);
-        whitelist.rely(rootAdmin);
-    }
-
-    function deployAllowanceOperator(address tranche, address assessor, address distributor) public auth {
-        allowance = allowancefab.newOperator(tranche, assessor, distributor);
-        allowance.rely(rootAdmin);
+    function deployOperator(address tranche, address assessor, address distributor) public auth {
+        operator = OperatorLike(operatorFab.newOperator(tranche, assessor, distributor));
+        operator.rely(rootAdmin);
     }
 
     function deploy() public auth {
         distributor.rely(rootAdmin);
 
-        tranche.rely(address(whitelist));
+        tranche.rely(address(operator));
         tranche.rely(address(distributor));
 
         distributor.depend("junior", address(tranche));
