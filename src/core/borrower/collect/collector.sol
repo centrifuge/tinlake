@@ -25,7 +25,7 @@ contract NFTLike {
     function transferFrom(address from, address to, uint256 tokenId) public;
 }
 
-contract Distributor {
+contract DistributorLike {
     function balance() public;
 }
 
@@ -59,12 +59,11 @@ contract Collector is DSNote, Auth {
     }
     mapping (uint => Lot) public tags;
 
-    Distributor distributor;
+    DistributorLike distributor;
     ShelfLike shelf;
     PileLike pile;
 
-    constructor (address distributor_, address shelf_, address pile_, address threshold_) public {
-        distributor = Distributor(distributor_);
+    constructor (address shelf_, address pile_, address threshold_) public {
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
         threshold = RegistryLike(threshold_);
@@ -72,7 +71,7 @@ contract Collector is DSNote, Auth {
     }
 
     function depend(bytes32 what, address addr) public auth {
-        if (what == "distributor") distributor = Distributor(addr);
+        if (what == "distributor") distributor = DistributorLike(addr);
         else if (what == "shelf") shelf = ShelfLike(addr);
         else if (what == "pile") pile = PileLike(addr);
         else if (what == "threshold") threshold = RegistryLike(addr);

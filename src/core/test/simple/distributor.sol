@@ -15,9 +15,13 @@ contract Distributor {
     ShelfLike public shelf;
     // simple tranche manager = 1 tranche/1 operator for now
     TokenLike public token;
-    constructor (address shelf_, address token_) public {
+    constructor (address token_) public {
         token = TokenLike(token_);
-        shelf = ShelfLike(shelf_);
+    }
+
+    function depend(bytes32 what, address addr) public {
+        if(what == "shelf") shelf = ShelfLike(addr);
+        else revert();
     }
 
     // --- Calls ---

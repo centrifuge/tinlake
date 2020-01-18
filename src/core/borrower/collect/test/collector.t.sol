@@ -44,7 +44,8 @@ contract CollectorTest is DSTest {
         distributor = new DistributorMock();
 
         threshold = new PushRegistry();
-        collector = new Collector(address(distributor), address(shelf), address(pile), address(threshold));
+        collector = new Collector(address(shelf), address(pile), address(threshold));
+        collector.depend("distributor", address(distributor));
     }
 
     function collect(uint loan, uint tokenId, uint price) internal {
