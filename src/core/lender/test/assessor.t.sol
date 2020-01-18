@@ -37,10 +37,11 @@ contract AssessorTest is DSTest,Math {
     TestTranche junior = new TestTranche();
     function setUp() public {
         pool = new PoolMock();
-        assessor = new Assessor(address(pool));
+        assessor = new Assessor();
         assessor_ = address(assessor);
-        assessor.file("junior", address(junior));
-        assessor.file("senior", address(senior));
+        assessor.depend("junior", address(junior));
+        assessor.depend("senior", address(senior));
+        assessor.depend("pool", address(pool));
         assessor.rely(address(junior));
         assessor.rely(address(senior));
     }

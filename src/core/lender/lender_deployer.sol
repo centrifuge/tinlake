@@ -41,8 +41,8 @@ contract SeniorFab {
 }
 
 contract AssessorFab {
-    function newAssessor(address pool) public returns (Assessor assessor) {
-        assessor = new Assessor(pool);
+    function newAssessor() public returns (Assessor assessor) {
+        assessor = new Assessor();
         assessor.rely(msg.sender);
         assessor.deny(address(this));
     }
@@ -105,8 +105,8 @@ contract LenderDeployer is Auth {
         tranche.rely(mainDeployer);
     }
 
-    function deployAssessor(address pool) public auth {
-        assessor = assessorfab.newAssessor(pool);
+    function deployAssessor() public auth {
+        assessor = assessorfab.newAssessor();
         assessor.rely(mainDeployer);
     }
 
@@ -126,10 +126,9 @@ contract LenderDeployer is Auth {
     }
 
     // only default deployment setup for now
-    function deployDefaultLenderDeployment(address currency, address token, address pool) public auth {
+    function deployDefaultLenderDeployment(address currency, address token) public auth {
         deployTranche(currency, token);
         deployDistributor(currency);
-        deployAssessor(pool);
         deployWhitelistOperator(address(tranche), address(assessor), address(distributor));
 
         tranche.rely(address(whitelist));

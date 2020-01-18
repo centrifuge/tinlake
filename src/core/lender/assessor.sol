@@ -51,16 +51,16 @@ contract Assessor is Math, DSNote, Auth {
 
     // --- Assessor ---
     // computes the current asset value for tranches.
-    constructor(address pool_) public {
+    constructor() public {
         wards[msg.sender] = 1;
-        pool = PoolLike(pool_);
         tokenAmountForONE = 1;
     }
 
     // --- Calls ---
-    function file(bytes32 what, address addr_) public auth {
+    function depend(bytes32 what, address addr_) public auth {
         if (what == "junior") { junior = addr_; }
         else if (what == "senior") { senior = addr_; }
+        else if (what == "pool") { pool = PoolLike(addr_); }
         else revert();
     }
 
