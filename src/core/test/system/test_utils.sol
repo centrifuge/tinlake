@@ -19,7 +19,7 @@ import "ds-test/test.sol";
 import { Title } from "tinlake-title/title.sol";
 import "../../borrower/deployer.sol";
 import "../../lender/deployer.sol";
-import "../../root_admin.sol";
+import "./root_admin.sol";
 
 import "../simple/token.sol";
 
@@ -135,7 +135,7 @@ contract TestUtils  {
     LenderDeployer public lenderDeployer;
 
 
-    RootAdmin rootAdmin;
+    TestRootAdmin rootAdmin;
     address rootAdmin_;
 
     function deployContracts() public {
@@ -158,7 +158,7 @@ contract TestUtils  {
         currency = new SimpleToken("C", "Currency", "1", 0);
         currency_ = address(currency);
 
-        rootAdmin = new RootAdmin();
+        rootAdmin = new TestRootAdmin();
         rootAdmin_ = address(rootAdmin);
     }
 

@@ -61,27 +61,4 @@ contract RootAdmin is Auth {
         relyModules();
     }
 
-
-    function denyBorrowAdmin(address usr) public auth {
-        borrowerDeployer.title().rely(usr);
-        borrowerDeployer.principal().deny(usr);
-        borrowerDeployer.shelf().deny(usr);
-        borrowerDeployer.pile().deny(usr);
-    }
-
-
-    function relyBorrowAdmin(address usr) public auth {
-        borrowerDeployer.title().rely(usr);
-        borrowerDeployer.shelf().rely(usr);
-        borrowerDeployer.pile().rely(usr);
-        borrowerDeployer.principal().rely(usr);
-    }
-
-
-    function relyLenderAdmin(address usr) public auth {
-        lenderDeployer.juniorOperator().rely(usr);
-        lenderDeployer.assessor().rely(usr);
-        lenderDeployer.distributor().rely(usr);
-        lenderDeployer.junior().rely(usr);
-    }
 }
