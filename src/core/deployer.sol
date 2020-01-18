@@ -17,7 +17,7 @@ import "./lender/deployer.sol";
 
 import "tinlake-auth/auth.sol";
 
-contract DeployerPermissions is Auth {
+contract MainDeployer is Auth {
     BorrowerDeployer borrowerDeployer;
     LenderDeployer lenderDeployer;
 
@@ -31,21 +31,17 @@ contract DeployerPermissions is Auth {
     }
 
     function wireDepends() public auth {
-        // lender addresses
         address distributor_ = address(lenderDeployer.distributor());
-
-        // borrower addresses
         address shelf_ = address(borrowerDeployer.shelf());
 
+        // Borrower  Depends
         borrowerDeployer.collector().depend("distributor", distributor_);
-
         // todo needs to be tranche after mock
         borrowerDeployer.shelf().depend("lender", distributor_);
-
-        // distributor needs to know shelf
-        lenderDeployer.distributor().depend("shelf", shelf_);
         borrowerDeployer.collector().depend("distributor", distributor_);
 
+        //  Lender  depends
+        lenderDeployer.distributor().depend("shelf", shelf_);
     }
 
     function wireDeployment() public auth {

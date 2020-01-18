@@ -101,7 +101,7 @@ contract BorrowerDeployer {
     CollectorFab      collectorFab;
     ThresholdFab      thresholdFab;
 
-    address     public god;
+    address     public mainDeployer;
 
     Title       public title;
     LightSwitch public lightswitch;
@@ -113,8 +113,8 @@ contract BorrowerDeployer {
     PushRegistry public threshold;
 
 
-    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, ShelfFab shelffab_, PileFab pilefab_, PrincipalFab principalFab_, CollectorFab collectorFab_, ThresholdFab thresholdFab_) public {
-        god = god_;
+    constructor (address mainDeployer_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, ShelfFab shelffab_, PileFab pilefab_, PrincipalFab principalFab_, CollectorFab collectorFab_, ThresholdFab thresholdFab_) public {
+        mainDeployer = mainDeployer_;
 
         titlefab = titlefab_;
         lightswitchfab = lightswitchfab_;
@@ -128,37 +128,37 @@ contract BorrowerDeployer {
 
     function deployThreshold() public {
         threshold = thresholdFab.newThreshold();
-        threshold.rely(god);
+        threshold.rely(mainDeployer);
 
     }
     function deployCollector() public {
         collector = collectorFab.newCollector(address(shelf), address(pile), address(threshold));
-        collector.rely(god);
+        collector.rely(mainDeployer);
     }
 
     function deployPile() public {
         pile = pilefab.newPile();
-        pile.rely(god);
+        pile.rely(mainDeployer);
     }
 
     function deployTitle(string memory name, string memory symbol) public {
         title = titlefab.newTitle(name, symbol);
-        title.rely(god);
+        title.rely(mainDeployer);
     }
 
     function deployLightSwitch() public {
         lightswitch = lightswitchfab.newLightSwitch();
-        lightswitch.rely(god);
+        lightswitch.rely(mainDeployer);
     }
 
     function deployShelf(address currency_) public {
         shelf = shelffab.newShelf(currency_, address(title), address(pile), address(principal));
-        shelf.rely(god);
+        shelf.rely(mainDeployer);
     }
 
     function deployPrincipal() public {
         principal = principalFab.newPrincipal();
-        principal.rely(god);
+        principal.rely(mainDeployer);
     }
 
     function deploy() public {
@@ -172,5 +172,7 @@ contract BorrowerDeployer {
         // collector allowed to call
         shelf.rely(collector_);
     }
+
+    // todo give away power method
 }
 

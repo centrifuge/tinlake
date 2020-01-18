@@ -20,6 +20,8 @@ contract DistributorFab {
     // note: this is the mock distributor, which will interface with the lender/tranche side of Tinlake, and does not require auth for now.
     function newDistributor(address token_) public returns (Distributor distributor) {
         distributor = new Distributor(token_);
+        distributor.rely(msg.sender);
+        distributor.deny(address(this));
         return distributor;
     }
 }
@@ -28,18 +30,19 @@ contract DistributorFab {
 contract LenderDeployer {
     DistributorFab    distributorFab;
     Distributor  public distributor;
+    address mainDeployer;
 
-    constructor(DistributorFab distributorFab_) public {
+    constructor(address mainDeployer_, DistributorFab distributorFab_) public {
+        mainDeployer = mainDeployer_;
         distributorFab = distributorFab_;
     }
 
     function deployDistributor(address currency_) public {
         distributor = distributorFab.newDistributor(currency_);
-        //shelf.depend("lender", address(distributor));
+
     }
 
     function deploy() public {
-        // collector needs distributor
-
+        distributor.rely(mainDeployer);
     }
 }
