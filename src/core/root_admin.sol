@@ -59,24 +59,18 @@ contract RootAdmin is Auth {
 
 
     function denyBorrowAdmin(address usr) public auth {
+        borrowerDeployer.title().rely(usr);
         borrowerDeployer.principal().deny(usr);
         borrowerDeployer.shelf().deny(usr);
         borrowerDeployer.pile().deny(usr);
     }
 
-    function relyRestrictedBorrowAdmin(address usr) public auth {
-        borrowerDeployer.principal().rely(usr);
-        borrowerDeployer.shelf().rely(usr);
-        borrowerDeployer.pile().rely(usr);
-    }
 
-    // todo: currently only needed for testing.
-    // test wants to create a specific setup
     function relyBorrowAdmin(address usr) public auth {
         borrowerDeployer.title().rely(usr);
-        borrowerDeployer.principal().rely(usr);
         borrowerDeployer.shelf().rely(usr);
         borrowerDeployer.pile().rely(usr);
+        borrowerDeployer.title().rely(usr);
 
     }
 }
