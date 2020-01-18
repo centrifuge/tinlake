@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.4.23;
+pragma solidity >=0.5.12;
 
 import "ds-test/test.sol";
 import { Title } from "tinlake-title/title.sol";
@@ -31,12 +31,12 @@ contract ERC20Like {
 contract User is DSTest{
     ERC20Like tkn;
     Shelf shelf;
-    TrancheManager trancheManager;
+    Distributor distributor;
     Pile pile;
 
-    constructor (address shelf_, address trancheManager_, address tkn_, address pile_) public {
+    constructor (address shelf_, address distributor_, address tkn_, address pile_) public {
         shelf = Shelf(shelf_);
-        trancheManager = TrancheManager(trancheManager_);
+        distributor = Distributor(distributor_);
         tkn = ERC20Like(tkn_);
         pile = Pile(pile_);
     }
@@ -44,7 +44,7 @@ contract User is DSTest{
     function doBorrow(uint loan, uint amount) public {
         shelf.lock(loan, address(this));
         shelf.borrow(loan, amount);
-        trancheManager.balance();
+        distributor.balance();
         shelf.withdraw(loan, amount, address(this));
     }
 
@@ -58,7 +58,7 @@ contract User is DSTest{
          emit log_named_uint("loan", wad);
         shelf.unlock(loan);
          emit log_named_uint("loan", wad);
-        trancheManager.balance();
+        distributor.balance();
     }
 
     function doClose(uint loan, address usr) public {
@@ -143,7 +143,7 @@ contract SystemTest is DSTest {
         TitleFab titlefab = new TitleFab();
         LightSwitchFab lightswitchfab = new LightSwitchFab();
         ShelfFab shelffab = new ShelfFab();
-        TrancheManagerFab trancheManagerfab = new TrancheManagerFab();
+        DistributorFab distributorFab = new DistributorFab();
         PileFab pileFab = new PileFab();
         PrincipalFab principalFab = new PrincipalFab();
         CollectorFab collectorFab = new CollectorFab();
@@ -151,20 +151,20 @@ contract SystemTest is DSTest {
 
         admin = new AdminUser();
         admin_ = address(admin);
-        deployer = new Deployer(admin_, titlefab, lightswitchfab, shelffab, trancheManagerfab, pileFab, principalFab, collectorFab, thresholdFab);
+        deployer = new Deployer(admin_, titlefab, lightswitchfab, shelffab, distributorFab, pileFab, principalFab, collectorFab, thresholdFab);
 
         deployer.deployLightSwitch();
         deployer.deployTitle("Tinlake Loan", "TLNT");
         deployer.deployPile();
         deployer.deployPrincipal();
         deployer.deployShelf(tkn_);
-        deployer.deployTrancheManager(tkn_);
+        deployer.deployDistributor(tkn_);
         deployer.deployThreshold();
         deployer.deployCollector();
 
         deployer.deploy();
 
-        borrower = new User(address(deployer.shelf()), address(deployer.trancheManager()), tkn_, address(deployer.pile()));
+        borrower = new User(address(deployer.shelf()), address(deployer.distributor()), tkn_, address(deployer.pile()));
         borrower_ = address(borrower);
         admin.file(deployer);
 
@@ -236,9 +236,9 @@ contract SystemTest is DSTest {
         return extra;
     }
 
-    // note: this method will be refactored with the new lender side contracts, as the trancheManager should not hold any currency
-    function currTrancheManagerBal() public returns(uint) {
-        return tkn.balanceOf(address(deployer.trancheManager()));
+    // note: this method will be refactored with the new lender side contracts, as the distributor should not hold any currency
+    function currdistributorBal() public returns(uint) {
+        return tkn.balanceOf(address(deployer.distributor()));
     }
 
     function borrowRepay(uint principal, uint rate) public {
@@ -259,12 +259,12 @@ contract SystemTest is DSTest {
 
         // borrower needs some currency to pay rate
         setupRepayReq();
-        uint trancheManagerShould = deployer.pile().debt(loan) + currTrancheManagerBal();
+        uint distributorShould = deployer.pile().debt(loan) + currdistributorBal();
 
         // close without defined amount
         borrower.doClose(loan, borrower_);
         uint totalT = uint(tkn.totalSupply());
-        checkAfterRepay(loan, tokenId, totalT, trancheManagerShould);
+        checkAfterRepay(loan, tokenId, totalT, distributorShould);
     }
 
     // --- Tests ---
@@ -310,13 +310,13 @@ contract SystemTest is DSTest {
 
         // borrower needs some currency to pay rate
         setupRepayReq();
-        uint trancheManagerShould = deployer.pile().debt(loan) + currTrancheManagerBal();
+        uint distributorShould = deployer.pile().debt(loan) + currdistributorBal();
 
         // close without defined amount
         borrower.doClose(loan, borrower_);
 
         uint totalT = uint(tkn.totalSupply());
-        checkAfterRepay(loan, tokenId, totalT, trancheManagerShould);
+        checkAfterRepay(loan, tokenId, totalT, distributorShould);
     }
 
     function testLongOngoing() public {
@@ -328,13 +328,13 @@ contract SystemTest is DSTest {
         // borrower needs some currency to pay rate
         setupRepayReq();
 
-        uint trancheManagerShould = deployer.pile().debt(loan) + currTrancheManagerBal();
+        uint distributorShould = deployer.pile().debt(loan) + currdistributorBal();
 
         // close without defined amount
         borrower.doClose(loan, borrower_);
 
         uint totalT = uint(tkn.totalSupply());
-        checkAfterRepay(loan, tokenId, totalT, trancheManagerShould);
+        checkAfterRepay(loan, tokenId, totalT, distributorShould);
     }
 
     function testMultipleBorrowAndRepay () public {
@@ -365,7 +365,7 @@ contract SystemTest is DSTest {
         // allow pile full control over borrower tokens
         borrower.doApproveCurrency(address(deployer.shelf()), uint(-1));
 
-        uint trancheManagerBalance = tkn.balanceOf(address(deployer.trancheManager()));
+        uint distributorBalance = tkn.balanceOf(address(deployer.distributor()));
         for (uint i = 1; i <= 10; i++) {
             principal = i * 80;
 
@@ -373,8 +373,8 @@ contract SystemTest is DSTest {
             emit log_named_uint("repay", principal);
             borrower.doRepay(i, principal, borrower_);
             
-            trancheManagerBalance += principal;
-            checkAfterRepay(i, i, tTotal, trancheManagerBalance);
+            distributorBalance += principal;
+            checkAfterRepay(i, i, tTotal, distributorBalance);
         }
     }
 

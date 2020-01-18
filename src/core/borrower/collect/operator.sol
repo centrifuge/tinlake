@@ -1,5 +1,5 @@
-// Copyright (C) 2019 lucasvo
-
+// Copyright (C) 2020 Centrifuge
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -13,27 +13,29 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity >=0.4.24;
 
-import "ds-test/test.sol";
-import "../pool.sol";
-import "../../test/mock/pile.sol";
+import "tinlake-auth/auth.sol";
 
-contract PricePoolTest is DSTest {
-    PricePool pricePool;
-    PileMock pile;
+contract CollectorLike {
+    function collect(uint loan, address usr) public;
+}
 
-    function setUp() public {
-        pile = new PileMock();
-        pricePool = new PricePool();
-        pricePool.depend("pile", address(pile));
+contract CollectOperator is Auth {
+
+    CollectorLike collector;
+
+    constructor(address collector_) public {
+        wards[msg.sender] = 1;
+        collector = CollectorLike(collector_);
     }
 
-    function testPriceValue() public {
-        pile.setTotalReturn(100 ether);
-        assertEq(pricePool.totalValue(), 100 ether);
-        // assume 10% defaults
-        pricePool.file("riskscore", 9 * 10**26);
-        assertEq(pricePool.totalValue(), 90 ether);
+    function depend(bytes32 what, address addr) public auth {
+        if(what == "collector") { collector = CollectorLike(addr);}
+        else revert();
+    }
+
+    function collect(uint loan) public auth {
+        collector.collect(loan, msg.sender);
     }
 }

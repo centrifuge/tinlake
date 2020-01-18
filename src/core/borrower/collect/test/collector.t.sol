@@ -13,13 +13,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.4.23;
+pragma solidity >=0.5.12;
 pragma experimental ABIEncoderV2;
 
 import "ds-test/test.sol";
 
 import "../../test/mock/shelf.sol";
-import "../../test/mock/trancheManager.sol";
+import "../../test/mock/distributor.sol";
 import "../../test/mock/nft.sol";
 import "../../test/mock/pile.sol";
 
@@ -31,7 +31,7 @@ import "../collector.sol";
 contract CollectorTest is DSTest {
     ShelfMock shelf;
     PileMock pile;
-    TrancheManagerMock trancheManager;
+    DistributorMock distributor;
     NFTMock   nft;
 
     Collector    collector;
@@ -41,10 +41,10 @@ contract CollectorTest is DSTest {
         nft = new NFTMock();
         shelf = new ShelfMock();
         pile = new PileMock();
-        trancheManager = new TrancheManagerMock();
+        distributor = new DistributorMock();
 
         threshold = new PushRegistry();
-        collector = new Collector(address(trancheManager), address(shelf), address(pile), address(threshold));
+        collector = new Collector(address(distributor), address(shelf), address(pile), address(threshold));
     }
 
     function collect(uint loan, uint tokenId, uint price) internal {
