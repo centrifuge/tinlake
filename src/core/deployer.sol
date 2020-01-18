@@ -32,16 +32,24 @@ contract DeployerPermissions is Auth {
 
     function wireDepends() public auth {
 
-      //  collector.depend("distributor", distributor);
-       // shelf.depend("lender", tranche);
+        // lender addresses
+        address distributor_ = address(lenderDeployer.distributor());
+
+        // borrower addresses
+        address shelf_ = address(borrowerDeployer.shelf());
+
+        borrowerDeployer.collector().depend("distributor", distributor_);
+
+        // todo needs to be tranche after mock
+        borrowerDeployer.shelf().depend("lender", distributor_);
 
         // distributor needs to know shelf
-
+        lenderDeployer.distributor().depend("shelf", shelf_);
     }
 
     function wireDeployment() public auth {
         require(address(borrowerDeployer) != address(0));
-        require(address(borrowerDeployer) != address(0));
+        require(address(lenderDeployer) != address(0));
 
 
      //   address distributor_ = address(distributor);
