@@ -56,7 +56,6 @@ contract BaseOperator is Math, DSNote, Auth {
 
     function _supply(uint currencyAmount) internal {
         tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, assessor.calcTokenPrice(address(tranche))));
-       // tranche.supply(msg.sender, currencyAmount, currencyAmount);
         distributor.balance();
     }
 

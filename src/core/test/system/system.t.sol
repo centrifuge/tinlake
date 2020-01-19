@@ -23,7 +23,8 @@ contract SystemTest is TestUtils, DSTest {
     address      admin_;
     User borrower;
     address      borrower_;
-    // todo add investor contract
+    WhitelistInvestor juniorInvestor;
+    address     juniorInvestor_;
 
     // hevm
     Hevm public hevm;
@@ -43,18 +44,15 @@ contract SystemTest is TestUtils, DSTest {
         admin = new AdminUser();
         admin_ = address(admin);
         admin.file(borrowerDeployer);
+        juniorInvestor = new WhitelistInvestor(address(lenderDeployer.juniorOperator()), currency_, address(lenderDeployer.juniorERC20()));
+        juniorInvestor_ = address(juniorInvestor);
 
         // give admin access rights to contract
         // root only for this test setup
         rootAdmin.relyBorrowAdmin(admin_);
 
-        // todo replace with investor contract
-        rootAdmin.relyLenderAdmin(address(this));
-
-        // give invest rights to test
-        WhitelistOperator juniorOperator = WhitelistOperator(address(lenderDeployer.juniorOperator()));
-        juniorOperator.relyInvestor(address(this));
-
+        // junior investor
+        rootAdmin.relyLenderAdmin(juniorInvestor_);
     }
 
     function setupCurrencyOnLender(uint amount) public {
@@ -138,6 +136,11 @@ contract SystemTest is TestUtils, DSTest {
     // note: this method will be refactored with the new lender side contracts, as the distributor should not hold any currency
     function currdistributorBal() public returns(uint) {
         return currency.balanceOf(address(lenderDeployer.distributor()));
+    }
+
+    function supply(uint supply, uint amount) public {
+        currency.mint(juniorInvestor_, supply);
+        juniorInvestor.doSupply(amount);
     }
 
     function borrowRepay(uint principal, uint rate) public {
@@ -320,5 +323,24 @@ contract SystemTest is TestUtils, DSTest {
         uint loan = admin.doAdmit(collateralNFT_, tokenId, 100, borrower_);
         borrower.doBorrow(loan, 100);
         assertEq(currency.balanceOf(borrower_), 100);
+    }
+
+    function testSupply() public {
+        supply(100 ether, 10 ether);
+        assertEq(currency.balanceOf(juniorInvestor_), 90 ether);
+        assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), 10 ether);
+        assertEq(currency.balanceOf(address(borrowerDeployer.shelf())), 10 ether);
+    }
+
+    function testRedeem() public {
+        supply(100 ether, 10 ether);
+        assertEq(currency.balanceOf(juniorInvestor_), 90 ether);
+        assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), 10 ether);
+        // additional liquidity changes the token price
+        // TODO: add code to move funds from shelf to tranche so we can enact the actual repayment scenario
+        currency.mint(address(lenderDeployer.junior()), 100 ether);
+        juniorInvestor.doRedeem(10 ether);
+        assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), 0);
+        assertEq(currency.balanceOf(juniorInvestor_), 190 ether);
     }
 }

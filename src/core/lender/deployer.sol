@@ -93,9 +93,16 @@ contract DistributorLike {
     function balance() public;
 }
 
-contract OperatorLike {
+contract AllowanceOperatorLike {
     function rely(address usr) public;
     function deny(address usr) public;
+}
+
+contract WhitelistOperatorLike {
+    function rely(address usr) public;
+    function deny(address usr) public;
+    function relyInvestor(address usr) public;
+    function denyInvestor(address usr) public;
 }
 
 // Simple Lender only deploys a SimpleDistributor as lender module
@@ -118,7 +125,7 @@ contract LenderDeployer is Auth {
     ERC20 public seniorERC20;
     Assessor public assessor;
     DistributorLike public distributor;
-    OperatorLike public juniorOperator;
+    WhitelistOperatorLike public juniorOperator;
 
     constructor(address rootAdmin_, address trancheFab_, address assessorFab_,
         address operatorFab_, address distributorFab_) public {
@@ -148,13 +155,20 @@ contract LenderDeployer is Auth {
 
     }
 
-    // todo write deploy senior method
     function deployJuniorTranche(address currency, string memory symbol, string memory name) public auth {
         juniorERC20 = new ERC20(symbol, name);
         junior = trancheFab.newTranche(currency, address(juniorERC20));
         // tranche can mint
         juniorERC20.rely(address(junior));
         junior.rely(rootAdmin);
+    }
+
+    function deploySeniorTranche(address currency, string memory symbol, string memory name) public auth {
+        seniorERC20 = new ERC20(symbol, name);
+        senior = seniorFab.newSeniorTranche(currency, address(seniorERC20));
+        // tranche can mint
+        seniorERC20.rely(address(senior));
+        senior.rely(rootAdmin);
     }
 
     function deployAssessor() public auth {
@@ -165,7 +179,7 @@ contract LenderDeployer is Auth {
     function deployJuniorOperator() public auth {
         require(address(assessor) != address(0));
         require(address(junior) != address(0));
-        juniorOperator = OperatorLike(operatorFab.newOperator(address(junior), address(assessor), address(distributor)));
+        juniorOperator = WhitelistOperatorLike(operatorFab.newOperator(address(junior), address(assessor), address(distributor)));
         juniorOperator.rely(rootAdmin);
     }
 

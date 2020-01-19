@@ -90,6 +90,31 @@ contract User is DSTest{
     }
 }
 
+contract WhitelistInvestor is DSTest{
+    WhitelistOperator operator;
+    ERC20Like currency;
+    ERC20Like token;
+
+    constructor(address operator_, address currency_, address token_) public {
+        operator = WhitelistOperator(operator_);
+        currency = ERC20Like(currency_);
+        token = ERC20Like(token_);
+    }
+
+    function doSupply(uint amount) public {
+        address tranche_ = address(operator.tranche());
+        currency.approve(tranche_, uint(-1));
+        operator.supply(amount);
+    }
+
+    function doRedeem(uint amount) public {
+        address tranche_ = address(operator.tranche());
+        currency.approve(tranche_, uint(-1));
+        token.approve(tranche_, uint(-1));
+        operator.redeem(amount);
+    }
+}
+
 contract AdminUser is DSTest{
     // --- Data ---
     BorrowerDeployer  deployer;
