@@ -21,11 +21,11 @@ import "../assessor.sol";
 import "./mock/pool.sol";
 import "./mock/tranche.sol";
 contract AssessorLike {
-    function calcTokenPrice() public returns (uint);
+    function calcTokenPrice(address tranche) public returns (uint);
 }
 contract TestTranche is TrancheMock {
     function doCalcTokenPrice(address assessor_) public returns (uint) {
-        return AssessorLike(assessor_).calcTokenPrice();
+        return AssessorLike(assessor_).calcTokenPrice(address(this));
     }
 }
 contract AssessorTest is DSTest,Math {

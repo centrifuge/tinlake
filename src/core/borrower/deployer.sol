@@ -15,14 +15,16 @@
 
 pragma solidity >=0.5.12;
 
+import "tinlake-auth/auth.sol";
+
 import { Title } from "tinlake-title/title.sol";
-import { LightSwitch } from "./borrower/lightswitch.sol";
-import { Shelf } from "./borrower/shelf.sol";
-import { Distributor } from "./test/simple/distributor.sol";
-import { Pile } from "./borrower/pile.sol";
-import { Collector } from "./borrower/collect/collector.sol";
-import { Principal } from "./borrower/ceiling/principal.sol";
+import { LightSwitch } from "./lightswitch.sol";
+import { Shelf } from "./shelf.sol";
+import { Pile } from "./pile.sol";
+import { Collector } from "./collect/collector.sol";
+import { Principal } from "./ceiling/principal.sol";
 import { PushRegistry } from 'tinlake-registry/registry.sol';
+import { PricePool } from "./price/pool.sol";
 
 contract LenderFabLike {
     function deploy(address,address,address) public returns (address);
@@ -46,7 +48,7 @@ contract PileFab {
 }
 
 contract TitleFab {
-   function newTitle(string memory name, string memory symbol) public returns (Title title) {
+    function newTitle(string memory name, string memory symbol) public returns (Title title) {
         title = new Title(name, symbol);
         title.rely(msg.sender);
         title.deny(address(this));
@@ -54,7 +56,7 @@ contract TitleFab {
 }
 
 contract LightSwitchFab {
-   function newLightSwitch() public returns (LightSwitch lightswitch) {
+    function newLightSwitch() public returns (LightSwitch lightswitch) {
         lightswitch = new LightSwitch();
         lightswitch.rely(msg.sender);
         lightswitch.deny(address(this));
@@ -62,24 +64,16 @@ contract LightSwitchFab {
 }
 
 contract ShelfFab {
-   function newShelf(address tkn_, address title_, address debt_, address principal_) public returns (Shelf shelf) {
+    function newShelf(address tkn_, address title_, address debt_, address principal_) public returns (Shelf shelf) {
         shelf = new Shelf(tkn_, title_, debt_, principal_);
         shelf.rely(msg.sender);
         shelf.deny(address(this));
     }
 }
 
-contract DistributorFab {
-    // note: this is the mock distributor, which will interface with the lender/tranche side of Tinlake, and does not require auth for now.
-    function newDistributor(address shelf_, address token_) public returns (Distributor distributor) {
-        distributor = new Distributor(shelf_, token_);
-        return distributor;
-    }
-}
-
 contract CollectorFab {
-    function newCollector(address distributor, address shelf, address pile, address threshold) public returns (Collector collector) {
-        collector = new Collector(distributor, shelf, pile, threshold);
+    function newCollector(address shelf, address pile, address threshold) public returns (Collector collector) {
+        collector = new Collector(shelf, pile, threshold);
         collector.rely(msg.sender);
         collector.deny(address(this));
     }
@@ -101,98 +95,118 @@ contract ThresholdFab {
     }
 }
 
-contract Deployer {
+contract PricePoolFab {
+    function newPricePool() public returns (PricePool pricePool) {
+        pricePool = new PricePool();
+        pricePool.rely(msg.sender);
+        pricePool.deny(address(this));
+    }
+}
+
+contract BorrowerDeployer is Auth {
     TitleFab          titlefab;
     LightSwitchFab    lightswitchfab;
     ShelfFab          shelffab;
-    DistributorFab    distributorFab;
     PileFab           pilefab;
     PrincipalFab      principalFab;
     CollectorFab      collectorFab;
     ThresholdFab      thresholdFab;
+    PricePoolFab      pricePoolFab;
 
-    address     public god;
+    address     public rootAdmin;
 
     Title       public title;
     LightSwitch public lightswitch;
     Shelf       public shelf;
-    Distributor  public distributor;
     LenderLike  public lender;
     Pile        public pile;
     Principal   public principal;
     Collector   public collector;
     PushRegistry public threshold;
+    PricePool   public  pricePool;
 
 
-    constructor (address god_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, ShelfFab shelffab_, DistributorFab distributorFab_, PileFab pilefab_, PrincipalFab principalFab_, CollectorFab collectorFab_, ThresholdFab thresholdFab_) public {
-        god = god_;
+    address public deployUser;
+
+
+    constructor (address rootAdmin_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, ShelfFab shelffab_, PileFab pilefab_,
+        PrincipalFab principalFab_, CollectorFab collectorFab_, ThresholdFab thresholdFab_, PricePoolFab pricePoolFab_) public {
+        deployUser = msg.sender;
+        rootAdmin = rootAdmin_;
+
+        wards[deployUser] = 1;
+        wards[rootAdmin] = 1;
+
 
         titlefab = titlefab_;
         lightswitchfab = lightswitchfab_;
         shelffab = shelffab_;
-        distributorFab = distributorFab_;
+
         pilefab = pilefab_;
         principalFab = principalFab_;
         collectorFab = collectorFab_;
         thresholdFab = thresholdFab_;
+        pricePoolFab = pricePoolFab_;
     }
 
-    function deployThreshold() public {
+    function deployThreshold() public auth {
         threshold = thresholdFab.newThreshold();
-        threshold.rely(god);
+        threshold.rely(rootAdmin);
 
     }
-    function deployCollector() public {
-        collector = collectorFab.newCollector(address(distributor), address(shelf), address(pile), address(threshold));
-        collector.rely(god);
+
+    function deployPricePool() public auth {
+        pricePool = pricePoolFab.newPricePool();
+        pricePool.rely(rootAdmin);
     }
 
-    function deployPile() public {
+    function deployCollector() public auth {
+        collector = collectorFab.newCollector(address(shelf), address(pile), address(threshold));
+        collector.rely(rootAdmin);
+    }
+
+    function deployPile() public auth {
         pile = pilefab.newPile();
-        pile.rely(god);
+        pile.rely(rootAdmin);
     }
 
-    function deployTitle(string memory name, string memory symbol) public {
+    function deployTitle(string memory name, string memory symbol) public auth {
         title = titlefab.newTitle(name, symbol);
-        title.rely(god);
+        title.rely(rootAdmin);
     }
 
-    function deployLightSwitch() public {
+    function deployLightSwitch() public auth {
         lightswitch = lightswitchfab.newLightSwitch();
-        lightswitch.rely(god);
+        lightswitch.rely(rootAdmin);
     }
 
-    function deployShelf(address currency_) public {
+    function deployShelf(address currency_) public auth {
         shelf = shelffab.newShelf(currency_, address(title), address(pile), address(principal));
-        shelf.rely(god);
+        shelf.rely(rootAdmin);
     }
 
-    // note: this method will be refactored with the new lender side contracts, we will rely on God once more
-    //and the Pile should articulate that it depends on the distributor, not a generic "lender".
-    function deployDistributor(address currency_) public {
-        distributor = distributorFab.newDistributor(address(shelf), currency_);
-        shelf.depend("lender", address(distributor));
-    }
-
-    function deployPrincipal() public {
+    function deployPrincipal() public auth {
         principal = principalFab.newPrincipal();
-        principal.rely(god);
+        principal.rely(rootAdmin);
     }
 
-    function deploy() public {
-        address distributor_ = address(distributor);
+    function deploy() public auth {
         address shelf_ = address(shelf);
         address collector_ = address(collector);
 
-        // distributor allowed to call
-        shelf.rely(distributor_);
-      
         // shelf allowed to call
         pile.rely(shelf_);
         principal.rely(shelf_);
 
         // collector allowed to call
         shelf.rely(collector_);
+
+        // pool needs pile
+        pricePool.depend("pile", address(pile));
+
+        // remove access of deployUser
+        deny(deployUser);
     }
+
 }
 

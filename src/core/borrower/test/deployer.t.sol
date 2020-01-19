@@ -19,7 +19,7 @@ import "ds-test/test.sol";
 import { Title } from "tinlake-title/title.sol";
 
 import "../deployer.sol";
-import { SimpleToken } from "./simple/token.sol";
+import { SimpleToken } from "../../test/simple/token.sol";
 
 contract DeployerTest is DSTest {
     Title nft;
@@ -27,11 +27,11 @@ contract DeployerTest is DSTest {
     TitleFab titlefab;
     LightSwitchFab lightswitchfab;
     ShelfFab shelffab;
-    DistributorFab distributorFab;
     PileFab pilefab;
     PrincipalFab principalFab;
     CollectorFab collectorFab;
     ThresholdFab thresholdFab;
+    PricePoolFab pricePoolFab;
     Title title;
 
     function setUp() public {
@@ -40,24 +40,24 @@ contract DeployerTest is DSTest {
         titlefab = new TitleFab();
         lightswitchfab = new LightSwitchFab();
         shelffab = new ShelfFab();
-        distributorFab = new DistributorFab();
         pilefab = new PileFab();
         principalFab = new PrincipalFab();
         collectorFab = new CollectorFab();
         thresholdFab = new ThresholdFab();
+        pricePoolFab = new PricePoolFab();
    }
 
-    function testDeploy() public logs_gas {
-        Deployer deployer = new Deployer(address(0), titlefab, lightswitchfab, shelffab, distributorFab, pilefab, principalFab, collectorFab, thresholdFab);
+    function testBorrowerDeploy() public logs_gas {
+        BorrowerDeployer deployer = new BorrowerDeployer(address(0), titlefab, lightswitchfab, shelffab, pilefab, principalFab, collectorFab, thresholdFab, pricePoolFab);
 
         deployer.deployTitle("Test", "TEST");
         deployer.deployPile();
         deployer.deployPrincipal();
         deployer.deployLightSwitch();
         deployer.deployShelf(address(dai));
-        deployer.deployDistributor(address(dai));
         deployer.deployThreshold();
         deployer.deployCollector();
+        deployer.deployPricePool();
 
         deployer.deploy();
     }

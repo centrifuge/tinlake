@@ -1,4 +1,5 @@
 pragma solidity >=0.5.12;
+import "tinlake-auth/auth.sol";
 
 contract TokenLike {
     function transferFrom(address, address, uint) public;
@@ -9,15 +10,20 @@ contract ShelfLike {
     function balanceRequest() public returns (bool, uint);
 }
 
-contract Distributor {
+contract Distributor is Auth {
 
     // --- Data ---
     ShelfLike public shelf;
     // simple tranche manager = 1 tranche/1 operator for now
     TokenLike public token;
-    constructor (address shelf_, address token_) public {
+    constructor (address token_) public {
+        wards[msg.sender] = 1;
         token = TokenLike(token_);
-        shelf = ShelfLike(shelf_);
+    }
+
+    function depend(bytes32 what, address addr) public {
+        if(what == "shelf") shelf = ShelfLike(addr);
+        else revert();
     }
 
     // --- Calls ---
