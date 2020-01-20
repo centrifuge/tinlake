@@ -36,7 +36,6 @@ contract WhitelistedInvestor is DSTest {
 
     function doRedeem(uint amount) public {
         address tranche_ = address(operator.tranche());
-        currency.approve(tranche_, uint(-1));
         token.approve(tranche_, amount);
         operator.redeem(amount);
     }
