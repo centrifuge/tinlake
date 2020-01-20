@@ -53,11 +53,12 @@ contract Collector is DSNote, Auth {
 
     // --- Data ---
     RegistryLike threshold;
-    struct Lot {
-        address usr;
-        uint    wad;
+
+    struct Option {
+        address buyer;
+        uint    nftPrice;
     }
-    mapping (uint => Lot) public tags;
+    mapping (uint => Option) public options;
 
     DistributorLike distributor;
     ShelfLike shelf;
@@ -79,8 +80,8 @@ contract Collector is DSNote, Auth {
     }
 
     // --- Collector ---
-    function file(uint loan, address usr, uint wad) public auth {
-        tags[loan] = Lot(usr, wad);
+    function file(uint loan, address buyer, uint nftPrice) public auth {
+        options[loan] = Option(buyer, nftPrice);
     }
 
     function seize(uint loan) public {
@@ -89,11 +90,12 @@ contract Collector is DSNote, Auth {
         shelf.claim(loan, address(this));
     }
 
-    function collect(uint loan, address usr) public auth_collector {
-        require(usr == tags[loan].usr || tags[loan].usr == address(0));
+    function collect(uint loan, address buyer) public auth_collector {
+        require(buyer == options[loan].buyer || options[loan].buyer == address(0));
         (address registry, uint nft) = shelf.token(loan);
-        shelf.recover(loan, usr, tags[loan].wad);
-        NFTLike(registry).transferFrom(address(this), usr, nft);
+        require(options[loan].nftPrice > 0, "no-nft-price-defined");
+        shelf.recover(loan, buyer, options[loan].nftPrice);
+        NFTLike(registry).transferFrom(address(this), buyer, nft);
         distributor.balance();
     }
 }

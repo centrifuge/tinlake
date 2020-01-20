@@ -97,6 +97,7 @@ contract CollectorTest is DSTest {
     }
 
     function testFailSeizeThresholdNotReached() public {
+        collector.relyCollector(address(this));
         uint loan = 1; uint tokenId = 123;
         uint debt = 100;
         uint price = debt-1;
@@ -108,6 +109,7 @@ contract CollectorTest is DSTest {
     }
 
     function testFailSeizeCollectUnauthorizedUser() public {
+        collector.relyCollector(address(this));
         uint loan = 1; uint tokenId = 123;
         uint debt = 100;
         uint price = debt-1;
@@ -117,6 +119,19 @@ contract CollectorTest is DSTest {
         collector.file(loan, address(1), price);
         seize(loan);
         collect(loan, tokenId, price);
+    }
+
+    function testFailNoPriceDefined() public {
+        collector.relyCollector(address(this));
+        uint loan = 1; uint tokenId = 123;
+        uint debt = 100;
+        uint price = debt-1;
+        setUpLoan(loan, tokenId, debt);
+
+        threshold.set(loan, debt-1);
+
+        seize(loan);
+        collect(loan, tokenId, 0);
     }
 }
 
