@@ -82,7 +82,12 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     }
 
     function depend (bytes32 what, address addr) public auth {
-        if (what == "lender") { lender = addr; }
+        if (what == "lender") {
+            lender = addr;
+            // todo review alternatives
+            tkn.approve(lender, uint(-1));
+
+        }
         else if (what == "token") { tkn = TokenLike(addr); }
         else if (what == "title") { title = TitleLike(addr); }
         else if (what == "pile") { pile = PileLike(addr); }
@@ -173,7 +178,6 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         tkn.transferFrom(usr, address(this), wad);
         ceiling.repay(loan, wad);
         pile.decDebt(loan, wad);
-        tkn.approve(lender, wad);
     }
 
     // --- NFT actions ---
