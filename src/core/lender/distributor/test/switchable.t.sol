@@ -66,7 +66,7 @@ contract SwitchableSingleTrancheTest is DSTest, Math {
     function testRepaySingleTranche() public {
         uint amount = 200 ether;
         distributor.file("borrowFromTranches", false);
-        currency.setBalanceOfReturn(amount);
+        currency.setReturn("balanceOf", amount);
 
         distributor.balance();
 
@@ -97,7 +97,7 @@ contract SwitchableSingleTrancheTest is DSTest, Math {
         distributor.file("borrowFromTranches", false);
 
         uint amount = 150 ether;
-        currency.setBalanceOfReturn(amount);
+        currency.setReturn("balanceOf", amount);
         senior.setReturn("debt", 100 ether);
 
         distributor.balance();
