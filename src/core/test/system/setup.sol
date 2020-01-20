@@ -114,18 +114,12 @@ contract TestSetup is DSTest{
         lenderDeployer = new LenderDeployer(rootAdmin_, currency_, address(new TrancheFab()), address(new AssessorFab()),
             address(new WhitelistFab()), address(new SwitchableDistributorFab()));
 
-<<<<<<< HEAD:src/core/test/system/setup.sol
-        lenderDeployer.deployJuniorTranche(currency_, "JUN", "Junior Tranche Token");
-        lenderDeployer.deployAssessor();
-        lenderDeployer.deployDistributor(currency_);
-=======
         lenderDeployer.deployJuniorTranche("JUN", "Junior Tranche Token");
 
         lenderDeployer.deployAssessor();
 
         lenderDeployer.deployDistributor();
 
->>>>>>> upstream/develop:src/core/test/system/test_utils.sol
         lenderDeployer.deployJuniorOperator();
         lenderDeployer.deploy();
 
