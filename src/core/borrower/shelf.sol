@@ -193,9 +193,4 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     function claim(uint loan, address usr) public auth {
         NFTLike(shelf[loan].registry).transferFrom(address(this), usr, shelf[loan].tokenId);
     }
-
-    // -- Currency --
-    function doApproveCurrency(address usr, uint wad) public auth {
-        tkn.approve(usr, wad);
-    }
 }

@@ -56,8 +56,6 @@ contract SwitchableDistributor is BaseDistributor {
             return;
         }
         uint repayAmount = currency.balanceOf(address(shelf));
-        shelf.doApproveCurrency(address(junior), repayAmount);
-        shelf.doApproveCurrency(address(senior), repayAmount);
         _balanceTranches();
         _repayTranches(repayAmount);
     }

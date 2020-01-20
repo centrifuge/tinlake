@@ -51,7 +51,6 @@ contract SystemTest is TestUtils, DSTest {
         // give admin access rights to contract
         // root only for this test setup
         rootAdmin.relyBorrowAdmin(admin_);
-
         rootAdmin.relyLenderAdmin(address(this));
 
         // junior investor
@@ -103,7 +102,7 @@ contract SystemTest is TestUtils, DSTest {
 
         setupCurrencyOnLender(principal);
 
-//        // borrow transaction
+        // borrow transaction
         borrower.doBorrow(loan, principal);
         checkAfterBorrow(tokenId, principal);
     }
@@ -112,10 +111,6 @@ contract SystemTest is TestUtils, DSTest {
         currency.mint(juniorInvestor_, balance);
         juniorInvestor.doSupply(amount);
     }
-
-//    function setDistributorBorrow(bool flag) public {
-//        lenderDeployer.distributor().file("borrowFromTranches", flag);
-//    }
 
     function defaultLoan() public pure returns(uint principal, uint rate) {
         uint principal = 1000 ether;
@@ -170,7 +165,6 @@ contract SystemTest is TestUtils, DSTest {
         // borrower needs some currency to pay rate
         setupRepayReq();
         uint distributorShould = borrowerDeployer.pile().debt(loan) + currdistributorBal();
-
         // close without defined amount
         borrower.doClose(loan, borrower_);
         uint totalT = uint(currency.totalSupply());
@@ -225,7 +219,7 @@ contract SystemTest is TestUtils, DSTest {
         // borrower needs some currency to pay rate
         setupRepayReq();
         uint distributorShould = borrowerDeployer.pile().debt(loan) + currdistributorBal();
-
+        emit log_named_uint("test", borrowerDeployer.pile().debt(loan));
         // close without defined amount
         borrower.doClose(loan, borrower_);
 

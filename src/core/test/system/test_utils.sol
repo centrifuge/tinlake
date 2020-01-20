@@ -81,6 +81,7 @@ contract User is DSTest{
 
     function doClose(uint loan, address usr) public {
         uint debt = pile.debt(loan);
+        emit log_named_uint("debt", debt);
         doRepay(loan, debt, usr);
     }
 
