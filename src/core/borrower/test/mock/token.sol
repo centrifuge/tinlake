@@ -1,54 +1,36 @@
 pragma solidity >=0.5.12;
 
-contract TokenMock {
-    // calls
-    uint public balanceOfCalls;
-    uint public mintCalls;
-    uint public transferFromCalls;
-    uint public burnCalls;
-    uint public approveCalls;
 
-    // returns
-    uint public balanceOfReturn; function setBalanceOfReturn(uint balanceOfReturn_) public {balanceOfReturn=balanceOfReturn_;}
-    bool public approveReturn; function setApproveReturn(bool approveReturn_) public {approveReturn = approveReturn_;}
-    // variables
-    address public addr;
-    uint public wad;
-    address public dst;
-    address public src;
-    address public usr;
+import "../../../test/mock/mock.sol";
 
-    uint public totalSupply;
-
-
-    function balanceOf(address addr_) public view returns (uint) {
-        return balanceOfReturn;
+contract TokenMock is Mock {
+    function balanceOf(address usr) public returns (uint) {
+        values_address["balanceOf_usr"] = usr;
+        return call("balanceOf");
     }
     
-    function mint(address addr_,uint wad_) public {
-        addr = addr_;
-        wad = wad_;
-        mintCalls++;
+    function mint(address usr, uint amount) public {
+        calls["mint"]++;
+        values_address["mint_usr"] = usr;
+        values_uint["mint_amount"] = amount;
     }
 
-    function transferFrom(address dst_ ,address src_,uint wad_) public {
-        dst = dst_;
-        src = src_;
-        wad = wad_;
-        transferFromCalls++;
-
+    function transferFrom(address from ,address to, uint amount) public {
+        calls["transferFrom"]++;
+        values_address["transferFrom_from"] = from;
+        values_address["transferFrom_to"] = to;
+        values_uint["transferFrom_amount"] = amount;
     }
-    function burn(address addr_, uint wad_) public {
-        addr=addr_;
-        wad = wad_;
-        burnCalls;
-    }
-
-    function approve(address usr_, uint wad_) public returns (bool) {
-        usr = usr_;
-        wad = wad_;
-        approveCalls++;
-        return approveReturn;
+    function burn(address usr, uint amount) public {
+        calls["burn"]++;
+        values_address["burn_usr"] = usr;
+        values_uint["burn_amount"] = amount;
     }
 
+    function approve(address usr, uint amount) public returns (bool) {
+        calls["approve"]++;
+        values_address["approve_usr"] = usr;
+        values_uint["approve_amount"] = amount;
+        return values_bool_return["approve"];
+    }
 }

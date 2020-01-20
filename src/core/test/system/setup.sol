@@ -79,7 +79,6 @@ contract TestSetup is DSTest{
 
     function deployBorrower() private {
         TitleFab titlefab = new TitleFab();
-        LightSwitchFab lightswitchfab = new LightSwitchFab();
         ShelfFab shelffab = new ShelfFab();
         PileFab pileFab = new PileFab();
         PrincipalFab principalFab = new PrincipalFab();
@@ -87,9 +86,8 @@ contract TestSetup is DSTest{
         ThresholdFab thresholdFab = new ThresholdFab();
         PricePoolFab pricePoolFab = new PricePoolFab();
 
-        borrowerDeployer = new BorrowerDeployer(rootAdmin_, titlefab, lightswitchfab, shelffab, pileFab, principalFab, collectorFab, thresholdFab, pricePoolFab);
+        borrowerDeployer = new BorrowerDeployer(rootAdmin_, titlefab, shelffab, pileFab, principalFab, collectorFab, thresholdFab, pricePoolFab);
 
-        borrowerDeployer.deployLightSwitch();
         borrowerDeployer.deployTitle("Tinlake Loan", "TLNT");
         borrowerDeployer.deployPile();
         borrowerDeployer.deployPrincipal();
@@ -113,12 +111,21 @@ contract TestSetup is DSTest{
     }
 
     function deployDefaultLender() private {
-        lenderDeployer = new LenderDeployer(rootAdmin_,address(new TrancheFab()), address(new AssessorFab()),
+        lenderDeployer = new LenderDeployer(rootAdmin_, currency_, address(new TrancheFab()), address(new AssessorFab()),
             address(new WhitelistFab()), address(new SwitchableDistributorFab()));
 
+<<<<<<< HEAD:src/core/test/system/setup.sol
         lenderDeployer.deployJuniorTranche(currency_, "JUN", "Junior Tranche Token");
         lenderDeployer.deployAssessor();
         lenderDeployer.deployDistributor(currency_);
+=======
+        lenderDeployer.deployJuniorTranche("JUN", "Junior Tranche Token");
+
+        lenderDeployer.deployAssessor();
+
+        lenderDeployer.deployDistributor();
+
+>>>>>>> upstream/develop:src/core/test/system/test_utils.sol
         lenderDeployer.deployJuniorOperator();
         lenderDeployer.deploy();
 

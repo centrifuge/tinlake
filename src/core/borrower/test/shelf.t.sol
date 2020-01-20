@@ -28,17 +28,17 @@ contract ShelfTest is DSTest {
     Shelf shelf;
     NFTMock nft;
     TitleMock title;
-    TokenMock tkn;
+    TokenMock currency;
     PileMock pile;
     CeilingMock ceiling;
 
     function setUp() public {
         nft = new NFTMock();
         title = new TitleMock();
-        tkn = new TokenMock();
+        currency = new TokenMock();
         pile = new PileMock();
         ceiling = new CeilingMock();
-        shelf = new Shelf(address(tkn), address(title), address(pile), address(ceiling));
+        shelf = new Shelf(address(currency), address(title), address(pile), address(ceiling));
     }
 
     function _issue(uint256 tokenId_, uint loan_) internal {
@@ -81,10 +81,10 @@ contract ShelfTest is DSTest {
 
         assertEq(totalBalance-wad_, shelf.balance());
         assertEq(loanBalance-wad_, shelf.balances(loan_));
-        assertEq(tkn.transferFromCalls(), 1);
-        assertEq(tkn.dst(), address(shelf));
-        assertEq(tkn.src(), address(this));
-        assertEq(tkn.wad(), wad_);
+        assertEq(currency.calls("transferFrom"), 1);
+        assertEq(currency.values_address("transferFrom_from"), address(shelf));
+        assertEq(currency.values_address("transferFrom_to"), address(this));
+        assertEq(currency.values_uint("transferFrom_amount"), wad_);
     }
 
     function _repay(uint loan_, uint wad_) internal {
@@ -96,10 +96,10 @@ contract ShelfTest is DSTest {
         assertEq(shelf.balance(), 0);
         assertEq(shelf.balances(loan_), 0);
         assertEq(ceiling.callsRepay(), 1);
-        assertEq(tkn.transferFromCalls(),2);
-        assertEq(tkn.dst(),address(this));
-        assertEq(tkn.src(),address(shelf));
-        assertEq(tkn.wad(),wad_);
+        assertEq(currency.calls("transferFrom"),2);
+        assertEq(currency.values_address("transferFrom_from"),address(this));
+        assertEq(currency.values_address("transferFrom_to"),address(shelf));
+        assertEq(currency.values_uint("transferFrom_amount"),wad_);
     }
 
     function _recover(uint loan_, address usr_, uint wad_, uint debt_) internal {
@@ -109,10 +109,10 @@ contract ShelfTest is DSTest {
         assertEq(pile.callsAccrue(), 2);
         assertEq(pile.callsDecDebt(), 2);
 
-        assertEq(tkn.transferFromCalls(), 2);
-        assertEq(tkn.dst(), usr_);
-        assertEq(tkn.src(), address(shelf));
-        assertEq(tkn.wad(), wad_);
+        assertEq(currency.calls("transferFrom"), 2);
+        assertEq(currency.values_address("transferFrom_from"), usr_);
+        assertEq(currency.values_address("transferFrom_to"), address(shelf));
+        assertEq(currency.values_uint("transferFrom_amount"), wad_);
     }
 
     uint loan  = 1;
@@ -194,7 +194,7 @@ contract ShelfTest is DSTest {
     }
 
     function testSetupPrecondition() public {
-        tkn.setBalanceOfReturn(0);
+        currency.setReturn("balanceOf", 0);
     }
 
     function testIssue() public {

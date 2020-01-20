@@ -25,7 +25,6 @@ contract DeployerTest is DSTest {
     Title nft;
     SimpleToken dai;
     TitleFab titlefab;
-    LightSwitchFab lightswitchfab;
     ShelfFab shelffab;
     PileFab pilefab;
     PrincipalFab principalFab;
@@ -38,7 +37,6 @@ contract DeployerTest is DSTest {
         nft = new Title("SimpleNFT", "NFT");
         dai = new SimpleToken("DDAI", "Dummy Dai", "1", 0);
         titlefab = new TitleFab();
-        lightswitchfab = new LightSwitchFab();
         shelffab = new ShelfFab();
         pilefab = new PileFab();
         principalFab = new PrincipalFab();
@@ -48,12 +46,11 @@ contract DeployerTest is DSTest {
    }
 
     function testBorrowerDeploy() public logs_gas {
-        BorrowerDeployer deployer = new BorrowerDeployer(address(0), titlefab, lightswitchfab, shelffab, pilefab, principalFab, collectorFab, thresholdFab, pricePoolFab);
+        BorrowerDeployer deployer = new BorrowerDeployer(address(0), titlefab, shelffab, pilefab, principalFab, collectorFab, thresholdFab, pricePoolFab);
 
         deployer.deployTitle("Test", "TEST");
         deployer.deployPile();
         deployer.deployPrincipal();
-        deployer.deployLightSwitch();
         deployer.deployShelf(address(dai));
         deployer.deployThreshold();
         deployer.deployCollector();
