@@ -21,6 +21,7 @@ import "./base.sol";
 
 contract CurrencyLike {
     function balanceOf(address) public returns(uint);
+    function approve(address, uint) public returns (bool);
 }
 
 contract SwitchableDistributor is BaseDistributor {
@@ -55,6 +56,8 @@ contract SwitchableDistributor is BaseDistributor {
             return;
         }
         uint repayAmount = currency.balanceOf(address(shelf));
+        shelf.doApproveCurrency(address(junior), repayAmount);
+        shelf.doApproveCurrency(address(senior), repayAmount);
         _balanceTranches();
         _repayTranches(repayAmount);
     }

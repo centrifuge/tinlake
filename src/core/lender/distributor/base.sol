@@ -29,6 +29,7 @@ contract TrancheLike {
 
 contract ShelfLike {
     function balanceRequest() public returns (bool requestWant, uint amount);
+    function doApproveCurrency(address, uint) public;
 }
 
 /// The Distributor contract borrows and repays from tranches

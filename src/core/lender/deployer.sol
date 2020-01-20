@@ -90,22 +90,15 @@ contract DistributorLike {
     function rely(address usr) public;
     function deny(address usr) public;
     function depend (bytes32 what, address addr) public;
+    function file(bytes32 what, bool flag) public;
     function balance() public;
 }
 
-contract AllowanceOperatorLike {
+contract OperatorLike {
     function rely(address usr) public;
     function deny(address usr) public;
 }
 
-contract WhitelistOperatorLike {
-    function rely(address usr) public;
-    function deny(address usr) public;
-    function relyInvestor(address usr) public;
-    function denyInvestor(address usr) public;
-}
-
-// Simple Lender only deploys a SimpleDistributor as lender module
 
 contract LenderDeployer is Auth {
     address rootAdmin;
@@ -125,7 +118,7 @@ contract LenderDeployer is Auth {
     ERC20 public seniorERC20;
     Assessor public assessor;
     DistributorLike public distributor;
-    WhitelistOperatorLike public juniorOperator;
+    OperatorLike public juniorOperator;
 
     constructor(address rootAdmin_, address trancheFab_, address assessorFab_,
         address operatorFab_, address distributorFab_) public {
@@ -152,7 +145,6 @@ contract LenderDeployer is Auth {
     function deployDistributor(address currency_) public auth {
         distributor = DistributorLike(distributorFab.newDistributor(currency_));
         distributor.rely(rootAdmin);
-
     }
 
     function deployJuniorTranche(address currency, string memory symbol, string memory name) public auth {
@@ -179,7 +171,7 @@ contract LenderDeployer is Auth {
     function deployJuniorOperator() public auth {
         require(address(assessor) != address(0));
         require(address(junior) != address(0));
-        juniorOperator = WhitelistOperatorLike(operatorFab.newOperator(address(junior), address(assessor), address(distributor)));
+        juniorOperator = OperatorLike(operatorFab.newOperator(address(junior), address(assessor), address(distributor)));
         juniorOperator.rely(rootAdmin);
     }
 

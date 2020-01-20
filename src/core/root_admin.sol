@@ -51,6 +51,8 @@ contract RootAdmin is Auth {
     function relyModules() internal {
         // distributor allowed to call
         borrowerDeployer.shelf().rely(address(lenderDeployer.distributor()));
+        // TODO: currency transfer allowance approval needs to be updated for senior tranche also
+//        borrowerDeployer.shelf().doApproveCurrency(juniorTranche, uint(-1));
     }
 
     function completeDeployment() public auth {

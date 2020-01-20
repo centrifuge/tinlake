@@ -60,7 +60,7 @@ contract BaseOperator is Math, DSNote, Auth {
     }
 
     function _redeem(uint tokenAmount) internal {
-        tranche.redeem(msg.sender, rmul(tokenAmount, assessor.calcTokenPrice(address(tranche))), tokenAmount);
         distributor.balance();
+        tranche.redeem(msg.sender, rmul(tokenAmount, assessor.calcTokenPrice(address(tranche))), tokenAmount);
     }
 }

@@ -3,7 +3,7 @@
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// (at your option) any later version.z
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,6 +16,7 @@
 pragma solidity >=0.5.12;
 
 import "./test_utils.sol";
+import "./users/whitelisted_investor.sol";
 
 contract SystemTest is TestUtils, DSTest {
     // users
@@ -23,8 +24,8 @@ contract SystemTest is TestUtils, DSTest {
     address      admin_;
     User borrower;
     address      borrower_;
-    WhitelistInvestor juniorInvestor;
-    address     juniorInvestor_;
+    WhitelistedInvestor public juniorInvestor;
+    address     public juniorInvestor_;
 
     // hevm
     Hevm public hevm;
@@ -44,15 +45,18 @@ contract SystemTest is TestUtils, DSTest {
         admin = new AdminUser();
         admin_ = address(admin);
         admin.file(borrowerDeployer);
-        juniorInvestor = new WhitelistInvestor(address(lenderDeployer.juniorOperator()), currency_, address(lenderDeployer.juniorERC20()));
+        juniorInvestor = new WhitelistedInvestor(address(lenderDeployer.juniorOperator()), currency_, address(lenderDeployer.juniorERC20()));
         juniorInvestor_ = address(juniorInvestor);
 
         // give admin access rights to contract
         // root only for this test setup
         rootAdmin.relyBorrowAdmin(admin_);
 
+        rootAdmin.relyLenderAdmin(address(this));
+
         // junior investor
-        rootAdmin.relyLenderAdmin(juniorInvestor_);
+        WhitelistOperator juniorOperator = WhitelistOperator(address(lenderDeployer.juniorOperator()));
+        juniorOperator.relyInvestor(juniorInvestor_);
     }
 
     function setupCurrencyOnLender(uint amount) public {
@@ -104,6 +108,15 @@ contract SystemTest is TestUtils, DSTest {
         checkAfterBorrow(tokenId, principal);
     }
 
+    function supply(uint balance, uint amount) public {
+        currency.mint(juniorInvestor_, balance);
+        juniorInvestor.doSupply(amount);
+    }
+
+//    function setDistributorBorrow(bool flag) public {
+//        lenderDeployer.distributor().file("borrowFromTranches", flag);
+//    }
+
     function defaultLoan() public pure returns(uint principal, uint rate) {
         uint principal = 1000 ether;
         // define rate
@@ -136,11 +149,6 @@ contract SystemTest is TestUtils, DSTest {
     // note: this method will be refactored with the new lender side contracts, as the distributor should not hold any currency
     function currdistributorBal() public returns(uint) {
         return currency.balanceOf(address(lenderDeployer.distributor()));
-    }
-
-    function supply(uint supply, uint amount) public {
-        currency.mint(juniorInvestor_, supply);
-        juniorInvestor.doSupply(amount);
     }
 
     function borrowRepay(uint principal, uint rate) public {
@@ -323,24 +331,5 @@ contract SystemTest is TestUtils, DSTest {
         uint loan = admin.doAdmit(collateralNFT_, tokenId, 100, borrower_);
         borrower.doBorrow(loan, 100);
         assertEq(currency.balanceOf(borrower_), 100);
-    }
-
-    function testSupply() public {
-        supply(100 ether, 10 ether);
-        assertEq(currency.balanceOf(juniorInvestor_), 90 ether);
-        assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), 10 ether);
-        assertEq(currency.balanceOf(address(borrowerDeployer.shelf())), 10 ether);
-    }
-
-    function testRedeem() public {
-        supply(100 ether, 10 ether);
-        assertEq(currency.balanceOf(juniorInvestor_), 90 ether);
-        assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), 10 ether);
-        // additional liquidity changes the token price
-        // TODO: add code to move funds from shelf to tranche so we can enact the actual repayment scenario
-        currency.mint(address(lenderDeployer.junior()), 100 ether);
-        juniorInvestor.doRedeem(10 ether);
-        assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), 0);
-        assertEq(currency.balanceOf(juniorInvestor_), 190 ether);
     }
 }

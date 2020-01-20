@@ -29,7 +29,6 @@ contract TestRootAdmin is RootAdmin {
     // Needed for System Tests
     function relyLenderAdmin(address usr) public auth {
         lenderDeployer.juniorOperator().rely(usr);
-        lenderDeployer.juniorOperator().relyInvestor(usr);
         lenderDeployer.assessor().rely(usr);
         lenderDeployer.distributor().rely(usr);
         lenderDeployer.junior().rely(usr);
