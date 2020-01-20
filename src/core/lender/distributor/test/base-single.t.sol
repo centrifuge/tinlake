@@ -19,6 +19,8 @@ import "ds-test/test.sol";
 import "tinlake-math/math.sol";
 
 import "../../test/mock/tranche.sol";
+import "../../../borrower/test/mock/shelf.sol";
+import "../../../borrower/test/mock/token.sol";
 import "../base.sol";
 
 
@@ -26,26 +28,13 @@ contract Hevm {
     function warp(uint256) public;
 }
 
-// todo replace it with borrower mock of Shelf
-contract ShelfMock {
-    uint calls;
-    bool returnRequestWant;
-    uint returnAmount;
-
-    function balanceRequest() public returns (bool, uint) {
-     return (returnRequestWant, returnAmount);
-    }
-
-    function setReturn(bytes32 name, bool requestWant, uint amount) public {
-        returnRequestWant = requestWant;
-        returnAmount = amount;
-    }
-}
-
 contract BastDistributorSingleTrancheTest is DSTest, Math {
     BaseDistributor distributor;
+    address distributor_;
 
     TrancheMock junior;
+    TokenMock currency;
+    address currency_;
     address junior_;
     address shelf_;
     ShelfMock shelf;
@@ -57,8 +46,10 @@ contract BastDistributorSingleTrancheTest is DSTest, Math {
     function setUp() public {
         junior = new TrancheMock(); junior_ = address(junior);
         shelf = new ShelfMock(); shelf_ = address(shelf);
+        currency = new TokenMock(); currency_ = address(currency);
 
-        distributor = new BaseDistributor();
+        distributor = new BaseDistributor(currency_);
+        distributor_ = address(distributor);
         distributor.depend("shelf", shelf_);
         distributor.depend("junior", junior_);
     }
@@ -68,7 +59,7 @@ contract BastDistributorSingleTrancheTest is DSTest, Math {
 
         assertEq(junior.calls("borrow"), 1);
         assertEq(junior.values_uint("borrow_amount"), amount);
-        assertEq(junior.values_address("borrow_usr"), shelf_);
+        assertEq(junior.values_address("borrow_usr"), distributor_);
     }
 
     function balanceExpectRepay(uint amount) public {
@@ -76,7 +67,7 @@ contract BastDistributorSingleTrancheTest is DSTest, Math {
 
         assertEq(junior.calls("repay"), 1);
         assertEq(junior.values_uint("repay_amount"), amount);
-        assertEq(junior.values_address("repay_usr"), shelf_);
+        assertEq(junior.values_address("repay_usr"), distributor_);
     }
 
     // --- Tests ---

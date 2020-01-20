@@ -18,18 +18,11 @@ pragma solidity >=0.5.12;
 import "ds-note/note.sol";
 import "./base.sol";
 
-
-contract CurrencyLike {
-    function balanceOf(address) public returns(uint);
-}
-
 contract SwitchableDistributor is BaseDistributor {
     // ERC20
-    CurrencyLike public currency;
     bool public borrowFromTranches;
 
-    constructor(address currency_) BaseDistributor()  public {
-        currency = CurrencyLike(currency_);
+    constructor(address currency_) BaseDistributor(currency_) public {
         borrowFromTranches = true;
     }
 
