@@ -71,17 +71,13 @@ contract User is DSTest{
     }
 
     function doRepay(uint loan, uint wad, address usr) public {
-        emit log_named_uint("loan", wad);
         shelf.repay(loan, wad);
-        emit log_named_uint("loan", wad);
         shelf.unlock(loan);
-        emit log_named_uint("loan", wad);
         distributor.balance();
     }
 
     function doClose(uint loan, address usr) public {
         uint debt = pile.debt(loan);
-        emit log_named_uint("debt", debt);
         doRepay(loan, debt, usr);
     }
 
