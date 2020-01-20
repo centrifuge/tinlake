@@ -189,14 +189,14 @@ contract TestUtils  {
     }
 
     function deployDefaultLender() private {
-        lenderDeployer = new LenderDeployer(rootAdmin_,address(new TrancheFab()), address(new AssessorFab()),
+        lenderDeployer = new LenderDeployer(rootAdmin_, currency_, address(new TrancheFab()), address(new AssessorFab()),
             address(new WhitelistFab()), address(new SwitchableDistributorFab()));
 
-        lenderDeployer.deployJuniorTranche(currency_, "JUN", "Junior Tranche Token");
+        lenderDeployer.deployJuniorTranche("JUN", "Junior Tranche Token");
 
         lenderDeployer.deployAssessor();
 
-        lenderDeployer.deployDistributor(currency_);
+        lenderDeployer.deployDistributor();
 
         lenderDeployer.deployJuniorOperator();
 
