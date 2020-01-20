@@ -16,8 +16,14 @@
 pragma solidity >=0.5.12;
 
 contract Mock {
+    // counting calls
     mapping (bytes32 => uint) public calls;
+
+    // returns
     mapping (bytes32 => uint) public values_return;
+    mapping (bytes32 => bool) public values_bool_return;
+
+    // passed parameter
     mapping (bytes32 => uint) public values_uint;
     mapping (bytes32 => address) public values_address;
 
@@ -31,5 +37,8 @@ contract Mock {
 
     function setReturn(bytes32 name, uint returnValue) public {
         values_return[name] = returnValue;
+    }
+    function setReturn(bytes32 name, bool returnValue) public {
+        values_bool_return[name] = returnValue;
     }
 }

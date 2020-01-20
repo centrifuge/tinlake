@@ -13,10 +13,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 pragma solidity >=0.5.12;
 
+import "ds-test/test.sol";
 import "../../../lender/deployer.sol";
 import "../test_utils.sol";
 
-contract WhitelistedInvestor {
+contract WhitelistedInvestor is DSTest {
     WhitelistOperator operator;
     ERC20Like currency;
     ERC20Like token;
@@ -35,6 +36,7 @@ contract WhitelistedInvestor {
 
     function doRedeem(uint amount) public {
         address tranche_ = address(operator.tranche());
+        currency.approve(tranche_, uint(-1));
         token.approve(tranche_, amount);
         operator.redeem(amount);
     }

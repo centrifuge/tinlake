@@ -14,7 +14,7 @@
 pragma solidity >=0.5.12;
 import "ds-test/test.sol";
 
-import "./mock.sol";
+import "../../../test/mock/mock.sol";
 
 contract PoolMock is Mock {
     function totalValue() public returns (uint) {

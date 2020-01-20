@@ -26,10 +26,12 @@ contract RedeemTest is SystemTest {
         supply(investorBalance, supplyAmount);
         assertEq(currency.balanceOf(juniorInvestor_), 90 ether);
         assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), 10 ether);
+
         SwitchableDistributor switchable = SwitchableDistributor(address(lenderDeployer.distributor()));
         switchable.file("borrowFromTranches", false);
+        currency.balanceOf(address(borrowerDeployer.shelf()));
         juniorInvestor.doRedeem(10 ether);
-//        assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), 0);
-//        assertEq(currency.balanceOf(juniorInvestor_), 100 ether);
+        assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), 0);
+        assertEq(currency.balanceOf(juniorInvestor_), 100 ether);
     }
 }

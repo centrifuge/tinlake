@@ -59,7 +59,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     TitleLike public title;
     CeilingLike public ceiling;
     PileLike public pile;
-    TokenLike public tkn;
+    TokenLike public currency;
 
     struct Loan {
         address registry;
@@ -73,17 +73,22 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     uint public balance;
     address public lender;
 
-    constructor(address tkn_, address title_, address pile_, address ceiling_) TitleOwned(title_) public {
+    constructor(address currency_, address title_, address pile_, address ceiling_) TitleOwned(title_) public {
         wards[msg.sender] = 1;
-        tkn = TokenLike(tkn_);
+        currency = TokenLike(currency_);
         title = TitleLike(title_);
         pile = PileLike(pile_);
         ceiling = CeilingLike(ceiling_);
     }
 
     function depend (bytes32 what, address addr) public auth {
-        if (what == "lender") { lender = addr; }
-        else if (what == "token") { tkn = TokenLike(addr); }
+        if (what == "lender") {
+            lender = addr;
+            // todo review alternatives
+            currency.approve(lender, uint(-1));
+
+        }
+        else if (what == "token") { currency = TokenLike(addr); }
         else if (what == "title") { title = TitleLike(addr); }
         else if (what == "pile") { pile = PileLike(addr); }
         else if (what == "ceiling") { ceiling = CeilingLike(addr); }
@@ -129,51 +134,50 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         if (balance > 0) {
             return (true, balance);
         } else {
-            return (false, tkn.balanceOf(address(this)));
+            return (false, currency.balanceOf(address(this)));
         }
     }
 
-    function borrow(uint loan, uint wad) public owner(loan) {
+    function borrow(uint loan, uint currencyAmount) public owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
         pile.accrue(loan);
-        ceiling.borrow(loan, wad);
-        pile.incDebt(loan, wad);
-        balances[loan] = add(balances[loan], wad);
-        balance = add(balance, wad);
+        ceiling.borrow(loan, currencyAmount);
+        pile.incDebt(loan, currencyAmount);
+        balances[loan] = add(balances[loan], currencyAmount);
+        balance = add(balance, currencyAmount);
     }
 
-    function withdraw(uint loan, uint wad, address usr) public owner(loan) note {
+    function withdraw(uint loan, uint currencyAmount, address usr) public owner(loan) note {
         require(nftLocked(loan), "nft-not-locked");
-        require(wad <= balances[loan], "amount-too-high");
-        balances[loan] = sub(balances[loan], wad);
-        balance = sub(balance, wad);
-        tkn.transferFrom(address(this), usr, wad);
+        require(currencyAmount <= balances[loan], "amount-too-high");
+        balances[loan] = sub(balances[loan], currencyAmount);
+        balance = sub(balance, currencyAmount);
+        currency.transferFrom(address(this), usr, currencyAmount);
     }
 
-    function repay(uint loan, uint wad) public owner(loan) note {
+    function repay(uint loan, uint currencyAmount) public owner(loan) note {
         require(nftLocked(loan), "nft-not-locked");
         require(balances[loan] == 0,"before repay loan needs to be withdrawn");
-        _repay(loan, msg.sender, wad);
+        _repay(loan, msg.sender, currencyAmount);
     }
 
-    function recover(uint loan, address usr, uint wad) public auth {
-        _repay(loan, usr, wad);
+    function recover(uint loan, address usr, uint currencyAmount) public auth {
+        _repay(loan, usr, currencyAmount);
         uint loss = pile.debt(loan);
         pile.decDebt(loan, loss);
     }
 
-    function _repay(uint loan, address usr, uint wad) internal {
+    function _repay(uint loan, address usr, uint currencyAmount) internal {
         pile.accrue(loan);
         uint loanDebt = pile.debt(loan);
         // only repay max loan debt
-        if (wad > loanDebt) {
-            wad = loanDebt;
+        if (currencyAmount > loanDebt) {
+            currencyAmount = loanDebt;
         } 
 
-        tkn.transferFrom(usr, address(this), wad);
-        ceiling.repay(loan, wad);
-        pile.decDebt(loan, wad);
-        tkn.approve(lender, wad);
+        currency.transferFrom(usr, address(this), currencyAmount);
+        ceiling.repay(loan, currencyAmount);
+        pile.decDebt(loan, currencyAmount);
     }
 
     // --- NFT actions ---
