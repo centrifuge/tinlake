@@ -201,6 +201,5 @@ contract TestUtils  {
         lenderDeployer.deployJuniorOperator();
 
         lenderDeployer.deploy();
-
     }
 }

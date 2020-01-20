@@ -56,6 +56,7 @@ contract SystemTest is TestUtils, DSTest {
         // junior investor
         WhitelistOperator juniorOperator = WhitelistOperator(address(lenderDeployer.juniorOperator()));
         juniorOperator.relyInvestor(juniorInvestor_);
+        juniorOperator.relyInvestor(address(this));
     }
 
     function setupCurrencyOnLender(uint amount) public {

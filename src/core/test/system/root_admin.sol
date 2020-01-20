@@ -28,9 +28,7 @@ contract TestRootAdmin is RootAdmin {
 
     // Needed for System Tests
     function relyLenderAdmin(address usr) public auth {
-        WhitelistOperator juniorOperator = WhitelistOperator(address(lenderDeployer.juniorOperator()));
-        juniorOperator.relyInvestor(usr);
-        juniorOperator.rely(usr);
+        lenderDeployer.juniorOperator().rely(usr);
         lenderDeployer.assessor().rely(usr);
         lenderDeployer.distributor().rely(usr);
         lenderDeployer.junior().rely(usr);
