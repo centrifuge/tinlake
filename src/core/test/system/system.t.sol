@@ -15,14 +15,17 @@
 
 pragma solidity >=0.5.12;
 
-import "./test_utils.sol";
+import "./setup.sol";
+import "./users/borrower.sol";
+import "./users/admin.sol";
 
-contract SystemTest is TestUtils, DSTest {
+
+contract SystemTest is TestSetup {
     // users
-    AdminUser public  admin;
-    address      admin_;
-    User borrower;
-    address      borrower_;
+    AdminUser public admin;
+    address admin_;
+    Borrower borrower;
+    address borrower_;
     // todo add investor contract
 
     // hevm
@@ -38,11 +41,10 @@ contract SystemTest is TestUtils, DSTest {
         deployContracts();
 
         // setup users
-        borrower = new User(address(borrowerDeployer.shelf()), address(lenderDeployer.distributor()), currency_, address(borrowerDeployer.pile()));
+        borrower = new Borrower(address(borrowerDeployer.shelf()), address(lenderDeployer.distributor()), currency_, address(borrowerDeployer.pile()));
+        admin = new AdminUser(address(borrowerDeployer.shelf()), address(borrowerDeployer.pile()), address(borrowerDeployer.principal()), address(borrowerDeployer.title()));
         borrower_ = address(borrower);
-        admin = new AdminUser();
         admin_ = address(admin);
-        admin.file(borrowerDeployer);
 
         // give admin access rights to contract
         // root only for this test setup
@@ -68,7 +70,7 @@ contract SystemTest is TestUtils, DSTest {
         address operator_ = address(lenderDeployer.juniorOperator());
         WhitelistOperator(operator_).supply(amount);
 
-//        // same amount of junior tokens
+//       // same amount of junior tokens
         assertEq(lenderDeployer.juniorERC20().balanceOf(address(this)), balanceBefore + amount);
     }
 
@@ -97,12 +99,11 @@ contract SystemTest is TestUtils, DSTest {
     }
 
     function borrow(uint loan, uint tokenId, uint principal) public {
-        borrower.doApproveNFT(collateralNFT, address(borrowerDeployer.shelf()));
-
+    
+        borrower.approveNFT(collateralNFT, address(borrowerDeployer.shelf()));
         setupCurrencyOnLender(principal);
-
 //        // borrow transaction
-        borrower.doBorrow(loan, principal);
+        borrower.borrow(loan, principal);
         checkAfterBorrow(tokenId, principal);
     }
 
@@ -150,8 +151,6 @@ contract SystemTest is TestUtils, DSTest {
 
         assertEq(ceiling_.values(loan), principal);
         borrow(loan, tokenId, principal);
-
-
         assertEq(ceiling_.values(loan), 0);
 
         hevm.warp(now + 10 days);
@@ -176,11 +175,11 @@ contract SystemTest is TestUtils, DSTest {
         uint tokenId = collateralNFT.issue(borrower_);
         uint loan = admin.doAdmit(collateralNFT_, tokenId, principal, borrower_);
 
-        borrower.doApproveNFT(collateralNFT, address(borrowerDeployer.shelf()));
+        borrower.approveNFT(collateralNFT, address(borrowerDeployer.shelf()));
 
         setupCurrencyOnLender(principal);
 
-        borrower.doBorrow(loan, principal);
+        borrower.borrow(loan, principal);
 
         checkAfterBorrow(tokenId, principal);
     }
@@ -255,10 +254,10 @@ contract SystemTest is TestUtils, DSTest {
             uint loan = whitelist(tokenId, collateralNFT_, principal, borrower_, rate);
             // collateralNFT whitelist
 
-            borrower.doApproveNFT(collateralNFT, address(borrowerDeployer.shelf()));
+            borrower.approveNFT(collateralNFT, address(borrowerDeployer.shelf()));
 
             setupCurrencyOnLender(principal);
-            borrower.doBorrow(loan, principal);
+            borrower.borrow(loan, principal);
             tBorrower += principal;
             emit log_named_uint("total", tBorrower);
           //  checkAfterBorrow(i, tBorrower);
@@ -276,7 +275,7 @@ contract SystemTest is TestUtils, DSTest {
 
             // repay transaction
             emit log_named_uint("repay", principal);
-            borrower.doRepay(i, principal, borrower_);
+            borrower.repay(i, principal, borrower_);
 
             distributorBalance += principal;
             checkAfterRepay(i, i, tTotal, distributorBalance);
@@ -290,35 +289,35 @@ contract SystemTest is TestUtils, DSTest {
         // create borrower collateral collateralNFT
         uint tokenId = collateralNFT.issue(borrower_);
         uint loan = admin.doAdmit(collateralNFT_, tokenId, principal, borrower_);
-        borrower.doApproveNFT(collateralNFT, address(borrowerDeployer.shelf()));
-        borrower.doBorrow(loan, principal);
+        borrower.approveNFT(collateralNFT, address(borrowerDeployer.shelf()));
+        borrower.borrow(loan, principal);
         checkAfterBorrow(tokenId, principal);
 
         // should fail
-        borrower.doBorrow(loan, principal);
+        borrower.borrow(loan, principal);
     }
 
     function testFailBorrowNonExistingToken() public {
-        borrower.doBorrow(42, 100);
+        borrower.borrow(42, 100);
         assertEq(currency.balanceOf(borrower_), 0);
     }
 
     function testFailBorrowNotWhitelisted() public {
         collateralNFT.issue(borrower_);
-        borrower.doBorrow(1, 100);
+        borrower.borrow(1, 100);
         assertEq(currency.balanceOf(borrower_), 0);
     }
 
     function testFailAdmitNonExistingcollateralNFT() public {
         uint loan = admin.doAdmit(collateralNFT_, 1, 100, borrower_);
-        borrower.doBorrow(loan, 100);
+        borrower.borrow(loan, 100);
         assertEq(currency.balanceOf(borrower_), 0);
     }
 
     function testFailBorrowcollateralNFTNotApproved() public {
         uint tokenId = collateralNFT.issue(borrower_);
         uint loan = admin.doAdmit(collateralNFT_, tokenId, 100, borrower_);
-        borrower.doBorrow(loan, 100);
+        borrower.borrow(loan, 100);
         assertEq(currency.balanceOf(borrower_), 100);
     }
 }

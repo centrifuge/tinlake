@@ -51,7 +51,7 @@ contract ShelfTest is DSTest {
     }
 
     function _lock(uint256 tokenId_, uint loan_) internal {
-        shelf.lock(loan_, address(this));
+        shelf.lock(loan_);
 
         assertEq(nft.transferFromCalls(), 1);
         assertEq(nft.from(), address(this));
