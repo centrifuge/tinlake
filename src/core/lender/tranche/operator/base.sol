@@ -34,7 +34,6 @@ contract DistributorLike {
 }
 // Abstract Contract
 contract BaseOperator is Math, DSNote, Auth {
-
     TrancheLike public tranche;
     AssessorLike public assessor;
     DistributorLike public distributor;
