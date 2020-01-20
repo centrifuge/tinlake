@@ -151,7 +151,6 @@ contract BaseDistributor is Math, DSNote, Auth {
 
         // repay senior always first
         if(address(senior) != address(0)) {
-            currency.approve(address(senior), available);
             available = sub(available, _repay(senior, available));
         }
 
@@ -173,6 +172,7 @@ contract BaseDistributor is Math, DSNote, Auth {
             currencyAmount = available;
         }
         if (currencyAmount > 0) {
+            currency.approve(address(senior), currencyAmount);
             tranche.repay(address(this), currencyAmount);
         }
         return currencyAmount;
