@@ -34,7 +34,6 @@ contract DistributorLike {
 }
 // Abstract Contract
 contract BaseOperator is Math, DSNote, Auth {
-
     TrancheLike public tranche;
     AssessorLike public assessor;
     DistributorLike public distributor;
@@ -56,12 +55,11 @@ contract BaseOperator is Math, DSNote, Auth {
 
     function _supply(uint currencyAmount) internal {
         tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, assessor.calcTokenPrice(address(tranche))));
-       // tranche.supply(msg.sender, currencyAmount, currencyAmount);
         distributor.balance();
     }
 
     function _redeem(uint tokenAmount) internal {
-        tranche.redeem(msg.sender, rmul(tokenAmount, assessor.calcTokenPrice(address(tranche))), tokenAmount);
         distributor.balance();
+        tranche.redeem(msg.sender, rmul(tokenAmount, assessor.calcTokenPrice(address(tranche))), tokenAmount);
     }
 }
