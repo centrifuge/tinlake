@@ -102,6 +102,7 @@ contract BaseDistributor is Math, DSNote, Auth {
     /// @param currencyAmount request amount to borrow
     /// @dev currencyAmount denominated in WAD (10^18)
     function _borrowTranches(uint currencyAmount) internal  {
+        uint totalAmount = currencyAmount;
         if(currencyAmount == 0) {
             return;
         }
@@ -117,7 +118,8 @@ contract BaseDistributor is Math, DSNote, Auth {
             revert("requested currency amount too high");
         }
 
-        currency.transferFrom(address(this), address(shelf), currency.balanceOf(address(this)));
+        // distributor -> shelf
+        currency.transferFrom(address(this), address(shelf), totalAmount);
     }
 
     /// borrows up to the max amount from one tranche
@@ -143,6 +145,7 @@ contract BaseDistributor is Math, DSNote, Auth {
             return;
         }
 
+        // shelf -> distributor
         currency.transferFrom(address(shelf), address(this), available);
 
         // repay senior always first
