@@ -194,6 +194,12 @@ contract BorrowerDeployer is Auth {
         address shelf_ = address(shelf);
         address collector_ = address(collector);
 
+        // ensures all required deploy methods were called
+        require(shelf_ != address(0));
+        require(collector_ != address(0));
+        require(address(pricePool) != address(0));
+
+
         // shelf allowed to call
         pile.rely(shelf_);
         principal.rely(shelf_);
