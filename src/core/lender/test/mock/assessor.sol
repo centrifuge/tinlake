@@ -15,7 +15,7 @@
 
 pragma solidity >=0.5.12;
 
-import "./mock.sol";
+import "../../../test/mock/mock.sol";
 
 contract AssessorMock is Mock {
     function calcTokenPrice (address tranche) public returns (uint) {
