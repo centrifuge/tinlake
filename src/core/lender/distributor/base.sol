@@ -29,7 +29,6 @@ contract TrancheLike {
 
 contract ShelfLike {
     function balanceRequest() public returns (bool requestWant, uint amount);
-    function doApproveCurrency(address, uint) public;
 }
 
 contract CurrencyLike {
@@ -152,6 +151,7 @@ contract BaseDistributor is Math, DSNote, Auth {
 
         // repay senior always first
         if(address(senior) != address(0)) {
+            currency.approve(address(senior), available);
             available = sub(available, _repay(senior, available));
         }
 

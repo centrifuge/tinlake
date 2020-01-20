@@ -3,7 +3,7 @@
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.z
+// (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -220,7 +220,6 @@ contract SystemTest is TestUtils, DSTest {
         // borrower needs some currency to pay rate
         setupRepayReq();
         uint distributorShould = borrowerDeployer.pile().debt(loan) + currdistributorBal();
-        emit log_named_uint("test", borrowerDeployer.pile().debt(loan));
         // close without defined amount
         borrower.doClose(loan, borrower_);
 
