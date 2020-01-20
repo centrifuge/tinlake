@@ -18,7 +18,6 @@ pragma solidity >=0.5.12;
 import "tinlake-auth/auth.sol";
 
 import { Title } from "tinlake-title/title.sol";
-import { LightSwitch } from "./lightswitch.sol";
 import { Shelf } from "./shelf.sol";
 import { Pile } from "./pile.sol";
 import { Collector } from "./collect/collector.sol";
@@ -52,14 +51,6 @@ contract TitleFab {
         title = new Title(name, symbol);
         title.rely(msg.sender);
         title.deny(address(this));
-    }
-}
-
-contract LightSwitchFab {
-    function newLightSwitch() public returns (LightSwitch lightswitch) {
-        lightswitch = new LightSwitch();
-        lightswitch.rely(msg.sender);
-        lightswitch.deny(address(this));
     }
 }
 
@@ -105,7 +96,6 @@ contract PricePoolFab {
 
 contract BorrowerDeployer is Auth {
     TitleFab          titlefab;
-    LightSwitchFab    lightswitchfab;
     ShelfFab          shelffab;
     PileFab           pilefab;
     PrincipalFab      principalFab;
@@ -116,7 +106,6 @@ contract BorrowerDeployer is Auth {
     address     public rootAdmin;
 
     Title       public title;
-    LightSwitch public lightswitch;
     Shelf       public shelf;
     LenderLike  public lender;
     Pile        public pile;
@@ -129,7 +118,7 @@ contract BorrowerDeployer is Auth {
     address public deployUser;
 
 
-    constructor (address rootAdmin_, TitleFab titlefab_, LightSwitchFab lightswitchfab_, ShelfFab shelffab_, PileFab pilefab_,
+    constructor (address rootAdmin_, TitleFab titlefab_, ShelfFab shelffab_, PileFab pilefab_,
         PrincipalFab principalFab_, CollectorFab collectorFab_, ThresholdFab thresholdFab_, PricePoolFab pricePoolFab_) public {
         deployUser = msg.sender;
         rootAdmin = rootAdmin_;
@@ -139,7 +128,6 @@ contract BorrowerDeployer is Auth {
 
 
         titlefab = titlefab_;
-        lightswitchfab = lightswitchfab_;
         shelffab = shelffab_;
 
         pilefab = pilefab_;
@@ -173,11 +161,6 @@ contract BorrowerDeployer is Auth {
     function deployTitle(string memory name, string memory symbol) public auth {
         title = titlefab.newTitle(name, symbol);
         title.rely(rootAdmin);
-    }
-
-    function deployLightSwitch() public auth {
-        lightswitch = lightswitchfab.newLightSwitch();
-        lightswitch.rely(rootAdmin);
     }
 
     function deployShelf(address currency_) public auth {

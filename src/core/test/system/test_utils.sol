@@ -164,7 +164,6 @@ contract TestUtils  {
 
     function deployBorrower() private {
         TitleFab titlefab = new TitleFab();
-        LightSwitchFab lightswitchfab = new LightSwitchFab();
         ShelfFab shelffab = new ShelfFab();
         PileFab pileFab = new PileFab();
         PrincipalFab principalFab = new PrincipalFab();
@@ -172,9 +171,8 @@ contract TestUtils  {
         ThresholdFab thresholdFab = new ThresholdFab();
         PricePoolFab pricePoolFab = new PricePoolFab();
 
-        borrowerDeployer = new BorrowerDeployer(rootAdmin_, titlefab, lightswitchfab, shelffab, pileFab, principalFab, collectorFab, thresholdFab, pricePoolFab);
+        borrowerDeployer = new BorrowerDeployer(rootAdmin_, titlefab, shelffab, pileFab, principalFab, collectorFab, thresholdFab, pricePoolFab);
 
-        borrowerDeployer.deployLightSwitch();
         borrowerDeployer.deployTitle("Tinlake Loan", "TLNT");
         borrowerDeployer.deployPile();
         borrowerDeployer.deployPrincipal();
