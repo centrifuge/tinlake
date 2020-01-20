@@ -6,7 +6,7 @@
 	url = https://github.com/dapphub/ds-note
 [submodule "lib/tinlake-title"]
 	path = lib/tinlake-title
-	url = https://github.com/centrifuge/tinlake-title
+	url = https://github.com/lib/tinlake-title
 [submodule "lib/tinlake-erc20"]
 	path = lib/tinlake-erc20
 	url = https://github.com/centrifuge/tinlake-erc20
