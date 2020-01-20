@@ -42,7 +42,7 @@ contract RootAdmin is Auth {
         borrowerDeployer.shelf().depend("lender", distributor_);
         borrowerDeployer.collector().depend("distributor", distributor_);
 
-        //  Lender  depends
+        //  Lender depends
         address borrowerPricePool = address(borrowerDeployer.pricePool());
         lenderDeployer.distributor().depend("shelf", shelf_);
         lenderDeployer.assessor().depend("pool", borrowerPricePool);
