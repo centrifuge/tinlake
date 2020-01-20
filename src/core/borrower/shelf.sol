@@ -17,7 +17,6 @@
 pragma solidity >=0.5.12;
 pragma experimental ABIEncoderV2;
 
-import "ds-test/test.sol";
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
@@ -54,7 +53,7 @@ contract CeilingLike {
     function repay(uint loan, uint currencyAmount) public;
 }
 
-contract Shelf is DSNote, Auth, TitleOwned, Math, DSTest {
+contract Shelf is DSNote, Auth, TitleOwned, Math {
 
     // --- Data ---
     TitleLike public title;
@@ -82,11 +81,6 @@ contract Shelf is DSNote, Auth, TitleOwned, Math, DSTest {
         ceiling = CeilingLike(ceiling_);
     }
 
-<<<<<<< HEAD
-    function depend(bytes32 what, address addr) public auth {
-        if (what == "lender") { lender = addr; }
-        else if (what == "token") { tkn = TokenLike(addr); }
-=======
     function depend (bytes32 what, address addr) public auth {
         if (what == "lender") {
             lender = addr;
@@ -95,7 +89,6 @@ contract Shelf is DSNote, Auth, TitleOwned, Math, DSTest {
 
         }
         else if (what == "token") { currency = TokenLike(addr); }
->>>>>>> upstream/develop
         else if (what == "title") { title = TitleLike(addr); }
         else if (what == "pile") { pile = PileLike(addr); }
         else if (what == "ceiling") { ceiling = CeilingLike(addr); }
