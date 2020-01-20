@@ -31,6 +31,12 @@ contract ShelfLike {
     function balanceRequest() public returns (bool requestWant, uint amount);
 }
 
+contract CurrencyLike {
+    function transferFrom(address from, address to, uint amount) public;
+    function balanceOf(address) public returns(uint);
+}
+
+
 /// The Distributor contract borrows and repays from tranches
 /// In the base implementation the requested `currencyAmount` always is taken from the
 /// junior tranche first. For repayment senior comes first.
@@ -43,14 +49,19 @@ contract BaseDistributor is Math, DSNote, Auth {
     TrancheLike public senior;
     TrancheLike public junior;
 
-    constructor() public {
+    CurrencyLike public currency;
+
+    constructor(address currency_) public {
         wards[msg.sender] = 1;
+        currency = CurrencyLike(currency_);
+
     }
 
     function depend (bytes32 what, address addr) public auth {
         if (what == "shelf") { shelf = ShelfLike(addr); }
         else if (what == "junior") { junior = TrancheLike(addr); }
         else if (what == "senior") { senior = TrancheLike(addr); }
+        else if (what == "currency") { currency = CurrencyLike(addr); }
         else revert();
     }
 
@@ -91,6 +102,7 @@ contract BaseDistributor is Math, DSNote, Auth {
     /// @param currencyAmount request amount to borrow
     /// @dev currencyAmount denominated in WAD (10^18)
     function _borrowTranches(uint currencyAmount) internal  {
+        uint totalAmount = currencyAmount;
         if(currencyAmount == 0) {
             return;
         }
@@ -105,6 +117,9 @@ contract BaseDistributor is Math, DSNote, Auth {
         if (currencyAmount > 0) {
             revert("requested currency amount too high");
         }
+
+        // distributor -> shelf
+        currency.transferFrom(address(this), address(shelf), totalAmount);
     }
 
     /// borrows up to the max amount from one tranche
@@ -118,7 +133,7 @@ contract BaseDistributor is Math, DSNote, Auth {
             currencyAmount = available;
         }
 
-        tranche.borrow(address(shelf), currencyAmount);
+        tranche.borrow(address(this), currencyAmount);
         return currencyAmount;
     }
 
@@ -130,6 +145,9 @@ contract BaseDistributor is Math, DSNote, Auth {
             return;
         }
 
+        // shelf -> distributor
+        currency.transferFrom(address(shelf), address(this), available);
+
         // repay senior always first
         if(address(senior) != address(0)) {
             available = sub(available, _repay(senior, available));
@@ -137,7 +155,7 @@ contract BaseDistributor is Math, DSNote, Auth {
 
         if (available > 0) {
             // junior gets the rest
-            junior.repay(address(shelf), available);
+            junior.repay(address(this), available);
         }
     }
 
@@ -152,7 +170,7 @@ contract BaseDistributor is Math, DSNote, Auth {
             currencyAmount = available;
         }
         if (currencyAmount > 0) {
-            tranche.repay(address(shelf), currencyAmount);
+            tranche.repay(address(this), currencyAmount);
         }
         return currencyAmount;
     }

@@ -29,6 +29,8 @@ contract Hevm {
 
 contract SwitchableSingleTrancheTest is DSTest, Math {
     SwitchableDistributor distributor;
+    address distributor_;
+
     TrancheMock junior;
     address junior_;
     TrancheMock senior;
@@ -44,6 +46,7 @@ contract SwitchableSingleTrancheTest is DSTest, Math {
         currency = new TokenMock();
 
         distributor = new SwitchableDistributor(address(currency));
+        distributor_ = address(distributor);
         distributor.depend("shelf", shelf_);
         distributor.depend("junior", junior_);
         distributor.depend("senior", address(0));
@@ -57,19 +60,19 @@ contract SwitchableSingleTrancheTest is DSTest, Math {
 
         assertEq(junior.calls("borrow"), 1);
         assertEq(junior.values_uint("borrow_amount"), amount);
-        assertEq(junior.values_address("borrow_usr"), shelf_);
+        assertEq(junior.values_address("borrow_usr"), distributor_);
     }
 
     function testRepaySingleTranche() public {
         uint amount = 200 ether;
         distributor.file("borrowFromTranches", false);
-        currency.setBalanceOfReturn(amount);
+        currency.setReturn("balanceOf", amount);
 
         distributor.balance();
 
         assertEq(junior.calls("repay"), 1);
         assertEq(junior.values_uint("repay_amount"), amount);
-        assertEq(junior.values_address("repay_usr"), shelf_);
+        assertEq(junior.values_address("repay_usr"), distributor_);
     }
 
     function testBorrowTwoTranches() public {
@@ -81,11 +84,11 @@ contract SwitchableSingleTrancheTest is DSTest, Math {
 
         assertEq(senior.calls("borrow"), 1);
         assertEq(senior.values_uint("borrow_amount"), 100 ether);
-        assertEq(senior.values_address("borrow_usr"), shelf_);
+        assertEq(senior.values_address("borrow_usr"), distributor_);
 
         assertEq(junior.calls("borrow"), 1);
         assertEq(junior.values_uint("borrow_amount"), 50 ether);
-        assertEq(junior.values_address("borrow_usr"), shelf_);
+        assertEq(junior.values_address("borrow_usr"), distributor_);
     }
 
 
@@ -94,18 +97,18 @@ contract SwitchableSingleTrancheTest is DSTest, Math {
         distributor.file("borrowFromTranches", false);
 
         uint amount = 150 ether;
-        currency.setBalanceOfReturn(amount);
+        currency.setReturn("balanceOf", amount);
         senior.setReturn("debt", 100 ether);
 
         distributor.balance();
 
         assertEq(senior.calls("repay"), 1);
         assertEq(senior.values_uint("repay_amount"), 100 ether);
-        assertEq(senior.values_address("repay_usr"), shelf_);
+        assertEq(senior.values_address("repay_usr"), distributor_);
 
         assertEq(junior.calls("repay"), 1);
         assertEq(junior.values_uint("repay_amount"), 50 ether);
-        assertEq(junior.values_address("repay_usr"), shelf_);
+        assertEq(junior.values_address("repay_usr"), distributor_);
     }
 
 }

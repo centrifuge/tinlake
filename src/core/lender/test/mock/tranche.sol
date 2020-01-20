@@ -16,7 +16,7 @@
 pragma solidity >=0.5.12;
 
 import "ds-test/test.sol";
-import "./mock.sol";
+import "../../../test/mock/mock.sol";
 
 contract TrancheMock is Mock {
     function debt() public returns (uint) {

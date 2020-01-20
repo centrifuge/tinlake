@@ -90,6 +90,8 @@ contract SwitchableDistributorFab {
     }
 }
 
+// todo add BaseDistributorFab
+
 contract DistributorLike {
     function rely(address usr) public;
     function deny(address usr) public;

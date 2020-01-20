@@ -18,7 +18,7 @@ pragma solidity >=0.5.12;
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
 
-import "./mock.sol";
+import "../../../test/mock/mock.sol";
 
 contract DistributorMock is Mock {
     function balance() public returns (uint) {
