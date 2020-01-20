@@ -62,7 +62,7 @@ contract ShelfTest is DSTest {
     function _borrow(uint loan_, uint wad_) internal {
         shelf.borrow(loan_, wad_);
         
-        assertEq(ceiling.callsBorrow(), 1);
+        assertEq(ceiling.calls("borrow"), 1);
         assertEq(pile.callsAccrue(), 1);
         assertEq(pile.callsIncDebt(), 1);
         assertEq(shelf.balance(), wad_);
@@ -95,7 +95,7 @@ contract ShelfTest is DSTest {
         assertEq(pile.callsDecDebt(), 1);
         assertEq(shelf.balance(), 0);
         assertEq(shelf.balances(loan_), 0);
-        assertEq(ceiling.callsRepay(), 1);
+        assertEq(ceiling.calls("repay"), 1);
         assertEq(currency.calls("transferFrom"),2);
         assertEq(currency.values_address("transferFrom_from"),address(this));
         assertEq(currency.values_address("transferFrom_to"),address(shelf));
@@ -121,26 +121,23 @@ contract ShelfTest is DSTest {
 
     function testBorrow() public {
         testLock();
-        ceiling.setCeilingReached(false);
         _borrow(loan, wad);
     }
 
     function testFailBorrowCeilingReached() public {
         testLock();
-        ceiling.setCeilingReached(true);
+        ceiling.setFail("borrow", true);
         _borrow(loan, wad);
     }
 
     function testFailBorrowNFTNotLocked() public {
         nft.setOwnerOfReturn(address(this));
         _issue(tokenId,loan);
-        ceiling.setCeilingReached(false);
         _borrow(loan, wad);
     }
 
     function testWithdraw() public {
         testLock();
-        ceiling.setCeilingReached(false);
         _borrow(loan, wad);
         _withdraw(loan, wad);
     }
@@ -148,7 +145,6 @@ contract ShelfTest is DSTest {
     function testFailWithdrawNFTNotLocked() public {
         nft.setOwnerOfReturn(address(this));
         _issue(tokenId,loan);
-        ceiling.setCeilingReached(false);
         _borrow(loan, wad);
         shelf.claim(loan, address(1));
         _withdraw(loan, wad);
@@ -156,13 +152,11 @@ contract ShelfTest is DSTest {
 
     function testFailWithdrawNoBalance() public {
         testLock();
-        ceiling.setCeilingReached(false);
         _withdraw(loan, wad);
     }
 
     function testRepay() public {
         testLock();
-        ceiling.setCeilingReached(false);
         _borrow(loan, wad);
         _withdraw(loan, wad);
         _repay(loan, wad);
@@ -170,7 +164,6 @@ contract ShelfTest is DSTest {
 
     function testRecover() public {
         testLock();
-        ceiling.setCeilingReached(false);
         _borrow(loan, wad);
         _withdraw(loan, wad);
         _recover(loan, address(1), wad-10, wad);
@@ -179,7 +172,6 @@ contract ShelfTest is DSTest {
     function testFailRepayNFTNotLocked() public {
         nft.setOwnerOfReturn(address(this));
         _issue(tokenId,loan);
-        ceiling.setCeilingReached(false);
         _borrow(loan, wad);
         _withdraw(loan, wad);
         shelf.claim(loan, address(1));
@@ -188,7 +180,6 @@ contract ShelfTest is DSTest {
 
     function testFailRepayNFTNoWithdraw() public {
         testLock();
-        ceiling.setCeilingReached(false);
         _borrow(loan, wad);
         _repay(loan, wad);
     }

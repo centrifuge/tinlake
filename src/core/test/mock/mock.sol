@@ -27,6 +27,8 @@ contract Mock {
     mapping (bytes32 => uint) public values_uint;
     mapping (bytes32 => address) public values_address;
 
+    mapping (bytes32 =>bool) method_fail;
+
     // function values(bytes32 name) public returns (uint) {return values_uint[name];}
     // function values(bytes32 name) public returns (address) {return values_address[name];}
 
@@ -40,5 +42,9 @@ contract Mock {
     }
     function setReturn(bytes32 name, bool returnValue) public {
         values_bool_return[name] = returnValue;
+    }
+
+    function setFail(bytes32 name, bool flag) public {
+        method_fail[name] = flag;
     }
 }
