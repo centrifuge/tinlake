@@ -39,8 +39,9 @@ contract Mock {
     }
 
     function setReturn(bytes32 name, uint returnValue) public {
-    values_return[name] = returnValue;
-}
+        values_return[name] = returnValue;
+    }
+
     function setReturn(bytes32 name, bool returnValue) public {
         values_bool_return[name] = returnValue;
     }

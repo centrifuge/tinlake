@@ -67,7 +67,7 @@ contract CollectorTest is DSTest {
     
     function setUpLoan(uint loan, uint tokenId, uint debt) public {
         shelf.setLoanReturn(address(nft), tokenId);
-        pile.setLoanDebtReturn(debt);
+        pile.setReturn("debt_loan", debt);
     }
 
     function testSeizeCollect() public {

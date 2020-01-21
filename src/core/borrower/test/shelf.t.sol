@@ -64,8 +64,8 @@ contract ShelfTest is DSTest {
         shelf.borrow(loan_, wad_);
         
         assertEq(ceiling.calls("borrow"), 1);
-        assertEq(pile.callsAccrue(), 1);
-        assertEq(pile.callsIncDebt(), 1);
+        assertEq(pile.calls("accrue"), 1);
+        assertEq(pile.calls("incDebt"), 1);
         assertEq(shelf.balance(), wad_);
         uint loanBalance = shelf.balances(loan_);
         assertEq(loanBalance, wad_);
@@ -76,7 +76,7 @@ contract ShelfTest is DSTest {
         uint loanBalance = shelf.balances(loan_);
         assertEq(totalBalance, wad_);
         assertEq(loanBalance, wad_);
-        assertEq(pile.wad(), wad_);
+        assertEq(pile.values_uint("incDebt_currencyAmount"), wad_);
         
         shelf.withdraw(loan_, wad_, address(this));
 
@@ -89,11 +89,11 @@ contract ShelfTest is DSTest {
     }
 
     function _repay(uint loan_, uint wad_) internal {
-        pile.setLoanDebtReturn(wad_);
+        pile.setReturn("debt_loan", wad_);
         shelf.repay(loan_, wad_);
 
-        assertEq(pile.callsAccrue(), 2);
-        assertEq(pile.callsDecDebt(), 1);
+        assertEq(pile.calls("accrue"), 2);
+        assertEq(pile.calls("decDebt"), 1);
         assertEq(shelf.balance(), 0);
         assertEq(shelf.balances(loan_), 0);
         assertEq(ceiling.calls("repay"), 1);
@@ -104,11 +104,11 @@ contract ShelfTest is DSTest {
     }
 
     function _recover(uint loan_, address usr_, uint wad_, uint debt_) internal {
-        pile.setLoanDebtReturn(debt_);
+        pile.setReturn("debt_loan", debt_);
         shelf.recover(loan_, usr_, wad_);
 
-        assertEq(pile.callsAccrue(), 2);
-        assertEq(pile.callsDecDebt(), 2);
+        assertEq(pile.calls("accrue"), 2);
+        assertEq(pile.calls("decDebt"), 2);
 
         assertEq(currency.calls("transferFrom"), 2);
         assertEq(currency.values_address("transferFrom_from"), usr_);
@@ -248,7 +248,7 @@ contract ShelfTest is DSTest {
     function testUnlock() public {
         testLock();
 
-        pile.setLoanDebtReturn(0);
+        pile.setReturn("debt_loan", 0);
         shelf.unlock(loan);
 
         assertEq(nft.calls("transferFrom"), 2);
@@ -259,8 +259,7 @@ contract ShelfTest is DSTest {
 
     function testFailUnlock() public {
         // debt not repaid in pile
-        pile.setLoanDebtReturn(100);
+        pile.setReturn("debt_loan", 100);
         shelf.unlock(loan);
-
     }
 }
