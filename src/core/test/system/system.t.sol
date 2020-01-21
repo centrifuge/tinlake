@@ -15,64 +15,9 @@
 
 pragma solidity >=0.5.12;
 
-import "./test_utils.sol";
-import "./users/whitelisted_investor.sol";
+import "./system.sol";
 
-contract SystemTest is TestUtils, DSTest {
-    // users
-    AdminUser public  admin;
-    address      admin_;
-    User borrower;
-    address      borrower_;
-    WhitelistedInvestor public juniorInvestor;
-    address     public juniorInvestor_;
-
-    // hevm
-    Hevm public hevm;
-
-    function setUp() public {
-        // setup hevm
-        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-        hevm.warp(1234567);
-
-        // setup deployment
-
-        deployContracts();
-
-        // setup users
-        borrower = new User(address(borrowerDeployer.shelf()), address(lenderDeployer.distributor()), currency_, address(borrowerDeployer.pile()));
-        borrower_ = address(borrower);
-        admin = new AdminUser();
-        admin_ = address(admin);
-        admin.file(borrowerDeployer);
-        juniorInvestor = new WhitelistedInvestor(address(lenderDeployer.juniorOperator()), currency_, address(lenderDeployer.juniorERC20()));
-        juniorInvestor_ = address(juniorInvestor);
-
-        // give admin access rights to contract
-        // root only for this test setup
-        rootAdmin.relyBorrowAdmin(admin_);
-        rootAdmin.relyLenderAdmin(address(this));
-
-        // junior investor
-        WhitelistOperator juniorOperator = WhitelistOperator(address(lenderDeployer.juniorOperator()));
-        juniorOperator.relyInvestor(juniorInvestor_);
-        juniorOperator.relyInvestor(address(this));
-    }
-
-    function setupCurrencyOnLender(uint amount) public {
-        // mint currency
-        currency.mint(address(this), amount);
-        currency.approve(address(lenderDeployer.junior()), amount);
-
-        uint balanceBefore = lenderDeployer.juniorERC20().balanceOf(address(this));
-
-        // move currency into junior tranche
-        address operator_ = address(lenderDeployer.juniorOperator());
-        WhitelistOperator(operator_).supply(amount);
-
-//        // same amount of junior tokens
-        assertEq(lenderDeployer.juniorERC20().balanceOf(address(this)), balanceBefore + amount);
-    }
+contract STest is SystemTest {
 
    // Checks
     function checkAfterBorrow(uint tokenId, uint tBalance) public {
@@ -99,18 +44,12 @@ contract SystemTest is TestUtils, DSTest {
     }
 
     function borrow(uint loan, uint tokenId, uint principal) public {
-        borrower.doApproveNFT(collateralNFT, address(borrowerDeployer.shelf()));
-
+    
+        borrower.approveNFT(collateralNFT, address(borrowerDeployer.shelf()));
         setupCurrencyOnLender(principal);
-
-        // borrow transaction
-        borrower.doBorrow(loan, principal);
+//        // borrow transaction
+        borrower.borrow(loan, principal);
         checkAfterBorrow(tokenId, principal);
-    }
-
-    function supply(uint balance, uint amount) public {
-        currency.mint(juniorInvestor_, balance);
-        juniorInvestor.doSupply(amount);
     }
 
     function defaultLoan() public pure returns(uint principal, uint rate) {
@@ -157,8 +96,6 @@ contract SystemTest is TestUtils, DSTest {
 
         assertEq(ceiling_.values(loan), principal);
         borrow(loan, tokenId, principal);
-
-
         assertEq(ceiling_.values(loan), 0);
 
         hevm.warp(now + 10 days);
@@ -182,11 +119,11 @@ contract SystemTest is TestUtils, DSTest {
         uint tokenId = collateralNFT.issue(borrower_);
         uint loan = admin.doAdmit(collateralNFT_, tokenId, principal, borrower_);
 
-        borrower.doApproveNFT(collateralNFT, address(borrowerDeployer.shelf()));
+        borrower.approveNFT(collateralNFT, address(borrowerDeployer.shelf()));
 
         setupCurrencyOnLender(principal);
 
-        borrower.doBorrow(loan, principal);
+        borrower.borrow(loan, principal);
 
         checkAfterBorrow(tokenId, principal);
     }
@@ -260,10 +197,10 @@ contract SystemTest is TestUtils, DSTest {
             uint loan = whitelist(tokenId, collateralNFT_, principal, borrower_, rate);
             // collateralNFT whitelist
 
-            borrower.doApproveNFT(collateralNFT, address(borrowerDeployer.shelf()));
+            borrower.approveNFT(collateralNFT, address(borrowerDeployer.shelf()));
 
             setupCurrencyOnLender(principal);
-            borrower.doBorrow(loan, principal);
+            borrower.borrow(loan, principal);
             tBorrower += principal;
             emit log_named_uint("total", tBorrower);
           //  checkAfterBorrow(i, tBorrower);
@@ -281,7 +218,7 @@ contract SystemTest is TestUtils, DSTest {
 
             // repay transaction
             emit log_named_uint("repay", principal);
-            borrower.doRepay(i, principal, borrower_);
+            borrower.repay(i, principal, borrower_);
 
             distributorBalance += principal;
             checkAfterRepay(i, i, tTotal, distributorBalance);
@@ -295,35 +232,35 @@ contract SystemTest is TestUtils, DSTest {
         // create borrower collateral collateralNFT
         uint tokenId = collateralNFT.issue(borrower_);
         uint loan = admin.doAdmit(collateralNFT_, tokenId, principal, borrower_);
-        borrower.doApproveNFT(collateralNFT, address(borrowerDeployer.shelf()));
-        borrower.doBorrow(loan, principal);
+        borrower.approveNFT(collateralNFT, address(borrowerDeployer.shelf()));
+        borrower.borrow(loan, principal);
         checkAfterBorrow(tokenId, principal);
 
         // should fail
-        borrower.doBorrow(loan, principal);
+        borrower.borrow(loan, principal);
     }
 
     function testFailBorrowNonExistingToken() public {
-        borrower.doBorrow(42, 100);
+        borrower.borrow(42, 100);
         assertEq(currency.balanceOf(borrower_), 0);
     }
 
     function testFailBorrowNotWhitelisted() public {
         collateralNFT.issue(borrower_);
-        borrower.doBorrow(1, 100);
+        borrower.borrow(1, 100);
         assertEq(currency.balanceOf(borrower_), 0);
     }
 
     function testFailAdmitNonExistingcollateralNFT() public {
         uint loan = admin.doAdmit(collateralNFT_, 1, 100, borrower_);
-        borrower.doBorrow(loan, 100);
+        borrower.borrow(loan, 100);
         assertEq(currency.balanceOf(borrower_), 0);
     }
 
     function testFailBorrowcollateralNFTNotApproved() public {
         uint tokenId = collateralNFT.issue(borrower_);
         uint loan = admin.doAdmit(collateralNFT_, tokenId, 100, borrower_);
-        borrower.doBorrow(loan, 100);
+        borrower.borrow(loan, 100);
         assertEq(currency.balanceOf(borrower_), 100);
     }
 }

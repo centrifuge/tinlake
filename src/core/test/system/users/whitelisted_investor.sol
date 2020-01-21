@@ -15,7 +15,7 @@ pragma solidity >=0.5.12;
 
 import "ds-test/test.sol";
 import "../../../lender/deployer.sol";
-import "../test_utils.sol";
+import "../interfaces.sol";
 
 contract WhitelistedInvestor is DSTest {
     WhitelistOperator operator;
