@@ -15,20 +15,9 @@
 
 pragma solidity >=0.5.12;
 
-import "../setup.sol";
-import "../users/borrower.sol";
-import "../users/admin.sol";
+import "../system.sol";
 
-
-contract IssueTest is TestSetup {
-    Borrower borrower;
-    address borrower_;
-
-    function setUp() public {
-        deployContracts();
-        borrower = new Borrower(address(borrowerDeployer.shelf()), address(lenderDeployer.distributor()), currency_, address(borrowerDeployer.pile()));
-        borrower_ = address(borrower);
-    }
+contract IssueTest is SystemTest {
 
     function issueLoan(uint tokenId, bytes32 lookupId) public {
         assertPreCondition(tokenId, lookupId);

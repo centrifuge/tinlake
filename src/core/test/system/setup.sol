@@ -122,6 +122,5 @@ contract TestSetup is DSTest{
 
         lenderDeployer.deployJuniorOperator();
         lenderDeployer.deploy();
-
     }
 }

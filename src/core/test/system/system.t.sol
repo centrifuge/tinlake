@@ -15,64 +15,9 @@
 
 pragma solidity >=0.5.12;
 
-import "./setup.sol";
-import "./users/borrower.sol";
-import "./users/admin.sol";
+import "./system.sol";
 
-
-contract SystemTest is TestSetup {
-    // users
-    AdminUser public admin;
-    address admin_;
-    Borrower borrower;
-    address borrower_;
-    // todo add investor contract
-
-    // hevm
-    Hevm public hevm;
-
-    function setUp() public {
-        // setup hevm
-        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-        hevm.warp(1234567);
-
-        // setup deployment
-
-        deployContracts();
-
-        // setup users
-        borrower = new Borrower(address(borrowerDeployer.shelf()), address(lenderDeployer.distributor()), currency_, address(borrowerDeployer.pile()));
-        admin = new AdminUser(address(borrowerDeployer.shelf()), address(borrowerDeployer.pile()), address(borrowerDeployer.principal()), address(borrowerDeployer.title()));
-        borrower_ = address(borrower);
-        admin_ = address(admin);
-
-        // give admin access rights to contract
-        // root only for this test setup
-        rootAdmin.relyBorrowAdmin(admin_);
-
-        // todo replace with investor contract
-        rootAdmin.relyLenderAdmin(address(this));
-
-        // give invest rights to test
-        WhitelistOperator juniorOperator = WhitelistOperator(address(lenderDeployer.juniorOperator()));
-        juniorOperator.relyInvestor(address(this));
-
-    }
-
-    function setupCurrencyOnLender(uint amount) public {
-        // mint currency
-        currency.mint(address(this), amount);
-        currency.approve(address(lenderDeployer.junior()), amount);
-
-        uint balanceBefore = lenderDeployer.juniorERC20().balanceOf(address(this));
-
-        // move currency into junior tranche
-        address operator_ = address(lenderDeployer.juniorOperator());
-        WhitelistOperator(operator_).supply(amount);
-
-//       // same amount of junior tokens
-        assertEq(lenderDeployer.juniorERC20().balanceOf(address(this)), balanceBefore + amount);
-    }
+contract STest is SystemTest {
 
    // Checks
     function checkAfterBorrow(uint tokenId, uint tBalance) public {
@@ -158,7 +103,6 @@ contract SystemTest is TestSetup {
         // borrower needs some currency to pay rate
         setupRepayReq();
         uint distributorShould = borrowerDeployer.pile().debt(loan) + currdistributorBal();
-
         // close without defined amount
         borrower.doClose(loan, borrower_);
         uint totalT = uint(currency.totalSupply());
@@ -213,7 +157,6 @@ contract SystemTest is TestSetup {
         // borrower needs some currency to pay rate
         setupRepayReq();
         uint distributorShould = borrowerDeployer.pile().debt(loan) + currdistributorBal();
-
         // close without defined amount
         borrower.doClose(loan, borrower_);
 
