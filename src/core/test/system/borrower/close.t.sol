@@ -16,8 +16,18 @@
 pragma solidity >=0.5.12;
 
 import "../system.sol";
+import "../users/borrower.sol";
 
 contract CloseTest is SystemTest {
+
+    Borrower borrower;
+    address borrower_;
+        
+    function setUp() public {
+        baseSetup();
+        borrower = new Borrower(address(borrowerDeployer.shelf()), address(lenderDeployer.distributor()), currency_, address(borrowerDeployer.pile()));
+        borrower_ = address(borrower);
+    }
     
     function closeLoan(uint loanId, uint tokenId, bytes32 lookupId) public {
         assertPreCondition(loanId, tokenId, lookupId);
