@@ -90,7 +90,13 @@ contract Collector is DSNote, Auth {
         shelf.claim(loan, address(this));
     }
 
-    function collect(uint loan, address buyer) public auth_collector {
+    function collect(uint loan) public auth_collector {
+        _collect(loan, msg.sender);
+    }
+    function collect(uint loan, address buyer) public auth {
+        _collect(loan, buyer);
+    }
+    function _collect(uint loan, address buyer) internal {
         require(buyer == options[loan].buyer || options[loan].buyer == address(0));
         (address registry, uint nft) = shelf.token(loan);
         require(options[loan].nftPrice > 0, "no-nft-price-defined");
