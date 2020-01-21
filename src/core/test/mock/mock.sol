@@ -46,6 +46,16 @@ contract Mock {
         values_bool_return[name] = returnValue;
     }
 
+    function setReturn(bytes32 name, bool flag, uint value) public {
+        setReturn(name, flag);
+        setReturn(name, value);
+    }
+
+    function setReturn(bytes32 name, address addr, uint value) public {
+        setReturn(name, addr);
+        setReturn(name, value);
+    }
+
     function setReturn(bytes32 name, address returnValue) public {
         values_address_return[name] = returnValue;
     }
