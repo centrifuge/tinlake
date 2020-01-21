@@ -30,7 +30,6 @@ contract IssueTest is SystemTest {
     }
 
     function issueLoan(uint tokenId, bytes32 lookupId) public {
-        assertPreCondition(tokenId, lookupId);
         uint loanId = borrower.issue(collateralNFT_, tokenId);
         assertPostCondition(loanId, tokenId, lookupId);
     }
@@ -53,6 +52,7 @@ contract IssueTest is SystemTest {
 
     function testIssueLoan() public {
         (uint tokenId, bytes32 lookupId) = issueNFT(borrower_);
+        assertPreCondition(tokenId, lookupId);
         issueLoan(tokenId, lookupId); 
     }
 

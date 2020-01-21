@@ -30,7 +30,6 @@ contract LockTest is SystemTest {
     }
     
     function lockNFT(uint loanId, uint tokenId) public {
-        assertPreCondition(loanId, tokenId);
         borrower.lock(loanId);
         assertPostCondition(loanId, tokenId);
     }
@@ -53,6 +52,7 @@ contract LockTest is SystemTest {
         (uint tokenId, ) = issueNFT(borrower_);
         borrower.approveNFT(collateralNFT, address(shelf));
         uint loanId = borrower.issue(collateralNFT_, tokenId);
+        assertPreCondition(loanId, tokenId);
         lockNFT(loanId, tokenId);
     }
 
