@@ -42,8 +42,8 @@ contract ShelfTest is DSTest {
     }
 
     function _issue(uint256 tokenId_, uint loan_) internal {
-        title.setIssueReturn(loan_);
-        title.setOwnerOfReturn(address(this));
+        title.setReturn("issue", loan_);
+        title.setReturn("ownerOf", address(this));
 
         uint loanId = shelf.issue(address(nft), tokenId_);
         assertEq(loanId, loan_);
@@ -202,12 +202,12 @@ contract ShelfTest is DSTest {
 
         shelf.close(loan);
         assertEq(shelf.nftlookup(keccak256(abi.encodePacked(address(nft), tokenId))), 0);
-        assertEq(title.closeCalls(), 1);
-        assertEq(title.tkn(), 1);
+        assertEq(title.calls("close"), 1);
+        assertEq(title.values_uint("close_loan"), 1);
 
         // issue second loan with same tokenId
-        title.setIssueReturn(secondLoan);
-        title.setOwnerOfReturn(address(this));
+        title.setReturn("issue", secondLoan);
+        title.setReturn("ownerOf", address(this));
 
         uint loanId = shelf.issue(address(nft), tokenId);
         assertEq(loanId, secondLoan);
