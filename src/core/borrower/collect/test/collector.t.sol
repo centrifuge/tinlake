@@ -50,9 +50,9 @@ contract CollectorTest is DSTest {
 
     function collect(uint loan, uint tokenId, uint price) internal {
         collector.collect(loan, address(this));
-        assertEq(nft.transferFromCalls(), 1);
-        assertEq(nft.to(), address(this));
-        assertEq(nft.tokenId(), tokenId);
+        assertEq(nft.calls("transferFrom"), 1);
+        assertEq(nft.values_address("transferFrom_to"), address(this));
+        assertEq(nft.values_uint("transferFrom_tokenId"), tokenId);
         assertEq(shelf.callsRecover(), 1);
         assertEq(shelf.wad(), price);
         assertEq(shelf.usr(), address(this));

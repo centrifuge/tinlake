@@ -1,44 +1,26 @@
 pragma solidity >=0.5.12;
 
-contract NFTMock {
-    //calls
-    uint public transferFromCalls;
-    uint public mintCalls;
+import "../../../test/mock/mock.sol";
 
-    uint public tokenId;
-    address public from;
-    address public to;
-    address public owner;
-
-    function reset() public {
-        transferFromCalls = 0;
-        mintCalls = 0;
-        tokenId = 0;
-        from = address(0);
-        to = address(0);
-        owner = address(0);
+contract NFTMock is Mock {
+    function ownerOf(uint tokenId) public returns (address) {
+        calls["ownerOf"]++;
+        values_uint["ownerOf_tokenId"] = tokenId;
+        return values_address_return["ownerOf"];
     }
+    function transferFrom(address from, address to, uint tokenId) public {
+        calls["transferFrom"]++;
+        values_address["transferFrom_from"] = from;
+        values_address["transferFrom_to"] = to;
 
-    //returns
-    address public ownerOfReturn; function setOwnerOfReturn(address ownerOfReturn_) public {ownerOfReturn=ownerOfReturn_;}
+        //mock nft transfer behaviour
+        values_address_return["ownerOf"] = to;
 
-    function ownerOf(uint256 tokenId_) public view returns (address) {
-        return ownerOfReturn;
-
+        values_uint["transferFrom_tokenId"] = tokenId;
     }
-    function transferFrom(address from_, address to_, uint256 tokenId_) public {
-        from = from_;
-        to = to_;
-        tokenId = tokenId_;
-
-        ownerOfReturn = to_; //mock nft transfer behaviour
-
-        transferFromCalls++;
-
-    }
-    function mint(address owner_, uint256 tokenId_) public {
-        owner = owner_;
-        tokenId = tokenId_;
-        mintCalls++;
+    function mint(address owner, uint256 tokenId) public {
+        calls["mint"]++;
+        values_address["mint_owner"] = owner;
+        values_uint["mint_tokenId"] = tokenId;
     }
 }

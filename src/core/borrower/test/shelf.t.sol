@@ -44,7 +44,7 @@ contract ShelfTest is DSTest {
     function _issue(uint256 tokenId_, uint loan_) internal {
         title.setIssueReturn(loan_);
         title.setOwnerOfReturn(address(this));
-    
+
         uint loanId = shelf.issue(address(nft), tokenId_);
         assertEq(loanId, loan_);
         assertEq(shelf.nftlookup(keccak256(abi.encodePacked(address(nft), tokenId_))), loan_);
@@ -53,10 +53,11 @@ contract ShelfTest is DSTest {
     function _lock(uint256 tokenId_, uint loan_) internal {
         shelf.lock(loan_, address(this));
 
-        assertEq(nft.transferFromCalls(), 1);
-        assertEq(nft.from(), address(this));
-        assertEq(nft.to(), address(shelf));
-        assertEq(nft.tokenId(), tokenId_);
+        assertEq(nft.calls("transferFrom"), 1);
+        assertEq(nft.values_address("transferFrom_to"), address(shelf));
+        assertEq(nft.values_address("transferFrom_from"), address(this));
+        assertEq(nft.values_uint("transferFrom_tokenId"), tokenId);
+
     }
 
     function _borrow(uint loan_, uint wad_) internal {
@@ -131,7 +132,7 @@ contract ShelfTest is DSTest {
     }
 
     function testFailBorrowNFTNotLocked() public {
-        nft.setOwnerOfReturn(address(this));
+        nft.setReturn("ownerOf", address(this));
         _issue(tokenId,loan);
         _borrow(loan, wad);
     }
@@ -143,7 +144,7 @@ contract ShelfTest is DSTest {
     }
 
     function testFailWithdrawNFTNotLocked() public {
-        nft.setOwnerOfReturn(address(this));
+        nft.setReturn("ownerOf", address(this));
         _issue(tokenId,loan);
         _borrow(loan, wad);
         shelf.claim(loan, address(1));
@@ -170,7 +171,7 @@ contract ShelfTest is DSTest {
     }
 
     function testFailRepayNFTNotLocked() public {
-        nft.setOwnerOfReturn(address(this));
+        nft.setReturn("ownerOf", address(this));
         _issue(tokenId,loan);
         _borrow(loan, wad);
         _withdraw(loan, wad);
@@ -189,13 +190,13 @@ contract ShelfTest is DSTest {
     }
 
     function testIssue() public {
-       nft.setOwnerOfReturn(address(this));
+        nft.setReturn("ownerOf", address(this));
        _issue(tokenId, loan);
     }
 
     function testMultiple_Issue() public {
         uint secondLoan = 2;
-        nft.setOwnerOfReturn(address(this));
+        nft.setReturn("ownerOf", address(this));
 
         _issue(tokenId, loan);
 
@@ -204,19 +205,26 @@ contract ShelfTest is DSTest {
         assertEq(title.closeCalls(), 1);
         assertEq(title.tkn(), 1);
 
-        _issue(tokenId, secondLoan);
+        // issue second loan with same tokenId
+        title.setIssueReturn(secondLoan);
+        title.setOwnerOfReturn(address(this));
+
+        uint loanId = shelf.issue(address(nft), tokenId);
+        assertEq(loanId, secondLoan);
+        nft.setReturn("ownerOf", secondLoan);
+        assertEq(shelf.nftlookup(keccak256(abi.encodePacked(address(nft), tokenId))), secondLoan);
     }
 
     function testFailMultiple_Issue() public {
         uint secondLoan = 2;
-        nft.setOwnerOfReturn(address(this));
+        nft.setReturn("ownerOf", address(this));
 
         _issue(tokenId, loan);
         _issue(tokenId, secondLoan);
     }
 
     function testLock() public {
-        nft.setOwnerOfReturn(address(this));
+        nft.setReturn("ownerOf", address(this));
         _issue(tokenId, loan);
         _lock(tokenId, loan);
     }
@@ -232,19 +240,21 @@ contract ShelfTest is DSTest {
 
     function testFailDepositNotNFTOwner() public {
         // tokenId minted at some address
-        nft.setOwnerOfReturn(address(1));
+        nft.setReturn("ownerOf", address(1));
         shelf.file(loan, address(nft), tokenId);
         _lock(tokenId, loan);
     }
 
     function testUnlock() public {
         testLock();
-        nft.reset();
+
         pile.setLoanDebtReturn(0);
-        shelf.unlock(1);
-        assertEq(nft.from(), address(shelf));
-        assertEq(nft.to(), address(this));
-        assertEq(nft.transferFromCalls(), 1);
+        shelf.unlock(loan);
+
+        assertEq(nft.calls("transferFrom"), 2);
+        assertEq(nft.values_address("transferFrom_to"), address(this));
+        assertEq(nft.values_address("transferFrom_from"), address(shelf));
+        assertEq(nft.values_uint("transferFrom_tokenId"), tokenId);
     }
 
     function testFailUnlock() public {
