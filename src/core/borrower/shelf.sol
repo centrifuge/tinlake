@@ -107,13 +107,10 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     // --- Shelf: Loan actions ---
     function issue(address registry, uint token) public returns (uint) {
         require(NFTLike(registry).ownerOf(token) == msg.sender, "nft-not-owned");
-
         bytes32 nft = keccak256(abi.encodePacked(registry, token));
         require(nftlookup[nft] == 0, "nft-in-use");
-
         uint loan = title.issue(msg.sender);
         nftlookup[nft] = loan;
-
         shelf[loan].registry = registry;
         shelf[loan].tokenId = token;
 
@@ -122,6 +119,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
 
     function close(uint loan) public {
         require(pile.debt(loan) == 0, "outstanding-debt");
+        require(!nftLocked(loan));
         (address registry, uint tokenId) = token(loan);
         require(title.ownerOf(loan) == msg.sender || NFTLike(registry).ownerOf(tokenId) == msg.sender, "not loan or nft owner");
         title.close(loan);
@@ -181,7 +179,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     }
 
     // --- NFT actions ---
-    function lock(uint loan, address usr) public owner(loan) {
+    function lock(uint loan) public owner(loan) {
         NFTLike(shelf[loan].registry).transferFrom(msg.sender, address(this), shelf[loan].tokenId);
     }
  

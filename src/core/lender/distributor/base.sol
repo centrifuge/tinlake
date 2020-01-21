@@ -34,6 +34,7 @@ contract ShelfLike {
 contract CurrencyLike {
     function transferFrom(address from, address to, uint amount) public;
     function balanceOf(address) public returns(uint);
+    function approve(address, uint) public;
 }
 
 
@@ -140,7 +141,7 @@ contract BaseDistributor is Math, DSNote, Auth {
     /// repays according to a waterfall model
     /// @param available total available currency to repay the tranches
     /// @dev available denominated in WAD (10^18)
-    function _repayTranches(uint available) public auth {
+    function _repayTranches(uint available) internal {
         if(available == 0) {
             return;
         }
@@ -155,6 +156,7 @@ contract BaseDistributor is Math, DSNote, Auth {
 
         if (available > 0) {
             // junior gets the rest
+            currency.approve(address(junior), available);
             junior.repay(address(this), available);
         }
     }
@@ -170,6 +172,7 @@ contract BaseDistributor is Math, DSNote, Auth {
             currencyAmount = available;
         }
         if (currencyAmount > 0) {
+            currency.approve(address(senior), currencyAmount);
             tranche.repay(address(this), currencyAmount);
         }
         return currencyAmount;

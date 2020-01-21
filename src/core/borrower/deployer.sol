@@ -186,6 +186,7 @@ contract BorrowerDeployer is Auth {
         // shelf allowed to call
         pile.rely(shelf_);
         principal.rely(shelf_);
+        title.rely(shelf_);
 
         // collector allowed to call
         shelf.rely(collector_);

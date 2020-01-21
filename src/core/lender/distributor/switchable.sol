@@ -19,7 +19,6 @@ import "ds-note/note.sol";
 import "./base.sol";
 
 contract SwitchableDistributor is BaseDistributor {
-    // ERC20
     bool public borrowFromTranches;
 
     constructor(address currency_) BaseDistributor(currency_) public {
