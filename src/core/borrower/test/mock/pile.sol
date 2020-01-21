@@ -7,10 +7,6 @@ contract PileMock is Mock {
         return call("total");
     }
 
-//    function rates(uint loan) public view returns(uint, uint, uint, uint) {
-//        return (rateReturn.pie, rateReturn.chi, rateReturn.speed, rateReturn.rho);
-//    }
-
     function setRate(uint loan, uint rate) public {
         values_uint["setRate_loan"] = loan;
         values_uint["setRate_rate"] = rate;
