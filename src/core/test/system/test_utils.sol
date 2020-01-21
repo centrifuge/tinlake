@@ -26,7 +26,6 @@ import "../simple/token.sol";
 import "tinlake-erc20/erc20.sol";
 
 
-
 contract ERC20Like {
     function transferFrom(address, address, uint) public;
     function mint(address, uint) public;
@@ -72,11 +71,8 @@ contract User is DSTest{
     }
 
     function doRepay(uint loan, uint wad, address usr) public {
-        emit log_named_uint("loan", wad);
         shelf.repay(loan, wad);
-        emit log_named_uint("loan", wad);
         shelf.unlock(loan);
-        emit log_named_uint("loan", wad);
         distributor.balance();
     }
 
@@ -199,6 +195,5 @@ contract TestUtils  {
         lenderDeployer.deployJuniorOperator();
 
         lenderDeployer.deploy();
-
     }
 }

@@ -96,6 +96,7 @@ contract DistributorLike {
     function rely(address usr) public;
     function deny(address usr) public;
     function depend (bytes32 what, address addr) public;
+    function file(bytes32 what, bool flag) public;
     function balance() public;
 }
 
@@ -164,7 +165,6 @@ contract LenderDeployer is Auth {
     function deployDistributor() public auth {
         distributor = DistributorLike(distributorFab.newDistributor(currency));
         distributor.rely(rootAdmin);
-
     }
 
     function deploySeniorTranche(string memory symbol, string memory name) public auth {

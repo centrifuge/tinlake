@@ -16,6 +16,7 @@
 pragma solidity >=0.5.12;
 
 import "./test_utils.sol";
+import "./users/whitelisted_investor.sol";
 
 contract SystemTest is TestUtils, DSTest {
     // users
@@ -23,7 +24,8 @@ contract SystemTest is TestUtils, DSTest {
     address      admin_;
     User borrower;
     address      borrower_;
-    // todo add investor contract
+    WhitelistedInvestor public juniorInvestor;
+    address     public juniorInvestor_;
 
     // hevm
     Hevm public hevm;
@@ -43,18 +45,18 @@ contract SystemTest is TestUtils, DSTest {
         admin = new AdminUser();
         admin_ = address(admin);
         admin.file(borrowerDeployer);
+        juniorInvestor = new WhitelistedInvestor(address(lenderDeployer.juniorOperator()), currency_, address(lenderDeployer.juniorERC20()));
+        juniorInvestor_ = address(juniorInvestor);
 
         // give admin access rights to contract
         // root only for this test setup
         rootAdmin.relyBorrowAdmin(admin_);
-
-        // todo replace with investor contract
         rootAdmin.relyLenderAdmin(address(this));
 
-        // give invest rights to test
+        // junior investor
         WhitelistOperator juniorOperator = WhitelistOperator(address(lenderDeployer.juniorOperator()));
+        juniorOperator.relyInvestor(juniorInvestor_);
         juniorOperator.relyInvestor(address(this));
-
     }
 
     function setupCurrencyOnLender(uint amount) public {
@@ -101,9 +103,14 @@ contract SystemTest is TestUtils, DSTest {
 
         setupCurrencyOnLender(principal);
 
-//        // borrow transaction
+        // borrow transaction
         borrower.doBorrow(loan, principal);
         checkAfterBorrow(tokenId, principal);
+    }
+
+    function supply(uint balance, uint amount) public {
+        currency.mint(juniorInvestor_, balance);
+        juniorInvestor.doSupply(amount);
     }
 
     function defaultLoan() public pure returns(uint principal, uint rate) {
@@ -159,7 +166,6 @@ contract SystemTest is TestUtils, DSTest {
         // borrower needs some currency to pay rate
         setupRepayReq();
         uint distributorShould = borrowerDeployer.pile().debt(loan) + currdistributorBal();
-
         // close without defined amount
         borrower.doClose(loan, borrower_);
         uint totalT = uint(currency.totalSupply());
@@ -214,7 +220,6 @@ contract SystemTest is TestUtils, DSTest {
         // borrower needs some currency to pay rate
         setupRepayReq();
         uint distributorShould = borrowerDeployer.pile().debt(loan) + currdistributorBal();
-
         // close without defined amount
         borrower.doClose(loan, borrower_);
 
