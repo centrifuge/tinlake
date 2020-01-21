@@ -30,7 +30,6 @@ contract IssueTest is SystemTest {
     }
 
     function issueLoan(uint tokenId, bytes32 lookupId) public {
-        assertPreCondition(tokenId, lookupId);
         uint loanId = borrower.issue(collateralNFT_, tokenId);
         assertPostCondition(loanId, tokenId, lookupId);
     }
@@ -53,6 +52,7 @@ contract IssueTest is SystemTest {
 
     function testIssueLoan() public {
         (uint tokenId, bytes32 lookupId) = issueNFT(borrower_);
+        assertPreCondition(loanId, tokenId, lookupId);
         issueLoan(tokenId, lookupId); 
     }
 
@@ -60,7 +60,7 @@ contract IssueTest is SystemTest {
         (uint tokenId, bytes32 lookupId) = issueNFT(borrower_);
         issueLoan(tokenId, lookupId); 
 
-        // issue second loan agains same nft
+        // issue second loan against same nft
         uint secondLoanId = borrower.issue(collateralNFT_, tokenId);
         assertPostCondition(secondLoanId, tokenId, lookupId);
     }

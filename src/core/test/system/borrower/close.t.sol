@@ -30,7 +30,6 @@ contract CloseTest is SystemTest {
     }
     
     function closeLoan(uint loanId, uint tokenId, bytes32 lookupId) public {
-        assertPreCondition(loanId, tokenId, lookupId);
         borrower.close(loanId);
         assertPostCondition(loanId, tokenId, lookupId);
     }
@@ -60,7 +59,8 @@ contract CloseTest is SystemTest {
         uint loanId = borrower.issue(collateralNFT_, tokenId);
         // transfer nft to random user / borrower still loanOwner
         borrower.approveNFT(collateralNFT, address(this));
-        collateralNFT.transferFrom(borrower_, address(this), tokenId);  
+        collateralNFT.transferFrom(borrower_, address(this), tokenId);
+        assertPreCondition(loanId, tokenId, lookupId);
         closeLoan(loanId, tokenId, lookupId);
     }
 
