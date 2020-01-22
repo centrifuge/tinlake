@@ -82,6 +82,7 @@ contract BaseDistributor is Math, DSNote, Auth {
             }
             // move junior reserve to distributor -> senior
             currency.transferFrom(address(junior), address(this), amount);
+            currency.approve(address(senior), amount);
             senior.repay(address(this), amount);
         }
     }
