@@ -34,7 +34,6 @@ contract TestSetup {
     Pile pile;
     Title title;
     Principal ceiling;
-    DistributorLike distributor;
     // CollectorLike collector;
     // ThresholdLike threshold;
     // PricePoolLike pricePool;
