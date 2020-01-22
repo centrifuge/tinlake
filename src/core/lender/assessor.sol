@@ -42,9 +42,6 @@ contract Assessor is Math, DSNote, Auth {
 
     PoolLike public pool;
 
-    // initial net asset value
-    uint public initialNAV;
-
     // amounts of token for a token price of ONE
     // constant factor multiplied with the token price
     uint public tokenAmountForONE;
