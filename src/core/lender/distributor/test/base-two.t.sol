@@ -94,9 +94,7 @@ contract BaseDistributorTwoTranches is DSTest, Math {
     }
 
     function checkShelfTransferFrom(address from, address to, uint amount) public {
-        // junior -> distributor
         // shelf -> distributor
-
         assertEq(currency.calls("transferFrom"), 1);
         assertEq(currency.values_address("transferFrom_from"), from);
         assertEq(currency.values_address("transferFrom_to"), to);
