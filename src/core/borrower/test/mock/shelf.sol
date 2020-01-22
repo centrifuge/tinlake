@@ -13,7 +13,7 @@ contract ShelfMock {
     uint public callsRepay;
     uint public callsRecover;
     uint calls;
-    bool returnRequestWant;
+    bool public returnRequestWant;
     uint returnAmount;
 
     uint public    loan;

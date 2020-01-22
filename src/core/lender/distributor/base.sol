@@ -80,8 +80,9 @@ contract BaseDistributor is Math, DSNote, Auth {
             if (amount > juniorBalance) {
                 amount = juniorBalance;
             }
-            // move junior reserve to senior
-            senior.repay(address(junior), amount);
+            // move junior reserve to distributor -> senior
+            currency.transferFrom(address(junior), address(this), amount);
+            senior.repay(address(this), amount);
         }
     }
 

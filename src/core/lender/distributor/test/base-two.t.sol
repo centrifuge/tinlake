@@ -94,7 +94,14 @@ contract BaseDistributorTwoTranches is DSTest, Math {
     }
 
     function checkShelfTransferFrom(address from, address to, uint amount) public {
-        assertEq(currency.calls("transferFrom"), 1);
+        // junior -> distributor
+        // shelf -> distributor
+
+        if (senior.values_return("debt") > 0 && junior.values_return("balance") > 0) {
+           assertEq(currency.calls("transferFrom"), 2);
+        } else {
+           assertEq(currency.calls("transferFrom"), 1);
+        }
         assertEq(currency.values_address("transferFrom_from"), from);
         assertEq(currency.values_address("transferFrom_to"), to);
         assertEq(currency.values_uint("transferFrom_amount"), amount);
@@ -138,7 +145,7 @@ contract BaseDistributorTwoTranches is DSTest, Math {
         assertEq(senior.values_address("repay_usr"), expectedSeniorRepayUsr);
 
         if (seniorRepayCalls == 2) {
-            assertEq(senior.values_address("repay_usr"), junior_);
+            assertEq(senior.values_address("repay_usr"), distributor_);
             assertEq(senior.values_uint("repay_amount_2"), expectedSecondSeniorRepay);
             assertEq(senior.values_address("repay_usr_2"), distributor_);
 
@@ -223,7 +230,7 @@ contract BaseDistributorTwoTranches is DSTest, Math {
         // junior -> senior 70 ether
         assertEq(senior.calls("repay"), 1);
         assertEq(senior.values_uint("repay_amount"), 70 ether);
-        assertEq(senior.values_address("repay_usr"), junior_);
+        assertEq(senior.values_address("repay_usr"), distributor_);
     }
 
     function testBorrowTakeAll() public {
@@ -338,7 +345,7 @@ contract BaseDistributorTwoTranches is DSTest, Math {
         uint expectedJuniorRepay = 100 ether;
         // received from the first transfer
         uint expectedSeniorRepay = 50 ether;
-        address expectedSeniorRepayUsr = junior_;
+        address expectedSeniorRepayUsr = distributor_;
 
 
         // only one senior repay call
@@ -357,7 +364,7 @@ contract BaseDistributorTwoTranches is DSTest, Math {
         // junior -> senior 50 ether  (senior fully repaid)
         // available -> junior 100 ether (all)
         uint expectedJuniorRepay = 100 ether;
-        address expectedSeniorRepayUsr = junior_;
+        address expectedSeniorRepayUsr = distributor_;
         // received from the first transfer
         uint expectedSeniorRepay = 50 ether;
 
@@ -378,7 +385,7 @@ contract BaseDistributorTwoTranches is DSTest, Math {
         // available -> senior 40 ether (senior debt repaid)
         // available -> junior 60 ether (the rest)
         uint expectedSeniorRepay = 10 ether;
-        address expectedSeniorRepayUsr = junior_;
+        address expectedSeniorRepayUsr = distributor_;
         uint expectedJuniorRepay = 60 ether;
         uint expectedSecondSeniorRepay = 40 ether;
 
@@ -389,7 +396,7 @@ contract BaseDistributorTwoTranches is DSTest, Math {
 
     function testRepayScenarioD() public {
         // Repay Scenario D: high senior debt partial repaid by junior and available
-        // no payement to junior
+        // no payment to junior
         uint amount = 100 ether;
         uint balanceJunior = 10 ether;
         uint debtSeniorFirstCall = 50 ether;
@@ -400,7 +407,7 @@ contract BaseDistributorTwoTranches is DSTest, Math {
         // available -> senior 40 ether (senior debt repaid)
         // available -> junior 60 ether (the rest)
         uint expectedSeniorRepay = 10 ether;
-        address expectedSeniorRepayUsr = junior_;
+        address expectedSeniorRepayUsr = distributor_;
         uint expectedSecondSeniorRepay = 100 ether;
 
         shelf.setReturn("balanceRequest", !requestWant, amount);
@@ -421,7 +428,7 @@ contract BaseDistributorTwoTranches is DSTest, Math {
         assertEq(senior.values_address("repay_usr"), expectedSeniorRepayUsr);
 
 
-        assertEq(senior.values_address("repay_usr"), junior_);
+        assertEq(senior.values_address("repay_usr"), distributor_);
         assertEq(senior.values_uint("repay_amount_2"), expectedSecondSeniorRepay);
         assertEq(senior.values_address("repay_usr_2"), distributor_);
     }
