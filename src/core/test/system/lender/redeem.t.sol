@@ -20,8 +20,16 @@ import {SwitchableDistributor} from "../../../lender/distributor/switchable.sol"
 
 contract RedeemTest is SystemTest {
 
+    Investor juniorInvestor;
+    address  juniorInvestor_;
+
     function setUp() public {
         baseSetup();
+        WhitelistOperator juniorOperator = WhitelistOperator(lenderDeployer.juniorOperator());
+        juniorInvestor = new Investor(address(juniorOperator), currency_, address(lenderDeployer.juniorERC20()));
+        juniorInvestor_ = address(juniorInvestor);
+
+        juniorOperator.relyInvestor(juniorInvestor_);
     }
 
     function supply(uint balance, uint amount) public {
@@ -42,4 +50,24 @@ contract RedeemTest is SystemTest {
         assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), 0);
         assertEq(currency.balanceOf(juniorInvestor_), investorBalance);
     }
+
+//    function assertPreCondition(uint loanId, uint tokenId, bytes32 lookupId) public {
+//        // assert: borrower owner of loan or owner of nft
+//        assert(title.ownerOf(loanId) == borrower_ || collateralNFT.ownerOf(tokenId) == borrower_);
+//        // assert: loan has been issued
+//        assert(shelf.nftlookup(lookupId) > 0);
+//        // assert: nft not locked anymore
+//        assert(!shelf.nftLocked(loanId));
+//        // assert: loan has no open debt
+//        assert(pile.debt(loanId) == 0);
+//    }
+//
+//    function assertPostCondition(uint loanId, uint tokenId, bytes32 lookupId) public {
+//        // assert: nft + loan removed nftlookup
+//        assertEq(shelf.nftlookup(lookupId), 0);
+//
+//        // TODO: assert: loan burned => owner = address(0)
+//        // current title implementation reverts if loan owner => address(0)
+//        //assertEq(title.ownerOf(loanId), address(0));
+//    }
 }

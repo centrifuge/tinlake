@@ -24,6 +24,7 @@ import {Tranche} from "./tranche/tranche.sol";
 import {SeniorTranche} from "./tranche/senior_tranche.sol";
 import {SwitchableDistributor} from "./distributor/switchable.sol";
 import "tinlake-erc20/erc20.sol";
+import "../test/system/interfaces.sol";
 
 contract TrancheFab {
     function newTranche(address currency, address token) public returns (Tranche tranche) {
@@ -92,18 +93,18 @@ contract SwitchableDistributorFab {
 
 // todo add BaseDistributorFab
 
-contract DistributorLike {
-    function rely(address usr) public;
-    function deny(address usr) public;
-    function depend (bytes32 what, address addr) public;
-    function file(bytes32 what, bool flag) public;
-    function balance() public;
-}
-
-contract OperatorLike {
-    function rely(address usr) public;
-    function deny(address usr) public;
-}
+//contract DistributorLike {
+//    function rely(address usr) public;
+//    function deny(address usr) public;
+//    function depend (bytes32 what, address addr) public;
+//    function file(bytes32 what, bool flag) public;
+//    function balance() public;
+//}
+//
+//contract OperatorLike {
+//    function rely(address usr) public;
+//    function deny(address usr) public;
+//}
 
 // Simple Lender only deploys a SimpleDistributor as lender module
 

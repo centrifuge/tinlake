@@ -19,8 +19,16 @@ import "../system.t.sol";
 
 contract SupplyTest is SystemTest {
 
+    Investor juniorInvestor;
+    address  juniorInvestor_;
+
     function setUp() public {
         baseSetup();
+        WhitelistOperator juniorOperator = lenderDeployer.juniorOperator();
+        juniorInvestor = new Investor(address(juniorOperator), currency_, address(lenderDeployer.juniorERC20()));
+        juniorInvestor_ = address(juniorInvestor);
+
+        juniorOperator.relyInvestor(juniorInvestor_);
     }
     
     function supply(uint balance, uint amount) public {
