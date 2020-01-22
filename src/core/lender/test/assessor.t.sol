@@ -20,6 +20,8 @@ import "tinlake-math/math.sol";
 import "../assessor.sol";
 import "./mock/pool.sol";
 import "./mock/tranche.sol";
+import "../../../../lib/dss-add-ilk-spell/lib/dss-deploy/lib/dss/lib/ds-value/src/value.sol";
+
 contract AssessorLike {
     function calcTokenPrice(address tranche) public returns (uint);
 }
@@ -157,6 +159,123 @@ contract AssessorTest is DSTest,Math {
         senior.setReturn("tokenSupply",tokenSupply);
         tokenPrice = senior.doCalcTokenPrice(assessor_);
         assertEq(tokenPrice, ONE * initialNAV*2);
+    }
+
+
+    function _setJuniorAssetValue(uint juniorAssetValue) internal {
+        // junior asset value
+        uint poolValue = juniorAssetValue;
+        pool.setReturn("totalValue",poolValue);
+        senior.setReturn("balance", 0);
+        senior.setReturn("debt", 0);
+
+        // check correct junior asset Value
+        assertEq(assessor.calcAssetValue(assessor.junior()), poolValue);
+
+    }
+
+    function testMaxSeniorSupply() public {
+        // max junior ratio 20%
+        uint maxJuniorRatio = 2 * 10**26;
+        assessor.file("maxJuniorRatio" , maxJuniorRatio);
+
+        _setJuniorAssetValue(100 ether);
+
+
+        // 20/80 split juniorAssetValue: 100 ether maxSeniorSupply should be 400 ether
+        assertEq(assessor.calcMaxSeniorAssetValue(), 400 ether);
+
+        // different max junior ratio 10%
+        maxJuniorRatio = 1 * 10**26;
+        assessor.file("maxJuniorRatio" , maxJuniorRatio);
+
+        // ratio 10/90 juniorAssetValue: 100 ether  maxSeniorSupply should be 900 ether
+        assertEq(assessor.calcMaxSeniorAssetValue(), 900 ether);
+
+
+        // change junior to 200 ether
+        _setJuniorAssetValue(200 ether);
+
+        // ratio 10/90 juniorAssetValue: 200 ether  maxSeniorSupply should be 1800 ether
+        assertEq(assessor.calcMaxSeniorAssetValue(), 1800 ether);
+    }
+
+    function testCurrentJuniorRatio() public {
+        uint poolValue = 200 ether;
+        pool.setReturn("totalValue",poolValue);
+        senior.setReturn("balance", 0);
+        senior.setReturn("debt", 100 ether);
+
+        // check junior and senior absolute
+        assertEq(assessor.calcAssetValue(assessor.junior()), 100 ether);
+        assertEq(assessor.calcAssetValue(assessor.senior()), 100 ether);
+
+        // junior ratio should be 50%
+        assertEq(assessor.currentJuniorRatio(), 5*ONE/10);
+
+        // different ratio
+        senior.setReturn("debt", 150 ether);
+        // check junior and senior absolute
+        assertEq(assessor.calcAssetValue(assessor.junior()), 50 ether);
+        assertEq(assessor.calcAssetValue(assessor.senior()), 150 ether);
+
+        // junior ratio should be 25%
+        assertEq(assessor.currentJuniorRatio(), 25*ONE/100);
+
+        // different ratio with a lot of decimals
+        pool.setReturn("totalValue", 300 ether);
+        senior.setReturn("debt", 200 ether);
+
+        // check junior and senior absolute
+        assertEq(assessor.calcAssetValue(assessor.junior()), 100 ether);
+        assertEq(assessor.calcAssetValue(assessor.senior()), 200 ether);
+
+
+        // junior ratio should be 33.33%
+        assertEq(assessor.currentJuniorRatio(), 333333333333333333333333333);
+    }
+
+    function testSupplyApprove() public {
+        // define maxJuniorRatio with 20 %
+        uint maxSeniorRatio = 2*ONE/10;
+        assessor.file("maxJuniorRatio",maxSeniorRatio);
+
+        // set currentJuniorRatio to 25 %
+        uint poolValue = 400 ether;
+        pool.setReturn("totalValue",poolValue);
+        senior.setReturn("balance", 0);
+        senior.setReturn("debt", 300 ether);
+
+        // check if correct
+        assertEq(assessor.currentJuniorRatio(), 25 * 10**25);
+
+
+        uint maxSupplyAmount = 100 ether;
+
+        assertTrue(assessor.supplyApprove(assessor.senior(), maxSupplyAmount-1));
+        // max possible supply amount 100 ether (would result in:
+        assertTrue(assessor.supplyApprove(assessor.senior(), maxSupplyAmount));
+        assertTrue(assessor.supplyApprove(assessor.senior(), 101 ether) == false);
+
+        // random address should be false (if activated)
+        assertTrue(assessor.supplyApprove(address(123), 1 ether) == false);
+
+        // simulate additional ether supplied
+        senior.setReturn("balance", 100 ether);
+        assertEq(assessor.currentJuniorRatio(), maxSeniorRatio);
+
+        // junior always true
+        assertTrue(assessor.supplyApprove(assessor.junior(), uint(-1)));
+
+        // test not set
+        assessor.file("maxJuniorRatio",0);
+        assertTrue(assessor.supplyApprove(assessor.senior(), uint(-1)));
+
+        // junior always true
+        assertTrue(assessor.supplyApprove(assessor.junior(), uint(-1)));
+
+        // random address should be true (because not activated)
+        assertTrue(assessor.supplyApprove(address(123), 1 ether) == true);
     }
 
 }

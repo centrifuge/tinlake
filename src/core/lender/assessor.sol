@@ -49,6 +49,10 @@ contract Assessor is Math, DSNote, Auth {
     // constant factor multiplied with the token price
     uint public tokenAmountForONE;
 
+    // denominated in RAD
+    // ONE == 100%
+    uint public maxJuniorRatio;
+
     // --- Assessor ---
     // computes the current asset value for tranches.
     constructor() public {
@@ -66,6 +70,7 @@ contract Assessor is Math, DSNote, Auth {
 
     function file(bytes32 what, uint value) public auth {
         if (what == "tokenAmountForONE") { tokenAmountForONE = value; }
+        else if (what == "maxJuniorRatio") { maxJuniorRatio = value; }
         else revert();
     }
 
@@ -111,5 +116,47 @@ contract Assessor is Math, DSNote, Auth {
 
     function _seniorDebt() internal returns (uint) {
         return (senior != address(0x0)) ? SeniorTrancheLike(senior).debt() : 0;
+    }
+
+
+    function calcMaxSeniorAssetValue() public returns (uint) {
+        // maxJuniorRatio = 100/(maxSeniorAssetValue + juniorAssetValue)*juniorAssetValue
+        // therefore
+        // maxSeniorAssetValue = 100*juniorAssetValue/maxJuniorRatio - juniorAssetValue
+        // 100% == ONE
+        // maxSeniorAssetValue = ONE*juniorAssetValue/maxJuniorRatio - juniorAssetValue
+        // maxSeniorAssetValue = juniorAssetValue/maxJuniorRatio - juniorAssetValue
+        uint juniorAssetValue = calcAssetValue(junior);
+        if (juniorAssetValue == 0) {
+            return 0;
+        }
+        return rdiv(juniorAssetValue, maxJuniorRatio) - juniorAssetValue;
+    }
+
+    // only needed for external contracts
+    function currentJuniorRatio() public returns(uint) {
+        // currentJuniorRatio = 100/(seniorAssetValue + juniorAssetValue)*juniorAssetValue
+        uint juniorAssetValue = calcAssetValue(junior);
+        return rmul(rdiv(ONE,(add(juniorAssetValue, calcAssetValue(senior)))), juniorAssetValue);
+    }
+
+    function supplyApprove(address tranche, uint currencyAmount) public returns(bool) {
+        // always allowed to supply into junior || maxJuniorRatio feature not activated
+        if (tranche == junior || maxJuniorRatio == 0) {
+            return true;
+        }
+
+        if (tranche == senior) {
+            uint maxSeniorAssetValue = calcMaxSeniorAssetValue();
+            uint seniorAssetValue = calcAssetValue(senior);
+
+            if (maxSeniorAssetValue < seniorAssetValue) {
+                return false;
+            }
+            if (currencyAmount <= sub(maxSeniorAssetValue, seniorAssetValue)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
