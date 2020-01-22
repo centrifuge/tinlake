@@ -174,6 +174,7 @@ contract BaseDistributor is Math, DSNote, Auth {
             currencyAmount = available;
         }
         if (currencyAmount > 0) {
+            currency.approve(address(senior), currencyAmount);
             tranche.repay(address(this), currencyAmount);
         }
         return currencyAmount;

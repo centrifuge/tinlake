@@ -23,7 +23,7 @@ import "tinlake-auth/auth.sol";
 
 contract PileLike {
     uint public total;
-    function debt(uint) public view returns (uint);
+    function debt(uint) public returns (uint);
     function accrue(uint) public;
     function incDebt(uint, uint) public;
     function decDebt(uint, uint) public;

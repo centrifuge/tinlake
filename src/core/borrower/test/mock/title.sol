@@ -1,30 +1,21 @@
 pragma solidity >=0.5.12;
 
-contract TitleMock {
+import "../../../test/mock/mock.sol";
 
-    // calls
-    uint public issueCalls;
-    uint public closeCalls;
-
-    address public usr;
-    uint public    tkn;
-
-    // returns
-    uint public issueReturn; function setIssueReturn(uint issueReturn_) public {issueReturn = issueReturn_;}
-    address public ownerOfReturn; function setOwnerOfReturn(address ownerOfReturn_) public {ownerOfReturn=ownerOfReturn_;}
-
+contract TitleMock is Mock {
     function ownerOf(uint loan) public returns (address) {
-    return ownerOfReturn;
+        values_uint["ownerOf_loan"] = loan;
+        calls["ownerOf"]++;
+        return values_address_return["ownerOf"];
     }
 
-    function issue(address usr_) public returns (uint) {
-        issueCalls++;
-        usr = usr_;
-        return issueReturn;
+    function issue(address usr) public returns (uint) {
+        values_address["issue_usr"] = usr;
+        return call("issue");
     }
 
-    function close(uint tkn_) public {
-        closeCalls++;
-        tkn = tkn_;
+    function close(uint loan) public {
+        values_uint["close_loan"] = loan;
+        calls["close"]++;
     }
 }

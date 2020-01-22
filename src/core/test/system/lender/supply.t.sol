@@ -19,13 +19,18 @@ import "../system.t.sol";
 
 contract SupplyTest is SystemTest {
 
+    function supply(uint balance, uint amount) public {
+        currency.mint(juniorInvestor_, balance);
+        juniorInvestor.doSupply(amount);
+    }
+    
     function testSupply() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;
         supply(investorBalance, supplyAmount);
-        assertEq(currency.balanceOf(juniorInvestor_), 90 ether);
-        assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), 10 ether);
-        assertEq(currency.balanceOf(address(borrowerDeployer.shelf())), 10 ether);
+        assertEq(currency.balanceOf(juniorInvestor_), investorBalance - supplyAmount);
+        assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), supplyAmount);
+        assertEq(currency.balanceOf(address(borrowerDeployer.shelf())), supplyAmount);
     }
 }
 
