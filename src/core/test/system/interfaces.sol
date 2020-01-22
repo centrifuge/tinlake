@@ -31,10 +31,6 @@ contract PileLike {
     function setRate(uint loan, uint rate) public;
 }
 
-contract TDistributorLike {
-    function balance() public;
-}
-
 contract ShelfLike {
     function lock(uint loan) public;
     function unlock(uint loan) public;
@@ -60,10 +56,10 @@ contract CeilingLike {
     function file(uint loan, uint principal) public;
 }
 
-contract OperatorLike {
+contract TOperatorLike {
     TrancheLike public tranche;
     AssessorLike public assessor;
-    DistributorLike public distributor;
+    TDistributorLike public distributor;
 
     function rely(address usr) public;
     function deny(address usr) public;
@@ -81,10 +77,6 @@ contract AssessorLike {
     function calcTokenPrice(address tranche) public returns(uint);
 }
 
-contract DistributorLike {
-    function rely(address usr) public;
-    function deny(address usr) public;
-    function depend(bytes32 what, address addr) public;
-
+contract TDistributorLike {
     function balance() public;
 }

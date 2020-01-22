@@ -28,7 +28,9 @@ contract RedeemTest is SystemTest {
     address  juniorInvestor_;
 
     function setUp() public {
-        baseSetup("whitelist", "switchable");
+        bytes32 juniorOperator_ = "whitelist";
+        bytes32 distributor_ = "switchable";
+        baseSetup(juniorOperator_, distributor_);
         juniorOperator = WhitelistOperator(address(lenderDeployer.juniorOperator()));
         switchable = SwitchableDistributor(address(lenderDeployer.distributor()));
         juniorInvestor = new Investor(address(juniorOperator), currency_, address(lenderDeployer.juniorERC20()));

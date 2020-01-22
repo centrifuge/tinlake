@@ -25,7 +25,6 @@ import {SeniorTranche} from "./tranche/senior_tranche.sol";
 import {SwitchableDistributor} from "./distributor/switchable.sol";
 import {BaseDistributor} from "./distributor/base.sol";
 import "tinlake-erc20/erc20.sol";
-import "../test/system/interfaces.sol";
 
 contract TrancheFab {
     function newTranche(address currency, address token) public returns (Tranche tranche) {
@@ -57,6 +56,13 @@ contract AssessorFab {
 contract OperatorFab {
     function newOperator(address tranche, address assessor, address distributor) public returns (address);
 }
+
+contract OperatorLike {
+    function rely(address usr) public;
+    function deny(address usr) public;
+}
+
+
 contract AllowanceFab {
     function newOperator(address tranche, address assessor, address distributor) public returns (address operator) {
         AllowanceOperator operator = new AllowanceOperator(tranche, assessor, distributor);
@@ -79,6 +85,14 @@ contract WhitelistFab {
 // abstract distributor fab
 contract DistributorFab {
     function newDistributor(address currency) public returns (address);
+}
+
+contract DistributorLike {
+    function rely(address usr) public;
+    function deny(address usr) public;
+    function depend (bytes32 what, address addr) public;
+    function file(bytes32 what, bool flag) public;
+    function balance() public;
 }
 
 contract SwitchableFab {
