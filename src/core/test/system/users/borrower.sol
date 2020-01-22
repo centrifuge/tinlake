@@ -48,14 +48,12 @@ contract Borrower is DSTest {
         shelf.borrow(loan, amount);
     }
 
-    /*
-    function borrow(uint loan, uint amount) public {
+    function borrowAction(uint loan, uint amount) public {
         shelf.lock(loan);
         shelf.borrow(loan, amount);
         distributor.balance();
         shelf.withdraw(loan, amount, address(this));
     }
-    */
 
     function approveNFT(Title nft, address usr) public {
         nft.setApprovalForAll(usr, true);
