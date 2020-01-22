@@ -52,11 +52,6 @@ contract STest is SystemTest {
         checkAfterBorrow(tokenId, principal);
     }
 
-    function supply(uint balance, uint amount) public {
-        currency.mint(juniorInvestor_, balance);
-        juniorInvestor.doSupply(amount);
-    }
-
     function defaultLoan() public pure returns(uint principal, uint rate) {
         uint principal = 1000 ether;
         // define rate
