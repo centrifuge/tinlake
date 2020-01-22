@@ -154,7 +154,6 @@ contract BaseDistributor is Math, DSNote, Auth {
 
         // repay senior always first
         if(address(senior) != address(0)) {
-            currency.approve(address(senior), available);
             available = sub(available, _repay(senior, available));
         }
 
