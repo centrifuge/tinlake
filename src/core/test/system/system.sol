@@ -26,9 +26,9 @@ contract SystemTest is TestSetup, DSTest {
     AdminUser public admin;
     address admin_;
 
-    function baseSetup() public {
+    function baseSetup(address operator_fab, address distributor_fab) public {
         // setup deployment
-        deployContracts();
+        deployContracts(operator_fab, distributor_fab);
 
         // setup users
         admin = new AdminUser(address(borrowerDeployer.shelf()), address(borrowerDeployer.pile()), address(borrowerDeployer.principal()), address(borrowerDeployer.title()));

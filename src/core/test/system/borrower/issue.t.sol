@@ -24,7 +24,7 @@ contract IssueTest is SystemTest {
     address borrower_;
         
     function setUp() public {
-        baseSetup();
+        baseSetup(address(new WhitelistFab()), address(new SwitchableFab()));
         borrower = new Borrower(address(borrowerDeployer.shelf()), address(lenderDeployer.distributor()), currency_, address(borrowerDeployer.pile()));
         borrower_ = address(borrower);
     }

@@ -51,7 +51,6 @@ contract AssessorFab {
     }
 }
 
-
 // Operator Fabs
 
 // abstract operator fab
@@ -82,7 +81,7 @@ contract DistributorFab {
     function newDistributor(address currency) public returns (address);
 }
 
-contract SwitchableDistributorFab {
+contract SwitchableFab {
     function newDistributor(address currency) public returns (address) {
         SwitchableDistributor distributor = new SwitchableDistributor(currency);
 
@@ -92,7 +91,7 @@ contract SwitchableDistributorFab {
     }
 }
 
-contract BaseDistributorFab {
+contract BaseFab {
     function newDistributor(address currency) public returns (address) {
         BaseDistributor distributor = new BaseDistributor(currency);
 

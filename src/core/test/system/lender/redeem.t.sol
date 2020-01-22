@@ -28,7 +28,7 @@ contract RedeemTest is SystemTest {
     address  juniorInvestor_;
 
     function setUp() public {
-        baseSetup();
+        baseSetup(address(new WhitelistFab()), address(new SwitchableFab()));
         juniorOperator = WhitelistOperator(address(lenderDeployer.juniorOperator()));
         switchable = SwitchableDistributor(address(lenderDeployer.distributor()));
         juniorInvestor = new Investor(address(juniorOperator), currency_, address(lenderDeployer.juniorERC20()));
@@ -47,13 +47,13 @@ contract RedeemTest is SystemTest {
         uint supplyAmount = 10 ether;
         supply(investorBalance, supplyAmount);
         switchable.file("borrowFromTranches", false);
-        assertPreCondition(investorBalance, supplyAmount);
+        assertPreCondition();
 
         juniorInvestor.doRedeem(supplyAmount);
         assertPostCondition(investorBalance);
     }
 
-    function assertPreCondition(uint investorBalance, uint supplyAmount) public {
+    function assertPreCondition() public {
         // assert: borrowFromTranches == false
         assert(!switchable.borrowFromTranches());
         // assert: shelf is not bankrupt
@@ -71,7 +71,7 @@ contract RedeemTest is SystemTest {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;
         supply(investorBalance, supplyAmount);
-        assertPreCondition(investorBalance, supplyAmount);
+        assertPreCondition();
     }
 
     function testFailShelfBankrupt() public {
@@ -81,6 +81,6 @@ contract RedeemTest is SystemTest {
         switchable.file("borrowFromTranches", false);
         juniorInvestor.doRedeem(supplyAmount);
 
-        assertPreCondition(investorBalance, supplyAmount);
+        assertPreCondition();
     }
 }
