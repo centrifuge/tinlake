@@ -58,7 +58,7 @@ contract STest is SystemTest {
     }
 
     function borrow(uint loan, uint tokenId, uint principal) public {
-    
+
         borrower.approveNFT(collateralNFT, address(borrowerDeployer.shelf()));
         setupCurrencyOnLender(principal);
 //        // borrow transaction
