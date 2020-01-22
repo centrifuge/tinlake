@@ -40,6 +40,10 @@ contract AdminUser is DSTest{
         ceiling.file(loan, principal);
     }
 
+    function setCeiling(uint loan, uint principal) public {
+        ceiling.file(loan, principal);
+    }
+
     function doAdmit(address registry, uint nft, uint principal, address usr) public returns (uint) {
         uint loan = title.issue(usr);
         setCeiling(loan, principal);

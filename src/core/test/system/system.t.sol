@@ -70,7 +70,7 @@ contract STest is SystemTest {
     }
 
     function borrow(uint loan, uint tokenId, uint principal) public {
-    
+
         borrower.approveNFT(collateralNFT, address(borrowerDeployer.shelf()));
         setupCurrencyOnLender(principal);
 //        // borrow transaction
@@ -137,6 +137,7 @@ contract STest is SystemTest {
 
     // --- Tests ---
 
+
     function testBorrowTransaction() public {
         // collateralNFT value
         uint principal = 100;
@@ -144,13 +145,9 @@ contract STest is SystemTest {
         // create borrower collateral collateralNFT
         uint tokenId = collateralNFT.issue(borrower_);
         uint loan = admin.doAdmit(collateralNFT_, tokenId, principal, borrower_);
-        emit log_named_uint("moin", loan);
         borrower.approveNFT(collateralNFT, address(borrowerDeployer.shelf()));
-        emit log_named_uint("moin", loan);
         setupCurrencyOnLender(principal);
-        emit log_named_uint("moin", loan);
         borrower.borrowAction(loan, principal);
-        emit log_named_uint("moin", loan);
         checkAfterBorrow(tokenId, principal);
     }
 

@@ -127,7 +127,7 @@ contract BorrowTest is SystemTest {
         uint amount = ceiling;
         // issue nft for random user
         (uint tokenId, ) = issueNFT(randomUser_);
-        // issue loan fro random user
+        // issue loan from random user
         uint loanId = randomUser.issue(collateralNFT_, tokenId);
         // lock nft for random user
         randomUser.lock(loanId); 
