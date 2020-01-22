@@ -176,8 +176,8 @@ contract AssessorTest is DSTest,Math {
 
     function testMaxSeniorSupply() public {
         // max junior ratio 20%
-        uint maxJuniorRatio = 2 * 10**26;
-        assessor.file("maxJuniorRatio" , maxJuniorRatio);
+        uint minJuniorRatio = 2 * 10**26;
+        assessor.file("minJuniorRatio" , minJuniorRatio);
 
         _setJuniorAssetValue(100 ether);
 
@@ -186,8 +186,8 @@ contract AssessorTest is DSTest,Math {
         assertEq(assessor.calcMaxSeniorAssetValue(), 400 ether);
 
         // different max junior ratio 10%
-        maxJuniorRatio = 1 * 10**26;
-        assessor.file("maxJuniorRatio" , maxJuniorRatio);
+        minJuniorRatio = 1 * 10**26;
+        assessor.file("minJuniorRatio" , minJuniorRatio);
 
         // ratio 10/90 juniorAssetValue: 100 ether  maxSeniorSupply should be 900 ether
         assertEq(assessor.calcMaxSeniorAssetValue(), 900 ether);
@@ -236,9 +236,9 @@ contract AssessorTest is DSTest,Math {
     }
 
     function testSupplyApprove() public {
-        // define maxJuniorRatio with 20 %
+        // define minJuniorRatio with 20 %
         uint maxSeniorRatio = 2*ONE/10;
-        assessor.file("maxJuniorRatio",maxSeniorRatio);
+        assessor.file("minJuniorRatio",maxSeniorRatio);
 
         // set currentJuniorRatio to 25 %
         uint poolValue = 400 ether;
@@ -267,7 +267,7 @@ contract AssessorTest is DSTest,Math {
         assertTrue(assessor.supplyApprove(assessor.junior(), uint(-1)));
 
         // test not set
-        assessor.file("maxJuniorRatio",0);
+        assessor.file("minJuniorRatio",0);
         assertTrue(assessor.supplyApprove(assessor.senior(), uint(-1)));
 
         // junior always true
@@ -278,9 +278,9 @@ contract AssessorTest is DSTest,Math {
     }
 
     function testReedemApprove() public {
-        // define maxJuniorRatio with 20 %
+        // define minJuniorRatio with 20 %
         uint maxSeniorRatio = 2*ONE/10;
-        assessor.file("maxJuniorRatio",maxSeniorRatio);
+        assessor.file("minJuniorRatio",maxSeniorRatio);
 
         // set currentJuniorRatio to 25 %
         uint poolValue = 300 ether;
