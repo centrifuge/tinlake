@@ -20,7 +20,6 @@ import "tinlake-math/math.sol";
 import "../assessor.sol";
 import "./mock/pool.sol";
 import "./mock/tranche.sol";
-import "../../../../lib/dss-add-ilk-spell/lib/dss-deploy/lib/dss/lib/ds-value/src/value.sol";
 
 contract AssessorLike {
     function calcTokenPrice(address tranche) public returns (uint);
