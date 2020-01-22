@@ -29,16 +29,21 @@ contract TestSetup {
     SimpleToken  public currency;
     address      public currency_;
 
-    // Core contracts
+    // Borrower contracts
     Shelf shelf;
     Pile pile;
     Title title;
     Principal ceiling;
-    DistributorLike distributor;
     // CollectorLike collector;
     // ThresholdLike threshold;
     // PricePoolLike pricePool;
     // LightSwitchLike lightswitch;
+
+    // Lender contracts
+    Tranche junior;
+    DistributorLike distributor;
+    ERC20 juniorERC20;
+    OperatorLike juniorOperator;
 
     // Deployers
     BorrowerDeployer public borrowerDeployer;
@@ -105,14 +110,14 @@ contract TestSetup {
             address(new WhitelistFab()), address(new SwitchableDistributorFab()));
 
         lenderDeployer.deployJuniorTranche("JUN", "Junior Tranche Token");
-
         lenderDeployer.deployAssessor();
-
         lenderDeployer.deployDistributor();
-
         lenderDeployer.deployJuniorOperator();
         lenderDeployer.deploy();
 
         distributor = lenderDeployer.distributor();
+        juniorOperator = lenderDeployer.juniorOperator();
+        juniorERC20 = lenderDeployer.juniorERC20();
+        junior = lenderDeployer.junior();
     }
 }

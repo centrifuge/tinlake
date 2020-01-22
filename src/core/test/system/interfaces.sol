@@ -33,6 +33,7 @@ contract PileLike {
 
 contract TDistributorLike {
     function balance() public;
+    function file(bytes32 what, bool flag) public;
 }
 
 contract ShelfLike {
