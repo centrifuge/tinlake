@@ -97,11 +97,7 @@ contract BaseDistributorTwoTranches is DSTest, Math {
         // junior -> distributor
         // shelf -> distributor
 
-        if (senior.values_return("debt") > 0 && junior.values_return("balance") > 0) {
-           assertEq(currency.calls("transferFrom"), 2);
-        } else {
-           assertEq(currency.calls("transferFrom"), 1);
-        }
+        assertEq(currency.calls("transferFrom"), 1);
         assertEq(currency.values_address("transferFrom_from"), from);
         assertEq(currency.values_address("transferFrom_to"), to);
         assertEq(currency.values_uint("transferFrom_amount"), amount);
@@ -216,8 +212,17 @@ contract BaseDistributorTwoTranches is DSTest, Math {
         // borrow senior: 140 ether, junior: 10 ether
         uint juniorAmountBorrowed = 10 ether;
         uint seniorAmountBorrowed = 140 ether;
-        balanceExpectBorrow(juniorAmountBorrowed, seniorAmountBorrowed);
+        distributor.balance();
+        assertEq(currency.calls("transferFrom"), 1);
 
+        // once in _balanceTranches and again in _borrowTranches
+        assertEq(junior.calls("borrow"), 2);
+        assertEq(junior.values_uint("borrow_amount"), juniorAmountBorrowed);
+
+        assertEq(senior.calls("borrow"), 1);
+        assertEq(senior.values_uint("borrow_amount"), seniorAmountBorrowed);
+
+        checkShelfTransferFrom(distributor_, shelf_, juniorAmountBorrowed+seniorAmountBorrowed);
         // tranche balance
         // junior -> senior 70 ether
         assertEq(senior.calls("repay"), 1);
