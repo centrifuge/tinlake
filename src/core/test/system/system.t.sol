@@ -229,7 +229,6 @@ contract STest is SystemTest {
             setupCurrencyOnLender(principal);
             borrower.borrowAction(loan, principal);
             tBorrower += principal;
-            emit log_named_uint("total", tBorrower);
           //  checkAfterBorrow(i, tBorrower);
         }
 
@@ -244,7 +243,6 @@ contract STest is SystemTest {
             principal = i * 80;
 
             // repay transaction
-            emit log_named_uint("repay", principal);
             borrower.repay(i, principal, borrower_);
 
             distributorBalance += principal;
