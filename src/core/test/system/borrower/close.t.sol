@@ -23,12 +23,17 @@ contract CloseTest is SystemTest {
     Borrower borrower;
     address borrower_;
         
+    Borrower randomUser;
+    address randomUser_;
+
     function setUp() public {
         baseSetup();
-        borrower = new Borrower(address(borrowerDeployer.shelf()), address(lenderDeployer.distributor()), currency_, address(borrowerDeployer.pile()));
+        borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         borrower_ = address(borrower);
+        randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
+        randomUser_ = address(randomUser);
     }
-    
+  
     function closeLoan(uint loanId, uint tokenId, bytes32 lookupId) public {
         borrower.close(loanId);
         assertPostCondition(loanId, tokenId, lookupId);
@@ -59,21 +64,22 @@ contract CloseTest is SystemTest {
         uint loanId = borrower.issue(collateralNFT_, tokenId);
         // transfer nft to random user / borrower still loanOwner
         borrower.approveNFT(collateralNFT, address(this));
-        collateralNFT.transferFrom(borrower_, address(this), tokenId);
+        collateralNFT.transferFrom(borrower_, randomUser_, tokenId);
         assertPreCondition(loanId, tokenId, lookupId);
         closeLoan(loanId, tokenId, lookupId);
     }
 
     function testCloseLoanNFTOwner() public {
-        (uint tokenId, bytes32 lookupId) = issueNFT(address(this));
-        uint loanId = shelf.issue(collateralNFT_, tokenId);      
+        (uint tokenId, bytes32 lookupId) = issueNFT(randomUser_);
+        uint loanId = randomUser.issue(collateralNFT_, tokenId);      
         // transfer nft to borrower  / make borrower nftOwner
-        collateralNFT.transferFrom(address(this), borrower_, tokenId);
+        randomUser.approveNFT(collateralNFT, address(this));
+        collateralNFT.transferFrom(randomUser_, borrower_, tokenId);
         closeLoan(loanId, tokenId, lookupId);
     }
 
     function testFailCloseLoanNoPermissions() public {
-        (uint tokenId, bytes32 lookupId) = issueNFT(address(this));
+        (uint tokenId, bytes32 lookupId) = issueNFT(randomUser_);
         uint loanId = shelf.issue(collateralNFT_, tokenId);   
         // borrower not loanOwner or nftOwner
         closeLoan(loanId, tokenId, lookupId);

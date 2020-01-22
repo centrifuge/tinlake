@@ -34,6 +34,7 @@ contract TestSetup {
     Pile pile;
     Title title;
     Principal ceiling;
+    DistributorLike distributor;
     // CollectorLike collector;
     // ThresholdLike threshold;
     // PricePoolLike pricePool;
@@ -111,5 +112,7 @@ contract TestSetup {
 
         lenderDeployer.deployJuniorOperator();
         lenderDeployer.deploy();
+
+        distributor = lenderDeployer.distributor();
     }
 }

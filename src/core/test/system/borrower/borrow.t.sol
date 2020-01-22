@@ -17,57 +17,135 @@ pragma solidity >=0.5.12;
 
 import "../system.sol";
 import "../users/borrower.sol";
+import "../users/admin.sol";
 
 contract BorrowTest is SystemTest {
 
     Borrower borrower;
     address borrower_;
+
+    Borrower randomUser;
+    address randomUser_;
+    
+    AdminUser public admin;
+    address admin_;
         
     function setUp() public {
         baseSetup();
-        borrower = new Borrower(address(borrowerDeployer.shelf()), address(lenderDeployer.distributor()), currency_, address(borrowerDeployer.pile()));
+        // setup users
+        borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         borrower_ = address(borrower);
+        randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
+        randomUser_ = address(randomUser);
+        admin = new AdminUser(address(shelf), address(pile), address(ceiling), address(title));
+        admin_ = address(admin);
+
+        rootAdmin.relyBorrowAdmin(admin_);
     }
     
-    function borrow(uint loanId, uint amount) public {
-        borrower.borrow(loanId);
-        assertPostCondition(loanId, amount);
+    function borrow(uint loanId, uint tokenId, uint amount) public {
+        uint initialTotalBalance = shelf.balance();
+        uint initialLoanBalance = shelf.balances(loanId);
+        uint initialTotalDebt = pile.total();
+        uint initialLoanDebt = pile.debt(loanId);
+        uint initialCeiling = ceiling.ceiling(loanId);
+
+        borrower.borrow(loanId, amount);
+        assertPostCondition(loanId, tokenId, amount, initialTotalBalance, initialLoanBalance, initialTotalDebt, initialLoanDebt, initialCeiling);
     }
 
-    function assertPreCondition(uint loanId, uint amount) public {
+    function lockNFT(uint loanId) public {
+        borrower.approveNFT(collateralNFT, address(shelf));
+        borrower.lock(loanId);
+    }
+
+    function assertPreCondition(uint loanId, uint tokenId, uint amount) public {
+        // assert: borrower loanOwner
+        assertEq(title.ownerOf(loanId), borrower_);
+        // assert: shelf nftOwner
+        assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
+        // assert: borrowAmount <= ceiling
+        assert(amount <= ceiling.ceiling(loanId));
+    }
+
+    function assertPostCondition(uint loanId, uint tokenId, uint amount, uint initialTotalBalance, uint initialLoanBalance, uint initialTotalDebt, uint initialLoanDebt, uint initialCeiling) public {
         // assert: borrower loanOwner
         assertEq(title.ownerOf(loanId), borrower_);
         // assert: borrower nftOwner
         assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
-        // assert: borrowAmount <= ceiling
-        assertEq()
-    }
-
-    function assertPostCondition(uint loanId, uint tokenId) public {
-        // assert: borrower loanOwner
-        assertEq(title.ownerOf(loanId), borrower_);
-        // assert: shelf  nftOwner
-        assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
+        // assert: totalBalance increase by borrow amount
+        assertEq(shelf.balance(), initialTotalBalance + amount);
+        // assert: loanBalance increase by borrow amount
+        assertEq(shelf.balances(loanId), initialLoanBalance + amount);
+        // assert: totalDebt increase by borrow amount
+        assertEq(pile.total(), initialTotalDebt + amount);
+        // assert: loanDebt increase by borrow amount
+        assertEq(pile.debt(loanId), initialLoanDebt + amount);
+        // assert: available borrow amount decreased
+        assertEq(ceiling.ceiling(loanId), initialCeiling - amount);
     }
 
     function testBorrow() public {
+        uint ceiling = 100 ether;
+        uint amount = ceiling;
+        // issue nft for borrower
         (uint tokenId, ) = issueNFT(borrower_);
-        borrower.approveNFT(collateralNFT, address(shelf));
+        // issue loan for borrower
         uint loanId = borrower.issue(collateralNFT_, tokenId);
-        assertPreCondition(loanId, tokenId, lookupId);
-        lockNFT(loanId, tokenId);
+        // lock nft for borrower
+        lockNFT(loanId);
+        // admin sets loan ceiling
+        admin.setCeiling(loanId, ceiling);
+        assertPreCondition(loanId, tokenId, amount);
+        borrow(loanId, tokenId, amount);
     }
 
-    function testFailLockNFTLoanNotIssued() public {
+    function testPartialBorrow() public {
+        uint ceiling = 200 ether;
+        // borrow amount smaller then ceiling
+        uint amount = ceiling / 2;
+        (uint tokenId, ) = issueNFT(borrower_);
+        uint loanId = borrower.issue(collateralNFT_, tokenId);
+        lockNFT(loanId);
+        admin.setCeiling(loanId, amount * 2);
+        assertPreCondition(loanId, tokenId, amount);
+        borrow(loanId, tokenId, amount);
     }
 
-    function testFailLockNFTNoApproval() public {
+    function testFailBorrowNFTNotLocked() public {
+        uint ceiling = 100 ether;
+        uint amount = ceiling;
+        (uint tokenId, ) = issueNFT(borrower_);
+        uint loanId = borrower.issue(collateralNFT_, tokenId);  
+        // do not lock nft
+        admin.setCeiling(loanId, ceiling);
+        borrow(loanId, tokenId, amount);
     }
 
-    function testFailLockNFTBorrowerNotNFTOwner() public {
+    function testFailBorrowNotLoanOwner() public {
+        uint ceiling = 100 ether;
+        uint amount = ceiling;
+        // issue nft for random user
+        (uint tokenId, ) = issueNFT(randomUser_);
+        // issue loan fro random user
+        uint loanId = randomUser.issue(collateralNFT_, tokenId);
+        // lock nft for random user
+        randomUser.lock(loanId); 
+        // admin sets loan ceiling
+        admin.setCeiling(loanId, ceiling);
+        // borrower tries to borrow against loan
+        borrow(loanId, tokenId, amount);
     }
 
-    function testFailLockNFTBorrowerNotLoanOwner() public {
+    function testFailBorrowAmountTooHeigh() public {
+        uint ceiling = 100 ether;
+        // borrow amount heigher then ceiling
+        uint amount = ceiling * 2;
+        (uint tokenId, ) = issueNFT(borrower_);
+        uint loanId = borrower.issue(collateralNFT_, tokenId);
+        lockNFT(loanId);
+        admin.setCeiling(loanId, ceiling);
+        borrow(loanId, tokenId, amount);
     }
 
 }
