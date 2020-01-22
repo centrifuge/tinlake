@@ -173,7 +173,7 @@ contract AssessorTest is DSTest,Math {
 
     }
 
-    function testMaxSeniorSupply() public {
+    function testCalcMaxSeniorAssetValue() public {
         // max junior ratio 20%
         uint minJuniorRatio = 2 * 10**26;
         assessor.file("minJuniorRatio" , minJuniorRatio);
@@ -236,8 +236,8 @@ contract AssessorTest is DSTest,Math {
 
     function testSupplyApprove() public {
         // define minJuniorRatio with 20 %
-        uint maxSeniorRatio = 2*ONE/10;
-        assessor.file("minJuniorRatio",maxSeniorRatio);
+        uint minJuniorRatio = 2*ONE/10;
+        assessor.file("minJuniorRatio",minJuniorRatio);
 
         // set currentJuniorRatio to 25 %
         uint poolValue = 400 ether;
@@ -253,14 +253,14 @@ contract AssessorTest is DSTest,Math {
         assertTrue(assessor.supplyApprove(assessor.senior(), maxSupplyAmount-1));
         // max possible supply amount 100 ether (would result in:
         assertTrue(assessor.supplyApprove(assessor.senior(), maxSupplyAmount));
-        assertTrue(assessor.supplyApprove(assessor.senior(), 101 ether) == false);
+        assertTrue(assessor.supplyApprove(assessor.senior(), maxSupplyAmount+1) == false);
 
         // random address should be false (if activated)
         assertTrue(assessor.supplyApprove(address(123), 1 ether) == false);
 
         // simulate additional ether supplied
         senior.setReturn("balance", 100 ether);
-        assertEq(assessor.currentJuniorRatio(), maxSeniorRatio);
+        assertEq(assessor.currentJuniorRatio(), minJuniorRatio);
 
         // junior always true
         assertTrue(assessor.supplyApprove(assessor.junior(), uint(-1)));

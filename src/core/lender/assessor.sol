@@ -36,6 +36,7 @@ contract PoolLike {
 }
 
 contract Assessor is Math, DSNote, Auth {
+
     // --- Tranches ---
     address public senior;
     address public junior;
@@ -117,21 +118,22 @@ contract Assessor is Math, DSNote, Auth {
     }
 
 
-    function _calcMaxSeniorAssetValue(uint juniorAssetValue) internal returns (uint) {
-        // minJuniorRatio = 100/(maxSeniorAssetValue + juniorAssetValue)*juniorAssetValue
-        // therefore
-        // maxSeniorAssetValue = 100*juniorAssetValue/minJuniorRatio - juniorAssetValue
-        // 100% == ONE
-        // maxSeniorAssetValue = ONE*juniorAssetValue/minJuniorRatio - juniorAssetValue
-        // maxSeniorAssetValue = juniorAssetValue/minJuniorRatio - juniorAssetValue
+
+
+    function calcMaxSeniorAssetValue() public returns (uint) {
+        uint juniorAssetValue = calcAssetValue(junior);
         if (juniorAssetValue == 0) {
             return 0;
         }
-        return rdiv(juniorAssetValue, minJuniorRatio) - juniorAssetValue;
+        return rmul(rdiv(juniorAssetValue, minJuniorRatio), ONE-minJuniorRatio);
     }
 
-    function calcMaxSeniorAssetValue() public returns (uint) {
-       return  _calcMaxSeniorAssetValue(calcAssetValue((junior)));
+    function calcMinJuniorAssetValue() public returns (uint) {
+        uint seniorAssetValue = calcAssetValue(senior);
+        if (seniorAssetValue == 0) {
+            return uint(-1);
+        }
+        return rmul(rdiv(seniorAssetValue, ONE-minJuniorRatio), minJuniorRatio);
     }
 
     // only needed for external contracts
@@ -148,14 +150,10 @@ contract Assessor is Math, DSNote, Auth {
         }
 
         if (tranche == senior) {
-            uint maxSeniorAssetValue = _calcMaxSeniorAssetValue(calcAssetValue((junior)));
             uint seniorAssetValue = calcAssetValue(senior);
+            uint maxSeniorAssetValue = calcMaxSeniorAssetValue();
 
-            // below the minJuniorRatio even without additional 
-            if (maxSeniorAssetValue < seniorAssetValue) {
-                return false;
-            }
-            if (currencyAmount <= sub(maxSeniorAssetValue, seniorAssetValue)) {
+            if (add(seniorAssetValue, currencyAmount) <= maxSeniorAssetValue) {
                 return true;
             }
         }
@@ -169,15 +167,10 @@ contract Assessor is Math, DSNote, Auth {
         }
 
         if (tranche == junior) {
-            // calculate max senior with potential reduced junior
-            uint maxPostSeniorAssetValue = _calcMaxSeniorAssetValue(sub(calcAssetValue(junior), currencyAmount));
+            uint juniorAssetValue = calcAssetValue(junior);
+            uint minJuniorAssetValue = calcMinJuniorAssetValue();
 
-            // if sub fails not enough currency in the reserve
-            uint reducedJuniorReserve = sub(_juniorReserve(), currencyAmount);
-
-            uint postSeniorAssetValue = _calcSeniorAssetValue(pool.totalValue(), TrancheLike(senior).balance(), SeniorTrancheLike(senior).debt(), reducedJuniorReserve);
-
-            if (postSeniorAssetValue <= maxPostSeniorAssetValue) {
+            if (sub(juniorAssetValue, currencyAmount) >= minJuniorAssetValue) {
                 return true;
             }
         }
