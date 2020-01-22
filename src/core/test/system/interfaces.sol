@@ -61,7 +61,6 @@ contract CeilingLike {
 }
 
 contract OperatorLike {
-
     TrancheLike public tranche;
     AssessorLike public assessor;
     DistributorLike public distributor;

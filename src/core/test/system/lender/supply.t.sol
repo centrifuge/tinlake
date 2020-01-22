@@ -19,30 +19,54 @@ import "../system.t.sol";
 
 contract SupplyTest is SystemTest {
 
+    WhitelistOperator juniorOperator;
+    Assessor assessor;
+    SwitchableDistributor switchable;
+
     Investor juniorInvestor;
     address  juniorInvestor_;
 
     function setUp() public {
         baseSetup();
-        WhitelistOperator juniorOperator = lenderDeployer.juniorOperator();
+        juniorOperator = WhitelistOperator(address(lenderDeployer.juniorOperator()));
+        switchable = SwitchableDistributor(address(lenderDeployer.distributor()));
         juniorInvestor = new Investor(address(juniorOperator), currency_, address(lenderDeployer.juniorERC20()));
         juniorInvestor_ = address(juniorInvestor);
 
         juniorOperator.relyInvestor(juniorInvestor_);
     }
     
-    function supply(uint balance, uint amount) public {
-        currency.mint(juniorInvestor_, balance);
-        juniorInvestor.doSupply(amount);
-    }
-    
-    function testSupply() public {
+
+    function testSwitchableSupply() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;
-        supply(investorBalance, supplyAmount);
+        currency.mint(juniorInvestor_, investorBalance);
+        assertPreCondition(investorBalance);
+
+        juniorInvestor.doSupply(supplyAmount);
+        assertPostCondition(investorBalance, supplyAmount);
+    }
+
+    function assertPreCondition(uint investorBalance) public {
+        // assert: borrowFromTranches == true
+        assert(switchable.borrowFromTranches());
+    }
+
+    function assertPostCondition(uint investorBalance, uint supplyAmount) public {
+        // assert: junior investor currency balance is equal to the inital balance - how much was supplied
         assertEq(currency.balanceOf(juniorInvestor_), investorBalance - supplyAmount);
+        // assert: junior investor token balance == amount supplied (because no other currency was supplied yet)
         assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), supplyAmount);
+        //assert: balance supplied has been moved to shelf
         assertEq(currency.balanceOf(address(borrowerDeployer.shelf())), supplyAmount);
+    }
+
+    function testFailNoSupplyAllowed() public {
+        uint investorBalance = 100 ether;
+        uint supplyAmount = 10 ether;
+        switchable.file("borrowFromTranches", false);
+
+        assertPreCondition(investorBalance, supplyAmount);
     }
 }
 

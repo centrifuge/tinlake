@@ -23,6 +23,7 @@ import {WhitelistOperator} from "./tranche/operator/whitelist.sol";
 import {Tranche} from "./tranche/tranche.sol";
 import {SeniorTranche} from "./tranche/senior_tranche.sol";
 import {SwitchableDistributor} from "./distributor/switchable.sol";
+import {BaseDistributor} from "./distributor/base.sol";
 import "tinlake-erc20/erc20.sol";
 import "../test/system/interfaces.sol";
 
@@ -91,22 +92,15 @@ contract SwitchableDistributorFab {
     }
 }
 
-// todo add BaseDistributorFab
+contract BaseDistributorFab {
+    function newDistributor(address currency) public returns (address) {
+        BaseDistributor distributor = new BaseDistributor(currency);
 
-//contract DistributorLike {
-//    function rely(address usr) public;
-//    function deny(address usr) public;
-//    function depend (bytes32 what, address addr) public;
-//    function file(bytes32 what, bool flag) public;
-//    function balance() public;
-//}
-//
-//contract OperatorLike {
-//    function rely(address usr) public;
-//    function deny(address usr) public;
-//}
-
-// Simple Lender only deploys a SimpleDistributor as lender module
+        distributor.rely(msg.sender);
+        distributor.deny(address(this));
+        return address(distributor);
+    }
+}
 
 contract LenderDeployer is Auth {
     address rootAdmin;

@@ -104,11 +104,8 @@ contract TestSetup {
             address(new WhitelistFab()), address(new SwitchableDistributorFab()));
 
         lenderDeployer.deployJuniorTranche("JUN", "Junior Tranche Token");
-
         lenderDeployer.deployAssessor();
-
         lenderDeployer.deployDistributor();
-
         lenderDeployer.deployJuniorOperator();
         lenderDeployer.deploy();
     }

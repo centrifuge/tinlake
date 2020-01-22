@@ -37,14 +37,11 @@ contract SystemTest is TestSetup, DSTest {
         // give admin access rights to contract
         // root only for this test setup
         rootAdmin.relyBorrowAdmin(admin_);
-
-        // todo replace with investor contract
         rootAdmin.relyLenderAdmin(address(this));
 
         // give invest rights to test
         WhitelistOperator juniorOperator = WhitelistOperator(address(lenderDeployer.juniorOperator()));
         juniorOperator.relyInvestor(address(this));
-
     }
 
     function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {

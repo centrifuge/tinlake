@@ -20,12 +20,17 @@ import {SwitchableDistributor} from "../../../lender/distributor/switchable.sol"
 
 contract RedeemTest is SystemTest {
 
+    WhitelistOperator juniorOperator;
+    Assessor assessor;
+    SwitchableDistributor switchable;
+
     Investor juniorInvestor;
     address  juniorInvestor_;
 
     function setUp() public {
         baseSetup();
-        WhitelistOperator juniorOperator = WhitelistOperator(lenderDeployer.juniorOperator());
+        juniorOperator = WhitelistOperator(address(lenderDeployer.juniorOperator()));
+        switchable = SwitchableDistributor(address(lenderDeployer.distributor()));
         juniorInvestor = new Investor(address(juniorOperator), currency_, address(lenderDeployer.juniorERC20()));
         juniorInvestor_ = address(juniorInvestor);
 
@@ -37,37 +42,45 @@ contract RedeemTest is SystemTest {
         juniorInvestor.doSupply(amount);
     }
     
-    function testRedeem() public {
+    function testSwitchableRedeem() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;
         supply(investorBalance, supplyAmount);
-        assertEq(currency.balanceOf(juniorInvestor_), investorBalance - supplyAmount);
-        assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), supplyAmount);
-
-        SwitchableDistributor switchable = SwitchableDistributor(address(lenderDeployer.distributor()));
         switchable.file("borrowFromTranches", false);
+        assertPreCondition(investorBalance, supplyAmount);
+
         juniorInvestor.doRedeem(supplyAmount);
+        assertPostCondition(investorBalance);
+    }
+
+    function assertPreCondition(uint investorBalance, uint supplyAmount) public {
+        // assert: borrowFromTranches == false
+        assert(!switchable.borrowFromTranches());
+        // assert: shelf is not bankrupt
+        assert(currency.balanceOf(address(borrowerDeployer.shelf())) > 0);
+    }
+
+    function assertPostCondition(uint investorBalance) public {
+        // assert: no more tokens left for junior investor
         assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), 0);
+        // assert: junior currency balance back to initial pre-supply amount
         assertEq(currency.balanceOf(juniorInvestor_), investorBalance);
     }
 
-//    function assertPreCondition(uint loanId, uint tokenId, bytes32 lookupId) public {
-//        // assert: borrower owner of loan or owner of nft
-//        assert(title.ownerOf(loanId) == borrower_ || collateralNFT.ownerOf(tokenId) == borrower_);
-//        // assert: loan has been issued
-//        assert(shelf.nftlookup(lookupId) > 0);
-//        // assert: nft not locked anymore
-//        assert(!shelf.nftLocked(loanId));
-//        // assert: loan has no open debt
-//        assert(pile.debt(loanId) == 0);
-//    }
-//
-//    function assertPostCondition(uint loanId, uint tokenId, bytes32 lookupId) public {
-//        // assert: nft + loan removed nftlookup
-//        assertEq(shelf.nftlookup(lookupId), 0);
-//
-//        // TODO: assert: loan burned => owner = address(0)
-//        // current title implementation reverts if loan owner => address(0)
-//        //assertEq(title.ownerOf(loanId), address(0));
-//    }
+    function testFailNoRedeemingAllowed() public {
+        uint investorBalance = 100 ether;
+        uint supplyAmount = 10 ether;
+        supply(investorBalance, supplyAmount);
+        assertPreCondition(investorBalance, supplyAmount);
+    }
+
+    function testFailShelfBankrupt() public {
+        uint investorBalance = 100 ether;
+        uint supplyAmount = 10 ether;
+        supply(investorBalance, supplyAmount);
+        switchable.file("borrowFromTranches", false);
+        juniorInvestor.doRedeem(supplyAmount);
+
+        assertPreCondition(investorBalance, supplyAmount);
+    }
 }
