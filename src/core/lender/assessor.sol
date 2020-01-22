@@ -118,15 +118,12 @@ contract Assessor is Math, DSNote, Auth {
     }
 
 
-
-
     function calcMaxSeniorAssetValue() public returns (uint) {
         uint juniorAssetValue = calcAssetValue(junior);
         if (juniorAssetValue == 0) {
             return 0;
         }
-
-        // juniorAssetValue/minJuniorRatio * (1-minJuniorRatio) same as:
+        // juniorAssetValue/minJuniorRatio * (ONE-minJuniorRatio) same as:
         return sub(rdiv(juniorAssetValue, minJuniorRatio), juniorAssetValue);
     }
 
@@ -150,13 +147,8 @@ contract Assessor is Math, DSNote, Auth {
             return true;
         }
 
-        if (tranche == senior) {
-            uint seniorAssetValue = calcAssetValue(senior);
-            uint maxSeniorAssetValue = calcMaxSeniorAssetValue();
-
-            if (add(seniorAssetValue, currencyAmount) <= maxSeniorAssetValue) {
-                return true;
-            }
+        if (tranche == senior && add(calcAssetValue(senior), currencyAmount) <= calcMaxSeniorAssetValue()) {
+            return true;
         }
         return false;
     }
@@ -167,13 +159,9 @@ contract Assessor is Math, DSNote, Auth {
             return true;
         }
 
-        if (tranche == junior) {
-            uint juniorAssetValue = calcAssetValue(junior);
-            uint minJuniorAssetValue = calcMinJuniorAssetValue();
+        if (tranche == junior && sub(calcAssetValue(junior), currencyAmount) >= calcMinJuniorAssetValue()) {
+            return true;
 
-            if (sub(juniorAssetValue, currencyAmount) >= minJuniorAssetValue) {
-                return true;
-            }
         }
         return false;
     }
