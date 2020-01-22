@@ -20,8 +20,8 @@ import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
 
 contract TokenLike{
-    uint public totalSupply;
-    function balanceOf(address) public view returns (uint);
+    function totalSupply() public returns (uint);
+    function balanceOf(address) public returns (uint);
     function transferFrom(address,address,uint) public;
     function approve(address, uint) public;
     function mint(address, uint) public;
