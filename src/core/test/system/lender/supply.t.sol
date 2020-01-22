@@ -27,7 +27,7 @@ contract SupplyTest is SystemTest {
     address  juniorInvestor_;
 
     function setUp() public {
-        baseSetup(address(new WhitelistFab()), address(new SwitchableFab()));
+        baseSetup("whitelist", "switchable");
         juniorOperator = WhitelistOperator(address(lenderDeployer.juniorOperator()));
         switchable = SwitchableDistributor(address(lenderDeployer.distributor()));
         juniorInvestor = new Investor(address(juniorOperator), currency_, address(lenderDeployer.juniorERC20()));
@@ -66,7 +66,7 @@ contract SupplyTest is SystemTest {
         uint supplyAmount = 10 ether;
         switchable.file("borrowFromTranches", false);
 
-        assertPreCondition();
+        assertPostCondition(investorBalance, supplyAmount);
     }
 }
 

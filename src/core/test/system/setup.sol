@@ -46,7 +46,7 @@ contract TestSetup {
     TestRootAdmin rootAdmin;
     address rootAdmin_;
 
-    function deployContracts(address operator_fab, address distributor_fab) public {
+    function deployContracts(bytes32 operator, bytes32 distributor) public {
         collateralNFT = new Title("Collateral NFT", "collateralNFT");
         collateralNFT_ = address(collateralNFT);
 
@@ -58,7 +58,7 @@ contract TestSetup {
         // only admin is main deployer
         deployBorrower();
         // only admin is main deployer
-        deployLender(operator_fab, distributor_fab);
+        deployLender(operator, distributor);
 
         rootAdmin.file("borrower", address(borrowerDeployer));
         rootAdmin.file("lender", address(lenderDeployer));
@@ -99,9 +99,19 @@ contract TestSetup {
 
     }
 
-    function deployLender(address operator_fab, address distributor_fab) public {
+    function deployLender(bytes32 operator, bytes32 distributor) public {
+         address distributorfab_;
+         address operatorfab_;
+
+        if (operator == "whitelist") {
+            operatorfab_ = address(new WhitelistFab());
+        }
+        if (distributor == "switchable") {
+            distributorfab_ = address(new SwitchableFab());
+        }
+
         lenderDeployer = new LenderDeployer(rootAdmin_, currency_, address(new TrancheFab()), address(new AssessorFab()),
-            operator_fab, distributor_fab);
+            operatorfab_, distributorfab_);
 
         lenderDeployer.deployJuniorTranche("JUN", "Junior Tranche Token");
         lenderDeployer.deployAssessor();
