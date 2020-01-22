@@ -1,88 +1,57 @@
 pragma solidity >=0.5.12;
 
-contract PileMock {
+import "../../../test/mock/mock.sol";
 
-    uint public callsIncDebt;
-    uint public callsDecDebt;
-    uint public callsAccrue;
-    uint public callsFile;
-    uint public callsSetRate;
-    uint public callsChangeRate;
-
-    struct Rate {
-        uint pie;
-        uint chi;
-        uint speed;
-        uint48 rho;
-    }
-
-    // returns
-    uint public totalReturn; function setTotalReturn(uint totalReturn_) public {totalReturn=totalReturn_;}
-    uint public debtReturn; function setDebtReturn(uint debtReturn_) public {debtReturn=debtReturn_;}
-    uint public loanDebtReturn; function setLoanDebtReturn(uint loanDebtReturn_) public {loanDebtReturn=loanDebtReturn_;}
-    uint public getCurrentDebtReturn; function setBurdenReturn(uint getCurrentDebtReturn_) public {getCurrentDebtReturn=getCurrentDebtReturn_;}
-    uint public totalDebtReturn; function setTotalDebtReturn(uint totalDebtReturn_) public {totalDebtReturn=totalDebtReturn_;}
-    Rate public rateReturn; function setRateReturn(uint pie, uint chi, uint speed, uint48 rho) public {rateReturn = Rate(pie, chi, speed, rho);}
-
-    address public usr;
-    uint public loan;
-    uint public wad;
-    uint public rate;
-    uint public balance;
-
+contract PileMock is Mock {
     function total() public returns(uint) {
-        return totalReturn;
+        return call("total");
     }
 
-    uint public speed;
-
-    function rates(uint loan) public view returns(uint, uint, uint, uint) {
-        return (rateReturn.pie, rateReturn.chi, rateReturn.speed, rateReturn.rho);
+    function setRate(uint loan, uint rate) public {
+        values_uint["setRate_loan"] = loan;
+        values_uint["setRate_rate"] = rate;
+        calls["setRate"]++;
     }
 
-    function setRate(uint loan_, uint rate_) public {
-        loan = loan_;
-        rate = rate_;
-        callsSetRate++;
-
-    }
-
-    function changeRate(uint loan_, uint rate_) public {
-        loan = loan_;
-        rate = rate_;
-        callsChangeRate++;
+    function changeRate(uint loan, uint rate) public {
+        values_uint["changeRate_loan"] = loan;
+        values_uint["changeRate_rate"] = rate;
+        calls["changeRate"]++;
 
     }
 
     function debt(uint loan) public returns(uint) {
-        return loanDebtReturn;
+        // name = "debt_loan" because of two debt funcs
+        values_uint["debt_loan_loan"] = loan;
+        calls["debt_loan"]++;
+        return values_return["debt_loan"];
     }
 
     function debt() public returns(uint) {
-        return debtReturn;
+        return call("debt");
     }
 
-    function incDebt(uint loan_, uint wad_) public {
-       loan = loan_;
-       wad = wad_;
-       callsIncDebt++;
+    function incDebt(uint loan, uint currencyAmount) public {
+        values_uint["incDebt_loan"] = loan;
+        values_uint["incDebt_currencyAmount"] = currencyAmount;
+        calls["incDebt"]++;
+
     }
 
-    function decDebt(uint loan_, uint wad_) public {
-       loan = loan_;
-       wad = wad_;
-       callsDecDebt++;
+    function decDebt(uint loan, uint currencyAmount) public {
+        values_uint["decDebt_loan"] = loan;
+        values_uint["decDebt_currencyAmount"] = currencyAmount;
+        calls["decDebt"]++;
     }
 
-    function accrue(uint loan_) public {
-        loan = loan_;
-        callsAccrue++;
+    function accrue(uint loan) public {
+        values_uint["accrue_loan"] = loan;
+        calls["accrue"]++;
     }
 
-    function file(uint rate_, uint speed_) public {
-        callsFile++;
-        rate = rate_;
-        speed = speed_;
+    function file(uint rate, uint speed) public {
+        values_uint["file_rate"] = rate;
+        values_uint["file_speed"] = speed;
+        calls["file"]++;
     }
-
 }

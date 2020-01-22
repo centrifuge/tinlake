@@ -91,6 +91,7 @@ contract BastDistributorSingleTrancheTest is DSTest, Math {
     function testBorrow() public {
         uint amount = 100 ether;
         shelf.setReturn("balanceRequest", requestWant, amount);
+
         junior.setReturn("balance", 200 ether);
         balanceExpectBorrow(amount);
     }

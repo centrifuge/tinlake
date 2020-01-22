@@ -23,7 +23,7 @@ import "tinlake-auth/auth.sol";
 import { TitleOwned } from "tinlake-title/title.sol";
 
 contract NFTLike {
-    function ownerOf(uint256 tokenId) public view returns (address owner);
+    function ownerOf(uint256 tokenId) public returns (address owner);
     function transferFrom(address from, address to, uint256 tokenId) public;
 }
 
@@ -42,7 +42,7 @@ contract TokenLike {
 
 contract PileLike {
     uint public total;
-    function debt(uint) public view returns (uint);
+    function debt(uint) public returns (uint);
     function accrue(uint) public;
     function incDebt(uint, uint) public;
     function decDebt(uint, uint) public;
