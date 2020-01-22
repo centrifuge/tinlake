@@ -249,7 +249,6 @@ contract AssessorTest is DSTest,Math {
         // check if correct
         assertEq(assessor.currentJuniorRatio(), 25 * 10**25);
 
-
         uint maxSupplyAmount = 100 ether;
 
         assertTrue(assessor.supplyApprove(assessor.senior(), maxSupplyAmount-1));
@@ -276,6 +275,35 @@ contract AssessorTest is DSTest,Math {
 
         // random address should be true (because not activated)
         assertTrue(assessor.supplyApprove(address(123), 1 ether) == true);
+    }
+
+    function testReedemApprove() public {
+        // define maxJuniorRatio with 20 %
+        uint maxSeniorRatio = 2*ONE/10;
+        assessor.file("maxJuniorRatio",maxSeniorRatio);
+
+        // set currentJuniorRatio to 25 %
+        uint poolValue = 300 ether;
+        pool.setReturn("totalValue",poolValue);
+        senior.setReturn("balance", 0);
+        junior.setReturn("balance", 100 ether);
+        senior.setReturn("debt", 300 ether);
+
+        // check if correct
+        assertEq(assessor.currentJuniorRatio(), 25 * 10**25);
+
+        // seniorAssetValue: 300 ether, juniorAssetValue 100 ether => 25 %
+
+        // max possible juniorAssetValue
+        // seniorAssetValue: 300 ether, juniorAssetValue: 75 ether => 20%
+        // therefore maxReedem for senior: 25 ether
+
+        assertTrue(assessor.redeemApprove(assessor.junior(), 25 ether));
+        assertTrue(assessor.redeemApprove(assessor.junior(), 36 ether) == false);
+
+
+
+
     }
 
 }

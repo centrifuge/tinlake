@@ -119,18 +119,21 @@ contract Assessor is Math, DSNote, Auth {
     }
 
 
-    function calcMaxSeniorAssetValue() public returns (uint) {
+    function _calcMaxSeniorAssetValue(uint juniorAssetValue) internal returns (uint) {
         // maxJuniorRatio = 100/(maxSeniorAssetValue + juniorAssetValue)*juniorAssetValue
         // therefore
         // maxSeniorAssetValue = 100*juniorAssetValue/maxJuniorRatio - juniorAssetValue
         // 100% == ONE
         // maxSeniorAssetValue = ONE*juniorAssetValue/maxJuniorRatio - juniorAssetValue
         // maxSeniorAssetValue = juniorAssetValue/maxJuniorRatio - juniorAssetValue
-        uint juniorAssetValue = calcAssetValue(junior);
         if (juniorAssetValue == 0) {
             return 0;
         }
         return rdiv(juniorAssetValue, maxJuniorRatio) - juniorAssetValue;
+    }
+
+    function calcMaxSeniorAssetValue() public returns (uint) {
+       return  _calcMaxSeniorAssetValue(calcAssetValue((junior)));
     }
 
     // only needed for external contracts
@@ -147,13 +150,35 @@ contract Assessor is Math, DSNote, Auth {
         }
 
         if (tranche == senior) {
-            uint maxSeniorAssetValue = calcMaxSeniorAssetValue();
+            uint maxSeniorAssetValue = _calcMaxSeniorAssetValue(calcAssetValue((junior)));
             uint seniorAssetValue = calcAssetValue(senior);
 
             if (maxSeniorAssetValue < seniorAssetValue) {
                 return false;
             }
             if (currencyAmount <= sub(maxSeniorAssetValue, seniorAssetValue)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function redeemApprove(address tranche, uint currencyAmount) public returns(bool) {
+        // always allowed to redeem into senior || maxJuniorRatio feature not activated
+        if (tranche == senior || maxJuniorRatio == 0) {
+            return true;
+        }
+
+        if (tranche == junior) {
+            // calculate max senior with potential reduced junior
+            uint maxPostSeniorAssetValue = _calcMaxSeniorAssetValue(sub(calcAssetValue(junior), currencyAmount));
+
+            // if sub fails not enough curreny in the reserve
+            uint reducedJuniorReserve = sub(_juniorReserve(), currencyAmount);
+
+            uint postSeniorAssetValue = _calcSeniorAssetValue(pool.totalValue(), TrancheLike(senior).balance(), SeniorTrancheLike(senior).debt(), reducedJuniorReserve);
+
+            if (postSeniorAssetValue <= maxPostSeniorAssetValue) {
                 return true;
             }
         }
