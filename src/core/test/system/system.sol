@@ -17,21 +17,11 @@ pragma solidity >=0.5.12;
 
 import "ds-test/test.sol";
 import "./setup.sol";
-<<<<<<< HEAD
-=======
-import "./users/admin.sol";
->>>>>>> upstream/develop
 import "./users/whitelisted_investor.sol";
 
 
 contract SystemTest is TestSetup, DSTest {
     // users
-<<<<<<< HEAD
-
-=======
-    AdminUser public admin;
-    address admin_;
->>>>>>> upstream/develop
     WhitelistedInvestor public juniorInvestor;
     address     public juniorInvestor_;
 
@@ -39,13 +29,6 @@ contract SystemTest is TestSetup, DSTest {
         // setup deployment
         deployContracts();
 
-<<<<<<< HEAD
-=======
-        // setup users
-        admin = new AdminUser(address(borrowerDeployer.shelf()), address(borrowerDeployer.pile()), address(borrowerDeployer.principal()), address(borrowerDeployer.title()));
-        admin_ = address(admin);
-
->>>>>>> upstream/develop
         juniorInvestor = new WhitelistedInvestor(address(lenderDeployer.juniorOperator()), currency_, address(lenderDeployer.juniorERC20()));
         juniorInvestor_ = address(juniorInvestor);
 
