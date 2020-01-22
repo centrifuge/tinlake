@@ -125,7 +125,9 @@ contract Assessor is Math, DSNote, Auth {
         if (juniorAssetValue == 0) {
             return 0;
         }
-        return rmul(rdiv(juniorAssetValue, minJuniorRatio), ONE-minJuniorRatio);
+
+        // juniorAssetValue/minJuniorRatio * (1-minJuniorRatio) same as:
+        return sub(rdiv(juniorAssetValue, minJuniorRatio), juniorAssetValue);
     }
 
     function calcMinJuniorAssetValue() public returns (uint) {
@@ -138,7 +140,6 @@ contract Assessor is Math, DSNote, Auth {
 
     // only needed for external contracts
     function currentJuniorRatio() public returns(uint) {
-        // currentJuniorRatio = 100/(seniorAssetValue + juniorAssetValue)*juniorAssetValue
         uint juniorAssetValue = calcAssetValue(junior);
         return rmul(rdiv(ONE,(add(juniorAssetValue, calcAssetValue(senior)))), juniorAssetValue);
     }
