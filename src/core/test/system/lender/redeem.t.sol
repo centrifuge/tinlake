@@ -31,14 +31,13 @@ contract RedeemTest is SystemTest {
 
         WhitelistOperator juniorOperator = WhitelistOperator(address(juniorOperator));
         juniorOperator.relyInvestor(juniorInvestor_);
-        //juniorOperator.relyInvestor(address(this));
     }
 
     function supply(uint balance, uint amount) public {
         currency.mint(juniorInvestor_, balance);
         juniorInvestor.doSupply(amount);
     }
-
+    
     function testRedeem() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;
