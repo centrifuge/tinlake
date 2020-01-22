@@ -19,6 +19,10 @@ import "../system.t.sol";
 
 contract SupplyTest is SystemTest {
 
+    function setUp() public {
+        baseSetup();
+    }
+    
     function supply(uint balance, uint amount) public {
         currency.mint(juniorInvestor_, balance);
         juniorInvestor.doSupply(amount);

@@ -16,11 +16,20 @@
 pragma solidity >=0.5.12;
 
 import "../system.sol";
+import "../users/borrower.sol";
 
 contract CloseTest is SystemTest {
+
+    Borrower borrower;
+    address borrower_;
+        
+    function setUp() public {
+        baseSetup();
+        borrower = new Borrower(address(borrowerDeployer.shelf()), address(lenderDeployer.distributor()), currency_, address(borrowerDeployer.pile()));
+        borrower_ = address(borrower);
+    }
     
     function closeLoan(uint loanId, uint tokenId, bytes32 lookupId) public {
-        assertPreCondition(loanId, tokenId, lookupId);
         borrower.close(loanId);
         assertPostCondition(loanId, tokenId, lookupId);
     }
@@ -50,7 +59,8 @@ contract CloseTest is SystemTest {
         uint loanId = borrower.issue(collateralNFT_, tokenId);
         // transfer nft to random user / borrower still loanOwner
         borrower.approveNFT(collateralNFT, address(this));
-        collateralNFT.transferFrom(borrower_, address(this), tokenId);  
+        collateralNFT.transferFrom(borrower_, address(this), tokenId);
+        assertPreCondition(loanId, tokenId, lookupId);
         closeLoan(loanId, tokenId, lookupId);
     }
 

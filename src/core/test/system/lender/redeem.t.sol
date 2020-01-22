@@ -20,6 +20,10 @@ import {SwitchableDistributor} from "../../../lender/distributor/switchable.sol"
 
 contract RedeemTest is SystemTest {
 
+    function setUp() public {
+        baseSetup();
+    }
+
     function supply(uint balance, uint amount) public {
         currency.mint(juniorInvestor_, balance);
         juniorInvestor.doSupply(amount);

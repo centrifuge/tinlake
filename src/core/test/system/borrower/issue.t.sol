@@ -16,11 +16,20 @@
 pragma solidity >=0.5.12;
 
 import "../system.sol";
+import "../users/borrower.sol";
 
 contract IssueTest is SystemTest {
 
+    Borrower borrower;
+    address borrower_;
+        
+    function setUp() public {
+        baseSetup();
+        borrower = new Borrower(address(borrowerDeployer.shelf()), address(lenderDeployer.distributor()), currency_, address(borrowerDeployer.pile()));
+        borrower_ = address(borrower);
+    }
+
     function issueLoan(uint tokenId, bytes32 lookupId) public {
-        assertPreCondition(tokenId, lookupId);
         uint loanId = borrower.issue(collateralNFT_, tokenId);
         assertPostCondition(loanId, tokenId, lookupId);
     }
@@ -43,6 +52,7 @@ contract IssueTest is SystemTest {
 
     function testIssueLoan() public {
         (uint tokenId, bytes32 lookupId) = issueNFT(borrower_);
+        assertPreCondition(tokenId, lookupId);
         issueLoan(tokenId, lookupId); 
     }
 
