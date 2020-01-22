@@ -1,38 +1,32 @@
 pragma solidity >=0.5.12;
 
-contract CeilingMock {
-    uint public callsBorrow;
-    uint public callsRepay;
-    uint public callsFile;
-    bool public ceilingReached; function setCeilingReached(bool ceilingReached_) public {ceilingReached=ceilingReached_;}
-    uint public ceilingReturn; function setCeilingReturn(uint ceiling) public {ceilingReturn=ceiling;}
+import "../../../test/mock/mock.sol";
 
-    uint public amount;
-    uint public loan;
-    uint public wad;
+contract CeilingMock is Mock {
 
-    function values(uint loan) public view returns(uint) {
-        return ceilingReturn;
+    function values(uint loan) public returns(uint) {
+        values_uint["values_loan"] = loan;
+        return call("values");
     }
 
-    function borrow (uint loan_, uint amount_) public {
-       callsBorrow++;
-       amount = amount_;
-       loan = loan_;
-       require(!ceilingReached);
+    function borrow (uint loan, uint amount) public {
+        bytes32 name = "borrow";
+        require(method_fail[name] == false);
+        calls[name]++;
+        values_uint["borrow_loan"] = loan;
+        values_uint["borrow_amount"] = amount;
     }
 
-    function repay(uint loan_, uint amount_) public {
-       callsRepay++;
-       amount = amount_;
-       loan = loan_;
-    }
-    
-    function file(uint loan_, uint wad_) public {
-        callsFile++;
-        loan = loan_;
-        wad = wad_;
+    function repay(uint loan, uint amount) public {
+        calls["repay"]++;
+        values_uint["repay_loan"] = loan;
+        values_uint["repay_amount"] = amount;
+
     }
 
-
+    function file(uint loan, uint amount) public {
+        calls["file"]++;
+        values_uint["file_loan"] = loan;
+        values_uint["file_amount"] = amount;
+    }
 }

@@ -49,25 +49,25 @@ contract CollectorTest is DSTest {
     }
 
     function collect(uint loan, uint tokenId, uint price) internal {
-        collector.collect(loan);
-        assertEq(nft.transferFromCalls(), 1);
-        assertEq(nft.to(), address(this));
-        assertEq(nft.tokenId(), tokenId);
-        assertEq(shelf.callsRecover(), 1);
-        assertEq(shelf.wad(), price);
-        assertEq(shelf.usr(), address(this));
+        collector.collect(loan, address(this));
+        assertEq(nft.calls("transferFrom"), 1);
+        assertEq(nft.values_address("transferFrom_to"), address(this));
+        assertEq(nft.values_uint("transferFrom_tokenId"), tokenId);
+        assertEq(shelf.calls("recover"), 1);
+        assertEq(shelf.values_uint("recover_currencyAmount"), price);
+        assertEq(shelf.values_address("recover_usr"), address(this));
     }
    
     function seize(uint loan) internal {
         collector.seize(loan);
-        assertEq(shelf.callsClaim(), 1);
-        assertEq(shelf.loan(), loan);
-        assertEq(shelf.usr(), address(collector));   
+        assertEq(shelf.calls("claim"), 1);
+        assertEq(shelf.values_uint("claim_loan"), loan);
+        assertEq(shelf.values_address("claim_usr"), address(collector));
     }
     
     function setUpLoan(uint loan, uint tokenId, uint debt) public {
-        shelf.setLoanReturn(address(nft), tokenId);
-        pile.setLoanDebtReturn(debt);
+        shelf.setReturn("token", address(nft), tokenId);
+        pile.setReturn("debt_loan", debt);
     }
 
     function testSeizeCollect() public {
@@ -79,8 +79,8 @@ contract CollectorTest is DSTest {
 
         threshold.set(loan, debt-1);
         collector.file(loan, address(this), price);
-        seize(loan);  
-        collect(loan, tokenId, price);  
+        seize(loan);
+        collect(loan, tokenId, price);
     }
 
     function testSeizeCollectAnyUser() public {
