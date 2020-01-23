@@ -30,14 +30,13 @@ contract STest is SystemTest {
     Hevm public hevm;
     
     function setUp() public {
-        baseSetup();
-        
+        baseSetup("whitelist", "switchable");
         // setup hevm
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
 
         // setup users
-        borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
+        borrower = new Borrower(address(shelf), address(lenderDeployer.distributor()), currency_, address(pile));
         borrower_ = address(borrower);
 
         admin = new AdminUser(address(shelf), address(pile), address(ceiling), address(title), address(distributor));
@@ -58,11 +57,11 @@ contract STest is SystemTest {
         assertEq(currency.balanceOf(address(borrowerDeployer.pile())), 0);
     }
 
-    function whitelist(uint tokenId, address collateralNFT_, uint principal, address borrower_, uint rate) public returns (uint) {
+    function whitelist(uint tokenId, address collateralNFT_, uint principal, address borrowerAddr, uint rate) public returns (uint) {
         // define rate
         admin.doInitRate(rate, rate);
         // collateralNFT whitelist
-        uint loan = admin.doAdmit(collateralNFT_, tokenId, principal, borrower_);
+        uint loan = admin.doAdmit(collateralNFT_, tokenId, principal, borrowerAddr);
 
         // add rate for loan
         admin.doAddRate(loan, rate);
@@ -79,18 +78,18 @@ contract STest is SystemTest {
     }
 
     function defaultLoan() public pure returns(uint principal, uint rate) {
-        uint principal = 1000 ether;
+        principal = 1000 ether;
         // define rate
-        uint rate = uint(1000000564701133626865910626); // 5 % day
+        rate = uint(1000000564701133626865910626); // 5 % day
 
         return (principal, rate);
     }
 
     function setupOngoingLoan() public returns (uint loan, uint tokenId, uint principal, uint rate) {
-        (uint principal, uint rate) = defaultLoan();
+        (principal, rate) = defaultLoan();
         // create borrower collateral collateralNFT
-        uint tokenId = collateralNFT.issue(borrower_);
-        uint loan = whitelist(tokenId, collateralNFT_, principal,borrower_, rate);
+        tokenId = collateralNFT.issue(borrower_);
+        loan = whitelist(tokenId, collateralNFT_, principal,borrower_, rate);
         borrow(loan, tokenId, principal);
 
         return (loan, tokenId, principal, rate);
@@ -108,12 +107,11 @@ contract STest is SystemTest {
     }
 
     // note: this method will be refactored with the new lender side contracts, as the distributor should not hold any currency
-    function currdistributorBal() public returns(uint) {
+    function currdistributorBal() public view returns(uint) {
         return currency.balanceOf(address(lenderDeployer.distributor()));
     }
 
     function borrowRepay(uint principal, uint rate) public {
-        ShelfLike shelf_ = ShelfLike(address(borrowerDeployer.shelf()));
         CeilingLike ceiling_ = CeilingLike(address(borrowerDeployer.principal()));
 
         // create borrower collateral collateralNFT
@@ -130,7 +128,7 @@ contract STest is SystemTest {
         setupRepayReq();
         uint distributorShould = borrowerDeployer.pile().debt(loan) + currdistributorBal();
         // close without defined amount
-        borrower.doClose(loan, borrower_);
+        borrower.doClose(loan);
         uint totalT = uint(currency.totalSupply());
         checkAfterRepay(loan, tokenId, totalT, distributorShould);
     }
@@ -173,7 +171,7 @@ contract STest is SystemTest {
     }
 
     function testRepayFullAmount() public {
-        (uint loan, uint tokenId, uint principal, uint rate) = setupOngoingLoan();
+        (uint loan, uint tokenId,,) = setupOngoingLoan();
 
         hevm.warp(now + 1 days);
 
@@ -181,14 +179,14 @@ contract STest is SystemTest {
         setupRepayReq();
         uint distributorShould = borrowerDeployer.pile().debt(loan) + currdistributorBal();
         // close without defined amount
-        borrower.doClose(loan, borrower_);
+        borrower.doClose(loan);
 
         uint totalT = uint(currency.totalSupply());
         checkAfterRepay(loan, tokenId, totalT, distributorShould);
     }
 
     function testLongOngoing() public {
-        (uint loan, uint tokenId, uint principal, uint rate) = setupOngoingLoan();
+        (uint loan, uint tokenId, , ) = setupOngoingLoan();
 
         // interest 5% per day 1.05^300 ~ 2273996.1286 chi
         hevm.warp(now + 300 days);
@@ -199,7 +197,7 @@ contract STest is SystemTest {
         uint distributorShould = borrowerDeployer.pile().debt(loan) + currdistributorBal();
 
         // close without defined amount
-        borrower.doClose(loan, borrower_);
+        borrower.doClose(loan);
 
         uint totalT = uint(currency.totalSupply());
         checkAfterRepay(loan, tokenId, totalT, distributorShould);

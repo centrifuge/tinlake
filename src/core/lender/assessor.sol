@@ -42,12 +42,14 @@ contract Assessor is Math, DSNote, Auth {
 
     PoolLike public pool;
 
-    // initial net asset value
-    uint public initialNAV;
-
     // amounts of token for a token price of ONE
     // constant factor multiplied with the token price
     uint public tokenAmountForONE;
+
+    // denominated in RAD
+    // ONE == 100%
+    // only needed for two tranches. if only one tranche is used == 0
+    uint public minJuniorRatio;
 
     // --- Assessor ---
     // computes the current asset value for tranches.
@@ -66,6 +68,7 @@ contract Assessor is Math, DSNote, Auth {
 
     function file(bytes32 what, uint value) public auth {
         if (what == "tokenAmountForONE") { tokenAmountForONE = value; }
+        else if (what == "minJuniorRatio") { minJuniorRatio = value; }
         else revert();
     }
 
@@ -79,7 +82,7 @@ contract Assessor is Math, DSNote, Auth {
     }
 
     function calcTokenPrice(address tranche) public returns (uint) {
-        return mul(_calcTokenPrice(tranche), tokenAmountForONE);
+        return safeMul(_calcTokenPrice(tranche), tokenAmountForONE);
     }
 
     function _calcTokenPrice(address tranche) internal returns (uint) {
@@ -95,13 +98,13 @@ contract Assessor is Math, DSNote, Auth {
     }
 
     // Tranche.assets (Junior) = (Pool.value + Tranche.reserve - Senior.debt) > 0 && (Pool.value - Tranche.reserve - Senior.debt) || 0
-    function _calcJuniorAssetValue(uint poolValue, uint trancheReserve, uint seniorDebt) internal returns (uint) {
+    function _calcJuniorAssetValue(uint poolValue, uint trancheReserve, uint seniorDebt) internal pure returns (uint) {
         int assetValue = int(poolValue + trancheReserve - seniorDebt);
         return (assetValue > 0) ? uint(assetValue) : 0;
     }
 
     // Tranche.assets (Senior) = (Tranche.debt < (Pool.value + Junior.reserve)) && (Senior.debt + Tranche.reserve) || (Pool.value + Junior.reserve + Tranche.reserve)
-    function _calcSeniorAssetValue(uint poolValue, uint trancheReserve, uint trancheDebt, uint juniorReserve) internal returns (uint) {
+    function _calcSeniorAssetValue(uint poolValue, uint trancheReserve, uint trancheDebt, uint juniorReserve) internal pure returns (uint) {
         return ((poolValue + juniorReserve) >= trancheDebt) ? (trancheDebt + trancheReserve) : (poolValue + juniorReserve + trancheReserve);
     }
 
@@ -111,5 +114,59 @@ contract Assessor is Math, DSNote, Auth {
 
     function _seniorDebt() internal returns (uint) {
         return (senior != address(0x0)) ? SeniorTrancheLike(senior).debt() : 0;
+    }
+
+
+    function calcMaxSeniorAssetValue() public returns (uint) {
+        uint juniorAssetValue = calcAssetValue(junior);
+        if (juniorAssetValue == 0) {
+            return 0;
+        }
+        return safeSub(rdiv(juniorAssetValue, minJuniorRatio), juniorAssetValue);
+    }
+
+    function calcMinJuniorAssetValue() public returns (uint) {
+        if (senior == address(0)) {
+            return 0;
+        }
+        uint seniorAssetValue = calcAssetValue(senior);
+        if (seniorAssetValue == 0) {
+            return uint(-1);
+        }
+        return rmul(rdiv(seniorAssetValue, ONE-minJuniorRatio), minJuniorRatio);
+    }
+
+    // only needed for external contracts
+    function currentJuniorRatio() public returns(uint) {
+        if (senior == address(0)) {
+            return ONE;
+        }
+        uint juniorAssetValue = calcAssetValue(junior);
+        return rdiv(juniorAssetValue, safeAdd(juniorAssetValue, calcAssetValue(senior)));
+    }
+
+    function supplyApprove(address tranche, uint currencyAmount) public returns(bool) {
+        // always allowed to supply into junior || minJuniorRatio feature not activated
+        if (tranche == junior || minJuniorRatio == 0) {
+            return true;
+        }
+
+        if (tranche == senior && safeAdd(calcAssetValue(senior), currencyAmount) <= calcMaxSeniorAssetValue()) {
+            return true;
+        }
+        return false;
+    }
+
+    function redeemApprove(address tranche, uint currencyAmount) public returns(bool) {
+        // always allowed to redeem into senior || minJuniorRatio feature not activated || only single tranche
+        if (tranche == senior || minJuniorRatio == 0 || senior == address(0)) {
+            return true;
+        }
+
+        if (tranche == junior && safeSub(calcAssetValue(junior), currencyAmount) >= calcMinJuniorAssetValue()) {
+            return true;
+
+        }
+        return false;
     }
 }

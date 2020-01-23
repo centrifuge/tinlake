@@ -17,21 +17,23 @@ pragma solidity >=0.5.12;
 
 import "ds-test/test.sol";
 import "./setup.sol";
+import "./users/admin.sol";
+import "./users/investor.sol";
 import "tinlake-math/math.sol";
 
+
 contract SystemTest is TestSetup, Math, DSTest {
+    // users
 
-    function baseSetup() public {
+    function baseSetup(bytes32 operator, bytes32 distributor) public {
         // setup deployment
-        deployContracts();
-
-        // todo replace with investor contract
+        deployContracts(operator, distributor);
         rootAdmin.relyLenderAdmin(address(this));
     }
 
     function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
-        uint tokenId = collateralNFT.issue(usr);
-        bytes32 lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
+        tokenId = collateralNFT.issue(usr);
+        lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
         return (tokenId, lookupId);
     }
 

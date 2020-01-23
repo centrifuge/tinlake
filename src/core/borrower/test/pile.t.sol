@@ -23,7 +23,7 @@ contract Hevm {
     function warp(uint256) public;
 }
 
-contract PileTest is Math, DSTest {
+contract PileTest is Interest, DSTest {
     Pile pile;
     Hevm hevm;
 
@@ -69,10 +69,10 @@ contract PileTest is Math, DSTest {
         return rmul(principal, rpow(rate, time, ONE));
     }
 
-    function _initRateGroup(uint rate_, uint speed_) internal {
-        pile.file(rate_, speed_);
-        (, uint chi , uint speed,) = pile.rates(rate_);
-        assertEq(speed, speed_);
+    function _initRateGroup(uint rate_, uint ratePerSecond_) internal {
+        pile.file(rate_, ratePerSecond_);
+        (, uint chi , uint ratePerSecond,) = pile.rates(rate_);
+        assertEq(ratePerSecond, ratePerSecond_);
         assertEq(chi, ONE);
     }
 
@@ -88,21 +88,21 @@ contract PileTest is Math, DSTest {
 
     function testInitRateGroup() public {
         uint rate = 1000000003593629043335673583;
-        uint speed = rate;
-        _initRateGroup(rate, speed);  
+        uint ratePerSecond = rate;
+        _initRateGroup(rate, ratePerSecond);  
     }
 
     function testUpdateRateGroup() public {
         uint rate = 1000000003593629043335673583;
-        uint initSpeed = rate;
-        _initRateGroup(rate, initSpeed);
+        uint initRatePerSecond = rate;
+        _initRateGroup(rate, initRatePerSecond);
         
         hevm.warp(now + 1 days);
         
-        uint newSpeed = 1000000564701133626865910626;
-        pile.file(rate, newSpeed);
-        (, uint chi, uint speed,) = pile.rates(rate);
-        assertEq(speed, 1000000564701133626865910626); 
+        uint newRatePerSecond = 1000000564701133626865910626;
+        pile.file(rate, newRatePerSecond);
+        (, uint chi, uint ratePerSecond,) = pile.rates(rate);
+        assertEq(ratePerSecond, 1000000564701133626865910626); 
         assertEq(chi, 1000310537755655376744337012);  
     }
 
@@ -350,31 +350,5 @@ contract PileTest is Math, DSTest {
 
     function wad(uint rad_) internal pure returns (uint) {
         return rad_ / 10 ** 27;
-    }
-
-    // --- Math ---
-    uint256 constant ONE = 10 ** 27;
-    function rpow(uint x, uint n, uint base) internal pure returns (uint z) {
-        assembly {
-            switch x case 0 {switch n case 0 {z := base} default {z := 0}}
-            default {
-                switch mod(n, 2) case 0 { z := base } default { z := x }
-                let half := div(base, 2)  // for rounding.
-                for { n := div(n, 2) } n { n := div(n,2) } {
-                let xx := mul(x, x)
-                if iszero(eq(div(xx, x), x)) { revert(0,0) }
-                let xxRound := add(xx, half)
-                if lt(xxRound, xx) { revert(0,0) }
-                x := div(xxRound, base)
-                if mod(n,2) {
-                    let zx := mul(z, x)
-                    if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0,0) }
-                    let zxRound := add(zx, half)
-                    if lt(zxRound, zx) { revert(0,0) }
-                    z := div(zxRound, base)
-                }
-            }
-            }
-        }
     }
 }

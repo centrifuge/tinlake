@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pragma solidity >=0.5.12;
-pragma experimental ABIEncoderV2;
+
 
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
@@ -43,7 +43,7 @@ contract CreditLine is DSNote, Auth, Math {
     }
 
     function ceiling(uint loan) public returns(uint) {
-        return sub(values[loan], pile.debt(loan));
+        return safeSub(values[loan], pile.debt(loan));
     }
 
     function depend(bytes32 what, address addr) public note auth {
@@ -56,7 +56,7 @@ contract CreditLine is DSNote, Auth, Math {
     }
 
     function borrow(uint loan, uint amount) public auth {
-        require(values[loan] >= add(pile.debt(loan), amount));
+        require(values[loan] >= safeAdd(pile.debt(loan), amount));
     }
 
     function repay(uint loan, uint amount) public auth {
