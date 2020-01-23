@@ -48,7 +48,7 @@ contract BalanceTest is SystemTest {
     function assertPreConditionTake(uint takeAmount) public {
         // assert: borrowFromTranches is active
         assert(distributor.borrowFromTranches());
-        // assert: junior has enough capital
+        // assert: tranche reserve has enough funds
         assert(currency.balanceOf(address(junior)) == takeAmount);
     }
 
