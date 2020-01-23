@@ -44,29 +44,29 @@ contract Borrower is DSTest {
         shelf.lock(loan);
     }
 
-    function borrow(uint loan, uint amount) public {
+    function borrow(uint loan, uint currencyAmount) public {
         shelf.lock(loan);
-        shelf.borrow(loan, amount);
+        shelf.borrow(loan, currencyAmount);
         distributor.balance();
-        shelf.withdraw(loan, amount, address(this));
+        shelf.withdraw(loan, currencyAmount, address(this));
     }
 
     function approveNFT(Title nft, address usr) public {
         nft.setApprovalForAll(usr, true);
     }
 
-    function repay(uint loan, uint wad, address usr) public {
-        shelf.repay(loan, wad);
+    function repay(uint loan, uint currencyAmount) public {
+        shelf.repay(loan, currencyAmount);
         shelf.unlock(loan);
         distributor.balance();
     }
 
-    function doClose(uint loan, address usr) public {
+    function doClose(uint loan) public {
         uint debt = pile.debt(loan);
-        repay(loan, debt, usr);
+        repay(loan, debt);
     }
 
-    function doApproveCurrency(address usr, uint wad) public {
-        tkn.approve(usr, wad);
+    function doApproveCurrency(address usr, uint currencyAmount) public {
+        tkn.approve(usr, currencyAmount);
     }
 }

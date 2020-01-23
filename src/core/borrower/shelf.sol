@@ -127,7 +127,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     }
     
     // --- Currency actions ---
-    function balanceRequest() public returns (bool, uint) {
+    function balanceRequest() public view returns (bool, uint) {
         if (balance > 0) {
             return (true, balance);
         } else {

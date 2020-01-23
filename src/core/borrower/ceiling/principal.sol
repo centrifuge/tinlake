@@ -29,7 +29,7 @@ contract Principal is DSNote, Auth, Math {
         wards[msg.sender] = 1;
     }
 
-    function ceiling(uint loan) public returns(uint) {
+    function ceiling(uint loan) public view returns(uint) {
         return values[loan];
     }
 

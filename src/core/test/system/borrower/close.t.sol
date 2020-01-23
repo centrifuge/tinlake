@@ -22,7 +22,7 @@ contract CloseTest is SystemTest {
     function closeLoan(uint loanId, uint tokenId, bytes32 lookupId) public {
         assertPreCondition(loanId, tokenId, lookupId);
         borrower.close(loanId);
-        assertPostCondition(loanId, tokenId, lookupId);
+        assertPostCondition(lookupId);
     }
 
     function assertPreCondition(uint loanId, uint tokenId, bytes32 lookupId) public {
@@ -36,7 +36,7 @@ contract CloseTest is SystemTest {
         assert(pile.debt(loanId) == 0);
     }
 
-    function assertPostCondition(uint loanId, uint tokenId, bytes32 lookupId) public {
+    function assertPostCondition(bytes32 lookupId) public {
         // assert: nft + loan removed nftlookup
         assertEq(shelf.nftlookup(lookupId), 0);
         
