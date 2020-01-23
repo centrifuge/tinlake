@@ -189,7 +189,7 @@ contract PileTest is Interest, DSTest {
         pile.file(highRate, highRate);
         // do not init lowRate
         pile.setRate(loan, highRate);
-        // fail rate not set
+        // fail rate not initiated
         pile.changeRate(loan, lowRate);
     }
 
