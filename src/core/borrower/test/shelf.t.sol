@@ -84,6 +84,7 @@ contract ShelfTest is DSTest {
         
         shelf.withdraw(loan_, wad_, address(this));
 
+        assertEq(distributor.calls("balance"), 1);
         assertEq(totalBalance-wad_, shelf.balance());
         assertEq(loanBalance-wad_, shelf.balances(loan_));
         assertEq(currency.calls("transferFrom"), 1);
@@ -96,6 +97,7 @@ contract ShelfTest is DSTest {
         pile.setReturn("debt_loan", wad_);
         shelf.repay(loan_, wad_);
 
+        assertEq(distributor.calls("balance"), 2);
         assertEq(pile.calls("accrue"), 2);
         assertEq(pile.calls("decDebt"), 1);
         assertEq(shelf.balance(), 0);
