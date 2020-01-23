@@ -16,7 +16,6 @@
 
 pragma solidity >=0.5.12;
 
-import "ds-test/test.sol";
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
@@ -57,7 +56,7 @@ contract DistributorLike {
     function balance() public;
 }
 
-contract Shelf is DSNote, Auth, TitleOwned, Math, DSTest {
+contract Shelf is DSNote, Auth, TitleOwned, Math {
 
     // --- Data ---
     TitleLike public title;

@@ -37,7 +37,9 @@ contract WithdrawTest is SystemTest {
     SwitchableDistributor distributor;
         
     function setUp() public {
-        baseSetup();
+        bytes32 juniorOperator_ = "whitelist";
+        bytes32 distributor_ = "switchable";
+        baseSetup(juniorOperator_, distributor_);
         distributor = SwitchableDistributor(address(lenderDeployer.distributor()));
         // setup users
         borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
@@ -59,7 +61,7 @@ contract WithdrawTest is SystemTest {
     function withdraw(uint loanId, uint tokenId, uint amount, address usr) public {
         uint shelfBalance = currency.balanceOf(address(shelf));
         uint juniorBalance = currency.balanceOf(address(junior));
-        uint initialAvailable = add(shelfBalance, juniorBalance);
+        uint initialAvailable = safeAdd(shelfBalance, juniorBalance);
         uint initialRecipientBalance = currency.balanceOf(usr);
         uint initialLoanBalance = shelf.balances(loanId);
         uint initialTotalBalance = shelf.balance();
@@ -77,22 +79,22 @@ contract WithdrawTest is SystemTest {
         // assert: enough funds available
         uint shelfBalance = currency.balanceOf(address(shelf));
         uint juniorBalance = currency.balanceOf(address(junior));
-        assert(add(shelfBalance, juniorBalance) >= amount);
+        assert(safeAdd(shelfBalance, juniorBalance) >= amount);
     }
 
     function assertPostCondition(uint loanId, uint tokenId, uint withdrawAmount, address recipient, uint initialAvailable, uint initialRecipientBalance, uint initialLoanBalance, uint initialTotalBalance) public {
         // assert: nft still locked, shelf nftOwner
         assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
         // assert: available balance decreased
-        assertEq(currency.balanceOf(address(shelf)), sub(initialAvailable, withdrawAmount));
+        assertEq(currency.balanceOf(address(shelf)), safeSub(initialAvailable, withdrawAmount));
         // assert: no money left in tranche reserve -> withdraw calls balance
         assertEq(currency.balanceOf(address(junior)), 0);
         // assert: borrower balance increased
-        assertEq(currency.balanceOf(recipient), add(initialRecipientBalance, withdrawAmount));
+        assertEq(currency.balanceOf(recipient), safeAdd(initialRecipientBalance, withdrawAmount));
         // assert: loan balance reduced
-        assertEq(shelf.balances(loanId), sub(initialLoanBalance, withdrawAmount));
+        assertEq(shelf.balances(loanId), safeSub(initialLoanBalance, withdrawAmount));
         // assert: total balance reduced
-        assertEq(shelf.balance(), sub(initialTotalBalance, withdrawAmount));
+        assertEq(shelf.balance(), safeSub(initialTotalBalance, withdrawAmount));
     }
 
     function testWithdraw() public {
@@ -105,18 +107,18 @@ contract WithdrawTest is SystemTest {
         // lock nft
         lockNFT(loanId, borrower_);
         // init borrow -> add loan balance
-        initBorrow(loanId, tokenId, loanAmount, borrower_);
+        initBorrow(loanId, loanAmount, borrower_);
         // junior investor puts money into tranche
         invest(investAmount);
         // move funds into shelf
-        distributor.balance(); // why not worky
+        distributor.balance();
         assertPreCondition(loanId, tokenId, loanAmount);
         withdraw(loanId, tokenId, loanAmount, borrower_);
     }
 
     function testWithdrawToOtherUserAccount() public {
         uint loanAmount = 100 ether;
-        uint investAmount = mul(loanAmount, 2);
+        uint investAmount = safeMul(loanAmount, 2);
         // issue nft for borrower
         (uint tokenId, ) = issueNFT(borrower_);
         // issue loan for borrower
@@ -124,7 +126,7 @@ contract WithdrawTest is SystemTest {
         // lock nft
         lockNFT(loanId, borrower_);
         // init borrow -> add loan balance
-        initBorrow(loanId, tokenId, loanAmount, borrower_);
+        initBorrow(loanId, loanAmount, borrower_);
         // junior investor puts money into tranche
         invest(investAmount);
         assertPreCondition(loanId, tokenId, loanAmount);
@@ -134,7 +136,7 @@ contract WithdrawTest is SystemTest {
 
     function testWithdrawFromShelfHasFunds() public {
         uint loanAmount = 100 ether;
-        uint investAmount = mul(loanAmount, 2);
+        uint investAmount = safeMul(loanAmount, 2);
         // issue nft for borrower
         (uint tokenId, ) = issueNFT(borrower_);
         // issue loan for borrower
@@ -142,7 +144,7 @@ contract WithdrawTest is SystemTest {
         // lock nft
         lockNFT(loanId, borrower_);
         // init borrow -> add loan balance
-        initBorrow(loanId, tokenId, loanAmount, borrower_);
+        initBorrow(loanId, loanAmount, borrower_);
         // transfer funds directly into the shelf, without calling tranche.supply()
         supplyFunds(investAmount, address(shelf));
         assertPreCondition(loanId, tokenId, loanAmount);
@@ -153,8 +155,8 @@ contract WithdrawTest is SystemTest {
     function testPartialWithdraw() public {
         uint loanAmount = 100 ether;
         // just withdraw half of your loan balance
-        uint withdrawAmount = div(loanAmount, 2);
-        uint investAmount = mul(loanAmount, 2);
+        uint withdrawAmount = safeDiv(loanAmount, 2);
+        uint investAmount = safeMul(loanAmount, 2);
         // issue nft for borrower
         (uint tokenId, ) = issueNFT(borrower_);
         // issue loan for borrower
@@ -162,7 +164,7 @@ contract WithdrawTest is SystemTest {
         // lock nft
         lockNFT(loanId, borrower_);
         // init borrow -> add loan balance
-        initBorrow(loanId, tokenId, loanAmount, borrower_);
+        initBorrow(loanId, loanAmount, borrower_);
         // junior investor puts money into tranche
         invest(investAmount);
         assertPreCondition(loanId, tokenId, withdrawAmount);
@@ -179,7 +181,7 @@ contract WithdrawTest is SystemTest {
         uint loanId = borrower.issue(collateralNFT_, tokenId);
         // do not lock nft
         // init borrow -> add loan balance
-        initBorrow(loanId, tokenId, loanAmount, borrower_);
+        initBorrow(loanId, loanAmount, borrower_);
         // junior investor puts money into tranche
         invest(investAmount);
         withdraw(loanId, tokenId, loanAmount, borrower_);
@@ -195,7 +197,7 @@ contract WithdrawTest is SystemTest {
         // lock nft
         lockNFT(loanId, randomUser_);
         // init borrow -> add loan balance
-        initBorrow(loanId, tokenId, loanAmount, randomUser_);
+        initBorrow(loanId, loanAmount, randomUser_);
         // junior investor puts money into tranche
         invest(investAmount);
         withdraw(loanId, tokenId, loanAmount, borrower_);
@@ -218,7 +220,7 @@ contract WithdrawTest is SystemTest {
 
     function testFailWithdrawNotEnoughFundsAvailable() public {
         uint loanAmount = 100 ether;
-        uint investAmount = div(loanAmount, 2);
+        uint investAmount = safeDiv(loanAmount, 2);
         // issue nft for borrower
         (uint tokenId, ) = issueNFT(borrower_);
         // issue loan for borrower
@@ -226,7 +228,7 @@ contract WithdrawTest is SystemTest {
         // lock nft
         lockNFT(loanId, borrower_);
         // init borrow -> add loan balance
-        initBorrow(loanId, tokenId, loanAmount, borrower_);
+        initBorrow(loanId, loanAmount, borrower_);
         // junior investor puts money into tranche
         invest(investAmount);
         withdraw(loanId, tokenId, loanAmount, borrower_);
@@ -242,7 +244,7 @@ contract WithdrawTest is SystemTest {
         // lock nft
         lockNFT(loanId, borrower_);
         // init borrow -> add loan balance
-        initBorrow(loanId, tokenId, loanAmount, borrower_);
+        initBorrow(loanId, loanAmount, borrower_);
         // junior investor puts money into tranche
         invest(investAmount);
         assertPreCondition(loanId, tokenId, loanAmount);
@@ -261,7 +263,7 @@ contract WithdrawTest is SystemTest {
         juniorInvestor.doSupply(amount);
     }
 
-    function initBorrow(uint loanId, uint tokenId, uint amount, address usr) public {
+    function initBorrow(uint loanId, uint amount, address usr) public {
         uint ceiling = amount;
         uint rate = 1000000003593629043335673583;
         uint speed = rate;

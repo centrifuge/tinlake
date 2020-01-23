@@ -237,7 +237,7 @@ contract STest is SystemTest {
             principal = i * 80;
 
             // repay transaction
-            borrower.repayAction(i, principal, borrower_);
+            borrower.repayAction(i, principal);
 
             distributorBalance += principal;
             checkAfterRepay(i, i, tTotal, distributorBalance);
