@@ -15,52 +15,18 @@
 
 pragma solidity >=0.5.12;
 
+import "ds-test/test.sol";
 import "./setup.sol";
-import "./users/borrower.sol";
-import "./users/admin.sol";
-import "./users/whitelisted_investor.sol";
+import "tinlake-math/math.sol";
 
+contract SystemTest is TestSetup, Math, DSTest {
 
-contract SystemTest is TestSetup {
-    // users
-    AdminUser public admin;
-    address admin_;
-    Borrower borrower;
-    address borrower_;
-    WhitelistedInvestor public juniorInvestor;
-    address     public juniorInvestor_;
-
-    Hevm public hevm;
-
-    function setUp() public {
-        // setup hevm
-        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-        hevm.warp(1234567);
-
+    function baseSetup() public {
         // setup deployment
         deployContracts();
 
-        // setup users
-        borrower = new Borrower(address(borrowerDeployer.shelf()), address(lenderDeployer.distributor()), currency_, address(borrowerDeployer.pile()));
-        admin = new AdminUser(address(borrowerDeployer.shelf()), address(borrowerDeployer.pile()), address(borrowerDeployer.principal()), address(borrowerDeployer.title()));
-        borrower_ = address(borrower);
-        admin_ = address(admin);
-
-        juniorInvestor = new WhitelistedInvestor(address(lenderDeployer.juniorOperator()), currency_, address(lenderDeployer.juniorERC20()));
-        juniorInvestor_ = address(juniorInvestor);
-
-        // give admin access rights to contract
-        // root only for this test setup
-        rootAdmin.relyBorrowAdmin(admin_);
-
         // todo replace with investor contract
         rootAdmin.relyLenderAdmin(address(this));
-
-        // give invest rights to test
-        WhitelistOperator juniorOperator = WhitelistOperator(address(lenderDeployer.juniorOperator()));
-        juniorOperator.relyInvestor(juniorInvestor_);
-        juniorOperator.relyInvestor(address(this));
-
     }
 
     function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
@@ -73,13 +39,11 @@ contract SystemTest is TestSetup {
         // mint currency
         currency.mint(address(this), amount);
         currency.approve(address(lenderDeployer.junior()), amount);
-
         uint balanceBefore = lenderDeployer.juniorERC20().balanceOf(address(this));
-
         // move currency into junior tranche
         address operator_ = address(lenderDeployer.juniorOperator());
+        WhitelistOperator(operator_).relyInvestor(address(this));
         WhitelistOperator(operator_).supply(amount);
-
         // same amount of junior tokens
         assertEq(lenderDeployer.juniorERC20().balanceOf(address(this)), balanceBefore + amount);
     }

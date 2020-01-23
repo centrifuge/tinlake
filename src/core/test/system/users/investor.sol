@@ -17,7 +17,7 @@ import "ds-test/test.sol";
 import "../../../lender/deployer.sol";
 import "../interfaces.sol";
 
-contract WhitelistedInvestor is DSTest {
+contract Investor is DSTest {
     WhitelistOperator operator;
     ERC20Like currency;
     ERC20Like token;
