@@ -103,7 +103,7 @@ contract ShelfTest is DSTest {
         assertEq(shelf.balance(), 0);
         assertEq(shelf.balances(loan_), 0);
         assertEq(ceiling.calls("repay"), 1);
-        assertEq(currency.calls("transferFrom"),2);
+        assertEq(currency.calls("transferFrom"), 2);
         assertEq(currency.values_address("transferFrom_from"),address(this));
         assertEq(currency.values_address("transferFrom_to"),address(shelf));
         assertEq(currency.values_uint("transferFrom_amount"),wad_);

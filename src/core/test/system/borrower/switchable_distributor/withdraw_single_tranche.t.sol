@@ -69,15 +69,11 @@ contract WithdrawTest is SystemTest {
 
     function assertPreCondition(uint loanId, uint tokenId, uint amount) public {
         // assert: borrower loanOwner
-        emit log_named_uint("loan", loanId);
         assertEq(title.ownerOf(loanId), borrower_);
         // assert: shelf nftOwner
-        emit log_named_uint("loan", loanId);
         assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
-        emit log_named_uint("loan", loanId);
         // assert: loan has enough balance 
         assert(shelf.balances(loanId) >= amount);
-        emit log_named_uint("loan", loanId);
         // assert: enough funds available
         uint shelfBalance = currency.balanceOf(address(shelf));
         uint juniorBalance = currency.balanceOf(address(junior));
@@ -267,8 +263,14 @@ contract WithdrawTest is SystemTest {
 
     function initBorrow(uint loanId, uint tokenId, uint amount, address usr) public {
         uint ceiling = amount;
+        uint rate = 1000000003593629043335673583;
+        uint speed = rate;
         // admin sets loan ceiling
         admin.setCeiling(loanId, ceiling);
+        // init rate group
+        admin.doInitRate(rate, speed);
+        // add loan to rate group
+        admin.doAddRate(loanId, rate);
         // borrower borrows -> loan[balance] = amount
         Borrower(usr).borrow(loanId, amount);
     }

@@ -17,6 +17,7 @@
 pragma solidity >=0.5.12;
 pragma experimental ABIEncoderV2;
 
+import "ds-test/test.sol";
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
@@ -57,7 +58,7 @@ contract DistributorLike {
     function balance() public;
 }
 
-contract Shelf is DSNote, Auth, TitleOwned, Math {
+contract Shelf is DSNote, Auth, TitleOwned, Math, DSTest {
 
     // --- Data ---
     TitleLike public title;
@@ -180,7 +181,6 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         if (currencyAmount > loanDebt) {
             currencyAmount = loanDebt;
         } 
-
         currency.transferFrom(usr, address(this), currencyAmount);
         ceiling.repay(loan, currencyAmount);
         pile.decDebt(loan, currencyAmount);

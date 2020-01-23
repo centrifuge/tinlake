@@ -52,6 +52,10 @@ contract Borrower is DSTest {
         distributor.balance();
     }
 
+    function repay(uint loan, uint amount) public {
+        shelf.repay(loan, amount);
+    }
+
     function withdraw(uint loan, uint amount, address usr) public {
         shelf.withdraw(loan, amount, usr);
     }
@@ -67,7 +71,7 @@ contract Borrower is DSTest {
         nft.setApprovalForAll(usr, true);
     }
 
-    function repay(uint loan, uint wad, address usr) public {
+    function repayAction(uint loan, uint wad, address usr) public {
         shelf.repay(loan, wad);
         shelf.unlock(loan);
         distributor.balance();
@@ -75,7 +79,7 @@ contract Borrower is DSTest {
 
     function doClose(uint loan, address usr) public {
         uint debt = pile.debt(loan);
-        repay(loan, debt, usr);
+        repayAction(loan, debt, usr);
     }
 
     function doApproveCurrency(address usr, uint wad) public {
