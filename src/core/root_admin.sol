@@ -38,7 +38,6 @@ contract RootAdmin is Auth {
         borrowerDeployer.collector().depend("distributor", distributor_);
 
         // todo currently only one address approval in shelf
-        address juniorTranche = address(lenderDeployer.junior());
         borrowerDeployer.shelf().depend("lender", distributor_);
         borrowerDeployer.collector().depend("distributor", distributor_);
 
