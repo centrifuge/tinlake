@@ -131,10 +131,10 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         uint currencyBalance = currency.balanceOf(address(this));
         
         if (balance > currencyBalance) {
-            return (true, sub(balance, currencyBalance));
+            return (true, safeSub(balance, currencyBalance));
 
         } else {
-            return (false, sub(currencyBalance, balance));
+            return (false, safeSub(currencyBalance, balance));
         }
     }
 
@@ -143,15 +143,15 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         pile.accrue(loan);
         ceiling.borrow(loan, currencyAmount);
         pile.incDebt(loan, currencyAmount);
-        balances[loan] = add(balances[loan], currencyAmount);
-        balance = add(balance, currencyAmount);
+        balances[loan] = safeAdd(balances[loan], currencyAmount);
+        balance = safeAdd(balance, currencyAmount);
     }
 
     function withdraw(uint loan, uint currencyAmount, address usr) public owner(loan) note {
         require(nftLocked(loan), "nft-not-locked");
         require(currencyAmount <= balances[loan], "amount-too-high");
-        balances[loan] = sub(balances[loan], currencyAmount);
-        balance = sub(balance, currencyAmount);
+        balances[loan] = safeSub(balances[loan], currencyAmount);
+        balance = safeSub(balance, currencyAmount);
         currency.transferFrom(address(this), usr, currencyAmount);
     }
 

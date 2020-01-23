@@ -60,24 +60,24 @@ contract SimpleToken is Auth, Math {
         public returns (bool)
     {
         if (src != msg.sender && allowance[src][msg.sender] != uint(-1)) {
-            allowance[src][msg.sender] = sub(allowance[src][msg.sender], wad);
+            allowance[src][msg.sender] = safeSub(allowance[src][msg.sender], wad);
         }
-        balanceOf[src] = sub(balanceOf[src], wad);
-        balanceOf[dst] = add(balanceOf[dst], wad);
+        balanceOf[src] = safeSub(balanceOf[src], wad);
+        balanceOf[dst] = safeAdd(balanceOf[dst], wad);
         emit Transfer(src, dst, wad);
         return true;
     }
     function mint(address usr, uint wad) public {
-        balanceOf[usr] = add(balanceOf[usr], wad);
-        totalSupply    = add(totalSupply, wad);
+        balanceOf[usr] = safeAdd(balanceOf[usr], wad);
+        totalSupply    = safeAdd(totalSupply, wad);
         emit Transfer(address(0), usr, wad);
     }
     function burn(address usr, uint wad) public {
         if (usr != msg.sender && allowance[usr][msg.sender] != uint(-1)) {
-            allowance[usr][msg.sender] = sub(allowance[usr][msg.sender], wad);
+            allowance[usr][msg.sender] = safeSub(allowance[usr][msg.sender], wad);
         }
-        balanceOf[usr] = sub(balanceOf[usr], wad);
-        totalSupply    = sub(totalSupply, wad);
+        balanceOf[usr] = safeSub(balanceOf[usr], wad);
+        totalSupply    = safeSub(totalSupply, wad);
         emit Transfer(usr, address(0), wad);
     }
     function approve(address usr, uint wad) public returns (bool) {

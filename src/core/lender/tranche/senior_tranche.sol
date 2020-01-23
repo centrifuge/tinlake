@@ -49,14 +49,14 @@ contract SeniorTranche is Tranche, Interest {
 
     function repay(address usr, uint currencyAmount) public note auth {
         drip();
-        pie = sub(pie, toPie(chi, currencyAmount));
+        pie = safeSub(pie, toPie(chi, currencyAmount));
         super.repay(usr, currencyAmount);
 
     }
 
     function borrow(address usr, uint currencyAmount) public note auth {
         drip();
-        pie = add(pie, toPie(chi, currencyAmount));
+        pie = safeAdd(pie, toPie(chi, currencyAmount));
         super.borrow(usr, currencyAmount);
     }
 
