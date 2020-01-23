@@ -43,7 +43,7 @@ contract RedeemTest is SystemTest {
         currency.mint(juniorInvestor_, balance);
         juniorInvestor.doSupply(amount);
     }
-    
+
     function testSwitchableRedeem() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;

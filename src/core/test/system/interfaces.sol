@@ -31,6 +31,11 @@ contract PileLike {
     function setRate(uint loan, uint rate) public;
 }
 
+contract TDistributorLike {
+    function balance() public;
+    function file(bytes32 what, bool flag) public;
+}
+
 contract ShelfLike {
     function lock(uint loan) public;
     function unlock(uint loan) public;
@@ -75,8 +80,4 @@ contract TrancheLike {
 
 contract AssessorLike {
     function calcTokenPrice(address tranche) public returns(uint);
-}
-
-contract TDistributorLike {
-    function balance() public;
 }

@@ -62,7 +62,6 @@ contract OperatorLike {
     function deny(address usr) public;
 }
 
-
 contract AllowanceFab {
     function newOperator(address tranche, address assessor, address distributor) public returns (address operator) {
         AllowanceOperator operator = new AllowanceOperator(tranche, assessor, distributor);
@@ -88,6 +87,7 @@ contract DistributorFab {
 }
 
 contract DistributorLike {
+    bool public borrowFromTranches;
     function rely(address usr) public;
     function deny(address usr) public;
     function depend (bytes32 what, address addr) public;

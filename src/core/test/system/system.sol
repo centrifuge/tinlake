@@ -19,9 +19,10 @@ import "ds-test/test.sol";
 import "./setup.sol";
 import "./users/admin.sol";
 import "./users/investor.sol";
+import "tinlake-math/math.sol";
 
 
-contract SystemTest is TestSetup, DSTest {
+contract SystemTest is TestSetup, Math, DSTest {
     // users
     AdminUser public admin;
     address admin_;
@@ -30,13 +31,6 @@ contract SystemTest is TestSetup, DSTest {
         // setup deployment
         deployContracts(operator, distributor);
 
-        // setup users
-        admin = new AdminUser(address(borrowerDeployer.shelf()), address(borrowerDeployer.pile()), address(borrowerDeployer.principal()), address(borrowerDeployer.title()));
-        admin_ = address(admin);
-
-        // give admin access rights to contract
-        // root only for this test setup
-        rootAdmin.relyBorrowAdmin(admin_);
         rootAdmin.relyLenderAdmin(address(this));
 
         // give invest rights to test
@@ -54,13 +48,11 @@ contract SystemTest is TestSetup, DSTest {
         // mint currency
         currency.mint(address(this), amount);
         currency.approve(address(lenderDeployer.junior()), amount);
-
         uint balanceBefore = lenderDeployer.juniorERC20().balanceOf(address(this));
-
         // move currency into junior tranche
         address operator_ = address(lenderDeployer.juniorOperator());
+        WhitelistOperator(operator_).relyInvestor(address(this));
         WhitelistOperator(operator_).supply(amount);
-
         // same amount of junior tokens
         assertEq(lenderDeployer.juniorERC20().balanceOf(address(this)), balanceBefore + amount);
     }
