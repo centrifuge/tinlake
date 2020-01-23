@@ -417,6 +417,7 @@ contract BaseDistributorTwoTranches is DSTest, Math {
         assertEq(junior.calls("repay"), 0);
 
         uint seniorRepayCalls = senior.calls("repay");
+        assertEq(seniorRepayCalls, 2);
         assertEq(senior.values_uint("repay_amount"), expectedSeniorRepay);
         assertEq(senior.values_address("repay_usr"), expectedSeniorRepayUsr);
 
