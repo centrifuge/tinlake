@@ -47,7 +47,7 @@ contract BalanceTest is SystemTest {
         assertPostConditionGive(giveAmount, initialJuniorBalance);
     }
 
-    function assertPreConditionTake(uint takeAmount) public {
+    function assertPreConditionTake(uint takeAmount) public view {
         // assert: borrowFromTranches is active
         assert(distributor.borrowFromTranches());
         // assert: tranche reserve has enough funds
@@ -60,10 +60,10 @@ contract BalanceTest is SystemTest {
         // assert: all funds transferred from tranche reserve
         assertEq(currency.balanceOf(address(junior)), 0);
         // assert: shelf received funds
-        assertEq(currency.balanceOf(address(shelf)), add(initialShelfBalance, takeAmount));
+        assertEq(currency.balanceOf(address(shelf)), safeAdd(initialShelfBalance, takeAmount));
     }
 
-    function assertPreConditionGive(uint giveAmount) public {
+    function assertPreConditionGive(uint giveAmount) public view {
         // assert: borrowFromTranches is inactive
         assert(!distributor.borrowFromTranches());
         // assert: shelf has funds
@@ -76,7 +76,7 @@ contract BalanceTest is SystemTest {
         // assert: all funds transferred from shelf
         assertEq(currency.balanceOf(address(shelf)), 0);
         // assert: junior received funds
-        assertEq(currency.balanceOf(address(junior)), add(initialJuniorBalance, giveAmount));
+        assertEq(currency.balanceOf(address(junior)), safeAdd(initialJuniorBalance, giveAmount));
     }
 
     function testBalanceTake() public {

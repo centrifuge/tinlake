@@ -31,7 +31,7 @@ contract PrincipalTest is Math, DSTest {
         uint initial = 100;
         principal.file(loanId, initial);
        
-        uint borrowAmount = sub(initial, 20);
+        uint borrowAmount = safeSub(initial, 20);
         principal.borrow(loanId, borrowAmount);
         assertEq(principal.ceiling(loanId), initial - borrowAmount);
     }
@@ -42,7 +42,7 @@ contract PrincipalTest is Math, DSTest {
         uint initial = 100;
         principal.file(loanId, initial);
        
-        uint borrowAmount = add(initial, 20);
+        uint borrowAmount = safeAdd(initial, 20);
         principal.borrow(loanId, borrowAmount);
     }
 }

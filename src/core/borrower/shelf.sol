@@ -15,7 +15,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pragma solidity >=0.5.12;
-pragma experimental ABIEncoderV2;
 
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
@@ -105,14 +104,14 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     }
 
     // --- Shelf: Loan actions ---
-    function issue(address registry, uint token) public returns (uint) {
-        require(NFTLike(registry).ownerOf(token) == msg.sender, "nft-not-owned");
-        bytes32 nft = keccak256(abi.encodePacked(registry, token));
+    function issue(address registry_, uint token_) public returns (uint) {
+        require(NFTLike(registry_).ownerOf(token_) == msg.sender, "nft-not-owned");
+        bytes32 nft = keccak256(abi.encodePacked(registry_, token_));
         require(nftlookup[nft] == 0, "nft-in-use");
         uint loan = title.issue(msg.sender);
         nftlookup[nft] = loan;
-        shelf[loan].registry = registry;
-        shelf[loan].tokenId = token;
+        shelf[loan].registry = registry_;
+        shelf[loan].tokenId = token_;
 
         return loan;
     }
@@ -128,13 +127,14 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     }
     
     // --- Currency actions ---
-    function balanceRequest() public returns (bool, uint) {
+    function balanceRequest() public view returns (bool, uint) {
         uint currencyBalance = currency.balanceOf(address(this));
         
         if (balance > currencyBalance) {
-            return (true, sub(balance, currencyBalance));
+            return (true, safeSub(balance, currencyBalance));
+
         } else {
-            return (false, sub(currencyBalance, balance));
+            return (false, safeSub(currencyBalance, balance));
         }
     }
 
@@ -143,15 +143,15 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         pile.accrue(loan);
         ceiling.borrow(loan, currencyAmount);
         pile.incDebt(loan, currencyAmount);
-        balances[loan] = add(balances[loan], currencyAmount);
-        balance = add(balance, currencyAmount);
+        balances[loan] = safeAdd(balances[loan], currencyAmount);
+        balance = safeAdd(balance, currencyAmount);
     }
 
     function withdraw(uint loan, uint currencyAmount, address usr) public owner(loan) note {
         require(nftLocked(loan), "nft-not-locked");
         require(currencyAmount <= balances[loan], "amount-too-high");
-        balances[loan] = sub(balances[loan], currencyAmount);
-        balance = sub(balance, currencyAmount);
+        balances[loan] = safeSub(balances[loan], currencyAmount);
+        balance = safeSub(balance, currencyAmount);
         currency.transferFrom(address(this), usr, currencyAmount);
     }
 

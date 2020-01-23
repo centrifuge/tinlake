@@ -56,6 +56,9 @@ contract OperatorTest is DSTest {
     function setUp() public {
         assessor =  new AssessorMock();
         assessor.setReturn("tokenPrice", ONE);
+        assessor.setReturn("supplyApprove", true);
+        assessor.setReturn("redeemApprove", true);
+
         tranche = new TrancheMock();
         investor = new Investor();
         distributor = new DistributorMock();
@@ -72,6 +75,12 @@ contract OperatorTest is DSTest {
         assertEq(assessor.calls("tokenPrice"), 1);
     }
 
+    function testFailWhitelistSupplyAdmin() public {
+        whitelist.relyInvestor(address(this));
+        assessor.setReturn("supplyApprove", false);
+        whitelist.supply(100 ether);
+    }
+
     function testWhitelistRedeemAdmin() public {
         whitelist.relyInvestor(address(this));
         whitelist.redeem(100 ether);
@@ -80,13 +89,19 @@ contract OperatorTest is DSTest {
         assertEq(distributor.calls("balance"), 1);
     }
 
+    function testFailWhitelistRedeemAdmin() public {
+        whitelist.relyInvestor(address(this));
+        assessor.setReturn("redeemApprove", false);
+        whitelist.redeem(100 ether);
+    }
+
     function testWhitelistSupplyInvestor() public {
         whitelist.relyInvestor(address(investor));
         investor.doSupply(address(whitelist), 100 ether);
         assertEq(tranche.calls("supply"), 1);
         assertEq(assessor.calls("tokenPrice"), 1);
-        assertEq(tranche.values_return("currencyAmount"), 100 ether);
-        assertEq(tranche.values_return("tokenAmount"), 100 ether);
+        assertEq(tranche.values_uint("supply_currencyAmount"), 100 ether);
+        assertEq(tranche.values_uint("supply_tokenAmount"), 100 ether);
         assertEq(distributor.calls("balance"), 1);
     }
 
@@ -95,8 +110,8 @@ contract OperatorTest is DSTest {
         investor.doRedeem(address(whitelist), 100 ether);
         assertEq(tranche.calls("redeem"), 1);
         assertEq(assessor.calls("tokenPrice"), 1);
-        assertEq(tranche.values_return("currencyAmount"), 100 ether);
-        assertEq(tranche.values_return("tokenAmount"), 100 ether);
+        assertEq(tranche.values_uint("redeem_currencyAmount"), 100 ether);
+        assertEq(tranche.values_uint("redeem_tokenAmount"), 100 ether);
         assertEq(distributor.calls("balance"), 1);
     }
 
@@ -121,9 +136,15 @@ contract OperatorTest is DSTest {
         investor.doSupply(address(allowance), 100 ether);
         assertEq(tranche.calls("supply"), 1);
         assertEq(assessor.calls("tokenPrice"), 1);
-        assertEq(tranche.values_return("currencyAmount"), 100 ether);
-        assertEq(tranche.values_return("tokenAmount"), 100 ether);
+        assertEq(tranche.values_uint("supply_currencyAmount"), 100 ether);
+        assertEq(tranche.values_uint("supply_tokenAmount"), 100 ether);
         assertEq(distributor.calls("balance"), 1);
+    }
+
+    function testFailAllowanceSupplyNotApproved() public {
+        allowance.approve(address(investor), 100 ether, 100 ether);
+        assessor.setReturn("supplyApprove", false);
+        investor.doSupply(address(allowance), 100 ether);
     }
 
     function testAllowanceRedeem() public {
@@ -131,9 +152,15 @@ contract OperatorTest is DSTest {
         investor.doRedeem(address(allowance), 100 ether);
         assertEq(tranche.calls("redeem"), 1);
         assertEq(assessor.calls("tokenPrice"), 1);
-        assertEq(tranche.values_return("currencyAmount"), 100 ether);
-        assertEq(tranche.values_return("tokenAmount"), 100 ether);
+        assertEq(tranche.values_uint("redeem_currencyAmount"), 100 ether);
+        assertEq(tranche.values_uint("redeem_tokenAmount"), 100 ether);
         assertEq(distributor.calls("balance"), 1);
+    }
+
+    function testFailAllowanceRedeemNotApproved() public {
+        allowance.approve(address(investor), 100 ether, 100 ether);
+        assessor.setReturn("redeemApprove", false);
+        investor.doRedeem(address(allowance), 100 ether);
     }
 
     function testFailAllowanceSupply() public {

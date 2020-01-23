@@ -27,13 +27,15 @@ contract TrancheMock is Mock {
     }
     function supply(address usr, uint currencyAmount, uint tokenAmount) public {
         calls["supply"]++;
-        setReturn("currencyAmount", currencyAmount);
-        setReturn("tokenAmount", tokenAmount);
+        values_address["usr"] = usr;
+        values_uint["supply_currencyAmount"] = currencyAmount;
+        values_uint["supply_tokenAmount"] = tokenAmount;
     }
     function redeem(address usr, uint currencyAmount, uint tokenAmount) public {
         calls["redeem"]++;
-        setReturn("currencyAmount", currencyAmount);
-        setReturn("tokenAmount", tokenAmount);
+        values_address["redeem_usr"] = usr;
+        values_uint["redeem_currencyAmount"] = currencyAmount;
+        values_uint["redeem_tokenAmount"] = tokenAmount;
     }
     function tokenSupply() public returns (uint) {
         return call("tokenSupply");

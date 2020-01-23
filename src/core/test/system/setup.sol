@@ -52,7 +52,14 @@ contract TestSetup {
     TestRootAdmin rootAdmin;
     address rootAdmin_;
 
-    function deployContracts(bytes32 operator, bytes32 distributor) public {
+    function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
+        tokenId = collateralNFT.issue(usr);
+        lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
+        return (tokenId, lookupId);
+    }
+
+
+    function deployContracts(bytes32 operator, bytes32 distributor_) public {
         collateralNFT = new Title("Collateral NFT", "collateralNFT");
         collateralNFT_ = address(collateralNFT);
 
@@ -64,7 +71,7 @@ contract TestSetup {
         // only admin is main deployer
         deployBorrower();
         // only admin is main deployer
-        deployLender(operator, distributor);
+        deployLender(operator, distributor_);
 
         rootAdmin.file("borrower", address(borrowerDeployer));
         rootAdmin.file("lender", address(lenderDeployer));

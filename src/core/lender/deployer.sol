@@ -50,6 +50,7 @@ contract AssessorFab {
     }
 }
 
+
 // Operator Fabs
 
 // abstract operator fab
@@ -63,15 +64,16 @@ contract OperatorLike {
 }
 
 contract AllowanceOperatorFab {
-    function newOperator(address tranche, address assessor, address distributor) public returns (address operator) {
+    function newOperator(address tranche, address assessor, address distributor) public returns (address operator_) {
         AllowanceOperator operator = new AllowanceOperator(tranche, assessor, distributor);
         operator.rely(msg.sender);
         operator.deny(address(this));
+        return address(operator);
     }
 }
 
 contract WhitelistOperatorFab {
-    function newOperator(address tranche, address assessor, address distributor) public returns (address operator) {
+    function newOperator(address tranche, address assessor, address distributor) public returns (address operator_) {
         WhitelistOperator operator = new WhitelistOperator(tranche, assessor, distributor);
         operator.rely(msg.sender);
         operator.deny(address(this));

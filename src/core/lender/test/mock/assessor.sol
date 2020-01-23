@@ -19,10 +19,12 @@ import "../../../test/mock/mock.sol";
 
 contract AssessorMock is Mock {
     function calcTokenPrice (address tranche) public returns (uint) {
+        values_address["calcTokenPrice_tranche"]= tranche;
         return call("tokenPrice");
     }
 
     function calcAssetValue(address tranche) public returns (uint) {
+        values_address["calcAssetValue_tranche"]= tranche;
         return call("assetValue");
     }
 
@@ -32,5 +34,21 @@ contract AssessorMock is Mock {
 
     function seniorDebt() internal returns (uint) {
         return call("seniorDebt");
+    }
+
+    function supplyApprove(address tranche, uint currencyAmount) public returns(bool) {
+        calls["supplyApprove"]++;
+        values_address["supplyApprove_tranche"]= tranche;
+        values_uint["supplyApprove_currencyAmount"]= currencyAmount;
+
+        return values_bool_return["supplyApprove"];
+    }
+
+    function redeemApprove(address tranche, uint currencyAmount) public returns(bool) {
+        calls["redeemApprove"]++;
+        values_address["redeemApprove_tranche"]= tranche;
+        values_uint["redeemApprove_currencyAmount"]= currencyAmount;
+
+        return values_bool_return["redeemApprove"];
     }
 }
