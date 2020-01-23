@@ -128,6 +128,9 @@ contract Assessor is Math, DSNote, Auth {
     }
 
     function calcMinJuniorAssetValue() public returns (uint) {
+        if (senior == address(0)) {
+            return 0;
+        }
         uint seniorAssetValue = calcAssetValue(senior);
         if (seniorAssetValue == 0) {
             return uint(-1);
@@ -137,8 +140,11 @@ contract Assessor is Math, DSNote, Auth {
 
     // only needed for external contracts
     function currentJuniorRatio() public returns(uint) {
+        if (senior == address(0)) {
+            return ONE;
+        }
         uint juniorAssetValue = calcAssetValue(junior);
-        return rmul(rdiv(ONE,(add(juniorAssetValue, calcAssetValue(senior)))), juniorAssetValue);
+        return rdiv(juniorAssetValue, add(juniorAssetValue, calcAssetValue(senior)));
     }
 
     function supplyApprove(address tranche, uint currencyAmount) public returns(bool) {
