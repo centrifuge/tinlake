@@ -110,10 +110,10 @@ contract TestSetup {
          address operatorfab_;
 
         if (operator_ == "whitelist") {
-            operatorfab_ = address(new WhitelistFab());
+            operatorfab_ = address(new WhitelistOperatorFab());
         }
         if (distributor_ == "switchable") {
-            distributorfab_ = address(new SwitchableFab());
+            distributorfab_ = address(new SwitchableDistributorFab());
         }
 
         lenderDeployer = new LenderDeployer(rootAdmin_, currency_, address(new TrancheFab()), address(new AssessorFab()),

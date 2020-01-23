@@ -62,7 +62,7 @@ contract OperatorLike {
     function deny(address usr) public;
 }
 
-contract AllowanceFab {
+contract AllowanceOperatorFab {
     function newOperator(address tranche, address assessor, address distributor) public returns (address operator) {
         AllowanceOperator operator = new AllowanceOperator(tranche, assessor, distributor);
         operator.rely(msg.sender);
@@ -70,7 +70,7 @@ contract AllowanceFab {
     }
 }
 
-contract WhitelistFab {
+contract WhitelistOperatorFab {
     function newOperator(address tranche, address assessor, address distributor) public returns (address operator) {
         WhitelistOperator operator = new WhitelistOperator(tranche, assessor, distributor);
         operator.rely(msg.sender);
@@ -95,7 +95,7 @@ contract DistributorLike {
     function balance() public;
 }
 
-contract SwitchableFab {
+contract SwitchableDistributorFab {
     function newDistributor(address currency) public returns (address) {
         SwitchableDistributor distributor = new SwitchableDistributor(currency);
 
@@ -105,7 +105,7 @@ contract SwitchableFab {
     }
 }
 
-contract BaseFab {
+contract BaseDistributorFab {
     function newDistributor(address currency) public returns (address) {
         BaseDistributor distributor = new BaseDistributor(currency);
 
