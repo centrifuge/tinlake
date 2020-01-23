@@ -27,6 +27,8 @@ contract TrancheLike {
 
 contract AssessorLike {
     function calcTokenPrice(address tranche) public returns(uint);
+    function supplyApprove(address tranche, uint currencyAmount) public returns(bool);
+    function redeemApprove(address tranche, uint currencyAmount) public returns(bool);
 }
 
 contract DistributorLike {
@@ -53,12 +55,15 @@ contract BaseOperator is Math, DSNote, Auth {
     }
 
     function _supply(uint currencyAmount) internal {
+        require(assessor.supplyApprove(address(tranche), currencyAmount));
         tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, assessor.calcTokenPrice(address(tranche))));
         distributor.balance();
     }
 
     function _redeem(uint tokenAmount) internal {
         distributor.balance();
-        tranche.redeem(msg.sender, rmul(tokenAmount, assessor.calcTokenPrice(address(tranche))), tokenAmount);
+        uint currencyAmount = rmul(tokenAmount, assessor.calcTokenPrice(address(tranche)));
+        require(assessor.redeemApprove(address(tranche), currencyAmount));
+        tranche.redeem(msg.sender, currencyAmount, tokenAmount);
     }
 }

@@ -35,4 +35,20 @@ contract AssessorMock is Mock {
     function seniorDebt() internal returns (uint) {
         return call("seniorDebt");
     }
+
+    function supplyApprove(address tranche, uint currencyAmount) public returns(bool) {
+        calls["supplyApprove"]++;
+        values_address["supplyApprove_tranche"]= tranche;
+        values_uint["supplyApprove_currencyAmount"]= currencyAmount;
+
+        return values_bool_return["supplyApprove"];
+    }
+
+    function redeemApprove(address tranche, uint currencyAmount) public returns(bool) {
+        calls["redeemApprove"]++;
+        values_address["redeemApprove_tranche"]= tranche;
+        values_uint["redeemApprove_currencyAmount"]= currencyAmount;
+
+        return values_bool_return["redeemApprove"];
+    }
 }

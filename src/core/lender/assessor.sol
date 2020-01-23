@@ -36,7 +36,6 @@ contract PoolLike {
 }
 
 contract Assessor is Math, DSNote, Auth {
-
     // --- Tranches ---
     address public senior;
     address public junior;
@@ -123,7 +122,6 @@ contract Assessor is Math, DSNote, Auth {
         if (juniorAssetValue == 0) {
             return 0;
         }
-        // juniorAssetValue/minJuniorRatio * (ONE-minJuniorRatio) same as:
         return sub(rdiv(juniorAssetValue, minJuniorRatio), juniorAssetValue);
     }
 
