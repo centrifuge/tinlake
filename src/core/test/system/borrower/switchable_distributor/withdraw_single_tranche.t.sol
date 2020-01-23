@@ -38,7 +38,7 @@ contract WithdrawTest is SystemTest {
         
     function setUp() public {
         baseSetup();
-        distributor = SwitchableDistributor(address(distributor));
+        distributor = SwitchableDistributor(address(lenderDeployer.distributor()));
         // setup users
         borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         borrower_ = address(borrower);
@@ -69,11 +69,15 @@ contract WithdrawTest is SystemTest {
 
     function assertPreCondition(uint loanId, uint tokenId, uint amount) public {
         // assert: borrower loanOwner
+        emit log_named_uint("loan", loanId);
         assertEq(title.ownerOf(loanId), borrower_);
         // assert: shelf nftOwner
+        emit log_named_uint("loan", loanId);
         assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
+        emit log_named_uint("loan", loanId);
         // assert: loan has enough balance 
         assert(shelf.balances(loanId) >= amount);
+        emit log_named_uint("loan", loanId);
         // assert: enough funds available
         uint shelfBalance = currency.balanceOf(address(shelf));
         uint juniorBalance = currency.balanceOf(address(junior));
@@ -108,6 +112,8 @@ contract WithdrawTest is SystemTest {
         initBorrow(loanId, tokenId, loanAmount, borrower_);
         // junior investor puts money into tranche
         invest(investAmount);
+        // move funds into shelf
+        distributor.balance(); // why not worky
         assertPreCondition(loanId, tokenId, loanAmount);
         withdraw(loanId, tokenId, loanAmount, borrower_);
     }

@@ -23,11 +23,14 @@ contract BalanceTest is SystemTest {
     Borrower borrower;
     address borrower_;
         
+    SwitchableDistributor distributor;
     function setUp() public {
         baseSetup();
         // setup users
+        distributor = SwitchableDistributor(address(lenderDeployer.distributor()));
         borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         borrower_ = address(borrower);
+
     }
     
     function balanceTake() public {
