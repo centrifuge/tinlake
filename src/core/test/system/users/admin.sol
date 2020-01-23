@@ -26,12 +26,14 @@ contract AdminUser is DSTest{
     PileLike pile;
     CeilingLike ceiling;
     Title title;
+    TDistributorLike distributor;
 
-    constructor (address shelf_, address pile_, address ceiling_, address title_) public {
+    constructor (address shelf_, address pile_, address ceiling_, address title_, address distributor_) public {
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
         ceiling = CeilingLike(ceiling_);
         title = Title(title_);
+        distributor = TDistributorLike(distributor_);
     }
 
     function setCeiling(uint loan, uint principal) public {

@@ -37,7 +37,7 @@ contract BorrowTest is SystemTest {
         borrower_ = address(borrower);
         randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         randomUser_ = address(randomUser);
-        admin = new AdminUser(address(shelf), address(pile), address(ceiling), address(title));
+        admin = new AdminUser(address(shelf), address(pile), address(ceiling), address(title), address(distributor));
         admin_ = address(admin);
 
         rootAdmin.relyBorrowAdmin(admin_);
@@ -74,15 +74,15 @@ contract BorrowTest is SystemTest {
         // assert: borrower nftOwner
         assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
         // assert: totalBalance increase by borrow amount
-        assertEq(shelf.balance(), initialTotalBalance + amount);
+        assertEq(shelf.balance(), add(initialTotalBalance, amount));
         // assert: loanBalance increase by borrow amount
-        assertEq(shelf.balances(loanId), initialLoanBalance + amount);
+        assertEq(shelf.balances(loanId), add(initialLoanBalance, amount));
         // assert: totalDebt increase by borrow amount
-        assertEq(pile.total(), initialTotalDebt + amount);
+        assertEq(pile.total(), add(initialTotalDebt, amount));
         // assert: loanDebt increase by borrow amount
-        assertEq(pile.debt(loanId), initialLoanDebt + amount);
+        assertEq(pile.debt(loanId), add(initialLoanDebt, amount));
         // assert: available borrow amount decreased
-        assertEq(ceiling.ceiling(loanId), initialCeiling - amount);
+        assertEq(ceiling.ceiling(loanId), sub(initialCeiling, amount));
     }
 
     function testBorrow() public {
@@ -103,11 +103,11 @@ contract BorrowTest is SystemTest {
     function testPartialBorrow() public {
         uint ceiling = 200 ether;
         // borrow amount smaller then ceiling
-        uint amount = ceiling / 2;
+        uint amount = div(ceiling ,2);
         (uint tokenId, ) = issueNFT(borrower_);
         uint loanId = borrower.issue(collateralNFT_, tokenId);
         lockNFT(loanId);
-        admin.setCeiling(loanId, amount * 2);
+        admin.setCeiling(loanId, ceiling);
         assertPreCondition(loanId, tokenId, amount);
         borrow(loanId, tokenId, amount);
     }
@@ -127,7 +127,7 @@ contract BorrowTest is SystemTest {
         uint amount = ceiling;
         // issue nft for random user
         (uint tokenId, ) = issueNFT(randomUser_);
-        // issue loan fro random user
+        // issue loan from random user
         uint loanId = randomUser.issue(collateralNFT_, tokenId);
         // lock nft for random user
         randomUser.lock(loanId); 
@@ -137,10 +137,10 @@ contract BorrowTest is SystemTest {
         borrow(loanId, tokenId, amount);
     }
 
-    function testFailBorrowAmountTooHeigh() public {
+    function testFailBorrowAmountTooHigh() public {
         uint ceiling = 100 ether;
-        // borrow amount heigher then ceiling
-        uint amount = ceiling * 2;
+        // borrow amount higher then ceiling
+        uint amount = mul(ceiling, 2);
         (uint tokenId, ) = issueNFT(borrower_);
         uint loanId = borrower.issue(collateralNFT_, tokenId);
         lockNFT(loanId);

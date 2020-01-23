@@ -40,7 +40,7 @@ contract STest is SystemTest {
         borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         borrower_ = address(borrower);
 
-        admin = new AdminUser(address(shelf), address(pile), address(ceiling), address(title));
+        admin = new AdminUser(address(shelf), address(pile), address(ceiling), address(title), address(distributor));
         admin_ = address(admin);
         rootAdmin.relyBorrowAdmin(admin_);
     }
@@ -145,13 +145,9 @@ contract STest is SystemTest {
         // create borrower collateral collateralNFT
         uint tokenId = collateralNFT.issue(borrower_);
         uint loan = admin.doAdmit(collateralNFT_, tokenId, principal, borrower_);
-
         borrower.approveNFT(collateralNFT, address(borrowerDeployer.shelf()));
-
         setupCurrencyOnLender(principal);
-
         borrower.borrowAction(loan, principal);
-
         checkAfterBorrow(tokenId, principal);
     }
 

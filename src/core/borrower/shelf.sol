@@ -129,10 +129,12 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     
     // --- Currency actions ---
     function balanceRequest() public returns (bool, uint) {
-        if (balance > 0) {
-            return (true, balance);
+        uint currencyBalance = currency.balanceOf(address(this));
+        
+        if (balance > currencyBalance) {
+            return (true, sub(balance, currencyBalance));
         } else {
-            return (false, currency.balanceOf(address(this)));
+            return (false, sub(currencyBalance, balance));
         }
     }
 
