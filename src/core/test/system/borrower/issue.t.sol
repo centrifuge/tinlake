@@ -23,12 +23,17 @@ contract IssueTest is SystemTest {
     Borrower borrower;
     address borrower_;
         
+    Borrower randomUser;
+    address randomUser_;
+
     function setUp() public {
         bytes32 juniorOperator = "whitelist";
         bytes32 distributor = "switchable";
         baseSetup(juniorOperator, distributor);
         borrower = new Borrower(address(borrowerDeployer.shelf()), address(lenderDeployer.distributor()), currency_, address(borrowerDeployer.pile()));
         borrower_ = address(borrower);
+        randomUser = new Borrower(address(borrowerDeployer.shelf()), address(lenderDeployer.distributor()), currency_, address(borrowerDeployer.pile()));
+        randomUser_ = address(randomUser);
     }
 
     function issueLoan(uint tokenId, bytes32 lookupId) public {
@@ -62,14 +67,14 @@ contract IssueTest is SystemTest {
         (uint tokenId, bytes32 lookupId) = issueNFT(borrower_);
         issueLoan(tokenId, lookupId); 
 
-        // issue second loan agains same nft
+        // issue second loan against same nft
         uint secondLoanId = borrower.issue(collateralNFT_, tokenId);
         assertPostCondition(secondLoanId, tokenId, lookupId);
     }
 
     function testFailIssueLoanNotNFTOwner() public {
         // issue nft for random user -> borrower != nftOwner
-        (uint tokenId, bytes32 lookupId) = issueNFT(address(this));
+        (uint tokenId, bytes32 lookupId) = issueNFT(randomUser_);
         issueLoan(tokenId, lookupId); 
     }
 }
