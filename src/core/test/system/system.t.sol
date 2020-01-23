@@ -53,18 +53,18 @@ contract STest is SystemTest {
     }
 
     function defaultLoan() public pure returns(uint principal, uint rate) {
-        uint principal = 1000 ether;
+        principal = 1000 ether;
         // define rate
-        uint rate = uint(1000000564701133626865910626); // 5 % day
+        rate = uint(1000000564701133626865910626); // 5 % day
 
         return (principal, rate);
     }
 
     function setupOngoingLoan() public returns (uint loan, uint tokenId, uint principal, uint rate) {
-        (uint principal, uint rate) = defaultLoan();
+        (principal, rate) = defaultLoan();
         // create borrower collateral collateralNFT
-        uint tokenId = collateralNFT.issue(borrower_);
-        uint loan = whitelist(tokenId, collateralNFT_, principal,borrower_, rate);
+        tokenId = collateralNFT.issue(borrower_);
+        loan = whitelist(tokenId, collateralNFT_, principal,borrower_, rate);
         borrow(loan, tokenId, principal);
 
         return (loan, tokenId, principal, rate);

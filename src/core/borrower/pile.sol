@@ -25,12 +25,11 @@ import "tinlake-auth/auth.sol";
 // loan according to its interest rate category and pie value.
 contract Pile is DSNote, Auth, Interest {
     // --- Data ---
-    // https://github.com/makerdao/dsr/blob/master/src/dsr.sol
     struct Rate {
-        uint   pie;         // Total debt of all loans with this rate
-        uint   chi;         // Accumulated rates
-        uint   speed;       // Accumulation per second
-        uint48 rho;         // Last time the rate was accumulated
+        uint   pie;                 // Total debt of all loans with this rate
+        uint   chi;                 // Accumulated rates
+        uint   ratePerSecond;       // Accumulation per second
+        uint48 lastUpdated;         // Last time the rate was accumulated
     }
 
     mapping (uint => Rate) public rates;
@@ -39,103 +38,105 @@ contract Pile is DSNote, Auth, Interest {
     // pie = debt/chi
     mapping (uint => uint) public pie;
     // loan => rate
-    mapping (uint => uint) public group;
+    mapping (uint => uint) public loanRates;
 
     uint public total;
 
     constructor() public {
         wards[msg.sender] = 1;
-        rates[0].chi      = ONE;
-        rates[0].speed    = ONE;
+        rates[0].chi = ONE;
+        rates[0].ratePerSecond = ONE;
     }
 
     // --- Public Debt Methods  ---
-    // increase the loan's debt by wad
-    function incDebt(uint loan, uint wad) public auth note {
-        uint rate = group[loan];
-        require(now <= rates[rate].rho);
-        uint delta = toPie(rates[rate].chi, wad);
-        pie[loan] = add(pie[loan], delta);
-        rates[rate].pie = add(rates[rate].pie, delta);
-        total = add(total, wad);
+    // increase the loan's debt by currencyAmount
+    function incDebt(uint loan, uint currencyAmount) public auth note {
+        uint rate = loanRates[loan];
+        require(now <= rates[rate].lastUpdated);
+        uint pieAmount = toPie(rates[rate].chi, currencyAmount);
+
+        pie[loan] = add(pie[loan], pieAmount);
+        rates[rate].pie = add(rates[rate].pie, pieAmount);
+        total = add(total, currencyAmount);
     }
 
-    // decrease the loan's debt by wad
-    function decDebt(uint loan, uint wad) public auth note {
-        uint rate = group[loan];
-        require(now <= rates[rate].rho);
-        uint delta = toPie(rates[rate].chi, wad);
-        pie[loan] = sub(pie[loan], delta);
-        rates[rate].pie = sub(rates[rate].pie, delta);
-        total = sub(total, wad);
+    // decrease the loan's debt by currencyAmount
+    function decDebt(uint loan, uint currencyAmount) public auth note {
+        uint rate = loanRates[loan];
+        require(now <= rates[rate].lastUpdated);
+        uint pieAmount = toPie(rates[rate].chi, currencyAmount);
+
+        pie[loan] = sub(pie[loan], pieAmount);
+        rates[rate].pie = sub(rates[rate].pie, pieAmount);
+        total = sub(total, currencyAmount);
     }
 
     function debt(uint loan) public view returns (uint) {
-        uint rate = group[loan];
-        uint chi = rates[rate].chi;
-        if (now >= rates[rate].rho) {
-            chi = updateChi(rates[rate].chi, rates[rate].speed, rates[rate].rho);
+        uint rate_ = loanRates[loan];
+        uint chi_ = rates[rate_].chi;
+        if (now >= rates[rate_].lastUpdated) {
+            chi_ = updateChi(rates[rate_].chi, rates[rate_].ratePerSecond, rates[rate_].lastUpdated);
         }
-        return toAmount(chi, pie[loan]);
+        return toAmount(chi_, pie[loan]);
     }
 
     function rateDebt(uint rate) public view returns (uint) {
-        uint chi = rates[rate].chi;
-        uint pie = rates[rate].pie;
-        
-        if (now >= rates[rate].rho) {
-            chi = updateChi(rates[rate].chi, rates[rate].speed, rates[rate].rho);
+        uint chi_ = rates[rate].chi;
+        uint pie_ = rates[rate].pie;
+
+        if (now >= rates[rate].lastUpdated) {
+            chi_ = updateChi(rates[rate].chi, rates[rate].ratePerSecond, rates[rate].lastUpdated);
         } 
-        return toAmount(chi, pie);
+        return toAmount(chi_, pie_);
     } 
 
     // --- Interest Rate Group Implementation ---
 
-    // set rate group for a loan
+    // set rate loanRates for a loan
     function setRate(uint loan, uint rate) public auth {
         require(pie[loan] == 0, "non-zero-debt");
-        group[loan] = rate;
+        loanRates[loan] = rate;
     }
 
-    // change rate group for a loan
+    // change rate loanRates for a loan
     function changeRate(uint loan, uint newRate) public auth {
-        uint currentRate = group[loan];
+        uint currentRate = loanRates[loan];
         drip(currentRate);
         drip(newRate);
         uint pie_ = pie[loan];
-        uint debt = toAmount(rates[currentRate].chi, pie_);
+        uint debt_ = toAmount(rates[currentRate].chi, pie_);
         rates[currentRate].pie = sub(rates[currentRate].pie, pie_);
-        pie[loan] = toPie(rates[newRate].chi, debt);
+        pie[loan] = toPie(rates[newRate].chi, debt_);
         rates[newRate].pie = add(rates[newRate].pie, pie[loan]);
-        group[loan] = newRate;
+        loanRates[loan] = newRate;
     }
 
     // set/change the interest rate of a rate category
-    function file(uint rate, uint speed_) public auth {
-        require(speed_ != 0);
+    function file(uint rate, uint ratePerSecond) public auth {
+        require(ratePerSecond != 0);
 
-        if (rates[rate].chi == 0) { 
+        if (rates[rate].chi == 0) {
             rates[rate].chi = ONE;
-            rates[rate].rho = uint48(now);
+            rates[rate].lastUpdated = uint48(now);
         } else { 
             drip(rate);
         }
-        rates[rate].speed = speed_; 
+        rates[rate].ratePerSecond = ratePerSecond;
     }
 
-    // accrue neeeds to be called before any debt amounts are modified by an external component
+    // accrue needs to be called before any debt amounts are modified by an external component
     function accrue(uint loan) public {
-        drip(group[loan]);
+        drip(loanRates[loan]);
     }
     
     // drip updates the chi of the rate category by compounding the interest and
     // updates the total debt
     function drip(uint rate) public {
-        if (now >= rates[rate].rho) {
-            (uint chi, uint delta) = compounding(rates[rate].chi, rates[rate].speed, rates[rate].rho, rates[rate].pie);
+        if (now >= rates[rate].lastUpdated) {
+            (uint chi, uint deltaInterest) = compounding(rates[rate].chi, rates[rate].ratePerSecond, rates[rate].lastUpdated, rates[rate].pie);
             rates[rate].chi = chi;
-            rates[rate].rho = uint48(now);
-            total = add(total, delta);
+            rates[rate].lastUpdated = uint48(now);
+            total = add(total, deltaInterest);
         }
     }
 }
