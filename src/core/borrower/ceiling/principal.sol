@@ -39,7 +39,7 @@ contract Principal is DSNote, Auth, Math {
 
     function borrow(uint loan, uint amount) public auth {
         require(values[loan] >= amount);
-        values[loan] = sub(values[loan], amount);
+        values[loan] = safeSub(values[loan], amount);
     }
 
     function repay(uint loan, uint amount) public auth {

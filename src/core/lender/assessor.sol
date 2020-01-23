@@ -82,7 +82,7 @@ contract Assessor is Math, DSNote, Auth {
     }
 
     function calcTokenPrice(address tranche) public returns (uint) {
-        return mul(_calcTokenPrice(tranche), tokenAmountForONE);
+        return safeMul(_calcTokenPrice(tranche), tokenAmountForONE);
     }
 
     function _calcTokenPrice(address tranche) internal returns (uint) {
@@ -122,7 +122,7 @@ contract Assessor is Math, DSNote, Auth {
         if (juniorAssetValue == 0) {
             return 0;
         }
-        return sub(rdiv(juniorAssetValue, minJuniorRatio), juniorAssetValue);
+        return safeSub(rdiv(juniorAssetValue, minJuniorRatio), juniorAssetValue);
     }
 
     function calcMinJuniorAssetValue() public returns (uint) {
@@ -142,7 +142,7 @@ contract Assessor is Math, DSNote, Auth {
             return ONE;
         }
         uint juniorAssetValue = calcAssetValue(junior);
-        return rdiv(juniorAssetValue, add(juniorAssetValue, calcAssetValue(senior)));
+        return rdiv(juniorAssetValue, safeAdd(juniorAssetValue, calcAssetValue(senior)));
     }
 
     function supplyApprove(address tranche, uint currencyAmount) public returns(bool) {
@@ -151,7 +151,7 @@ contract Assessor is Math, DSNote, Auth {
             return true;
         }
 
-        if (tranche == senior && add(calcAssetValue(senior), currencyAmount) <= calcMaxSeniorAssetValue()) {
+        if (tranche == senior && safeAdd(calcAssetValue(senior), currencyAmount) <= calcMaxSeniorAssetValue()) {
             return true;
         }
         return false;
@@ -163,7 +163,7 @@ contract Assessor is Math, DSNote, Auth {
             return true;
         }
 
-        if (tranche == junior && sub(calcAssetValue(junior), currencyAmount) >= calcMinJuniorAssetValue()) {
+        if (tranche == junior && safeSub(calcAssetValue(junior), currencyAmount) >= calcMinJuniorAssetValue()) {
             return true;
 
         }

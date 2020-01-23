@@ -112,10 +112,10 @@ contract BaseDistributor is Math, DSNote, Auth {
         }
 
         // take from junior first
-        currencyAmount = sub(currencyAmount, _borrow(junior, currencyAmount));
+        currencyAmount = safeSub(currencyAmount, _borrow(junior, currencyAmount));
 
         if (currencyAmount > 0 && address(senior) != address(0)) {
-            currencyAmount = sub(currencyAmount, _borrow(senior, currencyAmount));
+            currencyAmount = safeSub(currencyAmount, _borrow(senior, currencyAmount));
         }
 
         if (currencyAmount > 0) {
@@ -154,7 +154,7 @@ contract BaseDistributor is Math, DSNote, Auth {
 
         // repay senior always first
         if(address(senior) != address(0)) {
-            available = sub(available, _repay(senior, available));
+            available = safeSub(available, _repay(senior, available));
         }
 
         if (available > 0) {
