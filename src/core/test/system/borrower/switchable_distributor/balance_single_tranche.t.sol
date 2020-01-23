@@ -22,10 +22,14 @@ contract BalanceTest is SystemTest {
 
     Borrower borrower;
     address borrower_;
+    
+    SwitchableDistributor distributor;
         
     function setUp() public {
         baseSetup();
+        distributor = SwitchableDistributor(address(lenderDeployer.distributor()));
         // setup users
+        borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         borrower_ = address(borrower);
     }
@@ -125,7 +129,6 @@ contract BalanceTest is SystemTest {
 
     // Helper to supply shelf or tranches with currency without using supply or repay, since these functions are usign balance internally.
     function supplyFunds(uint amount, address addr) public {
-        currency.mint(address(this), amount);
-        currency.transferFrom(address(this), address(addr), amount);
+        currency.mint(address(addr), amount);
     }
 }

@@ -33,9 +33,12 @@ contract WithdrawTest is SystemTest {
 
     Borrower randomUser;
     address randomUser_;
+
+    SwitchableDistributor distributor;
         
     function setUp() public {
         baseSetup();
+        distributor = SwitchableDistributor(address(distributor));
         // setup users
         borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         borrower_ = address(borrower);
@@ -266,7 +269,6 @@ contract WithdrawTest is SystemTest {
     
     // Helper to supply shelf or tranches with currency without using supply or repay, since these functions are usign balance internally.
     function supplyFunds(uint amount, address addr) public {
-        currency.mint(address(this), amount);
-        currency.transferFrom(address(this), address(addr), amount);
+        currency.mint(address(addr), amount);
     }
 }
