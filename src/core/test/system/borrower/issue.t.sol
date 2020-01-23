@@ -16,11 +16,26 @@
 pragma solidity >=0.5.12;
 
 import "../system.sol";
+import "../users/borrower.sol";
 
 contract IssueTest is SystemTest {
 
+    Borrower borrower;
+    address borrower_;
+        
+    Borrower randomUser;
+    address randomUser_;
+
+    function setUp() public {
+        baseSetup();
+        // setup users
+        borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
+        borrower_ = address(borrower);
+        randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
+        randomUser_ = address(randomUser);
+    }
+
     function issueLoan(uint tokenId, bytes32 lookupId) public {
-        assertPreCondition(tokenId, lookupId);
         uint loanId = borrower.issue(collateralNFT_, tokenId);
         assertPostCondition(loanId, tokenId, lookupId);
     }
@@ -43,6 +58,7 @@ contract IssueTest is SystemTest {
 
     function testIssueLoan() public {
         (uint tokenId, bytes32 lookupId) = issueNFT(borrower_);
+        assertPreCondition(tokenId, lookupId);
         issueLoan(tokenId, lookupId); 
     }
 
@@ -50,14 +66,14 @@ contract IssueTest is SystemTest {
         (uint tokenId, bytes32 lookupId) = issueNFT(borrower_);
         issueLoan(tokenId, lookupId); 
 
-        // issue second loan agains same nft
+        // issue second loan against same nft
         uint secondLoanId = borrower.issue(collateralNFT_, tokenId);
         assertPostCondition(secondLoanId, tokenId, lookupId);
     }
 
     function testFailIssueLoanNotNFTOwner() public {
         // issue nft for random user -> borrower != nftOwner
-        (uint tokenId, bytes32 lookupId) = issueNFT(address(this));
+        (uint tokenId, bytes32 lookupId) = issueNFT(randomUser_);
         issueLoan(tokenId, lookupId); 
     }
 }
