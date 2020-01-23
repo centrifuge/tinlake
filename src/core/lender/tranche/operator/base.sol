@@ -38,7 +38,6 @@ contract BaseOperator is Math, DSNote, Auth {
     AssessorLike public assessor;
     DistributorLike public distributor;
 
-
     constructor(address tranche_, address assessor_, address distributor_) internal {
         wards[msg.sender] = 1;
         tranche = TrancheLike(tranche_);

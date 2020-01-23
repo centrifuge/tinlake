@@ -36,18 +36,21 @@ contract PoolLike {
 }
 
 contract Assessor is Math, DSNote, Auth {
+
     // --- Tranches ---
     address public senior;
     address public junior;
 
     PoolLike public pool;
 
-    // initial net asset value
-    uint public initialNAV;
-
     // amounts of token for a token price of ONE
     // constant factor multiplied with the token price
     uint public tokenAmountForONE;
+
+    // denominated in RAD
+    // ONE == 100%
+    // only needed for two tranches. if only one tranche is used == 0
+    uint public minJuniorRatio;
 
     // --- Assessor ---
     // computes the current asset value for tranches.
@@ -66,6 +69,7 @@ contract Assessor is Math, DSNote, Auth {
 
     function file(bytes32 what, uint value) public auth {
         if (what == "tokenAmountForONE") { tokenAmountForONE = value; }
+        else if (what == "minJuniorRatio") { minJuniorRatio = value; }
         else revert();
     }
 
@@ -111,5 +115,60 @@ contract Assessor is Math, DSNote, Auth {
 
     function _seniorDebt() internal returns (uint) {
         return (senior != address(0x0)) ? SeniorTrancheLike(senior).debt() : 0;
+    }
+
+
+    function calcMaxSeniorAssetValue() public returns (uint) {
+        uint juniorAssetValue = calcAssetValue(junior);
+        if (juniorAssetValue == 0) {
+            return 0;
+        }
+        // juniorAssetValue/minJuniorRatio * (ONE-minJuniorRatio) same as:
+        return sub(rdiv(juniorAssetValue, minJuniorRatio), juniorAssetValue);
+    }
+
+    function calcMinJuniorAssetValue() public returns (uint) {
+        if (senior == address(0)) {
+            return 0;
+        }
+        uint seniorAssetValue = calcAssetValue(senior);
+        if (seniorAssetValue == 0) {
+            return uint(-1);
+        }
+        return rmul(rdiv(seniorAssetValue, ONE-minJuniorRatio), minJuniorRatio);
+    }
+
+    // only needed for external contracts
+    function currentJuniorRatio() public returns(uint) {
+        if (senior == address(0)) {
+            return ONE;
+        }
+        uint juniorAssetValue = calcAssetValue(junior);
+        return rdiv(juniorAssetValue, add(juniorAssetValue, calcAssetValue(senior)));
+    }
+
+    function supplyApprove(address tranche, uint currencyAmount) public returns(bool) {
+        // always allowed to supply into junior || minJuniorRatio feature not activated
+        if (tranche == junior || minJuniorRatio == 0) {
+            return true;
+        }
+
+        if (tranche == senior && add(calcAssetValue(senior), currencyAmount) <= calcMaxSeniorAssetValue()) {
+            return true;
+        }
+        return false;
+    }
+
+    function redeemApprove(address tranche, uint currencyAmount) public returns(bool) {
+        // always allowed to redeem into senior || minJuniorRatio feature not activated || only single tranche
+        if (tranche == senior || minJuniorRatio == 0 || senior == address(0)) {
+            return true;
+        }
+
+        if (tranche == junior && sub(calcAssetValue(junior), currencyAmount) >= calcMinJuniorAssetValue()) {
+            return true;
+
+        }
+        return false;
     }
 }
