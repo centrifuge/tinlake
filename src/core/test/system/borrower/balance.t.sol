@@ -57,7 +57,7 @@ contract BalanceTest is SystemTest {
         assert(takeAmount > 0);
         // assert: all funds transferred from tranche reserve
         assertEq(currency.balanceOf(address(junior)), 0);
-        // assert: received received funds
+        // assert: shelf received funds
         assertEq(currency.balanceOf(address(shelf)), add(initialShelfBalance, takeAmount));
     }
 
@@ -73,7 +73,7 @@ contract BalanceTest is SystemTest {
         assert(giveAmount > 0);
         // assert: all funds transferred from shelf
         assertEq(currency.balanceOf(address(shelf)), 0);
-        // assert: all funds transferred from shelf
+        // assert: junior received funds
         assertEq(currency.balanceOf(address(junior)), add(initialJuniorBalance, giveAmount));
     }
 
