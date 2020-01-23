@@ -264,9 +264,11 @@ contract RepayTest is SystemTest {
         (uint tokenId, ) = issueNFT(borrower_);
         // issue loan for borrower
         uint loanId = borrower.issue(collateralNFT_, tokenId);
-        // do not lock NFT 
+        // lock nft
+        lockNFT(loanId, borrower_);
         // admin sets parameters for the loan
         setLoanParameters(loanId, borrowAmount, rate, speed);
+        
         // borrower does not borrow
         
         supplyFunds(extraFunds, borrower_);
