@@ -95,6 +95,7 @@ contract BalanceTest is SystemTest {
         uint takeAmount = 100 ether;
         // supply junior tranche with funds
         supplyFunds(takeAmount, address(junior));
+        // deactivate borrow
         distributor.file("borrowFromTranches", false);
         balanceTake();
     }
@@ -103,7 +104,7 @@ contract BalanceTest is SystemTest {
         uint giveAmount = 100 ether;
         // supply shelf with funds
         supplyFunds(giveAmount, address(shelf));
-        // deactivate borrow from tranches
+        // deactivate borrow
         distributor.file("borrowFromTranches", false);
         // take money from shelf and transfer into tranche
         balanceGive();
@@ -120,7 +121,6 @@ contract BalanceTest is SystemTest {
         // supply shelf with funds
         supplyFunds(giveAmount, address(shelf));
         // do not deactivate borrow
-        // take money from shelf and transfer into tranche
         balanceGive();
     }
 
