@@ -55,9 +55,9 @@ contract Pile is DSNote, Auth, Interest {
         require(now <= rates[rate].lastUpdated);
         uint pieAmount = toPie(rates[rate].chi, currencyAmount);
 
-        pie[loan] = add(pie[loan], pieAmount);
-        rates[rate].pie = add(rates[rate].pie, pieAmount);
-        total = add(total, currencyAmount);
+        pie[loan] = safeAdd(pie[loan], pieAmount);
+        rates[rate].pie = safeAdd(rates[rate].pie, pieAmount);
+        total = safeAdd(total, currencyAmount);
     }
 
     // decrease the loan's debt by currencyAmount
@@ -66,9 +66,9 @@ contract Pile is DSNote, Auth, Interest {
         require(now <= rates[rate].lastUpdated);
         uint pieAmount = toPie(rates[rate].chi, currencyAmount);
 
-        pie[loan] = sub(pie[loan], pieAmount);
-        rates[rate].pie = sub(rates[rate].pie, pieAmount);
-        total = sub(total, currencyAmount);
+        pie[loan] = safeSub(pie[loan], pieAmount);
+        rates[rate].pie = safeSub(rates[rate].pie, pieAmount);
+        total = safeSub(total, currencyAmount);
     }
 
     function debt(uint loan) public view returns (uint) {
@@ -105,9 +105,9 @@ contract Pile is DSNote, Auth, Interest {
         drip(newRate);
         uint pie_ = pie[loan];
         uint debt_ = toAmount(rates[currentRate].chi, pie_);
-        rates[currentRate].pie = sub(rates[currentRate].pie, pie_);
+        rates[currentRate].pie = safeSub(rates[currentRate].pie, pie_);
         pie[loan] = toPie(rates[newRate].chi, debt_);
-        rates[newRate].pie = add(rates[newRate].pie, pie[loan]);
+        rates[newRate].pie = safeAdd(rates[newRate].pie, pie[loan]);
         loanRates[loan] = newRate;
     }
 
@@ -136,7 +136,7 @@ contract Pile is DSNote, Auth, Interest {
             (uint chi, uint deltaInterest) = compounding(rates[rate].chi, rates[rate].ratePerSecond, rates[rate].lastUpdated, rates[rate].pie);
             rates[rate].chi = chi;
             rates[rate].lastUpdated = uint48(now);
-            total = add(total, deltaInterest);
+            total = safeAdd(total, deltaInterest);
         }
     }
 }

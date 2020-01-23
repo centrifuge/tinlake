@@ -37,10 +37,10 @@ contract CreditLineTest is Math, DSTest {
         pile.setReturn("debt_loan", debt);
         creditLine.file(loanId, initial);
 
-        uint borrowAmount = sub(initial, debt);
+        uint borrowAmount = safeSub(initial, debt);
         creditLine.borrow(loanId, borrowAmount);
         assertEq(pile.calls("debt_loan"), 1);
-        pile.setReturn("debt_loan", add(debt, borrowAmount));
+        pile.setReturn("debt_loan", safeAdd(debt, borrowAmount));
         assertEq(creditLine.ceiling(loanId), initial - (borrowAmount + debt));
     }
 
@@ -53,7 +53,7 @@ contract CreditLineTest is Math, DSTest {
         pile.setReturn("debt_loan", debt);
         creditLine.file(loanId, initial);
 
-        uint borrowAmount = add(initial, 10);
+        uint borrowAmount = safeAdd(initial, 10);
         creditLine.borrow(loanId, borrowAmount);
     }
 }

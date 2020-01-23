@@ -41,7 +41,7 @@ contract SwitchableDistributor is BaseDistributor {
         if(borrowFromTranches) {
             uint currencyAmount = junior.balance();
             if (address(senior) != address(0)) {
-                currencyAmount = add(currencyAmount, senior.balance());
+                currencyAmount = safeAdd(currencyAmount, senior.balance());
             }
             _borrowTranches(currencyAmount);
             return;
