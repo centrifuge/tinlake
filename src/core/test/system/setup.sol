@@ -15,7 +15,6 @@
 
 pragma solidity >=0.5.12;
 
-import "ds-test/test.sol";
 import { Title } from "tinlake-title/title.sol";
 import "../../borrower/deployer.sol";
 import "../../lender/deployer.sol";
@@ -24,13 +23,13 @@ import "../simple/token.sol";
 
 import "tinlake-erc20/erc20.sol";
 
-contract TestSetup is DSTest{
+contract TestSetup {
     Title public collateralNFT;
     address      public collateralNFT_;
     SimpleToken  public currency;
     address      public currency_;
 
-    // Core contracts
+    // Borrower contracts
     Shelf shelf;
     Pile pile;
     Title title;
@@ -39,6 +38,12 @@ contract TestSetup is DSTest{
     // ThresholdLike threshold;
     // PricePoolLike pricePool;
     // LightSwitchLike lightswitch;
+
+    // Lender contracts
+    Tranche junior;
+    DistributorLike distributor;
+    ERC20 juniorERC20;
+    OperatorLike juniorOperator;
 
     // Deployers
     BorrowerDeployer public borrowerDeployer;
@@ -54,7 +59,14 @@ contract TestSetup is DSTest{
     }
 
     function deployContracts() public {
-        baseSetup();
+        collateralNFT = new Title("Collateral NFT", "collateralNFT");
+        collateralNFT_ = address(collateralNFT);
+
+        currency = new SimpleToken("C", "Currency", "1", 0);
+        currency_ = address(currency);
+
+        rootAdmin = new TestRootAdmin();
+        rootAdmin_ = address(rootAdmin);
         // only admin is main deployer
         deployBorrower();
         // only admin is main deployer
@@ -64,17 +76,6 @@ contract TestSetup is DSTest{
         rootAdmin.file("lender", address(lenderDeployer));
 
         rootAdmin.completeDeployment();
-    }
-
-    function baseSetup() private {
-        collateralNFT = new Title("Collateral NFT", "collateralNFT");
-        collateralNFT_ = address(collateralNFT);
-
-        currency = new SimpleToken("C", "Currency", "1", 0);
-        currency_ = address(currency);
-
-        rootAdmin = new TestRootAdmin();
-        rootAdmin_ = address(rootAdmin);
     }
 
     function deployBorrower() private {
@@ -115,12 +116,14 @@ contract TestSetup is DSTest{
             address(new WhitelistFab()), address(new SwitchableDistributorFab()));
 
         lenderDeployer.deployJuniorTranche("JUN", "Junior Tranche Token");
-
         lenderDeployer.deployAssessor();
-
         lenderDeployer.deployDistributor();
-
         lenderDeployer.deployJuniorOperator();
         lenderDeployer.deploy();
+
+        distributor = lenderDeployer.distributor();
+        juniorOperator = lenderDeployer.juniorOperator();
+        juniorERC20 = lenderDeployer.juniorERC20();
+        junior = lenderDeployer.junior();
     }
 }
