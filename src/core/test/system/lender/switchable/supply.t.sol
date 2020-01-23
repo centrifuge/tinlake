@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Centrifuge
+// Copyright (C) 2020 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -15,7 +15,7 @@
 
 pragma solidity >=0.5.12;
 
-import "../system.t.sol";
+import "../../system.t.sol";
 
 contract SupplyTest is SystemTest {
 
@@ -39,7 +39,7 @@ contract SupplyTest is SystemTest {
         rootAdmin.relyLenderAdmin(address(this));
     }
 
-    function testSwitchableSupply() public {
+    function testSupply() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;
         currency.mint(juniorInvestor_, investorBalance);
