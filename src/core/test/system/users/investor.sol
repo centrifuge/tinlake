@@ -18,12 +18,12 @@ import "../../../lender/deployer.sol";
 import "../interfaces.sol";
 
 contract Investor is DSTest {
-    WhitelistOperator operator;
+    TOperatorLike operator;
     ERC20Like currency;
     ERC20Like token;
 
     constructor(address operator_, address currency_, address token_) public {
-        operator = WhitelistOperator(operator_);
+        operator = TOperatorLike(operator_);
         currency = ERC20Like(currency_);
         token = ERC20Like(token_);
     }

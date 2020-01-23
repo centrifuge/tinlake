@@ -24,7 +24,9 @@ contract BalanceTest is SystemTest {
     address borrower_;
         
     function setUp() public {
-        baseSetup();
+        bytes32 juniorOperator_ = "whitelist";
+        bytes32 distributor_ = "switchable";
+        baseSetup(juniorOperator_, distributor_);
         // setup users
         borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         borrower_ = address(borrower);
