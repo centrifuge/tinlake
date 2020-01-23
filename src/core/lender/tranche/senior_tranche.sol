@@ -22,7 +22,7 @@ import "tinlake-math/interest.sol";
 // Interface to the senior tranche. keeps track of the current debt towards the tranche.
 contract SeniorTranche is Tranche, Interest {
 
-    uint internal debt_;              // accumulated interest over time
+    uint internal debt_;             // debt of the senior tranche
     uint public ratePerSecond;      // interest rate per second in RAD (10^27)
     uint public lastUpdated;        // Last time the accumlated rate has been updated
 
