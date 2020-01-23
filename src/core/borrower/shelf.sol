@@ -53,6 +53,10 @@ contract CeilingLike {
     function repay(uint loan, uint currencyAmount) public;
 }
 
+contract DistributorLike {
+    function balance() public;
+}
+
 contract Shelf is DSNote, Auth, TitleOwned, Math {
 
     // --- Data ---
@@ -60,6 +64,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     CeilingLike public ceiling;
     PileLike public pile;
     TokenLike public currency;
+    DistributorLike public distributor;
 
     struct Loan {
         address registry;
@@ -73,12 +78,13 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     uint public balance;
     address public lender;
 
-    constructor(address currency_, address title_, address pile_, address ceiling_) TitleOwned(title_) public {
+    constructor(address currency_, address title_, address pile_, address ceiling_, address distributor_) TitleOwned(title_) public {
         wards[msg.sender] = 1;
         currency = TokenLike(currency_);
         title = TitleLike(title_);
         pile = PileLike(pile_);
         ceiling = CeilingLike(ceiling_);
+        distributor = DistributorLike(distributor_);
     }
 
     function depend (bytes32 what, address addr) public auth {
@@ -130,7 +136,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     // --- Currency actions ---
     function balanceRequest() public returns (bool, uint) {
         uint currencyBalance = currency.balanceOf(address(this));
-        
+
         if (balance > currencyBalance) {
             return (true, sub(balance, currencyBalance));
         } else {
@@ -150,6 +156,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     function withdraw(uint loan, uint currencyAmount, address usr) public owner(loan) note {
         require(nftLocked(loan), "nft-not-locked");
         require(currencyAmount <= balances[loan], "amount-too-high");
+        distributor.balance();
         balances[loan] = sub(balances[loan], currencyAmount);
         balance = sub(balance, currencyAmount);
         currency.transferFrom(address(this), usr, currencyAmount);
@@ -178,6 +185,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         currency.transferFrom(usr, address(this), currencyAmount);
         ceiling.repay(loan, currencyAmount);
         pile.decDebt(loan, currencyAmount);
+        distributor.balance();
     }
 
     // --- NFT actions ---
