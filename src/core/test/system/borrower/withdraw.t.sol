@@ -85,7 +85,9 @@ contract WithdrawTest is SystemTest {
         (uint tokenId, ) = issueNFT(borrower_);
         // issue loan for borrower
         uint loanId = borrower.issue(collateralNFT_, tokenId);
+        // lock nft
         lockNFT(loanId);
+        initBorrow
         
 
 
