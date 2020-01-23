@@ -27,11 +27,12 @@ contract IssueTest is SystemTest {
     address randomUser_;
 
     function setUp() public {
-        baseSetup();
-        // setup users
+        bytes32 juniorOperator_ = "whitelist";
+        bytes32 distributor_ = "switchable";
+        baseSetup(juniorOperator_, distributor_);
         borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         borrower_ = address(borrower);
-        randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
+        randomUser = new Borrower(address(pile), address(distributor), currency_, address(pile));
         randomUser_ = address(randomUser);
     }
 

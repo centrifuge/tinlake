@@ -100,8 +100,8 @@ contract OperatorTest is DSTest {
         investor.doSupply(address(whitelist), 100 ether);
         assertEq(tranche.calls("supply"), 1);
         assertEq(assessor.calls("tokenPrice"), 1);
-        assertEq(tranche.values_return("currencyAmount"), 100 ether);
-        assertEq(tranche.values_return("tokenAmount"), 100 ether);
+        assertEq(tranche.values_uint("supply_currencyAmount"), 100 ether);
+        assertEq(tranche.values_uint("supply_tokenAmount"), 100 ether);
         assertEq(distributor.calls("balance"), 1);
     }
 
@@ -110,8 +110,8 @@ contract OperatorTest is DSTest {
         investor.doRedeem(address(whitelist), 100 ether);
         assertEq(tranche.calls("redeem"), 1);
         assertEq(assessor.calls("tokenPrice"), 1);
-        assertEq(tranche.values_return("currencyAmount"), 100 ether);
-        assertEq(tranche.values_return("tokenAmount"), 100 ether);
+        assertEq(tranche.values_uint("redeem_currencyAmount"), 100 ether);
+        assertEq(tranche.values_uint("redeem_tokenAmount"), 100 ether);
         assertEq(distributor.calls("balance"), 1);
     }
 
@@ -136,8 +136,8 @@ contract OperatorTest is DSTest {
         investor.doSupply(address(allowance), 100 ether);
         assertEq(tranche.calls("supply"), 1);
         assertEq(assessor.calls("tokenPrice"), 1);
-        assertEq(tranche.values_return("currencyAmount"), 100 ether);
-        assertEq(tranche.values_return("tokenAmount"), 100 ether);
+        assertEq(tranche.values_uint("supply_currencyAmount"), 100 ether);
+        assertEq(tranche.values_uint("supply_tokenAmount"), 100 ether);
         assertEq(distributor.calls("balance"), 1);
     }
 
@@ -152,8 +152,8 @@ contract OperatorTest is DSTest {
         investor.doRedeem(address(allowance), 100 ether);
         assertEq(tranche.calls("redeem"), 1);
         assertEq(assessor.calls("tokenPrice"), 1);
-        assertEq(tranche.values_return("currencyAmount"), 100 ether);
-        assertEq(tranche.values_return("tokenAmount"), 100 ether);
+        assertEq(tranche.values_uint("redeem_currencyAmount"), 100 ether);
+        assertEq(tranche.values_uint("redeem_tokenAmount"), 100 ether);
         assertEq(distributor.calls("balance"), 1);
     }
 

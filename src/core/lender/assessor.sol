@@ -36,7 +36,6 @@ contract PoolLike {
 }
 
 contract Assessor is Math, DSNote, Auth {
-
     // --- Tranches ---
     address public senior;
     address public junior;
@@ -99,13 +98,13 @@ contract Assessor is Math, DSNote, Auth {
     }
 
     // Tranche.assets (Junior) = (Pool.value + Tranche.reserve - Senior.debt) > 0 && (Pool.value - Tranche.reserve - Senior.debt) || 0
-    function _calcJuniorAssetValue(uint poolValue, uint trancheReserve, uint seniorDebt) internal returns (uint) {
+    function _calcJuniorAssetValue(uint poolValue, uint trancheReserve, uint seniorDebt) internal pure returns (uint) {
         int assetValue = int(poolValue + trancheReserve - seniorDebt);
         return (assetValue > 0) ? uint(assetValue) : 0;
     }
 
     // Tranche.assets (Senior) = (Tranche.debt < (Pool.value + Junior.reserve)) && (Senior.debt + Tranche.reserve) || (Pool.value + Junior.reserve + Tranche.reserve)
-    function _calcSeniorAssetValue(uint poolValue, uint trancheReserve, uint trancheDebt, uint juniorReserve) internal returns (uint) {
+    function _calcSeniorAssetValue(uint poolValue, uint trancheReserve, uint trancheDebt, uint juniorReserve) internal pure returns (uint) {
         return ((poolValue + juniorReserve) >= trancheDebt) ? (trancheDebt + trancheReserve) : (poolValue + juniorReserve + trancheReserve);
     }
 
@@ -123,7 +122,6 @@ contract Assessor is Math, DSNote, Auth {
         if (juniorAssetValue == 0) {
             return 0;
         }
-        // juniorAssetValue/minJuniorRatio * (ONE-minJuniorRatio) same as:
         return sub(rdiv(juniorAssetValue, minJuniorRatio), juniorAssetValue);
     }
 

@@ -14,7 +14,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pragma solidity >=0.5.12;
-pragma experimental ABIEncoderV2;
 
 import "ds-test/test.sol";
 
@@ -65,7 +64,7 @@ contract CollectorTest is DSTest {
         assertEq(shelf.values_address("claim_usr"), address(collector));
     }
     
-    function setUpLoan(uint loan, uint tokenId, uint debt) public {
+    function setUpLoan(uint tokenId, uint debt) public {
         shelf.setReturn("token", address(nft), tokenId);
         pile.setReturn("debt_loan", debt);
     }
@@ -75,7 +74,7 @@ contract CollectorTest is DSTest {
         uint loan = 1; uint tokenId = 123;
         uint debt = 100;
         uint price = debt-1;
-        setUpLoan(loan, tokenId, debt);
+        setUpLoan(tokenId, debt);
 
         threshold.set(loan, debt-1);
         collector.file(loan, address(this), price);
@@ -88,7 +87,7 @@ contract CollectorTest is DSTest {
         uint loan = 1; uint tokenId = 123;
         uint debt = 100;
         uint price = debt-1;
-        setUpLoan(loan, tokenId, debt);
+        setUpLoan(tokenId, debt);
         
         collector.file(loan, address(0), price);
         threshold.set(loan, debt-1);
@@ -101,7 +100,7 @@ contract CollectorTest is DSTest {
         uint loan = 1; uint tokenId = 123;
         uint debt = 100;
         uint price = debt-1;
-        setUpLoan(loan, tokenId, debt);
+        setUpLoan(tokenId, debt);
 
         threshold.set(loan, debt+1);
         collector.file(loan, address(this), price);
@@ -113,7 +112,7 @@ contract CollectorTest is DSTest {
         uint loan = 1; uint tokenId = 123;
         uint debt = 100;
         uint price = debt-1;
-        setUpLoan(loan, tokenId, debt);
+        setUpLoan(tokenId, debt);
 
         threshold.set(loan, debt+1);
         collector.file(loan, address(1), price);
@@ -125,8 +124,7 @@ contract CollectorTest is DSTest {
         collector.relyCollector(address(this));
         uint loan = 1; uint tokenId = 123;
         uint debt = 100;
-        uint price = debt-1;
-        setUpLoan(loan, tokenId, debt);
+        setUpLoan(tokenId, debt);
 
         threshold.set(loan, debt-1);
 

@@ -23,6 +23,7 @@ import {WhitelistOperator} from "./tranche/operator/whitelist.sol";
 import {Tranche} from "./tranche/tranche.sol";
 import {SeniorTranche} from "./tranche/senior_tranche.sol";
 import {SwitchableDistributor} from "./distributor/switchable.sol";
+import {BaseDistributor} from "./distributor/base.sol";
 import "tinlake-erc20/erc20.sol";
 
 contract TrancheFab {
@@ -56,16 +57,23 @@ contract AssessorFab {
 contract OperatorFab {
     function newOperator(address tranche, address assessor, address distributor) public returns (address);
 }
-contract AllowanceFab {
-    function newOperator(address tranche, address assessor, address distributor) public returns (address operator) {
+
+contract OperatorLike {
+    function rely(address usr) public;
+    function deny(address usr) public;
+}
+
+contract AllowanceOperatorFab {
+    function newOperator(address tranche, address assessor, address distributor) public returns (address operator_) {
         AllowanceOperator operator = new AllowanceOperator(tranche, assessor, distributor);
         operator.rely(msg.sender);
         operator.deny(address(this));
+        return address(operator);
     }
 }
 
-contract WhitelistFab {
-    function newOperator(address tranche, address assessor, address distributor) public returns (address operator) {
+contract WhitelistOperatorFab {
+    function newOperator(address tranche, address assessor, address distributor) public returns (address operator_) {
         WhitelistOperator operator = new WhitelistOperator(tranche, assessor, distributor);
         operator.rely(msg.sender);
         operator.deny(address(this));
@@ -80,6 +88,15 @@ contract DistributorFab {
     function newDistributor(address currency) public returns (address);
 }
 
+contract DistributorLike {
+    bool public borrowFromTranches;
+    function rely(address usr) public;
+    function deny(address usr) public;
+    function depend (bytes32 what, address addr) public;
+    function file(bytes32 what, bool flag) public;
+    function balance() public;
+}
+
 contract SwitchableDistributorFab {
     function newDistributor(address currency) public returns (address) {
         SwitchableDistributor distributor = new SwitchableDistributor(currency);
@@ -90,24 +107,15 @@ contract SwitchableDistributorFab {
     }
 }
 
-// todo add BaseDistributorFab
+contract BaseDistributorFab {
+    function newDistributor(address currency) public returns (address) {
+        BaseDistributor distributor = new BaseDistributor(currency);
 
-contract DistributorLike {
-    bool public borrowFromTranches;
-    function rely(address usr) public;
-    function deny(address usr) public;
-    function depend (bytes32 what, address addr) public;
-    function file(bytes32 what, bool flag) public;
-    function balance() public;
-
+        distributor.rely(msg.sender);
+        distributor.deny(address(this));
+        return address(distributor);
+    }
 }
-
-contract OperatorLike {
-    function rely(address usr) public;
-    function deny(address usr) public;
-}
-
-// Simple Lender only deploys a SimpleDistributor as lender module
 
 contract LenderDeployer is Auth {
     address rootAdmin;
