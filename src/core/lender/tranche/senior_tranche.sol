@@ -60,15 +60,15 @@ contract SeniorTranche is Tranche, Interest {
 
     function _repay(uint currencyAmount) internal {
         if(currencyAmount <= interest) {
-            interest = interest - currencyAmount;
+            interest = safeSub(interest, currencyAmount);
             return;
         }
 
-        currencyAmount = currencyAmount - interest;
+        currencyAmount = safeSub(currencyAmount, interest);
         interest = 0;
 
         if (currencyAmount <= borrowed){
-            borrowed = borrowed - currencyAmount;
+            borrowed = safeSub(borrowed, currencyAmount);
             return;
         }
         borrowed = 0;

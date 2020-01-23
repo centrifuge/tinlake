@@ -92,16 +92,20 @@ contract SeniorTrancheTest is DSTest, Interest {
         assertEq(senior.interest(), 10.25 ether);
 
         // repay
+        // stop accrue interest
         assessor.setReturn("accrueTrancheInterest", 0 ether);
+
+        // smaller than interest
         senior.repay(self, 5 ether);
         assertEq(senior.interest(), 5.25 ether);
         assertEq(senior.borrowed(), 100 ether);
-        assertEq(senior.debt(), 105.25 ether);
 
+        // interest + partial borrowed
         senior.repay(self, 50 ether);
         assertEq(senior.interest(), 0 ether);
         assertEq(senior.borrowed(), 55.25 ether);
 
+        // the rest
         currency.mint(address(this), 10.25 ether);
         senior.repay(self, 55.25 ether);
         assertEq(senior.interest(), 0 ether);
