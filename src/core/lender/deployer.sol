@@ -107,21 +107,6 @@ contract SwitchableDistributorFab {
     }
 }
 
-contract DistributorLike {
-    function rely(address usr) public;
-    function deny(address usr) public;
-    function depend (bytes32 what, address addr) public;
-    function file(bytes32 what, bool flag) public;
-    function balance() public;
-
-}
-
-        distributor.rely(msg.sender);
-        distributor.deny(address(this));
-        return address(distributor);
-    }
-}
-
 contract LenderDeployer is Auth {
     address rootAdmin;
     address deployUser;

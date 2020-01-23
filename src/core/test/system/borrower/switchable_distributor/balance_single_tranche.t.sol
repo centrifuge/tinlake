@@ -22,49 +22,51 @@ contract BalanceTest is SystemTest {
 
     Borrower borrower;
     address borrower_;
-    
-    SwitchableDistributor distributor;
         
+    SwitchableDistributor distributor;
     function setUp() public {
-        baseSetup();
-        distributor = SwitchableDistributor(address(lenderDeployer.distributor()));
+        bytes32 juniorOperator_ = "whitelist";
+        bytes32 distributor_ = "switchable";
+        baseSetup(juniorOperator_, distributor_);
         // setup users
-        borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
+        distributor = SwitchableDistributor(address(lenderDeployer.distributor()));
         borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         borrower_ = address(borrower);
+
     }
     
     function balanceTake() public {
-        uint initialCurrencyBalance = currency.balanceOf(address(shelf));
+        uint initialShelfBalance = currency.balanceOf(address(shelf));
         uint takeAmount = currency.balanceOf(address(junior));
         borrower.balance();
-        assertPostConditionTake(takeAmount, initialCurrencyBalance);
+        assertPostConditionTake(takeAmount, initialShelfBalance);
     }
 
     function balanceGive() public {
-        uint initialCurrencyBalance = currency.balanceOf(address(shelf));
-        uint giveAmount = currency.balanceOf(address(junior));
+        uint initialJuniorBalance = currency.balanceOf(address(junior));
+        uint giveAmount = currency.balanceOf(address(shelf));
+
         borrower.balance();
-        assertPostConditionGive(giveAmount, initialCurrencyBalance);
+        assertPostConditionGive(giveAmount, initialJuniorBalance);
     }
 
-    function assertPreConditionTake(uint takeAmount) public {
+    function assertPreConditionTake(uint takeAmount) public view {
         // assert: borrowFromTranches is active
         assert(distributor.borrowFromTranches());
-        // assert: junior has enough capital
+        // assert: tranche reserve has enough funds
         assert(currency.balanceOf(address(junior)) == takeAmount);
     }
 
-    function assertPostConditionTake(uint takeAmount, uint initialCurrencyBalance) public {
+    function assertPostConditionTake(uint takeAmount, uint initialShelfBalance) public {
         // assert: takeAmount > 0
         assert(takeAmount > 0);
         // assert: all funds transferred from tranche reserve
         assertEq(currency.balanceOf(address(junior)), 0);
-        // assert: junior received funds
-        assertEq(currency.balanceOf(address(shelf)), add(initialCurrencyBalance, takeAmount));
+        // assert: shelf received funds
+        assertEq(currency.balanceOf(address(shelf)), safeAdd(initialShelfBalance, takeAmount));
     }
 
-    function assertPreConditionGive(uint giveAmount) public {
+    function assertPreConditionGive(uint giveAmount) public view {
         // assert: borrowFromTranches is inactive
         assert(!distributor.borrowFromTranches());
         // assert: shelf has funds
@@ -76,8 +78,8 @@ contract BalanceTest is SystemTest {
         assert(giveAmount > 0);
         // assert: all funds transferred from shelf
         assertEq(currency.balanceOf(address(shelf)), 0);
-        // assert: all funds transferred from shelf
-        assertEq(currency.balanceOf(address(junior)), add(initialJuniorBalance, giveAmount));
+        // assert: junior received funds
+        assertEq(currency.balanceOf(address(junior)), safeAdd(initialJuniorBalance, giveAmount));
     }
 
     function testBalanceTake() public {
@@ -98,17 +100,18 @@ contract BalanceTest is SystemTest {
         uint takeAmount = 100 ether;
         // supply junior tranche with funds
         supplyFunds(takeAmount, address(junior));
+        // deactivate borrow
         distributor.file("borrowFromTranches", false);
         balanceTake();
     }
 
     function testBalanceGive() public {
         uint giveAmount = 100 ether;
-        // supply shelf tranche with funds
-        supplyFunds(giveAmount, address(junior));
-        // deactivate borrow from tranches
+        // supply shelf with funds
+        supplyFunds(giveAmount, address(shelf));
+        // deactivate borrow
         distributor.file("borrowFromTranches", false);
-        // take money from shelf and transfer into shelf
+        // take money from shelf and transfer into tranche
         balanceGive();
     }
 
@@ -120,15 +123,15 @@ contract BalanceTest is SystemTest {
 
     function testFailBalanceGiveInactive() public {
          uint giveAmount = 100 ether;
-        // supply shelf tranche with funds
-        supplyFunds(giveAmount, address(junior));
+        // supply shelf with funds
+        supplyFunds(giveAmount, address(shelf));
         // do not deactivate borrow
-        // take money from shelf and transfer into shelf
         balanceGive();
     }
 
     // Helper to supply shelf or tranches with currency without using supply or repay, since these functions are usign balance internally.
     function supplyFunds(uint amount, address addr) public {
-        currency.mint(address(addr), amount);
+        currency.mint(address(this), amount);
+        currency.transferFrom(address(this), address(addr), amount);
     }
 }
