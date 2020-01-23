@@ -56,7 +56,7 @@ contract ShelfTest is DSTest {
         assertEq(nft.calls("transferFrom"), 1);
         assertEq(nft.values_address("transferFrom_to"), address(shelf));
         assertEq(nft.values_address("transferFrom_from"), address(this));
-        assertEq(nft.values_uint("transferFrom_tokenId"), tokenId);
+        assertEq(nft.values_uint("transferFrom_tokenId"), tokenId_);
 
     }
 

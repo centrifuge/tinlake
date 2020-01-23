@@ -32,8 +32,8 @@ contract SystemTest is TestSetup, Math, DSTest {
     }
 
     function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
-        uint tokenId = collateralNFT.issue(usr);
-        bytes32 lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
+        tokenId = collateralNFT.issue(usr);
+        lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
         return (tokenId, lookupId);
     }
 

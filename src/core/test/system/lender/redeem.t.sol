@@ -56,7 +56,7 @@ contract RedeemTest is SystemTest {
         assertPostCondition(investorBalance);
     }
 
-    function assertPreCondition() public {
+    function assertPreCondition() public view {
         // assert: borrowFromTranches == false
         assert(!switchable.borrowFromTranches());
         // assert: shelf is not bankrupt

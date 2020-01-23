@@ -49,7 +49,7 @@ contract SupplyTest is SystemTest {
         assertPostCondition(investorBalance, supplyAmount);
     }
 
-    function assertPreCondition() public {
+    function assertPreCondition() public view {
         // assert: borrowFromTranches == true
         assert(switchable.borrowFromTranches());
     }

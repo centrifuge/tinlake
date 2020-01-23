@@ -19,10 +19,12 @@ import "../../../test/mock/mock.sol";
 
 contract AssessorMock is Mock {
     function calcTokenPrice (address tranche) public returns (uint) {
+        values_address["calcTokenPrice_tranche"]= tranche;
         return call("tokenPrice");
     }
 
     function calcAssetValue(address tranche) public returns (uint) {
+        values_address["calcAssetValue_tranche"]= tranche;
         return call("assetValue");
     }
 

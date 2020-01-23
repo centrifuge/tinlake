@@ -69,10 +69,10 @@ contract PileTest is Math, DSTest {
         return rmul(principal, rpow(rate, time, ONE));
     }
 
-    function _initRateGroup(uint rate_, uint speed_) internal {
-        pile.file(rate_, speed_);
-        (, uint chi , uint speed,) = pile.rates(rate_);
-        assertEq(speed, speed_);
+    function _initRateGroup(uint rate_, uint ratePerSecond_) internal {
+        pile.file(rate_, ratePerSecond_);
+        (, uint chi , uint ratePerSecond,) = pile.rates(rate_);
+        assertEq(ratePerSecond, ratePerSecond_);
         assertEq(chi, ONE);
     }
 
@@ -88,21 +88,21 @@ contract PileTest is Math, DSTest {
 
     function testInitRateGroup() public {
         uint rate = 1000000003593629043335673583;
-        uint speed = rate;
-        _initRateGroup(rate, speed);  
+        uint ratePerSecond = rate;
+        _initRateGroup(rate, ratePerSecond);  
     }
 
     function testUpdateRateGroup() public {
         uint rate = 1000000003593629043335673583;
-        uint initSpeed = rate;
-        _initRateGroup(rate, initSpeed);
+        uint initRatePerSecond = rate;
+        _initRateGroup(rate, initRatePerSecond);
         
         hevm.warp(now + 1 days);
         
-        uint newSpeed = 1000000564701133626865910626;
-        pile.file(rate, newSpeed);
-        (, uint chi, uint speed,) = pile.rates(rate);
-        assertEq(speed, 1000000564701133626865910626); 
+        uint newRatePerSecond = 1000000564701133626865910626;
+        pile.file(rate, newRatePerSecond);
+        (, uint chi, uint ratePerSecond,) = pile.rates(rate);
+        assertEq(ratePerSecond, 1000000564701133626865910626); 
         assertEq(chi, 1000310537755655376744337012);  
     }
 

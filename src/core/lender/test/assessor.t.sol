@@ -134,7 +134,7 @@ contract AssessorTest is DSTest,Math {
         senior.setReturn("tokenSupply", 10 ether);
         uint assetValue = assessor.calcAssetValue(address(senior));
         assertEq(assetValue, 0);
-        uint tokenPrice = senior.doCalcTokenPrice(assessor_);
+        senior.doCalcTokenPrice(assessor_);
     }
 
     function testTokenPriceWithInitialNAV() public {

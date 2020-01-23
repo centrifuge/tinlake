@@ -35,10 +35,10 @@ contract CloseTest is SystemTest {
         randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         randomUser_ = address(randomUser);
     }
-
-    function closeLoan(uint loanId, uint tokenId, bytes32 lookupId) public {
+  
+    function closeLoan(uint loanId, bytes32 lookupId) public {
         borrower.close(loanId);
-        assertPostCondition(loanId, tokenId, lookupId);
+        assertPostCondition(lookupId);
     }
 
     function assertPreCondition(uint loanId, uint tokenId, bytes32 lookupId) public {
@@ -52,7 +52,7 @@ contract CloseTest is SystemTest {
         assert(pile.debt(loanId) == 0);
     }
 
-    function assertPostCondition(uint loanId, uint tokenId, bytes32 lookupId) public {
+    function assertPostCondition(bytes32 lookupId) public {
         // assert: nft + loan removed nftlookup
         assertEq(shelf.nftlookup(lookupId), 0);
         
@@ -68,7 +68,7 @@ contract CloseTest is SystemTest {
         borrower.approveNFT(collateralNFT, address(this));
         collateralNFT.transferFrom(borrower_, randomUser_, tokenId);
         assertPreCondition(loanId, tokenId, lookupId);
-        closeLoan(loanId, tokenId, lookupId);
+        closeLoan(loanId, lookupId);
     }
 
     function testCloseLoanNFTOwner() public {
@@ -77,21 +77,21 @@ contract CloseTest is SystemTest {
         // transfer nft to borrower  / make borrower nftOwner
         randomUser.approveNFT(collateralNFT, address(this));
         collateralNFT.transferFrom(randomUser_, borrower_, tokenId);
-        closeLoan(loanId, tokenId, lookupId);
+        closeLoan(loanId, lookupId);
     }
 
     function testFailCloseLoanNoPermissions() public {
         (uint tokenId, bytes32 lookupId) = issueNFT(randomUser_);
-        uint loanId = shelf.issue(collateralNFT_, tokenId);   
+        shelf.issue(collateralNFT_, tokenId);
         // borrower not loanOwner or nftOwner
-        closeLoan(loanId, tokenId, lookupId);
+        closeLoan(123, lookupId);
     }
 
     function testFailCloseLoanNotExisting() public {
-        (uint tokenId, bytes32 lookupId) = issueNFT(borrower_);
+        ( ,bytes32 lookupId) = issueNFT(borrower_);
         // loan not issued
         uint loanId = 10;
-        closeLoan(loanId, tokenId, lookupId);
+        closeLoan(loanId, lookupId);
     }
 
     function testFailCloseNFTLocked() public {
@@ -99,7 +99,7 @@ contract CloseTest is SystemTest {
         uint loanId = borrower.issue(collateralNFT_, tokenId);
         // lock nft
         borrower.lock(loanId);
-        closeLoan(loanId, tokenId, lookupId);
+        closeLoan(loanId, lookupId);
     }
 
     // TODO
