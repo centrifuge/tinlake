@@ -18,8 +18,8 @@ pragma solidity >=0.5.12;
 import "ds-test/test.sol";
 import "tinlake-math/math.sol";
 import "../assessor.sol";
-import "./mock/pool.sol";
-import "./mock/tranche.sol";
+import "../../test/mock/pool.sol";
+import "../../test/mock/tranche.sol";
 
 contract AssessorLike {
     function calcTokenPrice(address tranche) public returns (uint);
@@ -29,7 +29,7 @@ contract TestTranche is TrancheMock {
         return AssessorLike(assessor_).calcTokenPrice(address(this));
     }
 }
-contract AssessorTest is DSTest,Math {
+contract AssessorTest is DSTest, Math {
     uint256 constant ONE = 10 ** 27;
     Assessor assessor;
     address assessor_;
@@ -299,9 +299,6 @@ contract AssessorTest is DSTest,Math {
 
         assertTrue(assessor.redeemApprove(assessor.junior(), 25 ether));
         assertTrue(assessor.redeemApprove(assessor.junior(), 36 ether) == false);
-
-
-
 
     }
 
