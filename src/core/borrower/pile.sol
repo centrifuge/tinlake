@@ -95,11 +95,14 @@ contract Pile is DSNote, Auth, Interest {
     // set rate loanRates for a loan
     function setRate(uint loan, uint rate) public auth {
         require(pie[loan] == 0, "non-zero-debt");
+        // rate category has to be initiated
+        require(rates[rate].chi != 0);
         loanRates[loan] = rate;
     }
 
     // change rate loanRates for a loan
     function changeRate(uint loan, uint newRate) public auth {
+        require(rates[newRate].chi != 0);
         uint currentRate = loanRates[loan];
         drip(currentRate);
         drip(newRate);
