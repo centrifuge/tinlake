@@ -24,18 +24,11 @@ import "tinlake-math/math.sol";
 
 contract SystemTest is TestSetup, Math, DSTest {
     // users
-    AdminUser public admin;
-    address admin_;
 
     function baseSetup(bytes32 operator, bytes32 distributor) public {
         // setup deployment
         deployContracts(operator, distributor);
-
         rootAdmin.relyLenderAdmin(address(this));
-
-        // give invest rights to test
-        WhitelistOperator juniorOperator = WhitelistOperator(address(lenderDeployer.juniorOperator()));
-        juniorOperator.relyInvestor(address(this));
     }
 
     function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {

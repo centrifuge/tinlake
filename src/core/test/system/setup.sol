@@ -105,14 +105,14 @@ contract TestSetup {
 
     }
 
-    function deployLender(bytes32 operator, bytes32 distributor) public {
+    function deployLender(bytes32 operator_, bytes32 distributor_) public {
          address distributorfab_;
          address operatorfab_;
 
-        if (operator == "whitelist") {
+        if (operator_ == "whitelist") {
             operatorfab_ = address(new WhitelistFab());
         }
-        if (distributor == "switchable") {
+        if (distributor_ == "switchable") {
             distributorfab_ = address(new SwitchableFab());
         }
 

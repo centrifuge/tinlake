@@ -31,13 +31,13 @@ contract BorrowTest is SystemTest {
     address admin_;
         
     function setUp() public {
-        bytes32 juniorOperator = "whitelist";
-        bytes32 distributor = "switchable";
-        baseSetup(juniorOperator, distributor);
+        bytes32 juniorOperator_ = "whitelist";
+        bytes32 distributor_ = "switchable";
+        baseSetup(juniorOperator_, distributor_);
         // setup users
-        borrower = new Borrower(address(shelf), address(lenderDeployer.distributor()), currency_, address(pile));
+        borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         borrower_ = address(borrower);
-        randomUser = new Borrower(address(shelf), address(lenderDeployer.distributor()), currency_, address(pile));
+        randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         randomUser_ = address(randomUser);
         admin = new AdminUser(address(shelf), address(pile), address(ceiling), address(title), address(distributor));
         admin_ = address(admin);

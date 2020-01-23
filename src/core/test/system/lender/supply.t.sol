@@ -19,7 +19,7 @@ import "../system.t.sol";
 
 contract SupplyTest is SystemTest {
 
-    WhitelistOperator juniorOperator;
+    WhitelistOperator operator;
     Assessor assessor;
     SwitchableDistributor switchable;
 
@@ -30,14 +30,14 @@ contract SupplyTest is SystemTest {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "switchable";
         baseSetup(juniorOperator_, distributor_);
-        juniorOperator = WhitelistOperator(address(lenderDeployer.juniorOperator()));
-        switchable = SwitchableDistributor(address(lenderDeployer.distributor()));
-        juniorInvestor = new Investor(address(juniorOperator), currency_, address(lenderDeployer.juniorERC20()));
+        operator = WhitelistOperator(address(juniorOperator));
+        switchable = SwitchableDistributor(address(distributor));
+        juniorInvestor = new Investor(address(operator), currency_, address(juniorERC20));
         juniorInvestor_ = address(juniorInvestor);
 
-        juniorOperator.relyInvestor(juniorInvestor_);
+        operator.relyInvestor(juniorInvestor_);
+        rootAdmin.relyLenderAdmin(address(this));
     }
-    
 
     function testSwitchableSupply() public {
         uint investorBalance = 100 ether;

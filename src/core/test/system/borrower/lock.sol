@@ -27,12 +27,12 @@ contract LockTest is SystemTest {
     address randomUser_;
 
     function setUp() public {
-        bytes32 juniorOperator = "whitelist";
-        bytes32 distributor = "switchable";
-        baseSetup(juniorOperator, distributor);
-        borrower = new Borrower(address(borrowerDeployer.shelf()), address(lenderDeployer.distributor()), currency_, address(borrowerDeployer.pile()));
+        bytes32 juniorOperator_ = "whitelist";
+        bytes32 distributor_ = "switchable";
+        baseSetup(juniorOperator_, distributor_);
+        borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         borrower_ = address(borrower);
-        randomUser = new Borrower(address(shelf), address(lenderDeployer.distributor()), currency_, address(pile));
+        randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         randomUser_ = address(randomUser);
     }
     
