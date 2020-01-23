@@ -27,7 +27,9 @@ contract CloseTest is SystemTest {
     address randomUser_;
 
     function setUp() public {
-        baseSetup();
+        bytes32 juniorOperator_ = "whitelist";
+        bytes32 distributor_ = "switchable";
+        baseSetup(juniorOperator_, distributor_);
         borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         borrower_ = address(borrower);
         randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
@@ -71,7 +73,7 @@ contract CloseTest is SystemTest {
 
     function testCloseLoanNFTOwner() public {
         (uint tokenId, bytes32 lookupId) = issueNFT(randomUser_);
-        uint loanId = randomUser.issue(collateralNFT_, tokenId);      
+        uint loanId = randomUser.issue(collateralNFT_, tokenId);
         // transfer nft to borrower  / make borrower nftOwner
         randomUser.approveNFT(collateralNFT, address(this));
         collateralNFT.transferFrom(randomUser_, borrower_, tokenId);

@@ -60,3 +60,24 @@ contract CeilingLike {
     function values(uint) public view returns(uint);
     function file(uint loan, uint principal) public;
 }
+
+contract TOperatorLike {
+    TrancheLike public tranche;
+    AssessorLike public assessor;
+    TDistributorLike public distributor;
+
+    function rely(address usr) public;
+    function deny(address usr) public;
+
+    function supply(uint amount) public;
+    function redeem(uint amount) public;
+}
+
+contract TrancheLike {
+    function balance() public returns(uint);
+    function tokenSupply() public returns(uint);
+}
+
+contract AssessorLike {
+    function calcTokenPrice(address tranche) public returns(uint);
+}
