@@ -23,6 +23,7 @@ import "./mock/nft.sol";
 import "./mock/token.sol";
 import "./mock/pile.sol";
 import "./mock/ceiling.sol";
+import "../../lender/test/mock/distributor.sol";
 
 contract ShelfTest is DSTest {
     Shelf shelf;
@@ -31,6 +32,7 @@ contract ShelfTest is DSTest {
     TokenMock currency;
     PileMock pile;
     CeilingMock ceiling;
+    DistributorMock distributor;
 
     function setUp() public {
         nft = new NFTMock();
@@ -38,7 +40,9 @@ contract ShelfTest is DSTest {
         currency = new TokenMock();
         pile = new PileMock();
         ceiling = new CeilingMock();
+        distributor = new DistributorMock();
         shelf = new Shelf(address(currency), address(title), address(pile), address(ceiling));
+        shelf.depend("distributor", address(distributor));
     }
 
     function _issue(uint256 tokenId_, uint loan_) internal {

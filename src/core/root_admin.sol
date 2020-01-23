@@ -41,6 +41,7 @@ contract RootAdmin is Auth {
         address juniorTranche = address(lenderDeployer.junior());
         borrowerDeployer.shelf().depend("lender", distributor_);
         borrowerDeployer.collector().depend("distributor", distributor_);
+        borrowerDeployer.shelf().depend("distributor", distributor_);
 
         //  Lender depends
         address borrowerPricePool = address(borrowerDeployer.pricePool());

@@ -78,16 +78,15 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     uint public balance;
     address public lender;
 
-    constructor(address currency_, address title_, address pile_, address ceiling_, address distributor_) TitleOwned(title_) public {
+    constructor(address currency_, address title_, address pile_, address ceiling_) TitleOwned(title_) public {
         wards[msg.sender] = 1;
         currency = TokenLike(currency_);
         title = TitleLike(title_);
         pile = PileLike(pile_);
         ceiling = CeilingLike(ceiling_);
-        distributor = DistributorLike(distributor_);
     }
 
-    function depend (bytes32 what, address addr) public auth {
+    function depend(bytes32 what, address addr) public auth {
         if (what == "lender") {
             lender = addr;
             // todo review alternatives
@@ -98,6 +97,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         else if (what == "title") { title = TitleLike(addr); }
         else if (what == "pile") { pile = PileLike(addr); }
         else if (what == "ceiling") { ceiling = CeilingLike(addr); }
+        else if (what == "distributor") { distributor = DistributorLike(addr);}
         else revert();
     }
 

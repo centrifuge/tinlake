@@ -21,9 +21,6 @@ import "../users/admin.sol";
 
 contract BorrowTest is SystemTest {
 
-    Borrower borrower;
-    address borrower_;
-
     Borrower randomUser;
     address randomUser_;
     

@@ -52,6 +52,10 @@ contract Borrower is DSTest {
         distributor.balance();
     }
 
+    function withdraw(uint loan, uint amount, address usr) public {
+        shelf.withdraw(loan, amount, usr);
+    }
+
     function borrowAction(uint loan, uint amount) public {
         shelf.lock(loan);
         shelf.borrow(loan, amount);
