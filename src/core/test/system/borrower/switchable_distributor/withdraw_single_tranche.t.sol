@@ -148,7 +148,6 @@ contract WithdrawTest is SystemTest {
         // transfer funds directly into the shelf, without calling tranche.supply()
         supplyFunds(investAmount, address(shelf));
         assertPreCondition(loanId, tokenId, loanAmount);
-        // recipient not borrower account
         withdraw(loanId, tokenId, loanAmount, borrower_);
     }
 
@@ -168,7 +167,6 @@ contract WithdrawTest is SystemTest {
         // junior investor puts money into tranche
         invest(investAmount);
         assertPreCondition(loanId, tokenId, withdrawAmount);
-        // recipient not borrower account
         withdraw(loanId, tokenId, withdrawAmount, borrower_);
     }
 

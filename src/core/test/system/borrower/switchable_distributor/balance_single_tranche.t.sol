@@ -64,6 +64,8 @@ contract BalanceTest is SystemTest {
         assertEq(currency.balanceOf(address(junior)), 0);
         // assert: shelf received funds
         assertEq(currency.balanceOf(address(shelf)), safeAdd(initialShelfBalance, takeAmount));
+        // assert: distributor does not hold any funds
+        assertEq(currency.balanceOf(address(distributor)), 0);
     }
 
     function assertPreConditionGive(uint giveAmount) public view {
@@ -80,6 +82,8 @@ contract BalanceTest is SystemTest {
         assertEq(currency.balanceOf(address(shelf)), 0);
         // assert: junior received funds
         assertEq(currency.balanceOf(address(junior)), safeAdd(initialJuniorBalance, giveAmount));
+        // assert: distributor does not hold any funds
+        assertEq(currency.balanceOf(address(distributor)), 0);
     }
 
     function testBalanceTake() public {
