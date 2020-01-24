@@ -38,9 +38,9 @@ contract RepayTest is BaseSystemTest {
 
     function repay(uint loanId, uint tokenId, uint amount, uint expectedDebt) public {
         uint initialBorrowerBalance = currency.balanceOf(borrower_);
-        uint initialShelfBalance = currency.balanceOf(address(shelf));
+        uint initialTrancheBalance = currency.balanceOf(address(junior));
         borrower.repay(loanId, amount);
-        assertPostCondition(loanId, tokenId, amount, initialBorrowerBalance, initialShelfBalance, expectedDebt);
+        assertPostCondition(loanId, tokenId, amount, initialBorrowerBalance, initialTrancheBalance, expectedDebt);
     }
 
     function assertPreCondition(uint loanId, uint tokenId, uint repayAmount, uint expectedDebt) public {
@@ -58,7 +58,7 @@ contract RepayTest is BaseSystemTest {
         assert(currency.balanceOf(borrower_) >= repayAmount);
     }
 
-    function assertPostCondition(uint loanId, uint tokenId, uint repaidAmount, uint initialBorrowerBalance, uint initialShelfBalance, uint expectedDebt) public {
+    function assertPostCondition(uint loanId, uint tokenId, uint repaidAmount, uint initialBorrowerBalance, uint initialTrancheBalance, uint expectedDebt) public {
         // assert: borrower still loanOwner
         assertEq(title.ownerOf(loanId), borrower_);
         // assert: shelf still nftOwner
@@ -66,11 +66,13 @@ contract RepayTest is BaseSystemTest {
         // assert: borrower funds decreased by the smaller of repaidAmount or totalLoanDebt
         if (repaidAmount > expectedDebt) {
             // make sure borrower did not pay more then hs debt
-            repaidAmount = expectedDebt;   
+            repaidAmount = expectedDebt;  
+ 
         }
         assertEq(safeSub(initialBorrowerBalance, repaidAmount), currency.balanceOf(borrower_));
-        // assert: shelf received funds
-        assertEq(safeAdd(initialShelfBalance, repaidAmount), currency.balanceOf(address(shelf)));
+        // assert: shelf/tranche received funds
+        // since we are calling balance inside repay, money is directly transferred to the tranche through shelf
+        assertEq(safeAdd(initialTrancheBalance, repaidAmount), currency.balanceOf(address(junior)));
         // assert: debt amounts reduced by repayAmount
         assertEq(pile.debt(loanId), safeSub(expectedDebt, repaidAmount));
         assertEq(pile.total(), safeSub(expectedDebt, repaidAmount));

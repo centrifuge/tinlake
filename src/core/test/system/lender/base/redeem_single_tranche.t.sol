@@ -22,12 +22,22 @@ contract RedeemTest is BaseSystemTest {
     WhitelistOperator operator;
     BaseDistributor base;
 
+    Investor juniorInvestor;
+    address  juniorInvestor_;
+
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "base";
         baseSetup(juniorOperator_, distributor_);
         operator = WhitelistOperator(address(juniorOperator));
         base = BaseDistributor(address(distributor));
+
+        // setup users
+        juniorInvestor = new Investor(address(operator), currency_, address(juniorERC20));
+        juniorInvestor_ = address(juniorInvestor);
+
+        operator.relyInvestor(juniorInvestor_);
+        rootAdmin.relyLenderAdmin(address(this));
     }
 
     function supply(uint balance, uint amount) public {

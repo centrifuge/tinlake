@@ -19,14 +19,13 @@ import "../../base_system.sol";
 
 contract BalanceTest is BaseSystemTest {
         
-    BaseDistributor distributor;
-
+    SwitchableDistributor distributor;
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
-        bytes32 distributor_ = "base";
+        bytes32 distributor_ = "switchable";
         baseSetup(juniorOperator_, distributor_);
         createTestUsers();
-        distributor = distributor = BaseDistributor(address(lenderDeployer.destributor()));
+        distributor = SwitchableDistributor(address(lenderDeployer.distributor()));
     }
     
     function balanceTake() public {

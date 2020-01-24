@@ -18,7 +18,10 @@ pragma solidity >=0.5.12;
 import "../../system.t.sol";
 
 contract SupplyTest is BaseSystemTest {
+
+    WhitelistOperator operator;
     BaseDistributor base;
+
 
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
@@ -26,6 +29,13 @@ contract SupplyTest is BaseSystemTest {
         baseSetup(juniorOperator_, distributor_);
         operator = WhitelistOperator(address(juniorOperator));
         base = BaseDistributor(address(distributor));
+
+        // setup users
+        juniorInvestor = new Investor(address(operator), currency_, address(juniorERC20));
+        juniorInvestor_ = address(juniorInvestor);
+
+        operator.relyInvestor(juniorInvestor_);
+        rootAdmin.relyLenderAdmin(address(this));
     }
 
     function testSimpleSupply() public {
