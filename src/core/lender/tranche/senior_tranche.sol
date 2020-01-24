@@ -87,7 +87,7 @@ contract SeniorTranche is Tranche, Interest {
 
     function drip() internal {
         if (now >= lastUpdated) {
-            interest = safeAdd(interest, assessor.accrueTrancheInterest(msg.sender));
+            interest = safeAdd(interest, assessor.accrueTrancheInterest(address(this)));
             lastUpdated = now;
         }
     }

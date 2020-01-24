@@ -63,7 +63,7 @@ contract CeilingLike {
 
 contract TOperatorLike {
     TrancheLike public tranche;
-    AssessorLike public assessor;
+    TAssessorLike public assessor;
     TDistributorLike public distributor;
 
     function rely(address usr) public;
@@ -78,6 +78,6 @@ contract TrancheLike {
     function tokenSupply() public returns(uint);
 }
 
-contract AssessorLike {
+contract TAssessorLike {
     function calcTokenPrice(address tranche) public returns(uint);
 }

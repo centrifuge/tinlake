@@ -47,7 +47,7 @@ contract TestSetup {
     OperatorLike juniorOperator;
     ERC20 seniorERC20;
     OperatorLike seniorOperator;
-    Assessor assessor;
+    AssessorLike assessor;
 
     // Deployers
     BorrowerDeployer public borrowerDeployer;
@@ -149,7 +149,7 @@ contract TestSetup {
         juniorOperator = lenderDeployer.juniorOperator();
         juniorERC20 = lenderDeployer.juniorERC20();
         junior = lenderDeployer.junior();
-        assessor = lenderDeployer.assessor();
+        assessor = AssessorLike(address(lenderDeployer.assessor()));
     }
 
     function deploySenior(address operatorfab_) public {
