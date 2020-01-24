@@ -33,7 +33,8 @@ contract RedeemTwoTrancheTest is SystemTest {
     function setUp() public {
         bytes32 operator_ = "whitelist";
         bytes32 distributor_ = "default";
-        baseSetup(operator_, distributor_, true);
+        bool deploySeniorTranche = true;
+        baseSetup(operator_, distributor_, deploySeniorTranche);
 
         jOperator = WhitelistOperator(address(juniorOperator));
         sOperator = WhitelistOperator(address(seniorOperator));

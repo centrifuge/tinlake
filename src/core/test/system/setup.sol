@@ -131,7 +131,6 @@ contract TestSetup {
             distributorfab_ = address(new DefaultDistributorFab());
         }
 
-
         lenderDeployer = new LenderDeployer(rootAdmin_, currency_, address(new TrancheFab()), address(new AssessorFab()),
             operatorfab_, distributorfab_);
 
@@ -141,7 +140,7 @@ contract TestSetup {
         lenderDeployer.deployJuniorOperator();
 
         if (senior_) {
-            deploySenior(operator_);
+            deploySenior(operatorfab_);
         }
 
         lenderDeployer.deploy();
@@ -153,16 +152,11 @@ contract TestSetup {
         assessor = lenderDeployer.assessor();
     }
 
-    function deploySenior(bytes32 operator_) public {
+    function deploySenior(address operatorfab_) public {
         address sOperatorfab_;
         address tranchefab_;
 
-        if (operator_ == "whitelist") {
-            sOperatorfab_ = address(new WhitelistOperatorFab());
-        } else if (operator_ == "allowance") {
-            sOperatorfab_ = address(new AllowanceOperatorFab());
-        }
-
+        sOperatorfab_ = operatorfab_;
         tranchefab_ = address(new SeniorTrancheFab());
 
         lenderDeployer.depend("senior_tranche_fab", tranchefab_);

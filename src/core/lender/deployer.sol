@@ -166,12 +166,8 @@ contract LenderDeployer is Auth {
     }
 
     function depend(bytes32 what, address addr) public auth {
-        if (what == "senior_tranche_fab") { seniorTrancheFab = SeniorTrancheFab(addr);
-            return;
-        }
-        if (what == "senior_operator_fab") { seniorOperatorFab = OperatorFab(addr);
-            return;
-        }
+        if (what == "senior_tranche_fab") { seniorTrancheFab = SeniorTrancheFab(addr); }
+        else if (what == "senior_operator_fab") { seniorOperatorFab = OperatorFab(addr); }
         else revert();
     }
 
