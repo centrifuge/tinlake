@@ -23,9 +23,16 @@ contract DefaultAssessor is BaseAssessor, Interest {
     // accrueTrancheInterest can implement different interest models
     function accrueTrancheInterest(address tranche_) public returns (uint) {
         SeniorTrancheLike tranche = SeniorTrancheLike(tranche_);
+
+        if(tranche_ == junior) {
+            return 0;
+
+        }
+
         uint debt = tranche.borrowed() + tranche.interest();
         // move to tinlake-math
         // interest is calculated based on tranche debt
         return safeSub(rmul(rpow(tranche.ratePerSecond(), now - tranche.lastUpdated(), ONE), debt), debt);
+
     }
 }
