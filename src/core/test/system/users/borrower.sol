@@ -82,7 +82,7 @@ contract Borrower is DSTest {
         repayAction(loan, debt);
     }
 
-    function doApproveCurrency(address usr, uint wad) public {
-        tkn.approve(usr, wad);
+    function doApproveCurrency(address usr, uint currencyAmount) public {
+        tkn.approve(usr, currencyAmount);
     }
 }
