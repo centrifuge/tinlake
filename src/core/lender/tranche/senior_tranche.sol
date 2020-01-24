@@ -18,22 +18,36 @@ pragma solidity >=0.5.12;
 import "./tranche.sol";
 import "tinlake-math/interest.sol";
 
+contract AssessorLike {
+    function accrueTrancheInterest(address tranche_) public returns (uint);
+}
+
 // SeniorTranche
 // Interface to the senior tranche. keeps track of the current debt towards the tranche.
 contract SeniorTranche is Tranche, Interest {
 
-    uint internal debt_;             // debt of the senior tranche
     uint public ratePerSecond;      // interest rate per second in RAD (10^27)
     uint public lastUpdated;        // Last time the accumlated rate has been updated
 
+    uint public borrowed;
+    uint public interest;
+
+    AssessorLike  public assessor;
+
     function debt() public returns(uint) {
         drip();
-        return debt_;
+        return safeAdd(borrowed, interest);
     }
 
-    constructor(address token_, address currency_) Tranche(token_ ,currency_) public {
+    constructor(address token_, address currency_, address assessor_) Tranche(token_ ,currency_) public {
         ratePerSecond = ONE;
         lastUpdated = now;
+        assessor = AssessorLike(assessor_);
+    }
+
+    function depend(bytes32 what, address addr) public note auth {
+        if (what == "assessor") {assessor = AssessorLike(addr); }
+        else { super.depend(what, addr); }
     }
 
     function file(bytes32 what, uint ratePerSecond_) public note auth {
@@ -43,23 +57,37 @@ contract SeniorTranche is Tranche, Interest {
         }
     }
 
+
+    function _repay(uint currencyAmount) internal {
+        if(currencyAmount <= interest) {
+            interest = safeSub(interest, currencyAmount);
+            return;
+        }
+
+        currencyAmount = safeSub(currencyAmount, interest);
+        interest = 0;
+
+        if (currencyAmount <= borrowed){
+            borrowed = safeSub(borrowed, currencyAmount);
+            return;
+        }
+        borrowed = 0;
+    }
     function repay(address usr, uint currencyAmount) public note auth {
         drip();
-        debt_ = safeSub(debt_, currencyAmount);
+        _repay(currencyAmount);
         super.repay(usr, currencyAmount);
-
     }
 
     function borrow(address usr, uint currencyAmount) public note auth {
         drip();
-        debt_ = safeAdd(debt_, currencyAmount);
+        borrowed = safeAdd(borrowed, currencyAmount);
         super.borrow(usr, currencyAmount);
     }
 
     function drip() internal {
         if (now >= lastUpdated) {
-            // todo move to tinlake-math
-            debt_ = rmul(rpow(ratePerSecond, now - lastUpdated, ONE), debt_);
+            interest = safeAdd(interest, assessor.accrueTrancheInterest(msg.sender));
             lastUpdated = now;
         }
     }

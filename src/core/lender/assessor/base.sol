@@ -23,8 +23,14 @@ contract TrancheLike {
     function balance() public returns(uint);
     function tokenSupply() public returns(uint);
 }
+
 contract SeniorTrancheLike {
     function debt() public returns(uint);
+    function borrowed() public returns(uint);
+    function interest() public returns(uint);
+
+    function ratePerSecond() public returns(uint);
+    function lastUpdated() public returns(uint);
 }
 
 contract PileLike {
@@ -35,7 +41,7 @@ contract PoolLike {
     function totalValue() public returns(uint);
 }
 
-contract Assessor is Math, DSNote, Auth {
+contract BaseAssessor is Math, Auth {
     // --- Tranches ---
     address public senior;
     address public junior;

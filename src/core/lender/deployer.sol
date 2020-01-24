@@ -17,7 +17,7 @@ import "tinlake-auth/auth.sol";
 pragma solidity >=0.5.12;
 
 // lender contracts
-import {Assessor} from "./assessor.sol";
+import {DefaultAssessor} from "./assessor/default.sol";
 import {AllowanceOperator} from "./tranche/operator/allowance.sol";
 import {WhitelistOperator} from "./tranche/operator/whitelist.sol";
 import {Tranche} from "./tranche/tranche.sol";
@@ -35,16 +35,16 @@ contract TrancheFab {
 }
 
 contract SeniorTrancheFab {
-    function newSeniorTranche(address currency, address token) public returns (SeniorTranche tranche) {
-        tranche = new SeniorTranche(currency, token);
+    function newSeniorTranche(address currency, address token, address assessor) public returns (SeniorTranche tranche) {
+        tranche = new SeniorTranche(currency, token, assessor);
         tranche.rely(msg.sender);
         tranche.deny(address(this));
     }
 }
 
 contract AssessorFab {
-    function newAssessor() public returns (Assessor assessor) {
-        assessor = new Assessor();
+    function newAssessor() public returns (DefaultAssessor assessor) {
+        assessor = new DefaultAssessor();
         assessor.rely(msg.sender);
         assessor.deny(address(this));
     }
@@ -132,7 +132,7 @@ contract LenderDeployer is Auth {
     address public currency;
 
     // Contracts
-    Assessor public assessor;
+    DefaultAssessor public assessor;
     DistributorLike public distributor;
 
     // junior
@@ -177,8 +177,9 @@ contract LenderDeployer is Auth {
     }
 
     function deploySeniorTranche(string memory symbol, string memory name) public auth {
+        require(address(assessor) != address(0));
         seniorERC20 = new ERC20(symbol, name);
-        senior = seniorTrancheFab.newSeniorTranche(currency, address(seniorERC20));
+        senior = seniorTrancheFab.newSeniorTranche(currency, address(seniorERC20), address(assessor));
         senior_ = address(senior);
         // senior tranche can mint
         seniorERC20.rely(address(senior));
