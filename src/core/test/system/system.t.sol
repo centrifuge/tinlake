@@ -15,7 +15,7 @@
 
 pragma solidity >=0.5.12;
 
-import "./system.sol";
+import "./base_system.sol";
 import "./users/borrower.sol";
 import "./users/admin.sol";
 

@@ -15,7 +15,7 @@
 
 pragma solidity >=0.5.12;
 
-import "../../system.sol";
+import "../../base_system.sol";
 
 contract RepayTest is SystemTest {
 
