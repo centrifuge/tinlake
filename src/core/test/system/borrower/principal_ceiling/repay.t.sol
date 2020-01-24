@@ -17,7 +17,7 @@ pragma solidity >=0.5.12;
 
 import "../../base_system.sol";
 
-contract RepayTest is SystemTest {
+contract RepayTest is BaseSystemTest {
 
     SwitchableDistributor distributor;
 
@@ -33,6 +33,7 @@ contract RepayTest is SystemTest {
 
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
+        fundTranches();
     }
 
     function repay(uint loanId, uint tokenId, uint amount, uint expectedDebt) public {
@@ -75,45 +76,30 @@ contract RepayTest is SystemTest {
         assertEq(pile.total(), safeSub(expectedDebt, repaidAmount));
     }
 
-    function borrowAndRepay(address usr, uint borrowAmount, uint rate, uint speed, uint expectedDebt, uint repayAmount) public {
-        uint extraFunds = 100 ether;
-        uint investAmount = safeMul(2, borrowAmount);
-
+    function borrowAndRepay(address usr, uint ceiling, uint rate, uint speed, uint expectedDebt, uint repayAmount) public {
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(usr, ceiling, rate, speed);
         // supply borrower with additional funds to pay for accrued interest
-        supplyFunds(extraFunds, usr);
+        topup(usr);
         // borrower allows shelf full control over borrower tokens
         Borrower(usr).doApproveCurrency(address(shelf), uint(-1));
-        // investor invests into tranche
-        invest(investAmount);
-        // issue nft for borrower
-        (uint tokenId, ) = issueNFT(usr);
-        // issue loan for borrower
-        uint loanId = Borrower(usr).issue(collateralNFT_, tokenId);
-        // lock nft
-        lockNFT(loanId, usr);
-        // admin sets parameters for the loan
-        setLoanParameters(loanId, borrowAmount, rate, speed);
-        // borrower borrows funds
-        borrow(loanId, borrowAmount, usr);
         //repay after 1 year
         hevm.warp(now + 365 days);
-        repay(loanId, tokenId, repayAmount, expectedDebt);
-        
+        repay(loanId, tokenId, repayAmount, expectedDebt);   
     }
     
     function testRepayFullDebt() public {
-        uint borrowAmount = 66 ether;
+        uint ceiling = 66 ether;
         // 12 % per year compound in seconds
         uint rate = 1000000003593629043335673583;
         uint speed = rate;
         // expected debt after 1 year of compounding
         uint expectedDebt = 73.92 ether;
         uint repayAmount = expectedDebt;
-        borrowAndRepay(borrower_, borrowAmount, rate, speed, expectedDebt, repayAmount);
+        borrowAndRepay(borrower_, ceiling, rate, speed, expectedDebt, repayAmount);
     }
 
     function testRepayMaxLoanDebt() public {
-        uint borrowAmount = 66 ether;
+        uint ceiling = 66 ether;
         // 12 % per year compound in seconds
         uint rate = 1000000003593629043335673583;
         uint speed = rate;
@@ -121,60 +107,46 @@ contract RepayTest is SystemTest {
         uint expectedDebt = 73.92 ether;
         // borrower tries to repay twice his debt amount
         uint repayAmount = safeMul(expectedDebt, 2);
-        borrowAndRepay(borrower_, borrowAmount, rate, speed, expectedDebt, repayAmount);
+        borrowAndRepay(borrower_, ceiling, rate, speed, expectedDebt, repayAmount);
     }
 
     function testPartialRepay() public {
-        uint borrowAmount = 66 ether;
+        uint ceiling = 66 ether;
         // 12 % per year compound in seconds
         uint rate = 1000000003593629043335673583;
         uint speed = rate;
         // expected debt after 1 year of compounding
         uint expectedDebt =  73.92 ether;
         uint repayAmount = safeDiv(expectedDebt, 2);
-        borrowAndRepay(borrower_, borrowAmount, rate, speed, expectedDebt, repayAmount);
+        borrowAndRepay(borrower_, ceiling, rate, speed, expectedDebt, repayAmount);
     }
 
     function testRepayDebtNoRate() public {
-        uint borrowAmount = 66 ether;
+        uint ceiling = 66 ether;
         // do not set rate - default rate group: 0
-        uint expectedDebt = borrowAmount;
-        uint ceiling = borrowAmount;
+        uint expectedDebt = ceiling;
         uint repayAmount = expectedDebt;
-       
-        uint investAmount = safeMul(2, borrowAmount);
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling);
+
         // borrower allows shelf full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
-        // investor invests into tranche
-        invest(investAmount);
-        // issue nft for borrower
-        (uint tokenId, ) = issueNFT(borrower_);
-        // issue loan for borrower
-        uint loanId = Borrower(borrower_).issue(collateralNFT_, tokenId);
-        // lock nft
-        lockNFT(loanId, borrower_);
-        // admin sets loan ceiling
-        admin.setCeiling(loanId, ceiling);
-        // borrower borrows funds
-        borrow(loanId, borrowAmount, borrower_);
         //repay after 1 year
         hevm.warp(now + 365 days);
         repay(loanId, tokenId, repayAmount, expectedDebt);
     }
 
     function testFailRepayNotLoanOwner() public {
-        uint borrowAmount = 66 ether;
+        uint ceiling = 66 ether;
         // 12 % per year compound in seconds
         uint rate = 1000000003593629043335673583;
         uint speed = rate;
         // expected debt after 1 year of compounding
         uint expectedDebt = 73.92 ether;
         uint repayAmount = expectedDebt;
-        uint extraFunds = 100 ether;
 
-        // supplyFunds to borrower
-        supplyFunds(extraFunds, borrower_);
-        borrowAndRepay(randomUser_, borrowAmount, rate, speed, expectedDebt, repayAmount);
+         // supply borrower with additional funds to pay for accrued interest
+        topup(borrower_);
+        borrowAndRepay(randomUser_, ceiling, rate, speed, expectedDebt, repayAmount);
     }
 
     /*
@@ -184,153 +156,88 @@ contract RepayTest is SystemTest {
     */
 
     function testFailRepayNotEnoughFunds() public {
-        uint borrowAmount = 66 ether;
-        uint investAmount = safeMul(2, borrowAmount);
+        uint ceiling = 66 ether;
         // 12 % per year compound in seconds
         uint rate = 1000000003593629043335673583;
         uint speed = rate;
         // expected debt after 1 year of compounding
         uint expectedDebt = 73.92 ether;
         uint repayAmount = expectedDebt;
-        // investor invests into tranche
-        invest(investAmount);
-        // issue nft for borrower
-        (uint tokenId, ) = issueNFT(borrower_);
-        // issue loan for borrower
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
-        // lock nft
-        lockNFT(loanId, borrower_);
-        // admin sets parameters for the loan
-        setLoanParameters(loanId, borrowAmount, rate, speed);
-        // borrower borrows funds
-        borrow(loanId, borrowAmount, borrower_);
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
+        
         hevm.warp(now + 365 days);
      
         // do not supply borrower with additional funds to repay interest
-        
+
         // borrower allows shelf full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
         repay(loanId, tokenId, repayAmount, expectedDebt);
     }
     
-    function testFailRepayLoanNotWithdrawn() public {
-        uint borrowAmount = 66 ether;
-        uint investAmount = safeMul(2, borrowAmount);
+    function testFailRepayLoanNotFullyWithdrawn() public {
+        uint ceiling = 66 ether;
         // 12 % per year compound in seconds
         uint rate = 1000000003593629043335673583;
         uint speed = rate;
         // expected debt after 1 year of compounding
         uint expectedDebt = 73.92 ether;
-        uint repayAmount = borrowAmount;
-        uint extraFunds = 100 ether;
-        // investor invests into tranche
-        invest(investAmount);
-        // issue nft for borrower
-        (uint tokenId, ) = issueNFT(borrower_);
-        // issue loan for borrower
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
+        uint repayAmount = ceiling;
+        (uint loanId, uint tokenId) = issueNFTAndCreateLoan(borrower_);
         // lock nft
         lockNFT(loanId, borrower_);
         // admin sets parameters for the loan
-        setLoanParameters(loanId, borrowAmount, rate, speed);
-        // borrower add loan balance of full borrowAmount
-        borrower.borrow(loanId, borrowAmount);
-        // borrower just withdraws half of borrowAmount -> loanBalance remains
-        borrower.withdraw(loanId, safeSub(borrowAmount, 2), borrower_);
+        setLoanParameters(loanId, ceiling, rate, speed);
+        // borrower add loan balance of full ceiling
+        borrower.borrow(loanId, ceiling);
+        // borrower just withdraws half of ceiling -> loanBalance remains
+        borrower.withdraw(loanId, safeSub(ceiling, 2), borrower_);
         hevm.warp(now + 365 days);
+
         // supply borrower with additional funds to pay for accrued interest
-        supplyFunds(extraFunds, borrower_);
+        topup(borrower_);
         // borrower allows shelf full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
         repay(loanId, tokenId, repayAmount, expectedDebt);
     }
 
     function testFailRepayZeroDebt() public {
-        uint borrowAmount = 66 ether;
-        uint investAmount = safeMul(2, borrowAmount);
+        uint ceiling = 66 ether;
         // 12 % per year compound in seconds
         uint rate = 1000000003593629043335673583;
         uint speed = rate;
         // expected debt after 1 year of compounding
         uint expectedDebt = 73.92 ether;
         uint repayAmount = expectedDebt;
-        uint extraFunds = 100 ether;
-        // investor invests into tranche
-        invest(investAmount);
-        // issue nft for borrower
-        (uint tokenId, ) = issueNFT(borrower_);
-        // issue loan for borrower
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
+        (uint loanId, uint tokenId) = issueNFTAndCreateLoan(borrower_);
         // lock nft
         lockNFT(loanId, borrower_);
         // admin sets parameters for the loan
-        setLoanParameters(loanId, borrowAmount, rate, speed);
+        setLoanParameters(loanId, ceiling, rate, speed);
+
         // borrower does not borrow
         
-        supplyFunds(extraFunds, borrower_);
+        // supply borrower with additional funds to pay for accrued interest
+        topup(borrower_);
         // borrower allows shelf full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
         repay(loanId, tokenId, repayAmount, expectedDebt);
     }
 
     function testFailRepayCurrencyNotApproved() public {
-        uint borrowAmount = 66 ether;
-        uint investAmount = safeMul(2, borrowAmount);
+        uint ceiling = 66 ether;
         // 12 % per year compound in seconds
         uint rate = 1000000003593629043335673583;
         uint speed = rate;
         // expected debt after 1 year of compounding
         uint expectedDebt = 73.92 ether;
-        uint repayAmount = borrowAmount;
-        uint extraFunds = 100 ether;
-        // supply borrower with additional funds to pay for accrued interest
-        supplyFunds(extraFunds, borrower_);
-  
-        // borrower does not approve currency 
+        uint repayAmount = ceiling;
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
 
-        // investor invests into tranche
-        invest(investAmount);
-        // issue nft for borrower
-        (uint tokenId, ) = issueNFT(borrower_);
-        // issue loan for borrower
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
-        // lock nft
-        lockNFT(loanId, borrower_);
-        // admin sets parameters for the loan
-        setLoanParameters(loanId, borrowAmount, rate, speed);
-        // borrower borrows funds
-        borrow(loanId, borrowAmount, borrower_);
         //repay after 1 year
         hevm.warp(now + 365 days);
-        assertPreCondition(loanId, tokenId, repayAmount, expectedDebt);
+
+         // supply borrower with additional funds to pay for accrued interest
+        topup(borrower_);
         repay(loanId, tokenId, repayAmount, expectedDebt);
-    }
- 
-    // helpers
-    function setLoanParameters(uint loanId, uint amount, uint rate, uint speed) public {
-        uint ceiling = amount;
-        // admin sets loan ceiling
-        admin.setCeiling(loanId, ceiling);
-        // init rate group
-        admin.doInitRate(rate, speed);
-        // add loan to rate group
-        admin.doAddRate(loanId, rate);
-        // admin sets loan rate
-    }
-
-    function lockNFT(uint loanId, address usr) public {
-        Borrower(usr).approveNFT(collateralNFT, address(shelf));
-        Borrower(usr).lock(loanId);
-    } 
-
-    function invest(uint amount) public {
-        currency.mint(juniorInvestor_, amount);
-        juniorInvestor.doSupply(amount);
-    }
-
-    function borrow(uint loanId, uint amount, address usr) public {
-        // borrower borrows -> loan[balance] = amount
-        Borrower(usr).borrow(loanId, amount);
-        Borrower(usr).withdraw(loanId, amount, borrower_);
     }
 }

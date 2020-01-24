@@ -23,11 +23,11 @@ import "./users/borrower.sol";
 import "tinlake-math/math.sol";
 
 
-contract SystemTest is TestSetup, Math, DSTest {
+contract BaseSystemTest is TestSetup, Math, DSTest {
     // users
     Borrower borrower;
     address borrower_;
-
+   
     AdminUser public admin;
     address admin_;
 
@@ -57,13 +57,93 @@ contract SystemTest is TestSetup, Math, DSTest {
             juniorInvestor = new Investor(address(juniorOperator), currency_, address(juniorERC20));
             juniorInvestor_ = address(juniorInvestor);
             WhitelistOperator juniorOperator = WhitelistOperator(address(juniorOperator));
-            juniorOperator.relyInvestor(juniorInvestor_);
+            juniorOperator.relyInvestor(juniorInvestor_);  
     }
 
-    function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
-        tokenId = collateralNFT.issue(usr);
-        lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
+    function lockNFT(uint loanId, address usr) public {
+        Borrower(usr).approveNFT(collateralNFT, address(shelf));
+        Borrower(usr).lock(loanId);
+    } 
+
+    function transferNFT(address sender, address recipient, uint tokenId) public {
+        Borrower(sender).approveNFT(collateralNFT, address(this));
+        collateralNFT.transferFrom(sender, recipient, tokenId);
+    }
+
+    // helpers borrower
+    function issueNFT(address usr) public returns (uint, bytes32) {
+        uint tokenId = collateralNFT.issue(usr);
+        bytes32 lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
+        // user approves shelf too lock NFT
         return (tokenId, lookupId);
+    }
+
+    function issueNFTAndCreateLoan(address usr) public returns (uint, uint) {
+        // issue nft for borrower
+        (uint tokenId, ) = issueNFT(usr);
+        // issue loan for borrower
+        uint loanId = Borrower(usr).issue(collateralNFT_, tokenId);
+        return (tokenId, loanId);
+    }
+
+    function createLoanAndBorrow(address usr, uint ceiling, uint rate) public returns (uint, uint) {
+     (uint loanId, uint tokenId) = issueNFTAndCreateLoan(usr);
+        // lock nft
+        lockNFT(loanId, usr);
+        // admin sets ceiling
+        admin.setCeiling(loanId, ceiling);
+        // admit sets loan rate
+        if (rate > 0) {
+            admin.doAddRate(loanId, rate);
+        }
+        // borrower borrows funds
+        Borrower(usr).borrow(loanId, ceiling);
+        return (loanId, tokenId);
+    }
+
+    function createLoanAndWithdraw(address usr, uint ceiling) public returns (uint, uint) {
+        (uint loanId, uint tokenId ) = createLoanAndBorrow(usr, ceiling, 0);
+        Borrower(usr).withdraw(loanId, ceiling, borrower_);
+        return (loanId, tokenId);
+    }
+
+    function createLoanAndWithdraw(address usr, uint ceiling, uint rate, uint speed) public returns (uint, uint) {
+        // init rate group
+        admin.doInitRate(rate, speed);
+        (uint loanId, uint tokenId) = createLoanAndBorrow(usr, ceiling, rate);
+        Borrower(usr).withdraw(loanId, ceiling, borrower_);
+        return (loanId, tokenId);
+    }
+
+    function repayLoan(address usr, uint loanId, uint currencyAmount) public {
+        // transfer extra funds, so that usr can pay for interest
+        topup(usr);
+        // borrower allows shelf full control over borrower tokens
+        Borrower(usr).doApproveCurrency(address(shelf), uint(-1));
+        // repay loan
+        borrower.repay(loanId, currencyAmount);
+    }
+
+    // helpers admin
+    function setLoanParameters(uint loanId, uint ceiling, uint rate, uint speed) public {
+        // admin sets loan ceiling
+        admin.setCeiling(loanId, ceiling);
+        // init rate group
+        admin.doInitRate(rate, speed);
+        // add loan to rate group
+        admin.doAddRate(loanId, rate);
+        // admin sets loan rate
+    }
+
+    // helpers lenders
+    function invest(uint currencyAmount) public {
+        currency.mint(juniorInvestor_, currencyAmount);
+        juniorInvestor.doSupply(currencyAmount);
+    }
+
+    function fundTranches() public {
+        uint defaultAmount = 1000 ether;
+        invest(defaultAmount);
     }
 
     function setupCurrencyOnLender(uint amount) public {
@@ -81,5 +161,9 @@ contract SystemTest is TestSetup, Math, DSTest {
 
     function supplyFunds(uint amount, address addr) public {
         currency.mint(address(addr), amount);
+    }
+
+    function topup(address usr) public {
+        currency.mint(address(usr), 100 ether);
     }
 }

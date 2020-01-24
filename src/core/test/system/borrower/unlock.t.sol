@@ -17,7 +17,7 @@ pragma solidity >=0.5.12;
 
 import "../base_system.sol";
 
-contract UnlockTest is SystemTest {
+contract UnlockTest is BaseSystemTest {
 
     Hevm public hevm;
 
@@ -26,6 +26,7 @@ contract UnlockTest is SystemTest {
         bytes32 distributor_ = "switchable";
         baseSetup(juniorOperator_, distributor_, false);
         createTestUsers();
+        fundTranches();
 
         // setup hevm
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
@@ -54,81 +55,42 @@ contract UnlockTest is SystemTest {
     }
 
     function testUnlockNFT() public {
-        (uint tokenId, ) = issueNFT(borrower_);
-        borrower.approveNFT(collateralNFT, address(shelf));
-        // issue loan
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
-        // lock nft
+        (uint loanId, uint tokenId) = issueNFTAndCreateLoan(borrower_);
         lockNFT(loanId, borrower_);
         assertPreCondition(loanId, tokenId);
         unlockNFT(loanId, tokenId);
     }
 
     function testUnlockNFTAfterRepay() public {
-        uint amount = 100 ether;
-        (uint tokenId, ) = issueNFT(borrower_);
-        // issue loan for borrower
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
-        // lock nft
-        lockNFT(loanId, borrower_);
-        // borrow
-        borrow(loanId, amount);
-        // borrower allows shelf full control over borrower tokens
-        borrower.doApproveCurrency(address(shelf), uint(-1));
-         //repay after 1 year
+        uint ceiling = 100 ether;
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling);
+         
         hevm.warp(now + 365 days);
-        // loan category 0 -> no accrued interest
-        borrower.repay(loanId, amount);
+
+        // repay after 1 year  (no accrued interest, since loan per default in 0 rate group)
+        repayLoan(borrower_, loanId, ceiling);
         assertPreCondition(loanId, tokenId);
         unlockNFT(loanId, tokenId);
     }
 
     function testFailUnlockNotLoanOwner() public {
-        (uint tokenId, ) = issueNFT(randomUser_);
-        randomUser.approveNFT(collateralNFT, address(shelf));
-        // issue loan
-        uint loanId = randomUser.issue(collateralNFT_, tokenId);
-        // lock nft
+        // nft isued and loan created by random user
+        (uint loanId, uint tokenId) = issueNFTAndCreateLoan(randomUser_);
         lockNFT(loanId, randomUser_);
+
         unlockNFT(loanId, tokenId);
     }
 
     function testFailUnlockOpenDebt() public {
-        uint amount = 100 ether;
-        (uint tokenId, ) = issueNFT(borrower_);
-        // issue loan for borrower
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
-        // lock nft
-        lockNFT(loanId, borrower_);
-        // borrow
-        borrow(loanId, amount);
+        uint ceiling = 100 ether;
+        // borrower creates loan and borrows funds
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling);
         // borrower allows shelf full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
-         //repay after 1 year
+        
         hevm.warp(now + 365 days);
-        // do not repay loan
+        
+        // borrower does not repay 
         unlockNFT(loanId, tokenId);
-    }
-
-    // helper
-    function borrow(uint loanId, uint amount) public {
-        uint investAmount = amount;
-         // investor invests into tranche
-        invest(investAmount);
-        // admin sets parameters for the loan
-        admin.setCeiling(loanId, amount);
-        // borrower borrows funds
-        borrower.borrow(loanId, amount);
-        borrower.withdraw(loanId, amount, borrower_);        
-    }
-
-    function lockNFT(uint loanId, address usr) public {
-        Borrower(usr).approveNFT(collateralNFT, address(shelf));
-        Borrower(usr).lock(loanId);
-    } 
-
-    function invest(uint amount) public {
-        currency.mint(juniorInvestor_, amount);
-        juniorInvestor.doSupply(amount);
     }
 }

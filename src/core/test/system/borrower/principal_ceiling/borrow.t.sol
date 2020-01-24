@@ -17,7 +17,7 @@ pragma solidity >=0.5.12;
 
 import "../../base_system.sol";
 
-contract BorrowTest is SystemTest {
+contract BorrowTest is BaseSystemTest {
         
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
@@ -35,11 +35,6 @@ contract BorrowTest is SystemTest {
 
         borrower.borrow(loanId, amount);
         assertPostCondition(loanId, tokenId, amount, initialTotalBalance, initialLoanBalance, initialTotalDebt, initialLoanDebt, initialCeiling);
-    }
-
-    function lockNFT(uint loanId) public {
-        borrower.approveNFT(collateralNFT, address(shelf));
-        borrower.lock(loanId);
     }
 
     function assertPreCondition(uint loanId, uint tokenId, uint amount) public {
@@ -71,12 +66,9 @@ contract BorrowTest is SystemTest {
     function testBorrow() public {
         uint ceiling = 100 ether;
         uint amount = ceiling;
-        // issue nft for borrower
-        (uint tokenId, ) = issueNFT(borrower_);
-        // issue loan for borrower
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
+        (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
         // lock nft for borrower
-        lockNFT(loanId);
+        lockNFT(loanId, borrower_);
         // admin sets loan ceiling
         admin.setCeiling(loanId, ceiling);
         assertPreCondition(loanId, tokenId, amount);
@@ -87,9 +79,8 @@ contract BorrowTest is SystemTest {
         uint ceiling = 200 ether;
         // borrow amount smaller then ceiling
         uint amount = safeDiv(ceiling ,2);
-        (uint tokenId, ) = issueNFT(borrower_);
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
-        lockNFT(loanId);
+        (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
+        lockNFT(loanId, borrower_);
         admin.setCeiling(loanId, ceiling);
         assertPreCondition(loanId, tokenId, amount);
         borrow(loanId, tokenId, amount);
@@ -98,8 +89,7 @@ contract BorrowTest is SystemTest {
     function testFailBorrowNFTNotLocked() public {
         uint ceiling = 100 ether;
         uint amount = ceiling;
-        (uint tokenId, ) = issueNFT(borrower_);
-        uint loanId = borrower.issue(collateralNFT_, tokenId);  
+        (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
         // do not lock nft
         admin.setCeiling(loanId, ceiling);
         borrow(loanId, tokenId, amount);
@@ -108,10 +98,7 @@ contract BorrowTest is SystemTest {
     function testFailBorrowNotLoanOwner() public {
         uint ceiling = 100 ether;
         uint amount = ceiling;
-        // issue nft for random user
-        (uint tokenId, ) = issueNFT(randomUser_);
-        // issue loan from random user
-        uint loanId = randomUser.issue(collateralNFT_, tokenId);
+         (uint tokenId, uint loanId) = issueNFTAndCreateLoan(randomUser_);
         // lock nft for random user
         randomUser.lock(loanId); 
         // admin sets loan ceiling
@@ -124,9 +111,8 @@ contract BorrowTest is SystemTest {
         uint ceiling = 100 ether;
         // borrow amount higher then ceiling
         uint amount = safeMul(ceiling, 2);
-        (uint tokenId, ) = issueNFT(borrower_);
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
-        lockNFT(loanId);
+        (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
+        lockNFT(loanId, borrower_);
         admin.setCeiling(loanId, ceiling);
         borrow(loanId, tokenId, amount);
     }

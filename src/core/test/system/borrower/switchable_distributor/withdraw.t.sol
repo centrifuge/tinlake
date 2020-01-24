@@ -17,7 +17,7 @@ pragma solidity >=0.5.12;
 
 import "../../base_system.sol";
 
-contract WithdrawTest is SystemTest {
+contract WithdrawTest is BaseSystemTest {
 
     SwitchableDistributor distributor;
         
@@ -69,180 +69,78 @@ contract WithdrawTest is SystemTest {
     }
 
     function testWithdraw() public {
-        uint loanAmount = 100 ether;
-        uint investAmount = loanAmount;
-        // issue nft for borrower
-        (uint tokenId, ) = issueNFT(borrower_);
-        // issue loan for borrower
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
-        // lock nft
-        lockNFT(loanId, borrower_);
-        // init borrow -> add loan balance
-        initBorrow(loanId, loanAmount, borrower_);
-        // junior investor puts money into tranche
-        invest(investAmount);
-        // move funds into shelf
-        distributor.balance();
-        assertPreCondition(loanId, tokenId, loanAmount);
-        withdraw(loanId, tokenId, loanAmount, borrower_);
+        fundTranches();
+        uint ceiling = 100 ether;
+        (uint loanId, uint tokenId) = createLoanAndBorrow(borrower_, ceiling, 0);
+        assertPreCondition(loanId, tokenId, ceiling);
+        withdraw(loanId, tokenId, ceiling, borrower_);
     }
 
     function testWithdrawToOtherUserAccount() public {
-        uint loanAmount = 100 ether;
-        uint investAmount = safeMul(loanAmount, 2);
-        // issue nft for borrower
-        (uint tokenId, ) = issueNFT(borrower_);
-        // issue loan for borrower
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
-        // lock nft
-        lockNFT(loanId, borrower_);
-        // init borrow -> add loan balance
-        initBorrow(loanId, loanAmount, borrower_);
-        // junior investor puts money into tranche
-        invest(investAmount);
-        assertPreCondition(loanId, tokenId, loanAmount);
+        fundTranches();
+        uint ceiling = 100 ether;
+        (uint loanId, uint tokenId) = createLoanAndBorrow(borrower_, ceiling, 0);
+        assertPreCondition(loanId, tokenId, ceiling);
         // recipient not borrower account
-        withdraw(loanId, tokenId, loanAmount, randomUser_);
+        withdraw(loanId, tokenId, ceiling, randomUser_);
     }
 
     function testWithdrawFromShelfHasFunds() public {
-        uint loanAmount = 100 ether;
-        uint investAmount = safeMul(loanAmount, 2);
-        // issue nft for borrower
-        (uint tokenId, ) = issueNFT(borrower_);
-        // issue loan for borrower
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
-        // lock nft
-        lockNFT(loanId, borrower_);
-        // init borrow -> add loan balance
-        initBorrow(loanId, loanAmount, borrower_);
+        uint ceiling = 100 ether;
         // transfer funds directly into the shelf, without calling tranche.supply()
+        uint investAmount = safeMul(ceiling, 2);
         supplyFunds(investAmount, address(shelf));
-        assertPreCondition(loanId, tokenId, loanAmount);
-        withdraw(loanId, tokenId, loanAmount, borrower_);
+        (uint loanId, uint tokenId) = createLoanAndBorrow(borrower_, ceiling, 0);
+        assertPreCondition(loanId, tokenId, ceiling);
+        withdraw(loanId, tokenId, ceiling, borrower_);
     }
 
     function testPartialWithdraw() public {
-        uint loanAmount = 100 ether;
-        // just withdraw half of your loan balance
-        uint withdrawAmount = safeDiv(loanAmount, 2);
-        uint investAmount = safeMul(loanAmount, 2);
-        // issue nft for borrower
-        (uint tokenId, ) = issueNFT(borrower_);
-        // issue loan for borrower
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
-        // lock nft
-        lockNFT(loanId, borrower_);
-        // init borrow -> add loan balance
-        initBorrow(loanId, loanAmount, borrower_);
-        // junior investor puts money into tranche
-        invest(investAmount);
+        fundTranches();
+        uint ceiling = 100 ether;
+        // withdraw amount half of your loan balance
+        uint withdrawAmount = safeDiv(ceiling, 2);
+        (uint loanId, uint tokenId) = createLoanAndBorrow(borrower_, ceiling, 0);
         assertPreCondition(loanId, tokenId, withdrawAmount);
         withdraw(loanId, tokenId, withdrawAmount, borrower_);
     }
 
     function testFailWithdrawNFTnotLocked() public {
-        uint loanAmount = 100 ether;
-        uint investAmount = loanAmount;
-        // issue nft for borrower
-        (uint tokenId, ) = issueNFT(borrower_);
-        // issue loan for borrower
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
+        fundTranches();
+        uint ceiling = 100 ether;
+        (uint loanId, uint tokenId) = issueNFTAndCreateLoan(borrower_);
         // do not lock nft
-        // init borrow -> add loan balance
-        initBorrow(loanId, loanAmount, borrower_);
-        // junior investor puts money into tranche
-        invest(investAmount);
-        withdraw(loanId, tokenId, loanAmount, borrower_);
+        withdraw(loanId, tokenId, ceiling, borrower_);
     }
 
     function testFailWithdrawNotLoanOwner() public {
-        uint loanAmount = 100 ether;
-        uint investAmount = loanAmount;
-        // issue nft for borrower
-        (uint tokenId, ) = issueNFT(randomUser_);
-        // issue loan for borrower
-        uint loanId = randomUser.issue(collateralNFT_, tokenId);
-        // lock nft
-        lockNFT(loanId, randomUser_);
-        // init borrow -> add loan balance
-        initBorrow(loanId, loanAmount, randomUser_);
-        // junior investor puts money into tranche
-        invest(investAmount);
-        withdraw(loanId, tokenId, loanAmount, borrower_);
+        fundTranches();
+        uint ceiling = 100 ether;
+        (uint loanId, uint tokenId) = createLoanAndBorrow(randomUser_, ceiling, 0);
+        withdraw(loanId, tokenId, ceiling, borrower_);
     }
 
     function testFailLoanHasNoBalance() public {
-        uint loanAmount = 100 ether;
-        uint investAmount = loanAmount;
-        // issue nft for borrower
-        (uint tokenId, ) = issueNFT(borrower_);
-        // issue loan for borrower
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
-        // lock nft
+        fundTranches();
+        uint ceiling = 100 ether;
+        (uint loanId, uint tokenId) = issueNFTAndCreateLoan(borrower_);
         lockNFT(loanId, borrower_);
         // do not init Borrow & add loan balance 
-        // junior investor puts money into tranche
-        invest(investAmount);
-        withdraw(loanId, tokenId, loanAmount, borrower_);
+        withdraw(loanId, tokenId, ceiling, borrower_);
     }
 
     function testFailWithdrawNotEnoughFundsAvailable() public {
-        uint loanAmount = 100 ether;
-        uint investAmount = safeDiv(loanAmount, 2);
-        // issue nft for borrower
-        (uint tokenId, ) = issueNFT(borrower_);
-        // issue loan for borrower
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
-        // lock nft
-        lockNFT(loanId, borrower_);
-        // init borrow -> add loan balance
-        initBorrow(loanId, loanAmount, borrower_);
-        // junior investor puts money into tranche
-        invest(investAmount);
-        withdraw(loanId, tokenId, loanAmount, borrower_);
+        uint ceiling = 100 ether;
+        (uint loanId, uint tokenId) = createLoanAndBorrow(randomUser_, ceiling, 0);
+        withdraw(loanId, tokenId, ceiling, borrower_);
     }
 
     function testFailWithdrawTwice() public {
-        uint loanAmount = 100 ether;
-        uint investAmount = loanAmount;
-        // issue nft for borrower
-        (uint tokenId, ) = issueNFT(borrower_);
-        // issue loan for borrower
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
-        // lock nft
-        lockNFT(loanId, borrower_);
-        // init borrow -> add loan balance
-        initBorrow(loanId, loanAmount, borrower_);
-        // junior investor puts money into tranche
-        invest(investAmount);
-        assertPreCondition(loanId, tokenId, loanAmount);
-        withdraw(loanId, tokenId, loanAmount, borrower_);
-        withdraw(loanId, tokenId, loanAmount, borrower_);
-    }
-
-    // helpers
-    function lockNFT(uint loanId, address usr) public {
-        Borrower(usr).approveNFT(collateralNFT, address(shelf));
-        Borrower(usr).lock(loanId);
-    } 
-
-    function invest(uint amount) public {
-        currency.mint(juniorInvestor_, amount);
-        juniorInvestor.doSupply(amount);
-    }
-
-    function initBorrow(uint loanId, uint amount, address usr) public {
-        uint ceiling = amount;
-        uint rate = 1000000003593629043335673583;
-        uint speed = rate;
-        // admin sets loan ceiling
-        admin.setCeiling(loanId, ceiling);
-        // init rate group
-        admin.doInitRate(rate, speed);
-        // add loan to rate group
-        admin.doAddRate(loanId, rate);
-        // borrower borrows -> loan[balance] = amount
-        Borrower(usr).borrow(loanId, amount);
+        fundTranches();
+        uint ceiling = 100 ether;
+        (uint loanId, uint tokenId) = createLoanAndBorrow(randomUser_, ceiling, 0);
+        assertPreCondition(loanId, tokenId, ceiling);
+        withdraw(loanId, tokenId, ceiling, borrower_);
+        withdraw(loanId, tokenId, ceiling, borrower_);
     }
 }
