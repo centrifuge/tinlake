@@ -22,7 +22,7 @@ contract Assessor is BaseAssessor {
     // accrueTrancheInterest can implement different interest models
     function accrueTrancheInterest(address tranche_) public returns (uint) {
         SeniorTrancheLike tranche = SeniorTrancheLike(tranche_);
-        uint debt = tranche.debt();
+        uint debt = tranche.borrowed() + tranche.interest();
         // move to tinlake-math
         // interest is calculated based on tranche debt
         return safeSub(rmul(rpow(tranche.ratePerSecond(), now - tranche.lastUpdated(), ONE), debt), debt);

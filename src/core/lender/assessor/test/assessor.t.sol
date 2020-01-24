@@ -53,8 +53,8 @@ contract AssessorTest is DSTest, Math {
     }
 
     // simulate tranche behaviour
-    uint borrowed;
-    uint interest;
+    uint public borrowed;
+    uint public interest;
     uint public ratePerSecond;
     uint public lastUpdated;
 
