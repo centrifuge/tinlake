@@ -108,12 +108,18 @@ contract SwitchableDistributorFab {
 }
 
 contract DefaultDistributorFab {
-    function newDistributor(address currency) public returns (address) {	
+    function newDistributor(address currency) public returns (address) {
         DefaultDistributor distributor = new DefaultDistributor(currency);
-        distributor.rely(msg.sender);	
-        distributor.deny(address(this));	
-        return address(distributor);	
-    }	
+        distributor.rely(msg.sender);
+        distributor.deny(address(this));
+        return address(distributor);
+    }
+}
+contract AssessorLike {
+    function rely(address usr) public;
+    function deny(address usr) public;
+    function depend(bytes32 what, address addr_) public;
+    function file(bytes32 what, uint value) public;
 }
 
 contract LenderDeployer is Auth {
