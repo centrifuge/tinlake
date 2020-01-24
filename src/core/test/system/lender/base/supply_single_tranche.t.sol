@@ -55,4 +55,14 @@ contract SupplyTest is SystemTest {
         // assert: junior investor token balance == amount supplied (because no other currency was supplied yet)
         assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), supplyAmount);
     }
+
+    function testFailInvestorNotWhitelisted() public {
+        uint investorBalance = 100 ether;
+        uint supplyAmount = 10 ether;
+        currency.mint(juniorInvestor_, investorBalance);
+        operator.denyInvestor(juniorInvestor_);
+
+        juniorInvestor.doSupply(supplyAmount);
+        assertPostCondition(supplyAmount);
+    }
 }

@@ -85,7 +85,7 @@ contract RedeemTest is SystemTest {
         juniorInvestor.doRedeem(supplyAmount);
     }
 
-    function testFailNotEnoughMoney() public {
+    function testFailNotEnoughToken() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;
         uint redeemAmount = 15 ether;

@@ -54,20 +54,42 @@ contract RedeemTest is SystemTest {
         assertPostCondition(investorBalance);
     }
 
-    function assertPreCondition(uint tokenAmount) public {}
+    function testPartialRedeem() public {
+        uint investorBalance = 100 ether;
+        uint supplyAmount = 10 ether;
+        uint redeemAmount = 5 ether;
+        supply(investorBalance, supplyAmount);
+        // first redeem
+        juniorInvestor.doRedeem(redeemAmount);
+        // second redeem
+        juniorInvestor.doRedeem(redeemAmount);
+        assertPostCondition(investorBalance);
+    }
 
     function assertPostCondition(uint investorBalance) public {
+        // assert: no more tokens left for junior investor
+        assertEq(juniorERC20.balanceOf(juniorInvestor_), 0);
         // assert: back to original balance
         assertEq(currency.balanceOf(juniorInvestor_), investorBalance);
         // assert: shelf is balanced, excess has either been transferred to tranches or needed money transferred from distributor -> shelf
         assertEq(shelf.balance() - currency.balanceOf(address(shelf)), 0);
     }
 
-    function testFailNotEnoughMoney() public {
+    function testFailInvestorNotWhitelisted() public {
+        uint investorBalance = 100 ether;
+        uint supplyAmount = 10 ether;
+        supply(investorBalance, supplyAmount);
+        operator.denyInvestor(juniorInvestor_);
+
+        juniorInvestor.doRedeem(supplyAmount);
+    }
+
+    function testFailNotEnoughToken() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;
         uint redeemAmount = 15 ether;
         supply(investorBalance, supplyAmount);
         juniorInvestor.doRedeem(redeemAmount);
+        assertPostCondition(investorBalance);
     }
 }
