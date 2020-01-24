@@ -237,10 +237,7 @@ contract STest is SystemTest {
             principal = i * 80;
 
             // repay transaction
-            emit log_named_uint("repay", principal);
-            borrower.repay(i, principal);
-
-
+            borrower.repayAction(i, principal);
 
             distributorBalance += principal;
             checkAfterRepay(i, i, tTotal, distributorBalance);

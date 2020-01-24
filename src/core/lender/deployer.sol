@@ -107,14 +107,14 @@ contract SwitchableDistributorFab {
     }
 }
 
-contract BaseDistributorFab {
-    function newDistributor(address currency) public returns (address) {
-        BaseDistributor distributor = new BaseDistributor(currency);
+contract BaseDistributorFab {	
+    function newDistributor(address currency) public returns (address) {	
+        BaseDistributor distributor = new BaseDistributor(currency);	
 
-        distributor.rely(msg.sender);
-        distributor.deny(address(this));
-        return address(distributor);
-    }
+        distributor.rely(msg.sender);	
+        distributor.deny(address(this));	
+        return address(distributor);	
+    }	
 }
 
 contract LenderDeployer is Auth {
