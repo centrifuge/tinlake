@@ -81,9 +81,43 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         Borrower(usr).lock(loanId);
     } 
 
+
     function transferNFT(address sender, address recipient, uint tokenId) public {
         Borrower(sender).approveNFT(collateralNFT, address(this));
         collateralNFT.transferFrom(sender, recipient, tokenId);
+    }
+
+    function createLoanAndBorrow(address usr, uint ceiling, uint rate, uint speed) public returns (uint, uint) {
+        (uint loanId, uint tokenId ) = issueNFTAndCreateLoan(usr);
+        // lock nft
+        lockNFT(loanId, usr);
+        // admin sets parameters for the loan
+        setLoanParameters(loanId, ceiling, rate, speed);
+        // borrower borrows funds
+        Borrower(usr).borrow(loanId, ceiling);
+        Borrower(usr).withdraw(loanId, ceiling, borrower_);
+        return (loanId, tokenId);
+    }
+
+    function createLoanAndBorrow(address usr, uint ceiling) public returns (uint, uint) {
+        (uint loanId, uint tokenId ) = issueNFTAndCreateLoan(usr);
+        // lock nft
+        lockNFT(loanId, usr);
+        // admin sets ceiling
+        admin.setCeiling(loanId, ceiling);
+        // borrower borrows funds
+        Borrower(usr).borrow(loanId, ceiling);
+        Borrower(usr).withdraw(loanId, ceiling, borrower_);
+        return (loanId, tokenId);
+    }
+
+    function repayLoan(address usr, uint loanId, uint currencyAmount) public {
+        // transfer extra funds, so that usr can pay for interest
+        topup(usr);
+        // borrower allows shelf full control over borrower tokens
+        Borrower(usr).doApproveCurrency(address(shelf), uint(-1));
+        // repay loan
+        borrower.repay(loanId, currencyAmount);
     }
 
     // helpers admin
@@ -95,6 +129,17 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         // add loan to rate group
         admin.doAddRate(loanId, rate);
         // admin sets loan rate
+    }
+
+    // helpers lenders
+    function invest(uint currencyAmount) public {
+        currency.mint(juniorInvestor_, currencyAmount);
+        juniorInvestor.doSupply(currencyAmount);
+    }
+
+    function fundTranches() public {
+        uint defaultAmount = 1000 ether;
+        invest(defaultAmount);
     }
 
     function setupCurrencyOnLender(uint amount) public {
@@ -112,6 +157,10 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
     function supplyFunds(uint amount, address addr) public {
         currency.mint(address(addr), amount);
+    }
+
+    function topup(address usr) public {
+        currency.mint(address(usr), 100 ether);
     }
 
 }
