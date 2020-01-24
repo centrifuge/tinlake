@@ -33,7 +33,6 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         juniorInvestor.doSupply(amount);
     }
 
-
     function testSimpleRedeem() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;

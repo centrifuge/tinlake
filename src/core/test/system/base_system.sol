@@ -42,7 +42,14 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
     function baseSetup(bytes32 operator_, bytes32 distributor_, bool senior_) public {
         // setup deployment
-        deployContracts(operator_, distributor_, senior_);
+        bytes32 assessor_ = "default";
+        deployContracts(operator_, distributor_,assessor_,  senior_);
+        rootAdmin.relyLenderAdmin(address(this), senior_);
+    }
+
+    function baseSetup(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_) public {
+        // setup deployment
+        deployContracts(operator_, distributor_,assessor_, senior_);
         rootAdmin.relyLenderAdmin(address(this), senior_);
     }
 
@@ -76,7 +83,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     function lockNFT(uint loanId, address usr) public {
         Borrower(usr).approveNFT(collateralNFT, address(shelf));
         Borrower(usr).lock(loanId);
-    } 
+    }
 
     function transferNFT(address sender, address recipient, uint tokenId) public {
         Borrower(sender).approveNFT(collateralNFT, address(this));
@@ -84,12 +91,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
 
     // helpers borrower
-    function issueNFT(address usr) public returns (uint, bytes32) {
-        uint tokenId = collateralNFT.issue(usr);
-        bytes32 lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
-        // user approves shelf too lock NFT
-        return (tokenId, lookupId);
-    }
 
     function issueNFTAndCreateLoan(address usr) public returns (uint, uint) {
         // issue nft for borrower
@@ -175,7 +176,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     function supplyFunds(uint amount, address addr) public {
         currency.mint(address(addr), amount);
     }
-
     function topup(address usr) public {
         currency.mint(address(usr), 100 ether);
     }
