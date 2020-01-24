@@ -40,6 +40,7 @@ contract RootAdmin is Auth {
         // todo currently only one address approval in shelf
         borrowerDeployer.shelf().depend("lender", distributor_);
         borrowerDeployer.collector().depend("distributor", distributor_);
+        borrowerDeployer.shelf().depend("distributor", distributor_);
 
         //  Lender depends
         address borrowerPricePool = address(borrowerDeployer.pricePool());
