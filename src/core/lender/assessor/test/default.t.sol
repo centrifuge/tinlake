@@ -34,7 +34,7 @@ contract Hevm {
     function warp(uint256) public;
 }
 
-contract AssessorTest is DSTest, Math {
+contract DefaultAssessorTest is DSTest, Math {
     uint256 constant ONE = 10 ** 27;
     DefaultAssessor assessor;
     address assessor_;
@@ -81,5 +81,7 @@ contract AssessorTest is DSTest, Math {
         interest = assessor.accrueTrancheInterest(address(this));
         expectedInterest = 5.25 ether;
         assertEq(interest, expectedInterest);
+
+        assertEq(assessor.accrueTrancheInterest(address(junior)), 0);
     }
 }
