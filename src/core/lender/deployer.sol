@@ -48,18 +48,18 @@ contract AssessorFab {
     function newAssessor() public returns (address);
 }
 
-contract DefaultAssessorFab {
+contract FullInvestmentAssessorFab {
     function newAssessor() public returns (address) {
-        DefaultAssessor assessor = new DefaultAssessor();
+        FullInvestmentAssessor assessor = new FullInvestmentAssessor();
         assessor.rely(msg.sender);
         assessor.deny(address(this));
         return address(assessor);
     }
 }
 
-contract FullInvestmentAssessorFab {
+contract DefaultAssessorFab {
     function newAssessor() public returns (address) {
-        FullInvestmentAssessor assessor = new FullInvestmentAssessor();
+        DefaultAssessor assessor = new DefaultAssessor();
         assessor.rely(msg.sender);
         assessor.deny(address(this));
         return address(assessor);

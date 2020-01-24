@@ -17,7 +17,7 @@ pragma solidity >=0.5.12;
 
 import "../../system.t.sol";
 
-contract RedeemTest is SystemTest {
+contract RedeemTest is BaseSystemTest {
 
     WhitelistOperator operator;
     DefaultDistributor dDistributor;
@@ -30,7 +30,7 @@ contract RedeemTest is SystemTest {
         bytes32 distributor_ = "default";
         baseSetup(juniorOperator_, distributor_, false);
         operator = WhitelistOperator(address(juniorOperator));
-        dDistributor = DefaultDistributor(address(distributor));
+        dDistributor = DefaultDistributor(address(lenderDeployer.distributor()));
 
         // setup users
         juniorInvestor = new Investor(address(operator), currency_, address(juniorERC20));

@@ -17,7 +17,7 @@ pragma solidity >=0.5.12;
 
 import "../../system.t.sol";
 
-contract RedeemTwoTrancheTest is SystemTest {
+contract RedeemTwoTrancheTest is BaseSystemTest {
 
     WhitelistOperator jOperator;
     WhitelistOperator sOperator;

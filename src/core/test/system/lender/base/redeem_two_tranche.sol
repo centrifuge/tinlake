@@ -15,28 +15,41 @@
 
 pragma solidity >=0.5.12;
 
-import "../../system.t.sol";
+import "../../base_system.sol";
 
-contract RedeemTwoTrancheTest is SystemTest {
+contract RedeemTwoTrancheTest is BaseSystemTest {
 
     WhitelistOperator jOperator;
     WhitelistOperator sOperator;
 
     DefaultDistributor dDistributor;
 
+    Investor juniorInvestor;
+    address  juniorInvestor_;
+
+    Investor seniorInvestor;
+    address  seniorInvestor_;
+
     function setUp() public {
         bytes32 operator_ = "whitelist";
         bytes32 distributor_ = "default";
         bool deploySeniorTranche = true;
         baseSetup(operator_, distributor_, deploySeniorTranche);
-        createTestUsers();
-        createSeniorInvestor();
 
         jOperator = WhitelistOperator(address(juniorOperator));
         sOperator = WhitelistOperator(address(seniorOperator));
+        dDistributor = DefaultDistributor(address(lenderDeployer.distributor()));
 
-        dDistributor = DefaultDistributor(address(distributor));
+        // setup users
+        juniorInvestor = new Investor(address(jOperator), currency_, address(juniorERC20));
+        juniorInvestor_ = address(juniorInvestor);
 
+        // setup users
+        seniorInvestor = new Investor(address(jOperator), currency_, address(seniorERC20));
+        seniorInvestor_ = address(seniorInvestor);
+
+        jOperator.relyInvestor(juniorInvestor_);
+        sOperator.relyInvestor(seniorInvestor_);
     }
 
     function supply(uint balance, uint amount) public {
@@ -44,7 +57,7 @@ contract RedeemTwoTrancheTest is SystemTest {
         juniorInvestor.doSupply(amount);
     }
 
-    function testSimpleSupply() public {
+    function testSimpleRedeem() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;
         uint redeemAmount = supplyAmount;

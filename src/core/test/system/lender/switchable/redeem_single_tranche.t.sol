@@ -17,7 +17,7 @@ pragma solidity >=0.5.12;
 
 import "../../system.t.sol";
 
-contract RedeemTest is SystemTest {
+contract RedeemTest is BaseSystemTest {
 
     WhitelistOperator operator;
     SwitchableDistributor switchable;

@@ -17,7 +17,7 @@ pragma solidity >=0.5.12;
 
 import "../../base_system.sol";
 
-contract BalanceTest is SystemTest {
+contract BalanceTest is BaseSystemTest {
         
     SwitchableDistributor distributor;
     function setUp() public {
