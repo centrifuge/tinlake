@@ -19,16 +19,45 @@ import "ds-test/test.sol";
 import "./setup.sol";
 import "./users/admin.sol";
 import "./users/investor.sol";
+import "./users/borrower.sol";
 import "tinlake-math/math.sol";
 
 
 contract SystemTest is TestSetup, Math, DSTest {
     // users
+    Borrower borrower;
+    address borrower_;
+   
+    AdminUser public admin;
+    address admin_;
+
+    Investor public juniorInvestor;
+    address public juniorInvestor_;
+
+    Borrower randomUser;
+    address randomUser_;
 
     function baseSetup(bytes32 operator, bytes32 distributor) public {
         // setup deployment
         deployContracts(operator, distributor);
         rootAdmin.relyLenderAdmin(address(this));
+    }
+
+    function createTestUsers() public {
+            borrower = new Borrower(address(shelf), address(lenderDeployer.distributor()), currency_, address(pile));
+            borrower_ = address(borrower);
+
+           randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
+           randomUser_ = address(randomUser);
+
+            admin = new AdminUser(address(shelf), address(pile), address(ceiling), address(title), address(lenderDeployer.distributor()));
+            admin_ = address(admin);
+            rootAdmin.relyBorrowAdmin(admin_);
+
+            juniorInvestor = new Investor(address(juniorOperator), currency_, address(juniorERC20));
+            juniorInvestor_ = address(juniorInvestor);
+            WhitelistOperator juniorOperator = WhitelistOperator(address(juniorOperator));
+            juniorOperator.relyInvestor(juniorInvestor_);  
     }
 
     function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
@@ -48,6 +77,10 @@ contract SystemTest is TestSetup, Math, DSTest {
         WhitelistOperator(operator_).supply(amount);
         // same amount of junior tokens
         assertEq(lenderDeployer.juniorERC20().balanceOf(address(this)), balanceBefore + amount);
+    }
+
+    function supplyFunds(uint amount, address addr) public {
+        currency.mint(address(addr), amount);
     }
 
 }

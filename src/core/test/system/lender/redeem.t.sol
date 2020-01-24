@@ -19,25 +19,15 @@ import "../system.t.sol";
 import {SwitchableDistributor} from "../../../lender/distributor/switchable.sol";
 
 contract RedeemTest is SystemTest {
-
-    WhitelistOperator operator;
-    Assessor assessor;
+    
     SwitchableDistributor switchable;
-
-    Investor juniorInvestor;
-    address  juniorInvestor_;
-
+    
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "switchable";
         baseSetup(juniorOperator_, distributor_);
-        operator = WhitelistOperator(address(juniorOperator));
         switchable = SwitchableDistributor(address(distributor));
-        juniorInvestor = new Investor(address(operator), currency_, address(juniorERC20));
-        juniorInvestor_ = address(juniorInvestor);
-
-        operator.relyInvestor(juniorInvestor_);
-        rootAdmin.relyLenderAdmin(address(this));
+        createTestUsers();
     }
 
     function supply(uint balance, uint amount) public {

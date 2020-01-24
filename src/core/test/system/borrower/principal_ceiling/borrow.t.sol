@@ -16,33 +16,14 @@
 pragma solidity >=0.5.12;
 
 import "../../system.sol";
-import "../../users/borrower.sol";
-import "../../users/admin.sol";
 
 contract BorrowTest is SystemTest {
-
-    Borrower borrower;
-    address borrower_;
-
-    Borrower randomUser;
-    address randomUser_;
-    
-    AdminUser public admin;
-    address admin_;
         
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "switchable";
         baseSetup(juniorOperator_, distributor_);
-        // setup users
-        borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
-        borrower_ = address(borrower);
-        randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
-        randomUser_ = address(randomUser);
-        admin = new AdminUser(address(shelf), address(pile), address(ceiling), address(title), address(distributor));
-        admin_ = address(admin);
-
-        rootAdmin.relyBorrowAdmin(admin_);
+        createTestUsers();
     }
     
     function borrow(uint loanId, uint tokenId, uint amount) public {
