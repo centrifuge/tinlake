@@ -165,6 +165,33 @@ contract RepayTest is SystemTest {
         borrowAndRepay(borrower_, borrowAmount, rate, speed, expectedDebt, repayAmount);
     }
 
+    function testRepayDebtNoRate() public {
+        uint borrowAmount = 66 ether;
+        // do not set rate - default rate group: 0
+        uint expectedDebt = borrowAmount;
+        uint ceiling = borrowAmount;
+        uint repayAmount = expectedDebt;
+       
+        uint investAmount = safeMul(2, borrowAmount);
+        // borrower allows shelf full control over borrower tokens
+        borrower.doApproveCurrency(address(shelf), uint(-1));
+        // investor invests into tranche
+        invest(investAmount);
+        // issue nft for borrower
+        (uint tokenId, ) = issueNFT(borrower_);
+        // issue loan for borrower
+        uint loanId = Borrower(borrower_).issue(collateralNFT_, tokenId);
+        // lock nft
+        lockNFT(loanId, borrower_);
+        // admin sets loan ceiling
+        admin.setCeiling(loanId, ceiling);
+        // borrower borrows funds
+        borrow(loanId, borrowAmount, borrower_);
+        //repay after 1 year
+        hevm.warp(now + 365 days);
+        repay(loanId, tokenId, repayAmount, expectedDebt);
+    }
+
     function testFailRepayNotLoanOwner() public {
         uint borrowAmount = 66 ether;
         // 12 % per year compound in seconds
@@ -268,7 +295,6 @@ contract RepayTest is SystemTest {
         lockNFT(loanId, borrower_);
         // admin sets parameters for the loan
         setLoanParameters(loanId, borrowAmount, rate, speed);
-        
         // borrower does not borrow
         
         supplyFunds(extraFunds, borrower_);
