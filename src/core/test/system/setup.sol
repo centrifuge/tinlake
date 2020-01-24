@@ -125,7 +125,6 @@ contract TestSetup {
             distributorfab_ = address(new BaseDistributorFab());
         }
 
-
         lenderDeployer = new LenderDeployer(rootAdmin_, currency_, address(new TrancheFab()), address(new AssessorFab()),
             operatorfab_, distributorfab_);
 

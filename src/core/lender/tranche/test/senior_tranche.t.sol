@@ -84,37 +84,36 @@ contract SeniorTrancheTest is DSTest, Interest {
         assertEq(senior.debt(), 110.25 ether);
     }
 
-    // TODO needs to be fixed with rounding error
-//    function testSeniorRepay() public {
-//        uint ratePerSecond = 1000000564701133626865910626; // 5% per day
-//        senior.file("rate", ratePerSecond);
-//
-//        uint amount = 100 ether;
-//        currency.mint(address(senior), amount);
-//        borrow(amount);
-//
-//        hevm.warp(now + 2 days);
-//        uint expectedDebt = 110.25 ether; // 100 * 1.05^2
-//        uint interest = expectedDebt-amount;
-//        currency.mint(self, interest); // extra to repay interest
-//
-//        currency.approve(senior_, uint(-1));
-//
-//        senior.repay(self, interest);
-//        assertEq(senior.debt(), expectedDebt-interest);
-//        assertEq(currency.balanceOf(senior_), interest);
-//
-//        // increase again
-//        uint debt = senior.debt();
-//        assertEq(debt, amount); // previous interest has been repaid
-//        hevm.warp(now + 1 days);
-//        assertEq(senior.debt(), 105 ether); // 100 * 1.05
-//
-//        currency.mint(self, 5 ether); // extra to repay interest
-//        senior.repay(self, 105 ether); // repay rest
-//
-//        assertEq(currency.balanceOf(senior_), expectedDebt+ 5 ether);
-//        assertEq(senior.debt(), 0);
-//
-//    }
+    function testSeniorRepay() public {
+        uint ratePerSecond = 1000000564701133626865910626; // 5% per day
+        senior.file("rate", ratePerSecond);
+
+        uint amount = 100 ether;
+        currency.mint(address(senior), amount);
+        borrow(amount);
+
+        hevm.warp(now + 2 days);
+        uint expectedDebt = 110.25 ether; // 100 * 1.05^2
+        uint interest = expectedDebt-amount;
+        currency.mint(self, interest); // extra to repay interest
+
+        currency.approve(senior_, uint(-1));
+
+        senior.repay(self, interest);
+        assertEq(senior.debt(), expectedDebt-interest);
+        assertEq(currency.balanceOf(senior_), interest);
+
+        // increase again
+        uint debt = senior.debt();
+        assertEq(debt, amount); // previous interest has been repaid
+        hevm.warp(now + 1 days);
+        assertEq(senior.debt(), 105 ether); // 100 * 1.05
+
+        currency.mint(self, 5 ether); // extra to repay interest
+        senior.repay(self, 105 ether); // repay rest
+
+        assertEq(currency.balanceOf(senior_), expectedDebt+ 5 ether);
+        assertEq(senior.debt(), 0);
+
+    }
 }

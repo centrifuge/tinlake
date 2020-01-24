@@ -23,6 +23,7 @@ import "./mock/nft.sol";
 import "./mock/token.sol";
 import "./mock/pile.sol";
 import "./mock/ceiling.sol";
+import "../../lender/test/mock/distributor.sol";
 
 contract ShelfTest is DSTest {
     Shelf shelf;
@@ -31,6 +32,7 @@ contract ShelfTest is DSTest {
     TokenMock currency;
     PileMock pile;
     CeilingMock ceiling;
+    DistributorMock distributor;
 
     function setUp() public {
         nft = new NFTMock();
@@ -38,7 +40,9 @@ contract ShelfTest is DSTest {
         currency = new TokenMock();
         pile = new PileMock();
         ceiling = new CeilingMock();
+        distributor = new DistributorMock();
         shelf = new Shelf(address(currency), address(title), address(pile), address(ceiling));
+        shelf.depend("distributor", address(distributor));
     }
 
     function _issue(uint256 tokenId_, uint loan_) internal {
@@ -80,6 +84,7 @@ contract ShelfTest is DSTest {
         
         shelf.withdraw(loan_, wad_, address(this));
 
+        assertEq(distributor.calls("balance"), 1);
         assertEq(totalBalance-wad_, shelf.balance());
         assertEq(loanBalance-wad_, shelf.balances(loan_));
         assertEq(currency.calls("transferFrom"), 1);
@@ -92,12 +97,13 @@ contract ShelfTest is DSTest {
         pile.setReturn("debt_loan", wad_);
         shelf.repay(loan_, wad_);
 
+        assertEq(distributor.calls("balance"), 2);
         assertEq(pile.calls("accrue"), 2);
         assertEq(pile.calls("decDebt"), 1);
         assertEq(shelf.balance(), 0);
         assertEq(shelf.balances(loan_), 0);
         assertEq(ceiling.calls("repay"), 1);
-        assertEq(currency.calls("transferFrom"),2);
+        assertEq(currency.calls("transferFrom"), 2);
         assertEq(currency.values_address("transferFrom_from"),address(this));
         assertEq(currency.values_address("transferFrom_to"),address(shelf));
         assertEq(currency.values_uint("transferFrom_amount"),wad_);
