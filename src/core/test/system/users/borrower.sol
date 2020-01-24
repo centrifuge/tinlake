@@ -44,6 +44,10 @@ contract Borrower is DSTest {
         shelf.lock(loan);
     }
 
+    function unlock(uint loan) public {
+        shelf.unlock(loan);
+    }
+
     function borrow(uint loan, uint currencyAmount) public {
         shelf.borrow(loan, currencyAmount);
     }
@@ -63,7 +67,6 @@ contract Borrower is DSTest {
     function borrowAction(uint loan, uint currencyAmount) public {
         shelf.lock(loan);
         shelf.borrow(loan, currencyAmount);
-        distributor.balance();
         shelf.withdraw(loan, currencyAmount, address(this));
     }
 
