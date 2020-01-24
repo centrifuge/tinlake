@@ -15,9 +15,9 @@
 
 pragma solidity >=0.5.12;
 
-import "../system.sol";
-import "../users/borrower.sol";
-import "../users/admin.sol";
+import "../../system.sol";
+import "../../users/borrower.sol";
+import "../../users/admin.sol";
 
 contract BorrowTest is SystemTest {
 

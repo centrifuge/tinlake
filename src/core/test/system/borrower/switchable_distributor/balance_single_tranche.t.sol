@@ -15,21 +15,24 @@
 
 pragma solidity >=0.5.12;
 
-import "../system.sol";
-import "../users/borrower.sol";
+import "../../system.sol";
+import "../../users/borrower.sol";
 
 contract BalanceTest is SystemTest {
 
     Borrower borrower;
     address borrower_;
         
+    SwitchableDistributor distributor;
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "switchable";
         baseSetup(juniorOperator_, distributor_);
         // setup users
+        distributor = SwitchableDistributor(address(lenderDeployer.distributor()));
         borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         borrower_ = address(borrower);
+
     }
     
     function balanceTake() public {
@@ -61,6 +64,8 @@ contract BalanceTest is SystemTest {
         assertEq(currency.balanceOf(address(junior)), 0);
         // assert: shelf received funds
         assertEq(currency.balanceOf(address(shelf)), safeAdd(initialShelfBalance, takeAmount));
+        // assert: distributor does not hold any funds
+        assertEq(currency.balanceOf(address(distributor)), 0);
     }
 
     function assertPreConditionGive(uint giveAmount) public view {
@@ -77,6 +82,8 @@ contract BalanceTest is SystemTest {
         assertEq(currency.balanceOf(address(shelf)), 0);
         // assert: junior received funds
         assertEq(currency.balanceOf(address(junior)), safeAdd(initialJuniorBalance, giveAmount));
+        // assert: distributor does not hold any funds
+        assertEq(currency.balanceOf(address(distributor)), 0);
     }
 
     function testBalanceTake() public {
