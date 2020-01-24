@@ -22,20 +22,16 @@ import "tinlake-math/interest.sol";
 // Interface to the senior tranche. keeps track of the current debt towards the tranche.
 contract SeniorTranche is Tranche, Interest {
 
-    uint internal chi;              // accumulated interest over time
+    uint internal debt_;             // debt of the senior tranche
     uint public ratePerSecond;      // interest rate per second in RAD (10^27)
     uint public lastUpdated;        // Last time the accumlated rate has been updated
 
-    uint internal pie;              // denominated as debt/chi. denominated in RAD (10^27)
-
-
     function debt() public returns(uint) {
         drip();
-        return toAmount(chi, pie);
+        return debt_;
     }
 
     constructor(address token_, address currency_) Tranche(token_ ,currency_) public {
-        chi = ONE;
         ratePerSecond = ONE;
         lastUpdated = now;
     }
@@ -49,20 +45,21 @@ contract SeniorTranche is Tranche, Interest {
 
     function repay(address usr, uint currencyAmount) public note auth {
         drip();
-        pie = safeSub(pie, toPie(chi, currencyAmount));
+        debt_ = safeSub(debt_, currencyAmount);
         super.repay(usr, currencyAmount);
 
     }
 
     function borrow(address usr, uint currencyAmount) public note auth {
         drip();
-        pie = safeAdd(pie, toPie(chi, currencyAmount));
+        debt_ = safeAdd(debt_, currencyAmount);
         super.borrow(usr, currencyAmount);
     }
 
     function drip() internal {
         if (now >= lastUpdated) {
-            chi = updateChi(chi, ratePerSecond, lastUpdated);
+            // todo move to tinlake-math
+            debt_ = rmul(rpow(ratePerSecond, now - lastUpdated, ONE), debt_);
             lastUpdated = now;
         }
     }
