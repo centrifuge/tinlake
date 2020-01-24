@@ -15,7 +15,7 @@
 
 pragma solidity >=0.5.12;
 
-import "./system.sol";
+import "./base_system.sol";
 import "./users/borrower.sol";
 import "./users/admin.sol";
 
@@ -23,7 +23,7 @@ contract STest is SystemTest {
     Hevm public hevm;
     
     function setUp() public {
-        baseSetup("whitelist", "switchable");
+        baseSetup("whitelist", "switchable", false);
         createTestUsers();
         // setup hevm
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);

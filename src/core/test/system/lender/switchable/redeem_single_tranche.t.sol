@@ -22,13 +22,19 @@ contract RedeemTest is SystemTest {
     WhitelistOperator operator;
     SwitchableDistributor switchable;
 
+    Investor juniorInvestor;
+    address  juniorInvestor_;
+
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "switchable";
-        baseSetup(juniorOperator_, distributor_);
+        baseSetup(juniorOperator_, distributor_, false);
         operator = WhitelistOperator(address(juniorOperator));
         switchable = SwitchableDistributor(address(distributor));
-        createTestUsers();
+        juniorInvestor = new Investor(address(operator), currency_, address(juniorERC20));
+        juniorInvestor_ = address(juniorInvestor);
+
+        operator.relyInvestor(juniorInvestor_);
     }
 
     function supply(uint balance, uint amount) public {

@@ -23,7 +23,7 @@ import {WhitelistOperator} from "./tranche/operator/whitelist.sol";
 import {Tranche} from "./tranche/tranche.sol";
 import {SeniorTranche} from "./tranche/senior_tranche.sol";
 import {SwitchableDistributor} from "./distributor/switchable.sol";
-import {BaseDistributor} from "./distributor/base.sol";
+import {DefaultDistributor} from "./distributor/default.sol";
 import "tinlake-erc20/erc20.sol";
 
 contract TrancheFab {
@@ -87,14 +87,6 @@ contract WhitelistOperatorFab {
     }
 }
 
-contract AssessorLike {
-    function rely(address usr) public;
-    function deny(address usr) public;
-    function depend(bytes32 what, address addr_) public;
-    function file(bytes32 what, uint value) public;
-}
-
-
 // Distributor Fabs
 
 // abstract distributor fab
@@ -121,13 +113,19 @@ contract SwitchableDistributorFab {
     }
 }
 
-contract BaseDistributorFab {	
-    function newDistributor(address currency) public returns (address) {	
-        BaseDistributor distributor = new BaseDistributor(currency);	
-        distributor.rely(msg.sender);	
-        distributor.deny(address(this));	
-        return address(distributor);	
-    }	
+contract DefaultDistributorFab {
+    function newDistributor(address currency) public returns (address) {
+        DefaultDistributor distributor = new DefaultDistributor(currency);
+        distributor.rely(msg.sender);
+        distributor.deny(address(this));
+        return address(distributor);
+    }
+}
+contract AssessorLike {
+    function rely(address usr) public;
+    function deny(address usr) public;
+    function depend(bytes32 what, address addr_) public;
+    function file(bytes32 what, uint value) public;
 }
 
 contract LenderDeployer is Auth {
@@ -180,7 +178,7 @@ contract LenderDeployer is Auth {
     }
 
     function depend(bytes32 what, address addr) public auth {
-        if(what == "senior_tranche_fab") { seniorTrancheFab = SeniorTrancheFab(addr); }
+        if (what == "senior_tranche_fab") { seniorTrancheFab = SeniorTrancheFab(addr); }
         else if (what == "senior_operator_fab") { seniorOperatorFab = OperatorFab(addr); }
         else revert();
     }
