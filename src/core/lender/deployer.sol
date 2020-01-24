@@ -17,13 +17,13 @@ import "tinlake-auth/auth.sol";
 pragma solidity >=0.5.12;
 
 // lender contracts
-import {Assessor} from "./assessor.sol";
+import {DefaultAssessor} from "./assessor/default.sol";
 import {AllowanceOperator} from "./tranche/operator/allowance.sol";
 import {WhitelistOperator} from "./tranche/operator/whitelist.sol";
 import {Tranche} from "./tranche/tranche.sol";
 import {SeniorTranche} from "./tranche/senior_tranche.sol";
 import {SwitchableDistributor} from "./distributor/switchable.sol";
-import {BaseDistributor} from "./distributor/base.sol";
+import {DefaultDistributor} from "./distributor/default.sol";
 import "tinlake-erc20/erc20.sol";
 
 contract TrancheFab {
@@ -35,18 +35,24 @@ contract TrancheFab {
 }
 
 contract SeniorTrancheFab {
-    function newSeniorTranche(address currency, address token) public returns (SeniorTranche tranche) {
-        tranche = new SeniorTranche(currency, token);
+    function newSeniorTranche(address currency, address token, address assessor) public returns (SeniorTranche tranche) {
+        tranche = new SeniorTranche(currency, token, assessor);
         tranche.rely(msg.sender);
         tranche.deny(address(this));
     }
 }
 
+
 contract AssessorFab {
-    function newAssessor() public returns (Assessor assessor) {
-        assessor = new Assessor();
+    function newAssessor() public returns (address);
+}
+
+contract DefaultAssessorFab {
+    function newAssessor() public returns (address) {
+        DefaultAssessor assessor = new DefaultAssessor();
         assessor.rely(msg.sender);
         assessor.deny(address(this));
+        return address(assessor);
     }
 }
 
@@ -107,13 +113,19 @@ contract SwitchableDistributorFab {
     }
 }
 
-contract BaseDistributorFab {	
-    function newDistributor(address currency) public returns (address) {	
-        BaseDistributor distributor = new BaseDistributor(currency);	
-        distributor.rely(msg.sender);	
-        distributor.deny(address(this));	
-        return address(distributor);	
-    }	
+contract DefaultDistributorFab {
+    function newDistributor(address currency) public returns (address) {
+        DefaultDistributor distributor = new DefaultDistributor(currency);
+        distributor.rely(msg.sender);
+        distributor.deny(address(this));
+        return address(distributor);
+    }
+}
+contract AssessorLike {
+    function rely(address usr) public;
+    function deny(address usr) public;
+    function depend(bytes32 what, address addr_) public;
+    function file(bytes32 what, uint value) public;
 }
 
 contract LenderDeployer is Auth {
@@ -132,7 +144,7 @@ contract LenderDeployer is Auth {
     address public currency;
 
     // Contracts
-    Assessor public assessor;
+    AssessorLike public assessor;
     DistributorLike public distributor;
 
     // junior
@@ -166,7 +178,7 @@ contract LenderDeployer is Auth {
     }
 
     function depend(bytes32 what, address addr) public auth {
-        if(what == "senior_tranche_fab") { seniorTrancheFab = SeniorTrancheFab(addr); }
+        if (what == "senior_tranche_fab") { seniorTrancheFab = SeniorTrancheFab(addr); }
         else if (what == "senior_operator_fab") { seniorOperatorFab = OperatorFab(addr); }
         else revert();
     }
@@ -177,8 +189,9 @@ contract LenderDeployer is Auth {
     }
 
     function deploySeniorTranche(string memory symbol, string memory name) public auth {
+        require(address(assessor) != address(0));
         seniorERC20 = new ERC20(symbol, name);
-        senior = seniorTrancheFab.newSeniorTranche(currency, address(seniorERC20));
+        senior = seniorTrancheFab.newSeniorTranche(currency, address(seniorERC20), address(assessor));
         senior_ = address(senior);
         // senior tranche can mint
         seniorERC20.rely(address(senior));
@@ -195,7 +208,7 @@ contract LenderDeployer is Auth {
     }
 
     function deployAssessor() public auth {
-        assessor = assessorFab.newAssessor();
+        assessor = AssessorLike(assessorFab.newAssessor());
         assessor.rely(rootAdmin);
     }
 

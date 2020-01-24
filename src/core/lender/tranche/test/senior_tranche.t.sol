@@ -20,6 +20,7 @@ import "tinlake-math/interest.sol";
 
 import "../senior_tranche.sol";
 import "../../../test/simple/token.sol";
+import "../../test/mock/assessor.sol";
 
 contract Hevm {
     function warp(uint256) public;
@@ -31,6 +32,8 @@ contract SeniorTrancheTest is DSTest, Interest {
     SimpleToken token;
     SimpleToken currency;
 
+    AssessorMock assessor;
+
     Hevm hevm;
 
     address self;
@@ -40,12 +43,15 @@ contract SeniorTrancheTest is DSTest, Interest {
         token = new SimpleToken("TIN", "Tranche", "1", 0);
         currency = new SimpleToken("CUR", "Currency", "1", 0);
 
-        senior = new SeniorTranche(address(token), address(currency));
+        assessor = new AssessorMock();
+
+        senior = new SeniorTranche(address(token), address(currency), address(assessor));
         senior_ = address(senior);
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
 
         self = address(this);
+        currency.approve(senior_, uint(-1));
     }
 
     function testFileRate() public {
@@ -59,18 +65,16 @@ contract SeniorTrancheTest is DSTest, Interest {
         assertEq(currency.balanceOf(self), amount);
         assertEq(currency.balanceOf(senior_), 0);
         assertEq(senior.debt(), amount);
+        assertEq(senior.borrowed(), amount);
     }
 
     function testSeniorBorrow() public {
-        uint ratePerSecond = 1000000564701133626865910626; // 5% per day
-        senior.file("rate", ratePerSecond);
-
         uint amount = 100 ether;
         currency.mint(address(senior), amount);
         borrow(amount);
     }
 
-    function testSeniorDebtIncrease() public {
+    function testBorrowRepayDebt() public {
         uint ratePerSecond = 1000000564701133626865910626; // 5% per day
         senior.file("rate", ratePerSecond);
 
@@ -78,42 +82,33 @@ contract SeniorTrancheTest is DSTest, Interest {
         currency.mint(address(senior), amount);
         borrow(amount);
 
-        hevm.warp(now + 1 days);
+        assessor.setReturn("accrueTrancheInterest", 5 ether);
         assertEq(senior.debt(), 105 ether);
-        hevm.warp(now + 1 days);
+
+        assessor.setReturn("accrueTrancheInterest", 5.25 ether);
         assertEq(senior.debt(), 110.25 ether);
-    }
 
-    function testSeniorRepay() public {
-        uint ratePerSecond = 1000000564701133626865910626; // 5% per day
-        senior.file("rate", ratePerSecond);
+        assertEq(senior.borrowed(), 100 ether);
+        assertEq(senior.interest(), 10.25 ether);
 
-        uint amount = 100 ether;
-        currency.mint(address(senior), amount);
-        borrow(amount);
+        // repay
+        // stop accrue interest
+        assessor.setReturn("accrueTrancheInterest", 0 ether);
 
-        hevm.warp(now + 2 days);
-        uint expectedDebt = 110.25 ether; // 100 * 1.05^2
-        uint interest = expectedDebt-amount;
-        currency.mint(self, interest); // extra to repay interest
+        // smaller than interest
+        senior.repay(self, 5 ether);
+        assertEq(senior.interest(), 5.25 ether);
+        assertEq(senior.borrowed(), 100 ether);
 
-        currency.approve(senior_, uint(-1));
+        // interest + partial borrowed
+        senior.repay(self, 50 ether);
+        assertEq(senior.interest(), 0 ether);
+        assertEq(senior.borrowed(), 55.25 ether);
 
-        senior.repay(self, interest);
-        assertEq(senior.debt(), expectedDebt-interest);
-        assertEq(currency.balanceOf(senior_), interest);
-
-        // increase again
-        uint debt = senior.debt();
-        assertEq(debt, amount); // previous interest has been repaid
-        hevm.warp(now + 1 days);
-        assertEq(senior.debt(), 105 ether); // 100 * 1.05
-
-        currency.mint(self, 5 ether); // extra to repay interest
-        senior.repay(self, 105 ether); // repay rest
-
-        assertEq(currency.balanceOf(senior_), expectedDebt+ 5 ether);
-        assertEq(senior.debt(), 0);
-
+        // the rest
+        currency.mint(address(this), 10.25 ether);
+        senior.repay(self, 55.25 ether);
+        assertEq(senior.interest(), 0 ether);
+        assertEq(senior.borrowed(), 0 ether);
     }
 }

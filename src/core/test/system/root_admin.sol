@@ -27,18 +27,28 @@ contract TestRootAdmin is RootAdmin {
     }
 
     // Needed for System Tests
-    function relyLenderAdmin(address usr) public auth {
+    function relyLenderAdmin(address usr, bool senior_) public auth {
         lenderDeployer.juniorOperator().rely(usr);
         lenderDeployer.assessor().rely(usr);
         lenderDeployer.distributor().rely(usr);
         lenderDeployer.junior().rely(usr);
+
+        if (senior_) {
+            lenderDeployer.seniorOperator().rely(usr);
+            lenderDeployer.senior().rely(usr);
+        }
     }
 
-    function denyLenderAdmin(address usr) public auth {
+    function denyLenderAdmin(address usr, bool senior_) public auth {
         lenderDeployer.juniorOperator().deny(usr);
         lenderDeployer.assessor().deny(usr);
         lenderDeployer.distributor().deny(usr);
         lenderDeployer.junior().deny(usr);
+
+        if (senior_) {
+            lenderDeployer.seniorOperator().deny(usr);
+            lenderDeployer.senior().deny(usr);
+        }
     }
 
     function denyBorrowAdmin(address usr) public auth {

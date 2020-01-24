@@ -16,12 +16,12 @@
 pragma solidity >=0.5.12;
 
 import "ds-note/note.sol";
-import "./base.sol";
+import "./default.sol";
 
-contract SwitchableDistributor is BaseDistributor {
+contract SwitchableDistributor is DefaultDistributor {
     bool public borrowFromTranches;
 
-    constructor(address currency_) BaseDistributor(currency_) public {
+    constructor(address currency_) DefaultDistributor(currency_) public {
         borrowFromTranches = true;
     }
 

@@ -21,8 +21,8 @@ contract BorrowTest is BaseSystemTest {
         
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
-        bytes32 distributor_ = "base";
-        baseSetup(juniorOperator_, distributor_);
+        bytes32 distributor_ = "default";
+        baseSetup(juniorOperator_, distributor_, false);
         createTestUsers();
     }
     

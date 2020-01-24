@@ -42,7 +42,7 @@ contract CurrencyLike {
 /// In the base implementation the requested `currencyAmount` always is taken from the
 /// junior tranche first. For repayment senior comes first.
 /// This implementation can handle one or two tranches.
-contract BaseDistributor is Math, DSNote, Auth {
+contract DefaultDistributor is Math, DSNote, Auth {
 
     ShelfLike public shelf;
 

@@ -19,14 +19,14 @@ import "../base_system.sol";
 
 contract WithdrawTest is BaseSystemTest {
 
-    BaseDistributor distributor;
+    DefaultDistributor distributor;
         
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
-        bytes32 distributor_ = "base";
-        baseSetup(juniorOperator_, distributor_);
+        bytes32 distributor_ = "default";
+        baseSetup(juniorOperator_, distributor_, false);
         createTestUsers();
-        distributor = BaseDistributor(address(distributor));
+        distributor = DefaultDistributor(address(lenderDeployer.distributor()));
     }
 
     function withdraw(uint loanId, uint tokenId, uint amount, address usr) public {

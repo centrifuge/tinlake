@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Centrifuge
+// Copyright (C) 2019 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -25,7 +25,8 @@ contract SupplyTest is BaseSystemTest {
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "switchable";
-        baseSetup(juniorOperator_, distributor_);
+        baseSetup(juniorOperator_, distributor_, false);
+        operator = WhitelistOperator(address(juniorOperator));
         switchable = SwitchableDistributor(address(distributor));
         createTestUsers();
     }
