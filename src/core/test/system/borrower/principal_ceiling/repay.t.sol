@@ -265,7 +265,6 @@ contract RepayTest is SystemTest {
         lockNFT(loanId, borrower_);
         // admin sets parameters for the loan
         setLoanParameters(loanId, borrowAmount, rate, speed);
-
         // borrower does not borrow
         
         supplyFunds(extraFunds, borrower_);
