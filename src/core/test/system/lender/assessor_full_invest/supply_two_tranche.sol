@@ -43,7 +43,6 @@ contract RedeemTwoTrancheTest is SystemTest {
 
     }
 
-
     function testFIAssessor_SimpleSupply() public {
         uint seniorInvestorAmount = 100 ether;
         uint juniorInvestorAmount = 200 ether;
@@ -52,9 +51,14 @@ contract RedeemTwoTrancheTest is SystemTest {
         currency.mint(juniorInvestor_, juniorInvestorAmount);
 
         juniorInvestor.doSupply(juniorInvestorAmount);
+        // currency in tranche
         assertEq(currency.balanceOf(address(lenderDeployer.junior())), juniorInvestorAmount);
-        assertEq(currency.balanceOf(seniorInvestor_), seniorInvestorAmount);
+        // junior investor has token
+        assertEq(juniorERC20.balanceOf(juniorInvestor_), juniorInvestorAmount);
+
         seniorInvestor.doSupply(seniorInvestorAmount);
         assertEq(currency.balanceOf(address(lenderDeployer.senior())), seniorInvestorAmount);
+
+        assertEq(seniorERC20.balanceOf(seniorInvestor_), seniorInvestorAmount);
     }
 }
