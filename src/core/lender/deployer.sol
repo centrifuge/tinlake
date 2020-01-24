@@ -23,7 +23,7 @@ import {WhitelistOperator} from "./tranche/operator/whitelist.sol";
 import {Tranche} from "./tranche/tranche.sol";
 import {SeniorTranche} from "./tranche/senior_tranche.sol";
 import {SwitchableDistributor} from "./distributor/switchable.sol";
-import {BaseDistributor} from "./distributor/base.sol";
+import {DefaultDistributor} from "./distributor/default.sol";
 import "tinlake-erc20/erc20.sol";
 
 contract TrancheFab {
@@ -107,9 +107,9 @@ contract SwitchableDistributorFab {
     }
 }
 
-contract BaseDistributorFab {	
+contract DefaultDistributorFab {
     function newDistributor(address currency) public returns (address) {	
-        BaseDistributor distributor = new BaseDistributor(currency);	
+        DefaultDistributor distributor = new DefaultDistributor(currency);
         distributor.rely(msg.sender);	
         distributor.deny(address(this));	
         return address(distributor);	
@@ -166,7 +166,7 @@ contract LenderDeployer is Auth {
     }
 
     function depend(bytes32 what, address addr) public auth {
-        if(what == "senior_tranche_fab") { seniorTrancheFab = SeniorTrancheFab(addr); }
+        if (what == "senior_tranche_fab") { seniorTrancheFab = SeniorTrancheFab(addr); }
         else if (what == "senior_operator_fab") { seniorOperatorFab = OperatorFab(addr); }
         else revert();
     }

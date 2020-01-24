@@ -20,24 +20,23 @@ import "../../system.t.sol";
 contract RedeemTest is SystemTest {
 
     WhitelistOperator operator;
-    BaseDistributor base;
+    DefaultDistributor dDistributor;
 
     Investor juniorInvestor;
     address  juniorInvestor_;
 
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
-        bytes32 distributor_ = "base";
-        baseSetup(juniorOperator_, distributor_);
+        bytes32 distributor_ = "default";
+        baseSetup(juniorOperator_, distributor_, false);
         operator = WhitelistOperator(address(juniorOperator));
-        base = BaseDistributor(address(distributor));
+        dDistributor = DefaultDistributor(address(distributor));
 
         // setup users
         juniorInvestor = new Investor(address(operator), currency_, address(juniorERC20));
         juniorInvestor_ = address(juniorInvestor);
 
         operator.relyInvestor(juniorInvestor_);
-        rootAdmin.relyLenderAdmin(address(this));
     }
 
     function supply(uint balance, uint amount) public {
@@ -74,6 +73,15 @@ contract RedeemTest is SystemTest {
         assertEq(currency.balanceOf(juniorInvestor_), investorBalance);
         // assert: shelf is balanced, excess has either been transferred to tranches or needed money transferred from distributor -> shelf
         assertEq(shelf.balance() - currency.balanceOf(address(shelf)), 0);
+    }
+
+    function testFailInvestorNotWhitelisted() public {
+        uint investorBalance = 100 ether;
+        uint supplyAmount = 10 ether;
+        supply(investorBalance, supplyAmount);
+        operator.denyInvestor(juniorInvestor_);
+
+        juniorInvestor.doRedeem(supplyAmount);
     }
 
     function testFailNotEnoughToken() public {

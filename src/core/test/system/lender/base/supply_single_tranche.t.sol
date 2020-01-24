@@ -20,24 +20,23 @@ import "../../system.t.sol";
 contract SupplyTest is SystemTest {
 
     WhitelistOperator operator;
-    BaseDistributor base;
+    DefaultDistributor base;
 
     Investor juniorInvestor;
     address  juniorInvestor_;
 
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
-        bytes32 distributor_ = "base";
-        baseSetup(juniorOperator_, distributor_);
+        bytes32 distributor_ = "default";
+        baseSetup(juniorOperator_, distributor_, false);
         operator = WhitelistOperator(address(juniorOperator));
-        base = BaseDistributor(address(distributor));
+        base = DefaultDistributor(address(distributor));
 
         // setup users
         juniorInvestor = new Investor(address(operator), currency_, address(juniorERC20));
         juniorInvestor_ = address(juniorInvestor);
 
         operator.relyInvestor(juniorInvestor_);
-        rootAdmin.relyLenderAdmin(address(this));
     }
 
     function testSimpleSupply() public {
@@ -54,6 +53,16 @@ contract SupplyTest is SystemTest {
         // assert: shelf is balanced, excess has either been transferred to tranches or needed money transferred from distributor -> shelf
         assertEq(shelf.balance() - currency.balanceOf(address(shelf)), 0);
         // assert: junior investor token balance == amount supplied (because no other currency was supplied yet)
-        assertEq(juniorERC20.balanceOf(juniorInvestor_), supplyAmount);
+        assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), supplyAmount);
+    }
+
+    function testFailInvestorNotWhitelisted() public {
+        uint investorBalance = 100 ether;
+        uint supplyAmount = 10 ether;
+        currency.mint(juniorInvestor_, investorBalance);
+        operator.denyInvestor(juniorInvestor_);
+
+        juniorInvestor.doSupply(supplyAmount);
+        assertPostCondition(supplyAmount);
     }
 }

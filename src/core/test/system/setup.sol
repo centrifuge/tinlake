@@ -41,9 +41,13 @@ contract TestSetup {
 
     // Lender contracts
     Tranche junior;
+    SeniorTranche senior;
     DistributorLike distributor;
     ERC20 juniorERC20;
     OperatorLike juniorOperator;
+    ERC20 seniorERC20;
+    OperatorLike seniorOperator;
+    Assessor assessor;
 
     // Deployers
     BorrowerDeployer public borrowerDeployer;
@@ -58,8 +62,7 @@ contract TestSetup {
         return (tokenId, lookupId);
     }
 
-
-    function deployContracts(bytes32 operator, bytes32 distributor_) public {
+    function deployContracts(bytes32 operator_, bytes32 distributor_, bool senior_) public {
         collateralNFT = new Title("Collateral NFT", "collateralNFT");
         collateralNFT_ = address(collateralNFT);
 
@@ -71,7 +74,7 @@ contract TestSetup {
         // only admin is main deployer
         deployBorrower();
         // only admin is main deployer
-        deployLender(operator, distributor_);
+        deployLender(operator_, distributor_, senior_);
 
         rootAdmin.file("borrower", address(borrowerDeployer));
         rootAdmin.file("lender", address(lenderDeployer));
@@ -112,19 +115,21 @@ contract TestSetup {
 
     }
 
-    function deployLender(bytes32 operator_, bytes32 distributor_) public {
+    function deployLender(bytes32 operator_, bytes32 distributor_, bool senior_) public {
          address distributorfab_;
          address operatorfab_;
 
         if (operator_ == "whitelist") {
             operatorfab_ = address(new WhitelistOperatorFab());
-        }
-        if (distributor_ == "switchable") {
-            distributorfab_ = address(new SwitchableDistributorFab());
-        } else if (distributor_ == "base") {
-            distributorfab_ = address(new BaseDistributorFab());
+        } else if (operator_ == "allowance") {
+            operatorfab_ = address(new AllowanceOperatorFab());
         }
 
+        if (distributor_ == "switchable") {
+            distributorfab_ = address(new SwitchableDistributorFab());
+        } else if (distributor_ == "default") {
+            distributorfab_ = address(new DefaultDistributorFab());
+        }
 
         lenderDeployer = new LenderDeployer(rootAdmin_, currency_, address(new TrancheFab()), address(new AssessorFab()),
             operatorfab_, distributorfab_);
@@ -133,11 +138,35 @@ contract TestSetup {
         lenderDeployer.deployAssessor();
         lenderDeployer.deployDistributor();
         lenderDeployer.deployJuniorOperator();
+
+        if (senior_) {
+            deploySenior(operatorfab_);
+        }
+
         lenderDeployer.deploy();
 
         distributor = lenderDeployer.distributor();
         juniorOperator = lenderDeployer.juniorOperator();
         juniorERC20 = lenderDeployer.juniorERC20();
         junior = lenderDeployer.junior();
+        assessor = lenderDeployer.assessor();
+    }
+
+    function deploySenior(address operatorfab_) public {
+        address sOperatorfab_;
+        address tranchefab_;
+
+        sOperatorfab_ = operatorfab_;
+        tranchefab_ = address(new SeniorTrancheFab());
+
+        lenderDeployer.depend("senior_tranche_fab", tranchefab_);
+        lenderDeployer.depend("senior_operator_fab", sOperatorfab_);
+
+        lenderDeployer.deploySeniorTranche("SUN", "Senior Tranche Token");
+        senior = lenderDeployer.senior();
+
+        lenderDeployer.deploySeniorOperator();
+        seniorOperator = lenderDeployer.seniorOperator();
+        seniorERC20 = lenderDeployer.seniorERC20();
     }
 }

@@ -15,7 +15,7 @@
 
 pragma solidity >=0.5.12;
 
-import "../../system.sol";
+import "../../base_system.sol";
 
 contract RepayTest is SystemTest {
 
@@ -26,7 +26,7 @@ contract RepayTest is SystemTest {
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "switchable";
-        baseSetup(juniorOperator_, distributor_);
+        baseSetup(juniorOperator_, distributor_, false);
         createTestUsers();
         
         distributor = SwitchableDistributor(address(lenderDeployer.distributor()));
