@@ -20,7 +20,6 @@ import "../../system.t.sol";
 contract RedeemTest is SystemTest {
 
     WhitelistOperator operator;
-    Assessor assessor;
     BaseDistributor base;
 
     Investor juniorInvestor;
@@ -32,6 +31,8 @@ contract RedeemTest is SystemTest {
         baseSetup(juniorOperator_, distributor_);
         operator = WhitelistOperator(address(juniorOperator));
         base = BaseDistributor(address(distributor));
+
+        // setup users
         juniorInvestor = new Investor(address(operator), currency_, address(juniorERC20));
         juniorInvestor_ = address(juniorInvestor);
 
@@ -44,45 +45,42 @@ contract RedeemTest is SystemTest {
         juniorInvestor.doSupply(amount);
     }
 
-    function testRedeem() public {
-//        uint investorBalance = 100 ether;
-//        uint supplyAmount = 10 ether;
-//        supply(investorBalance, supplyAmount);
-//        base.file("borrowFromTranches", false);
-//        assertPreCondition();
-//
-//        juniorInvestor.doRedeem(supplyAmount);
-//        assertPostCondition(investorBalance);
+    function testSimpleRedeem() public {
+        uint investorBalance = 100 ether;
+        uint supplyAmount = 10 ether;
+        uint redeemAmount = supplyAmount;
+        supply(investorBalance, supplyAmount);
+
+        juniorInvestor.doRedeem(redeemAmount);
+        assertPostCondition(investorBalance);
     }
 
-    function assertPreCondition() public {
-//        // assert: borrowFromTranches == false
-//        assert(!base.borrowFromTranches());
-//        // assert: shelf is not bankrupt
-//        assert(currency.balanceOf(address(borrowerDeployer.shelf())) > 0);
+    function testPartialRedeem() public {
+        uint investorBalance = 100 ether;
+        uint supplyAmount = 10 ether;
+        uint redeemAmount = 5 ether;
+        supply(investorBalance, supplyAmount);
+        // first redeem
+        juniorInvestor.doRedeem(redeemAmount);
+        // second redeem
+        juniorInvestor.doRedeem(redeemAmount);
+        assertPostCondition(investorBalance);
     }
 
     function assertPostCondition(uint investorBalance) public {
-//        // assert: no more tokens left for junior investor
-//        assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), 0);
-//        // assert: junior currency balance back to initial pre-supply amount
-//        assertEq(currency.balanceOf(juniorInvestor_), investorBalance);
+        // assert: no more tokens left for junior investor
+        assertEq(juniorERC20.balanceOf(juniorInvestor_), 0);
+        // assert: back to original balance
+        assertEq(currency.balanceOf(juniorInvestor_), investorBalance);
+        // assert: shelf is balanced, excess has either been transferred to tranches or needed money transferred from distributor -> shelf
+        assertEq(shelf.balance() - currency.balanceOf(address(shelf)), 0);
     }
 
-    function testFailNoRedeemingAllowed() public {
-//        uint investorBalance = 100 ether;
-//        uint supplyAmount = 10 ether;
-//        supply(investorBalance, supplyAmount);
-//        juniorInvestor.doRedeem(supplyAmount);
-//        assertPostCondition(investorBalance);
-    }
-
-    function testFailShelfBankrupt() public {
-//        uint investorBalance = 100 ether;
-//        uint supplyAmount = 10 ether;
-//        supply(investorBalance, supplyAmount);
-//        base.file("borrowFromTranches", false);
-//        juniorInvestor.doRedeem(supplyAmount);
-//        juniorInvestor.doRedeem(supplyAmount);
+    function testFailNotEnoughMoney() public {
+        uint investorBalance = 100 ether;
+        uint supplyAmount = 10 ether;
+        uint redeemAmount = 15 ether;
+        supply(investorBalance, supplyAmount);
+        juniorInvestor.doRedeem(redeemAmount);
     }
 }

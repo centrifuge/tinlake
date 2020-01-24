@@ -20,7 +20,6 @@ import "../../system.t.sol";
 contract SupplyTest is SystemTest {
 
     WhitelistOperator operator;
-    Assessor assessor;
     SwitchableDistributor switchable;
 
     Investor juniorInvestor;
@@ -39,7 +38,7 @@ contract SupplyTest is SystemTest {
         rootAdmin.relyLenderAdmin(address(this));
     }
 
-    function testSupply() public {
+    function testSimpleSupply() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;
         currency.mint(juniorInvestor_, investorBalance);
@@ -68,6 +67,16 @@ contract SupplyTest is SystemTest {
         uint supplyAmount = 10 ether;
         switchable.file("borrowFromTranches", false);
 
+        juniorInvestor.doSupply(supplyAmount);
+        assertPostCondition(investorBalance, supplyAmount);
+    }
+
+    function testFailInvestorNotWhitelisted() public {
+        uint investorBalance = 100 ether;
+        uint supplyAmount = 10 ether;
+        operator.denyInvestor(juniorInvestor_);
+
+        juniorInvestor.doSupply(supplyAmount);
         assertPostCondition(investorBalance, supplyAmount);
     }
 }
