@@ -45,9 +45,10 @@ contract RedeemTwoTrancheTest is SystemTest {
 
         // setup users
         seniorInvestor = new Investor(address(jOperator), currency_, address(seniorERC20));
-        seniorInvestor_ = address(juniorInvestor);
+        seniorInvestor_ = address(seniorInvestor);
 
         jOperator.relyInvestor(juniorInvestor_);
+        sOperator.relyInvestor(seniorInvestor_);
     }
 
     function supply(uint balance, uint amount) public {
