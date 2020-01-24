@@ -15,18 +15,18 @@
 
 pragma solidity >=0.5.12;
 
-import "../../base_system.sol";
+import "../base_system.sol";
 
 contract WithdrawTest is BaseSystemTest {
 
-    SwitchableDistributor distributor;
+    BaseDistributor distributor;
         
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
-        bytes32 distributor_ = "switchable";
+        bytes32 distributor_ = "base";
         baseSetup(juniorOperator_, distributor_);
         createTestUsers();
-        distributor = SwitchableDistributor(address(lenderDeployer.distributor()));
+        distributor = BaseDistributor(address(distributor));
     }
 
     function withdraw(uint loanId, uint tokenId, uint amount, address usr) public {

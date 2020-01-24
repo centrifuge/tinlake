@@ -34,6 +34,7 @@ contract AdminUser is DSTest{
         ceiling = CeilingLike(ceiling_);
         title = Title(title_);
         distributor = TDistributorLike(distributor_);
+        
     }
 
     function setCeiling(uint loan, uint principal) public {
