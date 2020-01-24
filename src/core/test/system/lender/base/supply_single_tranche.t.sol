@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Centrifuge
+// Copyright (C) 2020 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -15,23 +15,24 @@
 
 pragma solidity >=0.5.12;
 
-import "../system.t.sol";
+import "../../system.t.sol";
 
 contract SupplyTest is SystemTest {
 
     WhitelistOperator operator;
-    DefaultAssessor assessor;
-    SwitchableDistributor switchable;
+    BaseDistributor base;
 
     Investor juniorInvestor;
     address  juniorInvestor_;
 
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
-        bytes32 distributor_ = "switchable";
+        bytes32 distributor_ = "base";
         baseSetup(juniorOperator_, distributor_);
         operator = WhitelistOperator(address(juniorOperator));
-        switchable = SwitchableDistributor(address(distributor));
+        base = BaseDistributor(address(distributor));
+
+        // setup users
         juniorInvestor = new Investor(address(operator), currency_, address(juniorERC20));
         juniorInvestor_ = address(juniorInvestor);
 
@@ -39,36 +40,20 @@ contract SupplyTest is SystemTest {
         rootAdmin.relyLenderAdmin(address(this));
     }
 
-    function testSwitchableSupply() public {
+    function testSimpleSupply() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;
         currency.mint(juniorInvestor_, investorBalance);
-        assertPreCondition();
 
         juniorInvestor.doSupply(supplyAmount);
-        assertPostCondition(investorBalance, supplyAmount);
+        assertPostCondition(supplyAmount);
+        assertEq(currency.balanceOf(address(junior)), supplyAmount);
     }
 
-    function assertPreCondition() public view {
-        // assert: borrowFromTranches == true
-        assert(switchable.borrowFromTranches());
-    }
-
-    function assertPostCondition(uint investorBalance, uint supplyAmount) public {
-        // assert: junior investor currency balance is equal to the inital balance - how much was supplied
-        assertEq(currency.balanceOf(juniorInvestor_), investorBalance - supplyAmount);
+    function assertPostCondition(uint supplyAmount) public {
+        // assert: shelf is balanced, excess has either been transferred to tranches or needed money transferred from distributor -> shelf
+        assertEq(shelf.balance() - currency.balanceOf(address(shelf)), 0);
         // assert: junior investor token balance == amount supplied (because no other currency was supplied yet)
-        assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), supplyAmount);
-        //assert: balance supplied has been moved to shelf
-        assertEq(currency.balanceOf(address(borrowerDeployer.shelf())), supplyAmount);
-    }
-
-    function testFailNoSupplyAllowed() public {
-        uint investorBalance = 100 ether;
-        uint supplyAmount = 10 ether;
-        switchable.file("borrowFromTranches", false);
-
-        assertPostCondition(investorBalance, supplyAmount);
+        assertEq(juniorERC20.balanceOf(juniorInvestor_), supplyAmount);
     }
 }
-

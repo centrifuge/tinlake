@@ -56,6 +56,7 @@ contract DefaultAssessorFab {
     }
 }
 
+
 // Operator Fabs
 
 // abstract operator fab

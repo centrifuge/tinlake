@@ -16,23 +16,8 @@
 pragma solidity >=0.5.12;
 
 import "../../system.sol";
-import "../../users/borrower.sol";
-import "../../users/admin.sol";
-import "../../users/investor.sol";
 
 contract RepayTest is SystemTest {
-
-    Borrower borrower;
-    address borrower_;
-   
-    AdminUser public admin;
-    address admin_;
-
-    Investor public juniorInvestor;
-    address public juniorInvestor_;
-
-    Borrower randomUser;
-    address randomUser_;
 
     SwitchableDistributor distributor;
 
@@ -42,27 +27,12 @@ contract RepayTest is SystemTest {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "switchable";
         baseSetup(juniorOperator_, distributor_);
+        createTestUsers();
+        
         distributor = SwitchableDistributor(address(lenderDeployer.distributor()));
 
-        // setup hevm
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
-
-        // setup users
-        borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
-        borrower_ = address(borrower);
-
-        randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
-        randomUser_ = address(randomUser);
-
-        admin = new AdminUser(address(shelf), address(pile), address(ceiling), address(title), address(distributor));
-        admin_ = address(admin);
-        rootAdmin.relyBorrowAdmin(admin_);
-
-        juniorInvestor = new Investor(address(juniorOperator), currency_, address(juniorERC20));
-        juniorInvestor_ = address(juniorInvestor);
-        WhitelistOperator juniorOperator = WhitelistOperator(address(juniorOperator));
-        juniorOperator.relyInvestor(juniorInvestor_);
     }
 
     function repay(uint loanId, uint tokenId, uint amount, uint expectedDebt) public {
@@ -362,9 +332,5 @@ contract RepayTest is SystemTest {
         // borrower borrows -> loan[balance] = amount
         Borrower(usr).borrow(loanId, amount);
         Borrower(usr).withdraw(loanId, amount, borrower_);
-    }
-
-    function supplyFunds(uint amount, address addr) public {
-        currency.mint(address(addr), amount);
     }
 }
