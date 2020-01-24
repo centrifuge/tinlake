@@ -79,5 +79,8 @@ contract TrancheLike {
 }
 
 contract TAssessorLike {
-    function calcTokenPrice(address tranche) public returns(uint);
+    function rely(address usr) public;
+    function deny(address usr) public;
+    function depend(bytes32 what, address addr_) public;
+    function file(bytes32 what, uint value) public;
 }
