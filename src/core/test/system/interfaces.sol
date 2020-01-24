@@ -81,3 +81,8 @@ contract TrancheLike {
 contract TAssessorLike {
     function calcTokenPrice(address tranche) public returns(uint);
 }
+
+contract CollectorLike {
+    function collect(uint loan) public;
+    function collect(uint loan, address buyer) public;
+}
