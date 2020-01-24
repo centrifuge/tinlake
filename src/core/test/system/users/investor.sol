@@ -30,6 +30,7 @@ contract Investor is DSTest {
 
     function doSupply(uint amount) public {
         address tranche_ = address(operator.tranche());
+        assertTrue(currency.balanceOf(address(this)) > amount);
         currency.approve(tranche_, amount);
         operator.supply(amount);
     }

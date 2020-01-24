@@ -56,7 +56,13 @@ contract TestSetup {
     TestRootAdmin rootAdmin;
     address rootAdmin_;
 
-  function deployContracts(bytes32 operator_, bytes32 distributor_, bool senior_) public {
+    function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
+        tokenId = collateralNFT.issue(usr);
+        lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
+        return (tokenId, lookupId);
+    }
+
+    function deployContracts(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_) public {
         collateralNFT = new Title("Collateral NFT", "collateralNFT");
         collateralNFT_ = address(collateralNFT);
 
@@ -68,7 +74,7 @@ contract TestSetup {
         // only admin is main deployer
         deployBorrower();
         // only admin is main deployer
-        deployLender(operator_, distributor_, senior_);
+        deployLender(operator_, distributor_,assessor_, senior_);
 
         rootAdmin.file("borrower", address(borrowerDeployer));
         rootAdmin.file("lender", address(lenderDeployer));
@@ -109,25 +115,32 @@ contract TestSetup {
 
     }
 
-    function deployLender(bytes32 operator_, bytes32 distributor_, bool senior_) public {
-         address distributorfab_;
-         address operatorfab_;
+    function deployLender(bytes32 operator_,  bytes32 distributor_,bytes32 assessor_,bool senior_) public {
+        address distributorFab_;
+        address operatorFab_;
+
+        address assessorFab_;
 
         if (operator_ == "whitelist") {
-            operatorfab_ = address(new WhitelistOperatorFab());
+            operatorFab_ = address(new WhitelistOperatorFab());
         } else if (operator_ == "allowance") {
-            operatorfab_ = address(new AllowanceOperatorFab());
+            operatorFab_ = address(new AllowanceOperatorFab());
         }
 
         if (distributor_ == "switchable") {
-            distributorfab_ = address(new SwitchableDistributorFab());
+            distributorFab_ = address(new SwitchableDistributorFab());
         } else if (distributor_ == "default") {
-            distributorfab_ = address(new DefaultDistributorFab());
+            distributorFab_ = address(new DefaultDistributorFab());
         }
 
+        if (assessor_ == "default") {
+            assessorFab_ = address(new DefaultAssessorFab());
+        } else if (assessor_ == "full_investment") {
+            assessorFab_ = address(new FullInvestmentAssessorFab());
+        }
 
-        lenderDeployer = new LenderDeployer(rootAdmin_, currency_, address(new TrancheFab()), address(new DefaultAssessorFab()),
-            operatorfab_, distributorfab_);
+        lenderDeployer = new LenderDeployer(rootAdmin_, currency_, address(new TrancheFab()), assessorFab_,
+            operatorFab_, distributorFab_);
 
         lenderDeployer.deployJuniorTranche("JUN", "Junior Tranche Token");
         lenderDeployer.deployAssessor();
@@ -135,7 +148,7 @@ contract TestSetup {
         lenderDeployer.deployJuniorOperator();
 
         if (senior_) {
-            deploySenior(operatorfab_);
+            deploySenior(operatorFab_);
         }
 
         lenderDeployer.deploy();
@@ -157,7 +170,8 @@ contract TestSetup {
         lenderDeployer.depend("senior_tranche_fab", tranchefab_);
         lenderDeployer.depend("senior_operator_fab", sOperatorfab_);
 
-        lenderDeployer.deploySeniorTranche("SUN", "Senior Tranche Token");
+        uint ratePerSecond = 1000000564701133626865910626; // 5% per day
+        lenderDeployer.deploySeniorTranche("SUN", "Senior Tranche Token", ratePerSecond);
         senior = lenderDeployer.senior();
 
         lenderDeployer.deploySeniorOperator();
