@@ -25,7 +25,7 @@ contract WithdrawTest is BaseSystemTest {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "switchable";
         baseSetup(juniorOperator_, distributor_, false);
-        createTestUsers();
+        createTestUsers(false);
         distributor = SwitchableDistributor(address(lenderDeployer.distributor()));
     }
 

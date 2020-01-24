@@ -34,6 +34,9 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     Investor public juniorInvestor;
     address public juniorInvestor_;
 
+    Investor seniorInvestor;
+    address  seniorInvestor_;
+
     Borrower randomUser;
     address randomUser_;
 
@@ -43,21 +46,31 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         rootAdmin.relyLenderAdmin(address(this), senior_);
     }
 
-    function createTestUsers() public {
-            borrower = new Borrower(address(shelf), address(lenderDeployer.distributor()), currency_, address(pile));
+    function createTestUsers(bool senior_) public {
+            borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
             borrower_ = address(borrower);
 
            randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
            randomUser_ = address(randomUser);
 
-            admin = new AdminUser(address(shelf), address(pile), address(ceiling), address(title), address(lenderDeployer.distributor()));
+            admin = new AdminUser(address(shelf), address(pile), address(ceiling), address(title), address(distributor));
             admin_ = address(admin);
             rootAdmin.relyBorrowAdmin(admin_);
 
             juniorInvestor = new Investor(address(juniorOperator), currency_, address(juniorERC20));
             juniorInvestor_ = address(juniorInvestor);
+
             WhitelistOperator juniorOperator = WhitelistOperator(address(juniorOperator));
-            juniorOperator.relyInvestor(juniorInvestor_);  
+            juniorOperator.relyInvestor(juniorInvestor_);
+
+            if (senior_) {
+                WhitelistOperator seniorOperator = WhitelistOperator(address(seniorOperator));
+
+                seniorInvestor = new Investor(address(seniorOperator), currency_, address(seniorERC20));
+                seniorInvestor_ = address(seniorInvestor);
+
+                seniorOperator.relyInvestor(seniorInvestor_);
+            }
     }
 
     function lockNFT(uint loanId, address usr) public {
