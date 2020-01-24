@@ -15,9 +15,9 @@
 
 pragma solidity >=0.5.12;
 
-import "../../system.sol";
+import "../../base_system.sol";
 
-contract BorrowTest is SystemTest {
+contract BorrowTest is BaseSystemTest {
         
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
@@ -35,11 +35,6 @@ contract BorrowTest is SystemTest {
 
         borrower.borrow(loanId, amount);
         assertPostCondition(loanId, tokenId, amount, initialTotalBalance, initialLoanBalance, initialTotalDebt, initialLoanDebt, initialCeiling);
-    }
-
-    function lockNFT(uint loanId) public {
-        borrower.approveNFT(collateralNFT, address(shelf));
-        borrower.lock(loanId);
     }
 
     function assertPreCondition(uint loanId, uint tokenId, uint amount) public {
@@ -76,7 +71,7 @@ contract BorrowTest is SystemTest {
         // issue loan for borrower
         uint loanId = borrower.issue(collateralNFT_, tokenId);
         // lock nft for borrower
-        lockNFT(loanId);
+        lockNFT(loanId, borrower_);
         // admin sets loan ceiling
         admin.setCeiling(loanId, ceiling);
         assertPreCondition(loanId, tokenId, amount);
@@ -89,7 +84,7 @@ contract BorrowTest is SystemTest {
         uint amount = safeDiv(ceiling ,2);
         (uint tokenId, ) = issueNFT(borrower_);
         uint loanId = borrower.issue(collateralNFT_, tokenId);
-        lockNFT(loanId);
+        lockNFT(loanId, borrower_);
         admin.setCeiling(loanId, ceiling);
         assertPreCondition(loanId, tokenId, amount);
         borrow(loanId, tokenId, amount);
@@ -126,7 +121,7 @@ contract BorrowTest is SystemTest {
         uint amount = safeMul(ceiling, 2);
         (uint tokenId, ) = issueNFT(borrower_);
         uint loanId = borrower.issue(collateralNFT_, tokenId);
-        lockNFT(loanId);
+        lockNFT(loanId, borrower_);
         admin.setCeiling(loanId, ceiling);
         borrow(loanId, tokenId, amount);
     }

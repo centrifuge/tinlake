@@ -15,9 +15,9 @@
 
 pragma solidity >=0.5.12;
 
-import "../../system.sol";
+import "../../base_system.sol";
 
-contract RepayTest is SystemTest {
+contract RepayTest is BaseSystemTest {
 
     SwitchableDistributor distributor;
 
@@ -318,11 +318,6 @@ contract RepayTest is SystemTest {
         admin.doAddRate(loanId, rate);
         // admin sets loan rate
     }
-
-    function lockNFT(uint loanId, address usr) public {
-        Borrower(usr).approveNFT(collateralNFT, address(shelf));
-        Borrower(usr).lock(loanId);
-    } 
 
     function invest(uint amount) public {
         currency.mint(juniorInvestor_, amount);

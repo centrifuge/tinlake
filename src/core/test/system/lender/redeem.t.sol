@@ -18,7 +18,7 @@ pragma solidity >=0.5.12;
 import "../system.t.sol";
 import {SwitchableDistributor} from "../../../lender/distributor/switchable.sol";
 
-contract RedeemTest is SystemTest {
+contract RedeemTest is BaseSystemTest {
     
     SwitchableDistributor switchable;
     

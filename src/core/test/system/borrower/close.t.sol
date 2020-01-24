@@ -15,9 +15,9 @@
 
 pragma solidity >=0.5.12;
 
-import "../system.sol";
+import "../base_system.sol";
 
-contract CloseTest is SystemTest {
+contract CloseTest is BaseSystemTest {
 
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";

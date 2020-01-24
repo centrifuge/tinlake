@@ -15,9 +15,9 @@
 
 pragma solidity >=0.5.12;
 
-import "../system.sol";
+import "../base_system.sol";
 
-contract LockTest is SystemTest {
+contract LockTest is BaseSystemTest {
 
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
@@ -26,7 +26,7 @@ contract LockTest is SystemTest {
         createTestUsers();
     }
     
-    function lockNFT(uint loanId, uint tokenId) public {
+    function lock(uint loanId, uint tokenId) public {
         borrower.lock(loanId);
         assertPostCondition(loanId, tokenId);
     }
@@ -47,24 +47,23 @@ contract LockTest is SystemTest {
 
     function testLockNFT() public {
         (uint tokenId, ) = issueNFT(borrower_);
-        borrower.approveNFT(collateralNFT, address(shelf));
         uint loanId = borrower.issue(collateralNFT_, tokenId);
         assertPreCondition(loanId, tokenId);
-        lockNFT(loanId, tokenId);
+        lock(loanId, tokenId);
     }
 
     function testFailLockNFTLoanNotIssued() public {
         (uint tokenId, ) = issueNFT(borrower_);
-        borrower.approveNFT(collateralNFT, address(shelf));
         // loan not issued - random id
         uint loanId = 11;
-        lockNFT(loanId, tokenId);
+        lock(loanId, tokenId);
     }
 
     function testFailLockNFTNoApproval() public {
-        (uint tokenId, ) = issueNFT(randomUser_);
+        uint tokenId = collateralNFT.issue(borrower_);
+        // borrower does not approve shelf to take NFT
         uint loanId = borrower.issue(collateralNFT_, tokenId);
-        lockNFT(loanId, tokenId);
+        lock(loanId, tokenId);
     }
 
     function testFailLockNFTNotNFTOwner() public {
@@ -72,25 +71,18 @@ contract LockTest is SystemTest {
         // borrower creates loan against nft
         uint loanId = borrower.issue(collateralNFT_, tokenId);
         // borrower transfers nftOwnership to random user / borrower still loanOwner
-        borrower.approveNFT(collateralNFT, address(this));
-        collateralNFT.transferFrom(borrower_, randomUser_, tokenId);
-        // nftOwner approves shelf to lock
-        collateralNFT.setApprovalForAll(address(shelf), true);
-        // borrower tries to lock nft
-        lockNFT(loanId, tokenId);
+        transferNFT(borrower_, randomUser_, tokenId);
+        lock(loanId, tokenId);
     }
 
     function testFailLockNFTNotLoanOwner() public {
         (uint tokenId, ) = issueNFT(randomUser_);
         // random user creates loan against nft
         uint loanId = randomUser.issue(collateralNFT_, tokenId);
-        // random user transfers nftownership to borrower / random user still loanOwner
+        // random user transfers nftOwnership to borrower / random user still loanOwner
         collateralNFT.transferFrom(randomUser_, borrower_, tokenId);
-        borrower.approveNFT(collateralNFT, address(shelf));
-        // nftOwner approves shelf to lock
-        collateralNFT.setApprovalForAll(address(shelf), true);
         // borrower tries to lock nft
-        lockNFT(loanId, tokenId);
+        lock(loanId, tokenId);
     }
 
 }

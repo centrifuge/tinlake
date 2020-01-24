@@ -23,7 +23,7 @@ import "./users/borrower.sol";
 import "tinlake-math/math.sol";
 
 
-contract SystemTest is TestSetup, Math, DSTest {
+contract BaseSystemTest is TestSetup, Math, DSTest {
     // users
     Borrower borrower;
     address borrower_;
@@ -60,10 +60,23 @@ contract SystemTest is TestSetup, Math, DSTest {
             juniorOperator.relyInvestor(juniorInvestor_);  
     }
 
+    // helpers
     function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
         tokenId = collateralNFT.issue(usr);
         lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
+        // user approves shelf too lock NFT
+        Borrower(usr).approveNFT(collateralNFT, address(shelf));
         return (tokenId, lookupId);
+    }
+
+    function lockNFT(uint loanId, address usr) public {
+        Borrower(usr).approveNFT(collateralNFT, address(shelf));
+        Borrower(usr).lock(loanId);
+    } 
+
+    function transferNFT(address sender, address recipient, uint tokenId) public {
+        Borrower(sender).approveNFT(collateralNFT, address(this));
+        collateralNFT.transferFrom(sender, recipient, tokenId);
     }
 
     function setupCurrencyOnLender(uint amount) public {

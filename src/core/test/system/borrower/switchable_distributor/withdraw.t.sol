@@ -15,9 +15,9 @@
 
 pragma solidity >=0.5.12;
 
-import "../../system.sol";
+import "../../base_system.sol";
 
-contract WithdrawTest is SystemTest {
+contract WithdrawTest is BaseSystemTest {
 
     SwitchableDistributor distributor;
         
@@ -222,10 +222,6 @@ contract WithdrawTest is SystemTest {
     }
 
     // helpers
-    function lockNFT(uint loanId, address usr) public {
-        Borrower(usr).approveNFT(collateralNFT, address(shelf));
-        Borrower(usr).lock(loanId);
-    } 
 
     function invest(uint amount) public {
         currency.mint(juniorInvestor_, amount);
