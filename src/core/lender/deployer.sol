@@ -42,14 +42,19 @@ contract SeniorTrancheFab {
     }
 }
 
+
 contract AssessorFab {
-    function newAssessor() public returns (DefaultAssessor assessor) {
-        assessor = new DefaultAssessor();
-        assessor.rely(msg.sender);
-        assessor.deny(address(this));
-    }
+    function newAssessor() public returns (address);
 }
 
+contract DefaultAssessorFab {
+    function newAssessor() public returns (address) {
+        DefaultAssessor assessor = new DefaultAssessor();
+        assessor.rely(msg.sender);
+        assessor.deny(address(this));
+        return address(assessor);
+    }
+}
 
 // Operator Fabs
 
@@ -80,6 +85,14 @@ contract WhitelistOperatorFab {
         return address(operator);
     }
 }
+
+contract AssessorLike {
+    function rely(address usr) public;
+    function deny(address usr) public;
+    function depend(bytes32 what, address addr_) public;
+    function file(bytes32 what, uint value) public;
+}
+
 
 // Distributor Fabs
 
@@ -132,7 +145,7 @@ contract LenderDeployer is Auth {
     address public currency;
 
     // Contracts
-    DefaultAssessor public assessor;
+    AssessorLike public assessor;
     DistributorLike public distributor;
 
     // junior
@@ -196,7 +209,7 @@ contract LenderDeployer is Auth {
     }
 
     function deployAssessor() public auth {
-        assessor = assessorFab.newAssessor();
+        assessor = AssessorLike(assessorFab.newAssessor());
         assessor.rely(rootAdmin);
     }
 

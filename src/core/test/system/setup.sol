@@ -123,7 +123,7 @@ contract TestSetup {
             distributorfab_ = address(new SwitchableDistributorFab());
         }
 
-        lenderDeployer = new LenderDeployer(rootAdmin_, currency_, address(new TrancheFab()), address(new AssessorFab()),
+        lenderDeployer = new LenderDeployer(rootAdmin_, currency_, address(new TrancheFab()), address(new DefaultAssessorFab()),
             operatorfab_, distributorfab_);
 
         lenderDeployer.deployJuniorTranche("JUN", "Junior Tranche Token");
