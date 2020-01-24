@@ -27,7 +27,7 @@ contract SystemTest is TestSetup, Math, DSTest {
     // users
     Borrower borrower;
     address borrower_;
-   
+
     AdminUser public admin;
     address admin_;
 
@@ -37,10 +37,10 @@ contract SystemTest is TestSetup, Math, DSTest {
     Borrower randomUser;
     address randomUser_;
 
-    function baseSetup(bytes32 operator, bytes32 distributor) public {
+    function baseSetup(bytes32 operator_, bytes32 distributor_, bool senior_) public {
         // setup deployment
-        deployContracts(operator, distributor);
-        rootAdmin.relyLenderAdmin(address(this));
+        deployContracts(operator_, distributor_, senior_);
+        rootAdmin.relyLenderAdmin(address(this), senior_);
     }
 
     function createTestUsers() public {
@@ -57,7 +57,7 @@ contract SystemTest is TestSetup, Math, DSTest {
             juniorInvestor = new Investor(address(juniorOperator), currency_, address(juniorERC20));
             juniorInvestor_ = address(juniorInvestor);
             WhitelistOperator juniorOperator = WhitelistOperator(address(juniorOperator));
-            juniorOperator.relyInvestor(juniorInvestor_);  
+            juniorOperator.relyInvestor(juniorInvestor_);
     }
 
     function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
@@ -69,18 +69,17 @@ contract SystemTest is TestSetup, Math, DSTest {
     function setupCurrencyOnLender(uint amount) public {
         // mint currency
         currency.mint(address(this), amount);
-        currency.approve(address(lenderDeployer.junior()), amount);
-        uint balanceBefore = lenderDeployer.juniorERC20().balanceOf(address(this));
+        currency.approve(address(junior), amount);
+        uint balanceBefore = juniorERC20.balanceOf(address(this));
         // move currency into junior tranche
-        address operator_ = address(lenderDeployer.juniorOperator());
+        address operator_ = address(juniorOperator);
         WhitelistOperator(operator_).relyInvestor(address(this));
         WhitelistOperator(operator_).supply(amount);
         // same amount of junior tokens
-        assertEq(lenderDeployer.juniorERC20().balanceOf(address(this)), balanceBefore + amount);
+        assertEq(juniorERC20.balanceOf(address(this)), balanceBefore + amount);
     }
 
     function supplyFunds(uint amount, address addr) public {
         currency.mint(address(addr), amount);
     }
-
 }

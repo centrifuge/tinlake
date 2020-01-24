@@ -17,26 +17,37 @@ pragma solidity >=0.5.12;
 
 import "../../system.t.sol";
 
-contract RedeemTest is SystemTest {
+contract RedeemTwoTrancheTest is SystemTest {
 
-    WhitelistOperator operator;
+    WhitelistOperator jOperator;
+    WhitelistOperator sOperator;
+
     DefaultDistributor dDistributor;
 
     Investor juniorInvestor;
     address  juniorInvestor_;
 
+    Investor seniorInvestor;
+    address  seniorInvestor_;
+
     function setUp() public {
-        bytes32 juniorOperator_ = "whitelist";
+        bytes32 operator_ = "whitelist";
         bytes32 distributor_ = "default";
-        baseSetup(juniorOperator_, distributor_, false);
-        operator = WhitelistOperator(address(juniorOperator));
+        baseSetup(operator_, distributor_, true);
+
+        jOperator = WhitelistOperator(address(juniorOperator));
+        sOperator = WhitelistOperator(address(seniorOperator));
         dDistributor = DefaultDistributor(address(distributor));
 
         // setup users
-        juniorInvestor = new Investor(address(operator), currency_, address(juniorERC20));
+        juniorInvestor = new Investor(address(jOperator), currency_, address(juniorERC20));
         juniorInvestor_ = address(juniorInvestor);
 
-        operator.relyInvestor(juniorInvestor_);
+        // setup users
+        seniorInvestor = new Investor(address(jOperator), currency_, address(seniorERC20));
+        seniorInvestor_ = address(juniorInvestor);
+
+        jOperator.relyInvestor(juniorInvestor_);
     }
 
     function supply(uint balance, uint amount) public {
@@ -48,25 +59,6 @@ contract RedeemTest is SystemTest {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;
         uint redeemAmount = supplyAmount;
-        supply(investorBalance, supplyAmount);
-
-        juniorInvestor.doRedeem(redeemAmount);
-        assertPostCondition(investorBalance);
-    }
-
-    function assertPreCondition(uint tokenAmount) public {}
-
-    function assertPostCondition(uint investorBalance) public {
-        // assert: back to original balance
-        assertEq(currency.balanceOf(juniorInvestor_), investorBalance);
-        // assert: shelf is balanced, excess has either been transferred to tranches or needed money transferred from distributor -> shelf
-        assertEq(shelf.balance() - currency.balanceOf(address(shelf)), 0);
-    }
-
-    function testFailNotEnoughMoney() public {
-        uint investorBalance = 100 ether;
-        uint supplyAmount = 10 ether;
-        uint redeemAmount = 15 ether;
         supply(investorBalance, supplyAmount);
         juniorInvestor.doRedeem(redeemAmount);
     }
