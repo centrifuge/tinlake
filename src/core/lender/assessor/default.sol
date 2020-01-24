@@ -29,7 +29,7 @@ contract DefaultAssessor is BaseAssessor, Interest {
 
         }
 
-        uint debt = tranche.borrowed() + tranche.interest();
+        uint debt = safeAdd(tranche.borrowed(), tranche.interest());
         // move to tinlake-math
         // interest is calculated based on tranche debt
         return safeSub(rmul(rpow(tranche.ratePerSecond(), now - tranche.lastUpdated(), ONE), debt), debt);
