@@ -22,6 +22,7 @@ contract FullInvestmentAssessor is BaseAssessor, Interest {
     // accrueTrancheInterest can implement different interest models
     function accrueTrancheInterest(address tranche_) public returns (uint) {
         SeniorTrancheLike tranche = SeniorTrancheLike(tranche_);
+
         if(tranche_ == junior) {
             return 0;
 

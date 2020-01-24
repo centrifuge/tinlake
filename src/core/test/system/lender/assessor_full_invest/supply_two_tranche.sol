@@ -24,31 +24,37 @@ contract RedeemTwoTrancheTest is SystemTest {
 
     DefaultDistributor dDistributor;
 
+
+
     function setUp() public {
         bytes32 operator_ = "whitelist";
         bytes32 distributor_ = "default";
+        bytes32 assessor_ = "full_investment";
         bool deploySeniorTranche = true;
-        baseSetup(operator_, distributor_, deploySeniorTranche);
+        baseSetup(operator_, distributor_,assessor_, deploySeniorTranche);
+
         createTestUsers();
         createSeniorInvestor();
 
         jOperator = WhitelistOperator(address(juniorOperator));
         sOperator = WhitelistOperator(address(seniorOperator));
-
         dDistributor = DefaultDistributor(address(distributor));
 
+
     }
 
-    function supply(uint balance, uint amount) public {
-        currency.mint(juniorInvestor_, balance);
-        juniorInvestor.doSupply(amount);
-    }
 
-    function testSimpleSupply() public {
-        uint investorBalance = 100 ether;
-        uint supplyAmount = 10 ether;
-        uint redeemAmount = supplyAmount;
-        supply(investorBalance, supplyAmount);
-        juniorInvestor.doRedeem(redeemAmount);
+    function testFIAssessor_SimpleSupply() public {
+        uint seniorInvestorAmount = 100 ether;
+        uint juniorInvestorAmount = 200 ether;
+
+        currency.mint(seniorInvestor_, seniorInvestorAmount);
+        currency.mint(juniorInvestor_, juniorInvestorAmount);
+
+        juniorInvestor.doSupply(juniorInvestorAmount);
+        assertEq(currency.balanceOf(address(lenderDeployer.junior())), juniorInvestorAmount);
+        assertEq(currency.balanceOf(seniorInvestor_), seniorInvestorAmount);
+        seniorInvestor.doSupply(seniorInvestorAmount);
+        assertEq(currency.balanceOf(address(lenderDeployer.senior())), seniorInvestorAmount);
     }
 }

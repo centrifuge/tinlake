@@ -18,6 +18,7 @@ pragma solidity >=0.5.12;
 
 // lender contracts
 import {DefaultAssessor} from "./assessor/default.sol";
+import {FullInvestmentAssessor} from "./assessor/full_investment.sol";
 import {AllowanceOperator} from "./tranche/operator/allowance.sol";
 import {WhitelistOperator} from "./tranche/operator/whitelist.sol";
 import {Tranche} from "./tranche/tranche.sol";
@@ -36,7 +37,7 @@ contract TrancheFab {
 
 contract SeniorTrancheFab {
     function newSeniorTranche(address currency, address token, address assessor) public returns (SeniorTranche tranche) {
-        tranche = new SeniorTranche(currency, token, assessor);
+        tranche = new SeniorTranche(token, currency, assessor);
         tranche.rely(msg.sender);
         tranche.deny(address(this));
     }
@@ -50,6 +51,15 @@ contract AssessorFab {
 contract DefaultAssessorFab {
     function newAssessor() public returns (address) {
         DefaultAssessor assessor = new DefaultAssessor();
+        assessor.rely(msg.sender);
+        assessor.deny(address(this));
+        return address(assessor);
+    }
+}
+
+contract FullInvestmentAssessorFab {
+    function newAssessor() public returns (address) {
+        FullInvestmentAssessor assessor = new FullInvestmentAssessor();
         assessor.rely(msg.sender);
         assessor.deny(address(this));
         return address(assessor);

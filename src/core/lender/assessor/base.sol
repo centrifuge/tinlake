@@ -99,7 +99,9 @@ contract BaseAssessor is Math, Auth {
             return ONE;
         }
         if (assetValue == 0) {
-            revert("tranche is bankrupt");
+           // revert("tranche is bankrupt");
+            // todo fix
+            return ONE;
         }
         return rdiv(assetValue, tokenSupply);
     }
