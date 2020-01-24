@@ -15,18 +15,18 @@
 
 pragma solidity >=0.5.12;
 
-import "../../base_system.sol";
+import "../base_system.sol";
 
 contract WithdrawTest is BaseSystemTest {
 
-    SwitchableDistributor distributor;
+    DefaultDistributor distributor;
         
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
-        bytes32 distributor_ = "switchable";
+        bytes32 distributor_ = "default";
         baseSetup(juniorOperator_, distributor_, false);
         createTestUsers();
-        distributor = SwitchableDistributor(address(lenderDeployer.distributor()));
+        distributor = DefaultDistributor(address(lenderDeployer.distributor()));
     }
 
     function withdraw(uint loanId, uint tokenId, uint amount, address usr) public {
@@ -57,9 +57,9 @@ contract WithdrawTest is BaseSystemTest {
         // assert: nft still locked, shelf nftOwner
         assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
         // assert: available balance decreased
-        assertEq(currency.balanceOf(address(shelf)), safeSub(initialAvailable, withdrawAmount));
-        // assert: no money left in tranche reserve -> withdraw calls balance
-        assertEq(currency.balanceOf(address(junior)), 0);
+        uint shelfBalance = currency.balanceOf(address(shelf));
+        uint juniorBalance = currency.balanceOf(address(junior));
+        assertEq(safeAdd(shelfBalance, juniorBalance), safeSub(initialAvailable, withdrawAmount));
         // assert: borrower balance increased
         assertEq(currency.balanceOf(recipient), safeAdd(initialRecipientBalance, withdrawAmount));
         // assert: loan balance reduced

@@ -30,7 +30,7 @@ contract RedeemTest is BaseSystemTest {
         bytes32 distributor_ = "default";
         baseSetup(juniorOperator_, distributor_, false);
         operator = WhitelistOperator(address(juniorOperator));
-        dDistributor = DefaultDistributor(address(distributor));
+        dDistributor = DefaultDistributor(address(lenderDeployer.distributor()));
 
         // setup users
         juniorInvestor = new Investor(address(operator), currency_, address(juniorERC20));
