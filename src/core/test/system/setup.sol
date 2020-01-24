@@ -170,7 +170,8 @@ contract TestSetup {
         lenderDeployer.depend("senior_tranche_fab", tranchefab_);
         lenderDeployer.depend("senior_operator_fab", sOperatorfab_);
 
-        lenderDeployer.deploySeniorTranche("SUN", "Senior Tranche Token");
+        uint ratePerSecond = 1000000564701133626865910626; // 5% per day
+        lenderDeployer.deploySeniorTranche("SUN", "Senior Tranche Token", ratePerSecond);
         senior = lenderDeployer.senior();
 
         lenderDeployer.deploySeniorOperator();

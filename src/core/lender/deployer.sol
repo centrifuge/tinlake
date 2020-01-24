@@ -198,7 +198,7 @@ contract LenderDeployer is Auth {
         distributor.rely(rootAdmin);
     }
 
-    function deploySeniorTranche(string memory symbol, string memory name) public auth {
+    function deploySeniorTranche(string memory symbol, string memory name, uint ratePerSecond) public auth {
         require(address(assessor) != address(0));
         seniorERC20 = new ERC20(symbol, name);
         senior = seniorTrancheFab.newSeniorTranche(currency, address(seniorERC20), address(assessor));
@@ -206,6 +206,7 @@ contract LenderDeployer is Auth {
         // senior tranche can mint
         seniorERC20.rely(address(senior));
         senior.rely(rootAdmin);
+        senior.file("rate", ratePerSecond);
     }
 
     function deployJuniorTranche(string memory symbol, string memory name) public auth {

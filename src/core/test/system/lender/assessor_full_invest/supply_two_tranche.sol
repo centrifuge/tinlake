@@ -24,7 +24,7 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
 
     DefaultDistributor dDistributor;
 
-
+    Hevm hevm;
 
     function setUp() public {
         bytes32 operator_ = "whitelist";
@@ -33,6 +33,9 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         bool deploySeniorTranche = true;
         baseSetup(operator_, distributor_,assessor_, deploySeniorTranche);
 
+        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm.warp(1234567);
+
         createTestUsers();
         createSeniorInvestor();
 
@@ -40,25 +43,48 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         sOperator = WhitelistOperator(address(seniorOperator));
         dDistributor = DefaultDistributor(address(distributor));
 
+    }
 
+    function supplySenior(uint amount) public {
+        currency.mint(seniorInvestor_, amount);
+        seniorInvestor.doSupply(amount);
+        assertEq(currency.balanceOf(address(lenderDeployer.senior())), amount);
+
+        assertEq(seniorERC20.balanceOf(seniorInvestor_), amount);
+        assertEq(lenderDeployer.senior().debt(), 0);
+    }
+
+    function supplyJunior(uint amount) public {
+        currency.mint(juniorInvestor_, amount);
+
+        juniorInvestor.doSupply(amount);
+        // currency in tranche
+        assertEq(currency.balanceOf(address(lenderDeployer.junior())), amount);
+        // junior investor has token
+        assertEq(juniorERC20.balanceOf(juniorInvestor_), amount);
     }
 
     function testFIAssessor_SimpleSupply() public {
         uint seniorInvestorAmount = 100 ether;
         uint juniorInvestorAmount = 200 ether;
 
-        currency.mint(seniorInvestor_, seniorInvestorAmount);
-        currency.mint(juniorInvestor_, juniorInvestorAmount);
+        supplySenior(seniorInvestorAmount);
+        supplyJunior(juniorInvestorAmount);
 
-        juniorInvestor.doSupply(juniorInvestorAmount);
-        // currency in tranche
-        assertEq(currency.balanceOf(address(lenderDeployer.junior())), juniorInvestorAmount);
-        // junior investor has token
-        assertEq(juniorERC20.balanceOf(juniorInvestor_), juniorInvestorAmount);
 
-        seniorInvestor.doSupply(seniorInvestorAmount);
-        assertEq(currency.balanceOf(address(lenderDeployer.senior())), seniorInvestorAmount);
+        hevm.warp(now + 1 days);
 
-        assertEq(seniorERC20.balanceOf(seniorInvestor_), seniorInvestorAmount);
+        assertEq(lenderDeployer.senior().debt(), 5 ether);
+    }
+
+    function testInterestSenior() public {
+        uint amount = 100 ether;
+        supplySenior(amount);
+
+        assertEq(lenderDeployer.senior().debt(), 0 ether);
+        hevm.warp(now + 1 days);
+        assertEq(lenderDeployer.senior().debt(), 5 ether);
+        hevm.warp(now + 1 days);
+        assertEq(lenderDeployer.senior().debt(), 10.25 ether);
     }
 }
