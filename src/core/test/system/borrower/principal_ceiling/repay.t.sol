@@ -77,7 +77,7 @@ contract RepayTest is BaseSystemTest {
     }
 
     function borrowAndRepay(address usr, uint ceiling, uint rate, uint speed, uint expectedDebt, uint repayAmount) public {
-        (uint loanId, uint tokenId) = createLoanAndBorrow(usr, ceiling, rate, speed);
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(usr, ceiling, rate, speed);
         // supply borrower with additional funds to pay for accrued interest
         topup(usr);
         // borrower allows shelf full control over borrower tokens
@@ -126,7 +126,7 @@ contract RepayTest is BaseSystemTest {
         // do not set rate - default rate group: 0
         uint expectedDebt = ceiling;
         uint repayAmount = expectedDebt;
-        (uint loanId, uint tokenId) = createLoanAndBorrow(borrower_, ceiling);
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling);
 
         // borrower allows shelf full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
@@ -163,7 +163,7 @@ contract RepayTest is BaseSystemTest {
         // expected debt after 1 year of compounding
         uint expectedDebt = 73.92 ether;
         uint repayAmount = expectedDebt;
-        (uint loanId, uint tokenId) = createLoanAndBorrow(borrower_, ceiling, rate, speed);
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
         
         hevm.warp(now + 365 days);
      
@@ -231,7 +231,7 @@ contract RepayTest is BaseSystemTest {
         // expected debt after 1 year of compounding
         uint expectedDebt = 73.92 ether;
         uint repayAmount = ceiling;
-        (uint loanId, uint tokenId) = createLoanAndBorrow(borrower_, ceiling, rate, speed);
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
 
         //repay after 1 year
         hevm.warp(now + 365 days);

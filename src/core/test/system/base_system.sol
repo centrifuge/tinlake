@@ -60,6 +60,16 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
             juniorOperator.relyInvestor(juniorInvestor_);  
     }
 
+    function lockNFT(uint loanId, address usr) public {
+        Borrower(usr).approveNFT(collateralNFT, address(shelf));
+        Borrower(usr).lock(loanId);
+    } 
+
+    function transferNFT(address sender, address recipient, uint tokenId) public {
+        Borrower(sender).approveNFT(collateralNFT, address(this));
+        collateralNFT.transferFrom(sender, recipient, tokenId);
+    }
+
     // helpers borrower
     function issueNFT(address usr) public returns (uint, bytes32) {
         uint tokenId = collateralNFT.issue(usr);
@@ -76,37 +86,31 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         return (tokenId, loanId);
     }
 
-    function lockNFT(uint loanId, address usr) public {
-        Borrower(usr).approveNFT(collateralNFT, address(shelf));
-        Borrower(usr).lock(loanId);
-    } 
-
-
-    function transferNFT(address sender, address recipient, uint tokenId) public {
-        Borrower(sender).approveNFT(collateralNFT, address(this));
-        collateralNFT.transferFrom(sender, recipient, tokenId);
-    }
-
-    function createLoanAndBorrow(address usr, uint ceiling, uint rate, uint speed) public returns (uint, uint) {
-        (uint loanId, uint tokenId ) = issueNFTAndCreateLoan(usr);
-        // lock nft
-        lockNFT(loanId, usr);
-        // admin sets parameters for the loan
-        setLoanParameters(loanId, ceiling, rate, speed);
-        // borrower borrows funds
-        Borrower(usr).borrow(loanId, ceiling);
-        Borrower(usr).withdraw(loanId, ceiling, borrower_);
-        return (loanId, tokenId);
-    }
-
-    function createLoanAndBorrow(address usr, uint ceiling) public returns (uint, uint) {
-        (uint loanId, uint tokenId ) = issueNFTAndCreateLoan(usr);
+    function createLoanAndBorrow(address usr, uint ceiling, uint rate) public returns (uint, uint) {
+     (uint loanId, uint tokenId) = issueNFTAndCreateLoan(usr);
         // lock nft
         lockNFT(loanId, usr);
         // admin sets ceiling
         admin.setCeiling(loanId, ceiling);
+        // admit sets loan rate
+        if (rate > 0) {
+            admin.doAddRate(loanId, rate);
+        }
         // borrower borrows funds
         Borrower(usr).borrow(loanId, ceiling);
+        return (loanId, tokenId);
+    }
+
+    function createLoanAndWithdraw(address usr, uint ceiling) public returns (uint, uint) {
+        (uint loanId, uint tokenId ) = createLoanAndBorrow(usr, ceiling, 0);
+        Borrower(usr).withdraw(loanId, ceiling, borrower_);
+        return (loanId, tokenId);
+    }
+
+    function createLoanAndWithdraw(address usr, uint ceiling, uint rate, uint speed) public returns (uint, uint) {
+        // init rate group
+        admin.doInitRate(rate, speed);
+        (uint loanId, uint tokenId) = createLoanAndBorrow(usr, ceiling, rate);
         Borrower(usr).withdraw(loanId, ceiling, borrower_);
         return (loanId, tokenId);
     }

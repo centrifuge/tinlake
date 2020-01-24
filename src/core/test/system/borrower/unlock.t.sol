@@ -63,7 +63,7 @@ contract UnlockTest is BaseSystemTest {
 
     function testUnlockNFTAfterRepay() public {
         uint ceiling = 100 ether;
-        (uint loanId, uint tokenId) = createLoanAndBorrow(borrower_, ceiling);
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling);
          
         hevm.warp(now + 365 days);
 
@@ -84,7 +84,7 @@ contract UnlockTest is BaseSystemTest {
     function testFailUnlockOpenDebt() public {
         uint ceiling = 100 ether;
         // borrower creates loan and borrows funds
-        (uint loanId, uint tokenId) = createLoanAndBorrow(borrower_, ceiling);
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling);
         // borrower allows shelf full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
         
