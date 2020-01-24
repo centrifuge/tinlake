@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Centrifuge
+// Copyright (C) 2020 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -15,21 +15,23 @@
 
 pragma solidity >=0.5.12;
 
-import "../system.t.sol";
+import "../../system.t.sol";
 
 contract SupplyTest is SystemTest {
 
+    WhitelistOperator operator;
     SwitchableDistributor switchable;
 
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "switchable";
         baseSetup(juniorOperator_, distributor_);
+        operator = WhitelistOperator(address(juniorOperator));
         switchable = SwitchableDistributor(address(distributor));
         createTestUsers();
     }
 
-    function testSwitchableSupply() public {
+    function testSimpleSupply() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;
         currency.mint(juniorInvestor_, investorBalance);
@@ -58,6 +60,16 @@ contract SupplyTest is SystemTest {
         uint supplyAmount = 10 ether;
         switchable.file("borrowFromTranches", false);
 
+        juniorInvestor.doSupply(supplyAmount);
+        assertPostCondition(investorBalance, supplyAmount);
+    }
+
+    function testFailInvestorNotWhitelisted() public {
+        uint investorBalance = 100 ether;
+        uint supplyAmount = 10 ether;
+        operator.denyInvestor(juniorInvestor_);
+
+        juniorInvestor.doSupply(supplyAmount);
         assertPostCondition(investorBalance, supplyAmount);
     }
 }

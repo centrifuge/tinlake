@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Centrifuge
+// Copyright (C) 2020 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -15,17 +15,18 @@
 
 pragma solidity >=0.5.12;
 
-import "../system.t.sol";
-import {SwitchableDistributor} from "../../../lender/distributor/switchable.sol";
+import "../../system.t.sol";
 
 contract RedeemTest is SystemTest {
-    
+
+    WhitelistOperator operator;
     SwitchableDistributor switchable;
-    
+
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "switchable";
         baseSetup(juniorOperator_, distributor_);
+        operator = WhitelistOperator(address(juniorOperator));
         switchable = SwitchableDistributor(address(distributor));
         createTestUsers();
     }
@@ -35,45 +36,55 @@ contract RedeemTest is SystemTest {
         juniorInvestor.doSupply(amount);
     }
 
-    function testSwitchableRedeem() public {
+    function testSimpleRedeem() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;
+        uint redeemAmount = supplyAmount;
         supply(investorBalance, supplyAmount);
         switchable.file("borrowFromTranches", false);
         assertPreCondition();
 
-        juniorInvestor.doRedeem(supplyAmount);
+        juniorInvestor.doRedeem(redeemAmount);
         assertPostCondition(investorBalance);
     }
 
     function assertPreCondition() public view {
         // assert: borrowFromTranches == false
         assert(!switchable.borrowFromTranches());
-        // assert: shelf is not bankrupt
-        assert(currency.balanceOf(address(borrowerDeployer.shelf())) > 0);
     }
 
     function assertPostCondition(uint investorBalance) public {
-        // assert: no more tokens left for junior investor
-        assertEq(lenderDeployer.juniorERC20().balanceOf(juniorInvestor_), 0);
-        // assert: junior currency balance back to initial pre-supply amount
+        // assert: back to original balance
         assertEq(currency.balanceOf(juniorInvestor_), investorBalance);
+        // assert: no more tokens left for junior investor
+        assertEq(juniorERC20.balanceOf(juniorInvestor_), 0);
+        // assert: all money has been moved to tranches from shelf
+        assertEq(currency.balanceOf(address(shelf)), 0);
     }
 
     function testFailNoRedeemingAllowed() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;
         supply(investorBalance, supplyAmount);
+
         juniorInvestor.doRedeem(supplyAmount);
-        assertPostCondition(investorBalance);
     }
 
-    function testFailShelfBankrupt() public {
+    function testFailInvestorNotWhitelisted() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;
         supply(investorBalance, supplyAmount);
+        operator.denyInvestor(juniorInvestor_);
+
+        juniorInvestor.doRedeem(supplyAmount);
+    }
+
+    function testFailNotEnoughToken() public {
+        uint investorBalance = 100 ether;
+        uint supplyAmount = 10 ether;
+        uint redeemAmount = 15 ether;
+        supply(investorBalance, supplyAmount);
         switchable.file("borrowFromTranches", false);
-        juniorInvestor.doRedeem(supplyAmount);
-        juniorInvestor.doRedeem(supplyAmount);
+        juniorInvestor.doRedeem(redeemAmount);
     }
 }

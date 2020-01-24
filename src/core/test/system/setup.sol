@@ -121,7 +121,10 @@ contract TestSetup {
         }
         if (distributor_ == "switchable") {
             distributorfab_ = address(new SwitchableDistributorFab());
+        } else if (distributor_ == "base") {
+            distributorfab_ = address(new BaseDistributorFab());
         }
+
 
         lenderDeployer = new LenderDeployer(rootAdmin_, currency_, address(new TrancheFab()), address(new AssessorFab()),
             operatorfab_, distributorfab_);
