@@ -19,12 +19,14 @@ import "../../system.t.sol";
 
 contract RedeemTest is SystemTest {
 
+    WhitelistOperator operator;
     SwitchableDistributor switchable;
 
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "switchable";
         baseSetup(juniorOperator_, distributor_);
+        operator = WhitelistOperator(address(juniorOperator));
         switchable = SwitchableDistributor(address(distributor));
         createTestUsers();
     }
@@ -77,7 +79,7 @@ contract RedeemTest is SystemTest {
         juniorInvestor.doRedeem(supplyAmount);
     }
 
-    function testFailNotEnoughMoney() public {
+    function testFailNotEnoughToken() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;
         uint redeemAmount = 15 ether;

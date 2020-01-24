@@ -76,11 +76,12 @@ contract RedeemTest is SystemTest {
         assertEq(shelf.balance() - currency.balanceOf(address(shelf)), 0);
     }
 
-    function testFailNotEnoughMoney() public {
+    function testFailNotEnoughToken() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 10 ether;
         uint redeemAmount = 15 ether;
         supply(investorBalance, supplyAmount);
         juniorInvestor.doRedeem(redeemAmount);
+        assertPostCondition(investorBalance);
     }
 }

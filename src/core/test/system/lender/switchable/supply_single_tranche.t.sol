@@ -19,12 +19,14 @@ import "../../system.t.sol";
 
 contract SupplyTest is SystemTest {
 
+    WhitelistOperator operator;
     SwitchableDistributor switchable;
 
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "switchable";
         baseSetup(juniorOperator_, distributor_);
+        operator = WhitelistOperator(address(juniorOperator));
         switchable = SwitchableDistributor(address(distributor));
         createTestUsers();
     }
