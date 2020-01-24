@@ -51,4 +51,11 @@ contract AssessorMock is Mock {
 
         return values_bool_return["redeemApprove"];
     }
+
+    function accrueTrancheInterest(address tranche) public returns (uint) {
+        calls["accrueTrancheInterest"]++;
+        values_address["accrueTrancheInterest_tranche"] = tranche;
+
+        return values_return["accrueTrancheInterest"];
+    }
 }

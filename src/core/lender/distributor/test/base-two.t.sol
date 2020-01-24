@@ -21,7 +21,7 @@ import "tinlake-math/math.sol";
 import "../../test/mock/tranche.sol";
 import "../../../borrower/test/mock/shelf.sol";
 import "../../../borrower/test/mock/token.sol";
-import "../base.sol";
+import "../default.sol";
 
 
 contract Hevm {
@@ -62,8 +62,8 @@ contract SeniorMock is JuniorMock  {
     }
 }
 
-contract BaseDistributorTwoTranches is DSTest, Math {
-    BaseDistributor distributor;
+contract DefaultDistributorTwoTranches is DSTest, Math {
+    DefaultDistributor distributor;
     address distributor_;
 
     JuniorMock junior;
@@ -84,7 +84,7 @@ contract BaseDistributorTwoTranches is DSTest, Math {
         senior = new SeniorMock(); senior_ = address(senior);
         shelf = new ShelfMock(); shelf_ = address(shelf);
         currency = new TokenMock(); currency_ = address(currency);
-        distributor = new BaseDistributor(currency_);
+        distributor = new DefaultDistributor(currency_);
         distributor_ = address(distributor);
         distributor.depend("shelf", shelf_);
 

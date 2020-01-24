@@ -17,9 +17,9 @@ pragma solidity >=0.5.12;
 
 import "ds-test/test.sol";
 import "tinlake-math/math.sol";
-import "../assessor.sol";
-import "./mock/pool.sol";
-import "./mock/tranche.sol";
+import "../base.sol";
+import "../../test/mock/pool.sol";
+import "../../test/mock/tranche.sol";
 
 contract AssessorLike {
     function calcTokenPrice(address tranche) public returns (uint);
@@ -29,16 +29,16 @@ contract TestTranche is TrancheMock {
         return AssessorLike(assessor_).calcTokenPrice(address(this));
     }
 }
-contract AssessorTest is DSTest,Math {
+contract AssessorTest is DSTest, Math {
     uint256 constant ONE = 10 ** 27;
-    Assessor assessor;
+    BaseAssessor assessor;
     address assessor_;
     PoolMock pool;
     TestTranche senior = new TestTranche();
     TestTranche junior = new TestTranche();
     function setUp() public {
         pool = new PoolMock();
-        assessor = new Assessor();
+        assessor = new BaseAssessor();
         assessor_ = address(assessor);
         assessor.depend("junior", address(junior));
         assessor.depend("senior", address(senior));
@@ -299,9 +299,6 @@ contract AssessorTest is DSTest,Math {
 
         assertTrue(assessor.redeemApprove(assessor.junior(), 25 ether));
         assertTrue(assessor.redeemApprove(assessor.junior(), 36 ether) == false);
-
-
-
 
     }
 
