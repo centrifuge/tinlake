@@ -66,10 +66,7 @@ contract BorrowTest is BaseSystemTest {
     function testBorrow() public {
         uint ceiling = 100 ether;
         uint amount = ceiling;
-        // issue nft for borrower
-        (uint tokenId, ) = issueNFT(borrower_);
-        // issue loan for borrower
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
+        (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
         // lock nft for borrower
         lockNFT(loanId, borrower_);
         // admin sets loan ceiling
@@ -82,8 +79,7 @@ contract BorrowTest is BaseSystemTest {
         uint ceiling = 200 ether;
         // borrow amount smaller then ceiling
         uint amount = safeDiv(ceiling ,2);
-        (uint tokenId, ) = issueNFT(borrower_);
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
+        (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
         lockNFT(loanId, borrower_);
         admin.setCeiling(loanId, ceiling);
         assertPreCondition(loanId, tokenId, amount);
@@ -93,8 +89,7 @@ contract BorrowTest is BaseSystemTest {
     function testFailBorrowNFTNotLocked() public {
         uint ceiling = 100 ether;
         uint amount = ceiling;
-        (uint tokenId, ) = issueNFT(borrower_);
-        uint loanId = borrower.issue(collateralNFT_, tokenId);  
+        (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
         // do not lock nft
         admin.setCeiling(loanId, ceiling);
         borrow(loanId, tokenId, amount);
@@ -103,10 +98,7 @@ contract BorrowTest is BaseSystemTest {
     function testFailBorrowNotLoanOwner() public {
         uint ceiling = 100 ether;
         uint amount = ceiling;
-        // issue nft for random user
-        (uint tokenId, ) = issueNFT(randomUser_);
-        // issue loan from random user
-        uint loanId = randomUser.issue(collateralNFT_, tokenId);
+         (uint tokenId, uint loanId) = issueNFTAndCreateLoan(randomUser_);
         // lock nft for random user
         randomUser.lock(loanId); 
         // admin sets loan ceiling
@@ -119,8 +111,7 @@ contract BorrowTest is BaseSystemTest {
         uint ceiling = 100 ether;
         // borrow amount higher then ceiling
         uint amount = safeMul(ceiling, 2);
-        (uint tokenId, ) = issueNFT(borrower_);
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
+        (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
         lockNFT(loanId, borrower_);
         admin.setCeiling(loanId, ceiling);
         borrow(loanId, tokenId, amount);

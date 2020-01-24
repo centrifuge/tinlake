@@ -60,13 +60,20 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
             juniorOperator.relyInvestor(juniorInvestor_);  
     }
 
-    // helpers
-    function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
-        tokenId = collateralNFT.issue(usr);
-        lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
+    // helpers borrower
+    function issueNFT(address usr) public returns (uint, bytes32) {
+        uint tokenId = collateralNFT.issue(usr);
+        bytes32 lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
         // user approves shelf too lock NFT
-        Borrower(usr).approveNFT(collateralNFT, address(shelf));
         return (tokenId, lookupId);
+    }
+
+    function issueNFTAndCreateLoan(address usr) public returns (uint, uint) {
+        // issue nft for borrower
+        (uint tokenId, ) = issueNFT(usr);
+        // issue loan for borrower
+        uint loanId = Borrower(usr).issue(collateralNFT_, tokenId);
+        return (tokenId, loanId);
     }
 
     function lockNFT(uint loanId, address usr) public {
@@ -77,6 +84,17 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     function transferNFT(address sender, address recipient, uint tokenId) public {
         Borrower(sender).approveNFT(collateralNFT, address(this));
         collateralNFT.transferFrom(sender, recipient, tokenId);
+    }
+
+    // helpers admin
+    function setLoanParameters(uint loanId, uint ceiling, uint rate, uint speed) public {
+        // admin sets loan ceiling
+        admin.setCeiling(loanId, ceiling);
+        // init rate group
+        admin.doInitRate(rate, speed);
+        // add loan to rate group
+        admin.doAddRate(loanId, rate);
+        // admin sets loan rate
     }
 
     function setupCurrencyOnLender(uint amount) public {
