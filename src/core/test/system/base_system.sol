@@ -131,7 +131,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
     function repayLoan(address usr, uint loanId, uint currencyAmount) public {
         // transfer extra funds, so that usr can pay for interest
-        topup(usr);
+        topUp(usr);
         // borrower allows shelf full control over borrower tokens
         Borrower(usr).doApproveCurrency(address(shelf), uint(-1));
         // repay loan
@@ -176,7 +176,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     function supplyFunds(uint amount, address addr) public {
         currency.mint(address(addr), amount);
     }
-    function topup(address usr) public {
+    function topUp(address usr) public {
         currency.mint(address(usr), 100 ether);
     }
 }

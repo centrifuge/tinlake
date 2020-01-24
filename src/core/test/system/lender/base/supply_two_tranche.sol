@@ -19,7 +19,13 @@ import "../../system.t.sol";
 
 contract SupplyTwoTrancheTest is BaseSystemTest {
 
+    Hevm hevm;
+
     function setUp() public {
+
+        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm.warp(1234567);
+
         bytes32 operator_ = "whitelist";
         bytes32 distributor_ = "default";
         bool deploySeniorTranche = true;
@@ -30,27 +36,84 @@ contract SupplyTwoTrancheTest is BaseSystemTest {
 
     function testSimpleSupply() public {
         uint investorBalance = 100 ether;
-        currency.mint(juniorInvestor_, 100 ether);
-        currency.mint(seniorInvestor_, 100 ether);
+        currency.mint(juniorInvestor_, investorBalance);
+        currency.mint(seniorInvestor_, investorBalance);
 
-        uint supplyAmount = 10 ether;
-        juniorInvestor.doSupply(supplyAmount);
-        seniorInvestor.doSupply(supplyAmount);
+        uint jSupplyAmount = 80 ether;
+        uint sSupplyAmount = 20 ether;
 
-        assertEq(senior)
+        juniorInvestor.doSupply(jSupplyAmount);
+        seniorInvestor.doSupply(sSupplyAmount);
 
+        assertEq(currency.balanceOf(address(junior)), jSupplyAmount);
+        assertEq(juniorERC20.balanceOf(juniorInvestor_), jSupplyAmount);
+        assertEq(currency.balanceOf(address(senior)), sSupplyAmount);
+        assertEq(seniorERC20.balanceOf(seniorInvestor_), sSupplyAmount);
+
+        uint minJuniorRatio = 8 * 10**26;
+        assessor.file("minJuniorRatio" , minJuniorRatio);
+
+        // doesn't break ratio, junior supply now 90 and senior supply 20
+        uint jAdditionalSupply = 10 ether;
+        juniorInvestor.doSupply(jAdditionalSupply);
+
+        assertEq(currency.balanceOf(address(junior)), jSupplyAmount + jAdditionalSupply);
+        assertEq(juniorERC20.balanceOf(juniorInvestor_), jSupplyAmount + jAdditionalSupply);
+
+        // new loan, should take all from junior and 10 from senior
+        uint ceiling = 100 ether;
+        createLoanAndWithdraw(borrower_, ceiling);
+
+        assertEq(currency.balanceOf(address(junior)), 0);
+        assertEq(currency.balanceOf(address(senior)), 10 ether);
+        assertEq(senior.debt(), 10 ether);
+
+        hevm.warp(now + 1 days);
+
+        assertEq(senior.debt(), 10.5 ether);
+
+        // change the ratio, senior can still supply
+        assessor.file("minJuniorRatio" , 0);
+        seniorInvestor.doSupply(sSupplyAmount);
     }
 
-    function assertPreCondition() public view {
-        // assert:
-    }
+    function testFailSimpleSupply() public {
+        uint investorBalance = 100 ether;
+        currency.mint(juniorInvestor_, investorBalance);
+        currency.mint(seniorInvestor_, investorBalance);
 
-    function assertPostCondition(uint investorBalance, uint supplyAmount) public {
-        // assert: junior investor currency balance is equal to the inital balance - how much was supplied
-        assertEq(currency.balanceOf(juniorInvestor_), investorBalance - supplyAmount);
-        // assert: junior investor token balance == amount supplied (because no other currency was supplied yet)
-        assertEq(juniorERC20.balanceOf(juniorInvestor_), supplyAmount);
-        //assert: balance supplied has been moved to shelf
-        assertEq(currency.balanceOf(address(shelf)), supplyAmount);
+        uint jSupplyAmount = 80 ether;
+        uint sSupplyAmount = 20 ether;
+
+        juniorInvestor.doSupply(jSupplyAmount);
+        seniorInvestor.doSupply(sSupplyAmount);
+
+        assertEq(currency.balanceOf(address(junior)), jSupplyAmount);
+        assertEq(juniorERC20.balanceOf(juniorInvestor_), jSupplyAmount);
+        assertEq(currency.balanceOf(address(senior)), sSupplyAmount);
+        assertEq(seniorERC20.balanceOf(seniorInvestor_), sSupplyAmount);
+
+        uint minJuniorRatio = 8 * 10**26;
+        assessor.file("minJuniorRatio" , minJuniorRatio);
+
+        // doesn't break ratio, junior supply now 90 and senior supply 20
+        uint jAdditionalSupply = 10 ether;
+        juniorInvestor.doSupply(jAdditionalSupply);
+
+        assertEq(currency.balanceOf(address(junior)), jSupplyAmount + jAdditionalSupply);
+        assertEq(juniorERC20.balanceOf(juniorInvestor_), jSupplyAmount + jAdditionalSupply);
+
+        // new loan, should take all from junior and 10 from senior
+        uint ceiling = 100 ether;
+        createLoanAndWithdraw(borrower_, ceiling);
+
+        assertEq(currency.balanceOf(address(junior)), 0);
+        assertEq(currency.balanceOf(address(senior)), 10 ether);
+        assertEq(senior.debt(), 10 ether);
+
+        hevm.warp(now + 1 days);
+
+        // break ratio, senior cannot supply
+        seniorInvestor.doSupply(sSupplyAmount);
     }
 }

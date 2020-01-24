@@ -17,12 +17,7 @@ pragma solidity >=0.5.12;
 
 import "../../system.t.sol";
 
-contract RedeemTwoTrancheTest is BaseSystemTest {
-
-    WhitelistOperator jOperator;
-    WhitelistOperator sOperator;
-
-    DefaultDistributor dDistributor;
+contract SupplyTwoTrancheTest is BaseSystemTest {
 
     Hevm hevm;
 
@@ -36,20 +31,13 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
 
-        createTestUsers();
-        createSeniorInvestor();
-
-        jOperator = WhitelistOperator(address(juniorOperator));
-        sOperator = WhitelistOperator(address(seniorOperator));
-        dDistributor = DefaultDistributor(address(distributor));
-
+        createTestUsers(deploySeniorTranche);
     }
 
     function supplySenior(uint amount) public {
         currency.mint(seniorInvestor_, amount);
         seniorInvestor.doSupply(amount);
         assertEq(currency.balanceOf(address(lenderDeployer.senior())), amount);
-
         assertEq(seniorERC20.balanceOf(seniorInvestor_), amount);
         assertEq(lenderDeployer.senior().debt(), 0);
     }
@@ -67,7 +55,6 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
     function testFIAssessor_SimpleSupply() public {
         uint seniorInvestorAmount = 100 ether;
         uint juniorInvestorAmount = 200 ether;
-
         supplySenior(seniorInvestorAmount);
         supplyJunior(juniorInvestorAmount);
 
