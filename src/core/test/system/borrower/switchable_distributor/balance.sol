@@ -16,23 +16,16 @@
 pragma solidity >=0.5.12;
 
 import "../../system.sol";
-import "../../users/borrower.sol";
 
 contract BalanceTest is SystemTest {
-
-    Borrower borrower;
-    address borrower_;
         
     SwitchableDistributor distributor;
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "switchable";
         baseSetup(juniorOperator_, distributor_);
-        // setup users
+        createTestUsers();
         distributor = SwitchableDistributor(address(lenderDeployer.distributor()));
-        borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
-        borrower_ = address(borrower);
-
     }
     
     function balanceTake() public {
@@ -131,11 +124,5 @@ contract BalanceTest is SystemTest {
         supplyFunds(giveAmount, address(shelf));
         // do not deactivate borrow
         balanceGive();
-    }
-
-    // Helper to supply shelf or tranches with currency without using supply or repay, since these functions are usign balance internally.
-    function supplyFunds(uint amount, address addr) public {
-        currency.mint(address(this), amount);
-        currency.transferFrom(address(this), address(addr), amount);
     }
 }

@@ -16,24 +16,14 @@
 pragma solidity >=0.5.12;
 
 import "../system.sol";
-import "../users/borrower.sol";
 
 contract IssueTest is SystemTest {
-
-    Borrower borrower;
-    address borrower_;
-        
-    Borrower randomUser;
-    address randomUser_;
 
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "switchable";
         baseSetup(juniorOperator_, distributor_);
-        borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
-        borrower_ = address(borrower);
-        randomUser = new Borrower(address(pile), address(distributor), currency_, address(pile));
-        randomUser_ = address(randomUser);
+        createTestUsers();
     }
 
     function issueLoan(uint tokenId, bytes32 lookupId) public {

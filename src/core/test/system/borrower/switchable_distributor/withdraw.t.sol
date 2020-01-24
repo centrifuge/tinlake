@@ -16,23 +16,8 @@
 pragma solidity >=0.5.12;
 
 import "../../system.sol";
-import "../../users/borrower.sol";
-import "../../users/admin.sol";
-import "../../users/investor.sol";
 
 contract WithdrawTest is SystemTest {
-
-    Borrower borrower;
-    address borrower_;
-   
-    AdminUser public admin;
-    address admin_;
-
-    Investor public juniorInvestor;
-    address public juniorInvestor_;
-
-    Borrower randomUser;
-    address randomUser_;
 
     SwitchableDistributor distributor;
         
@@ -40,22 +25,8 @@ contract WithdrawTest is SystemTest {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "switchable";
         baseSetup(juniorOperator_, distributor_);
+        createTestUsers();
         distributor = SwitchableDistributor(address(lenderDeployer.distributor()));
-        // setup users
-        borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
-        borrower_ = address(borrower);
-
-        randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
-        randomUser_ = address(randomUser);
-
-        admin = new AdminUser(address(shelf), address(pile), address(ceiling), address(title), address(distributor));
-        admin_ = address(admin);
-        rootAdmin.relyBorrowAdmin(admin_);
-
-        juniorInvestor = new Investor(address(juniorOperator), currency_, address(juniorERC20));
-        juniorInvestor_ = address(juniorInvestor);
-        WhitelistOperator juniorOperator = WhitelistOperator(address(juniorOperator));
-        juniorOperator.relyInvestor(juniorInvestor_);
     }
 
     function withdraw(uint loanId, uint tokenId, uint amount, address usr) public {
@@ -273,10 +244,5 @@ contract WithdrawTest is SystemTest {
         admin.doAddRate(loanId, rate);
         // borrower borrows -> loan[balance] = amount
         Borrower(usr).borrow(loanId, amount);
-    }
-    
-    // Helper to supply shelf or tranches with currency without using supply or repay, since these functions are usign balance internally.
-    function supplyFunds(uint amount, address addr) public {
-        currency.mint(address(addr), amount);
     }
 }
