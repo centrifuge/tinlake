@@ -21,7 +21,7 @@ import {SwitchableDistributor} from "../../../lender/distributor/switchable.sol"
 contract RedeemTest is SystemTest {
 
     WhitelistOperator operator;
-    Assessor assessor;
+    DefaultAssessor assessor;
     SwitchableDistributor switchable;
 
     Investor juniorInvestor;

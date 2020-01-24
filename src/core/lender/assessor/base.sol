@@ -16,7 +16,7 @@
 pragma solidity >=0.5.12;
 
 import "ds-note/note.sol";
-import "tinlake-math/interest.sol";
+import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
 
 contract TrancheLike {
@@ -41,7 +41,7 @@ contract PoolLike {
     function totalValue() public returns(uint);
 }
 
-contract BaseAssessor is Interest, Auth {
+contract BaseAssessor is Math, Auth {
     // --- Tranches ---
     address public senior;
     address public junior;

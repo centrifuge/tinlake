@@ -20,7 +20,7 @@ import "../system.t.sol";
 contract SupplyTest is SystemTest {
 
     WhitelistOperator operator;
-    Assessor assessor;
+    DefaultAssessor assessor;
     SwitchableDistributor switchable;
 
     Investor juniorInvestor;

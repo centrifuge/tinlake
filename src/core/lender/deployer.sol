@@ -17,7 +17,7 @@ import "tinlake-auth/auth.sol";
 pragma solidity >=0.5.12;
 
 // lender contracts
-import {Assessor} from "./assessor/assessor.sol";
+import {DefaultAssessor} from "./assessor/default.sol";
 import {AllowanceOperator} from "./tranche/operator/allowance.sol";
 import {WhitelistOperator} from "./tranche/operator/whitelist.sol";
 import {Tranche} from "./tranche/tranche.sol";
@@ -43,8 +43,8 @@ contract SeniorTrancheFab {
 }
 
 contract AssessorFab {
-    function newAssessor() public returns (Assessor assessor) {
-        assessor = new Assessor();
+    function newAssessor() public returns (DefaultAssessor assessor) {
+        assessor = new DefaultAssessor();
         assessor.rely(msg.sender);
         assessor.deny(address(this));
     }
@@ -133,7 +133,7 @@ contract LenderDeployer is Auth {
     address public currency;
 
     // Contracts
-    Assessor public assessor;
+    DefaultAssessor public assessor;
     DistributorLike public distributor;
 
     // junior

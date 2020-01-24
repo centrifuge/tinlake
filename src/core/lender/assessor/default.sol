@@ -16,8 +16,9 @@
 pragma solidity >=0.5.12;
 
 import "./base.sol";
+import "tinlake-math/interest.sol";
 
-contract Assessor is BaseAssessor {
+contract DefaultAssessor is BaseAssessor, Interest {
 
     // accrueTrancheInterest can implement different interest models
     function accrueTrancheInterest(address tranche_) public returns (uint) {

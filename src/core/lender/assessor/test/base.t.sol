@@ -17,7 +17,7 @@ pragma solidity >=0.5.12;
 
 import "ds-test/test.sol";
 import "tinlake-math/math.sol";
-import "../assessor.sol";
+import "../base.sol";
 import "../../test/mock/pool.sol";
 import "../../test/mock/tranche.sol";
 
@@ -31,14 +31,14 @@ contract TestTranche is TrancheMock {
 }
 contract AssessorTest is DSTest, Math {
     uint256 constant ONE = 10 ** 27;
-    Assessor assessor;
+    BaseAssessor assessor;
     address assessor_;
     PoolMock pool;
     TestTranche senior = new TestTranche();
     TestTranche junior = new TestTranche();
     function setUp() public {
         pool = new PoolMock();
-        assessor = new Assessor();
+        assessor = new BaseAssessor();
         assessor_ = address(assessor);
         assessor.depend("junior", address(junior));
         assessor.depend("senior", address(senior));

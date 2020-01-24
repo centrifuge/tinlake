@@ -17,7 +17,7 @@ pragma solidity >=0.5.12;
 
 import "ds-test/test.sol";
 import "tinlake-math/math.sol";
-import "../assessor.sol";
+import "../default.sol";
 import "../../test/mock/pool.sol";
 import "../../test/mock/tranche.sol";
 
@@ -36,7 +36,7 @@ contract Hevm {
 
 contract AssessorTest is DSTest, Math {
     uint256 constant ONE = 10 ** 27;
-    Assessor assessor;
+    DefaultAssessor assessor;
     address assessor_;
     PoolMock pool;
     TestTranche senior = new TestTranche();
@@ -46,7 +46,7 @@ contract AssessorTest is DSTest, Math {
 
     function setUp() public {
         pool = new PoolMock();
-        assessor = new Assessor();
+        assessor = new DefaultAssessor();
         assessor_ = address(assessor);
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
