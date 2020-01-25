@@ -20,23 +20,14 @@ import "../../system.t.sol";
 contract RedeemTest is BaseSystemTest {
 
     WhitelistOperator operator;
-    DefaultDistributor dDistributor;
-
-    Investor juniorInvestor;
-    address  juniorInvestor_;
 
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "default";
-        baseSetup(juniorOperator_, distributor_, false);
-        operator = WhitelistOperator(address(juniorOperator));
-        dDistributor = DefaultDistributor(address(lenderDeployer.distributor()));
+        bool deploySeniorTranche = false;
 
-        // setup users
-        juniorInvestor = new Investor(address(operator), currency_, address(juniorERC20));
-        juniorInvestor_ = address(juniorInvestor);
-
-        operator.relyInvestor(juniorInvestor_);
+        baseSetup(juniorOperator_, distributor_, deploySeniorTranche);
+        createTestUsers(deploySeniorTranche);
     }
 
     function supply(uint balance, uint amount) public {

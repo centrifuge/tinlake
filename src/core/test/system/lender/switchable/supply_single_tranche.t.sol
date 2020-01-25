@@ -28,7 +28,7 @@ contract SupplyTest is BaseSystemTest {
         baseSetup(juniorOperator_, distributor_, false);
         operator = WhitelistOperator(address(juniorOperator));
         switchable = SwitchableDistributor(address(distributor));
-        createTestUsers();
+        createTestUsers(false);
     }
 
     function testSimpleSupply() public {
