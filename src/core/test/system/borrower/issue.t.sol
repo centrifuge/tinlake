@@ -23,7 +23,7 @@ contract IssueTest is BaseSystemTest {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "default";
         baseSetup(juniorOperator_, distributor_, false);
-        createTestUsers();
+        createTestUsers(false);
     }
 
     function issueLoan(uint tokenId, bytes32 lookupId) public {

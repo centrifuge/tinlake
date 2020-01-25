@@ -19,37 +19,13 @@ import "../../base_system.sol";
 
 contract RedeemTwoTrancheTest is BaseSystemTest {
 
-    WhitelistOperator jOperator;
-    WhitelistOperator sOperator;
-
-    DefaultDistributor dDistributor;
-
-    Investor juniorInvestor;
-    address  juniorInvestor_;
-
-    Investor seniorInvestor;
-    address  seniorInvestor_;
-
     function setUp() public {
         bytes32 operator_ = "whitelist";
         bytes32 distributor_ = "default";
         bool deploySeniorTranche = true;
+
         baseSetup(operator_, distributor_, deploySeniorTranche);
-
-        jOperator = WhitelistOperator(address(juniorOperator));
-        sOperator = WhitelistOperator(address(seniorOperator));
-        dDistributor = DefaultDistributor(address(lenderDeployer.distributor()));
-
-        // setup users
-        juniorInvestor = new Investor(address(jOperator), currency_, address(juniorERC20));
-        juniorInvestor_ = address(juniorInvestor);
-
-        // setup users
-        seniorInvestor = new Investor(address(jOperator), currency_, address(seniorERC20));
-        seniorInvestor_ = address(seniorInvestor);
-
-        jOperator.relyInvestor(juniorInvestor_);
-        sOperator.relyInvestor(seniorInvestor_);
+        createTestUsers(deploySeniorTranche);
     }
 
     function supply(uint balance, uint amount) public {

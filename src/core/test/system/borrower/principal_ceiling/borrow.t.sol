@@ -23,7 +23,7 @@ contract BorrowTest is BaseSystemTest {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "default";
         baseSetup(juniorOperator_, distributor_, false);
-        createTestUsers();
+        createTestUsers(false);
     }
     
     function borrow(uint loanId, uint tokenId, uint amount) public {

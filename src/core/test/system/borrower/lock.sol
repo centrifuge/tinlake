@@ -23,7 +23,7 @@ contract LockTest is BaseSystemTest {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "default";
         baseSetup(juniorOperator_, distributor_, false);
-        createTestUsers();
+        createTestUsers(false);
     }
     
     function lock(uint loanId, uint tokenId) public {

@@ -25,7 +25,7 @@ contract CollectTest is BaseSystemTest {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "switchable";
         baseSetup(juniorOperator_, distributor_, false);
-        createTestUsers();
+        createTestUsers(false);
 
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
@@ -90,7 +90,7 @@ contract CollectTest is BaseSystemTest {
             admin.whitelistKeeper(usr);        
         }
         // topup keeper 
-        if (doTopup) { topup(keeper_); }
+        if (doTopup) { topUp(keeper_); }
         // keeper approves shelf to take currency
         if (doApprove) { keeper.approveCurrency(address(shelf), uint(-1)); }
     }

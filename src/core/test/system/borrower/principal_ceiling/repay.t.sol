@@ -27,7 +27,7 @@ contract RepayTest is BaseSystemTest {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "default";
         baseSetup(juniorOperator_, distributor_, false);
-        createTestUsers();
+        createTestUsers(false);
         
         distributor = DefaultDistributor(address(lenderDeployer.distributor()));
 
@@ -81,7 +81,7 @@ contract RepayTest is BaseSystemTest {
     function borrowAndRepay(address usr, uint ceiling, uint rate, uint speed, uint expectedDebt, uint repayAmount) public {
         (uint loanId, uint tokenId) = createLoanAndWithdraw(usr, ceiling, rate, speed);
         // supply borrower with additional funds to pay for accrued interest
-        topup(usr);
+        topUp(usr);
         // borrower allows shelf full control over borrower tokens
         Borrower(usr).doApproveCurrency(address(shelf), uint(-1));
         //repay after 1 year
@@ -147,7 +147,7 @@ contract RepayTest is BaseSystemTest {
         uint repayAmount = expectedDebt;
 
          // supply borrower with additional funds to pay for accrued interest
-        topup(borrower_);
+        topUp(borrower_);
         borrowAndRepay(randomUser_, ceiling, rate, speed, expectedDebt, repayAmount);
     }
 
@@ -196,7 +196,7 @@ contract RepayTest is BaseSystemTest {
         hevm.warp(now + 365 days);
 
         // supply borrower with additional funds to pay for accrued interest
-        topup(borrower_);
+        topUp(borrower_);
         // borrower allows shelf full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
         repay(loanId, tokenId, repayAmount, expectedDebt);
@@ -219,7 +219,7 @@ contract RepayTest is BaseSystemTest {
         // borrower does not borrow
         
         // supply borrower with additional funds to pay for accrued interest
-        topup(borrower_);
+        topUp(borrower_);
         // borrower allows shelf full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
         repay(loanId, tokenId, repayAmount, expectedDebt);
@@ -239,7 +239,7 @@ contract RepayTest is BaseSystemTest {
         hevm.warp(now + 365 days);
 
          // supply borrower with additional funds to pay for accrued interest
-        topup(borrower_);
+        topUp(borrower_);
         repay(loanId, tokenId, repayAmount, expectedDebt);
     }
 }
