@@ -80,18 +80,18 @@ contract CollectTest is BaseSystemTest {
         bool isAssigned, bool doTopup, bool doApprove) public { 
         // set loan threshold
         admin.setThreshold(loanId, threshold);
-        // keeper assigned to a certain loan. Can just be collected by this keeper
+        // keeper assigned to a certain loan. Loan can just be collected by this keeper
         if (isAssigned) { admin.addKeeper(loanId, keeper_, recoveryPrice); }
         // keeper whitelisted to call collect and collect all loans that are not assigned
         if (isWhitelisted) { 
-            // just set the price, do not assign keeper to theloan
+            // just set the price, do not assign keeper to the loan
             admin.setCollectPrice(loanId, recoveryPrice);
             // add keeper to whitelist
             admin.whitelistKeeper(usr);        
         }
+        // topup keeper 
         if (doTopup) { topup(keeper_); }
-
-        // approveCurrency
+        // keeper approves shelf to take currency
         if (doApprove) { keeper.approveCurrency(address(shelf), uint(-1)); }
     }
 
