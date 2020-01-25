@@ -26,7 +26,7 @@ contract WithdrawTest is BaseSystemTest {
         bytes32 distributor_ = "default";
         baseSetup(juniorOperator_, distributor_, false);
         createTestUsers(false);
-        distributor = SwitchableDistributor(address(lenderDeployer.distributor()));
+        distributor = DefaultDistributor(address(lenderDeployer.distributor()));
     }
 
     function withdraw(uint loanId, uint tokenId, uint amount, address usr) public {

@@ -127,9 +127,7 @@ contract TestSetup {
             operatorFab_ = address(new AllowanceOperatorFab());
         }
 
-        if (distributor_ == "switchable") {
-            distributorFab_ = address(new SwitchableDistributorFab());
-        } else if (distributor_ == "default") {
+        if (distributor_ == "default") {
             distributorFab_ = address(new DefaultDistributorFab());
         }
 
