@@ -47,7 +47,7 @@ contract TestSetup {
     OperatorLike juniorOperator;
     ERC20 seniorERC20;
     OperatorLike seniorOperator;
-    AssessorLike assessor;
+    AssessorLike public assessor;
 
     // Deployers
     BorrowerDeployer public borrowerDeployer;

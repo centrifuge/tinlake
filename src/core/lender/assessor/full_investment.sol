@@ -17,8 +17,9 @@ pragma solidity >=0.5.12;
 
 import "./base.sol";
 import "tinlake-math/interest.sol";
+import "ds-test/test.sol";
 
-contract FullInvestmentAssessor is BaseAssessor, Interest {
+contract FullInvestmentAssessor is BaseAssessor, Interest,DSTest {
     // accrueTrancheInterest can implement different interest models
     function accrueTrancheInterest(address tranche_) public returns (uint) {
         SeniorTrancheLike tranche = SeniorTrancheLike(tranche_);
@@ -28,6 +29,8 @@ contract FullInvestmentAssessor is BaseAssessor, Interest {
 
         }
         uint interestBearingAmount = safeAdd(safeAdd(tranche.borrowed(), tranche.interest()), tranche.balance());
+        emit log_named_uint("bearing", interestBearingAmount);
+        emit log_named_uint("after", rmul(rpow(tranche.ratePerSecond(), now - tranche.lastUpdated(), ONE), interestBearingAmount));
 
         return safeSub(rmul(rpow(tranche.ratePerSecond(), now - tranche.lastUpdated(), ONE), interestBearingAmount), interestBearingAmount);
     }

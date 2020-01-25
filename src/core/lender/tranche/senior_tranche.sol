@@ -85,7 +85,7 @@ contract SeniorTranche is Tranche, Interest {
         super.borrow(usr, currencyAmount);
     }
 
-    function drip() internal {
+    function drip() public {
         if (now >= lastUpdated) {
             interest = safeAdd(interest, assessor.accrueTrancheInterest(address(this)));
             lastUpdated = now;
