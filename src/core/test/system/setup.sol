@@ -34,8 +34,8 @@ contract TestSetup {
     Pile pile;
     Title title;
     Principal ceiling;
-    // CollectorLike collector;
-    // ThresholdLike threshold;
+    Collector collector;
+    PushRegistry threshold;
     // PricePoolLike pricePool;
     // LightSwitchLike lightswitch;
 
@@ -108,8 +108,8 @@ contract TestSetup {
         pile = borrowerDeployer.pile();
         ceiling = borrowerDeployer.principal();
         title = borrowerDeployer.title();
-        // collector = borrowerDeployer.collector();
-        // threshold = borrowerDeployer.threshold();
+        collector = borrowerDeployer.collector();
+        threshold = borrowerDeployer.threshold();
         // pricePool = borrowerDeployer.pricePool();
         // lightswitch = borrowerDeployer.lightswitch();
 

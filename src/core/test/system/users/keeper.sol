@@ -15,19 +15,24 @@
 
 pragma solidity >=0.5.12;
 
-import "ds-test/test.sol";
 import { Title } from "tinlake-title/title.sol";
 import "../interfaces.sol";
 
-contract Keeper is DSTest {
-    CollectorLike collector
+contract Keeper {
+    ERC20Like currency;
+    CollectorLike collector;
 
-    constructor (address collector_) public {
+    constructor (address collector_, address currency_) public {
         collector = CollectorLike(collector_);
+        currency = ERC20Like(currency_);
     }
 
-    function collect(uint loan, address usr) public {
-        collector.collect(loan, usr);
+    function collect(uint loan) public {
+        collector.collect(loan);
+    }
+
+    function approveCurrency(address usr, uint currencyPrice) public {
+        currency.approve(usr, currencyPrice);
     }
 
 }

@@ -47,9 +47,13 @@ contract Collector is DSNote, Auth {
     
      // -- Collectors --
     mapping (address => uint) public collectors;
-    function relyCollector(address usr) public auth note { collectors[usr] = 1; }
-    function denyCollector(address usr) public auth note { collectors[usr] = 0; }
-    modifier auth_collector { require(collectors[msg.sender] == 1); _; }
+    function relyCollector(address usr) public auth note { 
+         collectors[usr] = 1; 
+         }
+    function denyCollector(address usr) public auth note {
+            collectors[usr] = 0; }
+    modifier auth_collector { 
+        require(collectors[msg.sender] == 1); _; }
 
     // --- Data ---
     RegistryLike threshold;
@@ -58,6 +62,7 @@ contract Collector is DSNote, Auth {
         address buyer;
         uint    nftPrice;
     }
+    
     mapping (uint => Option) public options;
 
     DistributorLike distributor;

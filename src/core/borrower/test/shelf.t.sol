@@ -112,9 +112,8 @@ contract ShelfTest is DSTest {
     function _recover(uint loan_, address usr_, uint wad_, uint debt_) internal {
         pile.setReturn("debt_loan", debt_);
         shelf.recover(loan_, usr_, wad_);
-
         assertEq(pile.calls("accrue"), 2);
-        assertEq(pile.calls("decDebt"), 2);
+        assertEq(pile.calls("decDebt"), 1);
 
         assertEq(currency.calls("transferFrom"), 2);
         assertEq(currency.values_address("transferFrom_from"), usr_);

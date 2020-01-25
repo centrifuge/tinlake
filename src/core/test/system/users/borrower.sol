@@ -15,11 +15,10 @@
 
 pragma solidity >=0.5.12;
 
-import "ds-test/test.sol";
 import { Title } from "tinlake-title/title.sol";
 import "../interfaces.sol";
 
-contract Borrower is DSTest {
+contract Borrower {
     ERC20Like tkn;
     ShelfLike shelf;
     TDistributorLike distributor;
@@ -85,7 +84,7 @@ contract Borrower is DSTest {
         repayAction(loan, debt);
     }
 
-    function doApproveCurrency(address usr, uint wad) public {
-        tkn.approve(usr, wad);
+    function doApproveCurrency(address usr, uint currencyPrice) public {
+        tkn.approve(usr, currencyPrice);
     }
 }

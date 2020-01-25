@@ -13,11 +13,10 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 pragma solidity >=0.5.12;
 
-import "ds-test/test.sol";
 import "../../../lender/deployer.sol";
 import "../interfaces.sol";
 
-contract Investor is DSTest {
+contract Investor {
     TOperatorLike operator;
     ERC20Like currency;
     ERC20Like token;
