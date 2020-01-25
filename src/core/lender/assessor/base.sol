@@ -28,6 +28,7 @@ contract SeniorTrancheLike {
     function debt() public returns(uint);
     function borrowed() public returns(uint);
     function interest() public returns(uint);
+    function balance() public returns(uint);
 
     function ratePerSecond() public returns(uint);
     function lastUpdated() public returns(uint);
@@ -98,7 +99,7 @@ contract BaseAssessor is Math, Auth {
             return ONE;
         }
         if (assetValue == 0) {
-            revert("tranche is bankrupt");
+           revert("tranche is bankrupt");
         }
         return rdiv(assetValue, tokenSupply);
     }

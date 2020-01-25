@@ -18,6 +18,7 @@ pragma solidity >=0.5.12;
 
 // lender contracts
 import {DefaultAssessor} from "./assessor/default.sol";
+import {FullInvestmentAssessor} from "./assessor/full_investment.sol";
 import {AllowanceOperator} from "./tranche/operator/allowance.sol";
 import {WhitelistOperator} from "./tranche/operator/whitelist.sol";
 import {Tranche} from "./tranche/tranche.sol";
@@ -36,17 +37,32 @@ contract TrancheFab {
 
 contract SeniorTrancheFab {
     function newSeniorTranche(address currency, address token, address assessor) public returns (SeniorTranche tranche) {
-        tranche = new SeniorTranche(currency, token, assessor);
+        tranche = new SeniorTranche(token, currency, assessor);
         tranche.rely(msg.sender);
         tranche.deny(address(this));
     }
 }
 
+
 contract AssessorFab {
-    function newAssessor() public returns (DefaultAssessor assessor) {
-        assessor = new DefaultAssessor();
+    function newAssessor() public returns (address);
+}
+
+contract FullInvestmentAssessorFab {
+    function newAssessor() public returns (address) {
+        FullInvestmentAssessor assessor = new FullInvestmentAssessor();
         assessor.rely(msg.sender);
         assessor.deny(address(this));
+        return address(assessor);
+    }
+}
+
+contract DefaultAssessorFab {
+    function newAssessor() public returns (address) {
+        DefaultAssessor assessor = new DefaultAssessor();
+        assessor.rely(msg.sender);
+        assessor.deny(address(this));
+        return address(assessor);
     }
 }
 
@@ -138,7 +154,7 @@ contract LenderDeployer is Auth {
     address public currency;
 
     // Contracts
-    DefaultAssessor public assessor;
+    AssessorLike public assessor;
     DistributorLike public distributor;
 
     // junior
@@ -182,7 +198,7 @@ contract LenderDeployer is Auth {
         distributor.rely(rootAdmin);
     }
 
-    function deploySeniorTranche(string memory symbol, string memory name) public auth {
+    function deploySeniorTranche(string memory symbol, string memory name, uint ratePerSecond) public auth {
         require(address(assessor) != address(0));
         seniorERC20 = new ERC20(symbol, name);
         senior = seniorTrancheFab.newSeniorTranche(currency, address(seniorERC20), address(assessor));
@@ -190,6 +206,7 @@ contract LenderDeployer is Auth {
         // senior tranche can mint
         seniorERC20.rely(address(senior));
         senior.rely(rootAdmin);
+        senior.file("rate", ratePerSecond);
     }
 
     function deployJuniorTranche(string memory symbol, string memory name) public auth {
@@ -202,7 +219,7 @@ contract LenderDeployer is Auth {
     }
 
     function deployAssessor() public auth {
-        assessor = assessorFab.newAssessor();
+        assessor = AssessorLike(assessorFab.newAssessor());
         assessor.rely(rootAdmin);
     }
 

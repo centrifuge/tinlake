@@ -22,15 +22,13 @@ contract SupplyTest is BaseSystemTest {
     WhitelistOperator operator;
     DefaultDistributor base;
 
-    Investor juniorInvestor;
-    address  juniorInvestor_;
 
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "default";
         baseSetup(juniorOperator_, distributor_, false);
         operator = WhitelistOperator(address(juniorOperator));
-        base = DefaultDistributor(address(distributor));
+        base = DefaultDistributor(address(lenderDeployer.distributor()));
 
         // setup users
         juniorInvestor = new Investor(address(operator), currency_, address(juniorERC20));

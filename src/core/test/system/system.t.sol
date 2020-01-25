@@ -23,7 +23,7 @@ contract STest is BaseSystemTest {
     Hevm public hevm;
     
     function setUp() public {
-        baseSetup("whitelist", "switchable", false);
+        baseSetup("whitelist", "default", false);
         createTestUsers();
         // setup hevm
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);

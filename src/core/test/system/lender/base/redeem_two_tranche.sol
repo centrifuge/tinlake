@@ -38,7 +38,7 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
 
         jOperator = WhitelistOperator(address(juniorOperator));
         sOperator = WhitelistOperator(address(seniorOperator));
-        dDistributor = DefaultDistributor(address(distributor));
+        dDistributor = DefaultDistributor(address(lenderDeployer.distributor()));
 
         // setup users
         juniorInvestor = new Investor(address(jOperator), currency_, address(juniorERC20));

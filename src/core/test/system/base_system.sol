@@ -35,6 +35,9 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     Investor public juniorInvestor;
     address public juniorInvestor_;
 
+    Investor public seniorInvestor;
+    address public seniorInvestor_;
+
     Borrower randomUser;
     address randomUser_;
 
@@ -43,7 +46,14 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
     function baseSetup(bytes32 operator_, bytes32 distributor_, bool senior_) public {
         // setup deployment
-        deployContracts(operator_, distributor_, senior_);
+        bytes32 assessor_ = "default";
+        deployContracts(operator_, distributor_, assessor_,  senior_);
+        rootAdmin.relyLenderAdmin(address(this), senior_);
+    }
+
+    function baseSetup(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_) public {
+        // setup deployment
+        deployContracts(operator_, distributor_, assessor_, senior_);
         rootAdmin.relyLenderAdmin(address(this), senior_);
     }
 
@@ -78,10 +88,18 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
 
     // helpers borrower
-    function issueNFT(address usr) public returns (uint, bytes32) {
-        uint tokenId = collateralNFT.issue(usr);
-        bytes32 lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
-        // user approves shelf too lock NFT
+    // user approves shelf too lock NFT
+    function createSeniorInvestor() public {
+        seniorInvestor = new Investor(address(seniorOperator), currency_, address(seniorERC20));
+        seniorInvestor_ = address(seniorInvestor);
+
+        WhitelistOperator seniorOperator = WhitelistOperator(address(seniorOperator));
+        seniorOperator.relyInvestor(seniorInvestor_);
+    }
+
+    function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
+        tokenId = collateralNFT.issue(usr);
+        lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
         return (tokenId, lookupId);
     }
 
