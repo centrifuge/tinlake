@@ -22,6 +22,7 @@ contract UnlockTest is BaseSystemTest {
     Hevm public hevm;
 
     function setUp() public {
+
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "default";
         baseSetup(juniorOperator_, distributor_, false);
@@ -89,8 +90,19 @@ contract UnlockTest is BaseSystemTest {
         borrower.doApproveCurrency(address(shelf), uint(-1));
         
         hevm.warp(now + 365 days);
-        
         // borrower does not repay 
+        unlockNFT(loanId, tokenId);
+    }
+
+    function testFailUnlockCollected() public {
+        uint ceiling = 66 ether;
+        uint threshold = 70 ether;
+        uint rate = 1000000003593629043335673583; // 12 % per year compound in seconds
+        uint speed = rate;
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(randomUser_, ceiling, rate, speed);
+        // debt after 1 year: 73.92 ether -> threshold reached
+        hevm.warp(now + 365 days);
+        setThresholdAndSeize(loanId, threshold);
         unlockNFT(loanId, tokenId);
     }
 }

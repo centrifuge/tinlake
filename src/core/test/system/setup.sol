@@ -34,8 +34,8 @@ contract TestSetup {
     Pile pile;
     Title title;
     Principal ceiling;
-    // CollectorLike collector;
-    // ThresholdLike threshold;
+    Collector collector;
+    PushRegistry threshold;
     // PricePoolLike pricePool;
     // LightSwitchLike lightswitch;
 
@@ -74,7 +74,7 @@ contract TestSetup {
         // only admin is main deployer
         deployBorrower();
         // only admin is main deployer
-        deployLender(operator_, distributor_,assessor_, senior_);
+        deployLender(operator_, distributor_, assessor_, senior_);
 
         rootAdmin.file("borrower", address(borrowerDeployer));
         rootAdmin.file("lender", address(lenderDeployer));
@@ -108,14 +108,14 @@ contract TestSetup {
         pile = borrowerDeployer.pile();
         ceiling = borrowerDeployer.principal();
         title = borrowerDeployer.title();
-        // collector = borrowerDeployer.collector();
-        // threshold = borrowerDeployer.threshold();
+        collector = borrowerDeployer.collector();
+        threshold = borrowerDeployer.threshold();
         // pricePool = borrowerDeployer.pricePool();
         // lightswitch = borrowerDeployer.lightswitch();
 
     }
 
-    function deployLender(bytes32 operator_,  bytes32 distributor_,bytes32 assessor_,bool senior_) public {
+    function deployLender(bytes32 operator_,  bytes32 distributor_,bytes32 assessor_, bool senior_) public {
         address distributorFab_;
         address operatorFab_;
 

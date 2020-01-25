@@ -1,4 +1,5 @@
-// Copyright (C) 2020 Centrifuge
+// Copyright (C) 2019 Centrifuge
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -11,31 +12,27 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 pragma solidity >=0.5.12;
 
-import "../../../lender/deployer.sol";
+import { Title } from "tinlake-title/title.sol";
 import "../interfaces.sol";
 
-contract Investor {
-    TOperatorLike operator;
+contract Keeper {
     ERC20Like currency;
-    ERC20Like token;
+    CollectorLike collector;
 
-    constructor(address operator_, address currency_, address token_) public {
-        operator = TOperatorLike(operator_);
+    constructor (address collector_, address currency_) public {
+        collector = CollectorLike(collector_);
         currency = ERC20Like(currency_);
-        token = ERC20Like(token_);
     }
 
-    function doSupply(uint amount) public {
-        address tranche_ = address(operator.tranche());
-        currency.approve(tranche_, amount);
-        operator.supply(amount);
+    function collect(uint loan) public {
+        collector.collect(loan);
     }
 
-    function doRedeem(uint amount) public {
-        address tranche_ = address(operator.tranche());
-        token.approve(tranche_, amount);
-        operator.redeem(amount);
+    function approveCurrency(address usr, uint currencyPrice) public {
+        currency.approve(usr, currencyPrice);
     }
+
 }

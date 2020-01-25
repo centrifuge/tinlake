@@ -24,6 +24,8 @@ contract TestRootAdmin is RootAdmin {
         borrowerDeployer.shelf().rely(usr);
         borrowerDeployer.pile().rely(usr);
         borrowerDeployer.principal().rely(usr);
+        borrowerDeployer.collector().rely(usr);
+        borrowerDeployer.threshold().rely(usr);
     }
 
     // Needed for System Tests

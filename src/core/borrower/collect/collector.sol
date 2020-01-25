@@ -58,6 +58,7 @@ contract Collector is DSNote, Auth {
         address buyer;
         uint    nftPrice;
     }
+    
     mapping (uint => Option) public options;
 
     DistributorLike distributor;
@@ -93,9 +94,11 @@ contract Collector is DSNote, Auth {
     function collect(uint loan) public auth_collector {
         _collect(loan, msg.sender);
     }
+    
     function collect(uint loan, address buyer) public auth {
         _collect(loan, buyer);
     }
+
     function _collect(uint loan, address buyer) internal {
         require(buyer == options[loan].buyer || options[loan].buyer == address(0));
         (address registry, uint nft) = shelf.token(loan);

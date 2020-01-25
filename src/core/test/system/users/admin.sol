@@ -15,11 +15,10 @@
 
 pragma solidity >=0.5.12;
 
-import "ds-test/test.sol";
 import { Title } from "tinlake-title/title.sol";
 import "../interfaces.sol";
 
-contract AdminUser is DSTest{
+contract AdminUser {
     // --- Data ---
 
     ShelfLike shelf;
@@ -27,14 +26,17 @@ contract AdminUser is DSTest{
     CeilingLike ceiling;
     Title title;
     TDistributorLike distributor;
+    CollectorLike collector;
+    ThresholdLike threshold;
 
-    constructor (address shelf_, address pile_, address ceiling_, address title_, address distributor_) public {
+    constructor (address shelf_, address pile_, address ceiling_, address title_, address distributor_, address collector_, address threshold_) public {
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
         ceiling = CeilingLike(ceiling_);
         title = Title(title_);
         distributor = TDistributorLike(distributor_);
-        
+        collector = CollectorLike(collector_);
+        threshold = ThresholdLike(threshold_);
     }
 
     function setCeiling(uint loan, uint principal) public {
@@ -56,13 +58,24 @@ contract AdminUser is DSTest{
         pile.setRate(loan, rate);
     }
 
-    function addKeeper(address usr) public {
-        // CollectDeployer cd = CollectDeployer(address(collectDeployer()));
-        // cd.collector().rely(usr);
+    function setCollectPrice(uint loan, uint price) public {
+        collector.file(loan, address(0), price);
     }
 
-    function doAddKeeper(address usr) public {
-        // CollectDeployer cd = CollectDeployer(address(collectDeployer()));
-        // cd.collector().rely(usr);
+    function addKeeper(uint loan, address usr, uint price) public {
+        collector.file(loan, usr, price);
     }
+
+    function whitelistKeeper(address usr) public {
+        collector.relyCollector(usr);
+    }
+
+    function setThreshold(uint loan, uint currencyAmount) public {
+        threshold.set(loan, currencyAmount);
+    }
+
+    function collect(uint loan, address usr) public {
+        collector.collect(loan, usr);
+    }
+
 }

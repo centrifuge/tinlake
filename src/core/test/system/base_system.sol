@@ -20,6 +20,7 @@ import "./setup.sol";
 import "./users/admin.sol";
 import "./users/investor.sol";
 import "./users/borrower.sol";
+import "./users/keeper.sol";
 import "tinlake-math/math.sol";
 
 
@@ -40,50 +41,56 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     Borrower randomUser;
     address randomUser_;
 
+    Keeper keeper;
+    address keeper_;
+
     function baseSetup(bytes32 operator_, bytes32 distributor_, bool senior_) public {
         // setup deployment
         bytes32 assessor_ = "default";
-        deployContracts(operator_, distributor_,assessor_,  senior_);
+        deployContracts(operator_, distributor_, assessor_,  senior_);
         rootAdmin.relyLenderAdmin(address(this), senior_);
     }
 
     function baseSetup(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_) public {
         // setup deployment
-        deployContracts(operator_, distributor_,assessor_, senior_);
+        deployContracts(operator_, distributor_, assessor_, senior_);
         rootAdmin.relyLenderAdmin(address(this), senior_);
     }
 
     function createTestUsers(bool senior_) public {
-            borrower = new Borrower(address(shelf), address(distributor), currency_, address(pile));
-            borrower_ = address(borrower);
+        borrower = new Borrower(address(shelf), address(lenderDeployer.distributor()), currency_, address(pile));
+        borrower_ = address(borrower);
 
-           randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
-           randomUser_ = address(randomUser);
+        randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
+        randomUser_ = address(randomUser);
+       
+        keeper = new Keeper(address(collector), currency_);
+        keeper_ = address(keeper);
+        
+        admin = new AdminUser(address(shelf), address(pile), address(ceiling), address(title), address(distributor), address(collector), address(threshold));
+        admin_ = address(admin);
+        rootAdmin.relyBorrowAdmin(admin_);
 
-            admin = new AdminUser(address(shelf), address(pile), address(ceiling), address(title), address(distributor));
-            admin_ = address(admin);
-            rootAdmin.relyBorrowAdmin(admin_);
+        juniorInvestor = new Investor(address(juniorOperator), currency_, address(juniorERC20));
+        juniorInvestor_ = address(juniorInvestor);
 
-            juniorInvestor = new Investor(address(juniorOperator), currency_, address(juniorERC20));
-            juniorInvestor_ = address(juniorInvestor);
+        WhitelistOperator juniorOperator = WhitelistOperator(address(juniorOperator));
+        juniorOperator.relyInvestor(juniorInvestor_);
 
-            WhitelistOperator juniorOperator = WhitelistOperator(address(juniorOperator));
-            juniorOperator.relyInvestor(juniorInvestor_);
+        if (senior_) {
+            WhitelistOperator seniorOperator = WhitelistOperator(address(seniorOperator));
 
-            if (senior_) {
-                WhitelistOperator seniorOperator = WhitelistOperator(address(seniorOperator));
+            seniorInvestor = new Investor(address(seniorOperator), currency_, address(seniorERC20));
+            seniorInvestor_ = address(seniorInvestor);
 
-                seniorInvestor = new Investor(address(seniorOperator), currency_, address(seniorERC20));
-                seniorInvestor_ = address(seniorInvestor);
-
-                seniorOperator.relyInvestor(seniorInvestor_);
-            }
+            seniorOperator.relyInvestor(seniorInvestor_);
+        }
     }
 
     function lockNFT(uint loanId, address usr) public {
         Borrower(usr).approveNFT(collateralNFT, address(shelf));
         Borrower(usr).lock(loanId);
-    }
+    } 
 
     function transferNFT(address sender, address recipient, uint tokenId) public {
         Borrower(sender).approveNFT(collateralNFT, address(this));
@@ -91,6 +98,20 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
 
     // helpers borrower
+    // user approves shelf too lock NFT
+    function createSeniorInvestor() public {
+        seniorInvestor = new Investor(address(seniorOperator), currency_, address(seniorERC20));
+        seniorInvestor_ = address(seniorInvestor);
+
+        WhitelistOperator seniorOperator = WhitelistOperator(address(seniorOperator));
+        seniorOperator.relyInvestor(seniorInvestor_);
+    }
+
+    function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
+        tokenId = collateralNFT.issue(usr);
+        lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
+        return (tokenId, lookupId);
+    }
 
     function issueNFTAndCreateLoan(address usr) public returns (uint, uint) {
         // issue nft for borrower
@@ -155,6 +176,20 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         juniorInvestor.doSupply(currencyAmount);
     }
 
+    // helpers keeper
+    function setThresholdAndSeize(uint loanId, uint threshold) public {
+        admin.setThreshold(loanId, threshold);
+        collector.seize(loanId); 
+    }
+
+    function addKeeperAndCollect(uint loanId, uint threshold, address usr, uint recoveryPrice) public {
+        setThresholdAndSeize(loanId, threshold);
+        admin.addKeeper(loanId, usr, recoveryPrice);
+        topUp(usr);
+        Borrower(usr).doApproveCurrency(address(shelf), uint(-1));
+        admin.collect(loanId, usr);
+    }
+
     function fundTranches() public {
         uint defaultAmount = 1000 ether;
         invest(defaultAmount);
@@ -177,6 +212,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         currency.mint(address(addr), amount);
     }
     function topUp(address usr) public {
-        currency.mint(address(usr), 100 ether);
+        currency.mint(address(usr), 1000 ether);
     }
 }

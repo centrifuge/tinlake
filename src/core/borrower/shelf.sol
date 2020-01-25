@@ -130,6 +130,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         title.close(loan);
         bytes32 nft = keccak256(abi.encodePacked(shelf[loan].registry, shelf[loan].tokenId));
         nftlookup[nft] = 0;
+        resetLoanBalance(loan);
     }
     
     // --- Currency actions ---
@@ -168,9 +169,15 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     }
 
     function recover(uint loan, address usr, uint currencyAmount) public auth {
-        _repay(loan, usr, currencyAmount);
-        uint loss = pile.debt(loan);
-        pile.decDebt(loan, loss);
+        pile.accrue(loan);
+        uint loanDebt = pile.debt(loan);
+        
+        currency.transferFrom(usr, address(this), currencyAmount);
+       
+        ceiling.repay(loan, currencyAmount);
+        pile.decDebt(loan, loanDebt);
+        resetLoanBalance(loan);
+        distributor.balance();
     }
 
     function _repay(uint loan, address usr, uint currencyAmount) internal {
@@ -202,5 +209,13 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
 
     function claim(uint loan, address usr) public auth {
         NFTLike(shelf[loan].registry).transferFrom(address(this), usr, shelf[loan].tokenId);
+    }
+
+    function resetLoanBalance(uint loan) internal {
+        uint loanBalance = balances[loan];
+        if (loanBalance  > 0) {
+            balances[loan] = 0;
+            balance = safeSub(balance, loanBalance);
+        }
     }
 }
