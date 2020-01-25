@@ -23,7 +23,6 @@ import {AllowanceOperator} from "./tranche/operator/allowance.sol";
 import {WhitelistOperator} from "./tranche/operator/whitelist.sol";
 import {Tranche} from "./tranche/tranche.sol";
 import {SeniorTranche} from "./tranche/senior_tranche.sol";
-import {SwitchableDistributor} from "./distributor/switchable.sol";
 import {DefaultDistributor} from "./distributor/default.sol";
 import "tinlake-erc20/erc20.sol";
 
@@ -111,16 +110,6 @@ contract DistributorLike {
     function depend (bytes32 what, address addr) public;
     function file(bytes32 what, bool flag) public;
     function balance() public;
-}
-
-contract SwitchableDistributorFab {
-    function newDistributor(address currency) public returns (address) {
-        SwitchableDistributor distributor = new SwitchableDistributor(currency);
-
-        distributor.rely(msg.sender);
-        distributor.deny(address(this));
-        return address(distributor);
-    }
 }
 
 contract DefaultDistributorFab {

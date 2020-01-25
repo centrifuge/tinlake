@@ -23,7 +23,7 @@ contract CollectTest is BaseSystemTest {
 
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
-        bytes32 distributor_ = "switchable";
+        bytes32 distributor_ = "default";
         baseSetup(juniorOperator_, distributor_, false);
         createTestUsers(false);
 
@@ -36,7 +36,7 @@ contract CollectTest is BaseSystemTest {
     function collect(uint loanId, uint tokenId, bool whitelisted) public {
         ( , uint recoveryAmount ) = collector.options(loanId);
         uint initialKeeperBalance = currency.balanceOf(keeper_);
-        uint initialShelfBalance = currency.balanceOf(address(shelf));
+        uint initialJuniorBalance = currency.balanceOf(address(lenderDeployer.junior()));
         uint initialTotalBalance = shelf.balance();
         uint initialLoanBalance = shelf.balances(loanId);
         if (whitelisted) {
@@ -44,7 +44,7 @@ contract CollectTest is BaseSystemTest {
         } else {
             admin.collect(loanId, keeper_);
         }
-        assertPostCondition(loanId, tokenId, recoveryAmount, initialKeeperBalance, initialShelfBalance, initialTotalBalance, initialLoanBalance);
+        assertPostCondition(loanId, tokenId, recoveryAmount, initialKeeperBalance, initialJuniorBalance, initialTotalBalance, initialLoanBalance);
     }
 
     function assertPreCondition(uint loanId, uint tokenId) public {
@@ -61,7 +61,7 @@ contract CollectTest is BaseSystemTest {
         assert(currency.balanceOf(keeper_) >= price);
     }
 
-    function assertPostCondition(uint loanId, uint tokenId, uint recoveryAmount, uint initialKeeperBalance, uint initialShelfBalance, uint initialTotalBalance, uint initialLoanBalance) public {
+    function assertPostCondition(uint loanId, uint tokenId, uint recoveryAmount, uint initialKeeperBalance, uint initialJuniorBalance, uint initialTotalBalance, uint initialLoanBalance) public {
         // assert: nft got transferred to keeper
         assertEq(collateralNFT.ownerOf(tokenId), address(keeper));
         // assert: loanDebt set to 0 indipendant of recovery value
@@ -69,7 +69,7 @@ contract CollectTest is BaseSystemTest {
         // assert: keeper transferred funds
         assertEq(currency.balanceOf(keeper_), safeSub(initialKeeperBalance, recoveryAmount));
         // assert: shelf received recoveryAmount
-        assertEq(currency.balanceOf(address(shelf)), safeAdd(initialShelfBalance, recoveryAmount));
+        assertEq(currency.balanceOf(address(lenderDeployer.junior())), safeAdd(initialJuniorBalance, recoveryAmount));
         // assert: loan balance = 0
         assertEq(shelf.balances(loanId), 0);
         // assert: total balance got decreased by initial loanBalance
