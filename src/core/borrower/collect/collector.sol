@@ -16,7 +16,7 @@
 
 pragma solidity >=0.5.12;
 
-import 'tinlake-registry/registry.sol';
+import "tinlake-registry/registry.sol";
 import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
 

@@ -23,23 +23,20 @@ import "tinlake-auth/auth.sol";
 // Principal is an implementation of the Ceiling module that defines the max amount a user can borrow.
 // The principal of each loan is decreased with borrow transactions. Accrued interest is ignored.
 contract Principal is DSNote, Auth, Math {
-    mapping (uint => uint) public values;
+    mapping (uint => uint) public ceiling;
 
     constructor() public {
         wards[msg.sender] = 1;
     }
 
-    function ceiling(uint loan) public view returns(uint) {
-        return values[loan];
-    }
 
     function file(uint loan, uint principal) public note auth {
-        values[loan] = principal;
+        ceiling[loan] = principal;
     }
 
     function borrow(uint loan, uint amount) public auth {
-        require(values[loan] >= amount);
-        values[loan] = safeSub(values[loan], amount);
+        // safeSub will revert if the ceiling[loan] < amount
+        ceiling[loan] = safeSub(ceiling[loan], amount);
     }
 
     function repay(uint loan, uint amount) public auth {

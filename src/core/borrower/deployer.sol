@@ -22,7 +22,7 @@ import { Shelf } from "./shelf.sol";
 import { Pile } from "./pile.sol";
 import { Collector } from "./collect/collector.sol";
 import { Principal } from "./ceiling/principal.sol";
-import { PushRegistry } from 'tinlake-registry/registry.sol';
+import { PushRegistry } from "tinlake-registry/registry.sol";
 import { PricePool } from "./price/pool.sol";
 
 contract LenderFabLike {
