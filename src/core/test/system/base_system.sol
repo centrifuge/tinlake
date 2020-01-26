@@ -57,6 +57,17 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         rootAdmin.relyLenderAdmin(address(this), senior_);
     }
 
+    function supplySenior(uint amount) public {
+        currency.mint(seniorInvestor_, amount);
+        seniorInvestor.doSupply(amount);
+    }
+
+    function supplyJunior(uint amount) public {
+        currency.mint(juniorInvestor_, amount);
+
+        juniorInvestor.doSupply(amount);
+    }
+
     function createTestUsers(bool senior_) public {
         borrower = new Borrower(address(shelf), address(lenderDeployer.distributor()), currency_, address(pile));
         borrower_ = address(borrower);
