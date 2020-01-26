@@ -33,16 +33,6 @@ contract AuthLike {
     function deny(address) public;
 }
 
-contract TCeilingLike {
-    function ceiling(uint loan) public view returns(uint);
-    function values(uint) public view returns(uint);
-    function file(uint loan, uint currencyAmount) public;
-    function borrow(uint loan, uint currencyAmount) public;
-    function repay(uint loan, uint currencyAmount) public;
-    function rely(address) public;
-    function deny(address) public;
-}
-
 contract PileFab {
     function newPile() public returns (address) {
         Pile pile = new Pile();
