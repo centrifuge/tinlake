@@ -27,7 +27,7 @@ contract DeployerTest is DSTest {
     TitleFab titlefab;
     ShelfFab shelffab;
     PileFab pilefab;
-    CeilingFab ceilingFab;
+    address ceilingFab_;
     CollectorFab collectorFab;
     ThresholdFab thresholdFab;
     PricePoolFab pricePoolFab;
@@ -39,14 +39,14 @@ contract DeployerTest is DSTest {
         titlefab = new TitleFab();
         shelffab = new ShelfFab();
         pilefab = new PileFab();
-        ceilingFab = new CeilingFab();
+        ceilingFab_ = address(new PrincipalCeilingFab());
         collectorFab = new CollectorFab();
         thresholdFab = new ThresholdFab();
         pricePoolFab = new PricePoolFab();
    }
 
     function testBorrowerDeploy() public logs_gas {
-        BorrowerDeployer deployer = new BorrowerDeployer(address(0), titlefab, shelffab, pilefab, ceilingFab, collectorFab, thresholdFab, pricePoolFab, address(dai), "Test", "TEST");
+        BorrowerDeployer deployer = new BorrowerDeployer(address(0), titlefab, shelffab, pilefab, ceilingFab_, collectorFab, thresholdFab, pricePoolFab, address(dai), "Test", "TEST");
 
         deployer.deployTitle();
         deployer.deployPile();

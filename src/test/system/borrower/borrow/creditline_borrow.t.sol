@@ -17,13 +17,19 @@ pragma solidity >=0.5.12;
 
 import "../../base_system.sol";
 
-contract BorrowTest is BaseSystemTest {
-        
+contract CreditLineBorrowTest is BaseSystemTest {
+    
+    Hevm public hevm;
+
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "default";
-        baseSetup(juniorOperator_, distributor_, false);
+        bytes32 ceiling_ = "creditline";
+        baseSetup(juniorOperator_, distributor_, false, ceiling_);
         createTestUsers(false);
+
+        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm.warp(1234567);
     }
     
     function borrow(uint loanId, uint tokenId, uint amount) public {
@@ -78,32 +84,11 @@ contract BorrowTest is BaseSystemTest {
     function testPartialBorrow() public {
         uint ceiling = 200 ether;
         // borrow amount smaller then ceiling
-        uint amount = safeDiv(ceiling ,2);
+        uint amount = safeDiv(ceiling , 2);
         (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
         lockNFT(loanId, borrower_);
         admin.setCeiling(loanId, ceiling);
         assertPreCondition(loanId, tokenId, amount);
-        borrow(loanId, tokenId, amount);
-    }
-
-    function testFailBorrowNFTNotLocked() public {
-        uint ceiling = 100 ether;
-        uint amount = ceiling;
-        (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
-        // do not lock nft
-        admin.setCeiling(loanId, ceiling);
-        borrow(loanId, tokenId, amount);
-    }
-
-    function testFailBorrowNotLoanOwner() public {
-        uint ceiling = 100 ether;
-        uint amount = ceiling;
-         (uint tokenId, uint loanId) = issueNFTAndCreateLoan(randomUser_);
-        // lock nft for random user
-        randomUser.lock(loanId); 
-        // admin sets loan ceiling
-        admin.setCeiling(loanId, ceiling);
-        // borrower tries to borrow against loan
         borrow(loanId, tokenId, amount);
     }
 
@@ -114,6 +99,29 @@ contract BorrowTest is BaseSystemTest {
         (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
         lockNFT(loanId, borrower_);
         admin.setCeiling(loanId, ceiling);
+        borrow(loanId, tokenId, amount);
+    }
+
+    function testFailBorrowInterestAccrued() public {
+        uint ceiling = 66 ether;
+        // 12 % per year compound in seconds
+        uint rate = 1000000003593629043335673583;
+        uint speed = rate;
+        uint amount = safeDiv(ceiling, 2) ;
+
+        (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
+        // lock nft for borrower
+        lockNFT(loanId, borrower_);
+        // admin sets loan parameters
+        setLoanParameters(loanId, ceiling, rate, speed);
+        assertPreCondition(loanId, tokenId, amount);
+        // borrow half of the money
+        borrow(loanId, tokenId, amount);
+    
+        hevm.warp(now + 365 days); // expected debt after 1 year 36.96 ether
+
+        // borrower borrows other half of initial ceiling (33 ether) 
+        // -> should fail. Not enough ceiling left, because of accrued interest. 69.96 > 66 (creditline)
         borrow(loanId, tokenId, amount);
     }
 
