@@ -137,7 +137,8 @@ contract TestSetup {
             assessorFab_ = address(new FullInvestmentAssessorFab());
         }
 
-        lenderDeployer = new LenderDeployer(rootAdmin_, currency_, address(new TrancheFab()), assessorFab_,
+        uint tokenAmountForONE = 1;
+        lenderDeployer = new LenderDeployer(rootAdmin_, currency_,tokenAmountForONE, address(new TrancheFab()), assessorFab_,
             operatorFab_, distributorFab_);
 
         lenderDeployer.deployJuniorTranche("JUN", "Junior Tranche Token");

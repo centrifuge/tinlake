@@ -36,15 +36,22 @@ contract AssessorTest is DSTest, Math {
     PoolMock pool;
     TestTranche senior = new TestTranche();
     TestTranche junior = new TestTranche();
-    function setUp() public {
+
+    function _setUp(uint tokenAmountForONE) internal {
         pool = new PoolMock();
-        assessor = new BaseAssessor();
+        assessor = new BaseAssessor(tokenAmountForONE);
         assessor_ = address(assessor);
         assessor.depend("junior", address(junior));
         assessor.depend("senior", address(senior));
         assessor.depend("pool", address(pool));
         assessor.rely(address(junior));
         assessor.rely(address(senior));
+    }
+
+    function setUp() public {
+        uint tokenAmountForONE = 1;
+        _setUp(tokenAmountForONE);
+
     }
     function calcAssetValue(address tranche, uint seniorTrancheDebt, uint seniorTrancheReserve, uint juniorTrancheDebt, uint juniorTrancheReserve, uint poolValue) internal returns (uint) {
         pool.setReturn("totalValue", poolValue);
@@ -138,12 +145,12 @@ contract AssessorTest is DSTest, Math {
         senior.doCalcTokenPrice(assessor_);
     }
 
-    function testTokenPriceWithInitialNAV() public {
+    function testTokenPriceWithDifferentTokenAmount() public {
+        uint tokenAmountForONE = 100;
+        _setUp(tokenAmountForONE);
         uint poolValue = 100 ether;
         uint debt = poolValue;
 
-        uint initialNAV = 100;
-        assessor.file("tokenAmountForONE", initialNAV);
 
         pool.setReturn("totalValue", poolValue);
         senior.setReturn("debt", debt);
@@ -151,13 +158,13 @@ contract AssessorTest is DSTest, Math {
 
         // assetValue 100 ether, supply 100 ether
         uint tokenPrice = senior.doCalcTokenPrice(assessor_);
-        assertEq(tokenPrice, ONE*initialNAV);
+        assertEq(tokenPrice, ONE*tokenAmountForONE);
 
         // less token than assetValue: assetValue 100 ether, supply 50 ether
         uint tokenSupply = debt/2;
         senior.setReturn("tokenSupply",tokenSupply);
         tokenPrice = senior.doCalcTokenPrice(assessor_);
-        assertEq(tokenPrice, ONE * initialNAV*2);
+        assertEq(tokenPrice, ONE * tokenAmountForONE*2);
     }
 
 

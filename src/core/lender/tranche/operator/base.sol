@@ -34,7 +34,7 @@ contract AssessorLike {
 contract DistributorLike {
     function balance() public;
 }
-// Abstract Contract
+// Base Contract for Operators
 contract BaseOperator is Math, DSNote, Auth {
     TrancheLike public tranche;
     AssessorLike public assessor;

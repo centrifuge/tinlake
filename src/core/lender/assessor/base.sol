@@ -42,6 +42,7 @@ contract PoolLike {
     function totalValue() public returns(uint);
 }
 
+// Base contract for assessor contracts
 contract BaseAssessor is Math, Auth {
     // --- Tranches ---
     address public senior;
@@ -60,9 +61,11 @@ contract BaseAssessor is Math, Auth {
 
     // --- Assessor ---
     // computes the current asset value for tranches.
-    constructor() public {
+    constructor(uint tokenAmountForONE_) public {
         wards[msg.sender] = 1;
-        tokenAmountForONE = 1;
+        // only set once in the constructor
+        // not allowed to change in an ongoing deployment
+        tokenAmountForONE = tokenAmountForONE_;
     }
 
     // --- Calls ---
@@ -74,12 +77,12 @@ contract BaseAssessor is Math, Auth {
     }
 
     function file(bytes32 what, uint value) public auth {
-        if (what == "tokenAmountForONE") { tokenAmountForONE = value; }
-        else if (what == "minJuniorRatio") { minJuniorRatio = value; }
+        if (what == "minJuniorRatio") { minJuniorRatio = value; }
         else revert();
     }
 
     function calcAssetValue(address tranche) public returns(uint) {
+        require(tranche  == junior || tranche == senior);
         uint trancheReserve = TrancheLike(tranche).balance();
         uint poolValue = pool.totalValue();
         if (tranche == junior) {
@@ -89,6 +92,7 @@ contract BaseAssessor is Math, Auth {
     }
 
     function calcTokenPrice(address tranche) public returns (uint) {
+        require(tranche  == junior || tranche == senior);
         return safeMul(_calcTokenPrice(tranche), tokenAmountForONE);
     }
 
