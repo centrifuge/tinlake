@@ -28,10 +28,10 @@ import "../collector.sol";
 
 
 contract CollectorTest is DSTest {
-    ShelfMock shelf;
-    PileMock pile;
+    ShelfMock       shelf;
+    PileMock        pile;
     DistributorMock distributor;
-    NFTMock   nft;
+    NFTMock         nft;
 
     Collector    collector;
     PushRegistry threshold;
@@ -56,14 +56,14 @@ contract CollectorTest is DSTest {
         assertEq(shelf.values_uint("recover_currencyAmount"), price);
         assertEq(shelf.values_address("recover_usr"), address(this));
     }
-   
+
     function seize(uint loan) internal {
         collector.seize(loan);
         assertEq(shelf.calls("claim"), 1);
         assertEq(shelf.values_uint("claim_loan"), loan);
         assertEq(shelf.values_address("claim_usr"), address(collector));
     }
-    
+
     function setUpLoan(uint tokenId, uint debt) public {
         shelf.setReturn("token", address(nft), tokenId);
         pile.setReturn("debt_loan", debt);
@@ -71,7 +71,8 @@ contract CollectorTest is DSTest {
 
     function testSeizeCollect() public {
         collector.relyCollector(address(this));
-        uint loan = 1; uint tokenId = 123;
+        uint loan = 1;
+        uint tokenId = 123;
         uint debt = 100;
         uint price = debt-1;
         setUpLoan(tokenId, debt);
@@ -88,11 +89,11 @@ contract CollectorTest is DSTest {
         uint debt = 100;
         uint price = debt-1;
         setUpLoan(tokenId, debt);
-        
+
         collector.file(loan, address(0), price);
         threshold.set(loan, debt-1);
         seize(loan);
-        collect(loan, tokenId, price);       
+        collect(loan, tokenId, price);
     }
 
     function testFailSeizeThresholdNotReached() public {

@@ -32,7 +32,7 @@ contract CollectTest is BaseSystemTest {
 
         fundTranches();
     }
-    
+
     function collect(uint loanId, uint tokenId, bool whitelisted) public {
         ( , uint recoveryAmount ) = collector.options(loanId);
         uint initialKeeperBalance = currency.balanceOf(keeper_);
@@ -77,19 +77,19 @@ contract CollectTest is BaseSystemTest {
     }
 
     function setupCollect(uint loanId, uint threshold, uint recoveryPrice, address usr, bool isWhitelisted,
-        bool isAssigned, bool doTopup, bool doApprove) public { 
+        bool isAssigned, bool doTopup, bool doApprove) public {
         // set loan threshold
         admin.setThreshold(loanId, threshold);
         // keeper assigned to a certain loan. Loan can just be collected by this keeper
         if (isAssigned) { admin.addKeeper(loanId, keeper_, recoveryPrice); }
         // keeper whitelisted to call collect and collect all loans that are not assigned
-        if (isWhitelisted) { 
+        if (isWhitelisted) {
             // just set the price, do not assign keeper to the loan
             admin.setCollectPrice(loanId, recoveryPrice);
             // add keeper to whitelist
-            admin.whitelistKeeper(usr);        
+            admin.whitelistKeeper(usr);
         }
-        // topup keeper 
+        // topup keeper
         if (doTopup) { topUp(keeper_); }
         // keeper approves shelf to take currency
         if (doApprove) { keeper.approveCurrency(address(shelf), uint(-1)); }
@@ -107,11 +107,11 @@ contract CollectTest is BaseSystemTest {
         bool doApprove = true;
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
         setupCollect(loanId, threshold, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
-    
+
         // after 1 year debt higher than threshold
         hevm.warp(now + 365 days);
         // seize loan
-        collector.seize(loanId);  
+        collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
         collect(loanId, tokenId, false);
     }
@@ -131,10 +131,10 @@ contract CollectTest is BaseSystemTest {
         // after 1 year debt higher than threshold
         hevm.warp(now + 365 days);
         // seize loan
-        collector.seize(loanId);  
+        collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
         collect(loanId, tokenId, whitelisted);
-    } 
+    }
 
     function testCollectPriceSmallerDebt() public {
         uint ceiling = 66 ether;
@@ -148,11 +148,11 @@ contract CollectTest is BaseSystemTest {
         bool doApprove = true;
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
         setupCollect(loanId, threshold, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
-    
+
         // after 1 year debt higher than threshold
         hevm.warp(now + 365 days);
         // seize loan
-        collector.seize(loanId);  
+        collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
         collect(loanId, tokenId, false);
     }
@@ -170,11 +170,11 @@ contract CollectTest is BaseSystemTest {
         bool doApprove = true;
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
         setupCollect(loanId, threshold, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
-    
+
         // after 1 year debt higher than threshold
         hevm.warp(now + 365 days);
         // seize loan
-        collector.seize(loanId);  
+        collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
         collect(loanId, tokenId, false);
     }
@@ -208,13 +208,13 @@ contract CollectTest is BaseSystemTest {
         // borrower is added as keeper and collects loan
         addKeeperAndCollect(loanId, threshold, borrower_, recoveryPrice);
 
-        // borrower does not close old loan 
+        // borrower does not close old loan
 
         // should fail: borrower creates new loan
         borrower.issue(collateralNFT_, tokenId);
     }
 
-    function testFailCollectNotWhitelisted() public {  
+    function testFailCollectNotWhitelisted() public {
         uint ceiling = 66 ether;
         uint rate = 1000000003593629043335673583; // 12 % per year compound in seconds
         uint speed = rate;
@@ -226,16 +226,16 @@ contract CollectTest is BaseSystemTest {
         bool doApprove = true;
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
         setupCollect(loanId, threshold, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
-    
+
         // after 1 year debt higher than threshold
         hevm.warp(now + 365 days);
         // seize loan
-        collector.seize(loanId);  
+        collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
-        collect(loanId, tokenId, false); 
+        collect(loanId, tokenId, false);
     }
 
-    function testFailCollectLoanHasAssignedKeeper() public {   
+    function testFailCollectLoanHasAssignedKeeper() public {
         uint ceiling = 66 ether;
         uint rate = 1000000003593629043335673583; // 12 % per year compound in seconds
         uint speed = rate;
@@ -247,12 +247,12 @@ contract CollectTest is BaseSystemTest {
         bool doApprove = true;
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
         setupCollect(loanId, threshold, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
-        // assign random keeper to loan 
+        // assign random keeper to loan
         admin.addKeeper(loanId, randomUser_, recoveryPrice);
         // after 1 year debt higher than threshold
         hevm.warp(now + 365 days);
         // seize loan
-        collector.seize(loanId);  
+        collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
         collect(loanId, tokenId, true);
     }
@@ -269,11 +269,11 @@ contract CollectTest is BaseSystemTest {
         bool doApprove = true;
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
         setupCollect(loanId, threshold, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
-    
+
         // after 1 year debt has not reached threshold
         hevm.warp(now + 365 days);
         // seize loan
-        collector.seize(loanId);  
+        collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
         collect(loanId, tokenId, false);
     }
@@ -294,7 +294,7 @@ contract CollectTest is BaseSystemTest {
         // after 1 year threshold reached
         hevm.warp(now + 365 days);
         // seize loan
-        collector.seize(loanId);  
+        collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
         collect(loanId, tokenId, false);
     }
@@ -315,7 +315,7 @@ contract CollectTest is BaseSystemTest {
         // after 1 year threshold reached
         hevm.warp(now + 365 days);
         // seize loan
-        collector.seize(loanId);  
+        collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
         collect(loanId, tokenId, false);
     }

@@ -44,7 +44,7 @@ contract ShelfLike {
 }
 
 contract Collector is DSNote, Auth {
-    
+
      // -- Collectors --
     mapping (address => uint) public collectors;
     function relyCollector(address usr) public auth note { collectors[usr] = 1; }
@@ -58,7 +58,7 @@ contract Collector is DSNote, Auth {
         address buyer;
         uint    nftPrice;
     }
-    
+
     mapping (uint => Option) public options;
 
     DistributorLike distributor;
@@ -94,7 +94,7 @@ contract Collector is DSNote, Auth {
     function collect(uint loan) public auth_collector {
         _collect(loan, msg.sender);
     }
-    
+
     function collect(uint loan, address buyer) public auth {
         _collect(loan, buyer);
     }

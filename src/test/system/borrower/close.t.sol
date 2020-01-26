@@ -25,7 +25,7 @@ contract CloseTest is BaseSystemTest {
         baseSetup(juniorOperator_, distributor_, false);
         createTestUsers(false);
     }
-  
+
     function closeLoan(uint loanId, bytes32 lookupId) public {
         borrower.close(loanId);
         assertPostCondition(lookupId);
@@ -45,7 +45,7 @@ contract CloseTest is BaseSystemTest {
     function assertPostCondition(bytes32 lookupId) public {
         // assert: nft + loan removed nftlookup
         assertEq(shelf.nftlookup(lookupId), 0);
-        
+
         // TODO: assert: loan burned => owner = address(0)
         // current title implementation reverts if loan owner => address(0)
         //assertEq(title.ownerOf(loanId), address(0));
@@ -64,7 +64,7 @@ contract CloseTest is BaseSystemTest {
     function testCloseLoanNFTOwner() public {
         (uint tokenId, bytes32 lookupId) = issueNFT(randomUser_);
         uint loanId = randomUser.issue(collateralNFT_, tokenId);
-        // transfer nft to borrower  / make borrower nftOwner
+        // transfer nft to borrower / make borrower nftOwner
         randomUser.approveNFT(collateralNFT, address(this));
         collateralNFT.transferFrom(randomUser_, borrower_, tokenId);
         closeLoan(loanId, lookupId);
