@@ -52,6 +52,10 @@ contract SeniorTranche is Tranche, Interest {
 
     function file(bytes32 what, uint ratePerSecond_) public note auth {
          if (what ==  "rate") {
+             if(ratePerSecond != ONE) {
+                 // required for interest rate switch
+                 drip();
+             }
             ratePerSecond = ratePerSecond_;
         } else revert();
     }
