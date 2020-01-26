@@ -84,11 +84,11 @@ contract TestSetup {
     Tranche          junior;
     SeniorTranche    senior;
     DistributorLike  distributor;
-    TokenLike        juniorToken;
-    address          juniorOperator;
-    TokenLike        seniorToken;
-    address          seniorOperator;
-    address          assessor;
+    TokenLike public juniorToken;
+    address public   juniorOperator;
+    TokenLike public seniorToken;
+    address public   seniorOperator;
+    address public   assessor;
 
     // Deployers
     BorrowerDeployer public borrowerDeployer;
