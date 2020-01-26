@@ -44,12 +44,12 @@ contract SeniorTrancheFab {
 
 
 contract AssessorFab {
-    function newAssessor() public returns (address);
+    function newAssessor(uint tokenAmountForONE) public returns (address);
 }
 
 contract FullInvestmentAssessorFab {
-    function newAssessor() public returns (address) {
-        FullInvestmentAssessor assessor = new FullInvestmentAssessor();
+    function newAssessor(uint tokenAmountForONE) public returns (address) {
+        FullInvestmentAssessor assessor = new FullInvestmentAssessor(tokenAmountForONE);
         assessor.rely(msg.sender);
         assessor.deny(address(this));
         return address(assessor);
@@ -57,8 +57,8 @@ contract FullInvestmentAssessorFab {
 }
 
 contract DefaultAssessorFab {
-    function newAssessor() public returns (address) {
-        DefaultAssessor assessor = new DefaultAssessor();
+    function newAssessor(uint tokenAmountForONE) public returns (address) {
+        DefaultAssessor assessor = new DefaultAssessor(tokenAmountForONE);
         assessor.rely(msg.sender);
         assessor.deny(address(this));
         return address(assessor);
@@ -158,7 +158,9 @@ contract LenderDeployer is Auth {
     ERC20 public seniorERC20;
     OperatorLike public seniorOperator;
 
-    constructor(address rootAdmin_, address currency_, address trancheFab_, address assessorFab_,
+    uint tokenAmountForONE;
+
+    constructor(address rootAdmin_, address currency_, uint tokenAmountForONE_, address trancheFab_, address assessorFab_,
         address juniorOperatorFab_, address distributorFab_) public {
 
         deployUser = msg.sender;
@@ -168,6 +170,8 @@ contract LenderDeployer is Auth {
         wards[rootAdmin] = 1;
 
         currency = currency_;
+
+        tokenAmountForONE = tokenAmountForONE_;
 
         trancheFab = TrancheFab(trancheFab_);
         assessorFab = AssessorFab(assessorFab_);
@@ -208,7 +212,7 @@ contract LenderDeployer is Auth {
     }
 
     function deployAssessor() public auth {
-        assessor = AssessorLike(assessorFab.newAssessor());
+        assessor = AssessorLike(assessorFab.newAssessor(tokenAmountForONE));
         assessor.rely(rootAdmin);
     }
 

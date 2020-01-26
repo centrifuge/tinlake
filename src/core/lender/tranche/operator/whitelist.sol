@@ -18,6 +18,11 @@ pragma solidity >=0.5.12;
 import "./base.sol";
 
 contract WhitelistOperator is BaseOperator {
+
+    // -- Wards --
+    // - RootAdmin contract for rely/deny investors
+    // - LenderDeployer for deployment
+
     // -- Investors --
     mapping (address => uint) public investors;
     function relyInvestor(address usr) public auth note { investors[usr] = 1; }
