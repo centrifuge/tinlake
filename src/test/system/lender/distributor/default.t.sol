@@ -15,7 +15,7 @@
 
 pragma solidity >=0.5.12;
 
-import "../../system.t.sol";
+import "../../base_system.sol";
 
 contract SupplyTwoTrancheTest is BaseSystemTest {
 

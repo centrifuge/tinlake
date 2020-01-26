@@ -34,6 +34,14 @@ contract TokenLike{
     function burn(address, uint) public;
 }
 
+contract CeilingLike {
+    function ceiling(uint loan) public view returns(uint);
+    function values(uint) public view returns(uint);
+    function file(uint loan, uint currencyAmount) public;
+    function borrow(uint loan, uint currencyAmount) public;
+    function repay(uint loan, uint currencyAmount) public;
+}
+
 contract PileLike {
     function debt(uint loan) public returns(uint);
     function file(uint rate, uint speed) public;
@@ -63,11 +71,6 @@ contract ERC20Like {
     function approve(address usr, uint wad) public returns (bool);
     function totalSupply() public returns (uint256);
     function balanceOf(address usr) public returns (uint);
-}
-
-contract CeilingLike {
-    function ceiling(uint) public view returns(uint);
-    function file(uint loan, uint principal) public;
 }
 
 contract TOperatorLike {

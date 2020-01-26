@@ -19,7 +19,7 @@ import "./base_system.sol";
 import "./users/borrower.sol";
 import "./users/admin.sol";
 
-contract STest is BaseSystemTest {
+contract ScenarioTest is BaseSystemTest {
     Hevm public hevm;
 
     function setUp() public {

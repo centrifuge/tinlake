@@ -43,7 +43,10 @@ contract CreditLine is DSNote, Auth, Math {
     }
 
     function ceiling(uint loan) public returns(uint) {
-        return safeSub(values[loan], pile.debt(loan));
+        if (values[loan] > pile.debt(loan)) {
+            return safeSub(values[loan], pile.debt(loan));
+        } 
+        return 0;
     }
 
     function depend(bytes32 what, address addr) public note auth {
