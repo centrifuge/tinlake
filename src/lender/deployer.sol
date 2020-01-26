@@ -14,7 +14,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 pragma solidity >=0.5.12;
 
-import { Auth } from "tinlake-auth/auth.sol";
 
 // lender contracts
 import { DefaultAssessor } from "./assessor/default.sol";
@@ -134,7 +133,7 @@ contract DefaultDistributorFab {
     }
 }
 
-contract LenderDeployer is Auth {
+contract LenderDeployer {
     address root;
 
     // Fabs
@@ -175,7 +174,6 @@ contract LenderDeployer is Auth {
       address seniorOperatorFab_
     ) public {
         root = root_;
-        wards[root] = 1;
 
         currency = currency_;
         tokenAmountForONE = tokenAmountForONE_;

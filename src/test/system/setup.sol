@@ -200,16 +200,12 @@ contract TestSetup {
         distributor = DistributorLike(lenderDeployer.distributor());
         juniorOperator = lenderDeployer.juniorOperator();
         junior = Tranche(lenderDeployer.junior());
-        // TODO: solidity issue: this direct conversion does not work
-        // juniorToken = TokenLike(Tranche(lenderDeployer.junior()).token());
-        address juniorToken_ = address(junior.token());
-        juniorToken = TokenLike(juniorToken_);
+        juniorToken = TokenLike(address(junior.token()));
         assessor = lenderDeployer.assessor();
         if (senior_) {
             senior = SeniorTranche(lenderDeployer.senior());
             seniorOperator = lenderDeployer.seniorOperator();
-            address seniorToken_ = address(senior.token());
-            seniorToken = TokenLike(seniorToken_);
+            seniorToken = TokenLike(address(senior.token()));
         }
     }
 

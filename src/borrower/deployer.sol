@@ -15,8 +15,6 @@
 
 pragma solidity >=0.5.12;
 
-import { Auth } from "tinlake-auth/auth.sol";
-
 import { Title } from "tinlake-title/title.sol";
 import { Shelf } from "./shelf.sol";
 import { Pile } from "./pile.sol";
@@ -97,7 +95,7 @@ contract PricePoolFab {
     }
 }
 
-contract BorrowerDeployer is Auth {
+contract BorrowerDeployer {
     address      public root;
 
     TitleFab     public titlefab;
@@ -136,7 +134,6 @@ contract BorrowerDeployer is Auth {
       string memory titleSymbol_
     ) public {
         root = root_;
-        wards[root] = 1;
 
         titlefab = titlefab_;
         shelffab = shelffab_;
