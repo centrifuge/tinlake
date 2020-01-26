@@ -28,7 +28,6 @@ contract DefaultAssessor is BaseAssessor, Interest {
 
         if(tranche_ == junior) {
             return 0;
-
         }
 
         uint debt = safeAdd(tranche.borrowed(), tranche.interest());
