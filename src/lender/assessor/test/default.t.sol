@@ -51,7 +51,8 @@ contract DefaultAssessorTest is DSTest, Math {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
         assessor.depend("junior", address(junior));
-        assessor.depend("senior", address(senior));
+        // test simulates senior tranche
+        assessor.depend("senior", address(this));
     }
 
     // simulate tranche behaviour
@@ -59,6 +60,7 @@ contract DefaultAssessorTest is DSTest, Math {
     uint public interest;
     uint public ratePerSecond;
     uint public lastUpdated;
+    uint public balance;
 
     function debt() public view returns(uint){
         return borrowed+interest;

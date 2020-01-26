@@ -30,6 +30,8 @@ contract FullInvestmentAssessor is BaseAssessor, Interest {
             return 0;
 
         }
+        require(tranche_ == senior);
+
         uint interestBearingAmount = safeAdd(safeAdd(tranche.borrowed(), tranche.interest()), tranche.balance());
 
         return safeSub(rmul(rpow(tranche.ratePerSecond(), now - tranche.lastUpdated(), ONE), interestBearingAmount), interestBearingAmount);
