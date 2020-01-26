@@ -104,16 +104,29 @@ contract BaseAssessor is Math, Auth {
         return rdiv(assetValue, tokenSupply);
     }
 
-    // Tranche.assets (Junior) = (Pool.value + Tranche.reserve - Senior.debt) > 0 && (Pool.value - Tranche.reserve - Senior.debt) || 0
-    function _calcJuniorAssetValue(uint poolValue, uint trancheReserve, uint seniorDebt) internal pure returns (uint) {
-        int assetValue = int(poolValue + trancheReserve - seniorDebt);
-        return (assetValue > 0) ? uint(assetValue) : 0;
+  function _calcJuniorAssetValue(uint poolValue, uint juniorReserve, uint seniorDebt) internal pure returns (uint) {
+        // available for junior
+        uint available = safeAdd(poolValue, juniorReserve);
+
+        // senior debt needs to be covered first
+        if (available > seniorDebt) {
+            return safeSub(available, seniorDebt);
+        }
+        // currently junior would receive nothing
+        return 0;
     }
 
-    // Tranche.assets (Senior) = (Tranche.debt < (Pool.value + Junior.reserve)) && (Senior.debt + Tranche.reserve) || (Pool.value + Junior.reserve + Tranche.reserve)
-    function _calcSeniorAssetValue(uint poolValue, uint trancheReserve, uint trancheDebt, uint juniorReserve) internal pure returns (uint) {
-        return ((poolValue + juniorReserve) >= trancheDebt) ? (trancheDebt + trancheReserve) : (poolValue + juniorReserve + trancheReserve);
-    }
+   function _calcSeniorAssetValue(uint poolValue, uint seniorReserve, uint seniorDebt, uint juniorReserve) internal pure returns (uint) {
+        // available to cover senior debt
+        uint available = safeAdd(poolValue, juniorReserve);
+        if (available >= seniorDebt) {
+            // currently no losses for senior
+            return safeAdd(seniorDebt, seniorReserve);
+        }
+        // currently senior would have losses (means junior lost everything)
+        // therefore senior would receive the entire pool
+        return safeAdd(available, seniorReserve);
+   }
 
     function _juniorReserve() internal returns (uint) {
         return TrancheLike(junior).balance();
@@ -123,7 +136,10 @@ contract BaseAssessor is Math, Auth {
         return (senior != address(0x0)) ? SeniorTrancheLike(senior).debt() : 0;
     }
 
-
+    /// returns the maximum allowed seniorAssetValue to fulfill the minJuniorRatio
+    /// with the current juniorAssetValue.
+    /// @return maximum allowed seniorAssetValue
+    /// @dev return value is denominated in WAD(10^18)
     function calcMaxSeniorAssetValue() public returns (uint) {
         uint juniorAssetValue = calcAssetValue(junior);
         if (juniorAssetValue == 0) {
@@ -132,18 +148,23 @@ contract BaseAssessor is Math, Auth {
         return safeSub(rdiv(juniorAssetValue, minJuniorRatio), juniorAssetValue);
     }
 
+    /// returns the minimum required juniorAssetValue to fulfill the minJuniorRatio
+    /// with the current seniorAssetValue
+    /// @return minimum junior asset value
+    /// @dev return value is denominated in WAD(10^18)
     function calcMinJuniorAssetValue() public returns (uint) {
         if (senior == address(0)) {
             return 0;
         }
         uint seniorAssetValue = calcAssetValue(senior);
         if (seniorAssetValue == 0) {
-            return uint(-1);
+            return 0;
         }
         return rmul(rdiv(seniorAssetValue, ONE-minJuniorRatio), minJuniorRatio);
     }
 
-    // only needed for external contracts
+    /// returns the current juniorRatio
+    /// the current juniorRatio can be below the minJuniorRatio because of loan defaults
     function currentJuniorRatio() public returns(uint) {
         if (senior == address(0)) {
             return ONE;
@@ -152,6 +173,9 @@ contract BaseAssessor is Math, Auth {
         return rdiv(juniorAssetValue, safeAdd(juniorAssetValue, calcAssetValue(senior)));
     }
 
+    /// supplying more currency in the senior tranche can break the required minJuniorRatio
+    /// the method check if an additional supply would break the ratio
+    /// @return bool flag if supply is approved
     function supplyApprove(address tranche, uint currencyAmount) public returns(bool) {
         // always allowed to supply into junior || minJuniorRatio feature not activated
         if (tranche == junior || minJuniorRatio == 0) {
@@ -164,6 +188,9 @@ contract BaseAssessor is Math, Auth {
         return false;
     }
 
+    /// redeeming currency from the junior tranche can break the required minJuniorRatio
+    /// the method check if an additional redeem would break the ratio
+    /// @return bool flag if redeem is approved
     function redeemApprove(address tranche, uint currencyAmount) public returns(bool) {
         // always allowed to redeem into senior || minJuniorRatio feature not activated || only single tranche
         if (tranche == senior || minJuniorRatio == 0 || senior == address(0)) {

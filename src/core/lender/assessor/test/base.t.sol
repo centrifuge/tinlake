@@ -278,8 +278,8 @@ contract AssessorTest is DSTest, Math {
 
     function testReedemApprove() public {
         // define minJuniorRatio with 20 %
-        uint maxSeniorRatio = 2*ONE/10;
-        assessor.file("minJuniorRatio",maxSeniorRatio);
+        uint minJuniorRatio = 2*ONE/10;
+        assessor.file("minJuniorRatio", minJuniorRatio);
 
         // set currentJuniorRatio to 25 %
         uint poolValue = 300 ether;
@@ -299,6 +299,20 @@ contract AssessorTest is DSTest, Math {
 
         assertTrue(assessor.redeemApprove(assessor.junior(), 25 ether));
         assertTrue(assessor.redeemApprove(assessor.junior(), 36 ether) == false);
+    }
+
+    function testRedeemApproveZeroSenior() public {
+        // define minJuniorRatio with 20 %
+        uint minJuniorRatio = 2*ONE/10;
+        assessor.file("minJuniorRatio", minJuniorRatio);
+
+        uint poolValue = 300 ether;
+        pool.setReturn("totalValue",poolValue);
+        senior.setReturn("balance", 0);
+        junior.setReturn("balance", 0 ether);
+        senior.setReturn("debt", 0 ether);
+
+        assertTrue(assessor.redeemApprove(assessor.junior(), 300 ether));
 
     }
 
