@@ -114,9 +114,8 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         uint jSupplyAmount = 50 ether;
         uint sSupplyAmount = 200 ether;
 
-        topUp(juniorInvestor_);
-        topUp(seniorInvestor_);
-        topUp(admin_);
+        mintCurrency(seniorInvestor_, sSupplyAmount);
+        mintCurrency(juniorInvestor_, jSupplyAmount);
 
         uint minJuniorRatio = 2 * 10**26;
         FileLike(assessor).file("minJuniorRatio" , minJuniorRatio);
@@ -125,7 +124,6 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         seniorInvestor.doSupply(sSupplyAmount);
 
         emit log_named_uint("balance",currency.balanceOf(seniorInvestor_));
-
 
         // new loan, should take all from junior and 50 from senior
         uint ceiling = 100 ether;
@@ -139,34 +137,38 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         hevm.warp(now + 5 days);
         assertEq(senior.debt(), 191.442234375 ether);
 
-        // loanB has defaulted
+        // loan B has defaulted
         uint threshold = 115 ether;
         uint recoveryPrice = 75 ether;
         addKeeperAndCollect(loanB, threshold, borrower_, recoveryPrice);
         // 75 recovery price + 50 ether reserve
         assertEq(currency.balanceOf(address(senior)), 125 ether);
 
+        // 100 * 1.05^5 = 127.62815625
         uint loanDebt = 127.62815625 ether;
         repayLoan(borrower_, loanA, loanDebt);
+
         seniorInvestor.doRedeem(sSupplyAmount);
-        emit log_named_uint("balance",currency.balanceOf(seniorInvestor_));
         assertEq(senior.debt(), 0);
         // 150 * (1.05^5) = 191.442234375, 41.442234375 ether profit
-        assertEq(currency.balanceOf(seniorInvestor_), 1041.442234375 ether);
 
+        // balance should be initial investment = 200 ether  + profit
+        uint expectedSeniorBalance = 241.442234375 ether;
+        assertEq(currency.balanceOf(seniorInvestor_), expectedSeniorBalance);
         juniorInvestor.doRedeem(jSupplyAmount);
         //63.814078125 ether was the junior expected profit but junior takes the losses
         //63.814078125 ether - the 52.62815625 ether missing from the recovered defaulted loan = 11.185921875
-        assertEq(currency.balanceOf(juniorInvestor_), 961.185921875 ether);
+
+        uint expectedJuniorBalance = 11.185921875 ether;
+        assertEq(currency.balanceOf(juniorInvestor_), expectedJuniorBalance);
     }
 
     function testFailRedeemWithDefaults() public {
         uint jSupplyAmount = 50 ether;
         uint sSupplyAmount = 200 ether;
 
-        topUp(juniorInvestor_);
-        topUp(seniorInvestor_);
-        topUp(admin_);
+        mintCurrency(seniorInvestor_, sSupplyAmount);
+        mintCurrency(juniorInvestor_, jSupplyAmount);
 
         uint minJuniorRatio = 2 * 10**26;
         FileLike(assessor).file("minJuniorRatio" , minJuniorRatio);
@@ -203,7 +205,7 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         assertEq(senior.debt(), 38.814078125 ether);
         // 150 * (1.05^5) = 191.442234375, 41.442234375 ether profit
         // profit must take into account still unpaid debt, 41.442234375 - 38.814078125 = 2.62815625
-        assertEq(currency.balanceOf(seniorInvestor_), 1002.62815625 ether);
+        assertEq(currency.balanceOf(seniorInvestor_), 202.62815625 ether);
         // juniorInvestor cannot redeem
         juniorInvestor.doRedeem(jSupplyAmount);
     }

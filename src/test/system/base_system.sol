@@ -227,4 +227,8 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     function topUp(address usr) public {
         currency.mint(address(usr), 1000 ether);
     }
+
+    function mintCurrency(address usr, uint amount) public {
+        currency.mint(address(usr), amount);
+    }
 }
