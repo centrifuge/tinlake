@@ -138,7 +138,7 @@ contract BaseAssessor is Math, Auth {
         }
         uint seniorAssetValue = calcAssetValue(senior);
         if (seniorAssetValue == 0) {
-            return uint(-1);
+            return 0;
         }
         return rmul(rdiv(seniorAssetValue, ONE-minJuniorRatio), minJuniorRatio);
     }
