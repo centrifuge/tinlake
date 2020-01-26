@@ -38,21 +38,6 @@ contract DefaultInterestAssessorTest is BaseSystemTest {
         createTestUsers(deploySeniorTranche);
     }
 
-    function supplySenior(uint amount) public {
-        currency.mint(seniorInvestor_, amount);
-        seniorInvestor.doSupply(amount);
-    }
-
-    function supplyJunior(uint amount) public {
-        currency.mint(juniorInvestor_, amount);
-
-        juniorInvestor.doSupply(amount);
-        // currency in tranche
-        assertEq(currency.balanceOf(address(lenderDeployer.junior())), amount);
-        // junior investor has token
-        assertEq(juniorToken.balanceOf(juniorInvestor_), amount);
-    }
-
     function testBasicSetupWithSupplyRedeem() public {
         uint seniorInvestorAmount = 100 ether;
         uint juniorInvestorAmount = 200 ether;
@@ -140,35 +125,4 @@ contract DefaultInterestAssessorTest is BaseSystemTest {
         assertEq(currency.balanceOf(juniorInvestor_), 95 ether);
     }
 
-    function testTrancheInterestWithLoans() public {
-        // interest per day of senior tranche is 5%
-        uint amount = 100 ether;
-        supplySenior(amount);
-
-        assertEq(senior.debt(), 0 ether);
-
-        // loan borrowed (only senior has currency)
-        // should have no impact on interest calc
-       (uint loan, ) = createLoanAndWithdraw(borrower_, 80 ether);
-        assertEq(senior.borrowed(), 80 ether);
-        assertEq(senior.balance(), 20 ether);
-
-        // one day later
-        hevm.warp(now + 1 days);
-        senior.drip();
-
-        assertEq(senior.interest(), 5 ether);
-
-        // repayment
-        repayLoan(borrower_, loan, 80 ether);
-        assertEq(senior.balance(), 100 ether);
-        // interest is repaid first
-        assertEq(senior.interest(), 0 ether);
-        assertEq(senior.borrowed(), 5 ether);
-
-        hevm.warp(now + 1 days);
-        senior.drip();
-        assertEq(senior.interest(), 5.25 ether);
-
-    }
 }

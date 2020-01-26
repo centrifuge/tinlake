@@ -59,7 +59,7 @@ contract FullInterestAssessorTest is BaseSystemTest {
         supplySenior(seniorInvestorAmount);
         supplyJunior(juniorInvestorAmount);
 
-        // currency eqals token amount
+        // currency equals token amount
         seniorInvestor.doRedeem(seniorInvestorAmount);
         juniorInvestor.doRedeem(juniorInvestorAmount);
 
@@ -141,7 +141,7 @@ contract FullInterestAssessorTest is BaseSystemTest {
 
         // loan borrowed (only senior has currency)
         // should have no impact on interest calc
-       (uint loan, ) = createLoanAndWithdraw(borrower_, 80 ether);
+        (uint loan, ) = createLoanAndWithdraw(borrower_, 80 ether);
         assertEq(senior.borrowed(), 80 ether);
         assertEq(senior.balance(), 20 ether);
 

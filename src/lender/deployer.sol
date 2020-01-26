@@ -41,7 +41,7 @@ contract TrancheFab {
     string constant public symbol = "TIN";
     string constant public name = "Tinlake TIN Token";
 
-    function newTranche(address currency, address assessor) public returns (address) {
+    function newTranche(address currency) public returns (address) {
         ERC20 token = new ERC20(symbol, name);
         Tranche tranche = new Tranche(address(token), currency);
         tranche.rely(msg.sender);
@@ -201,7 +201,7 @@ contract LenderDeployer {
 
     function deployJuniorTranche() public {
         require(assessor != ZERO && junior == ZERO);
-        junior = juniorTrancheFab.newTranche(currency, assessor);
+        junior = juniorTrancheFab.newTranche(currency);
         AuthLike(junior).rely(root);
     }
 
