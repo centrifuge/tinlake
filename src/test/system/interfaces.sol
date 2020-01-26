@@ -66,7 +66,7 @@ contract ERC20Like {
 }
 
 contract CeilingLike {
-    function values(uint) public view returns(uint);
+    function ceiling(uint) public view returns(uint);
     function file(uint loan, uint principal) public;
 }
 

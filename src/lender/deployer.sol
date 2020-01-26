@@ -64,8 +64,8 @@ contract SeniorTrancheFab {
         ERC20 token = new ERC20(symbol, name);
         SeniorTranche senior = new SeniorTranche(address(token), currency, assessor);
         senior.rely(msg.sender);
-        senior.deny(address(this));
         senior.file("rate", ratePerSecond);
+        senior.deny(address(this));
         token.rely(address(senior));
         return address(senior);
     }
@@ -102,7 +102,7 @@ contract OperatorFab {
 }
 
 contract AllowanceOperatorFab {
-    function newOperator(address tranche, address assessor, address distributor) public returns (address operator_) {
+    function newOperator(address tranche, address assessor, address distributor) public returns (address) {
         AllowanceOperator operator = new AllowanceOperator(tranche, assessor, distributor);
         operator.rely(msg.sender);
         operator.deny(address(this));
@@ -191,10 +191,10 @@ contract LenderDeployer is Auth {
         AuthLike(distributor).rely(root);
     }
 
-    function deploySeniorTranche() public  {
-        require(assessor != ZERO && senior == ZERO);
-        senior = seniorTrancheFab.newTranche(currency, assessor);
-        AuthLike(senior).rely(root);
+    function deployAssessor() public {
+        require(assessor == ZERO);
+        assessor = assessorFab.newAssessor();
+        AuthLike(assessor).rely(root);
     }
 
     function deployJuniorTranche() public {
@@ -203,22 +203,20 @@ contract LenderDeployer is Auth {
         AuthLike(junior).rely(root);
     }
 
-    function deployAssessor() public {
-        require(assessor == ZERO);
-        assessor = assessorFab.newAssessor();
-        AuthLike(assessor).rely(root);
-    }
-
     function deployJuniorOperator() public {
-        require(assessor != ZERO && junior != ZERO && distributor != ZERO);
-
+        require(junior != ZERO && distributor != ZERO);
         juniorOperator = juniorOperatorFab.newOperator(junior, assessor, distributor);
         AuthLike(juniorOperator).rely(root);
     }
 
-    function deploySeniorOperator() public {
-        require(address(assessor) != ZERO && address(senior) != ZERO && address(distributor) != ZERO);
+    function deploySeniorTranche() public  {
+        require(assessor != ZERO && senior == ZERO);
+        senior = seniorTrancheFab.newTranche(currency, assessor);
+        AuthLike(senior).rely(root);
+    }
 
+    function deploySeniorOperator() public {
+        require(senior != ZERO && distributor != ZERO);
         seniorOperator = seniorOperatorFab.newOperator(senior, assessor, distributor);
         AuthLike(seniorOperator).rely(root);
     }

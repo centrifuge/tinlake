@@ -175,27 +175,22 @@ contract TestSetup {
         }
 
         if (senior_) {
-            seniorOperatorFab_ = operatorFab_;
             uint ratePerSecond = 1000000564701133626865910626; // 5% per day
             seniorTrancheFab_ = address(new SeniorTrancheFab(ratePerSecond));
+            seniorOperatorFab_ = operatorFab_;
         }
 
         lenderDeployer = new LenderDeployer(root_, currency_, address(new TrancheFab()), assessorFab_,
             operatorFab_, distributorFab_, seniorTrancheFab_, seniorOperatorFab_);
 
-        lenderDeployer.deployJuniorTranche();
         lenderDeployer.deployAssessor();
         lenderDeployer.deployDistributor();
+        lenderDeployer.deployJuniorTranche();
         lenderDeployer.deployJuniorOperator();
 
         if (senior_) {
             lenderDeployer.deploySeniorTranche();
-            senior = SeniorTranche(lenderDeployer.senior());
-
             lenderDeployer.deploySeniorOperator();
-            seniorOperator = lenderDeployer.seniorOperator();
-            address seniorToken_ = address(Tranche(lenderDeployer.senior()).token());
-            seniorToken = TokenLike(seniorToken_);
         }
 
         lenderDeployer.deploy();
@@ -205,9 +200,15 @@ contract TestSetup {
         junior = Tranche(lenderDeployer.junior());
         // TODO: solidity issue: this direct conversion does not work
         // juniorToken = TokenLike(Tranche(lenderDeployer.junior()).token());
-        address juniorToken_ = address(Tranche(lenderDeployer.junior()).token());
-        seniorToken = TokenLike(juniorToken_);
-         assessor = lenderDeployer.assessor();
+        address juniorToken_ = address(junior.token());
+        juniorToken = TokenLike(juniorToken_);
+        assessor = lenderDeployer.assessor();
+        if (senior_) {
+            senior = SeniorTranche(lenderDeployer.senior());
+            seniorOperator = lenderDeployer.seniorOperator();
+            address seniorToken_ = address(senior.token());
+            seniorToken = TokenLike(seniorToken_);
+        }
     }
 
 }

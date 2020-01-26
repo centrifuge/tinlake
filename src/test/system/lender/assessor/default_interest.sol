@@ -17,7 +17,7 @@ pragma solidity >=0.5.12;
 
 import "../../system.t.sol";
 
-contract SupplyTwoTrancheTest is BaseSystemTest {
+contract AssessorDefaultInterestSupplyTwoTrancheTest is BaseSystemTest {
 
     Hevm hevm;
 

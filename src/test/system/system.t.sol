@@ -57,7 +57,6 @@ contract STest is BaseSystemTest {
     function borrow(uint loan, uint tokenId, uint principal) public {
         borrower.approveNFT(collateralNFT, address(shelf));
         setupCurrencyOnLender(principal);
-//        // borrow transaction
         borrower.borrowAction(loan, principal);
         checkAfterBorrow(tokenId, principal);
     }
@@ -103,9 +102,9 @@ contract STest is BaseSystemTest {
         uint tokenId = collateralNFT.issue(borrower_);
         uint loan = whitelist(tokenId, collateralNFT_, principal, borrower_, rate);
 
-        assertEq(ceiling_.values(loan), principal);
+        assertEq(ceiling_.ceiling(loan), principal);
         borrow(loan, tokenId, principal);
-        assertEq(ceiling_.values(loan), 0);
+        assertEq(ceiling_.ceiling(loan), 0);
 
         hevm.warp(now + 10 days);
 
@@ -200,8 +199,8 @@ contract STest is BaseSystemTest {
 
             // create borrower collateral collateralNFT
             uint tokenId = collateralNFT.issue(borrower_);
-            uint loan = whitelist(tokenId, collateralNFT_, principal, borrower_, rate);
             // collateralNFT whitelist
+            uint loan = whitelist(tokenId, collateralNFT_, principal, borrower_, rate);
 
             borrower.approveNFT(collateralNFT, address(shelf));
 
