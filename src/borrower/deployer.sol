@@ -20,7 +20,7 @@ import { Shelf } from "./shelf.sol";
 import { Pile } from "./pile.sol";
 import { Collector } from "./collect/collector.sol";
 import { Principal } from "./ceiling/principal.sol";
-import { CreditLine } from "./ceiling/creditLine.sol";
+import { CreditLine } from "./ceiling/creditline.sol";
 import { PushRegistry } from "tinlake-registry/registry.sol";
 import { PricePool } from "./price/pool.sol";
 
