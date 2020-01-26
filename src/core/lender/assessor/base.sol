@@ -82,6 +82,7 @@ contract BaseAssessor is Math, Auth {
     }
 
     function calcAssetValue(address tranche) public returns(uint) {
+        require(tranche  == junior || tranche == senior);
         uint trancheReserve = TrancheLike(tranche).balance();
         uint poolValue = pool.totalValue();
         if (tranche == junior) {
