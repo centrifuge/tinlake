@@ -19,7 +19,13 @@ import "../../base_system.sol";
 
 contract RedeemTwoTrancheTest is BaseSystemTest {
 
+    Hevm hevm;
+
     function setUp() public {
+
+        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm.warp(1234567);
+
         bytes32 operator_ = "whitelist";
         bytes32 distributor_ = "default";
         bool deploySeniorTranche = true;
@@ -34,10 +40,114 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
     }
 
     function testSimpleRedeem() public {
-        uint investorBalance = 100 ether;
-        uint supplyAmount = 10 ether;
-        uint redeemAmount = supplyAmount;
-        supply(investorBalance, supplyAmount);
-        juniorInvestor.doRedeem(redeemAmount);
+        uint jSupplyAmount = 40 ether;
+        uint sSupplyAmount = 160 ether;
+
+        topUp(juniorInvestor_);
+        topUp(seniorInvestor_);
+
+        uint minJuniorRatio = 2 * 10**26;
+        assessor.file("minJuniorRatio" , minJuniorRatio);
+
+        juniorInvestor.doSupply(jSupplyAmount);
+        seniorInvestor.doSupply(sSupplyAmount);
+
+        // new loan, should take all from junior and 26 from senior
+        uint ceiling = 100 ether;
+        uint rate = 1000000564701133626865910626; // 5% per day compound in seconds
+        uint speed = rate;
+        (uint loanId,) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
+
+        assertEq(currency.balanceOf(address(borrower)), 100 ether);
+        assertEq(currency.balanceOf(address(junior)), 0);
+        assertEq(currency.balanceOf(address(senior)), 100 ether);
+        assertEq(senior.debt(), 60 ether);
+
+        hevm.warp(now + 1 days);
+
+        uint seniorDebt = senior.debt();
+        assertEq(seniorDebt, 63 ether);
+
+        repayLoan(borrower_, loanId, seniorDebt + jSupplyAmount);
+        seniorInvestor.doRedeem(seniorDebt);
+        assertEq(senior.debt(), 0);
+        assertEq(currency.balanceOf(address(junior)), jSupplyAmount);
+        // junior cannot redeem without breaking minJuniorRatio, so it has to first supply more currency
+        juniorInvestor.doSupply(jSupplyAmount);
+        juniorInvestor.doRedeem(jSupplyAmount);
     }
+
+    function testFailSimpleRedeem() public {
+        uint jSupplyAmount = 40 ether;
+        uint sSupplyAmount = 160 ether;
+
+        topUp(juniorInvestor_);
+        topUp(seniorInvestor_);
+
+        uint minJuniorRatio = 2 * 10**26;
+        assessor.file("minJuniorRatio" , minJuniorRatio);
+
+        juniorInvestor.doSupply(jSupplyAmount);
+        seniorInvestor.doSupply(sSupplyAmount);
+
+        // new loan, should take all from junior and 26 from senior
+        uint ceiling = 100 ether;
+        uint rate = 1000000564701133626865910626; // 5% per day compound in seconds
+        uint speed = rate;
+        (uint loanId,) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
+
+        hevm.warp(now + 1 days);
+
+        uint seniorDebt = senior.debt();
+        assertEq(seniorDebt, 63 ether);
+
+        repayLoan(borrower_, loanId, seniorDebt + jSupplyAmount);
+        // junior redeem will break the minJuniorRatio
+        juniorInvestor.doRedeem(jSupplyAmount);
+    }
+
+    function testRedeem() public {
+        uint jSupplyAmount = 40 ether;
+        uint sSupplyAmount = 160 ether;
+
+        topUp(juniorInvestor_);
+        topUp(seniorInvestor_);
+        topUp(admin_);
+
+        uint minJuniorRatio = 2 * 10**26;
+        assessor.file("minJuniorRatio" , minJuniorRatio);
+
+        juniorInvestor.doSupply(jSupplyAmount);
+        seniorInvestor.doSupply(sSupplyAmount);
+
+        // new loan, should take all from junior and 26 from senior
+        uint ceiling = 100 ether;
+        uint rate = 1000000564701133626865910626; // 5% per day compound in seconds
+        uint speed = rate;
+        (uint loanA,) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
+        emit log_named_uint("senior", currency.balanceOf(address(senior)));
+
+        // new loan, should take 100 from senior
+        uint threshold = 115 ether;
+        (uint loanB, uint tokenB) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
+
+        emit log_named_uint("senior", currency.balanceOf(address(senior)));
+
+        hevm.warp(now + 5 days);
+
+        // loanB has defaulted
+        uint recoveryPrice = 75 ether;
+        emit log_named_uint("senior", currency.balanceOf(address(senior)));
+
+    addKeeperAndCollect(loanB, threshold, keeper_, recoveryPrice);
+
+
+        emit log_named_uint("senior", currency.balanceOf(address(senior)));
+
+//        repayLoan(borrower_, loanA, seniorDebt + jSupplyAmount);
+        // junior redeem will break the minJuniorRatio
+
+        juniorInvestor.doRedeem(jSupplyAmount);
+    }
+
 }

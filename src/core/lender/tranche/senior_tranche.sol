@@ -19,6 +19,7 @@ import "./tranche.sol";
 import "tinlake-math/interest.sol";
 
 contract AssessorLike {
+    function calcTokenPrice(address) public returns (uint);
     function accrueTrancheInterest(address tranche_) public returns (uint);
 }
 
