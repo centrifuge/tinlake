@@ -19,6 +19,9 @@ import "./base.sol";
 import "tinlake-math/interest.sol";
 
 contract FullInvestmentAssessor is BaseAssessor, Interest {
+
+    constructor(uint tokenAmountForONE) BaseAssessor(tokenAmountForONE) public {}
+
     // accrueTrancheInterest can implement different interest models
     function accrueTrancheInterest(address tranche_) public returns (uint) {
         SeniorTrancheLike tranche = SeniorTrancheLike(tranche_);

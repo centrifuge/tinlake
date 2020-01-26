@@ -180,7 +180,9 @@ contract TestSetup {
             seniorOperatorFab_ = operatorFab_;
         }
 
-        lenderDeployer = new LenderDeployer(root_, currency_, address(new TrancheFab()), assessorFab_,
+
+        uint tokenAmountForONE = 1;
+        lenderDeployer = new LenderDeployer(root_, currency_, tokenAmountForONE, address(new TrancheFab()), assessorFab_,
             operatorFab_, distributorFab_, seniorTrancheFab_, seniorOperatorFab_);
 
         lenderDeployer.deployAssessor();

@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 pragma solidity >=0.5.12;
+
 import { Auth } from "tinlake-auth/auth.sol";
 
 // lender contracts
@@ -72,12 +73,12 @@ contract SeniorTrancheFab {
 }
 
 contract AssessorFab {
-    function newAssessor() public returns (address);
+    function newAssessor(uint tokenAmountForONE) public returns (address);
 }
 
 contract FullInvestmentAssessorFab {
-    function newAssessor() public returns (address) {
-        FullInvestmentAssessor assessor = new FullInvestmentAssessor();
+    function newAssessor(uint tokenAmountForONE) public returns (address) {
+        FullInvestmentAssessor assessor = new FullInvestmentAssessor(tokenAmountForONE);
         assessor.rely(msg.sender);
         assessor.deny(address(this));
         return address(assessor);
@@ -85,8 +86,8 @@ contract FullInvestmentAssessorFab {
 }
 
 contract DefaultAssessorFab {
-    function newAssessor() public returns (address) {
-        DefaultAssessor assessor = new DefaultAssessor();
+    function newAssessor(uint tokenAmountForONE) public returns (address) {
+        DefaultAssessor assessor = new DefaultAssessor(tokenAmountForONE);
         assessor.rely(msg.sender);
         assessor.deny(address(this));
         return address(assessor);
@@ -146,6 +147,7 @@ contract LenderDeployer is Auth {
     OperatorFab public       seniorOperatorFab;
 
     address public currency;
+    uint public tokenAmountForONE;
 
     // Contracts
     address public assessor;
@@ -164,6 +166,7 @@ contract LenderDeployer is Auth {
     constructor(
       address root_,
       address currency_,
+      uint tokenAmountForONE_,
       address juniorTrancheFab_,
       address assessorFab_,
       address juniorOperatorFab_,
@@ -175,6 +178,7 @@ contract LenderDeployer is Auth {
         wards[root] = 1;
 
         currency = currency_;
+        tokenAmountForONE = tokenAmountForONE_;
 
         assessorFab = AssessorFab(assessorFab_);
         juniorTrancheFab = TrancheFab(juniorTrancheFab_);
@@ -193,7 +197,7 @@ contract LenderDeployer is Auth {
 
     function deployAssessor() public {
         require(assessor == ZERO);
-        assessor = assessorFab.newAssessor();
+        assessor = assessorFab.newAssessor(tokenAmountForONE);
         AuthLike(assessor).rely(root);
     }
 

@@ -17,7 +17,7 @@ pragma solidity >=0.5.12;
 
 import "../../system.t.sol";
 
-contract AssessorDefaultInterestSupplyTwoTrancheTest is BaseSystemTest {
+contract DefaultInterestAssessorTest is BaseSystemTest {
 
     Hevm hevm;
 
@@ -26,7 +26,7 @@ contract AssessorDefaultInterestSupplyTwoTrancheTest is BaseSystemTest {
     function setUp() public {
         bytes32 operator_ = "whitelist";
         bytes32 distributor_ = "default";
-        bytes32 assessor_ = "full_investment";
+        bytes32 assessor_ = "default";
         bool deploySeniorTranche = true;
         baseSetup(operator_, distributor_,assessor_, deploySeniorTranche);
 
@@ -59,7 +59,7 @@ contract AssessorDefaultInterestSupplyTwoTrancheTest is BaseSystemTest {
         supplySenior(seniorInvestorAmount);
         supplyJunior(juniorInvestorAmount);
 
-        // currency eqals token amount
+        // currency equals token amount
         seniorInvestor.doRedeem(seniorInvestorAmount);
         juniorInvestor.doRedeem(juniorInvestorAmount);
 
@@ -68,63 +68,71 @@ contract AssessorDefaultInterestSupplyTwoTrancheTest is BaseSystemTest {
     function testSeniorInterest() public {
         // interest per day of senior tranche is 5%
         uint amount = 100 ether;
+
+        // total in tranches: 200 ether
         supplySenior(amount);
+        supplyJunior(amount);
 
+        // case no interest: no loans borrowed
         assertEq(senior.debt(), 0 ether);
+        supplySenior(amount);
         hevm.warp(now + 1 days);
         senior.drip();
+        assertEq(senior.interest(), 0 ether);
 
-        assertEq(senior.interest(), 5 ether);
-        hevm.warp(now + 1 days);
-        senior.drip();
-        assertEq(senior.interest(), 10.25 ether);
-        assertEq(senior.borrowed(), 0);
-
-        // additional investment
-        uint secondAmount = 100 ether;
-        currency.mint(seniorInvestor_, secondAmount);
-        seniorInvestor.doSupply(secondAmount);
-
-        // interest should stay the same
-        assertEq(senior.interest(), 10.25 ether);
-        assertEq(senior.borrowed(), 0);
+        // case no interest: only junior borrowed
+        (uint loan, ) = createLoanAndWithdraw(borrower_, 80 ether);
+        assertEq(senior.borrowed(), 0 ether);
 
         hevm.warp(now + 1 days);
-
-        assertEq(senior.balance(), 200 ether);
-        assertEq(senior.interest(), 10.25 ether);
-        assertEq(senior.borrowed(), 0);
-
-        // interestBearingAmount 210.25 * 1.05 = 220.7625
-        // delta interest: 5.2625
-        uint interestDelta = assessor.accrueTrancheInterest(address(senior));
-        assertEq(interestDelta, 10.5125 ether);
-
         senior.drip();
-        assertEq(senior.balance(), 200 ether);
-        assertEq(senior.borrowed(), 0);
+        assertEq(senior.interest(), 0 ether);
 
-        assertEq(senior.interest(), 10.25 ether + interestDelta);
+        // case make interest: on senior debt of 10 ether
+        createLoanAndWithdraw(borrower_, 30 ether);
+        assertEq(senior.borrowed(), 10 ether);
+
+        hevm.warp(now + 1 days);
+        senior.drip();
+        // interest on 10 ether borrowed
+        assertEq(senior.interest(), 0.5 ether); // 10 * 1.05 = 10.5 ether
+
+        assertEq(senior.debt(), 10.5 ether);
+        // partial borrow of first loan
+        // first interest
+        repayLoan(borrower_, loan, 0.5 ether);
+        assertEq(senior.interest(), 0 ether);
+        assertEq(senior.debt(), 10 ether);
+        // partial repay to reduce senior debt to 0
+        repayLoan(borrower_, loan, 10 ether);
+        assertEq(senior.debt(), 0 ether);
+
+        hevm.warp(now + 1 days);
+        senior.drip();
+        // no new interest for senior
+        assertEq(senior.interest(), 0 ether);
 
     }
 
     function testRedeemInvestmentWithInterest() public {
-        // interest per day of senior tranche is 5%
         uint amount = 100 ether;
+        uint total = 200 ether;
+
+        // total in tranches: 200 ether
         supplySenior(amount);
         supplyJunior(amount);
 
-        // no loans senior will get currency from junior
+        // + 5 ether interest for senior
+        (uint loan, ) = createLoanAndWithdraw(borrower_, total);
+        assertEq(senior.borrowed(), 100 ether);
         hevm.warp(now + 1 days);
-        senior.drip();
-        assertEq(senior.interest(), 5 ether);
-
+        repayLoan(borrower_, loan, total);
+        assertEq(senior.balance(), amount + 5 ether);
 
         // senior: 100 token for 105 currency
         uint seniorToken = 100 ether;
         seniorInvestor.doRedeem(seniorToken);
         assertEq(currency.balanceOf(seniorInvestor_), 105 ether);
-
 
         // junior 100 token for 95 currency
         uint juniorToken = 100 ether;

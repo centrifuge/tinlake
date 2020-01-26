@@ -46,7 +46,7 @@ contract FullInvestmentAssessorTest is DSTest, Math {
 
     function setUp() public {
         pool = new PoolMock();
-        assessor = new FullInvestmentAssessor();
+        assessor = new FullInvestmentAssessor(1);
         assessor_ = address(assessor);
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
