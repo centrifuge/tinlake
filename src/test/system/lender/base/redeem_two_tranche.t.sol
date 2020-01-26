@@ -160,7 +160,7 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         assertEq(currency.balanceOf(juniorInvestor_), 961.185921875 ether);
     }
 
-    function testRedeemWith() public {
+    function testFailRedeemWithDefaults() public {
         uint jSupplyAmount = 50 ether;
         uint sSupplyAmount = 200 ether;
 
