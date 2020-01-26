@@ -15,13 +15,56 @@
 
 pragma solidity >=0.5.12;
 
+import {
+  TitleFab,
+  ShelfFab,
+  PileFab,
+  CeilingFab,
+  ThresholdFab,
+  CollectorFab,
+  PricePoolFab,
+  BorrowerDeployer
+} from "../../borrower/deployer.sol";
+
 import { Title } from "tinlake-title/title.sol";
-import "../../borrower/deployer.sol";
-import "../../lender/deployer.sol";
-import "./root_admin.sol";
+import { Pile } from "../../borrower/pile.sol";
+import { Shelf } from "../../borrower/shelf.sol";
+import { Collector } from "../../borrower/collect/collector.sol";
+import { Principal } from "../../borrower/ceiling/principal.sol";
+
+import {
+  TrancheFab,
+  SeniorTrancheFab,
+  AllowanceOperatorFab,
+  WhitelistOperatorFab,
+  DefaultAssessorFab,
+  FullInvestmentAssessorFab,
+  DefaultDistributorFab,
+  LenderDeployer
+} from "../../lender/deployer.sol";
+import { Tranche } from "../../lender/tranche/tranche.sol";
+import { SeniorTranche } from "../../lender/tranche/senior_tranche.sol";
+
+import { TestRoot } from "./root.sol";
 import "../simple/token.sol";
 
 import "tinlake-erc20/erc20.sol";
+import { PushRegistry } from "tinlake-registry/registry.sol";
+import { TokenLike } from "./interfaces.sol";
+
+contract DistributorLike {
+    function borrowFromTranches() public returns (bool);
+    function rely(address usr) public;
+    function deny(address usr) public;
+    function depend (bytes32 what, address addr) public;
+    function file(bytes32 what, bool flag) public;
+    function balance() public;
+}
+
+contract AuthLike {
+    function rely(address) public;
+    function deny(address) public;
+}
 
 contract TestSetup {
     Title public collateralNFT;
@@ -30,31 +73,29 @@ contract TestSetup {
     address      public currency_;
 
     // Borrower contracts
-    Shelf shelf;
-    Pile pile;
-    Title title;
-    Principal ceiling;
-    Collector collector;
+    Shelf        shelf;
+    Pile         pile;
+    Title        title;
+    Principal    ceiling;
+    Collector    collector;
     PushRegistry threshold;
-    // PricePoolLike pricePool;
-    // LightSwitchLike lightswitch;
 
     // Lender contracts
-    Tranche junior;
-    SeniorTranche senior;
-    DistributorLike distributor;
-    ERC20 juniorERC20;
-    OperatorLike juniorOperator;
-    ERC20 seniorERC20;
-    OperatorLike seniorOperator;
-    AssessorLike assessor;
+    Tranche          junior;
+    SeniorTranche    senior;
+    DistributorLike  distributor;
+    TokenLike        juniorToken;
+    address          juniorOperator;
+    TokenLike        seniorToken;
+    address          seniorOperator;
+    address          assessor;
 
     // Deployers
     BorrowerDeployer public borrowerDeployer;
-    LenderDeployer public lenderDeployer;
+    LenderDeployer public   lenderDeployer;
 
-    TestRootAdmin rootAdmin;
-    address rootAdmin_;
+    TestRoot root;
+    address  root_;
 
     function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
         tokenId = collateralNFT.issue(usr);
@@ -69,57 +110,53 @@ contract TestSetup {
         currency = new SimpleToken("C", "Currency", "1", 0);
         currency_ = address(currency);
 
-        rootAdmin = new TestRootAdmin();
-        rootAdmin_ = address(rootAdmin);
+        root = new TestRoot();
+        root_ = address(root);
         // only admin is main deployer
         deployBorrower();
         // only admin is main deployer
         deployLender(operator_, distributor_, assessor_, senior_);
 
-        rootAdmin.file("borrower", address(borrowerDeployer));
-        rootAdmin.file("lender", address(lenderDeployer));
+        root.file("borrower", address(borrowerDeployer));
+        root.file("lender", address(lenderDeployer));
 
-        rootAdmin.completeDeployment();
+        root.deploy();
     }
 
     function deployBorrower() private {
         TitleFab titlefab = new TitleFab();
         ShelfFab shelffab = new ShelfFab();
         PileFab pileFab = new PileFab();
-        PrincipalFab principalFab = new PrincipalFab();
+        CeilingFab ceilingFab = new CeilingFab();
         CollectorFab collectorFab = new CollectorFab();
         ThresholdFab thresholdFab = new ThresholdFab();
         PricePoolFab pricePoolFab = new PricePoolFab();
 
-        borrowerDeployer = new BorrowerDeployer(rootAdmin_, titlefab, shelffab, pileFab, principalFab, collectorFab, thresholdFab, pricePoolFab);
+        borrowerDeployer = new BorrowerDeployer(root_, titlefab, shelffab, pileFab, ceilingFab, collectorFab, thresholdFab, pricePoolFab, currency_, "Tinlake Loan Token", "TLNT");
 
-        borrowerDeployer.deployTitle("Tinlake Loan", "TLNT");
+        borrowerDeployer.deployTitle();
         borrowerDeployer.deployPile();
-        borrowerDeployer.deployPrincipal();
-        borrowerDeployer.deployShelf(currency_);
-
+        borrowerDeployer.deployCeiling();
+        borrowerDeployer.deployShelf();
         borrowerDeployer.deployThreshold();
         borrowerDeployer.deployCollector();
         borrowerDeployer.deployPricePool();
-
         borrowerDeployer.deploy();
 
-        shelf = borrowerDeployer.shelf();
-        pile = borrowerDeployer.pile();
-        ceiling = borrowerDeployer.principal();
-        title = borrowerDeployer.title();
-        collector = borrowerDeployer.collector();
-        threshold = borrowerDeployer.threshold();
-        // pricePool = borrowerDeployer.pricePool();
-        // lightswitch = borrowerDeployer.lightswitch();
-
+        shelf = Shelf(borrowerDeployer.shelf());
+        pile = Pile(borrowerDeployer.pile());
+        ceiling = Principal(borrowerDeployer.ceiling());
+        title = Title(borrowerDeployer.title());
+        collector = Collector(borrowerDeployer.collector());
+        threshold = PushRegistry(borrowerDeployer.threshold());
     }
 
-    function deployLender(bytes32 operator_,  bytes32 distributor_,bytes32 assessor_, bool senior_) public {
+    function deployLender(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_) public {
         address distributorFab_;
         address operatorFab_;
-
         address assessorFab_;
+        address seniorOperatorFab_;
+        address seniorTrancheFab_;
 
         if (operator_ == "whitelist") {
             operatorFab_ = address(new WhitelistOperatorFab());
@@ -137,43 +174,40 @@ contract TestSetup {
             assessorFab_ = address(new FullInvestmentAssessorFab());
         }
 
-        lenderDeployer = new LenderDeployer(rootAdmin_, currency_, address(new TrancheFab()), assessorFab_,
-            operatorFab_, distributorFab_);
+        if (senior_) {
+            seniorOperatorFab_ = operatorFab_;
+            uint ratePerSecond = 1000000564701133626865910626; // 5% per day
+            seniorTrancheFab_ = address(new SeniorTrancheFab(ratePerSecond));
+        }
 
-        lenderDeployer.deployJuniorTranche("JUN", "Junior Tranche Token");
+        lenderDeployer = new LenderDeployer(root_, currency_, address(new TrancheFab()), assessorFab_,
+            operatorFab_, distributorFab_, seniorTrancheFab_, seniorOperatorFab_);
+
+        lenderDeployer.deployJuniorTranche();
         lenderDeployer.deployAssessor();
         lenderDeployer.deployDistributor();
         lenderDeployer.deployJuniorOperator();
 
         if (senior_) {
-            deploySenior(operatorFab_);
+            lenderDeployer.deploySeniorTranche();
+            senior = SeniorTranche(lenderDeployer.senior());
+
+            lenderDeployer.deploySeniorOperator();
+            seniorOperator = lenderDeployer.seniorOperator();
+            address seniorToken_ = address(Tranche(lenderDeployer.senior()).token());
+            seniorToken = TokenLike(seniorToken_);
         }
 
         lenderDeployer.deploy();
 
-        distributor = lenderDeployer.distributor();
+        distributor = DistributorLike(lenderDeployer.distributor());
         juniorOperator = lenderDeployer.juniorOperator();
-        juniorERC20 = lenderDeployer.juniorERC20();
-        junior = lenderDeployer.junior();
-        assessor = AssessorLike(address(lenderDeployer.assessor()));
+        junior = Tranche(lenderDeployer.junior());
+        // TODO: solidity issue: this direct conversion does not work
+        // juniorToken = TokenLike(Tranche(lenderDeployer.junior()).token());
+        address juniorToken_ = address(Tranche(lenderDeployer.junior()).token());
+        seniorToken = TokenLike(juniorToken_);
+         assessor = lenderDeployer.assessor();
     }
 
-    function deploySenior(address operatorfab_) public {
-        address sOperatorfab_;
-        address tranchefab_;
-
-        sOperatorfab_ = operatorfab_;
-        tranchefab_ = address(new SeniorTrancheFab());
-
-        lenderDeployer.depend("senior_tranche_fab", tranchefab_);
-        lenderDeployer.depend("senior_operator_fab", sOperatorfab_);
-
-        uint ratePerSecond = 1000000564701133626865910626; // 5% per day
-        lenderDeployer.deploySeniorTranche("SUN", "Senior Tranche Token", ratePerSecond);
-        senior = lenderDeployer.senior();
-
-        lenderDeployer.deploySeniorOperator();
-        seniorOperator = lenderDeployer.seniorOperator();
-        seniorERC20 = lenderDeployer.seniorERC20();
-    }
 }

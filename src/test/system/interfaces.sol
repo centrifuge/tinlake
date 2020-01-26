@@ -25,6 +25,15 @@ contract TitleLike {
     function ownerOf (uint) public returns (address);
 }
 
+contract TokenLike{
+    function totalSupply() public returns (uint);
+    function balanceOf(address) public returns (uint);
+    function transferFrom(address,address,uint) public;
+    function approve(address, uint) public;
+    function mint(address, uint) public;
+    function burn(address, uint) public;
+}
+
 contract PileLike {
     function debt(uint loan) public returns(uint);
     function file(uint rate, uint speed) public;

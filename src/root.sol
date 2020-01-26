@@ -12,53 +12,54 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 pragma solidity >=0.5.12;
-import "./borrower/deployer.sol";
-import "./lender/deployer.sol";
+
+import { BorrowerDeployer } from "./borrower/deployer.sol";
+import { LenderDeployer } from "./lender/deployer.sol";
 
 import "tinlake-auth/auth.sol";
 
-contract RootAdmin is Auth {
+contract AuthLike {
+    function rely(address) public;
+    function deny(address) public;
+}
+
+contract DependLike {
+    function depend(bytes32, address) public;
+}
+
+
+contract TinlakeRoot is Auth {
     BorrowerDeployer borrowerDeployer;
     LenderDeployer lenderDeployer;
 
     constructor () public {
         wards[msg.sender] = 1;
     }
+
     function file(bytes32 what, address deployer) public auth {
         if(what == "borrower") borrowerDeployer = BorrowerDeployer(deployer);
         else if (what == "lender") lenderDeployer = LenderDeployer(deployer);
         else revert();
     }
 
-    function dependContracts() internal  {
-        address distributor_ = address(lenderDeployer.distributor());
-        address shelf_ = address(borrowerDeployer.shelf());
 
-        // Borrower  Depends
-        borrowerDeployer.collector().depend("distributor", distributor_);
-
-        // todo currently only one address approval in shelf
-        borrowerDeployer.shelf().depend("lender", distributor_);
-        borrowerDeployer.collector().depend("distributor", distributor_);
-        borrowerDeployer.shelf().depend("distributor", distributor_);
-
-        //  Lender depends
-        address borrowerPricePool = address(borrowerDeployer.pricePool());
-        lenderDeployer.distributor().depend("shelf", shelf_);
-        lenderDeployer.assessor().depend("pool", borrowerPricePool);
-    }
-
-    function relyModules() internal {
-        // distributor allowed to call
-        borrowerDeployer.shelf().rely(address(lenderDeployer.distributor()));
-    }
-
-    function completeDeployment() public auth {
+    function deploy() public auth {
         require(address(borrowerDeployer) != address(0));
         require(address(lenderDeployer) != address(0));
 
-        dependContracts();
-        relyModules();
+        address distributor_ = lenderDeployer.distributor();
+        address shelf_ = borrowerDeployer.shelf();
+
+        // Borrower depends
+        DependLike(borrowerDeployer.collector()).depend("distributor", distributor_);
+        DependLike(borrowerDeployer.shelf()).depend("lender", distributor_);
+        DependLike(borrowerDeployer.collector()).depend("distributor", distributor_);
+        DependLike(borrowerDeployer.shelf()).depend("distributor", distributor_);
+
+        //  Lender depends
+        address poolValue = borrowerDeployer.pricePool();
+        DependLike(lenderDeployer.distributor()).depend("shelf", shelf_);
+        DependLike(lenderDeployer.assessor()).depend("pool", poolValue);
     }
 
 }

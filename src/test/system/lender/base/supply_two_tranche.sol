@@ -17,6 +17,10 @@ pragma solidity >=0.5.12;
 
 import "../../system.t.sol";
 
+contract FileLike {
+    function file(bytes32, uint) public;
+}
+
 contract SupplyTwoTrancheTest is BaseSystemTest {
 
     Hevm hevm;
@@ -46,19 +50,19 @@ contract SupplyTwoTrancheTest is BaseSystemTest {
         seniorInvestor.doSupply(sSupplyAmount);
 
         assertEq(currency.balanceOf(address(junior)), jSupplyAmount);
-        assertEq(juniorERC20.balanceOf(juniorInvestor_), jSupplyAmount);
+        assertEq(juniorToken.balanceOf(juniorInvestor_), jSupplyAmount);
         assertEq(currency.balanceOf(address(senior)), sSupplyAmount);
-        assertEq(seniorERC20.balanceOf(seniorInvestor_), sSupplyAmount);
+        assertEq(seniorToken.balanceOf(seniorInvestor_), sSupplyAmount);
 
         uint minJuniorRatio = 8 * 10**26;
-        assessor.file("minJuniorRatio" , minJuniorRatio);
+        FileLike(assessor).file("minJuniorRatio" , minJuniorRatio);
 
         // doesn't break ratio, junior supply now 90 and senior supply 20
         uint jAdditionalSupply = 10 ether;
         juniorInvestor.doSupply(jAdditionalSupply);
 
         assertEq(currency.balanceOf(address(junior)), jSupplyAmount + jAdditionalSupply);
-        assertEq(juniorERC20.balanceOf(juniorInvestor_), jSupplyAmount + jAdditionalSupply);
+        assertEq(juniorToken.balanceOf(juniorInvestor_), jSupplyAmount + jAdditionalSupply);
 
         // new loan, should take all from junior and 10 from senior
         uint ceiling = 100 ether;
@@ -73,7 +77,7 @@ contract SupplyTwoTrancheTest is BaseSystemTest {
         assertEq(senior.debt(), 10.5 ether);
 
         // change the ratio, senior can still supply
-        assessor.file("minJuniorRatio" , 0);
+        FileLike(assessor).file("minJuniorRatio" , 0);
         seniorInvestor.doSupply(sSupplyAmount);
     }
 
@@ -89,19 +93,19 @@ contract SupplyTwoTrancheTest is BaseSystemTest {
         seniorInvestor.doSupply(sSupplyAmount);
 
         assertEq(currency.balanceOf(address(junior)), jSupplyAmount);
-        assertEq(juniorERC20.balanceOf(juniorInvestor_), jSupplyAmount);
+        assertEq(juniorToken.balanceOf(juniorInvestor_), jSupplyAmount);
         assertEq(currency.balanceOf(address(senior)), sSupplyAmount);
-        assertEq(seniorERC20.balanceOf(seniorInvestor_), sSupplyAmount);
+        assertEq(seniorToken.balanceOf(seniorInvestor_), sSupplyAmount);
 
         uint minJuniorRatio = 8 * 10**26;
-        assessor.file("minJuniorRatio" , minJuniorRatio);
+        FileLike(assessor).file("minJuniorRatio" , minJuniorRatio);
 
         // doesn't break ratio, junior supply now 90 and senior supply 20
         uint jAdditionalSupply = 10 ether;
         juniorInvestor.doSupply(jAdditionalSupply);
 
         assertEq(currency.balanceOf(address(junior)), jSupplyAmount + jAdditionalSupply);
-        assertEq(juniorERC20.balanceOf(juniorInvestor_), jSupplyAmount + jAdditionalSupply);
+        assertEq(juniorToken.balanceOf(juniorInvestor_), jSupplyAmount + jAdditionalSupply);
 
         // new loan, should take all from junior and 10 from senior
         uint ceiling = 100 ether;

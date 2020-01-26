@@ -15,7 +15,7 @@
 
 pragma solidity >=0.5.12;
 
-import "tinlake-auth/auth.sol";
+import { Auth } from "tinlake-auth/auth.sol";
 
 import { Title } from "tinlake-title/title.sol";
 import { Shelf } from "./shelf.sol";
@@ -25,177 +25,190 @@ import { Principal } from "./ceiling/principal.sol";
 import { PushRegistry } from "tinlake-registry/registry.sol";
 import { PricePool } from "./price/pool.sol";
 
-contract LenderFabLike {
-    function deploy(address,address,address) public returns (address);
+contract AuthLike {
+    function rely(address) public;
+    function deny(address) public;
 }
 
-contract LenderLike {
-    function rely(address) public;
-    function file(address) public;
-}
-
-contract WardsLike {
-    function rely(address) public;
+contract DependLike {
+    function depend(bytes32, address) public;
 }
 
 contract PileFab {
-    function newPile() public returns (Pile pile) {
-        pile = new Pile();
+    function newPile() public returns (address) {
+        Pile pile = new Pile();
         pile.rely(msg.sender);
         pile.deny(address(this));
+        return address(pile);
     }
 }
 
 contract TitleFab {
-    function newTitle(string memory name, string memory symbol) public returns (Title title) {
-        title = new Title(name, symbol);
+    function newTitle(string memory name, string memory symbol) public returns (address) {
+        Title title = new Title(name, symbol);
         title.rely(msg.sender);
         title.deny(address(this));
+        return address(title);
     }
 }
 
 contract ShelfFab {
-    function newShelf(address tkn_, address title_, address debt_, address principal_) public returns (Shelf shelf) {
-        shelf = new Shelf(tkn_, title_, debt_, principal_);
+    function newShelf(address tkn_, address title_, address debt_, address ceiling_) public returns (address) {
+        Shelf shelf = new Shelf(tkn_, title_, debt_, ceiling_);
         shelf.rely(msg.sender);
         shelf.deny(address(this));
+        return address(shelf);
     }
 }
 
 contract CollectorFab {
-    function newCollector(address shelf, address pile, address threshold) public returns (Collector collector) {
-        collector = new Collector(shelf, pile, threshold);
+    function newCollector(address shelf, address pile, address threshold) public returns (address) {
+        Collector collector = new Collector(shelf, pile, threshold);
         collector.rely(msg.sender);
         collector.deny(address(this));
+        return address(collector);
     }
 }
 
-contract PrincipalFab {
-    function newPrincipal() public returns (Principal principal) {
-        principal = new Principal();
-        principal.rely(msg.sender);
-        principal.deny(address(this));
+contract CeilingFab {
+    function newCeiling() public returns (address) {
+        Principal ceiling = new Principal();
+        ceiling.rely(msg.sender);
+        ceiling.deny(address(this));
+        return address(ceiling);
     }
 }
 
 contract ThresholdFab {
-    function newThreshold() public returns (PushRegistry threshold) {
-        threshold = new PushRegistry();
+    function newThreshold() public returns (address) {
+        PushRegistry threshold = new PushRegistry();
         threshold.rely(msg.sender);
         threshold.deny(address(this));
+        return address(threshold);
     }
 }
 
 contract PricePoolFab {
-    function newPricePool() public returns (PricePool pricePool) {
-        pricePool = new PricePool();
+    function newPricePool() public returns (address) {
+        PricePool pricePool = new PricePool();
         pricePool.rely(msg.sender);
         pricePool.deny(address(this));
+        return address(pricePool);
     }
 }
 
 contract BorrowerDeployer is Auth {
-    TitleFab          titlefab;
-    ShelfFab          shelffab;
-    PileFab           pilefab;
-    PrincipalFab      principalFab;
-    CollectorFab      collectorFab;
-    ThresholdFab      thresholdFab;
-    PricePoolFab      pricePoolFab;
+    address      public root;
 
-    address     public rootAdmin;
+    TitleFab     public titlefab;
+    ShelfFab     public shelffab;
+    PileFab      public pilefab;
+    CeilingFab   public ceilingFab;
+    CollectorFab public collectorFab;
+    ThresholdFab public thresholdFab;
+    PricePoolFab public pricePoolFab;
 
-    Title       public title;
-    Shelf       public shelf;
-    LenderLike  public lender;
-    Pile        public pile;
-    Principal   public principal;
-    Collector   public collector;
-    PushRegistry public threshold;
-    PricePool   public  pricePool;
+    address public title;
+    address public shelf;
+    address public pile;
+    address public ceiling;
+    address public collector;
+    address public threshold;
+    address public pricePool;
+    address public currency;
 
+    string       public titleName;
+    string       public titleSymbol;
 
-    address public deployUser;
+    address constant ZERO = address(0);
 
-
-    constructor (address rootAdmin_, TitleFab titlefab_, ShelfFab shelffab_, PileFab pilefab_,
-        PrincipalFab principalFab_, CollectorFab collectorFab_, ThresholdFab thresholdFab_, PricePoolFab pricePoolFab_) public {
-        deployUser = msg.sender;
-        rootAdmin = rootAdmin_;
-
-        wards[deployUser] = 1;
-        wards[rootAdmin] = 1;
-
+    constructor (
+      address root_,
+      TitleFab titlefab_,
+      ShelfFab shelffab_,
+      PileFab pilefab_,
+      CeilingFab ceilingFab_,
+      CollectorFab collectorFab_,
+      ThresholdFab thresholdFab_,
+      PricePoolFab pricePoolFab_,
+      address currency_,
+      string memory titleName_,
+      string memory titleSymbol_
+    ) public {
+        root = root_;
+        wards[root] = 1;
 
         titlefab = titlefab_;
         shelffab = shelffab_;
 
         pilefab = pilefab_;
-        principalFab = principalFab_;
+        ceilingFab = ceilingFab_;
         collectorFab = collectorFab_;
         thresholdFab = thresholdFab_;
         pricePoolFab = pricePoolFab_;
+        currency = currency_;
+
+        titleName = titleName_;
+        titleSymbol = titleSymbol_;
     }
 
-    function deployThreshold() public auth {
+    function deployThreshold() public {
+        require(threshold == ZERO);
         threshold = thresholdFab.newThreshold();
-        threshold.rely(rootAdmin);
+        AuthLike(threshold).rely(root);
 
     }
 
-    function deployPricePool() public auth {
+    function deployPricePool() public {
+        require(pricePool == ZERO);
         pricePool = pricePoolFab.newPricePool();
-        pricePool.rely(rootAdmin);
+        AuthLike(pricePool).rely(root);
     }
 
-    function deployCollector() public auth {
+    function deployCollector() public {
+        require(collector == ZERO && address(shelf) != ZERO);
         collector = collectorFab.newCollector(address(shelf), address(pile), address(threshold));
-        collector.rely(rootAdmin);
+        AuthLike(collector).rely(root);
     }
 
-    function deployPile() public auth {
+    function deployPile() public {
+        require(pile == ZERO);
         pile = pilefab.newPile();
-        pile.rely(rootAdmin);
+        AuthLike(pile).rely(root);
     }
 
-    function deployTitle(string memory name, string memory symbol) public auth {
-        title = titlefab.newTitle(name, symbol);
-        title.rely(rootAdmin);
+    function deployTitle() public {
+        require(title == ZERO);
+        title = titlefab.newTitle(titleName, titleSymbol);
+        AuthLike(title).rely(root);
     }
 
-    function deployShelf(address currency_) public auth {
-        shelf = shelffab.newShelf(currency_, address(title), address(pile), address(principal));
-        shelf.rely(rootAdmin);
+    function deployShelf() public {
+        require(shelf == ZERO && title != ZERO && pile != ZERO && ceiling != ZERO);
+        shelf = shelffab.newShelf(currency, address(title), address(pile), address(ceiling));
+        AuthLike(shelf).rely(root);
     }
 
-    function deployPrincipal() public auth {
-        principal = principalFab.newPrincipal();
-        principal.rely(rootAdmin);
+    function deployCeiling() public {
+        require(ceiling == ZERO);
+        ceiling = ceilingFab.newCeiling();
+        AuthLike(ceiling).rely(root);
     }
 
-    function deploy() public auth {
-        address shelf_ = address(shelf);
-        address collector_ = address(collector);
-
+    function deploy() public {
         // ensures all required deploy methods were called
-        require(shelf_ != address(0));
-        require(collector_ != address(0));
-        require(address(pricePool) != address(0));
-
+        require(shelf != ZERO && collector != ZERO && pricePool != ZERO);
 
         // shelf allowed to call
-        pile.rely(shelf_);
-        principal.rely(shelf_);
-        title.rely(shelf_);
+        AuthLike(pile).rely(shelf);
+        AuthLike(ceiling).rely(shelf);
+        AuthLike(title).rely(shelf);
 
         // collector allowed to call
-        shelf.rely(collector_);
+        AuthLike(shelf).rely(collector);
 
         // pool needs pile
-        pricePool.depend("pile", address(pile));
-
-        // remove access of deployUser
-        deny(deployUser);
+        DependLike(pricePool).depend("pile", address(pile));
     }
 
 }

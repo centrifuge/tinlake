@@ -59,7 +59,7 @@ contract RedeemTest is BaseSystemTest {
 
     function assertPostCondition(uint investorBalance) public {
         // assert: no more tokens left for junior investor
-        assertEq(juniorERC20.balanceOf(juniorInvestor_), 0);
+        assertEq(juniorToken.balanceOf(juniorInvestor_), 0);
         // assert: back to original balance
         assertEq(currency.balanceOf(juniorInvestor_), investorBalance);
         // assert: shelf is balanced, excess has either been transferred to tranches or needed money transferred from distributor -> shelf

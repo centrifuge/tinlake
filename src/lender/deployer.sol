@@ -13,36 +13,63 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 pragma solidity >=0.5.12;
-import "tinlake-auth/auth.sol";
-
-
+import { Auth } from "tinlake-auth/auth.sol";
 
 // lender contracts
-import {DefaultAssessor} from "./assessor/default.sol";
-import {FullInvestmentAssessor} from "./assessor/full_investment.sol";
-import {AllowanceOperator} from "./tranche/operator/allowance.sol";
-import {WhitelistOperator} from "./tranche/operator/whitelist.sol";
-import {Tranche} from "./tranche/tranche.sol";
-import {SeniorTranche} from "./tranche/senior_tranche.sol";
-import {DefaultDistributor} from "./distributor/default.sol";
+import { DefaultAssessor } from "./assessor/default.sol";
+import { FullInvestmentAssessor } from "./assessor/full_investment.sol";
+import { AllowanceOperator } from "./tranche/operator/allowance.sol";
+import { WhitelistOperator } from "./tranche/operator/whitelist.sol";
+import { Tranche } from "./tranche/tranche.sol";
+import { SeniorTranche } from "./tranche/senior_tranche.sol";
+import { DefaultDistributor } from "./distributor/default.sol";
+
 import "tinlake-erc20/erc20.sol";
 
+contract AuthLike {
+    function rely(address) public;
+    function deny(address) public;
+}
+
+contract DependLike {
+    function depend(bytes32, address) public;
+}
+
+
+
 contract TrancheFab {
-    function newTranche(address currency, address token) public returns (Tranche tranche) {
-        tranche = new Tranche(token, currency);
+    string constant public symbol = "TIN";
+    string constant public name = "Tinlake TIN Token";
+
+    function newTranche(address currency, address assessor) public returns (address) {
+        ERC20 token = new ERC20(symbol, name);
+        Tranche tranche = new Tranche(address(token), currency);
         tranche.rely(msg.sender);
         tranche.deny(address(this));
+        token.rely(address(tranche));
+        return address(tranche);
     }
 }
 
 contract SeniorTrancheFab {
-    function newSeniorTranche(address currency, address token, address assessor) public returns (SeniorTranche tranche) {
-        tranche = new SeniorTranche(token, currency, assessor);
-        tranche.rely(msg.sender);
-        tranche.deny(address(this));
+    string constant public symbol = "DROP";
+    string constant public name = "Tinlake Drop Token";
+    uint public ratePerSecond;
+
+    constructor (uint rate_) public {
+        ratePerSecond = rate_;
+    }
+
+    function newTranche(address currency, address assessor) public returns (address) {
+        ERC20 token = new ERC20(symbol, name);
+        SeniorTranche senior = new SeniorTranche(address(token), currency, assessor);
+        senior.rely(msg.sender);
+        senior.deny(address(this));
+        senior.file("rate", ratePerSecond);
+        token.rely(address(senior));
+        return address(senior);
     }
 }
-
 
 contract AssessorFab {
     function newAssessor() public returns (address);
@@ -74,11 +101,6 @@ contract OperatorFab {
     function newOperator(address tranche, address assessor, address distributor) public returns (address);
 }
 
-contract OperatorLike {
-    function rely(address usr) public;
-    function deny(address usr) public;
-}
-
 contract AllowanceOperatorFab {
     function newOperator(address tranche, address assessor, address distributor) public returns (address operator_) {
         AllowanceOperator operator = new AllowanceOperator(tranche, assessor, distributor);
@@ -89,7 +111,7 @@ contract AllowanceOperatorFab {
 }
 
 contract WhitelistOperatorFab {
-    function newOperator(address tranche, address assessor, address distributor) public returns (address operator_) {
+    function newOperator(address tranche, address assessor, address distributor) public returns (address) {
         WhitelistOperator operator = new WhitelistOperator(tranche, assessor, distributor);
         operator.rely(msg.sender);
         operator.deny(address(this));
@@ -98,21 +120,10 @@ contract WhitelistOperatorFab {
 }
 
 // Distributor Fabs
-
 // abstract distributor fab
 contract DistributorFab {
     function newDistributor(address currency) public returns (address);
 }
-
-contract DistributorLike {
-    bool public borrowFromTranches;
-    function rely(address usr) public;
-    function deny(address usr) public;
-    function depend (bytes32 what, address addr) public;
-    function file(bytes32 what, bool flag) public;
-    function balance() public;
-}
-
 contract DefaultDistributorFab {
     function newDistributor(address currency) public returns (address) {
         DefaultDistributor distributor = new DefaultDistributor(currency);
@@ -121,134 +132,112 @@ contract DefaultDistributorFab {
         return address(distributor);
     }
 }
-contract AssessorLike {
-    function rely(address usr) public;
-    function deny(address usr) public;
-    function depend(bytes32 what, address addr_) public;
-    function file(bytes32 what, uint value) public;
-}
 
 contract LenderDeployer is Auth {
-    address rootAdmin;
-    address deployUser;
+    address root;
 
     // Fabs
-    TrancheFab trancheFab;
-    SeniorTrancheFab seniorTrancheFab;
-    AssessorFab assessorFab;
-    DistributorFab distributorFab;
+    TrancheFab public        juniorTrancheFab;
+    SeniorTrancheFab public  seniorTrancheFab;
+    AssessorFab public       assessorFab;
+    DistributorFab public    distributorFab;
 
-    OperatorFab juniorOperatorFab;
-    OperatorFab seniorOperatorFab;
+    OperatorFab public       juniorOperatorFab;
+    OperatorFab public       seniorOperatorFab;
 
     address public currency;
 
     // Contracts
-    AssessorLike public assessor;
-    DistributorLike public distributor;
+    address public assessor;
+    address public distributor;
 
     // junior
-    Tranche public junior;
-    address public junior_;
-    ERC20 public juniorERC20;
-    OperatorLike public juniorOperator;
+    address public junior;
+    address public juniorOperator;
 
     // optional senior
-    SeniorTranche public senior;
-    address public senior_;
-    ERC20 public seniorERC20;
-    OperatorLike public seniorOperator;
+    address public senior;
+    address public seniorOperator;
 
-    constructor(address rootAdmin_, address currency_, address trancheFab_, address assessorFab_,
-        address juniorOperatorFab_, address distributorFab_) public {
+    address constant ZERO = address(0);
 
-        deployUser = msg.sender;
-        rootAdmin = rootAdmin_;
-
-        wards[deployUser] = 1;
-        wards[rootAdmin] = 1;
+    constructor(
+      address root_,
+      address currency_,
+      address juniorTrancheFab_,
+      address assessorFab_,
+      address juniorOperatorFab_,
+      address distributorFab_,
+      address seniorTrancheFab_,
+      address seniorOperatorFab_
+    ) public {
+        root = root_;
+        wards[root] = 1;
 
         currency = currency_;
 
-        trancheFab = TrancheFab(trancheFab_);
         assessorFab = AssessorFab(assessorFab_);
+        juniorTrancheFab = TrancheFab(juniorTrancheFab_);
         juniorOperatorFab = OperatorFab(juniorOperatorFab_);
+        seniorTrancheFab = SeniorTrancheFab(seniorTrancheFab_);
+        seniorOperatorFab = OperatorFab(seniorOperatorFab_);
 
         distributorFab = DistributorFab(distributorFab_);
     }
 
-    function depend(bytes32 what, address addr) public auth {
-        if (what == "senior_tranche_fab") { seniorTrancheFab = SeniorTrancheFab(addr); }
-        else if (what == "senior_operator_fab") { seniorOperatorFab = OperatorFab(addr); }
-        else revert();
+    function deployDistributor() public {
+        require(distributor == ZERO);
+        distributor = distributorFab.newDistributor(currency);
+        AuthLike(distributor).rely(root);
     }
 
-    function deployDistributor() public auth {
-        distributor = DistributorLike(distributorFab.newDistributor(currency));
-        distributor.rely(rootAdmin);
+    function deploySeniorTranche() public  {
+        require(assessor != ZERO && senior == ZERO);
+        senior = seniorTrancheFab.newTranche(currency, assessor);
+        AuthLike(senior).rely(root);
     }
 
-    function deploySeniorTranche(string memory symbol, string memory name, uint ratePerSecond) public auth {
-        require(address(assessor) != address(0));
-        seniorERC20 = new ERC20(symbol, name);
-        senior = seniorTrancheFab.newSeniorTranche(currency, address(seniorERC20), address(assessor));
-        senior_ = address(senior);
-        // senior tranche can mint
-        seniorERC20.rely(address(senior));
-        senior.rely(rootAdmin);
-        senior.file("rate", ratePerSecond);
+    function deployJuniorTranche() public {
+        require(assessor != ZERO && junior == ZERO);
+        junior = juniorTrancheFab.newTranche(currency, assessor);
+        AuthLike(junior).rely(root);
     }
 
-    function deployJuniorTranche(string memory symbol, string memory name) public auth {
-        juniorERC20 = new ERC20(symbol, name);
-        junior = trancheFab.newTranche(currency, address(juniorERC20));
-        junior_ = address(junior);
-        // tranche can mint
-        juniorERC20.rely(address(junior));
-        junior.rely(rootAdmin);
+    function deployAssessor() public {
+        require(assessor == ZERO);
+        assessor = assessorFab.newAssessor();
+        AuthLike(assessor).rely(root);
     }
 
-    function deployAssessor() public auth {
-        assessor = AssessorLike(assessorFab.newAssessor());
-        assessor.rely(rootAdmin);
+    function deployJuniorOperator() public {
+        require(assessor != ZERO && junior != ZERO && distributor != ZERO);
+
+        juniorOperator = juniorOperatorFab.newOperator(junior, assessor, distributor);
+        AuthLike(juniorOperator).rely(root);
     }
 
-    function deployJuniorOperator() public auth {
-        require(address(assessor) != address(0));
-        require(address(junior) != address(0));
-        require(address(distributor) != address(0));
+    function deploySeniorOperator() public {
+        require(address(assessor) != ZERO && address(senior) != ZERO && address(distributor) != ZERO);
 
-        juniorOperator = OperatorLike(juniorOperatorFab.newOperator(address(junior), address(assessor), address(distributor)));
-        juniorOperator.rely(rootAdmin);
+        seniorOperator = seniorOperatorFab.newOperator(senior, assessor, distributor);
+        AuthLike(seniorOperator).rely(root);
     }
 
-    function deploySeniorOperator() public auth {
-        require(address(assessor) != address(0));
-        require(address(senior) != address(0));
-        require(address(distributor) != address(0));
+    function deploy() public {
+        // if juniorOperator and optionally seniorOperator are defined required deploy methods were called
+        require(juniorOperator != ZERO && (address(seniorTrancheFab) == ZERO || seniorOperator != ZERO));
 
-        seniorOperator = OperatorLike(seniorOperatorFab.newOperator(address(senior), address(assessor), address(distributor)));
-        seniorOperator.rely(rootAdmin);
-    }
+        AuthLike(junior).rely(juniorOperator);
+        AuthLike(junior).rely(distributor);
 
-    function deploy() public auth {
-        // if juniorOperator is defined all required deploy methods were called
-        require(address(juniorOperator) != address(0));
+        DependLike(distributor).depend("junior", junior);
+        DependLike(assessor).depend("junior", junior);
 
-        junior.rely(address(juniorOperator));
-        junior.rely(address(distributor));
-
-        distributor.depend("junior", junior_);
-        assessor.depend("junior", junior_);
-
-        if (senior_ != address(0)) {
-            senior.rely(address(seniorOperator));
-            senior.rely(address(distributor));
-            distributor.depend("senior" , senior_);
-            assessor.depend("senior" , senior_);
+        if (senior != ZERO) {
+            AuthLike(senior).rely(seniorOperator);
+            AuthLike(senior).rely(distributor);
+            DependLike(distributor).depend("senior" , senior);
+            DependLike(assessor).depend("senior" , senior);
         }
-
-        // remove access of deployUser
-        deny(deployUser);
     }
 }

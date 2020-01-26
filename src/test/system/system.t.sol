@@ -21,7 +21,7 @@ import "./users/admin.sol";
 
 contract STest is BaseSystemTest {
     Hevm public hevm;
-    
+
     function setUp() public {
         baseSetup("whitelist", "default", false);
         createTestUsers(false);
@@ -33,14 +33,14 @@ contract STest is BaseSystemTest {
     // Checks
     function checkAfterBorrow(uint tokenId, uint tBalance) public {
         assertEq(currency.balanceOf(borrower_), tBalance);
-        assertEq(collateralNFT.ownerOf(tokenId), address(borrowerDeployer.shelf()));
+        assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
     }
 
     function checkAfterRepay(uint loan, uint tokenId, uint tTotal, uint tLender) public {
         assertEq(collateralNFT.ownerOf(tokenId), borrower_);
-        assertEq(borrowerDeployer.pile().debt(loan), 0);
+        assertEq(pile.debt(loan), 0);
         assertEq(currency.balanceOf(borrower_), tTotal - tLender);
-        assertEq(currency.balanceOf(address(borrowerDeployer.pile())), 0);
+        assertEq(currency.balanceOf(address(pile)), 0);
     }
 
     function whitelist(uint tokenId, address collateralNFT_, uint principal, address borrowerAddr, uint rate) public returns (uint) {
@@ -55,7 +55,7 @@ contract STest is BaseSystemTest {
     }
 
     function borrow(uint loan, uint tokenId, uint principal) public {
-        borrower.approveNFT(collateralNFT, address(borrowerDeployer.shelf()));
+        borrower.approveNFT(collateralNFT, address(shelf));
         setupCurrencyOnLender(principal);
 //        // borrow transaction
         borrower.borrowAction(loan, principal);
@@ -86,18 +86,18 @@ contract STest is BaseSystemTest {
         currency.mint(borrower_, extra);
 
         // allow pile full control over borrower tokens
-        borrower.doApproveCurrency(address(borrowerDeployer.shelf()), uint(-1));
+        borrower.doApproveCurrency(address(shelf), uint(-1));
 
         return extra;
     }
 
     // note: this method will be refactored with the new lender side contracts, as the distributor should not hold any currency
     function currdistributorBal() public view returns(uint) {
-        return currency.balanceOf(address(lenderDeployer.distributor()));
+        return currency.balanceOf(address(distributor));
     }
 
     function borrowRepay(uint principal, uint rate) public {
-        CeilingLike ceiling_ = CeilingLike(address(borrowerDeployer.principal()));
+        CeilingLike ceiling_ = CeilingLike(address(ceiling));
 
         // create borrower collateral collateralNFT
         uint tokenId = collateralNFT.issue(borrower_);
@@ -111,7 +111,7 @@ contract STest is BaseSystemTest {
 
         // borrower needs some currency to pay rate
         setupRepayReq();
-        uint distributorShould = borrowerDeployer.pile().debt(loan) + currdistributorBal();
+        uint distributorShould = pile.debt(loan) + currdistributorBal();
         // close without defined amount
         borrower.doClose(loan);
         uint totalT = uint(currency.totalSupply());
@@ -128,7 +128,7 @@ contract STest is BaseSystemTest {
         // create borrower collateral collateralNFT
         uint tokenId = collateralNFT.issue(borrower_);
         uint loan = admin.doAdmit(collateralNFT_, tokenId, principal, borrower_);
-        borrower.approveNFT(collateralNFT, address(borrowerDeployer.shelf()));
+        borrower.approveNFT(collateralNFT, address(shelf));
         setupCurrencyOnLender(principal);
         borrower.borrowAction(loan, principal);
         checkAfterBorrow(tokenId, principal);
@@ -162,7 +162,7 @@ contract STest is BaseSystemTest {
 
         // borrower needs some currency to pay rate
         setupRepayReq();
-        uint distributorShould = borrowerDeployer.pile().debt(loan) + currdistributorBal();
+        uint distributorShould = pile.debt(loan) + currdistributorBal();
         // close without defined amount
         borrower.doClose(loan);
 
@@ -179,7 +179,7 @@ contract STest is BaseSystemTest {
         // borrower needs some currency to pay rate
         setupRepayReq();
 
-        uint distributorShould = borrowerDeployer.pile().debt(loan) + currdistributorBal();
+        uint distributorShould = pile.debt(loan) + currdistributorBal();
 
         // close without defined amount
         borrower.doClose(loan);
@@ -203,7 +203,7 @@ contract STest is BaseSystemTest {
             uint loan = whitelist(tokenId, collateralNFT_, principal, borrower_, rate);
             // collateralNFT whitelist
 
-            borrower.approveNFT(collateralNFT, address(borrowerDeployer.shelf()));
+            borrower.approveNFT(collateralNFT, address(shelf));
 
             setupCurrencyOnLender(principal);
             borrower.borrowAction(loan, principal);
@@ -215,9 +215,9 @@ contract STest is BaseSystemTest {
         uint tTotal = currency.totalSupply();
 
         // allow pile full control over borrower tokens
-        borrower.doApproveCurrency(address(borrowerDeployer.shelf()), uint(-1));
+        borrower.doApproveCurrency(address(shelf), uint(-1));
 
-        uint distributorBalance = currency.balanceOf(address(lenderDeployer.distributor()));
+        uint distributorBalance = currency.balanceOf(address(distributor));
         for (uint i = 1; i <= 10; i++) {
             principal = i * 80;
 
@@ -236,7 +236,7 @@ contract STest is BaseSystemTest {
         // create borrower collateral collateralNFT
         uint tokenId = collateralNFT.issue(borrower_);
         uint loan = admin.doAdmit(collateralNFT_, tokenId, principal, borrower_);
-        borrower.approveNFT(collateralNFT, address(borrowerDeployer.shelf()));
+        borrower.approveNFT(collateralNFT, address(shelf));
         borrower.borrowAction(loan, principal);
         checkAfterBorrow(tokenId, principal);
 

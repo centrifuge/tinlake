@@ -17,6 +17,8 @@ pragma solidity >=0.5.12;
 
 import "ds-test/test.sol";
 import "./setup.sol";
+import { WhitelistOperator } from "../../lender/tranche/operator/whitelist.sol";
+import { DefaultDistributor } from "../../lender/distributor/default.sol";
 import "./users/admin.sol";
 import "./users/investor.sol";
 import "./users/borrower.sol";
@@ -28,7 +30,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     // users
     Borrower borrower;
     address borrower_;
-   
+
     AdminUser public admin;
     address admin_;
 
@@ -48,13 +50,13 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         // setup deployment
         bytes32 assessor_ = "default";
         deployContracts(operator_, distributor_, assessor_,  senior_);
-        rootAdmin.relyLenderAdmin(address(this), senior_);
+        root.relyLenderAdmin(address(this), senior_);
     }
 
     function baseSetup(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_) public {
         // setup deployment
         deployContracts(operator_, distributor_, assessor_, senior_);
-        rootAdmin.relyLenderAdmin(address(this), senior_);
+        root.relyLenderAdmin(address(this), senior_);
     }
 
     function createTestUsers(bool senior_) public {
@@ -63,15 +65,15 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
         randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         randomUser_ = address(randomUser);
-       
+
         keeper = new Keeper(address(collector), currency_);
         keeper_ = address(keeper);
-        
+
         admin = new AdminUser(address(shelf), address(pile), address(ceiling), address(title), address(distributor), address(collector), address(threshold));
         admin_ = address(admin);
-        rootAdmin.relyBorrowAdmin(admin_);
+        root.relyBorrowAdmin(admin_);
 
-        juniorInvestor = new Investor(address(juniorOperator), currency_, address(juniorERC20));
+        juniorInvestor = new Investor(address(juniorOperator), currency_, address(juniorToken));
         juniorInvestor_ = address(juniorInvestor);
 
         WhitelistOperator juniorOperator = WhitelistOperator(address(juniorOperator));
@@ -80,7 +82,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         if (senior_) {
             WhitelistOperator seniorOperator = WhitelistOperator(address(seniorOperator));
 
-            seniorInvestor = new Investor(address(seniorOperator), currency_, address(seniorERC20));
+            seniorInvestor = new Investor(address(seniorOperator), currency_, address(seniorToken));
             seniorInvestor_ = address(seniorInvestor);
 
             seniorOperator.relyInvestor(seniorInvestor_);
@@ -90,7 +92,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     function lockNFT(uint loanId, address usr) public {
         Borrower(usr).approveNFT(collateralNFT, address(shelf));
         Borrower(usr).lock(loanId);
-    } 
+    }
 
     function transferNFT(address sender, address recipient, uint tokenId) public {
         Borrower(sender).approveNFT(collateralNFT, address(this));
@@ -100,7 +102,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     // helpers borrower
     // user approves shelf too lock NFT
     function createSeniorInvestor() public {
-        seniorInvestor = new Investor(address(seniorOperator), currency_, address(seniorERC20));
+        seniorInvestor = new Investor(seniorOperator, currency_, address(seniorToken));
         seniorInvestor_ = address(seniorInvestor);
 
         WhitelistOperator seniorOperator = WhitelistOperator(address(seniorOperator));
@@ -179,7 +181,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     // helpers keeper
     function setThresholdAndSeize(uint loanId, uint threshold) public {
         admin.setThreshold(loanId, threshold);
-        collector.seize(loanId); 
+        collector.seize(loanId);
     }
 
     function addKeeperAndCollect(uint loanId, uint threshold, address usr, uint recoveryPrice) public {
@@ -199,13 +201,13 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         // mint currency
         currency.mint(address(this), amount);
         currency.approve(address(junior), amount);
-        uint balanceBefore = juniorERC20.balanceOf(address(this));
+        uint balanceBefore = juniorToken.balanceOf(address(this));
         // move currency into junior tranche
         address operator_ = address(juniorOperator);
         WhitelistOperator(operator_).relyInvestor(address(this));
         WhitelistOperator(operator_).supply(amount);
         // same amount of junior tokens
-        assertEq(juniorERC20.balanceOf(address(this)), balanceBefore + amount);
+        assertEq(juniorToken.balanceOf(address(this)), balanceBefore + amount);
     }
 
     function supplyFunds(uint amount, address addr) public {

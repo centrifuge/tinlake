@@ -69,11 +69,11 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         address registry;
         uint256 tokenId;
     }
-    
+
     mapping (uint => uint) public balances;
     mapping (uint => Loan) public shelf;
     mapping (bytes32 => uint) public nftlookup;
-    
+
     uint public balance;
     address public lender;
 
@@ -87,10 +87,9 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
 
     function depend(bytes32 what, address addr) public auth {
         if (what == "lender") {
+            currency.approve(lender, uint(0));
+            currency.approve(addr, uint(-1));
             lender = addr;
-            // todo review alternatives
-            currency.approve(lender, uint(-1));
-
         }
         else if (what == "token") { currency = TokenLike(addr); }
         else if (what == "title") { title = TitleLike(addr); }
@@ -132,7 +131,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         nftlookup[nft] = 0;
         resetLoanBalance(loan);
     }
-    
+
     // --- Currency actions ---
     function balanceRequest() public view returns (bool, uint) {
         uint currencyBalance = currency.balanceOf(address(this));
@@ -171,9 +170,9 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     function recover(uint loan, address usr, uint currencyAmount) public auth {
         pile.accrue(loan);
         uint loanDebt = pile.debt(loan);
-        
+
         currency.transferFrom(usr, address(this), currencyAmount);
-       
+
         ceiling.repay(loan, currencyAmount);
         pile.decDebt(loan, loanDebt);
         resetLoanBalance(loan);
@@ -186,7 +185,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         // only repay max loan debt
         if (currencyAmount > loanDebt) {
             currencyAmount = loanDebt;
-        } 
+        }
         currency.transferFrom(usr, address(this), currencyAmount);
         ceiling.repay(loan, currencyAmount);
         pile.decDebt(loan, currencyAmount);
@@ -197,7 +196,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     function lock(uint loan) public owner(loan) {
         NFTLike(shelf[loan].registry).transferFrom(msg.sender, address(this), shelf[loan].tokenId);
     }
- 
+
     function unlock(uint loan) public owner(loan) {
         require(pile.debt(loan) == 0, "has-debt");
         NFTLike(shelf[loan].registry).transferFrom(address(this), msg.sender, shelf[loan].tokenId);

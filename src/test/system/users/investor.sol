@@ -13,7 +13,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 pragma solidity >=0.5.12;
 
-import "../../../lender/deployer.sol";
 import "../interfaces.sol";
 
 contract Investor {

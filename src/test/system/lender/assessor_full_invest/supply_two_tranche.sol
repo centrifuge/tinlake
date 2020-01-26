@@ -37,9 +37,9 @@ contract SupplyTwoTrancheTest is BaseSystemTest {
     function supplySenior(uint amount) public {
         currency.mint(seniorInvestor_, amount);
         seniorInvestor.doSupply(amount);
-        assertEq(currency.balanceOf(address(lenderDeployer.senior())), amount);
-        assertEq(seniorERC20.balanceOf(seniorInvestor_), amount);
-        assertEq(lenderDeployer.senior().debt(), 0);
+        assertEq(currency.balanceOf(address(senior)), amount);
+        assertEq(seniorToken.balanceOf(seniorInvestor_), amount);
+        assertEq(senior.debt(), 0);
     }
 
     function supplyJunior(uint amount) public {
@@ -47,9 +47,9 @@ contract SupplyTwoTrancheTest is BaseSystemTest {
 
         juniorInvestor.doSupply(amount);
         // currency in tranche
-        assertEq(currency.balanceOf(address(lenderDeployer.junior())), amount);
+        assertEq(currency.balanceOf(address(junior)), amount);
         // junior investor has token
-        assertEq(juniorERC20.balanceOf(juniorInvestor_), amount);
+        assertEq(juniorToken.balanceOf(juniorInvestor_), amount);
     }
 
     function testFIAssessor_SimpleSupply() public {
@@ -61,17 +61,17 @@ contract SupplyTwoTrancheTest is BaseSystemTest {
 
         hevm.warp(now + 1 days);
 
-        assertEq(lenderDeployer.senior().debt(), 5 ether);
+        assertEq(senior.debt(), 5 ether);
     }
 
     function testInterestSenior() public {
         uint amount = 100 ether;
         supplySenior(amount);
 
-        assertEq(lenderDeployer.senior().debt(), 0 ether);
+        assertEq(senior.debt(), 0 ether);
         hevm.warp(now + 1 days);
-        assertEq(lenderDeployer.senior().debt(), 5 ether);
+        assertEq(senior.debt(), 5 ether);
         hevm.warp(now + 1 days);
-        assertEq(lenderDeployer.senior().debt(), 10.25 ether);
+        assertEq(senior.debt(), 10.25 ether);
     }
 }
