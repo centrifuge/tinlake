@@ -19,6 +19,8 @@ import {
   TitleFab,
   ShelfFab,
   PileFab,
+  PrincipalCeilingFab,
+  CreditLineCeilingFab,
   CeilingFab,
   ThresholdFab,
   CollectorFab,
@@ -128,16 +130,22 @@ contract TestSetup {
         TitleFab titlefab = new TitleFab();
         ShelfFab shelffab = new ShelfFab();
         PileFab pileFab = new PileFab();
-        CeilingFab ceilingFab = new CeilingFab();
         CollectorFab collectorFab = new CollectorFab();
         ThresholdFab thresholdFab = new ThresholdFab();
         PricePoolFab pricePoolFab = new PricePoolFab();
+        address ceilingFab_;
 
-        borrowerDeployer = new BorrowerDeployer(root_, titlefab, shelffab, pileFab, ceilingFab, collectorFab, thresholdFab, pricePoolFab, currency_, "Tinlake Loan Token", "TLNT");
+        if (ceiling_ == "default") {
+            ceilingFab_ = address(new PrincipalCeilingFab());
+        } else if (ceiling_ == "creditline") {
+            ceilingFab_ = address(new CreditLineCeilingFab());
+        }
+
+        borrowerDeployer = new BorrowerDeployer(root_, titlefab, shelffab, pileFab, ceilingFab_, collectorFab, thresholdFab, pricePoolFab, currency_, "Tinlake Loan Token", "TLNT");
 
         borrowerDeployer.deployTitle();
         borrowerDeployer.deployPile();
-        borrowerDeployer.deployCeiling(ceiling_);
+        borrowerDeployer.deployCeiling();
         borrowerDeployer.deployShelf();
         borrowerDeployer.deployThreshold();
         borrowerDeployer.deployCollector();

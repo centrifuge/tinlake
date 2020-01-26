@@ -33,6 +33,11 @@ contract AuthLike {
     function deny(address) public;
 }
 
+contract CeilingFab {
+    function newCeiling(address pile) public returns (address);
+}
+
+
 contract PileFab {
     function newPile() public returns (address) {
         Pile pile = new Pile();
@@ -69,16 +74,18 @@ contract CollectorFab {
     }
 }
 
-contract CeilingFab {
-    function newCeiling() public returns (address) {
-        Principal ceiling = new Principal();
+contract CreditLineCeilingFab {
+    function newCeiling(address pile) public returns (address) {
+        CreditLine ceiling = new CreditLine(pile);
         ceiling.rely(msg.sender);
         ceiling.deny(address(this));
         return address(ceiling);
     }
+}
 
+contract PrincipalCeilingFab {
     function newCeiling(address pile) public returns (address) {
-        CreditLine ceiling = new CreditLine(pile);
+        Principal ceiling = new Principal();
         ceiling.rely(msg.sender);
         ceiling.deny(address(this));
         return address(ceiling);
@@ -133,7 +140,7 @@ contract BorrowerDeployer {
       TitleFab titlefab_,
       ShelfFab shelffab_,
       PileFab pilefab_,
-      CeilingFab ceilingFab_,
+      address ceilingFab_,
       CollectorFab collectorFab_,
       ThresholdFab thresholdFab_,
       PricePoolFab pricePoolFab_,
@@ -147,7 +154,7 @@ contract BorrowerDeployer {
         shelffab = shelffab_;
 
         pilefab = pilefab_;
-        ceilingFab = ceilingFab_;
+        ceilingFab = CeilingFab(ceilingFab_);
         collectorFab = collectorFab_;
         thresholdFab = thresholdFab_;
         pricePoolFab = pricePoolFab_;
@@ -193,14 +200,8 @@ contract BorrowerDeployer {
         AuthLike(shelf).rely(root);
     }
 
-    function deployCeiling(bytes32 ceiling_) public {
-        require(ceiling == ZERO);
-        if (ceiling_ == "default") {
-         ceiling = ceilingFab.newCeiling();
-        } 
-        if (ceiling_ == "creditline") {
-         ceiling = ceilingFab.newCeiling(address(pile));
-        }  
+    function deployCeiling() public {
+        ceiling = ceilingFab.newCeiling(address(pile));
         AuthLike(ceiling).rely(root);
     }
 
