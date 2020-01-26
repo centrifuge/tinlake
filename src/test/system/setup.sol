@@ -19,6 +19,8 @@ import {
   TitleFab,
   ShelfFab,
   PileFab,
+  PrincipalCeilingFab,
+  CreditLineCeilingFab,
   CeilingFab,
   ThresholdFab,
   CollectorFab,
@@ -31,6 +33,7 @@ import { Pile } from "../../borrower/pile.sol";
 import { Shelf } from "../../borrower/shelf.sol";
 import { Collector } from "../../borrower/collect/collector.sol";
 import { Principal } from "../../borrower/ceiling/principal.sol";
+import { CreditLine } from "../../borrower/ceiling/creditline.sol";
 
 import {
   TrancheFab,
@@ -50,7 +53,7 @@ import "../simple/token.sol";
 
 import "tinlake-erc20/erc20.sol";
 import { PushRegistry } from "tinlake-registry/registry.sol";
-import { TokenLike } from "./interfaces.sol";
+import { TokenLike, CeilingLike } from "./interfaces.sol";
 
 contract DistributorLike {
     function borrowFromTranches() public returns (bool);
@@ -76,7 +79,7 @@ contract TestSetup {
     Shelf        shelf;
     Pile         pile;
     Title        title;
-    Principal    ceiling;
+    CeilingLike    ceiling;
     Collector    collector;
     PushRegistry threshold;
 
@@ -103,7 +106,7 @@ contract TestSetup {
         return (tokenId, lookupId);
     }
 
-    function deployContracts(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_) public {
+    function deployContracts(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_, bytes32 ceiling_) public {
         collateralNFT = new Title("Collateral NFT", "collateralNFT");
         collateralNFT_ = address(collateralNFT);
 
@@ -113,7 +116,7 @@ contract TestSetup {
         root = new TestRoot();
         root_ = address(root);
         // only admin is main deployer
-        deployBorrower();
+        deployBorrower(ceiling_);
         // only admin is main deployer
         deployLender(operator_, distributor_, assessor_, senior_);
 
@@ -123,16 +126,22 @@ contract TestSetup {
         root.deploy();
     }
 
-    function deployBorrower() private {
+    function deployBorrower(bytes32 ceiling_) private {
         TitleFab titlefab = new TitleFab();
         ShelfFab shelffab = new ShelfFab();
         PileFab pileFab = new PileFab();
-        CeilingFab ceilingFab = new CeilingFab();
         CollectorFab collectorFab = new CollectorFab();
         ThresholdFab thresholdFab = new ThresholdFab();
         PricePoolFab pricePoolFab = new PricePoolFab();
+        address ceilingFab_;
 
-        borrowerDeployer = new BorrowerDeployer(root_, titlefab, shelffab, pileFab, ceilingFab, collectorFab, thresholdFab, pricePoolFab, currency_, "Tinlake Loan Token", "TLNT");
+        if (ceiling_ == "default") {
+            ceilingFab_ = address(new PrincipalCeilingFab());
+        } else if (ceiling_ == "creditline") {
+            ceilingFab_ = address(new CreditLineCeilingFab());
+        }
+
+        borrowerDeployer = new BorrowerDeployer(root_, titlefab, shelffab, pileFab, ceilingFab_, collectorFab, thresholdFab, pricePoolFab, currency_, "Tinlake Loan Token", "TLNT");
 
         borrowerDeployer.deployTitle();
         borrowerDeployer.deployPile();
@@ -145,7 +154,8 @@ contract TestSetup {
 
         shelf = Shelf(borrowerDeployer.shelf());
         pile = Pile(borrowerDeployer.pile());
-        ceiling = Principal(borrowerDeployer.ceiling());
+        ceiling = CeilingLike(borrowerDeployer.ceiling());
+       
         title = Title(borrowerDeployer.title());
         collector = Collector(borrowerDeployer.collector());
         threshold = PushRegistry(borrowerDeployer.threshold());
