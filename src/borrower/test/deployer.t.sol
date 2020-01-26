@@ -50,7 +50,7 @@ contract DeployerTest is DSTest {
 
         deployer.deployTitle();
         deployer.deployPile();
-        deployer.deployCeiling();
+        deployer.deployCeiling("default");
         deployer.deployShelf();
         deployer.deployThreshold();
         deployer.deployCollector();

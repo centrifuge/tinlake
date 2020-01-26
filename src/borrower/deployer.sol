@@ -20,16 +20,27 @@ import { Shelf } from "./shelf.sol";
 import { Pile } from "./pile.sol";
 import { Collector } from "./collect/collector.sol";
 import { Principal } from "./ceiling/principal.sol";
+import { CreditLine } from "./ceiling/creditLine.sol";
 import { PushRegistry } from "tinlake-registry/registry.sol";
 import { PricePool } from "./price/pool.sol";
+
+contract DependLike {
+    function depend(bytes32, address) public;
+}
 
 contract AuthLike {
     function rely(address) public;
     function deny(address) public;
 }
 
-contract DependLike {
-    function depend(bytes32, address) public;
+contract TCeilingLike {
+    function ceiling(uint loan) public view returns(uint);
+    function values(uint) public view returns(uint);
+    function file(uint loan, uint currencyAmount) public;
+    function borrow(uint loan, uint currencyAmount) public;
+    function repay(uint loan, uint currencyAmount) public;
+    function rely(address) public;
+    function deny(address) public;
 }
 
 contract PileFab {
@@ -71,6 +82,13 @@ contract CollectorFab {
 contract CeilingFab {
     function newCeiling() public returns (address) {
         Principal ceiling = new Principal();
+        ceiling.rely(msg.sender);
+        ceiling.deny(address(this));
+        return address(ceiling);
+    }
+
+    function newCeiling(address pile) public returns (address) {
+        CreditLine ceiling = new CreditLine(pile);
         ceiling.rely(msg.sender);
         ceiling.deny(address(this));
         return address(ceiling);
@@ -153,7 +171,6 @@ contract BorrowerDeployer {
         require(threshold == ZERO);
         threshold = thresholdFab.newThreshold();
         AuthLike(threshold).rely(root);
-
     }
 
     function deployPricePool() public {
@@ -186,9 +203,14 @@ contract BorrowerDeployer {
         AuthLike(shelf).rely(root);
     }
 
-    function deployCeiling() public {
+    function deployCeiling(bytes32 ceiling_) public {
         require(ceiling == ZERO);
-        ceiling = ceilingFab.newCeiling();
+        if (ceiling_ == "default") {
+         ceiling = ceilingFab.newCeiling();
+        } 
+        if (ceiling_ == "creditline") {
+         ceiling = ceilingFab.newCeiling(address(pile));
+        }  
         AuthLike(ceiling).rely(root);
     }
 
