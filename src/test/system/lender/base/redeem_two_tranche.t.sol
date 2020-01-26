@@ -56,7 +56,7 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         juniorInvestor.doSupply(jSupplyAmount);
         seniorInvestor.doSupply(sSupplyAmount);
 
-        // new loan, should take all from junior and 26 from senior
+        // new loan, should take all from junior and 60 from senior
         uint ceiling = 100 ether;
         uint rate = 1000000564701133626865910626; // 5% per day compound in seconds
         uint speed = rate;
@@ -69,14 +69,16 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
 
         hevm.warp(now + 1 days);
 
+        // senior rate: 5% a day: 60 * 1.05 = 63
         uint seniorDebt = senior.debt();
         assertEq(seniorDebt, 63 ether);
 
         repayLoan(borrower_, loanId, seniorDebt + jSupplyAmount);
-        seniorInvestor.doRedeem(seniorDebt);
         assertEq(senior.debt(), 0);
+
+        seniorInvestor.doRedeem(seniorDebt);
         assertEq(currency.balanceOf(address(junior)), jSupplyAmount);
-        // junior cannot redeem without breaking minJuniorRatio, so it has to first supply more currency
+        // junior cannot redeem all jSupplyAmount without breaking minJuniorRatio, so it has to first supply more currency
         juniorInvestor.doSupply(jSupplyAmount);
         juniorInvestor.doRedeem(jSupplyAmount);
     }
@@ -94,7 +96,7 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         juniorInvestor.doSupply(jSupplyAmount);
         seniorInvestor.doSupply(sSupplyAmount);
 
-        // new loan, should take all from junior and 26 from senior
+        // new loan, should take all from junior and 60 from senior
         uint ceiling = 100 ether;
         uint rate = 1000000564701133626865910626; // 5% per day compound in seconds
         uint speed = rate;
@@ -135,6 +137,7 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         (uint loanB,) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
 
         hevm.warp(now + 5 days);
+        // 5% senior rate with an interestBearingAmount of 150 ether
         assertEq(senior.debt(), 191.442234375 ether);
 
         // loan B has defaulted
@@ -175,9 +178,6 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
 
         juniorInvestor.doSupply(jSupplyAmount);
         seniorInvestor.doSupply(sSupplyAmount);
-
-        emit log_named_uint("balance",currency.balanceOf(seniorInvestor_));
-
 
         // new loan, should take all from junior and 50 from senior
         uint ceiling = 100 ether;
