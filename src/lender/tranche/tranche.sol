@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity >=0.5.3;
 
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
@@ -22,7 +22,7 @@ import "tinlake-auth/auth.sol";
 contract TokenLike{
     function totalSupply() public returns (uint);
     function balanceOf(address) public returns (uint);
-    function transferFrom(address,address,uint) public;
+    function transferFrom(address,address,uint) public returns (bool);
     function approve(address, uint) public;
     function mint(address, uint) public;
     function burn(address, uint) public;
@@ -53,32 +53,32 @@ contract Tranche is DSNote, Auth {
         else revert();
     }
 
-    function balance() public returns (uint) {
+    function balance() external returns (uint) {
         return currency.balanceOf(self);
     }
 
-    function tokenSupply() public returns (uint) {
+    function tokenSupply() external returns (uint) {
         return token.totalSupply();
     }
 
     // -- Lender Side --
-    function supply(address usr, uint currencyAmount, uint tokenAmount) public note auth {
-        currency.transferFrom(usr, self, currencyAmount);
+    function supply(address usr, uint currencyAmount, uint tokenAmount) external note auth {
+        require(currency.transferFrom(usr, self, currencyAmount), "currency-transfer-failed");
         token.mint(usr, tokenAmount);
     }
 
-    function redeem(address usr, uint currencyAmount, uint tokenAmount) public note auth {
-        token.transferFrom(usr, self, tokenAmount);
+    function redeem(address usr, uint currencyAmount, uint tokenAmount) external note auth {
+        require(token.transferFrom(usr, self, tokenAmount), "token-transfer-failed");
         token.burn(self, tokenAmount);
-        currency.transferFrom(self, usr, currencyAmount);
+        require(currency.transferFrom(self, usr, currencyAmount), "currency-transfer-failed");
     }
 
     // -- Borrow Side --
     function repay(address usr, uint currencyAmount) public note auth {
-        currency.transferFrom(usr, self, currencyAmount);
+        require(currency.transferFrom(usr, self, currencyAmount), "currency-transfer-failed");
     }
 
     function borrow(address usr, uint currencyAmount) public note auth {
-        currency.transferFrom(self, usr, currencyAmount);
+        require(currency.transferFrom(self, usr, currencyAmount), "currency-transfer-failed");
     }
 }

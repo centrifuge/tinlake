@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity >=0.5.3;
 
 import "./tranche.sol";
 import "tinlake-math/interest.sol";
@@ -36,7 +36,7 @@ contract SeniorTranche is Tranche, Interest {
 
     AssessorLike  public assessor;
 
-    function debt() public returns(uint) {
+    function debt() external returns(uint) {
         drip();
         return safeAdd(borrowed, interest);
     }
@@ -52,7 +52,7 @@ contract SeniorTranche is Tranche, Interest {
         else { super.depend(what, addr); }
     }
 
-    function file(bytes32 what, uint ratePerSecond_) public note auth {
+    function file(bytes32 what, uint ratePerSecond_) external note auth {
          if (what ==  "rate") {
              if(ratePerSecond != ONE) {
                  // required for interest rate switch
