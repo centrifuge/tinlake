@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Centrifuge
+// Copyright (C) 2020 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -49,13 +49,22 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     function baseSetup(bytes32 operator_, bytes32 distributor_, bool senior_) public {
         // setup deployment
         bytes32 assessor_ = "default";
-        deployContracts(operator_, distributor_, assessor_,  senior_);
+        bytes32 ceiling_ = "default";
+        deployContracts(operator_, distributor_, assessor_, senior_, ceiling_);
+        root.relyLenderAdmin(address(this), senior_);
+    }
+
+    function baseSetup(bytes32 operator_, bytes32 distributor_, bool senior_, bytes32 ceiling_) public {
+        // setup deployment
+        bytes32 assessor_ = "default";
+        deployContracts(operator_, distributor_, assessor_, senior_, ceiling_);
         root.relyLenderAdmin(address(this), senior_);
     }
 
     function baseSetup(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_) public {
         // setup deployment
-        deployContracts(operator_, distributor_, assessor_, senior_);
+        bytes32 ceiling_ = "default";
+        deployContracts(operator_, distributor_, assessor_, senior_, ceiling_);
         root.relyLenderAdmin(address(this), senior_);
     }
 
@@ -111,7 +120,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
 
     // helpers borrower
-    // user approves shelf too lock NFT
     function createSeniorInvestor() public {
         seniorInvestor = new Investor(seniorOperator, currency_, address(seniorToken));
         seniorInvestor_ = address(seniorInvestor);

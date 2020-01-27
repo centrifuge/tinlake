@@ -35,8 +35,6 @@ contract DependLike {
     function depend(bytes32, address) public;
 }
 
-
-
 contract TrancheFab {
     string constant public symbol = "TIN";
     string constant public name = "Tinlake TIN Token";

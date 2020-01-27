@@ -18,6 +18,8 @@ pragma solidity >=0.5.12;
 import "./base.sol";
 import "tinlake-math/interest.sol";
 
+// FullInvestmentAssessor charges interest on invested currency (+ optional existing interest) in the senior tranche.
+// It doesn't matter if the currency of the senior tranche is used for loans.
 contract FullInvestmentAssessor is BaseAssessor, Interest {
 
     constructor(uint tokenAmountForONE) BaseAssessor(tokenAmountForONE) public {}
@@ -30,10 +32,11 @@ contract FullInvestmentAssessor is BaseAssessor, Interest {
             return 0;
 
         }
+
         require(tranche_ == senior);
 
         uint interestBearingAmount = safeAdd(safeAdd(tranche.borrowed(), tranche.interest()), tranche.balance());
 
-        return safeSub(rmul(rpow(tranche.ratePerSecond(), now - tranche.lastUpdated(), ONE), interestBearingAmount), interestBearingAmount);
+        return safeSub(chargeInterest(interestBearingAmount, tranche.ratePerSecond() , tranche.lastUpdated()), interestBearingAmount);
     }
 }

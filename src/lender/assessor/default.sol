@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Centrifuge
+// Copyright (C) 2020 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -18,6 +18,9 @@ pragma solidity >=0.5.12;
 import "./base.sol";
 import "tinlake-math/interest.sol";
 
+
+// DefaultAssessor only charges interest based on the debt of the senior tranche
+// The senior tranche only gets interest if its currency is used for loans.
 contract DefaultAssessor is BaseAssessor, Interest {
 
     constructor(uint tokenAmountForONE) BaseAssessor(tokenAmountForONE) public {}
@@ -36,7 +39,8 @@ contract DefaultAssessor is BaseAssessor, Interest {
         uint debt = safeAdd(tranche.borrowed(), tranche.interest());
         // move to tinlake-math
         // interest is calculated based on tranche debt
-        return safeSub(rmul(rpow(tranche.ratePerSecond(), now - tranche.lastUpdated(), ONE), debt), debt);
+
+        return safeSub(chargeInterest(debt, tranche.ratePerSecond() , tranche.lastUpdated()), debt);
 
     }
 }
