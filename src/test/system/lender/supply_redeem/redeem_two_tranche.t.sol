@@ -148,15 +148,17 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
 
         seniorInvestor.doRedeem(sSupplyAmount);
         assertEq(senior.debt(), 0);
-        // 150 * (1.05^5) = 191.442234375, 41.442234375 ether profit
+        // 150 * (1.05^5) = 191.442234375 (41.442234375 ether profit)
+        // total received tranche repayment: 202.62815625 ether (first loan: 75 ether, second loan: 127.62815625 ether)
+        // senior receives 191.442234375 for the debt (debt entirely repaid)
+        // junior repayment: 202.62815625 ether - 191.442234375 ether = 11.185921875 ether
 
         // balance should be initial investment = 200 ether  + profit
         uint expectedSeniorBalance = 241.442234375 ether;
         assertEq(currency.balanceOf(seniorInvestor_), expectedSeniorBalance);
         juniorInvestor.doRedeem(jSupplyAmount);
-        // 63.814078125 ether was the expected profit for the second loan but junior takes the losses
+        // 63.814078125 ether was the expected profit from the junior tranche (total loans amount: 200 * 1.05^5 - seniorDebt = 63.814078125 ether)
         // 63.814078125 ether - the 52.62815625 ether missing from the recovered defaulted loan = 11.185921875
-
         uint expectedJuniorBalance = 11.185921875 ether;
         assertEq(currency.balanceOf(juniorInvestor_), expectedJuniorBalance);
     }
