@@ -15,54 +15,54 @@ pragma solidity >=0.5.12;
 
 import { TinlakeRoot } from "../../root.sol";
 
-contract AuthLike {
-    function rely(address) public;
-    function deny(address) public;
-}
-
 contract TestRoot is TinlakeRoot {
+
+
+    constructor (address deployUsr) public TinlakeRoot(deployUsr) {
+    }
+
     // Permissions
     // To simplify testing, we add helpers to authorize contracts on any component.
 
     // Needed for System Tests
     function relyBorrowAdmin(address usr) public auth {
-        AuthLike(borrowerDeployer.title()).rely(usr);
-        AuthLike(borrowerDeployer.shelf()).rely(usr);
-        AuthLike(borrowerDeployer.pile()).rely(usr);
-        AuthLike(borrowerDeployer.ceiling()).rely(usr);
-        AuthLike(borrowerDeployer.collector()).rely(usr);
-        AuthLike(borrowerDeployer.threshold()).rely(usr);
+        relyContract(borrowerDeployer.title(), usr);
+        relyContract(borrowerDeployer.shelf(), usr);
+        relyContract(borrowerDeployer.pile(), usr);
+        relyContract(borrowerDeployer.ceiling(), usr);
+        relyContract(borrowerDeployer.collector(), usr);
+        relyContract(borrowerDeployer.threshold(), usr);
     }
 
     // Needed for System Tests
     function relyLenderAdmin(address usr, bool senior_) public auth {
-        AuthLike(lenderDeployer.juniorOperator()).rely(usr);
-        AuthLike(lenderDeployer.assessor()).rely(usr);
-        AuthLike(lenderDeployer.distributor()).rely(usr);
-        AuthLike(lenderDeployer.junior()).rely(usr);
+        relyContract(lenderDeployer.juniorOperator(), usr);
+        relyContract(lenderDeployer.assessor(), usr);
+        relyContract(lenderDeployer.distributor(), usr);
+        relyContract(lenderDeployer.junior(), usr);
 
         if (senior_) {
-            AuthLike(lenderDeployer.seniorOperator()).rely(usr);
-            AuthLike(lenderDeployer.senior()).rely(usr);
+            relyContract(lenderDeployer.seniorOperator(), usr);
+            relyContract(lenderDeployer.senior(), usr);
         }
     }
 
     function denyLenderAdmin(address usr, bool senior_) public auth {
-        AuthLike(lenderDeployer.juniorOperator()).deny(usr);
-        AuthLike(lenderDeployer.assessor()).deny(usr);
-        AuthLike(lenderDeployer.distributor()).deny(usr);
-        AuthLike(lenderDeployer.junior()).deny(usr);
+        denyContract(lenderDeployer.juniorOperator(), usr);
+        denyContract(lenderDeployer.assessor(), usr);
+        denyContract(lenderDeployer.distributor(), usr);
+        denyContract(lenderDeployer.junior(), usr);
 
         if (senior_) {
-            AuthLike(lenderDeployer.seniorOperator()).deny(usr);
-            AuthLike(lenderDeployer.senior()).deny(usr);
+            denyContract(lenderDeployer.seniorOperator(), usr);
+            denyContract(lenderDeployer.senior(), usr);
         }
     }
 
     function denyBorrowAdmin(address usr) public auth {
-        AuthLike(borrowerDeployer.title()).deny(usr);
-        AuthLike(borrowerDeployer.ceiling()).deny(usr);
-        AuthLike(borrowerDeployer.shelf()).deny(usr);
-        AuthLike(borrowerDeployer.pile()).deny(usr);
+        denyContract(borrowerDeployer.title(), usr);
+        denyContract(borrowerDeployer.ceiling(), usr);
+        denyContract(borrowerDeployer.shelf(), usr);
+        denyContract(borrowerDeployer.pile(), usr);
     }
 }

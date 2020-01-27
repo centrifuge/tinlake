@@ -35,12 +35,12 @@ contract TinlakeRoot is Auth {
     bool public             deployed;
     address public          deployUsr;
 
-    constructor(address deployUsr_) public {
+    constructor (address deployUsr_) public {
         deployUsr = deployUsr_;
     }
 
     // --- Prepare ---
-    //
+    // Sets the two deployer dependencies. This needs to be called by the deployUsr;
     function prepare(address lender_, address borrower_, address ward_) public {
         require(deployUsr == msg.sender);
         borrowerDeployer = BorrowerDeployer(borrower_);
