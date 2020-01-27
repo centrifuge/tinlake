@@ -113,7 +113,7 @@ contract TestSetup {
         currency = new SimpleToken("C", "Currency", "1", 0);
         currency_ = address(currency);
 
-        root = new TestRoot(msg.sender);
+        root = new TestRoot(address(this));
         root_ = address(root);
         // only admin is main deployer
         deployBorrower(ceiling_);
