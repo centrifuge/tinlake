@@ -75,7 +75,7 @@ contract Pile is DSNote, Auth, Interest {
         uint rate_ = loanRates[loan];
         uint chi_ = rates[rate_].chi;
         if (now >= rates[rate_].lastUpdated) {
-            chi_ = updateChi(rates[rate_].chi, rates[rate_].ratePerSecond, rates[rate_].lastUpdated);
+            chi_ = chargeInterest(rates[rate_].chi, rates[rate_].ratePerSecond, rates[rate_].lastUpdated);
         }
         return toAmount(chi_, pie[loan]);
     }
@@ -85,7 +85,7 @@ contract Pile is DSNote, Auth, Interest {
         uint pie_ = rates[rate].pie;
 
         if (now >= rates[rate].lastUpdated) {
-            chi_ = updateChi(rates[rate].chi, rates[rate].ratePerSecond, rates[rate].lastUpdated);
+            chi_ = chargeInterest(rates[rate].chi, rates[rate].ratePerSecond, rates[rate].lastUpdated);
         } 
         return toAmount(chi_, pie_);
     } 
