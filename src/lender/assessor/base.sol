@@ -108,7 +108,7 @@ contract BaseAssessor is Math, Auth {
         return rdiv(assetValue, tokenSupply);
     }
 
-  function _calcJuniorAssetValue(uint poolValue, uint juniorReserve, uint seniorDebt) internal pure returns (uint) {
+    function _calcJuniorAssetValue(uint poolValue, uint juniorReserve, uint seniorDebt) internal pure returns (uint) {
         // available for junior
         uint available = safeAdd(poolValue, juniorReserve);
 

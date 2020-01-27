@@ -34,6 +34,8 @@ contract DefaultAssessor is BaseAssessor, Interest {
 
         }
 
+        require(tranche_ == senior);
+
         uint debt = safeAdd(tranche.borrowed(), tranche.interest());
         // move to tinlake-math
         // interest is calculated based on tranche debt
