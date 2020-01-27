@@ -29,23 +29,43 @@ contract DependLike {
 
 
 contract TinlakeRoot is Auth {
-    BorrowerDeployer borrowerDeployer;
-    LenderDeployer lenderDeployer;
+    BorrowerDeployer public borrowerDeployer;
+    LenderDeployer public   lenderDeployer;
 
-    constructor () public {
-        wards[msg.sender] = 1;
+    bool public             deployed;
+    address public          deployUsr;
+
+    constructor (address deployUsr_) public {
+        deployUsr = deployUsr_;
     }
 
-    function file(bytes32 what, address deployer) public auth {
-        if(what == "borrower") borrowerDeployer = BorrowerDeployer(deployer);
-        else if (what == "lender") lenderDeployer = LenderDeployer(deployer);
-        else revert();
+    // --- Prepare ---
+    // Sets the two deployer dependencies. This needs to be called by the deployUsr;
+    function prepare(address lender_, address borrower_, address ward_) public {
+        require(deployUsr == msg.sender);
+        borrowerDeployer = BorrowerDeployer(borrower_);
+        lenderDeployer = LenderDeployer(lender_);
+        wards[ward_] = 1;
+        deployUsr = address(0); // disallow the deploy user to call this more than once.
     }
 
 
-    function deploy() public auth {
-        require(address(borrowerDeployer) != address(0));
-        require(address(lenderDeployer) != address(0));
+    // --- Governance Functions ---
+    // `relyContract` & `denyContract` can be called by any ward on the TinlakeRoot
+    // contract to make an arbitrary address a ward on any contract the TinlakeRoot
+    // is a ward on.
+    function relyContract(address target, address usr) public auth {
+        AuthLike(target).rely(usr);
+    }
+
+    function denyContract(address target, address usr) public auth {
+        AuthLike(target).deny(usr);
+    }
+
+
+    // --- Deploy ---
+    function deploy() public {
+        require(address(borrowerDeployer) != address(0) && address(lenderDeployer) != address(0) && deployed == false);
 
         address distributor_ = lenderDeployer.distributor();
         address shelf_ = borrowerDeployer.shelf();
