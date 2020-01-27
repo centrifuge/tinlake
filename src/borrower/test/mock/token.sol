@@ -1,4 +1,4 @@
-pragma solidity >=0.5.12;
+pragma solidity >=0.5.3;
 
 
 import "../../../test/mock/mock.sol";
@@ -15,11 +15,12 @@ contract TokenMock is Mock {
         values_uint["mint_amount"] = amount;
     }
 
-    function transferFrom(address from ,address to, uint amount) public {
+    function transferFrom(address from ,address to, uint amount) public returns (bool){
         calls["transferFrom"]++;
         values_address["transferFrom_from"] = from;
         values_address["transferFrom_to"] = to;
         values_uint["transferFrom_amount"] = amount;
+        return true;
     }
     function burn(address usr, uint amount) public {
         calls["burn"]++;

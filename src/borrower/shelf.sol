@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity >=0.5.3;
 
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
@@ -35,7 +35,7 @@ contract TitleLike {
 contract TokenLike {
     uint public totalSupply;
     function balanceOf(address) public view returns (uint);
-    function transferFrom(address,address,uint) public;
+    function transferFrom(address,address,uint) public returns (bool);
     function approve(address, uint) public;
 }
 
@@ -158,7 +158,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         distributor.balance();
         balances[loan] = safeSub(balances[loan], currencyAmount);
         balance = safeSub(balance, currencyAmount);
-        currency.transferFrom(address(this), usr, currencyAmount);
+        require(currency.transferFrom(address(this), usr, currencyAmount), "currency-transfer-failed");
     }
 
     function repay(uint loan, uint currencyAmount) public owner(loan) note {
@@ -171,7 +171,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         pile.accrue(loan);
         uint loanDebt = pile.debt(loan);
 
-        currency.transferFrom(usr, address(this), currencyAmount);
+        require(currency.transferFrom(usr, address(this), currencyAmount), "currency-transfer-failed");
 
         ceiling.repay(loan, currencyAmount);
         pile.decDebt(loan, loanDebt);
@@ -186,7 +186,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         if (currencyAmount > loanDebt) {
             currencyAmount = loanDebt;
         }
-        currency.transferFrom(usr, address(this), currencyAmount);
+        require(currency.transferFrom(usr, address(this), currencyAmount), "currency-transfer-failed");
         ceiling.repay(loan, currencyAmount);
         pile.decDebt(loan, currencyAmount);
         distributor.balance();

@@ -14,15 +14,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity >=0.5.3;
 
 import "tinlake-registry/registry.sol";
 import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
 
 contract NFTLike {
-    function ownerOf(uint256 tokenId) public view returns (address owner);
-    function transferFrom(address from, address to, uint256 tokenId) public;
+    function ownerOf(uint256 tokenId) external view returns (address owner);
+    function transferFrom(address from, address to, uint256 tokenId) external;
 }
 
 contract DistributorLike {
