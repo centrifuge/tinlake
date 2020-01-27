@@ -82,6 +82,7 @@ contract Collector is DSNote, Auth {
 
     // --- Collector ---
     function file(uint loan, address buyer, uint nftPrice) public auth {
+        require(nftPrice > 0, "no-nft-price-defined");
         options[loan] = Option(buyer, nftPrice);
     }
 

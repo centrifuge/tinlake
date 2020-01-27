@@ -38,11 +38,6 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         createTestUsers(deploySeniorTranche);
     }
 
-    function supply(uint balance, uint amount) public {
-        currency.mint(juniorInvestor_, balance);
-        juniorInvestor.doSupply(amount);
-    }
-
     function testSimpleRedeem() public {
         uint jSupplyAmount = 40 ether;
         uint sSupplyAmount = 160 ether;
@@ -125,7 +120,6 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         juniorInvestor.doSupply(jSupplyAmount);
         seniorInvestor.doSupply(sSupplyAmount);
 
-        emit log_named_uint("balance",currency.balanceOf(seniorInvestor_));
 
         // new loan, should take all from junior and 50 from senior
         uint ceiling = 100 ether;
@@ -159,8 +153,8 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         uint expectedSeniorBalance = 241.442234375 ether;
         assertEq(currency.balanceOf(seniorInvestor_), expectedSeniorBalance);
         juniorInvestor.doRedeem(jSupplyAmount);
-        //63.814078125 ether was the junior expected profit but junior takes the losses
-        //63.814078125 ether - the 52.62815625 ether missing from the recovered defaulted loan = 11.185921875
+        // 63.814078125 ether was the expected profit for the second loan but junior takes the losses
+        // 63.814078125 ether - the 52.62815625 ether missing from the recovered defaulted loan = 11.185921875
 
         uint expectedJuniorBalance = 11.185921875 ether;
         assertEq(currency.balanceOf(juniorInvestor_), expectedJuniorBalance);
@@ -189,23 +183,24 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         (uint loanB,) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
 
         hevm.warp(now + 5 days);
-        assertEq(senior.debt(), 191.442234375 ether);
+
+        // senior debt = 191.442234375 ether
 
         // loanB has defaulted
         uint threshold = 115 ether;
         uint recoveryPrice = 25 ether;
         addKeeperAndCollect(loanB, threshold, borrower_, recoveryPrice);
-        // 25 recovery price + 50 ether reserve
-        assertEq(currency.balanceOf(address(senior)), 75 ether);
+
+        // senior balance is 75 ether: 25 recovery price + 50 ether reserve
 
         uint loanDebt = 127.62815625 ether;
         repayLoan(borrower_, loanA, loanDebt);
         seniorInvestor.doRedeem(sSupplyAmount);
-        emit log_named_uint("balance",currency.balanceOf(seniorInvestor_));
         assertEq(senior.debt(), 38.814078125 ether);
+
         // 150 * (1.05^5) = 191.442234375, 41.442234375 ether profit
         // profit must take into account still unpaid debt, 41.442234375 - 38.814078125 = 2.62815625
-        assertEq(currency.balanceOf(seniorInvestor_), 202.62815625 ether);
+        // balance of senior investor is 202.62815625 ether
         // juniorInvestor cannot redeem
         juniorInvestor.doRedeem(jSupplyAmount);
     }
