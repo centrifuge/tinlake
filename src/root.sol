@@ -49,23 +49,12 @@ contract TinlakeRoot is Auth {
         deployUsr = address(0); // disallow the deploy user to call this more than once.
     }
 
-
-    // --- Governance Functions ---
-    // `relyContract` & `denyContract` can be called by any ward on the TinlakeRoot
-    // contract to make an arbitrary address a ward on any contract the TinlakeRoot
-    // is a ward on.
-    function relyContract(address target, address usr) public auth {
-        AuthLike(target).rely(usr);
-    }
-
-    function denyContract(address target, address usr) public auth {
-        AuthLike(target).deny(usr);
-    }
-
-
     // --- Deploy ---
+    // After going through the deploy process on the lender and borrower method, this method is called to connect
+    // lender and borrower contracts.
     function deploy() public {
         require(address(borrowerDeployer) != address(0) && address(lenderDeployer) != address(0) && deployed == false);
+        deployed = true;
 
         address distributor_ = lenderDeployer.distributor();
         address shelf_ = borrowerDeployer.shelf();
@@ -81,5 +70,19 @@ contract TinlakeRoot is Auth {
         DependLike(lenderDeployer.distributor()).depend("shelf", shelf_);
         DependLike(lenderDeployer.assessor()).depend("pool", poolValue);
     }
+
+    // --- Governance Functions ---
+    // `relyContract` & `denyContract` can be called by any ward on the TinlakeRoot
+    // contract to make an arbitrary address a ward on any contract the TinlakeRoot
+    // is a ward on.
+    function relyContract(address target, address usr) public auth {
+        AuthLike(target).rely(usr);
+    }
+
+    function denyContract(address target, address usr) public auth {
+        AuthLike(target).deny(usr);
+    }
+
+
 
 }
