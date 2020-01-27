@@ -71,7 +71,7 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         repayLoan(borrower_, loanId, seniorDebt + jSupplyAmount);
         assertEq(senior.debt(), 0);
 
-        seniorInvestor.doRedeem(seniorDebt);
+        seniorInvestor.doRedeem(sSupplyAmount);
         assertEq(currency.balanceOf(address(junior)), jSupplyAmount);
         // junior cannot redeem all jSupplyAmount without breaking minJuniorRatio, so it has to first supply more currency
         juniorInvestor.doSupply(jSupplyAmount);
@@ -119,7 +119,6 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
 
         juniorInvestor.doSupply(jSupplyAmount);
         seniorInvestor.doSupply(sSupplyAmount);
-
 
         // new loan, should take all from junior and 50 from senior
         uint ceiling = 100 ether;
