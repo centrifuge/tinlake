@@ -113,16 +113,14 @@ contract TestSetup {
         currency = new SimpleToken("C", "Currency", "1", 0);
         currency_ = address(currency);
 
-        root = new TestRoot();
+        root = new TestRoot(address(this));
         root_ = address(root);
         // only admin is main deployer
         deployBorrower(ceiling_);
         // only admin is main deployer
         deployLender(operator_, distributor_, assessor_, senior_);
 
-        root.file("borrower", address(borrowerDeployer));
-        root.file("lender", address(lenderDeployer));
-
+        root.prepare(address(lenderDeployer), address(borrowerDeployer), address(this));
         root.deploy();
     }
 

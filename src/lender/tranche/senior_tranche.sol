@@ -19,6 +19,8 @@ import "./tranche.sol";
 import "tinlake-math/interest.sol";
 
 contract AssessorLike {
+    function calcAssetValue(address) public returns (uint);
+    function calcTokenPrice(address) public returns (uint);
     function accrueTrancheInterest(address tranche_) public returns (uint);
 }
 
@@ -52,11 +54,13 @@ contract SeniorTranche is Tranche, Interest {
 
     function file(bytes32 what, uint ratePerSecond_) public note auth {
          if (what ==  "rate") {
-            drip();
+             if(ratePerSecond != ONE) {
+                 // required for interest rate switch
+                 drip();
+             }
             ratePerSecond = ratePerSecond_;
-        }
+        } else revert();
     }
-
 
     function _repay(uint currencyAmount) internal {
         if(currencyAmount <= interest) {
