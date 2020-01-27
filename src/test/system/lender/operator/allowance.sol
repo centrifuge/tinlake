@@ -21,7 +21,7 @@ contract AllowanceOperatorLike {
 function approve(address usr, uint maxCurrency_, uint maxToken_) public;
 }
 
-contract DefaultInterestAssessorTest is BaseSystemTest {
+contract AllowanceOperatorTest is BaseSystemTest {
 
     Hevm hevm;
 
