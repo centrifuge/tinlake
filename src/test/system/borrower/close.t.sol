@@ -46,9 +46,8 @@ contract CloseTest is BaseSystemTest {
         // assert: nft + loan removed nftlookup
         assertEq(shelf.nftlookup(lookupId), 0);
 
-        // TODO: assert: loan burned => owner = address(0)
+        // loan burned => owner = address(0)
         // current title implementation reverts if loan owner => address(0)
-        //assertEq(title.ownerOf(loanId), address(0));
     }
 
     function testCloseLoanOwner() public {
