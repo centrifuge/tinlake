@@ -40,7 +40,7 @@ contract TinlakeRoot is Auth {
     }
 
     // --- Prepare ---
-    // Sets the two deployer dependencies. This needs to be called by the deployUsr;
+    // Sets the two deployer dependencies. This needs to be called by the deployUsr
     function prepare(address lender_, address borrower_, address ward_) public {
         require(deployUsr == msg.sender);
         borrowerDeployer = BorrowerDeployer(borrower_);
