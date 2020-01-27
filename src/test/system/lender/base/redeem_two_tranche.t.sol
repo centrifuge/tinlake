@@ -73,6 +73,8 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
 
         seniorInvestor.doRedeem(sSupplyAmount);
         assertEq(currency.balanceOf(address(junior)), jSupplyAmount);
+        assertEq(currency.balanceOf(address(senior)), 0);
+        juniorInvestor.doRedeem(5 ether);
         // junior cannot redeem all jSupplyAmount without breaking minJuniorRatio, so it has to first supply more currency
         juniorInvestor.doSupply(jSupplyAmount);
         juniorInvestor.doRedeem(jSupplyAmount);
@@ -111,8 +113,8 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         uint jSupplyAmount = 50 ether;
         uint sSupplyAmount = 200 ether;
 
-        mintCurrency(seniorInvestor_, sSupplyAmount);
-        mintCurrency(juniorInvestor_, jSupplyAmount);
+        supplyFunds(sSupplyAmount, seniorInvestor_);
+        supplyFunds(jSupplyAmount, juniorInvestor_);
 
         uint minJuniorRatio = 2 * 10**26;
         FileLike(assessor).file("minJuniorRatio" , minJuniorRatio);
@@ -163,8 +165,8 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         uint jSupplyAmount = 50 ether;
         uint sSupplyAmount = 200 ether;
 
-        mintCurrency(seniorInvestor_, sSupplyAmount);
-        mintCurrency(juniorInvestor_, jSupplyAmount);
+        supplyFunds(sSupplyAmount, seniorInvestor_);
+        supplyFunds(jSupplyAmount, juniorInvestor_);
 
         uint minJuniorRatio = 2 * 10**26;
         FileLike(assessor).file("minJuniorRatio" , minJuniorRatio);
