@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity >=0.5.3;
 
 import "../base_system.sol";
 
@@ -46,9 +46,8 @@ contract CloseTest is BaseSystemTest {
         // assert: nft + loan removed nftlookup
         assertEq(shelf.nftlookup(lookupId), 0);
 
-        // TODO: assert: loan burned => owner = address(0)
+        // loan burned => owner = address(0)
         // current title implementation reverts if loan owner => address(0)
-        //assertEq(title.ownerOf(loanId), address(0));
     }
 
     function testCloseLoanOwner() public {

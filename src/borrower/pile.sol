@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity >=0.5.3;
 
 import "ds-note/note.sol";
 import "tinlake-math/interest.sol";
@@ -50,7 +50,7 @@ contract Pile is DSNote, Auth, Interest {
 
     // --- Public Debt Methods  ---
     // increase the loan's debt by currencyAmount
-    function incDebt(uint loan, uint currencyAmount) public auth note {
+    function incDebt(uint loan, uint currencyAmount) external auth note {
         uint rate = loanRates[loan];
         require(now <= rates[rate].lastUpdated);
         uint pieAmount = toPie(rates[rate].chi, currencyAmount);
@@ -61,7 +61,7 @@ contract Pile is DSNote, Auth, Interest {
     }
 
     // decrease the loan's debt by currencyAmount
-    function decDebt(uint loan, uint currencyAmount) public auth note {
+    function decDebt(uint loan, uint currencyAmount) external auth note {
         uint rate = loanRates[loan];
         require(now <= rates[rate].lastUpdated);
         uint pieAmount = toPie(rates[rate].chi, currencyAmount);
@@ -71,7 +71,7 @@ contract Pile is DSNote, Auth, Interest {
         total = safeSub(total, currencyAmount);
     }
 
-    function debt(uint loan) public view returns (uint) {
+    function debt(uint loan) external view returns (uint) {
         uint rate_ = loanRates[loan];
         uint chi_ = rates[rate_].chi;
         if (now >= rates[rate_].lastUpdated) {
@@ -80,7 +80,7 @@ contract Pile is DSNote, Auth, Interest {
         return toAmount(chi_, pie[loan]);
     }
 
-    function rateDebt(uint rate) public view returns (uint) {
+    function rateDebt(uint rate) external view returns (uint) {
         uint chi_ = rates[rate].chi;
         uint pie_ = rates[rate].pie;
 
@@ -93,7 +93,7 @@ contract Pile is DSNote, Auth, Interest {
     // --- Interest Rate Group Implementation ---
 
     // set rate loanRates for a loan
-    function setRate(uint loan, uint rate) public auth {
+    function setRate(uint loan, uint rate) external auth {
         require(pie[loan] == 0, "non-zero-debt");
         // rate category has to be initiated
         require(rates[rate].chi != 0);
@@ -101,7 +101,7 @@ contract Pile is DSNote, Auth, Interest {
     }
 
     // change rate loanRates for a loan
-    function changeRate(uint loan, uint newRate) public auth {
+    function changeRate(uint loan, uint newRate) external auth {
         require(rates[newRate].chi != 0);
         uint currentRate = loanRates[loan];
         drip(currentRate);
@@ -115,7 +115,7 @@ contract Pile is DSNote, Auth, Interest {
     }
 
     // set/change the interest rate of a rate category
-    function file(uint rate, uint ratePerSecond) public auth {
+    function file(uint rate, uint ratePerSecond) external auth {
         require(ratePerSecond != 0);
 
         if (rates[rate].chi == 0) {
@@ -128,7 +128,7 @@ contract Pile is DSNote, Auth, Interest {
     }
 
     // accrue needs to be called before any debt amounts are modified by an external component
-    function accrue(uint loan) public {
+    function accrue(uint loan) external {
         drip(loanRates[loan]);
     }
     

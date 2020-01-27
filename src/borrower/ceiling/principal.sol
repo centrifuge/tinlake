@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity >=0.5.3;
 
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
@@ -30,15 +30,15 @@ contract Principal is DSNote, Auth, Math {
     }
 
 
-    function file(uint loan, uint principal) public note auth {
+    function file(uint loan, uint principal) external note auth {
         ceiling[loan] = principal;
     }
 
-    function borrow(uint loan, uint amount) public auth {
+    function borrow(uint loan, uint amount) external auth {
         // safeSub will revert if the ceiling[loan] < amount
         ceiling[loan] = safeSub(ceiling[loan], amount);
     }
 
-    function repay(uint loan, uint amount) public auth {
+    function repay(uint loan, uint amount) external auth {
     }
 }
