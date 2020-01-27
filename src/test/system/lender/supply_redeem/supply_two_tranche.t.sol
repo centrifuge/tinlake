@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity >=0.5.3;
 
 import "../../base_system.sol";
 
@@ -119,5 +119,36 @@ contract SupplyTwoTrancheTest is BaseSystemTest {
 
         // break ratio, senior cannot supply
         seniorInvestor.doSupply(sSupplyAmount);
+    }
+
+    function testFailTrancheBankrupt() public {
+        uint investorBalance = 100 ether;
+        currency.mint(juniorInvestor_, investorBalance);
+        currency.mint(seniorInvestor_, investorBalance);
+
+        uint jSupplyAmount = 80 ether;
+        uint sSupplyAmount = 20 ether;
+
+        juniorInvestor.doSupply(jSupplyAmount);
+        seniorInvestor.doSupply(sSupplyAmount);
+
+        uint minJuniorRatio = 5 * 10**26;
+        FileLike(assessor).file("minJuniorRatio" , minJuniorRatio);
+
+        // new loan, should take all from junior and 20 from senior
+        uint ceiling = 100 ether;
+        uint rate = 1000000564701133626865910626; // 5% per day compound in seconds
+        uint speed = rate;
+        (uint loanA,) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
+
+        hevm.warp(now + 5 days);
+
+        uint threshold = 115 ether;
+        uint recoveryPrice = 5 ether;
+
+        addKeeperAndCollect(loanA, threshold, borrower_, recoveryPrice);
+
+        // juniorInvestor assetValue is 0, tranche is bankrupt
+        juniorInvestor.doSupply(5 ether);
     }
 }

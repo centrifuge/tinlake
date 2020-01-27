@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity >=0.5.3;
 
 import "./base.sol";
 
@@ -25,12 +25,12 @@ contract AllowanceOperator is BaseOperator {
     constructor(address tranche_, address assessor_, address distributor_)
     BaseOperator(tranche_, assessor_, distributor_) public {}
 
-    function approve(address usr, uint maxCurrency_, uint maxToken_) public auth {
+    function approve(address usr, uint maxCurrency_, uint maxToken_) external auth {
         maxCurrency[usr] = maxCurrency_;
         maxToken[usr] = maxToken_;
     }
 
-    function supply(uint currencyAmount) public  {
+    function supply(uint currencyAmount) external {
         if (maxCurrency[msg.sender] != uint(-1)) {
             require(maxCurrency[msg.sender] >= currencyAmount);
             maxCurrency[msg.sender] = maxCurrency[msg.sender] - currencyAmount;
@@ -38,7 +38,7 @@ contract AllowanceOperator is BaseOperator {
         _supply(currencyAmount);
     }
 
-    function redeem(uint tokenAmount) public  {
+    function redeem(uint tokenAmount) external {
         if (maxToken[msg.sender] != uint(-1)) {
             require(maxToken[msg.sender] >= tokenAmount);
             maxToken[msg.sender] = maxToken[msg.sender] - tokenAmount;

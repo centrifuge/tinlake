@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity >=0.5.3;
 
 import "./base.sol";
 import "tinlake-math/interest.sol";
@@ -31,7 +31,6 @@ contract DefaultAssessor is BaseAssessor, Interest {
 
         if(tranche_ == junior) {
             return 0;
-
         }
 
         require(tranche_ == senior);

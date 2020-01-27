@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity >=0.5.3;
 
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
@@ -32,7 +32,7 @@ contract ShelfLike {
 }
 
 contract CurrencyLike {
-    function transferFrom(address from, address to, uint amount) public;
+    function transferFrom(address from, address to, uint amount) public returns (bool);
     function balanceOf(address) public returns(uint);
     function approve(address, uint) public;
 }
@@ -89,7 +89,7 @@ contract DefaultDistributor is Math, DSNote, Auth {
     }
 
     /// handles requests from the shelf contract (borrower side)
-    function balance() public {
+    function balance() external {
         _balanceTranches();
 
         (bool requestWant, uint currencyAmount) = shelf.balanceRequest();
@@ -123,7 +123,7 @@ contract DefaultDistributor is Math, DSNote, Auth {
         }
 
         // distributor -> shelf
-        currency.transferFrom(address(this), address(shelf), totalAmount);
+        require(currency.transferFrom(address(this), address(shelf), totalAmount), "currency-transfer-failed");
     }
 
     /// borrows up to the max amount from one tranche
@@ -150,7 +150,7 @@ contract DefaultDistributor is Math, DSNote, Auth {
         }
 
         // shelf -> distributor
-        currency.transferFrom(address(shelf), address(this), available);
+        require(currency.transferFrom(address(shelf), address(this), available), "currency-transfer-failed");
 
         // repay senior always first
         if(address(senior) != address(0)) {
