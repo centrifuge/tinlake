@@ -42,26 +42,25 @@ contract CreditLine is DSNote, Auth, Math {
         wards[msg.sender] = 1;
     }
 
-    function ceiling(uint loan) public returns(uint) {
+    function ceiling(uint loan) external returns(uint) {
         if (values[loan] > pile.debt(loan)) {
             return safeSub(values[loan], pile.debt(loan));
         } 
         return 0;
     }
 
-    function depend(bytes32 what, address addr) public note auth {
+    function depend(bytes32 what, address addr) external note auth {
         if (what == "pile") { pile = PileLike(addr); }
         else revert();
     }
 
-    function file(uint loan, uint creditLine) public note auth {
+    function file(uint loan, uint creditLine) external note auth {
         values[loan] = creditLine;
     }
 
-    function borrow(uint loan, uint amount) public auth {
+    function borrow(uint loan, uint amount) external auth {
         require(values[loan] >= safeAdd(pile.debt(loan), amount));
     }
 
-    function repay(uint loan, uint amount) public auth {
-    }
+    function repay(uint loan, uint amount) external auth {}
 }

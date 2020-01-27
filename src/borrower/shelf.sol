@@ -85,7 +85,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         ceiling = CeilingLike(ceiling_);
     }
 
-    function depend(bytes32 what, address addr) public auth {
+    function depend(bytes32 what, address addr) external auth {
         if (what == "lender") {
             currency.approve(lender, uint(0));
             currency.approve(addr, uint(-1));
@@ -99,7 +99,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         else revert();
     }
 
-    function file(uint loan, address registry_, uint nft_) public auth {
+    function file(uint loan, address registry_, uint nft_) external auth {
         shelf[loan].registry = registry_;
         shelf[loan].tokenId = nft_;
     }
@@ -109,7 +109,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     }
 
     // --- Shelf: Loan actions ---
-    function issue(address registry_, uint token_) public returns (uint) {
+    function issue(address registry_, uint token_) external returns (uint) {
         require(NFTLike(registry_).ownerOf(token_) == msg.sender, "nft-not-owned");
         bytes32 nft = keccak256(abi.encodePacked(registry_, token_));
         require(nftlookup[nft] == 0, "nft-in-use");
@@ -121,7 +121,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         return loan;
     }
 
-    function close(uint loan) public {
+    function close(uint loan) external {
         require(pile.debt(loan) == 0, "outstanding-debt");
         require(!nftLocked(loan));
         (address registry, uint tokenId) = token(loan);
@@ -133,7 +133,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     }
 
     // --- Currency actions ---
-    function balanceRequest() public view returns (bool, uint) {
+    function balanceRequest() external view returns (bool, uint) {
         uint currencyBalance = currency.balanceOf(address(this));
         if (balance > currencyBalance) {
             return (true, safeSub(balance, currencyBalance));
@@ -143,7 +143,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         }
     }
 
-    function borrow(uint loan, uint currencyAmount) public owner(loan) {
+    function borrow(uint loan, uint currencyAmount) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
         pile.accrue(loan);
         ceiling.borrow(loan, currencyAmount);
@@ -152,7 +152,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         balance = safeAdd(balance, currencyAmount);
     }
 
-    function withdraw(uint loan, uint currencyAmount, address usr) public owner(loan) note {
+    function withdraw(uint loan, uint currencyAmount, address usr) external owner(loan) note {
         require(nftLocked(loan), "nft-not-locked");
         require(currencyAmount <= balances[loan], "amount-too-high");
         distributor.balance();
@@ -161,13 +161,13 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         require(currency.transferFrom(address(this), usr, currencyAmount), "currency-transfer-failed");
     }
 
-    function repay(uint loan, uint currencyAmount) public owner(loan) note {
+    function repay(uint loan, uint currencyAmount) external owner(loan) note {
         require(nftLocked(loan), "nft-not-locked");
         require(balances[loan] == 0,"before repay loan needs to be withdrawn");
         _repay(loan, msg.sender, currencyAmount);
     }
 
-    function recover(uint loan, address usr, uint currencyAmount) public auth {
+    function recover(uint loan, address usr, uint currencyAmount) external auth {
         pile.accrue(loan);
         uint loanDebt = pile.debt(loan);
 
@@ -193,11 +193,11 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     }
 
     // --- NFT actions ---
-    function lock(uint loan) public owner(loan) {
+    function lock(uint loan) external owner(loan) {
         NFTLike(shelf[loan].registry).transferFrom(msg.sender, address(this), shelf[loan].tokenId);
     }
 
-    function unlock(uint loan) public owner(loan) {
+    function unlock(uint loan) external owner(loan) {
         require(pile.debt(loan) == 0, "has-debt");
         NFTLike(shelf[loan].registry).transferFrom(address(this), msg.sender, shelf[loan].tokenId);
     }

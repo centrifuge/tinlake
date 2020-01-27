@@ -72,7 +72,7 @@ contract Collector is DSNote, Auth {
         wards[msg.sender] = 1;
     }
 
-    function depend(bytes32 what, address addr) public auth {
+    function depend(bytes32 what, address addr) external auth {
         if (what == "distributor") distributor = DistributorLike(addr);
         else if (what == "shelf") shelf = ShelfLike(addr);
         else if (what == "pile") pile = PileLike(addr);
@@ -81,22 +81,22 @@ contract Collector is DSNote, Auth {
     }
 
     // --- Collector ---
-    function file(uint loan, address buyer, uint nftPrice) public auth {
+    function file(uint loan, address buyer, uint nftPrice) external auth {
         require(nftPrice > 0, "no-nft-price-defined");
         options[loan] = Option(buyer, nftPrice);
     }
 
-    function seize(uint loan) public {
+    function seize(uint loan) external {
         uint debt = pile.debt(loan);
         require((threshold.get(loan) <= debt), "threshold-not-reached");
         shelf.claim(loan, address(this));
     }
 
-    function collect(uint loan) public auth_collector {
+    function collect(uint loan) external auth_collector {
         _collect(loan, msg.sender);
     }
 
-    function collect(uint loan, address buyer) public auth {
+    function collect(uint loan, address buyer) external auth {
         _collect(loan, buyer);
     }
 

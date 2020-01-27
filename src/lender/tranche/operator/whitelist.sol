@@ -31,11 +31,11 @@ contract WhitelistOperator is BaseOperator {
 
     constructor(address tranche_, address assessor_, address distributor_) BaseOperator(tranche_, assessor_, distributor_) public {}
 
-    function supply(uint currencyAmount) public auth_investor {
+    function supply(uint currencyAmount) external auth_investor {
         _supply(currencyAmount);
     }
 
-    function redeem(uint tokenAmount) public auth_investor {
+    function redeem(uint tokenAmount) external auth_investor {
         _redeem(tokenAmount);
     }
 }

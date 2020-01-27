@@ -89,7 +89,7 @@ contract DefaultDistributor is Math, DSNote, Auth {
     }
 
     /// handles requests from the shelf contract (borrower side)
-    function balance() public {
+    function balance() external {
         _balanceTranches();
 
         (bool requestWant, uint currencyAmount) = shelf.balanceRequest();
