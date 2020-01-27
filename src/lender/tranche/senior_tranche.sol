@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Centrifuge
+// Copyright (C) 2020 Centrifuge
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -54,11 +54,13 @@ contract SeniorTranche is Tranche, Interest {
 
     function file(bytes32 what, uint ratePerSecond_) public note auth {
          if (what ==  "rate") {
-            drip();
+             if(ratePerSecond != ONE) {
+                 // required for interest rate switch
+                 drip();
+             }
             ratePerSecond = ratePerSecond_;
-        }
+        } else revert();
     }
-
 
     function _repay(uint currencyAmount) internal {
         if(currencyAmount <= interest) {

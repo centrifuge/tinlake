@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Centrifuge
+// Copyright (C) 2020 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -108,7 +108,7 @@ contract BaseAssessor is Math, Auth {
         return rdiv(assetValue, tokenSupply);
     }
 
-  function _calcJuniorAssetValue(uint poolValue, uint juniorReserve, uint seniorDebt) internal pure returns (uint) {
+    function _calcJuniorAssetValue(uint poolValue, uint juniorReserve, uint seniorDebt) internal pure returns (uint) {
         // available for junior
         uint available = safeAdd(poolValue, juniorReserve);
 

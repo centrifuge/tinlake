@@ -1,5 +1,5 @@
 // collector.sol -- can remove bad assets from the pool
-// Copyright (C) 2019 Centrifuge
+// Copyright (C) 2020 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
