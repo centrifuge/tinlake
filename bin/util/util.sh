@@ -11,8 +11,7 @@ message() {
 
 success_msg()
 {
- echo -e "\e[0;31m Success >>> $1"
- echo -e "Default \e[92mLight green"
+ echo -e "\e[0;32m >>> $1 \e[0m"
 }
 error_exit()
 {
@@ -39,4 +38,19 @@ build_contracts()
         dapp build --extract
     fi
     message contract build files are ready
+}
+
+loadValuesFromFile() {
+    local keys
+
+    keys=$(jq -r "keys_unsorted[]" "$1")
+    for KEY in $keys; do
+        VALUE=$(jq -r ".$KEY" "$1")
+        eval "export $KEY=$VALUE"
+    done
+}
+
+addValuesToFile() {
+    result=$(jq -s add "$1" /dev/stdin)
+    printf %s "$result" > "$1"
 }
