@@ -1,11 +1,9 @@
 # Tinlake Deployment
-The Tinlake Deployment happens with bash script and the help of seth.
-
+A Tinlake Deployment happens with bash scripts and seth.
 
 ## Deploy Config File
-In a first step a config file needs to be defined.
-
-### Required
+A config file needs to be defined.
+### Required Parameters
 ```json
 {
   "ETH_RPC_URL": "<<RPC URL>>",
@@ -14,7 +12,7 @@ In a first step a config file needs to be defined.
 }
 ```
 
-### Optional
+### Optional Parameters
 ```json
 {
   "ETH_GAS": "<<NUMBER>>",
@@ -40,7 +38,7 @@ dapp testnet
 ```
 
 ## Deploy Contracts
-After a config file is generated run
+After the config file is defined. Run the follow script
 
 ```bash
 ./bin/deploy.sh
