@@ -7,10 +7,10 @@ cd $BIN_DIR
 
 message Deploy Lender
 
-# todo it should be possible to define other path
 DEPLOYMENT_FILE="./../deployments/addresses_$(seth chain).json"
+ZERO_ADDRESS=0x0000000000000000000000000000000000000000
 
-message Check or Deploy Lender Fabs
+message Check or Deploy Fabs
 
 # check or deploy default fabs
 [[ -z "$LENDER_OPERATOR_FAB" ]] && LENDER_OPERATOR_FAB=$(seth send --create ./../out/WhitelistOperatorFab.bin 'WhitelistOperator()')
@@ -22,10 +22,11 @@ message Check or Deploy Lender Fabs
 [[ -z "$LENDER_SENIOR_OPERATOR_FAB" ]] && LENDER_SENIOR_OPERATOR_FAB=$ZERO_ADDRESS
 
 success_msg Lender Fabs ready
+TOKEN_AMOUNT_FOR_ONE=$(seth --to-uint256 1)
 
 # backer allows lender to take currency
 
-export LENDER_DEPLOYER=$(seth send --create ./../out/LenderDeployer.bin 'LenderDeployer(address,address,uint,address,address,address,address,address,address)' $ROOT_CONTRACT $TINLAKE_CURRENCY $TOKEN_AMOUNT_FOR_ONE $LENDER_TRANCHE_FAB $LENDER_ASSESSOR_FAB $LENDER_OPERATOR_FAB $LENDER_DISTRIBUTOR_FAB $LENDER_SENIOR_TRANCHE_FAB $LENDER_SENIOR_OPERATOR_FAB)
+LENDER_DEPLOYER=$(seth send --create ./../out/LenderDeployer.bin 'LenderDeployer(address,address,uint,address,address,address,address,address,address)' $ROOT_CONTRACT $TINLAKE_CURRENCY $TOKEN_AMOUNT_FOR_ONE $LENDER_TRANCHE_FAB $LENDER_ASSESSOR_FAB $LENDER_OPERATOR_FAB $LENDER_DISTRIBUTOR_FAB $LENDER_SENIOR_TRANCHE_FAB $LENDER_SENIOR_OPERATOR_FAB)
 
 seth send $LENDER_DEPLOYER 'deployAssessor()'
 seth send $LENDER_DEPLOYER 'deployDistributor()'
@@ -44,7 +45,6 @@ success_msg Lender Contracts deployed
 #touch $DEPLOYMENT_FILE
 addValuesToFile $DEPLOYMENT_FILE <<EOF
 {
-    "LENDER_DEPLOYER"  :  "$LENDER_DEPLOYER",
     "LENDER_OPERATOR_FAB"  :  "$LENDER_OPERATOR_FAB",
     "LENDER_ASSESSOR_FAB"   :  "$LENDER_ASSESSOR_FAB",
     "LENDER_DISTRIBUTOR_FAB"   :  "$LENDER_DISTRIBUTOR_FAB",
