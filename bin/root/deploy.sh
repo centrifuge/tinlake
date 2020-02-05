@@ -3,6 +3,7 @@
 BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
 cd $BIN_DIR
 
+# todo it should be possible to define other path
 DEPLOYMENT_FILE="./../deployments/addresses_$(seth chain).json"
 
 DEPLOYMENT_NAME="Local Test Deployment"

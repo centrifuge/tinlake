@@ -18,7 +18,6 @@ export ETH_FROM=$(cat $GETH_DIR/keystore/* | jq -r '.address' | head -n 1)
 
 export ETH_GAS=${ETH_GAS:-"7000000"}
 
-
 # Defaults
 test -z "$CURRENCY_SYMBOL" && CURRENCY_SYMBOL="DAI"
 test -z "$CURRENCY_NAME" && CURRENCY_NAME="DAI Stablecoin"
