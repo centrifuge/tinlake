@@ -33,6 +33,8 @@ CONFIG_FILE=$1
 [ -z "$1" ] && CONFIG_FILE="./../config_$(seth chain).json"
 
 touch $CONFIG_FILE
+
+
 addValuesToFile $CONFIG_FILE <<EOF
 {
     "ETH_RPC_URL" :"$ETH_RPC_URL",
@@ -43,6 +45,7 @@ addValuesToFile $CONFIG_FILE <<EOF
     "TINLAKE_CURRENCY": "$TINLAKE_CURRENCY"
 }
 EOF
-
 message config file created
+
+msg Path: $(realpath $CONFIG_FILE)
 

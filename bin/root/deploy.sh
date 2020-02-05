@@ -7,9 +7,8 @@ DEPLOYMENT_FILE="./../deployments/addresses_$(seth chain).json"
 
 DEPLOYMENT_NAME="Local Test Deployment"
 
-# Deploy Default Currency
-
-ROOT_CONTRACT=$(seth send --create ./../out/TinlakeRoot.bin 'TinlakeRoot(address)' "$ETH_FROM")
+message Deploy Root Contract
+export ROOT_CONTRACT=$(seth send --create ./../out/TinlakeRoot.bin 'TinlakeRoot(address)' "$ETH_FROM")
 
 touch $DEPLOYMENT_FILE
 addValuesToFile $DEPLOYMENT_FILE <<EOF

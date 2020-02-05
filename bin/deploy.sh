@@ -21,3 +21,6 @@ build_contracts "./.."
 
 # deploy root contract
 source ./root/deploy.sh
+
+# deploy lender contracts
+source ./lender/deploy.sh
