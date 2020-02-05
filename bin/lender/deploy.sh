@@ -45,18 +45,18 @@ success_msg Lender Contracts deployed
 #touch $DEPLOYMENT_FILE
 addValuesToFile $DEPLOYMENT_FILE <<EOF
 {
-    "LENDER_DEPLOYER" : "$LENDER_DEPLOYER",
-    "LENDER_OPERATOR_FAB"  :  "$LENDER_OPERATOR_FAB",
-    "LENDER_ASSESSOR_FAB"   :  "$LENDER_ASSESSOR_FAB",
-    "LENDER_DISTRIBUTOR_FAB"   :  "$LENDER_DISTRIBUTOR_FAB",
-    "LENDER_TRANCHE_FAB"   :  "$LENDER_TRANCHE_FAB",
-    "LENDER_SENIOR_TRANCHE_FAB"   :  "$LENDER_SENIOR_TRANCHE_FAB",
-    "LENDER_SENIOR_OPERATOR_FAB"   :  "$LENDER_SENIOR_OPERATOR_FAB",
-    "LENDER_JUNIOR_OPERATOR"      :  "0x$(seth call $LENDER_DEPLOYER 'juniorOperator()(address)')",
-    "LENDER_JUNIOR"      :  "0x$(seth call $LENDER_DEPLOYER 'junior()(address)')",
-    "LENDER_SENIOR"      :  "0x$(seth call $LENDER_DEPLOYER 'senior()(address)')",
-    "LENDER_SENIOR_OPERATOR"      :  "0x$(seth call $LENDER_DEPLOYER 'seniorOperator()(address)')",
-    "LENDER_DISTRIBUTOR"      :  "0x$(seth call $LENDER_DEPLOYER 'distributor()(address)')",
-    "LENDER_ASSESSOR"      :  "0x$(seth call $LENDER_DEPLOYER 'assessor()(address)')"
+    "LENDER_DEPLOYER"           : "$LENDER_DEPLOYER",
+    "LENDER_OPERATOR_FAB"       :  "$LENDER_OPERATOR_FAB",
+    "LENDER_ASSESSOR_FAB"       :  "$LENDER_ASSESSOR_FAB",
+    "LENDER_DISTRIBUTOR_FAB"    :  "$LENDER_DISTRIBUTOR_FAB",
+    "LENDER_TRANCHE_FAB"        :  "$LENDER_TRANCHE_FAB",
+    "LENDER_SENIOR_TRANCHE_FAB" :  "$LENDER_SENIOR_TRANCHE_FAB",
+    "LENDER_SENIOR_OPERATOR_FAB":  "$LENDER_SENIOR_OPERATOR_FAB",
+    "LENDER_JUNIOR_OPERATOR"    :  "0x$(seth call $LENDER_DEPLOYER 'juniorOperator()(address)')",
+    "LENDER_JUNIOR"             :  "0x$(seth call $LENDER_DEPLOYER 'junior()(address)')",
+    "LENDER_SENIOR"             :  "0x$(seth call $LENDER_DEPLOYER 'senior()(address)')",
+    "LENDER_SENIOR_OPERATOR"    :  "0x$(seth call $LENDER_DEPLOYER 'seniorOperator()(address)')",
+    "LENDER_DISTRIBUTOR"        :  "0x$(seth call $LENDER_DEPLOYER 'distributor()(address)')",
+    "LENDER_ASSESSOR"           :  "0x$(seth call $LENDER_DEPLOYER 'assessor()(address)')"
 }
 EOF
