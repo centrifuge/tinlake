@@ -55,6 +55,7 @@ addValuesToFile $DEPLOYMENT_FILE <<EOF
     "BORROWER_PRICEPOOL_FAB"  :  "$BORROWER_PRICEPOOL_FAB",
     "BORROWER_CEILING_FAB"    :  "$BORROWER_CEILING_FAB",
     "BORROWER_TITLE"          :  "0x$(seth call $BORROWER_DEPLOYER 'title()(address)')",
+    "BORROWER_PILE"           :  "0x$(seth call $BORROWER_DEPLOYER 'pile()(address)')",
     "BORROWER_SHELF"          :  "0x$(seth call $BORROWER_DEPLOYER 'shelf()(address)')",
     "BORROWER_CEILING"        :  "0x$(seth call $BORROWER_DEPLOYER 'ceiling()(address)')",
     "BORROWER_COLLECTOR"      :  "0x$(seth call $BORROWER_DEPLOYER 'collector()(address)')",
