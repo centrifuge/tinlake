@@ -1,5 +1,7 @@
 #! /usr/bin/env bash
 
+ZERO_ADDRESS=0x0000000000000000000000000000000000000000
+
 message() {
 
     echo
