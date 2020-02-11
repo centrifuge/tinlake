@@ -81,5 +81,6 @@ contract TinlakeRoot is Auth {
 
     function denyContract(address target, address usr) public auth {
         AuthLike(target).deny(usr);
-    
+    }
+
 }
