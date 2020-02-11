@@ -83,6 +83,4 @@ contract TinlakeRoot is Auth {
         AuthLike(target).deny(usr);
     }
 
-
-
 }
