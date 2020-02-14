@@ -34,7 +34,7 @@ addValuesToFile $CONFIG_FILE <<EOF
     "ETH_KEYSTORE" :"$ETH_KEYSTORE",
     "ETH_PASSWORD" :"$ETH_PASSWORD",
     "TINLAKE_CURRENCY": "$TINLAKE_CURRENCY",
-    "GOVERNANCE": "0x$ETH_FROM"
+    "GOVERNANCE": "$GOVERNANCE"
 }
 EOF
 message config file created
