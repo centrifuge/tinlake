@@ -41,10 +41,10 @@ success_msg "Deployment File: $(realpath $DEPLOYMENT_FILE)"
 
 #touch $DEPLOYMENT_FILE
 addValuesToFile $DEPLOYMENT_FILE <<EOF
-{	
+{
     "GOVERNANCE" : "$GOVERNANCE"
-}	
-EOF	
+}
+EOF
 
 cat $DEPLOYMENT_FILE
 
