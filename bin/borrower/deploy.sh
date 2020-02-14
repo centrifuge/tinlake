@@ -28,25 +28,25 @@ success_msg Borrower Fabs ready
 TITLE_NAME="Tinlake Loan Token"
 TITLE_SYMBOL="TLNT"
 
-export DEPLOYER=$(seth send --create ./../out/BorrowerDeployer.bin 'BorrowerDeployer(address,address,address,address,address,address,address,address,address,string memory,string memory)' $ROOT_CONTRACT $TITLE_FAB $SHELF_FAB $PILE_FAB $CEILING_FAB $COLLECTOR_FAB $THRESHOLD_FAB $PRICEPOOL_FAB $TINLAKE_CURRENCY "$TITLE_NAME" "$TITLE_SYMBOL")
+export BORROWER_DEPLOYER=$(seth send --create ./../out/BorrowerDeployer.bin 'BorrowerDeployer(address,address,address,address,address,address,address,address,address,string memory,string memory)' $ROOT_CONTRACT $TITLE_FAB $SHELF_FAB $PILE_FAB $CEILING_FAB $COLLECTOR_FAB $THRESHOLD_FAB $PRICEPOOL_FAB $TINLAKE_CURRENCY "$TITLE_NAME" "$TITLE_SYMBOL")
 
 
-seth send $DEPLOYER 'deployTitle()'
-seth send $DEPLOYER 'deployPile()'
-seth send $DEPLOYER 'deployCeiling()'
-seth send $DEPLOYER 'deployShelf()'
-seth send $DEPLOYER 'deployThreshold()'
-seth send $DEPLOYER 'deployCollector()'
-seth send $DEPLOYER 'deployPricePool()'
+seth send $BORROWER_DEPLOYER 'deployTitle()'
+seth send $BORROWER_DEPLOYER 'deployPile()'
+seth send $BORROWER_DEPLOYER 'deployCeiling()'
+seth send $BORROWER_DEPLOYER 'deployShelf()'
+seth send $BORROWER_DEPLOYER 'deployThreshold()'
+seth send $BORROWER_DEPLOYER 'deployCollector()'
+seth send $BORROWER_DEPLOYER 'deployPricePool()'
 
-seth send $DEPLOYER 'deploy()'
+seth send $BORROWER_DEPLOYER 'deploy()'
 
 success_msg Borrower Contracts deployed
 
 touch $DEPLOYMENT_FILE
 addValuesToFile $DEPLOYMENT_FILE <<EOF
 {
-    "BORROWER_DEPLOYER"       :  "$DEPLOYER",
+    "BORROWER_DEPLOYER"       :  "$BORROWER_DEPLOYER",
     "TITLE_FAB"      :  "$TITLE_FAB",
     "SHELF_FAB"      :  "$SHELF_FAB",
     "PILE_FAB"       :  "$PILE_FAB",
@@ -54,12 +54,12 @@ addValuesToFile $DEPLOYMENT_FILE <<EOF
     "THRESHOLD_FAB"  :  "$THRESHOLD_FAB",
     "PRICEPOOL_FAB"  :  "$PRICEPOOL_FAB",
     "CEILING_FAB"    :  "$CEILING_FAB",
-    "TITLE"          :  "0x$(seth call $DEPLOYER 'title()(address)')",
-    "PILE"           :  "0x$(seth call $DEPLOYER 'pile()(address)')",
-    "SHELF"          :  "0x$(seth call $DEPLOYER 'shelf()(address)')",
-    "CEILING"        :  "0x$(seth call $DEPLOYER 'ceiling()(address)')",
-    "COLLECTOR"      :  "0x$(seth call $DEPLOYER 'collector()(address)')",
-    "THRESHOLD"      :  "0x$(seth call $DEPLOYER 'threshold()(address)')",
-    "PRICE_POOL"     :  "0x$(seth call $DEPLOYER 'pricePool()(address)')"
+    "TITLE"          :  "0x$(seth call $BORROWER_DEPLOYER 'title()(address)')",
+    "PILE"           :  "0x$(seth call $BORROWER_DEPLOYER 'pile()(address)')",
+    "SHELF"          :  "0x$(seth call $BORROWER_DEPLOYER 'shelf()(address)')",
+    "CEILING"        :  "0x$(seth call $BORROWER_DEPLOYER 'ceiling()(address)')",
+    "COLLECTOR"      :  "0x$(seth call $BORROWER_DEPLOYER 'collector()(address)')",
+    "THRESHOLD"      :  "0x$(seth call $BORROWER_DEPLOYER 'threshold()(address)')",
+    "PRICE_POOL"     :  "0x$(seth call $BORROWER_DEPLOYER 'pricePool()(address)')"
 }
 EOF
