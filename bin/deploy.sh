@@ -31,10 +31,21 @@ source ./borrower/deploy.sh
 # finalize deployment
 message Finalize Deployment
 
+[ -z “$GOVERANCE” ] && GOVERANCE=$ETH_FROM
+
 seth send $ROOT_CONTRACT 'prepare(address,address,address)' $LENDER_DEPLOYER $BORROWER_DEPLOYER $GOVERNANCE
 seth send $ROOT_CONTRACT 'deploy()'
 
 success_msg "Tinlake Deployment Finished"
 success_msg "Deployment File: $(realpath $DEPLOYMENT_FILE)"
+
+#touch $DEPLOYMENT_FILE	
+addValuesToFile $DEPLOYMENT_FILE <<EOF	
+{	
+    "GOVERNANCE" : "$GOVERNANCE"	
+}	
+EOF	
+
+cat $DEPLOYMENT_FILE
 
 success_msg DONE
