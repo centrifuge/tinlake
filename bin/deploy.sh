@@ -31,7 +31,7 @@ source ./borrower/deploy.sh
 # finalize deployment
 message Finalize Deployment
 
-[ -z “$GOVERANCE” ] && GOVERANCE=$ETH_FROM
+[ -z "$GOVERANCE" ] && GOVERANCE=$ETH_FROM
 
 seth send $ROOT_CONTRACT 'prepare(address,address,address)' $LENDER_DEPLOYER $BORROWER_DEPLOYER $GOVERNANCE
 seth send $ROOT_CONTRACT 'deploy()'
