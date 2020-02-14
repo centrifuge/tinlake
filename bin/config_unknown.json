@@ -1,0 +1,8 @@
+{
+  "ETH_RPC_URL": "http://127.0.0.1:8545",
+  "ETH_FROM": "2f2f9c68976e277424dc5903bd12a4c3c0f07c3e",
+  "ETH_GAS": "7000000",
+  "ETH_KEYSTORE": "/Users/ilinzweilin/.dapp/testnet/8545//keystore",
+  "ETH_PASSWORD": "/Users/ilinzweilin/.dapp/testnet/8545//.empty-password",
+  "TINLAKE_CURRENCY": "0x2c4a12ed160f785dc28451cac55099ec3992dd3d"
+}
