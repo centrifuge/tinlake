@@ -26,37 +26,37 @@ TOKEN_AMOUNT_FOR_ONE=$(seth --to-uint256 1)
 
 # backer allows lender to take currency
 
-export DEPLOYER=$(seth send --create ./../out/LenderDeployer.bin 'LenderDeployer(address,address,uint,address,address,address,address,address,address)' $ROOT_CONTRACT $TINLAKE_CURRENCY $TOKEN_AMOUNT_FOR_ONE $TRANCHE_FAB $ASSESSOR_FAB $OPERATOR_FAB $DISTRIBUTOR_FAB $SENIOR_TRANCHE_FAB $SENIOR_OPERATOR_FAB)
+export LENDER_DEPLOYER=$(seth send --create ./../out/LenderDeployer.bin 'LenderDeployer(address,address,uint,address,address,address,address,address,address)' $ROOT_CONTRACT $TINLAKE_CURRENCY $TOKEN_AMOUNT_FOR_ONE $TRANCHE_FAB $ASSESSOR_FAB $OPERATOR_FAB $DISTRIBUTOR_FAB $SENIOR_TRANCHE_FAB $SENIOR_OPERATOR_FAB)
 
-seth send $DEPLOYER 'deployAssessor()'
-seth send $DEPLOYER 'deployDistributor()'
-seth send $DEPLOYER 'deployJuniorTranche()'
-seth send $DEPLOYER 'deployJuniorOperator()'
+seth send $LENDER_DEPLOYER 'deployAssessor()'
+seth send $LENDER_DEPLOYER 'deployDistributor()'
+seth send $LENDER_DEPLOYER 'deployJuniorTranche()'
+seth send $LENDER_DEPLOYER 'deployJuniorOperator()'
 
 if [ "$SENIOR_TRANCHE_FAB"  !=  "$ZERO_ADDRESS" ]; then
-    seth send $DEPLOYER 'deploySeniorTranche()'
-    seth send $DEPLOYER 'deploySeniorOperator()'
+    seth send $LENDER_DEPLOYER 'deploySeniorTranche()'
+    seth send $LENDER_DEPLOYER 'deploySeniorOperator()'
 fi
 
-seth send $DEPLOYER 'deploy()'
+seth send $LENDER_DEPLOYER 'deploy()'
 
 success_msg Lender Contracts deployed
 
 #touch $DEPLOYMENT_FILE
 addValuesToFile $DEPLOYMENT_FILE <<EOF
 {
-    "LENDER_DEPLOYER"           : "$DEPLOYER",
+    "LENDER_DEPLOYER"           : "$LENDER_DEPLOYER",
     "OPERATOR_FAB"       :  "$OPERATOR_FAB",
     "ASSESSOR_FAB"       :  "$ASSESSOR_FAB",
     "DISTRIBUTOR_FAB"    :  "$DISTRIBUTOR_FAB",
     "TRANCHE_FAB"        :  "$TRANCHE_FAB",
     "SENIOR_TRANCHE_FAB" :  "$SENIOR_TRANCHE_FAB",
     "SENIOR_OPERATOR_FAB":  "$SENIOR_OPERATOR_FAB",
-    "JUNIOR_OPERATOR"    :  "0x$(seth call $DEPLOYER 'juniorOperator()(address)')",
-    "JUNIOR"             :  "0x$(seth call $DEPLOYER 'junior()(address)')",
-    "SENIOR"             :  "0x$(seth call $DEPLOYER 'senior()(address)')",
-    "SENIOR_OPERATOR"    :  "0x$(seth call $DEPLOYER 'seniorOperator()(address)')",
-    "DISTRIBUTOR"        :  "0x$(seth call $DEPLOYER 'distributor()(address)')",
-    "ASSESSOR"           :  "0x$(seth call $DEPLOYER 'assessor()(address)')"
+    "JUNIOR_OPERATOR"    :  "0x$(seth call $LENDER_DEPLOYER 'juniorOperator()(address)')",
+    "JUNIOR"             :  "0x$(seth call $LENDER_DEPLOYER 'junior()(address)')",
+    "SENIOR"             :  "0x$(seth call $LENDER_DEPLOYER 'senior()(address)')",
+    "SENIOR_OPERATOR"    :  "0x$(seth call $LENDER_DEPLOYER 'seniorOperator()(address)')",
+    "DISTRIBUTOR"        :  "0x$(seth call $LENDER_DEPLOYER 'distributor()(address)')",
+    "ASSESSOR"           :  "0x$(seth call $LENDER_DEPLOYER 'assessor()(address)')"
 }
 EOF
