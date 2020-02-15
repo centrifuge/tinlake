@@ -14,21 +14,21 @@ ZERO_ADDRESS=0x0000000000000000000000000000000000000000
 message Borrower Check or Deploy Fabs
 
 # check or deploy default fabs
-[[ -z "$BORROWER_TITLE_FAB" ]] && BORROWER_TITLE_FAB=$(seth send --create ./../out/TitleFab.bin 'TitleFab()')
-[[ -z "$BORROWER_SHELF_FAB" ]] && BORROWER_SHELF_FAB=$(seth send --create ./../out/ShelfFab.bin 'ShelfFab()')
-[[ -z "$BORROWER_PILE_FAB" ]] && BORROWER_PILE_FAB=$(seth send --create ./../out/PileFab.bin 'PileFab()')
-[[ -z "$BORROWER_COLLECTOR_FAB" ]] && BORROWER_COLLECTOR_FAB=$(seth send --create ./../out/CollectorFab.bin 'CollectorFab()')
-[[ -z "$BORROWER_THRESHOLD_FAB" ]] && BORROWER_THRESHOLD_FAB=$(seth send --create ./../out/ThresholdFab.bin 'ThresholdFab()')
-[[ -z "$BORROWER_PRICEPOOL_FAB" ]] && BORROWER_PRICEPOOL_FAB=$(seth send --create ./../out/PricePoolFab.bin 'PricePoolFab()')
+[[ -z "$TITLE_FAB" ]] && TITLE_FAB=$(seth send --create ./../out/TitleFab.bin 'TitleFab()')
+[[ -z "$SHELF_FAB" ]] && SHELF_FAB=$(seth send --create ./../out/ShelfFab.bin 'ShelfFab()')
+[[ -z "$PILE_FAB" ]] && PILE_FAB=$(seth send --create ./../out/PileFab.bin 'PileFab()')
+[[ -z "$COLLECTOR_FAB" ]] && COLLECTOR_FAB=$(seth send --create ./../out/CollectorFab.bin 'CollectorFab()')
+[[ -z "$THRESHOLD_FAB" ]] && THRESHOLD_FAB=$(seth send --create ./../out/ThresholdFab.bin 'ThresholdFab()')
+[[ -z "$PRICEPOOL_FAB" ]] && PRICEPOOL_FAB=$(seth send --create ./../out/PricePoolFab.bin 'PricePoolFab()')
 # default is Principal Ceiling Fab
-[[ -z "$BORROWER_CEILING_FAB" ]] && BORROWER_CEILING_FAB=$(seth send --create ./../out/PrincipalCeilingFab.bin 'PrincipalCeilingFab()')
+[[ -z "$CEILING_FAB" ]] && CEILING_FAB=$(seth send --create ./../out/PrincipalCeilingFab.bin 'PrincipalCeilingFab()')
 
 success_msg Borrower Fabs ready
 
 TITLE_NAME="Tinlake Loan Token"
 TITLE_SYMBOL="TLNT"
 
-export BORROWER_DEPLOYER=$(seth send --create ./../out/BorrowerDeployer.bin 'BorrowerDeployer(address,address,address,address,address,address,address,address,address,string memory,string memory)' $ROOT_CONTRACT $BORROWER_TITLE_FAB $BORROWER_SHELF_FAB $BORROWER_PILE_FAB $BORROWER_CEILING_FAB $BORROWER_COLLECTOR_FAB $BORROWER_THRESHOLD_FAB $BORROWER_PRICEPOOL_FAB $TINLAKE_CURRENCY "$TITLE_NAME" "$TITLE_SYMBOL")
+export BORROWER_DEPLOYER=$(seth send --create ./../out/BorrowerDeployer.bin 'BorrowerDeployer(address,address,address,address,address,address,address,address,address,string memory,string memory)' $ROOT_CONTRACT $TITLE_FAB $SHELF_FAB $PILE_FAB $CEILING_FAB $COLLECTOR_FAB $THRESHOLD_FAB $PRICEPOOL_FAB $TINLAKE_CURRENCY "$TITLE_NAME" "$TITLE_SYMBOL")
 
 
 seth send $BORROWER_DEPLOYER 'deployTitle()'
@@ -47,19 +47,19 @@ touch $DEPLOYMENT_FILE
 addValuesToFile $DEPLOYMENT_FILE <<EOF
 {
     "BORROWER_DEPLOYER"       :  "$BORROWER_DEPLOYER",
-    "BORROWER_TITLE_FAB"      :  "$BORROWER_TITLE_FAB",
-    "BORROWER_SHELF_FAB"      :  "$BORROWER_SHELF_FAB",
-    "BORROWER_PILE_FAB"       :  "$BORROWER_PILE_FAB",
-    "BORROWER_COLLECTOR_FAB"  :  "$BORROWER_COLLECTOR_FAB",
-    "BORROWER_THRESHOLD_FAB"  :  "$BORROWER_THRESHOLD_FAB",
-    "BORROWER_PRICEPOOL_FAB"  :  "$BORROWER_PRICEPOOL_FAB",
-    "BORROWER_CEILING_FAB"    :  "$BORROWER_CEILING_FAB",
-    "BORROWER_TITLE"          :  "0x$(seth call $BORROWER_DEPLOYER 'title()(address)')",
-    "BORROWER_PILE"           :  "0x$(seth call $BORROWER_DEPLOYER 'pile()(address)')",
-    "BORROWER_SHELF"          :  "0x$(seth call $BORROWER_DEPLOYER 'shelf()(address)')",
-    "BORROWER_CEILING"        :  "0x$(seth call $BORROWER_DEPLOYER 'ceiling()(address)')",
-    "BORROWER_COLLECTOR"      :  "0x$(seth call $BORROWER_DEPLOYER 'collector()(address)')",
-    "BORROWER_THRESHOLD"      :  "0x$(seth call $BORROWER_DEPLOYER 'threshold()(address)')",
-    "BORROWER_PRICE_POOL"     :  "0x$(seth call $BORROWER_DEPLOYER 'pricePool()(address)')"
+    "TITLE_FAB"      :  "$TITLE_FAB",
+    "SHELF_FAB"      :  "$SHELF_FAB",
+    "PILE_FAB"       :  "$PILE_FAB",
+    "COLLECTOR_FAB"  :  "$COLLECTOR_FAB",
+    "THRESHOLD_FAB"  :  "$THRESHOLD_FAB",
+    "PRICEPOOL_FAB"  :  "$PRICEPOOL_FAB",
+    "CEILING_FAB"    :  "$CEILING_FAB",
+    "TITLE"          :  "0x$(seth call $BORROWER_DEPLOYER 'title()(address)')",
+    "PILE"           :  "0x$(seth call $BORROWER_DEPLOYER 'pile()(address)')",
+    "SHELF"          :  "0x$(seth call $BORROWER_DEPLOYER 'shelf()(address)')",
+    "CEILING"        :  "0x$(seth call $BORROWER_DEPLOYER 'ceiling()(address)')",
+    "COLLECTOR"      :  "0x$(seth call $BORROWER_DEPLOYER 'collector()(address)')",
+    "THRESHOLD"      :  "0x$(seth call $BORROWER_DEPLOYER 'threshold()(address)')",
+    "PRICE_POOL"     :  "0x$(seth call $BORROWER_DEPLOYER 'pricePool()(address)')"
 }
 EOF
