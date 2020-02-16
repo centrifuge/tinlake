@@ -68,11 +68,11 @@ contract BaseAssessor is Math, Auth {
         tokenAmountForONE = tokenAmountForONE_;
     }
 
-    // --- Calls ---
-    function depend(bytes32 what, address addr_) public auth {
-        if (what == "junior") { junior = addr_; }
-        else if (what == "senior") { senior = addr_; }
-        else if (what == "pool") { pool = PoolLike(addr_); }
+    /// sets the dependency to another contract
+    function depend(bytes32 contractName, address addr_) public auth {
+        if (contractName == "junior") { junior = addr_; }
+        else if (contractName == "senior") { senior = addr_; }
+        else if (contractName == "pool") { pool = PoolLike(addr_); }
         else revert();
     }
 

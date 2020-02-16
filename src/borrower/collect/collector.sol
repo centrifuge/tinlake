@@ -72,11 +72,12 @@ contract Collector is DSNote, Auth {
         wards[msg.sender] = 1;
     }
 
-    function depend(bytes32 what, address addr) external auth {
-        if (what == "distributor") distributor = DistributorLike(addr);
-        else if (what == "shelf") shelf = ShelfLike(addr);
-        else if (what == "pile") pile = PileLike(addr);
-        else if (what == "threshold") threshold = RegistryLike(addr);
+    /// sets the dependency to another contract
+    function depend(bytes32 contractName, address addr) external auth {
+        if (contractName == "distributor") distributor = DistributorLike(addr);
+        else if (contractName == "shelf") shelf = ShelfLike(addr);
+        else if (contractName == "pile") pile = PileLike(addr);
+        else if (contractName == "threshold") threshold = RegistryLike(addr);
         else revert();
     }
 

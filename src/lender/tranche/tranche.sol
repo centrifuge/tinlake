@@ -47,9 +47,10 @@ contract Tranche is DSNote, Auth {
         self = address(this);
     }
 
-    function depend(bytes32 what, address addr) public auth {
-        if (what == "currency") { currency = TokenLike(addr); }
-        else if (what == "token") { token = TokenLike(addr); }
+    /// sets the dependency to another contract
+    function depend(bytes32 contractName, address addr) public auth {
+        if (contractName == "currency") { currency = TokenLike(addr); }
+        else if (contractName == "token") { token = TokenLike(addr); }
         else revert();
     }
 

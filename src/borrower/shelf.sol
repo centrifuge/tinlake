@@ -85,17 +85,19 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         ceiling = CeilingLike(ceiling_);
     }
 
-    function depend(bytes32 what, address addr) external auth {
-        if (what == "lender") {
+
+    /// sets the dependency to another contract
+    function depend(bytes32 contractName, address addr) external auth {
+        if (contractName == "lender") {
             currency.approve(lender, uint(0));
             currency.approve(addr, uint(-1));
             lender = addr;
         }
-        else if (what == "token") { currency = TokenLike(addr); }
-        else if (what == "title") { title = TitleLike(addr); }
-        else if (what == "pile") { pile = PileLike(addr); }
-        else if (what == "ceiling") { ceiling = CeilingLike(addr); }
-        else if (what == "distributor") { distributor = DistributorLike(addr);}
+        else if (contractName == "token") { currency = TokenLike(addr); }
+        else if (contractName == "title") { title = TitleLike(addr); }
+        else if (contractName == "pile") { pile = PileLike(addr); }
+        else if (contractName == "ceiling") { ceiling = CeilingLike(addr); }
+        else if (contractName == "distributor") { distributor = DistributorLike(addr);}
         else revert();
     }
 

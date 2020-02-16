@@ -47,10 +47,11 @@ contract BaseOperator is Math, DSNote, Auth {
         distributor = DistributorLike(distributor_);
     }
 
-    function depend(bytes32 what, address addr) public auth {
-        if (what == "tranche") { tranche = TrancheLike(addr); }
-        else if (what == "assessor") { assessor = AssessorLike(addr); }
-        else if (what == "distributor") { distributor = DistributorLike(addr); }
+    /// sets the dependency to another contract
+    function depend(bytes32 contractName, address addr) public auth {
+        if (contractName == "tranche") { tranche = TrancheLike(addr); }
+        else if (contractName == "assessor") { assessor = AssessorLike(addr); }
+        else if (contractName == "distributor") { distributor = DistributorLike(addr); }
         else revert();
     }
 

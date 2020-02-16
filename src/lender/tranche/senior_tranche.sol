@@ -47,9 +47,10 @@ contract SeniorTranche is Tranche, Interest {
         assessor = AssessorLike(assessor_);
     }
 
-    function depend(bytes32 what, address addr) public note auth {
-        if (what == "assessor") {assessor = AssessorLike(addr); }
-        else { super.depend(what, addr); }
+    /// sets the dependency to another contract
+    function depend(bytes32 contractName, address addr) public note auth {
+        if (contractName == "assessor") {assessor = AssessorLike(addr); }
+        else { super.depend(contractName, addr); }
     }
 
     function file(bytes32 what, uint ratePerSecond_) external note auth {

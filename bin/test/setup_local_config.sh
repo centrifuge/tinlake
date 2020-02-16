@@ -5,8 +5,8 @@ cd $BIN_DIR
 source ./../util/util.sh
 
 build_contracts ./../../
-
-# set SETH enviroment variable
+#
+## set SETH enviroment variable
 source ./local_env.sh
 
 # Defaults
