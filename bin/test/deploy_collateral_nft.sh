@@ -14,6 +14,6 @@ DEPLOYMENT_FILE=$BIN_DIR/../../deployments/addresses_$(seth chain).json
 touch $DEPLOYMENT_FILE
 addValuesToFile $DEPLOYMENT_FILE <<EOF
 {
-    "NFT" :"$COLLATERAL_NFT"
+    "COLLATERAL_NFT" :"$COLLATERAL_NFT"
 }
 EOF
