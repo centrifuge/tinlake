@@ -61,8 +61,8 @@ contract PileTest is Interest, DSTest {
         uint total = pile.total();
         uint loanDebt = pile.debt(loan);
         pile.decDebt(loan, amount);
-        assertEq(pile.total(), total - amount);
-        assertEq(pile.debt(loan), loanDebt - amount);  
+        assertEq(pile.total(), safeSub(total, amount));
+        assertEq(pile.debt(loan), safeSub(loanDebt, amount));  
     }
 
     function _calculateDebt(uint rate, uint principal, uint time) internal pure returns(uint z) {
