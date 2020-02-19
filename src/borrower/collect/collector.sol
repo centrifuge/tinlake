@@ -81,18 +81,25 @@ contract Collector is DSNote, Auth {
         else revert();
     }
 
-    // --- Collector ---
+    /// defines the price of an nft
     function file(uint loan, address buyer, uint nftPrice) external auth {
         require(nftPrice > 0, "no-nft-price-defined");
         options[loan] = Option(buyer, nftPrice);
     }
 
+
+    /// if a loan debt is above the loan threshold
+    /// the nft should be sold
+    /// therefore the ownership of the nft is transferred to the collector
     function seize(uint loan) external {
         uint debt = pile.debt(loan);
         require((threshold.get(loan) <= debt), "threshold-not-reached");
         shelf.claim(loan, address(this));
     }
 
+
+    /// a nft can be collected if the collector is the owner
+    /// which implies the debt was above the loan threshold at certain point in time
     function collect(uint loan) external auth_collector {
         _collect(loan, msg.sender);
     }
