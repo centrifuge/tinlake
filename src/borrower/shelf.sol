@@ -148,10 +148,10 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     }
 
     /// starts the borrow process of a loan
-    /// informs the system of the requests currencyAmount
+    /// informs the system of the requested currencyAmount
     /// interest accumulation starts with this method
     /// the method can only be called if the nft is locked
-    /// a max ceiling needs to be defined from an oracle
+    /// a max ceiling needs to be defined by an oracle
     function borrow(uint loan, uint currencyAmount) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
         pile.accrue(loan);
