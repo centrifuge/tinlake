@@ -135,8 +135,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         resetLoanBalance(loan);
     }
 
-    /// used by the lender contracts to satisfy new currency requests
-    /// or transfers currency back to the lender
+    /// used by the lender contracts to know if currency is needed or currency can be taken
     function balanceRequest() external view returns (bool, uint) {
         uint currencyBalance = currency.balanceOf(address(this));
         if (balance > currencyBalance) {

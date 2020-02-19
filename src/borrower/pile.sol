@@ -54,7 +54,7 @@ contract Pile is DSNote, Auth, Interest {
         rates[0].ratePerSecond = ONE;
     }
 
-    /// increases the debt of a loan by a the currencyAmount
+    /// increases the debt of a loan by a currencyAmount
     /// a change of the loan debt updates the rate debt and total debt
     function incDebt(uint loan, uint currencyAmount) external auth note {
         uint rate = loanRates[loan];
@@ -66,7 +66,7 @@ contract Pile is DSNote, Auth, Interest {
         total = safeAdd(total, currencyAmount);
     }
 
-    /// decrease the loan's debt by the currencyAmount
+    /// decrease the loan's debt by a currencyAmount
     /// a change of the loan debt updates the rate debt and total debt
     function decDebt(uint loan, uint currencyAmount) external auth note {
         uint rate = loanRates[loan];
