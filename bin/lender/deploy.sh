@@ -52,11 +52,11 @@ addValuesToFile $DEPLOYMENT_FILE <<EOF
     "TRANCHE_FAB"        :  "$TRANCHE_FAB",
     "SENIOR_TRANCHE_FAB" :  "$SENIOR_TRANCHE_FAB",
     "SENIOR_OPERATOR_FAB":  "$SENIOR_OPERATOR_FAB",
-    "JUNIOR_OPERATOR"    :  "$(seth call $LENDER_DEPLOYER 'juniorOperator()(address)')",
-    "JUNIOR"             :  "$(seth call $LENDER_DEPLOYER 'junior()(address)')",
-    "SENIOR"             :  "$(seth call $LENDER_DEPLOYER 'senior()(address)')",
-    "SENIOR_OPERATOR"    :  "$(seth call $LENDER_DEPLOYER 'seniorOperator()(address)')",
-    "DISTRIBUTOR"        :  "$(seth call $LENDER_DEPLOYER 'distributor()(address)')",
-    "ASSESSOR"           :  "$(seth call $LENDER_DEPLOYER 'assessor()(address)')"
+    "JUNIOR_OPERATOR"    :  "0x$(seth call $LENDER_DEPLOYER 'juniorOperator()(address)')",
+    "JUNIOR"             :  "0x$(seth call $LENDER_DEPLOYER 'junior()(address)')",
+    "SENIOR"             :  "0x$(seth call $LENDER_DEPLOYER 'senior()(address)')",
+    "SENIOR_OPERATOR"    :  "0x$(seth call $LENDER_DEPLOYER 'seniorOperator()(address)')",
+    "DISTRIBUTOR"        :  "0x$(seth call $LENDER_DEPLOYER 'distributor()(address)')",
+    "ASSESSOR"           :  "0x$(seth call $LENDER_DEPLOYER 'assessor()(address)')"
 }
 EOF
