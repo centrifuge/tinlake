@@ -13,7 +13,7 @@ ZERO_ADDRESS=0x0000000000000000000000000000000000000000
 message Check or Deploy Lender Fabs
 
 # check or deploy default fabs
-[[ -z "$OPERATOR_FAB" ]] && OPERATOR_FAB=$(seth send --create ./../out/WhitelistOperatorFab.bin 'WhitelistOperatorFab()')
+[[ -z "$OPERATOR_FAB" ]] && OPERATOR_FAB=$(seth send --create ./../out/AllowanceOperatorFab.bin 'AllowanceOperatorFab()')
 [[ -z "$ASSESSOR_FAB" ]] && ASSESSOR_FAB=$(seth send --create ./../out/DefaultAssessorFab.bin 'DefaultAssessorFab()')
 [[ -z "$DISTRIBUTOR_FAB" ]] && DISTRIBUTOR_FAB=$(seth send --create ./../out/DefaultDistributorFab.bin 'DefaultDistributorFab()')
 [[ -z "$TRANCHE_FAB" ]] && TRANCHE_FAB=$(seth send --create ./../out/TrancheFab.bin 'TrancheFab()')
