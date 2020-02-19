@@ -109,7 +109,7 @@ contract PrincipalBorrowTest is BaseSystemTest {
 
         // borrower borrows rest of principal (50 ether) 
         // should work even though total debt will result in 69.2 ether. daPrincipal ceiling ignores the accrued interest 
-        borrow(loanId, tokenId, ceiling - amount);
+        borrow(loanId, tokenId, safeSub(ceiling, amount));
     }
 
     function testFailBorrowNFTNotLocked() public {
