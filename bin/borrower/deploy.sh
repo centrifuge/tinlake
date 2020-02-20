@@ -54,12 +54,12 @@ addValuesToFile $DEPLOYMENT_FILE <<EOF
     "THRESHOLD_FAB"  :  "$THRESHOLD_FAB",
     "PRICEPOOL_FAB"  :  "$PRICEPOOL_FAB",
     "CEILING_FAB"    :  "$CEILING_FAB",
-    "TITLE"          :  "$(seth call $BORROWER_DEPLOYER 'title()(address)')",
-    "PILE"           :  "$(seth call $BORROWER_DEPLOYER 'pile()(address)')",
-    "SHELF"          :  "$(seth call $BORROWER_DEPLOYER 'shelf()(address)')",
-    "CEILING"        :  "$(seth call $BORROWER_DEPLOYER 'ceiling()(address)')",
-    "COLLECTOR"      :  "$(seth call $BORROWER_DEPLOYER 'collector()(address)')",
-    "THRESHOLD"      :  "$(seth call $BORROWER_DEPLOYER 'threshold()(address)')",
-    "PRICE_POOL"     :  "$(seth call $BORROWER_DEPLOYER 'pricePool()(address)')"
+    "TITLE"          :  "0x$(seth call $BORROWER_DEPLOYER 'title()(address)')",
+    "PILE"           :  "0x$(seth call $BORROWER_DEPLOYER 'pile()(address)')",
+    "SHELF"          :  "0x$(seth call $BORROWER_DEPLOYER 'shelf()(address)')",
+    "CEILING"        :  "0x$(seth call $BORROWER_DEPLOYER 'ceiling()(address)')",
+    "COLLECTOR"      :  "0x$(seth call $BORROWER_DEPLOYER 'collector()(address)')",
+    "THRESHOLD"      :  "0x$(seth call $BORROWER_DEPLOYER 'threshold()(address)')",
+    "PRICE_POOL"     :  "0x$(seth call $BORROWER_DEPLOYER 'pricePool()(address)')"
 }
 EOF
