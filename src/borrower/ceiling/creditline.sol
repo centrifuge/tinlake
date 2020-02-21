@@ -59,7 +59,9 @@ contract CreditLine is DSNote, Auth, Math {
         values[loan] = creditLine;
     }
 
+    /// borrow checks if loan amount would violate the loan ceiling
     function borrow(uint loan, uint amount) external auth {
+        // ceiling check uses existing loan debt
         require(values[loan] >= safeAdd(pile.debt(loan), amount));
     }
 

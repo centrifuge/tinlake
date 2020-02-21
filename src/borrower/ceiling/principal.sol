@@ -34,11 +34,13 @@ contract Principal is DSNote, Auth, Math {
         ceiling[loan] = principal;
     }
 
+    /// reverts if loan amount is higher than ceiling
     function borrow(uint loan, uint amount) external auth {
         // safeSub will revert if the ceiling[loan] < amount
         ceiling[loan] = safeSub(ceiling[loan], amount);
     }
 
+    /// repay interface method not required for ceiling implementation
     function repay(uint loan, uint amount) external auth {
     }
 }

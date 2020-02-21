@@ -24,7 +24,7 @@ import "tinlake-auth/auth.sol";
 // rate accumulators (chi values) for all interest rate categories. It calculates debt each
 // loan according to its interest rate category and pie value.
 contract Pile is DSNote, Auth, Interest {
-    /// stores all needed information of a interest rate group
+    /// stores all needed information of an interest rate group
     struct Rate {
         uint   pie;                 // Total debt of all loans with this rate
         uint   chi;                 // Accumulated rates

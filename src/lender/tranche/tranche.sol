@@ -83,7 +83,7 @@ contract Tranche is DSNote, Auth {
         require(currency.transferFrom(usr, self, currencyAmount), "currency-transfer-failed");
     }
 
-    /// used to borrow currency from a tranche for loans
+    /// used to borrow currency from the tranche for loans
     function borrow(address usr, uint currencyAmount) public note auth {
         require(currency.transferFrom(self, usr, currencyAmount), "currency-transfer-failed");
     }
