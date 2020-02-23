@@ -88,7 +88,7 @@ contract Collector is DSNote, Auth {
     }
 
 
-    /// if a loan debt is above the loan threshold the nft should be sold
+    /// if the loan debt is above the loan threshold the NFT should be seized, i.e. taken away from the borrower to be sold off at a later stage.
     /// therefore the ownership of the nft is transferred to the collector
     function seize(uint loan) external {
         uint debt = pile.debt(loan);
