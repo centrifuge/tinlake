@@ -56,6 +56,7 @@ contract Pile is DSNote, Auth, Interest {
         rates[0].ratePerSecond = ONE;
     }
 
+     // --- Public Debt Methods  --- 
     /// increases the debt of a loan by a currencyAmount
     /// a change of the loan debt updates the rate debt and total debt
     function incDebt(uint loan, uint currencyAmount) external auth note {
