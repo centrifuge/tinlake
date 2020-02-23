@@ -98,7 +98,7 @@ contract Collector is DSNote, Auth {
 
 
     /// a nft can be collected if the collector is the nft- owner
-    /// which implies the debt was above the loan threshold at certain point in time
+    /// The NFT needs to be `seized` first to transfer ownership to the collector.
     /// and then seized by the collector
     function collect(uint loan) external auth_collector {
         _collect(loan, msg.sender);
