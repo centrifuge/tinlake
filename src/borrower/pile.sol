@@ -34,7 +34,7 @@ contract Pile is DSNote, Auth, Interest {
         uint48 lastUpdated;         // Last time the rate was accumulated
     }
 
-    /// mapping for different interest rate groups
+    /// Interest Rate Groups are identified by a `uint` and stored in a mapping
     mapping (uint => Rate) public rates;
 
     /// mapping of all loan debts
