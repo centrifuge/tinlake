@@ -81,14 +81,15 @@ contract Collector is DSNote, Auth {
         else revert();
     }
 
-    /// sets the selling-price of an NFT
+    /// sets the liquidation-price of an NFT
     function file(uint loan, address buyer, uint nftPrice) external auth {
         require(nftPrice > 0, "no-nft-price-defined");
         options[loan] = Option(buyer, nftPrice);
     }
 
 
-    /// if the loan debt is above the loan threshold the NFT should be seized, i.e. taken away from the borrower to be sold off at a later stage.
+    /// if the loan debt is above the loan threshold the NFT should be seized,
+    /// i.e. taken away from the borrower to be sold off at a later stage.
     /// therefore the ownership of the nft is transferred to the collector
     function seize(uint loan) external {
         uint debt = pile.debt(loan);
