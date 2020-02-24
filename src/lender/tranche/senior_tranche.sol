@@ -57,12 +57,15 @@ contract SeniorTranche is Tranche, Interest {
          if (what ==  "rate") {
              if(ratePerSecond != ONE) {
                  // required for interest rate switch
+                 // charges interest with the existing rate before the change
                  drip();
              }
             ratePerSecond = ratePerSecond_;
         } else revert();
     }
 
+    /// the repay amount should first reduce the interest and
+    /// afterwards the borrowed amount
     function _repay(uint currencyAmount) internal {
         if(currencyAmount <= interest) {
             interest = safeSub(interest, currencyAmount);
@@ -90,6 +93,8 @@ contract SeniorTranche is Tranche, Interest {
         super.borrow(usr, currencyAmount);
     }
 
+
+    /// charges interest since the last update until now
     function drip() public {
         if (now >= lastUpdated) {
             interest = safeAdd(interest, assessor.accrueTrancheInterest(address(this)));
