@@ -30,8 +30,9 @@ contract PricePool is Auth, Math {
         riskScore = ONE;
     }
 
-    function depend(bytes32 what, address addr) public auth {
-        if (what == "pile") { pile = PileLike(addr); }
+    /// sets the dependency to another contract
+    function depend(bytes32 contractName, address addr) public auth {
+        if (contractName == "pile") { pile = PileLike(addr); }
         else revert();
     }
 

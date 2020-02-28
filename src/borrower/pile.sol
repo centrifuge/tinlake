@@ -25,6 +25,8 @@ import "tinlake-auth/auth.sol";
 // loan according to its interest rate category and pie value.
 contract Pile is DSNote, Auth, Interest {
     // --- Data ---
+    
+    /// stores all needed information of an interest rate group
     struct Rate {
         uint   pie;                 // Total debt of all loans with this rate
         uint   chi;                 // Accumulated rates
@@ -32,24 +34,31 @@ contract Pile is DSNote, Auth, Interest {
         uint48 lastUpdated;         // Last time the rate was accumulated
     }
 
+    /// Interest Rate Groups are identified by a `uint` and stored in a mapping
     mapping (uint => Rate) public rates;
 
-    // loan => pie
-    // pie = debt/chi
+    /// mapping of all loan debts
+    /// the debt is stored as pie
+    /// pie is defined as pie = debt/chi therefore debt = pie * chi
+    /// where chi is the accumulated interest rate index over time
     mapping (uint => uint) public pie;
-    // loan => rate
+    /// loan => rate
     mapping (uint => uint) public loanRates;
 
+
+    /// total debt of all ongoing loans
     uint public total;
 
     constructor() public {
         wards[msg.sender] = 1;
+        /// pre-definition for loans without interest rates
         rates[0].chi = ONE;
         rates[0].ratePerSecond = ONE;
     }
 
-    // --- Public Debt Methods  ---
-    // increase the loan's debt by currencyAmount
+     // --- Public Debt Methods  --- 
+    /// increases the debt of a loan by a currencyAmount
+    /// a change of the loan debt updates the rate debt and total debt
     function incDebt(uint loan, uint currencyAmount) external auth note {
         uint rate = loanRates[loan];
         require(now <= rates[rate].lastUpdated);
@@ -60,7 +69,8 @@ contract Pile is DSNote, Auth, Interest {
         total = safeAdd(total, currencyAmount);
     }
 
-    // decrease the loan's debt by currencyAmount
+    /// decrease the loan's debt by a currencyAmount
+    /// a change of the loan debt updates the rate debt and total debt
     function decDebt(uint loan, uint currencyAmount) external auth note {
         uint rate = loanRates[loan];
         require(now <= rates[rate].lastUpdated);
@@ -71,6 +81,7 @@ contract Pile is DSNote, Auth, Interest {
         total = safeSub(total, currencyAmount);
     }
 
+    /// returns the current debt based on actual block.timestamp (now)
     function debt(uint loan) external view returns (uint) {
         uint rate_ = loanRates[loan];
         uint chi_ = rates[rate_].chi;
@@ -80,6 +91,7 @@ contract Pile is DSNote, Auth, Interest {
         return toAmount(chi_, pie[loan]);
     }
 
+    /// returns the total debt of a interest rate group
     function rateDebt(uint rate) external view returns (uint) {
         uint chi_ = rates[rate].chi;
         uint pie_ = rates[rate].pie;

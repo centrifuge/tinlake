@@ -25,11 +25,13 @@ contract AllowanceOperator is BaseOperator {
     constructor(address tranche_, address assessor_, address distributor_)
     BaseOperator(tranche_, assessor_, distributor_) public {}
 
+    /// defines the max amount of currency for supply and max amount of token for redeem
     function approve(address usr, uint maxCurrency_, uint maxToken_) external auth {
         maxCurrency[usr] = maxCurrency_;
         maxToken[usr] = maxToken_;
     }
 
+    /// checks if supply amount is approved and calls supply method in BaseOperator
     function supply(uint currencyAmount) external {
         if (maxCurrency[msg.sender] != uint(-1)) {
             require(maxCurrency[msg.sender] >= currencyAmount);
@@ -38,6 +40,7 @@ contract AllowanceOperator is BaseOperator {
         _supply(currencyAmount);
     }
 
+    /// checks if redeem amount is approved and calls redeem method in BaseOperator
     function redeem(uint tokenAmount) external {
         if (maxToken[msg.sender] != uint(-1)) {
             require(maxToken[msg.sender] >= tokenAmount);
