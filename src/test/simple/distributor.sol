@@ -21,8 +21,9 @@ contract Distributor is Auth {
         token = TokenLike(token_);
     }
 
-    function depend(bytes32 what, address addr) public {
-        if(what == "shelf") shelf = ShelfLike(addr);
+    /// sets the dependency to another contract
+    function depend(bytes32 contractName, address addr) public {
+        if(contractName == "shelf") shelf = ShelfLike(addr);
         else revert();
     }
 

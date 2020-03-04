@@ -31,10 +31,12 @@ contract WhitelistOperator is BaseOperator {
 
     constructor(address tranche_, address assessor_, address distributor_) BaseOperator(tranche_, assessor_, distributor_) public {}
 
+    /// only whitelisted investors can supply
     function supply(uint currencyAmount) external auth_investor {
         _supply(currencyAmount);
     }
 
+    /// only whitelisted investors can redeem
     function redeem(uint tokenAmount) external auth_investor {
         _redeem(tokenAmount);
     }
