@@ -59,7 +59,7 @@ contract DistributorLike {
     function borrowFromTranches() public returns (bool);
     function rely(address usr) public;
     function deny(address usr) public;
-    function depend (bytes32 what, address addr) public;
+    function depend (bytes32 contractName, address addr) public;
     function file(bytes32 what, bool flag) public;
     function balance() public;
 }

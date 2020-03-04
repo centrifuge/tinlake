@@ -19,29 +19,32 @@ import "./base.sol";
 
 // AllowanceOperator sets allowances for investors
 contract AllowanceOperator is BaseOperator {
-    mapping (address => uint) maxCurrency;  // uint(-1) unlimited access by convention
-    mapping (address => uint) maxToken;     // uint(-1) unlimited access by convention
+    mapping (address => uint) public maxCurrency;  // uint(-1) unlimited access by convention
+    mapping (address => uint) public maxToken;     // uint(-1) unlimited access by convention
 
     constructor(address tranche_, address assessor_, address distributor_)
     BaseOperator(tranche_, assessor_, distributor_) public {}
 
+    /// defines the max amount of currency for supply and max amount of token for redeem
     function approve(address usr, uint maxCurrency_, uint maxToken_) external auth {
         maxCurrency[usr] = maxCurrency_;
         maxToken[usr] = maxToken_;
     }
 
+    /// checks if supply amount is approved and calls supply method in BaseOperator
     function supply(uint currencyAmount) external {
         if (maxCurrency[msg.sender] != uint(-1)) {
             require(maxCurrency[msg.sender] >= currencyAmount);
-            maxCurrency[msg.sender] = maxCurrency[msg.sender] - currencyAmount;
+            maxCurrency[msg.sender] = safeSub(maxCurrency[msg.sender], currencyAmount);
         }
         _supply(currencyAmount);
     }
 
+    /// checks if redeem amount is approved and calls redeem method in BaseOperator
     function redeem(uint tokenAmount) external {
         if (maxToken[msg.sender] != uint(-1)) {
             require(maxToken[msg.sender] >= tokenAmount);
-            maxToken[msg.sender] = maxToken[msg.sender] - tokenAmount;
+            maxToken[msg.sender] = safeSub(maxToken[msg.sender], tokenAmount);
         }
         _redeem(tokenAmount);
     }

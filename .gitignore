@@ -5,3 +5,4 @@ out
 deployments
 .DS_Store
 config_unknown.json
+.idea

@@ -47,9 +47,10 @@ contract Tranche is DSNote, Auth {
         self = address(this);
     }
 
-    function depend(bytes32 what, address addr) public auth {
-        if (what == "currency") { currency = TokenLike(addr); }
-        else if (what == "token") { token = TokenLike(addr); }
+    /// sets the dependency to another contract
+    function depend(bytes32 contractName, address addr) public auth {
+        if (contractName == "currency") { currency = TokenLike(addr); }
+        else if (contractName == "token") { token = TokenLike(addr); }
         else revert();
     }
 
@@ -61,23 +62,28 @@ contract Tranche is DSNote, Auth {
         return token.totalSupply();
     }
 
-    // -- Lender Side --
+    /// supplies currency to the tranche and mints new tranche token in exchange
+    /// the exchange rate is defined by the ward contract
     function supply(address usr, uint currencyAmount, uint tokenAmount) external note auth {
         require(currency.transferFrom(usr, self, currencyAmount), "currency-transfer-failed");
         token.mint(usr, tokenAmount);
     }
 
+    /// redeems currency from a tranche in exchange for tranche tokens
+    /// burns the tranche token
+    /// the exchange rate is defined by the ward contract
     function redeem(address usr, uint currencyAmount, uint tokenAmount) external note auth {
         require(token.transferFrom(usr, self, tokenAmount), "token-transfer-failed");
         token.burn(self, tokenAmount);
         require(currency.transferFrom(self, usr, currencyAmount), "currency-transfer-failed");
     }
 
-    // -- Borrow Side --
+    /// used to repay the tranche with currency of repaid loans
     function repay(address usr, uint currencyAmount) public note auth {
         require(currency.transferFrom(usr, self, currencyAmount), "currency-transfer-failed");
     }
 
+    /// used to borrow currency from the tranche for loans
     function borrow(address usr, uint currencyAmount) public note auth {
         require(currency.transferFrom(self, usr, currencyAmount), "currency-transfer-failed");
     }

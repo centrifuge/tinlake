@@ -63,7 +63,7 @@ contract RedeemTest is BaseSystemTest {
         // assert: back to original balance
         assertEq(currency.balanceOf(juniorInvestor_), investorBalance);
         // assert: shelf is balanced, excess has either been transferred to tranches or needed money transferred from distributor -> shelf
-        assertEq(shelf.balance() - currency.balanceOf(address(shelf)), 0);
+        assertEq(safeSub(shelf.balance(), currency.balanceOf(address(shelf))), 0);
     }
 
     function testFailInvestorNotWhitelisted() public {

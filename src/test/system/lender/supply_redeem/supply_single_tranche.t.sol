@@ -41,7 +41,7 @@ contract SupplyTest is BaseSystemTest {
 
     function assertPostCondition(uint supplyAmount) public {
         // assert: shelf is balanced, excess has either been transferred to tranches or needed money transferred from distributor -> shelf
-        assertEq(shelf.balance() - currency.balanceOf(address(shelf)), 0);
+        assertEq(safeSub(shelf.balance(), currency.balanceOf(address(shelf))), 0);
         // assert: junior investor token balance == amount supplied (because no other currency was supplied yet)
         assertEq(juniorToken.balanceOf(juniorInvestor_), supplyAmount);
     }

@@ -39,7 +39,7 @@ contract ScenarioTest is BaseSystemTest {
     function checkAfterRepay(uint loan, uint tokenId, uint tTotal, uint tLender) public {
         assertEq(collateralNFT.ownerOf(tokenId), borrower_);
         assertEq(pile.debt(loan), 0);
-        assertEq(currency.balanceOf(borrower_), tTotal - tLender);
+        assertEq(currency.balanceOf(borrower_), safeSub(tTotal, tLender));
         assertEq(currency.balanceOf(address(pile)), 0);
     }
 

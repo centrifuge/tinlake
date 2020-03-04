@@ -47,21 +47,25 @@ contract SeniorTranche is Tranche, Interest {
         assessor = AssessorLike(assessor_);
     }
 
-    function depend(bytes32 what, address addr) public note auth {
-        if (what == "assessor") {assessor = AssessorLike(addr); }
-        else { super.depend(what, addr); }
+    /// sets the dependency to another contract
+    function depend(bytes32 contractName, address addr) public note auth {
+        if (contractName == "assessor") {assessor = AssessorLike(addr); }
+        else { super.depend(contractName, addr); }
     }
 
     function file(bytes32 what, uint ratePerSecond_) external note auth {
          if (what ==  "rate") {
              if(ratePerSecond != ONE) {
                  // required for interest rate switch
+                 // charges interest with the existing rate before the change
                  drip();
              }
             ratePerSecond = ratePerSecond_;
         } else revert();
     }
 
+    /// the repay amount should first reduce the interest and
+    /// afterwards the borrowed amount
     function _repay(uint currencyAmount) internal {
         if(currencyAmount <= interest) {
             interest = safeSub(interest, currencyAmount);
@@ -89,6 +93,8 @@ contract SeniorTranche is Tranche, Interest {
         super.borrow(usr, currencyAmount);
     }
 
+
+    /// charges interest since the last update until now
     function drip() public {
         if (now >= lastUpdated) {
             interest = safeAdd(interest, assessor.accrueTrancheInterest(address(this)));

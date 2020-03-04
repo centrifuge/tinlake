@@ -58,11 +58,12 @@ contract DefaultDistributor is Math, DSNote, Auth {
 
     }
 
-    function depend (bytes32 what, address addr) public auth {
-        if (what == "shelf") { shelf = ShelfLike(addr); }
-        else if (what == "junior") { junior = TrancheLike(addr); }
-        else if (what == "senior") { senior = TrancheLike(addr); }
-        else if (what == "currency") { currency = CurrencyLike(addr); }
+    /// sets the dependency to another contract
+    function depend (bytes32 contractName, address addr) public auth {
+        if (contractName == "shelf") { shelf = ShelfLike(addr); }
+        else if (contractName == "junior") { junior = TrancheLike(addr); }
+        else if (contractName == "senior") { senior = TrancheLike(addr); }
+        else if (contractName == "currency") { currency = CurrencyLike(addr); }
         else revert();
     }
 
