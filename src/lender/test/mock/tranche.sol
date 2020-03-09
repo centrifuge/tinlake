@@ -22,6 +22,10 @@ contract TrancheMock is Mock {
     function debt() public returns (uint) {
         return call("debt");
     }
+
+    function updatedDebt() public returns (uint) {
+        return call("debt");
+    }
     function balance() public returns (uint) {
         return call("balance");
     }

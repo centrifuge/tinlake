@@ -151,8 +151,7 @@ contract BaseAssessor is Math, Auth {
     }
 
     function _seniorDebt() internal returns (uint) {
-        return (senior != address(0x0)) ? safeAdd(SeniorTrancheLike(senior).interest(), SeniorTrancheLike(senior).borrowed()) : 0;
-       // return (senior != address(0x0)) ? SeniorTrancheLike(senior).debt() : 0;
+        return (senior != address(0x0)) ? SeniorTrancheLike(senior).debt() : 0;
     }
 
     /// returns the maximum allowed seniorAssetValue to fulfill the minJuniorRatio

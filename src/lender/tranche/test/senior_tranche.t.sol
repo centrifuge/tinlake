@@ -64,7 +64,7 @@ contract SeniorTrancheTest is DSTest, Interest {
         senior.borrow(self, amount);
         assertEq(currency.balanceOf(self), amount);
         assertEq(currency.balanceOf(senior_), 0);
-        assertEq(senior.debt(), amount);
+        assertEq(senior.updatedDebt(), amount);
         assertEq(senior.borrowed(), amount);
     }
 
@@ -83,10 +83,10 @@ contract SeniorTrancheTest is DSTest, Interest {
         borrow(amount);
 
         assessor.setReturn("accrueTrancheInterest", 5 ether);
-        assertEq(senior.debt(), 105 ether);
+        assertEq(senior.updatedDebt(), 105 ether);
 
         assessor.setReturn("accrueTrancheInterest", 5.25 ether);
-        assertEq(senior.debt(), 110.25 ether);
+        assertEq(senior.updatedDebt(), 110.25 ether);
 
         assertEq(senior.borrowed(), 100 ether);
         assertEq(senior.interest(), 10.25 ether);

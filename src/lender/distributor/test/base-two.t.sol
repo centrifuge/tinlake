@@ -52,7 +52,7 @@ contract SeniorMock is JuniorMock  {
     }
 
     // support different return based on called
-    function debt() public returns (uint) {
+    function updatedDebt() public returns (uint) {
         uint called = calls["debt"];
         if(called == 0) {
             return super.debt();
