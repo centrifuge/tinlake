@@ -21,7 +21,7 @@ import "tinlake-math/interest.sol";
 contract AssessorLike {
     function calcAssetValue(address) public returns (uint);
     function calcUpdatedTokenPrice(address) public returns (uint);
-    function accrueTrancheInterest(address tranche_) public returns (uint);
+    function accrueTrancheInterest(address tranche_) public view returns (uint);
 }
 
 // SeniorTranche
@@ -96,7 +96,6 @@ contract SeniorTranche is Tranche, Interest {
         borrowed = safeAdd(borrowed, currencyAmount);
         super.borrow(usr, currencyAmount);
     }
-
 
     /// charges interest since the last update until now
     function drip() public {

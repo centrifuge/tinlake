@@ -29,10 +29,10 @@ contract SeniorTrancheLike {
     function debt() public view returns(uint);
     function interest() public view returns(uint);
     function borrowed() public view returns(uint);
-    function balance() public returns(uint);
+    function balance() public view returns(uint);
 
-    function ratePerSecond() public returns(uint);
-    function lastUpdated() public returns(uint);
+    function ratePerSecond() public view returns(uint);
+    function lastUpdated() public view returns(uint);
 }
 
 
