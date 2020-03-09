@@ -28,11 +28,12 @@ contract Hevm {
     function warp(uint256) public;
 }
 
-contract JuniorMock is TrancheMock {
-    function balanceX() public returns (uint) {
+contract JuniorMock is BaseTrancheMock {
+    function balance() public returns (uint) {
         uint called = calls["balance"];
         if(called == 0) {
-            return super.balance();
+            calls["balance"]++;
+            return values_return["balance"];
         }
         calls["balance"]++;
         return values_return["balance_2"];
@@ -55,6 +56,7 @@ contract SeniorMock is JuniorMock  {
     function updatedDebt() public returns (uint) {
         uint called = calls["debt"];
         if(called == 0) {
+            calls["debt"]++;
             return super.debt();
         }
         calls["debt"]++;
@@ -68,7 +70,7 @@ contract DefaultDistributorTwoTranches is DSTest, Math {
 
     JuniorMock junior;
     address junior_;
-    TrancheMock senior;
+    SeniorMock senior;
     address senior_;
     TokenMock currency;
     address currency_;
