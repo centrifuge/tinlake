@@ -25,6 +25,9 @@ contract TrancheMock is Mock {
     function balance() public returns (uint) {
         return call("balance");
     }
+    function drip() public {
+        calls["drip"]++;
+    }
     function supply(address usr, uint currencyAmount, uint tokenAmount) public {
         calls["supply"]++;
         values_address["usr"] = usr;

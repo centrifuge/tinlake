@@ -29,7 +29,7 @@ contract TestTranche is TrancheMock {
         return AssessorLike(assessor_).calcTokenPrice(address(this));
     }
 }
-contract AssessorTest is DSTest, Math {
+contract BaseAssessorTest is DSTest, Math {
     uint256 constant ONE = 10 ** 27;
     BaseAssessor assessor;
     address assessor_;
