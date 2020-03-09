@@ -93,14 +93,14 @@ contract BaseAssessor is Math, Auth {
         return _calcSeniorAssetValue(poolValue, trancheReserve, _seniorDebt(), _juniorReserve());
     }
 
-    function currentTokenPrice(address tranche) public returns (uint) {
+    function calcTokenPrice(address tranche) public returns (uint) {
         require(tranche  == junior || tranche == senior);
         return safeMul(_calcTokenPrice(tranche), tokenAmountForONE);
     }
-    function calcTokenPrice(address tranche) public returns (uint) {
-        require(tranche  == junior || tranche == senior);
+    
+    function calcUpdatedTokenPrice(address tranche) public returns (uint) {
         _drip();
-        return safeMul(_calcTokenPrice(tranche), tokenAmountForONE);
+        return calcTokenPrice(tranche);
     }
 
     /// ensures latest senior debt for assessor calculations
