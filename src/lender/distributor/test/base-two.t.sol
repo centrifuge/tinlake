@@ -29,7 +29,7 @@ contract Hevm {
 }
 
 contract JuniorMock is TrancheMock {
-    function balance() public returns (uint) {
+    function balanceX() public returns (uint) {
         uint called = calls["balance"];
         if(called == 0) {
             return super.balance();

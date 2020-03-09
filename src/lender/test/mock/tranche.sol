@@ -19,15 +19,15 @@ import "ds-test/test.sol";
 import "../../../test/mock/mock.sol";
 
 contract TrancheMock is Mock {
-    function debt() public returns (uint) {
-        return call("debt");
+    function debt() public view returns (uint) {
+        return values_return["debt"];
     }
 
     function updatedDebt() public returns (uint) {
-        return call("debt");
+        return values_return["debt"];
     }
-    function balance() public returns (uint) {
-        return call("balance");
+    function balance() public view returns (uint) {
+        return values_return["balance"];
     }
     function drip() public {
         calls["drip"]++;
@@ -44,8 +44,8 @@ contract TrancheMock is Mock {
         values_uint["redeem_currencyAmount"] = currencyAmount;
         values_uint["redeem_tokenAmount"] = tokenAmount;
     }
-    function tokenSupply() public returns (uint) {
-        return call("tokenSupply");
+    function tokenSupply() public view returns (uint) {
+        return values_return["tokenSupply"];
     }
 
     function borrow(address usr, uint amount) public {
