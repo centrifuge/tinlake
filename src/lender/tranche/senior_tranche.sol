@@ -48,7 +48,7 @@ contract SeniorTranche is Tranche, Interest {
     }
 
     function debt() external view returns(uint) {
-        return safeAdd(borrowed, interest);
+        return safeAdd(borrowed, _calcInterest());
     }
 
     /// sets the dependency to another contract
@@ -100,8 +100,15 @@ contract SeniorTranche is Tranche, Interest {
     /// charges interest since the last update until now
     function drip() public {
         if (now >= lastUpdated) {
-            interest = safeAdd(interest, assessor.accrueTrancheInterest(address(this)));
+            interest = _calcInterest();
             lastUpdated = now;
         }
+    }
+
+    function _calcInterest() internal view returns (uint) {
+        if (now >= lastUpdated) {
+            return safeAdd(interest, assessor.accrueTrancheInterest(address(this)));
+        }
+        return interest;
     }
 }
