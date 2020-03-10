@@ -19,7 +19,7 @@ import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 
 contract PileLike {
-    uint public total;
+    function total() public view returns(uint);
 }
 
 contract PricePool is Auth, Math {
