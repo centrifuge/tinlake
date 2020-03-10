@@ -98,7 +98,7 @@ contract BaseAssessor is Math, Auth {
         return safeMul(_calcTokenPrice(tranche), tokenAmountForONE);
     }
     
-    function calcUpdatedTokenPrice(address tranche) public returns (uint) {
+    function calcAndUpdateTokenPrice(address tranche) public returns (uint) {
         _drip();
         return calcTokenPrice(tranche);
     }

@@ -18,8 +18,8 @@ pragma solidity >=0.5.3;
 import "../../../test/mock/mock.sol";
 
 contract AssessorMock is Mock {
-    function calcUpdatedTokenPrice (address tranche) public returns (uint) {
-        values_address["calcUpdatedTokenPrice_tranche"]= tranche;
+    function calcAndUpdateTokenPrice (address tranche) public returns (uint) {
+        values_address["calcAndUpdateTokenPrice_tranche"]= tranche;
         return call("tokenPrice");
     }
 
