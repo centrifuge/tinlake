@@ -103,7 +103,7 @@ contract BaseAssessor is Math, Auth {
         return calcTokenPrice(tranche);
     }
 
-    /// ensures latest senior debt for assessor calculations
+    /// ensures latest senior debt and updates the state with the debt
     function _drip() internal {
         if (senior != address(0x0)) {
             SeniorTrancheLike(senior).drip();

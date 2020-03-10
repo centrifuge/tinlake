@@ -24,6 +24,7 @@ contract BaseTrancheMock is Mock {
     }
 
     function updatedDebt() public returns (uint) {
+        calls["debt"]++;
         return values_return["debt"];
     }
 

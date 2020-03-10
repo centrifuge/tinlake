@@ -52,7 +52,7 @@ contract AssessorMock is Mock {
         return values_bool_return["redeemApprove"];
     }
 
-    function accrueTrancheInterest(address tranche) public view returns (uint) {
+    function accrueTrancheInterest(address) public view returns (uint) {
         return values_return["accrueTrancheInterest"];
     }
 }

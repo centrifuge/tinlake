@@ -111,4 +111,23 @@ contract SeniorTrancheTest is DSTest, Interest {
         assertEq(senior.interest(), 0 ether);
         assertEq(senior.borrowed(), 0 ether);
     }
+
+    function testDebtAndUpdatedDebt() public {
+        uint ratePerSecond = 1000000564701133626865910626; // 5% per day
+        senior.file("rate", ratePerSecond);
+
+        uint amount = 100 ether;
+        currency.mint(address(senior), amount);
+        borrow(amount);
+
+        assessor.setReturn("accrueTrancheInterest", 5 ether);
+        assertEq(senior.debt(), 105 ether);
+
+        // state should be not updated
+        assertEq(senior.interest()+senior.borrowed(), 100 ether);
+        // update state
+        senior.drip();
+        assertEq(senior.interest()+senior.borrowed(), 105 ether);
+        assertEq(senior.debt(), senior.updatedDebt());
+    }
 }
