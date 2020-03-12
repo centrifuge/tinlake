@@ -70,7 +70,7 @@ contract FullInterestAssessorTest is BaseSystemTest {
         uint amount = 100 ether;
         supplySenior(amount);
 
-        assertEq(senior.debt(), 0 ether);
+        assertEq(senior.updatedDebt(), 0 ether);
         hevm.warp(now + 1 days);
         senior.drip();
 
@@ -137,7 +137,7 @@ contract FullInterestAssessorTest is BaseSystemTest {
         uint amount = 100 ether;
         supplySenior(amount);
 
-        assertEq(senior.debt(), 0 ether);
+        assertEq(senior.updatedDebt(), 0 ether);
 
         // loan borrowed (only senior has currency)
         // should have no impact on interest calc

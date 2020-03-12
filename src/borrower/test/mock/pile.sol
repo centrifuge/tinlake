@@ -3,8 +3,8 @@ pragma solidity >=0.5.3;
 import "../../../test/mock/mock.sol";
 
 contract PileMock is Mock {
-    function total() public returns(uint) {
-        return call("total");
+    function total() public view returns(uint) {
+        return values_return["total"];
     }
 
     function setRate(uint loan, uint rate) public {

@@ -66,14 +66,14 @@ contract SupplyTwoTrancheTest is BaseSystemTest {
         setUpDebtScenario(seniorAmount, juniorAmount, loanAmount);
 
         uint seniorDebt = 50 ether;
-        assertEq(senior.debt(), seniorDebt);
+        assertEq(senior.updatedDebt(), seniorDebt);
 
         // additional supply in junior should call distributor.balance
         // 50 ether: junior -> distributor -> senior
         supplyJunior(60 ether);
 
 
-        assertEq(senior.debt(), 0 ether);
+        assertEq(senior.updatedDebt(), 0 ether);
         assertEq(junior.balance(), 10 ether);
     }
 
@@ -83,11 +83,11 @@ contract SupplyTwoTrancheTest is BaseSystemTest {
         uint loan = setUpDebtScenario(seniorAmount, juniorAmount, loanAmount);
 
         uint seniorDebt = 50 ether;
-        assertEq(senior.debt(), seniorDebt);
+        assertEq(senior.updatedDebt(), seniorDebt);
 
         repayLoan(borrower_, loan, 60 ether);
 
-        assertEq(senior.debt(), 0 ether);
+        assertEq(senior.updatedDebt(), 0 ether);
         assertEq(senior.balance(), seniorAmount);
         assertEq(junior.balance(), 10 ether);
     }
@@ -98,7 +98,7 @@ contract SupplyTwoTrancheTest is BaseSystemTest {
         uint loan = setUpDebtScenario(seniorAmount, juniorAmount, loanAmount);
 
         uint seniorDebt = 0;
-        assertEq(senior.debt(), seniorDebt);
+        assertEq(senior.updatedDebt(), seniorDebt);
 
         assertEq(junior.balance(), 0);
 
@@ -113,14 +113,14 @@ contract SupplyTwoTrancheTest is BaseSystemTest {
         uint loan = setUpDebtScenario(seniorAmount, juniorAmount, loanAmount);
 
         uint seniorDebt = 50 ether;
-        assertEq(senior.debt(), seniorDebt);
+        assertEq(senior.updatedDebt(), seniorDebt);
         assertEq(junior.balance(), 0);
 
         // repay only senior
         repayLoan(borrower_, loan, 50 ether);
 
         assertEq(junior.balance(), 0);
-        assertEq(senior.debt(), 0);
+        assertEq(senior.updatedDebt(), 0);
 
     }
 }

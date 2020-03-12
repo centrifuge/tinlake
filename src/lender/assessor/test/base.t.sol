@@ -22,14 +22,14 @@ import "../../test/mock/pool.sol";
 import "../../test/mock/tranche.sol";
 
 contract AssessorLike {
-    function calcTokenPrice(address tranche) public returns (uint);
+    function calcAndUpdateTokenPrice(address tranche) public returns (uint);
 }
 contract TestTranche is TrancheMock {
     function doCalcTokenPrice(address assessor_) public returns (uint) {
-        return AssessorLike(assessor_).calcTokenPrice(address(this));
+        return AssessorLike(assessor_).calcAndUpdateTokenPrice(address(this));
     }
 }
-contract AssessorTest is DSTest, Math {
+contract BaseAssessorTest is DSTest, Math {
     uint256 constant ONE = 10 ** 27;
     BaseAssessor assessor;
     address assessor_;

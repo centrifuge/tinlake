@@ -18,12 +18,18 @@ pragma solidity >=0.5.3;
 import "ds-test/test.sol";
 import "../../../test/mock/mock.sol";
 
-contract TrancheMock is Mock {
-    function debt() public returns (uint) {
-        return call("debt");
+contract BaseTrancheMock is Mock {
+    function debt() public view returns (uint) {
+        return values_return["debt"];
     }
-    function balance() public returns (uint) {
-        return call("balance");
+
+    function updatedDebt() public returns (uint) {
+        calls["debt"]++;
+        return values_return["debt"];
+    }
+
+    function drip() public {
+        calls["drip"]++;
     }
     function supply(address usr, uint currencyAmount, uint tokenAmount) public {
         calls["supply"]++;
@@ -37,8 +43,8 @@ contract TrancheMock is Mock {
         values_uint["redeem_currencyAmount"] = currencyAmount;
         values_uint["redeem_tokenAmount"] = tokenAmount;
     }
-    function tokenSupply() public returns (uint) {
-        return call("tokenSupply");
+    function tokenSupply() public view returns (uint) {
+        return values_return["tokenSupply"];
     }
 
     function borrow(address usr, uint amount) public {
@@ -51,5 +57,11 @@ contract TrancheMock is Mock {
         calls["repay"]++;
         values_address["repay_usr"] = usr;
         values_uint["repay_amount"] = amount;
+    }
+}
+
+contract TrancheMock is BaseTrancheMock {
+    function balance() public view returns (uint) {
+        return values_return["balance"];
     }
 }

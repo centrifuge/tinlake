@@ -22,7 +22,7 @@ import "tinlake-auth/auth.sol";
 /// Interfaces
 contract TrancheLike {
     function borrow(address, uint) public;
-    function debt() public returns (uint);
+    function updatedDebt() public returns (uint);
     function repay(address, uint) public;
     function balance() public returns (uint);
 }
@@ -74,7 +74,7 @@ contract DefaultDistributor is Math, DSNote, Auth {
             return;
         }
 
-        uint seniorDebt = senior.debt();
+        uint seniorDebt = senior.updatedDebt();
         uint juniorBalance = junior.balance();
         if(juniorBalance > 0 && seniorDebt > 0) {
             uint amount = seniorDebt;
@@ -171,7 +171,7 @@ contract DefaultDistributor is Math, DSNote, Auth {
     /// @return actual repaid currencyAmount
     /// @dev available and currency Amount denominated in WAD (10^18)
     function _repay(TrancheLike tranche, uint available) internal returns(uint) {
-        uint currencyAmount = tranche.debt();
+        uint currencyAmount = tranche.updatedDebt();
         if (available < currencyAmount) {
             currencyAmount = available;
         }
