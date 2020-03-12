@@ -113,7 +113,7 @@ contract Pile is DSNote, Auth, Interest {
     }
 
     // change rate loanRates for a loan
-    function changeRate(uint loan, uint newRate) external auth {
+    function changeRate(uint loan, uint newRate) external auth note {
         require(rates[newRate].chi != 0);
         uint currentRate = loanRates[loan];
         drip(currentRate);
@@ -127,7 +127,7 @@ contract Pile is DSNote, Auth, Interest {
     }
 
     // set/change the interest rate of a rate category
-    function file(uint rate, uint ratePerSecond) external auth {
+    function file(uint rate, uint ratePerSecond) external auth note {
         require(ratePerSecond != 0);
 
         if (rates[rate].chi == 0) {

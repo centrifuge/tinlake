@@ -60,16 +60,16 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         assertEq(currency.balanceOf(address(borrower)), 100 ether);
         assertEq(currency.balanceOf(address(junior)), 0);
         assertEq(currency.balanceOf(address(senior)), 100 ether);
-        assertEq(senior.debt(), 60 ether);
+        assertEq(senior.updatedDebt(), 60 ether);
 
         hevm.warp(now + 1 days);
 
         // senior rate: 5% a day: 60 * 1.05 = 63
-        uint seniorDebt = senior.debt();
+        uint seniorDebt = senior.updatedDebt();
         assertEq(seniorDebt, 63 ether);
 
         repayLoan(borrower_, loanId, seniorDebt + jSupplyAmount);
-        assertEq(senior.debt(), 0);
+        assertEq(senior.updatedDebt(), 0);
 
         seniorInvestor.doRedeem(sSupplyAmount);
         assertEq(currency.balanceOf(address(junior)), jSupplyAmount);
@@ -101,7 +101,7 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
 
         hevm.warp(now + 1 days);
 
-        uint seniorDebt = senior.debt();
+        uint seniorDebt = senior.updatedDebt();
         assertEq(seniorDebt, 63 ether);
 
         repayLoan(borrower_, loanId, seniorDebt + jSupplyAmount);
@@ -133,7 +133,7 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
 
         hevm.warp(now + 5 days);
         // 5% senior rate with an interestBearingAmount of 150 ether
-        assertEq(senior.debt(), 191.442234375 ether);
+        assertEq(senior.updatedDebt(), 191.442234375 ether);
 
         // loan B has defaulted
         uint threshold = 115 ether;
@@ -147,7 +147,7 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         repayLoan(borrower_, loanA, loanDebt);
 
         seniorInvestor.doRedeem(sSupplyAmount);
-        assertEq(senior.debt(), 0);
+        assertEq(senior.updatedDebt(), 0);
         // 150 * (1.05^5) = 191.442234375 (41.442234375 ether profit)
         // total received tranche repayment: 202.62815625 ether (first loan: 75 ether, second loan: 127.62815625 ether)
         // senior receives 191.442234375 for the debt (debt entirely repaid)
@@ -199,7 +199,7 @@ contract RedeemTwoTrancheTest is BaseSystemTest {
         uint loanDebt = 127.62815625 ether;
         repayLoan(borrower_, loanA, loanDebt);
         seniorInvestor.doRedeem(sSupplyAmount);
-        assertEq(senior.debt(), 38.814078125 ether);
+        assertEq(senior.updatedDebt(), 38.814078125 ether);
 
         // 150 * (1.05^5) = 191.442234375, 41.442234375 ether profit
         // profit must take into account still unpaid debt, 41.442234375 - 38.814078125 = 2.62815625
