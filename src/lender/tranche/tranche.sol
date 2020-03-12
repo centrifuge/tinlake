@@ -20,8 +20,8 @@ import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
 
 contract TokenLike{
-    function totalSupply() public returns (uint);
-    function balanceOf(address) public returns (uint);
+    function totalSupply() public view returns (uint);
+    function balanceOf(address) public view returns (uint);
     function transferFrom(address,address,uint) public returns (bool);
     function approve(address, uint) public;
     function mint(address, uint) public;
@@ -54,11 +54,11 @@ contract Tranche is DSNote, Auth {
         else revert();
     }
 
-    function balance() external returns (uint) {
+    function balance() external view returns (uint) {
         return currency.balanceOf(self);
     }
 
-    function tokenSupply() external returns (uint) {
+    function tokenSupply() external view returns (uint) {
         return token.totalSupply();
     }
 

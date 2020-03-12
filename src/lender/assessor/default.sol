@@ -26,7 +26,7 @@ contract DefaultAssessor is BaseAssessor, Interest {
     constructor(uint tokenAmountForONE) BaseAssessor(tokenAmountForONE) public {}
 
     /// accrueTrancheInterest implements interest accumulation based on tranche debt
-    function accrueTrancheInterest(address tranche_) public returns (uint) {
+    function accrueTrancheInterest(address tranche_) public view returns (uint) {
         SeniorTrancheLike tranche = SeniorTrancheLike(tranche_);
 
         if(tranche_ == junior) {

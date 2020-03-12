@@ -18,8 +18,8 @@ pragma solidity >=0.5.3;
 import "../../../test/mock/mock.sol";
 
 contract AssessorMock is Mock {
-    function calcTokenPrice (address tranche) public returns (uint) {
-        values_address["calcTokenPrice_tranche"]= tranche;
+    function calcAndUpdateTokenPrice (address tranche) public returns (uint) {
+        values_address["calcAndUpdateTokenPrice_tranche"]= tranche;
         return call("tokenPrice");
     }
 
@@ -52,10 +52,7 @@ contract AssessorMock is Mock {
         return values_bool_return["redeemApprove"];
     }
 
-    function accrueTrancheInterest(address tranche) public returns (uint) {
-        calls["accrueTrancheInterest"]++;
-        values_address["accrueTrancheInterest_tranche"] = tranche;
-
+    function accrueTrancheInterest(address) public view returns (uint) {
         return values_return["accrueTrancheInterest"];
     }
 }
