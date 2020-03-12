@@ -5,6 +5,16 @@ cd $BIN_DIR
 
 source ./util.sh
 
+CONFIG_FILE=$1
+[ -z "$1" ] && CONFIG_FILE="./../config_$(seth chain).json"
+
+loadValuesFromFile $CONFIG_FILE
+
+# check if all required env variables are defined
+source ./env-check.sh
+
+success_msg "Correct Config File"
+
 
 message Create Borrow Fabs
 
@@ -34,7 +44,7 @@ message Create Lender Fabs
 
 
 FABS_DEPLOYMENT_FILE=$1
-[ -z "$1" ] && FABS_DEPLOYMENT_FILE="./../deployments/fabs_$(seth chain).json"
+[ -z "$1" ] && FABS_DEPLOYMENT_FILE="./../../deployments/fabs_$(seth chain).json"
 
 touch $FABS_DEPLOYMENT_FILE
 
