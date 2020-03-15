@@ -20,26 +20,28 @@ import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
 
 contract TrancheLike {
-    function balance() public returns(uint);
-    function tokenSupply() public returns(uint);
+    function balance() public view returns(uint);
+    function tokenSupply() public view returns(uint);
 }
 
 contract SeniorTrancheLike {
-    function debt() public returns(uint);
-    function borrowed() public returns(uint);
-    function interest() public returns(uint);
-    function balance() public returns(uint);
+    function drip() public;
+    function debt() public view returns(uint);
+    function interest() public view returns(uint);
+    function borrowed() public view returns(uint);
+    function balance() public view returns(uint);
 
-    function ratePerSecond() public returns(uint);
-    function lastUpdated() public returns(uint);
+    function ratePerSecond() public view returns(uint);
+    function lastUpdated() public view returns(uint);
 }
+
 
 contract PileLike {
     function debt() public returns(uint);
 }
 
 contract PoolLike {
-    function totalValue() public returns(uint);
+    function totalValue() public view returns(uint);
 }
 
 // Base contract for assessor contracts
@@ -81,22 +83,34 @@ contract BaseAssessor is Math, Auth {
         else revert();
     }
 
-    function calcAssetValue(address tranche) public returns(uint) {
+    function calcAssetValue(address tranche) public view returns(uint) {
         require(tranche  == junior || tranche == senior);
         uint trancheReserve = TrancheLike(tranche).balance();
         uint poolValue = pool.totalValue();
         if (tranche == junior) {
             return _calcJuniorAssetValue(poolValue, trancheReserve, _seniorDebt());
         }
-        return _calcSeniorAssetValue(poolValue, trancheReserve, SeniorTrancheLike(tranche).debt(), _juniorReserve());
+        return _calcSeniorAssetValue(poolValue, trancheReserve, _seniorDebt(), _juniorReserve());
     }
 
-    function calcTokenPrice(address tranche) public returns (uint) {
+    function calcTokenPrice(address tranche) public view returns (uint) {
         require(tranche  == junior || tranche == senior);
         return safeMul(_calcTokenPrice(tranche), tokenAmountForONE);
     }
+    
+    function calcAndUpdateTokenPrice(address tranche) public returns (uint) {
+        _drip();
+        return calcTokenPrice(tranche);
+    }
 
-    function _calcTokenPrice(address tranche) internal returns (uint) {
+    /// ensures latest senior debt and updates the state with the debt
+    function _drip() internal {
+        if (senior != address(0x0)) {
+            SeniorTrancheLike(senior).drip();
+        }
+    }
+
+    function _calcTokenPrice(address tranche) internal view returns (uint) {
         uint tokenSupply = TrancheLike(tranche).tokenSupply();
         uint assetValue = calcAssetValue(tranche);
         if (tokenSupply == 0) {
@@ -132,11 +146,11 @@ contract BaseAssessor is Math, Auth {
         return safeAdd(available, seniorReserve);
    }
 
-    function _juniorReserve() internal returns (uint) {
+    function _juniorReserve() internal view returns (uint) {
         return TrancheLike(junior).balance();
     }
 
-    function _seniorDebt() internal returns (uint) {
+    function _seniorDebt() internal view returns (uint) {
         return (senior != address(0x0)) ? SeniorTrancheLike(senior).debt() : 0;
     }
 
@@ -144,7 +158,7 @@ contract BaseAssessor is Math, Auth {
     /// with the current juniorAssetValue.
     /// @return maximum allowed seniorAssetValue
     /// @dev return value is denominated in WAD(10^18)
-    function calcMaxSeniorAssetValue() public returns (uint) {
+    function calcMaxSeniorAssetValue() public view returns (uint) {
         uint juniorAssetValue = calcAssetValue(junior);
         if (juniorAssetValue == 0) {
             return 0;
@@ -156,7 +170,7 @@ contract BaseAssessor is Math, Auth {
     /// with the current seniorAssetValue
     /// @return minimum junior asset value
     /// @dev return value is denominated in WAD(10^18)
-    function calcMinJuniorAssetValue() public returns (uint) {
+    function calcMinJuniorAssetValue() public view returns (uint) {
         if (senior == address(0)) {
             return 0;
         }
@@ -169,7 +183,7 @@ contract BaseAssessor is Math, Auth {
 
     /// returns the current juniorRatio
     /// the current juniorRatio can be below the minJuniorRatio because of loan defaults
-    function currentJuniorRatio() public returns(uint) {
+    function currentJuniorRatio() public view returns(uint) {
         if (senior == address(0)) {
             return ONE;
         }
@@ -185,6 +199,7 @@ contract BaseAssessor is Math, Auth {
         if (tranche == junior || minJuniorRatio == 0) {
             return true;
         }
+        _drip();
 
         if (tranche == senior && safeAdd(calcAssetValue(senior), currencyAmount) <= calcMaxSeniorAssetValue()) {
             return true;
@@ -200,6 +215,8 @@ contract BaseAssessor is Math, Auth {
         if (tranche == senior || minJuniorRatio == 0 || senior == address(0)) {
             return true;
         }
+
+        _drip();
 
         if (tranche == junior && safeSub(calcAssetValue(junior), currencyAmount) >= calcMinJuniorAssetValue()) {
             return true;

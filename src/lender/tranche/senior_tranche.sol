@@ -20,8 +20,8 @@ import "tinlake-math/interest.sol";
 
 contract AssessorLike {
     function calcAssetValue(address) public returns (uint);
-    function calcTokenPrice(address) public returns (uint);
-    function accrueTrancheInterest(address tranche_) public returns (uint);
+    function calcAndUpdateTokenPrice(address) public returns (uint);
+    function accrueTrancheInterest(address tranche_) public view returns (uint);
 }
 
 // SeniorTranche
@@ -36,15 +36,19 @@ contract SeniorTranche is Tranche, Interest {
 
     AssessorLike  public assessor;
 
-    function debt() external returns(uint) {
-        drip();
-        return safeAdd(borrowed, interest);
-    }
-
     constructor(address token_, address currency_, address assessor_) Tranche(token_ ,currency_) public {
         ratePerSecond = ONE;
         lastUpdated = now;
         assessor = AssessorLike(assessor_);
+    }
+
+    function updatedDebt() external returns(uint) {
+        drip();
+        return safeAdd(borrowed, interest);
+    }
+
+    function debt() external view returns(uint) {
+        return safeAdd(borrowed, _calcInterest());
     }
 
     /// sets the dependency to another contract
@@ -93,12 +97,18 @@ contract SeniorTranche is Tranche, Interest {
         super.borrow(usr, currencyAmount);
     }
 
-
     /// charges interest since the last update until now
     function drip() public {
         if (now >= lastUpdated) {
-            interest = safeAdd(interest, assessor.accrueTrancheInterest(address(this)));
+            interest = _calcInterest();
             lastUpdated = now;
         }
+    }
+
+    function _calcInterest() internal view returns (uint) {
+        if (now >= lastUpdated) {
+            return safeAdd(interest, assessor.accrueTrancheInterest(address(this)));
+        }
+        return interest;
     }
 }

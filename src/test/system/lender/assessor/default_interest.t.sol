@@ -59,7 +59,7 @@ contract DefaultInterestAssessorTest is BaseSystemTest {
         supplyJunior(amount);
 
         // case no interest: no loans borrowed
-        assertEq(senior.debt(), 0 ether);
+        assertEq(senior.updatedDebt(), 0 ether);
         supplySenior(amount);
         hevm.warp(now + 1 days);
         senior.drip();
@@ -82,15 +82,15 @@ contract DefaultInterestAssessorTest is BaseSystemTest {
         // interest on 10 ether borrowed
         assertEq(senior.interest(), 0.5 ether); // 10 * 1.05 = 10.5 ether
 
-        assertEq(senior.debt(), 10.5 ether);
+        assertEq(senior.updatedDebt(), 10.5 ether);
         // partial borrow of first loan
         // first interest
         repayLoan(borrower_, loan, 0.5 ether);
         assertEq(senior.interest(), 0 ether);
-        assertEq(senior.debt(), 10 ether);
+        assertEq(senior.updatedDebt(), 10 ether);
         // partial repay to reduce senior debt to 0
         repayLoan(borrower_, loan, 10 ether);
-        assertEq(senior.debt(), 0 ether);
+        assertEq(senior.updatedDebt(), 0 ether);
 
         hevm.warp(now + 1 days);
         senior.drip();
