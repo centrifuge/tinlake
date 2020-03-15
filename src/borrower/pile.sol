@@ -128,7 +128,7 @@ contract Pile is DSNote, Auth, Interest {
 
     // set/change the interest rate of a rate category
     function file(uint rate, uint ratePerSecond) external auth note {
-        require(ratePerSecond != 0, "rate per second can not be 0");
+        require(ratePerSecond != 0, "rate-per-second-can-not-be-0");
 
         if (rates[rate].chi == 0) {
             rates[rate].chi = ONE;

@@ -23,13 +23,13 @@ build_contracts "./.."
 mkdir $BIN_DIR/../deployments
 
 # deploy root contract
-source $BIN_DIR/root/deploy.sh
+source ./root/deploy.sh
 
 # deploy lender contracts
-source $BIN_DIR/lender/deploy.sh
+source ./lender/deploy.sh
 
 # deploy borrower contracts
-source $BIN_DIR/borrower/deploy.sh
+source ./borrower/deploy.sh
 
 # finalize deployment
 message Finalize Deployment

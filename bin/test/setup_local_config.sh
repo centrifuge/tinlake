@@ -7,7 +7,7 @@ source $BIN_DIR/../util/util.sh
 build_contracts $BIN_DIR/../../
 
 # set SETH enviroment variable
-# source $BIN_DIR/local_env.sh
+source $BIN_DIR/local_env.sh
 
 # Defaults
 test -z "$CURRENCY_SYMBOL" && CURRENCY_SYMBOL="DAI"
