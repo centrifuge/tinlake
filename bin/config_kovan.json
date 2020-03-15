@@ -1,0 +1,8 @@
+{
+  "ETH_RPC_URL": "https://kovan.infura.io/v3/092108ec6aea46ab97b2175b45130455",
+  "ETH_FROM": "0a735602a357802f553113f5831fe2fbf2f0e2e0",
+  "ETH_GAS": "1000000000000",
+  "ETH_KEYSTORE": "/Users/ilinzweilin/Desktop/tinlake_deployment/kovan",
+  "ETH_PASSWORD": "/Users/ilinzweilin/Desktop/tinlake_deployment/kovan/passphrase",
+  "TINLAKE_CURRENCY": ""
+}

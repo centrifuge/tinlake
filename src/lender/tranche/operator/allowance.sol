@@ -34,7 +34,7 @@ contract AllowanceOperator is BaseOperator {
     /// checks if supply amount is approved and calls supply method in BaseOperator
     function supply(uint currencyAmount) external note {
         if (maxCurrency[msg.sender] != uint(-1)) {
-            require(maxCurrency[msg.sender] >= currencyAmount);
+            require(maxCurrency[msg.sender] >= currencyAmount, "not-enough-currency");
             maxCurrency[msg.sender] = safeSub(maxCurrency[msg.sender], currencyAmount);
         }
         _supply(currencyAmount);
@@ -43,7 +43,7 @@ contract AllowanceOperator is BaseOperator {
     /// checks if redeem amount is approved and calls redeem method in BaseOperator
     function redeem(uint tokenAmount) external note {
         if (maxToken[msg.sender] != uint(-1)) {
-            require(maxToken[msg.sender] >= tokenAmount);
+            require(maxToken[msg.sender] >= tokenAmount, "not-enough-tokens");
             maxToken[msg.sender] = safeSub(maxToken[msg.sender], tokenAmount);
         }
         _redeem(tokenAmount);

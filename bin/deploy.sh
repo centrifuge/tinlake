@@ -19,14 +19,17 @@ success_msg "Correct Config File"
 # build contracts if needed
 build_contracts "./.."
 
+# create deployment folder
+mkdir $BIN_DIR/../deployments
+
 # deploy root contract
-source ./root/deploy.sh
+source $BIN_DIR/root/deploy.sh
 
 # deploy lender contracts
-source ./lender/deploy.sh
+source $BIN_DIR/lender/deploy.sh
 
 # deploy borrower contracts
-source ./borrower/deploy.sh
+source $BIN_DIR/borrower/deploy.sh
 
 # finalize deployment
 message Finalize Deployment

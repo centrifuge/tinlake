@@ -62,7 +62,7 @@ contract CreditLine is DSNote, Auth, Math {
     /// borrow checks if loan amount would violate the loan ceiling
     function borrow(uint loan, uint amount) external auth {
         // ceiling check uses existing loan debt
-        require(values[loan] >= safeAdd(pile.debt(loan), amount));
+        require(values[loan] >= safeAdd(pile.debt(loan), amount), "borrow-amount-too-high");
     }
 
     function repay(uint loan, uint amount) external auth {}
