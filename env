@@ -1,7 +1,0 @@
-export ETH_KEYSTORE=/Users/ilinzweilin/Desktop/tinlake_deployment/kovan
-export ETH_PASSWORD=/Users/ilinzweilin/Desktop/tinlake_deployment/kovan/passphrase
-export ETH_RPC_URL=https://kovan.infura.io/v3/092108ec6aea46ab97b2175b45130455
-export ETH_FROM=0a735602a357802f553113f5831fe2fbf2f0e2e0
-export ETH_PRIVATE_KEY=0x55730961bd61b9e78419134236a262ca9d699a8a5270997e3b26ce5de2a29679
-export TINLAKE_CURRENCY=0x2cab5720ce6e95fdfda58c1a6c693580324b7109
-export ETH_GAS=1000000000000
