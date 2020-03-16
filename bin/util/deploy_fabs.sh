@@ -49,8 +49,8 @@ echo "DISTRIBUTOR_FAB : $DISTRIBUTOR_FAB"
 [[ -z "$TRANCHE_FAB" ]] && TRANCHE_FAB=$(seth send --create ./../../out/TrancheFab.bin 'TrancheFab()')
 echo "TRANCHE_FAB : $TRANCHE_FAB"
 
-FABS_DEPLOYMENT_FILE=$1
-[ -z "$1" ] && FABS_DEPLOYMENT_FILE="./../../deployments/fabs_$(seth chain).json"
+FABS_DEPLOYMENT_FILE=$2
+[ -z "$2" ] && FABS_DEPLOYMENT_FILE="./../../deployments/fabs_$(seth chain).json"
 
 touch $FABS_DEPLOYMENT_FILE
 
