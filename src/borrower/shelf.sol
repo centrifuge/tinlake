@@ -125,10 +125,10 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     }
 
     function close(uint loan) external note{
-        require(pile.debt(loan) == 0, "outstanding-debt");
-        require(!nftLocked(loan));
+        require(pile.debt(loan) == 0, "loan-has-outstanding-debt");
+        require(!nftLocked(loan), "nft-not-locked");
         (address registry, uint tokenId) = token(loan);
-        require(title.ownerOf(loan) == msg.sender || NFTLike(registry).ownerOf(tokenId) == msg.sender, "not loan or nft owner");
+        require(title.ownerOf(loan) == msg.sender || NFTLike(registry).ownerOf(tokenId) == msg.sender, "not-loan-or-nft-owner");
         title.close(loan);
         bytes32 nft = keccak256(abi.encodePacked(shelf[loan].registry, shelf[loan].tokenId));
         nftlookup[nft] = 0;
@@ -165,7 +165,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     /// the method triggers the distributor to ensure the shelf has enough currency
     function withdraw(uint loan, uint currencyAmount, address usr) external owner(loan) note {
         require(nftLocked(loan), "nft-not-locked");
-        require(currencyAmount <= balances[loan], "amount-too-high");
+        require(currencyAmount <= balances[loan], "withdraw-amount-too-high");
         distributor.balance();
         balances[loan] = safeSub(balances[loan], currencyAmount);
         balance = safeSub(balance, currencyAmount);
@@ -175,7 +175,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     /// repays the entire or partial debt of a loan
     function repay(uint loan, uint currencyAmount) external owner(loan) note {
         require(nftLocked(loan), "nft-not-locked");
-        require(balances[loan] == 0,"before repay loan needs to be withdrawn");
+        require(balances[loan] == 0, "withdraw-required-before-repay");
         _repay(loan, msg.sender, currencyAmount);
     }
 
@@ -216,7 +216,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     /// unlocks an nft in the shelf
     /// requires zero debt
     function unlock(uint loan) external owner(loan) note {
-        require(pile.debt(loan) == 0, "has-debt");
+        require(pile.debt(loan) == 0, "loan-has-outstanding-debt");
         NFTLike(shelf[loan].registry).transferFrom(address(this), msg.sender, shelf[loan].tokenId);
     }
 

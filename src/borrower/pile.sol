@@ -61,7 +61,7 @@ contract Pile is DSNote, Auth, Interest {
     /// a change of the loan debt updates the rate debt and total debt
     function incDebt(uint loan, uint currencyAmount) external auth note {
         uint rate = loanRates[loan];
-        require(now <= rates[rate].lastUpdated);
+        require(now <= rates[rate].lastUpdated, "rate-group-not-updated");
         uint pieAmount = toPie(rates[rate].chi, currencyAmount);
 
         pie[loan] = safeAdd(pie[loan], pieAmount);
@@ -73,7 +73,7 @@ contract Pile is DSNote, Auth, Interest {
     /// a change of the loan debt updates the rate debt and total debt
     function decDebt(uint loan, uint currencyAmount) external auth note {
         uint rate = loanRates[loan];
-        require(now <= rates[rate].lastUpdated);
+        require(now <= rates[rate].lastUpdated, "rate-group-not-updated");
         uint pieAmount = toPie(rates[rate].chi, currencyAmount);
 
         pie[loan] = safeSub(pie[loan], pieAmount);
@@ -108,13 +108,13 @@ contract Pile is DSNote, Auth, Interest {
     function setRate(uint loan, uint rate) external auth {
         require(pie[loan] == 0, "non-zero-debt");
         // rate category has to be initiated
-        require(rates[rate].chi != 0);
+        require(rates[rate].chi != 0, "rate-group-not-set");
         loanRates[loan] = rate;
     }
 
     // change rate loanRates for a loan
     function changeRate(uint loan, uint newRate) external auth note {
-        require(rates[newRate].chi != 0);
+        require(rates[newRate].chi != 0, "rate-group-not-set");
         uint currentRate = loanRates[loan];
         drip(currentRate);
         drip(newRate);
@@ -128,7 +128,7 @@ contract Pile is DSNote, Auth, Interest {
 
     // set/change the interest rate of a rate category
     function file(uint rate, uint ratePerSecond) external auth note {
-        require(ratePerSecond != 0);
+        require(ratePerSecond != 0, "rate-per-second-can-not-be-0");
 
         if (rates[rate].chi == 0) {
             rates[rate].chi = ONE;

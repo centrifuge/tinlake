@@ -33,7 +33,7 @@ contract DefaultAssessor is BaseAssessor, Interest {
             return 0;
         }
 
-        require(tranche_ == senior);
+        require(tranche_ == senior, "tranche-not-senior");
 
         uint debt = safeAdd(tranche.borrowed(), tranche.interest());
         // move to tinlake-math

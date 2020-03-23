@@ -33,7 +33,7 @@ contract FullInvestmentAssessor is BaseAssessor, Interest {
 
         }
 
-        require(tranche_ == senior);
+        require(tranche_ == senior, "tranche-not-senior");
 
         uint interestBearingAmount = safeAdd(safeAdd(tranche.borrowed(), tranche.interest()), tranche.balance());
 

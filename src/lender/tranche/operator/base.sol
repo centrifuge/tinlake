@@ -56,7 +56,7 @@ contract BaseOperator is Math, DSNote, Auth {
     }
 
     function _supply(uint currencyAmount) internal {
-        require(assessor.supplyApprove(address(tranche), currencyAmount));
+        require(assessor.supplyApprove(address(tranche), currencyAmount), "supply-not-approved");
         tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, assessor.calcAndUpdateTokenPrice(address(tranche))));
         distributor.balance();
     }
@@ -64,7 +64,7 @@ contract BaseOperator is Math, DSNote, Auth {
     function _redeem(uint tokenAmount) internal {
         distributor.balance();
         uint currencyAmount = rmul(tokenAmount, assessor.calcAndUpdateTokenPrice(address(tranche)));
-        require(assessor.redeemApprove(address(tranche), currencyAmount));
+        require(assessor.redeemApprove(address(tranche), currencyAmount), "redeem-not-approved");
         tranche.redeem(msg.sender, currencyAmount, tokenAmount);
     }
 }

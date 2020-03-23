@@ -84,7 +84,7 @@ contract BaseAssessor is Math, Auth {
     }
 
     function calcAssetValue(address tranche) public view returns(uint) {
-        require(tranche  == junior || tranche == senior);
+        require(tranche  == junior || tranche == senior, "unknown-tranche-address");
         uint trancheReserve = TrancheLike(tranche).balance();
         uint poolValue = pool.totalValue();
         if (tranche == junior) {
@@ -94,7 +94,7 @@ contract BaseAssessor is Math, Auth {
     }
 
     function calcTokenPrice(address tranche) public view returns (uint) {
-        require(tranche  == junior || tranche == senior);
+        require(tranche  == junior || tranche == senior, "unknown-tranche-address");
         return safeMul(_calcTokenPrice(tranche), tokenAmountForONE);
     }
     
