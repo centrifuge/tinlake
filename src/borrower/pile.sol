@@ -61,7 +61,7 @@ contract Pile is DSNote, Auth, Interest {
     /// a change of the loan debt updates the rate debt and total debt
     function incDebt(uint loan, uint currencyAmount) external auth note {
         uint rate = loanRates[loan];
-        require(now <= rates[rate].lastUpdated, "rate-group-not-updated");
+        require(now == rates[rate].lastUpdated, "rate-group-not-updated");
         uint pieAmount = toPie(rates[rate].chi, currencyAmount);
 
         pie[loan] = safeAdd(pie[loan], pieAmount);
@@ -73,7 +73,7 @@ contract Pile is DSNote, Auth, Interest {
     /// a change of the loan debt updates the rate debt and total debt
     function decDebt(uint loan, uint currencyAmount) external auth note {
         uint rate = loanRates[loan];
-        require(now <= rates[rate].lastUpdated, "rate-group-not-updated");
+        require(now == rates[rate].lastUpdated, "rate-group-not-updated");
         uint pieAmount = toPie(rates[rate].chi, currencyAmount);
 
         pie[loan] = safeSub(pie[loan], pieAmount);
