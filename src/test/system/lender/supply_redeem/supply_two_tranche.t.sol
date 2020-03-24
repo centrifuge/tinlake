@@ -70,11 +70,11 @@ contract SupplyTwoTrancheTest is BaseSystemTest {
 
         assertEq(currency.balanceOf(address(junior)), 0);
         assertEq(currency.balanceOf(address(senior)), 10 ether);
-        assertEq(senior.debt(), 10 ether);
+        assertEq(senior.updatedDebt(), 10 ether);
 
         hevm.warp(now + 1 days);
 
-        assertEq(senior.debt(), 10.5 ether);
+        assertEq(senior.updatedDebt(), 10.5 ether);
 
         // change the ratio, senior can still supply
         FileLike(assessor).file("minJuniorRatio" , 0);
@@ -113,7 +113,7 @@ contract SupplyTwoTrancheTest is BaseSystemTest {
 
         assertEq(currency.balanceOf(address(junior)), 0);
         assertEq(currency.balanceOf(address(senior)), 10 ether);
-        assertEq(senior.debt(), 10 ether);
+        assertEq(senior.updatedDebt(), 10 ether);
 
         hevm.warp(now + 1 days);
 

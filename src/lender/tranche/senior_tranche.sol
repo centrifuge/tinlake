@@ -20,8 +20,8 @@ import "tinlake-math/interest.sol";
 
 contract AssessorLike {
     function calcAssetValue(address) public returns (uint);
-    function calcTokenPrice(address) public returns (uint);
-    function accrueTrancheInterest(address tranche_) public returns (uint);
+    function calcAndUpdateTokenPrice(address) public returns (uint);
+    function accrueTrancheInterest(address tranche_) public view returns (uint);
 }
 
 // SeniorTranche
@@ -36,32 +36,40 @@ contract SeniorTranche is Tranche, Interest {
 
     AssessorLike  public assessor;
 
-    function debt() external returns(uint) {
-        drip();
-        return safeAdd(borrowed, interest);
-    }
-
     constructor(address token_, address currency_, address assessor_) Tranche(token_ ,currency_) public {
         ratePerSecond = ONE;
         lastUpdated = now;
         assessor = AssessorLike(assessor_);
     }
 
-    function depend(bytes32 what, address addr) public note auth {
-        if (what == "assessor") {assessor = AssessorLike(addr); }
-        else { super.depend(what, addr); }
+    function updatedDebt() external returns(uint) {
+        drip();
+        return safeAdd(borrowed, interest);
+    }
+
+    function debt() external view returns(uint) {
+        return safeAdd(borrowed, _calcInterest());
+    }
+
+    /// sets the dependency to another contract
+    function depend(bytes32 contractName, address addr) public note auth {
+        if (contractName == "assessor") {assessor = AssessorLike(addr); }
+        else { super.depend(contractName, addr); }
     }
 
     function file(bytes32 what, uint ratePerSecond_) external note auth {
          if (what ==  "rate") {
              if(ratePerSecond != ONE) {
                  // required for interest rate switch
+                 // charges interest with the existing rate before the change
                  drip();
              }
             ratePerSecond = ratePerSecond_;
         } else revert();
     }
 
+    /// the repay amount should first reduce the interest and
+    /// afterwards the borrowed amount
     function _repay(uint currencyAmount) internal {
         if(currencyAmount <= interest) {
             interest = safeSub(interest, currencyAmount);
@@ -89,10 +97,18 @@ contract SeniorTranche is Tranche, Interest {
         super.borrow(usr, currencyAmount);
     }
 
+    /// charges interest since the last update until now
     function drip() public {
         if (now >= lastUpdated) {
-            interest = safeAdd(interest, assessor.accrueTrancheInterest(address(this)));
+            interest = _calcInterest();
             lastUpdated = now;
         }
+    }
+
+    function _calcInterest() internal view returns (uint) {
+        if (now >= lastUpdated) {
+            return safeAdd(interest, assessor.accrueTrancheInterest(address(this)));
+        }
+        return interest;
     }
 }

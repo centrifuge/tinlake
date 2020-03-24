@@ -19,7 +19,7 @@ import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 
 contract PileLike {
-    function total() public returns(uint);
+    function total() public view returns(uint);
 }
 
 contract PricePool is Auth, Math {
@@ -30,8 +30,9 @@ contract PricePool is Auth, Math {
         riskScore = ONE;
     }
 
-    function depend(bytes32 what, address addr) public auth {
-        if (what == "pile") { pile = PileLike(addr); }
+    /// sets the dependency to another contract
+    function depend(bytes32 contractName, address addr) public auth {
+        if (contractName == "pile") { pile = PileLike(addr); }
         else revert();
     }
 
@@ -40,7 +41,7 @@ contract PricePool is Auth, Math {
         else revert();
     }
 
-    function totalValue() public returns (uint) {
+    function totalValue() public view returns (uint) {
         return rmul(pile.total(), riskScore);
     }
 }

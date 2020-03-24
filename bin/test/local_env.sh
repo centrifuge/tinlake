@@ -1,5 +1,5 @@
 # Define ENV
-GETH_DIR=$HOME/.dapp/testnet/8545/
+GETH_DIR=$HOME/.dapp/testnet/8545
 
 # Default Test Config
 export ETH_RPC_URL=http://127.0.0.1:8545

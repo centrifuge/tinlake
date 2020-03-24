@@ -49,8 +49,9 @@ contract CreditLine is DSNote, Auth, Math {
         return 0;
     }
 
-    function depend(bytes32 what, address addr) external note auth {
-        if (what == "pile") { pile = PileLike(addr); }
+    /// sets the dependency to another contract
+    function depend(bytes32 contractName, address addr) external note auth {
+        if (contractName == "pile") { pile = PileLike(addr); }
         else revert();
     }
 
@@ -58,8 +59,10 @@ contract CreditLine is DSNote, Auth, Math {
         values[loan] = creditLine;
     }
 
+    /// borrow checks if loan amount would violate the loan ceiling
     function borrow(uint loan, uint amount) external auth {
-        require(values[loan] >= safeAdd(pile.debt(loan), amount));
+        // ceiling check uses existing loan debt
+        require(values[loan] >= safeAdd(pile.debt(loan), amount), "borrow-amount-too-high");
     }
 
     function repay(uint loan, uint amount) external auth {}

@@ -15,7 +15,6 @@ test -z "$CURRENCY_NAME" && CURRENCY_NAME="DAI Stablecoin"
 test -z "$CURRENCY_VERSION" && CURRENCY_VERSION="a"
 test -z "$CURRENCY_CHAINID" && CURRENCY_CHAINID=1
 
-
 # Deploy Default Currency
 TINLAKE_CURRENCY=$(seth send --create $BIN_DIR/../../out/SimpleToken.bin 'SimpleToken(string memory,string memory,string memory, uint)' "$CURRENCY_SYMBOL" "$CURRENCY_NAME" "$CURRENCY_VERSION" $(seth --to-uint256 $CURRENCY_CHAINID))
 

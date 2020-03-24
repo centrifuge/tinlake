@@ -1,6 +1,6 @@
 
 BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
-source $BIN_DIR/util/util.sh
+source $BIN_DIR/util.sh
 
 message Enviroment Variables
 

@@ -93,7 +93,7 @@ contract TrancheLike {
 contract TAssessorLike {
     function rely(address usr) public;
     function deny(address usr) public;
-    function depend(bytes32 what, address addr_) public;
+    function depend(bytes32 contractName, address addr_) public;
     function file(bytes32 what, uint value) public;
     function accrueTrancheInterest(address tranche_) public returns (uint);
 

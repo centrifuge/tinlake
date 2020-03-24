@@ -26,7 +26,7 @@ contract TrancheLike {
 }
 
 contract AssessorLike {
-    function calcTokenPrice(address tranche) public returns(uint);
+    function calcAndUpdateTokenPrice(address tranche) public returns(uint);
     function supplyApprove(address tranche, uint currencyAmount) public returns(bool);
     function redeemApprove(address tranche, uint currencyAmount) public returns(bool);
 }
@@ -47,23 +47,24 @@ contract BaseOperator is Math, DSNote, Auth {
         distributor = DistributorLike(distributor_);
     }
 
-    function depend(bytes32 what, address addr) public auth {
-        if (what == "tranche") { tranche = TrancheLike(addr); }
-        else if (what == "assessor") { assessor = AssessorLike(addr); }
-        else if (what == "distributor") { distributor = DistributorLike(addr); }
+    /// sets the dependency to another contract
+    function depend(bytes32 contractName, address addr) public auth {
+        if (contractName == "tranche") { tranche = TrancheLike(addr); }
+        else if (contractName == "assessor") { assessor = AssessorLike(addr); }
+        else if (contractName == "distributor") { distributor = DistributorLike(addr); }
         else revert();
     }
 
     function _supply(uint currencyAmount) internal {
-        require(assessor.supplyApprove(address(tranche), currencyAmount));
-        tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, assessor.calcTokenPrice(address(tranche))));
+        require(assessor.supplyApprove(address(tranche), currencyAmount), "supply-not-approved");
+        tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, assessor.calcAndUpdateTokenPrice(address(tranche))));
         distributor.balance();
     }
 
     function _redeem(uint tokenAmount) internal {
         distributor.balance();
-        uint currencyAmount = rmul(tokenAmount, assessor.calcTokenPrice(address(tranche)));
-        require(assessor.redeemApprove(address(tranche), currencyAmount));
+        uint currencyAmount = rmul(tokenAmount, assessor.calcAndUpdateTokenPrice(address(tranche)));
+        require(assessor.redeemApprove(address(tranche), currencyAmount), "redeem-not-approved");
         tranche.redeem(msg.sender, currencyAmount, tokenAmount);
     }
 }

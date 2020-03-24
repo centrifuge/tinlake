@@ -25,15 +25,15 @@ contract DefaultAssessor is BaseAssessor, Interest {
 
     constructor(uint tokenAmountForONE) BaseAssessor(tokenAmountForONE) public {}
 
-    // accrueTrancheInterest can implement different interest models
-    function accrueTrancheInterest(address tranche_) public returns (uint) {
+    /// accrueTrancheInterest implements interest accumulation based on tranche debt
+    function accrueTrancheInterest(address tranche_) public view returns (uint) {
         SeniorTrancheLike tranche = SeniorTrancheLike(tranche_);
 
         if(tranche_ == junior) {
             return 0;
         }
 
-        require(tranche_ == senior);
+        require(tranche_ == senior, "tranche-not-senior");
 
         uint debt = safeAdd(tranche.borrowed(), tranche.interest());
         // move to tinlake-math

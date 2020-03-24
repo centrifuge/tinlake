@@ -19,6 +19,9 @@ success_msg "Correct Config File"
 # build contracts if needed
 build_contracts "./.."
 
+# create deployment folder
+mkdir -p $BIN_DIR/../deployments
+
 # deploy root contract
 source ./root/deploy.sh
 

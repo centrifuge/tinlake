@@ -42,13 +42,12 @@ seth send $LENDER_DEPLOYER 'deploy()'
 
 success_msg Lender Contracts deployed
 
-JUNIOR="0x$(seth call $LENDER_DEPLOYER 'junior()(address)')"
-JUNIOR_TOKEN="0x$(seth call $JUNIOR 'token()(address)')"
-SENIOR="0x$(seth call $LENDER_DEPLOYER 'senior()(address)')"
+JUNIOR="$(seth call $LENDER_DEPLOYER 'junior()(address)')"
+JUNIOR_TOKEN="$(seth call $JUNIOR 'token()(address)')"
+SENIOR="$(seth call $LENDER_DEPLOYER 'senior()(address)')"
 
-if [ [ "$SENIOR_TRANCHE_FAB"  !=  "$ZERO_ADDRESS" ]; ]
-then
-    SENIOR_TOKEN="0x$(seth call $SENIOR 'token()(address)')"
+if [ "$SENIOR_TRANCHE_FAB"  !=  "$ZERO_ADDRESS" ]; then
+    SENIOR_TOKEN="$(seth call $SENIOR 'token()(address)')"
 else
     SENIOR_TOKEN="$ZERO_ADDRESS"
 fi
@@ -63,13 +62,13 @@ addValuesToFile $DEPLOYMENT_FILE <<EOF
     "TRANCHE_FAB"        :  "$TRANCHE_FAB",
     "SENIOR_TRANCHE_FAB" :  "$SENIOR_TRANCHE_FAB",
     "SENIOR_OPERATOR_FAB":  "$SENIOR_OPERATOR_FAB",
-    "JUNIOR_OPERATOR"    :  "0x$(seth call $LENDER_DEPLOYER 'juniorOperator()(address)')",
+    "JUNIOR_OPERATOR"    :  "$(seth call $LENDER_DEPLOYER 'juniorOperator()(address)')",
     "JUNIOR"             :  "$JUNIOR",
     "JUNIOR_TOKEN"       :  "$JUNIOR_TOKEN",
     "SENIOR"             :  "$SENIOR",
     "SENIOR_TOKEN"       :  "$SENIOR_TOKEN",
-    "SENIOR_OPERATOR"    :  "0x$(seth call $LENDER_DEPLOYER 'seniorOperator()(address)')",
-    "DISTRIBUTOR"        :  "0x$(seth call $LENDER_DEPLOYER 'distributor()(address)')",
-    "ASSESSOR"           :  "0x$(seth call $LENDER_DEPLOYER 'assessor()(address)')"
+    "SENIOR_OPERATOR"    :  "$(seth call $LENDER_DEPLOYER 'seniorOperator()(address)')",
+    "DISTRIBUTOR"        :  "$(seth call $LENDER_DEPLOYER 'distributor()(address)')",
+    "ASSESSOR"           :  "$(seth call $LENDER_DEPLOYER 'assessor()(address)')"
 }
 EOF

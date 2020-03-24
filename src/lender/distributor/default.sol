@@ -22,7 +22,7 @@ import "tinlake-auth/auth.sol";
 /// Interfaces
 contract TrancheLike {
     function borrow(address, uint) public;
-    function debt() public returns (uint);
+    function updatedDebt() public returns (uint);
     function repay(address, uint) public;
     function balance() public returns (uint);
 }
@@ -58,11 +58,12 @@ contract DefaultDistributor is Math, DSNote, Auth {
 
     }
 
-    function depend (bytes32 what, address addr) public auth {
-        if (what == "shelf") { shelf = ShelfLike(addr); }
-        else if (what == "junior") { junior = TrancheLike(addr); }
-        else if (what == "senior") { senior = TrancheLike(addr); }
-        else if (what == "currency") { currency = CurrencyLike(addr); }
+    /// sets the dependency to another contract
+    function depend (bytes32 contractName, address addr) public auth {
+        if (contractName == "shelf") { shelf = ShelfLike(addr); }
+        else if (contractName == "junior") { junior = TrancheLike(addr); }
+        else if (contractName == "senior") { senior = TrancheLike(addr); }
+        else if (contractName == "currency") { currency = CurrencyLike(addr); }
         else revert();
     }
 
@@ -73,7 +74,7 @@ contract DefaultDistributor is Math, DSNote, Auth {
             return;
         }
 
-        uint seniorDebt = senior.debt();
+        uint seniorDebt = senior.updatedDebt();
         uint juniorBalance = junior.balance();
         if(juniorBalance > 0 && seniorDebt > 0) {
             uint amount = seniorDebt;
@@ -170,7 +171,7 @@ contract DefaultDistributor is Math, DSNote, Auth {
     /// @return actual repaid currencyAmount
     /// @dev available and currency Amount denominated in WAD (10^18)
     function _repay(TrancheLike tranche, uint available) internal returns(uint) {
-        uint currencyAmount = tranche.debt();
+        uint currencyAmount = tranche.updatedDebt();
         if (available < currencyAmount) {
             currencyAmount = available;
         }

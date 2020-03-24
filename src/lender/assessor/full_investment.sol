@@ -24,8 +24,8 @@ contract FullInvestmentAssessor is BaseAssessor, Interest {
 
     constructor(uint tokenAmountForONE) BaseAssessor(tokenAmountForONE) public {}
 
-    // accrueTrancheInterest can implement different interest models
-    function accrueTrancheInterest(address tranche_) public returns (uint) {
+    /// accrueTrancheInterest implements interest accumulation based total supplied tranche currency and existing interest amounts
+    function accrueTrancheInterest(address tranche_) public view returns (uint) {
         SeniorTrancheLike tranche = SeniorTrancheLike(tranche_);
 
         if(tranche_ == junior) {
@@ -33,7 +33,7 @@ contract FullInvestmentAssessor is BaseAssessor, Interest {
 
         }
 
-        require(tranche_ == senior);
+        require(tranche_ == senior, "tranche-not-senior");
 
         uint interestBearingAmount = safeAdd(safeAdd(tranche.borrowed(), tranche.interest()), tranche.balance());
 
