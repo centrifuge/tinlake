@@ -51,7 +51,7 @@ contract AdminUser {
     }
 
     function doInitRate(uint rate, uint speed) public {
-        pile.file(rate, speed);
+        pile.file("rate",rate, speed);
     }
 
     function doAddRate(uint loan, uint rate) public {

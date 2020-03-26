@@ -44,7 +44,7 @@ contract CeilingLike {
 
 contract PileLike {
     function debt(uint loan) public returns(uint);
-    function file(uint rate, uint speed) public;
+    function file(bytes32 what, uint rate, uint speed) public;
     function setRate(uint loan, uint rate) public;
 }
 
