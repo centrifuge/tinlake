@@ -40,7 +40,7 @@ contract AdminUser {
     }
 
     function setCeiling(uint loan, uint principal) public {
-        ceiling.file(loan, principal);
+        ceiling.file("loan", loan, principal);
     }
 
     function doAdmit(address registry, uint nft, uint principal, address usr) public returns (uint) {

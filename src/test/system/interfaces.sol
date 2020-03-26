@@ -37,7 +37,7 @@ contract TokenLike{
 contract CeilingLike {
     function ceiling(uint loan) public view returns(uint);
     function values(uint) public view returns(uint);
-    function file(uint loan, uint currencyAmount) public;
+    function file(bytes32 what, uint loan, uint currencyAmount) public;
     function borrow(uint loan, uint currencyAmount) public;
     function repay(uint loan, uint currencyAmount) public;
 }

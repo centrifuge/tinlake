@@ -30,8 +30,11 @@ contract Principal is DSNote, Auth, Math {
     }
 
 
-    function file(uint loan, uint principal) external note auth {
-        ceiling[loan] = principal;
+    function file(bytes32 what, uint loan, uint principal) external note auth {
+        if (what == "loan") {
+            ceiling[loan] = principal;
+        } else revert("unknown parameter");
+
     }
 
     /// reverts if loan amount is higher than ceiling
