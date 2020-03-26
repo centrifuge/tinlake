@@ -59,11 +59,11 @@ contract AdminUser {
     }
 
     function setCollectPrice(uint loan, uint price) public {
-        collector.file(loan, address(0), price);
+        collector.file("loan", loan, address(0), price);
     }
 
     function addKeeper(uint loan, address usr, uint price) public {
-        collector.file(loan, usr, price);
+        collector.file("loan", loan, usr, price);
     }
 
     function whitelistKeeper(address usr) public {

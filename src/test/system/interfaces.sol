@@ -102,7 +102,7 @@ contract TAssessorLike {
 contract CollectorLike {
     function collect(uint loan) public;
     function collect(uint loan, address buyer) public;
-    function file(uint loan, address buyer, uint price) public;
+    function file(bytes32 what, uint loan, address buyer, uint price) public;
     function relyCollector(address user) public;
 }
 
