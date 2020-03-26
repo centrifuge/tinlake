@@ -239,14 +239,14 @@ contract ShelfTest is DSTest {
     }
 
     function testFailLockInvalidNFT() public {
-        shelf.file("loan",loan, address(1), tokenId);
+        shelf.file("loan", loan, address(1), tokenId);
         _lock(tokenId, loan);
     }
 
     function testFailDepositNotNFTOwner() public {
         // tokenId minted at some address
         nft.setReturn("ownerOf", address(1));
-        shelf.file("loan",loan, address(nft), tokenId);
+        shelf.file("loan", loan, address(nft), tokenId);
         _lock(tokenId, loan);
     }
 
