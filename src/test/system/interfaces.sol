@@ -62,7 +62,7 @@ contract ShelfLike {
     function withdraw(uint loan, uint wad, address usr) public;
     function repay(uint loan, uint wad) public;
     function shelf(uint loan) public returns(address registry,uint256 tokenId,uint price,uint principal, uint initial);
-    function file(uint loan, address registry, uint nft) public;
+    function file(bytes32 what, uint loan, address registry, uint nft) public;
 }
 
 contract ERC20Like {

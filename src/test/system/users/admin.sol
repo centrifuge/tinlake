@@ -46,7 +46,7 @@ contract AdminUser {
     function doAdmit(address registry, uint nft, uint principal, address usr) public returns (uint) {
         uint loan = title.issue(usr);
         setCeiling(loan, principal);
-        shelf.file(loan, registry, nft);
+        shelf.file("loan", loan, registry, nft);
         return loan;
     }
 
