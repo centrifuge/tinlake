@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.3;
+pragma solidity >=0.5.15 <0.6.0;
 
 
 import "ds-note/note.sol";
@@ -34,7 +34,7 @@ contract PileLike {
 contract CreditLine is DSNote, Auth, Math {
 
     // --- Data ---
-    PileLike pile;  
+    PileLike pile;
     mapping (uint =>  uint) public values;
 
     constructor(address pile_) public {
@@ -45,7 +45,7 @@ contract CreditLine is DSNote, Auth, Math {
     function ceiling(uint loan) external returns(uint) {
         if (values[loan] > pile.debt(loan)) {
             return safeSub(values[loan], pile.debt(loan));
-        } 
+        }
         return 0;
     }
 

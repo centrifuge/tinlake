@@ -1,4 +1,4 @@
-pragma solidity >=0.5.3;
+pragma solidity >=0.5.15 <0.6.0;
 import "tinlake-auth/auth.sol";
 
 contract TokenLike {
@@ -30,7 +30,7 @@ contract Distributor is Auth {
     // --- Calls ---
     function balance() public {
         (bool want, uint wad)  = shelf.balanceRequest();
-        
+
         if (wad == 0) {
             return;
         }
