@@ -3,7 +3,7 @@
 	url = https://github.com/dapphub/ds-test
 [submodule "lib/ds-note"]
 	path = lib/ds-note
-	url = https://github.com/dapphub/ds-note
+	url = https://github.com/centrifuge/ds-note
 [submodule "lib/tinlake-title"]
 	path = lib/tinlake-title
 	url = https://github.com/centrifuge/tinlake-title
