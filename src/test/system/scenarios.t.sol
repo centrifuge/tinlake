@@ -43,7 +43,7 @@ contract ScenarioTest is BaseSystemTest {
         assertEq(currency.balanceOf(address(pile)), 0);
     }
 
-    function whitelist(uint tokenId, address collateralNFT_, uint principal, address borrowerAddr, uint rate) public returns (uint) {
+    function setupLoan(uint tokenId, address collateralNFT_, uint principal, uint rate) public returns (uint) {
         // define rate
         admin.doInitRate(rate, rate);
         // collateralNFT whitelist
@@ -78,7 +78,7 @@ contract ScenarioTest is BaseSystemTest {
         (principal, rate) = defaultLoan();
         // create borrower collateral collateralNFT
         tokenId = collateralNFT.issue(borrower_);
-        loan = whitelist(tokenId, collateralNFT_, principal,borrower_, rate);
+        loan = setupLoan(tokenId, collateralNFT_, principal, rate);
         borrow(loan, tokenId, principal);
 
         return (loan, tokenId, principal, rate);
@@ -105,7 +105,7 @@ contract ScenarioTest is BaseSystemTest {
 
         // create borrower collateral collateralNFT
         uint tokenId = collateralNFT.issue(borrower_);
-        uint loan = whitelist(tokenId, collateralNFT_, principal, borrower_, rate);
+        uint loan = setupLoan(tokenId, collateralNFT_, principal, rate);
 
         assertEq(ceiling_.ceiling(loan), principal);
         borrow(loan, tokenId, principal);
@@ -209,7 +209,7 @@ contract ScenarioTest is BaseSystemTest {
             // create borrower collateral collateralNFT
             uint tokenId = collateralNFT.issue(borrower_);
             // collateralNFT whitelist
-            uint loan = whitelist(tokenId, collateralNFT_, principal, borrower_, rate);
+            uint loan = setupLoan(tokenId, collateralNFT_, principal, rate);
 
             borrower.approveNFT(collateralNFT, address(shelf));
 
