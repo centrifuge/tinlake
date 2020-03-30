@@ -43,13 +43,6 @@ contract AdminUser {
         ceiling.file("loan", loan, principal);
     }
 
-    function doAdmit(address registry, uint nft, uint principal, address usr) public returns (uint) {
-        uint loan = title.issue(usr);
-        setCeiling(loan, principal);
-        shelf.file("loan",  loan, registry, nft);
-        return loan;
-    }
-
     function doInitRate(uint rate, uint speed) public {
         pile.file("rate", rate, speed);
     }

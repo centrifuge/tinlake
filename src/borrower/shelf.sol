@@ -101,13 +101,6 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         else revert();
     }
 
-    function file(bytes32 what, uint loan, address registry_, uint nft_) external auth {
-        if(what == "loan") {
-            shelf[loan].registry = registry_;
-            shelf[loan].tokenId = nft_;
-        } else revert("unknown parameter");
-    }
-
     function token(uint loan) public view returns (address registry, uint nft) {
         return (shelf[loan].registry, shelf[loan].tokenId);
     }
