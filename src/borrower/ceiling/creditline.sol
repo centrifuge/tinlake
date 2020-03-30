@@ -55,8 +55,11 @@ contract CreditLine is DSNote, Auth, Math {
         else revert();
     }
 
-    function file(uint loan, uint creditLine) external note auth {
-        values[loan] = creditLine;
+    function file(bytes32 what, uint loan, uint creditLine) external note auth {
+        if(what == "loan") {
+            values[loan] = creditLine;
+        } else revert("unknown parameter");
+
     }
 
     /// borrow checks if loan amount would violate the loan ceiling

@@ -37,14 +37,14 @@ contract TokenLike{
 contract CeilingLike {
     function ceiling(uint loan) public view returns(uint);
     function values(uint) public view returns(uint);
-    function file(uint loan, uint currencyAmount) public;
+    function file(bytes32 what, uint loan, uint currencyAmount) public;
     function borrow(uint loan, uint currencyAmount) public;
     function repay(uint loan, uint currencyAmount) public;
 }
 
 contract PileLike {
     function debt(uint loan) public returns(uint);
-    function file(uint rate, uint speed) public;
+    function file(bytes32 what, uint rate, uint speed) public;
     function setRate(uint loan, uint rate) public;
 }
 
@@ -62,7 +62,7 @@ contract ShelfLike {
     function withdraw(uint loan, uint wad, address usr) public;
     function repay(uint loan, uint wad) public;
     function shelf(uint loan) public returns(address registry,uint256 tokenId,uint price,uint principal, uint initial);
-    function file(uint loan, address registry, uint nft) public;
+    function file(bytes32 what, uint loan, address registry, uint nft) public;
 }
 
 contract ERC20Like {
@@ -102,7 +102,7 @@ contract TAssessorLike {
 contract CollectorLike {
     function collect(uint loan) public;
     function collect(uint loan, address buyer) public;
-    function file(uint loan, address buyer, uint price) public;
+    function file(bytes32 what, uint loan, address buyer, uint price) public;
     function relyCollector(address user) public;
 }
 

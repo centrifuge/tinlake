@@ -78,7 +78,7 @@ contract CollectorTest is DSTest {
         setUpLoan(tokenId, debt);
 
         threshold.set(loan, debt-1);
-        collector.file(loan, address(this), price);
+        collector.file("loan", loan, address(this), price);
         seize(loan);
         collect(loan, tokenId, price);
     }
@@ -90,7 +90,7 @@ contract CollectorTest is DSTest {
         uint price = debt-1;
         setUpLoan(tokenId, debt);
 
-        collector.file(loan, address(0), price);
+        collector.file("loan", loan, address(0), price);
         threshold.set(loan, debt-1);
         seize(loan);
         collect(loan, tokenId, price);
@@ -104,7 +104,7 @@ contract CollectorTest is DSTest {
         setUpLoan(tokenId, debt);
 
         threshold.set(loan, debt+1);
-        collector.file(loan, address(this), price);
+        collector.file("loan", loan, address(this), price);
         seize(loan);
     }
 
@@ -116,7 +116,7 @@ contract CollectorTest is DSTest {
         setUpLoan(tokenId, debt);
 
         threshold.set(loan, debt+1);
-        collector.file(loan, address(1), price);
+        collector.file("loan", loan, address(1), price);
         seize(loan);
         collect(loan, tokenId, price);
     }

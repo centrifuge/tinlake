@@ -127,16 +127,18 @@ contract Pile is DSNote, Auth, Interest {
     }
 
     // set/change the interest rate of a rate category
-    function file(uint rate, uint ratePerSecond) external auth note {
-        require(ratePerSecond != 0, "rate-per-second-can-not-be-0");
+    function file(bytes32 what, uint rate, uint ratePerSecond) external auth note {
+        if (what == "rate") {
+            require(ratePerSecond != 0, "rate-per-second-can-not-be-0");
+            if (rates[rate].chi == 0) {
+                rates[rate].chi = ONE;
+                rates[rate].lastUpdated = uint48(now);
+            } else {
+                drip(rate);
+            }
+            rates[rate].ratePerSecond = ratePerSecond;
+        } else revert("unknown parameter");
 
-        if (rates[rate].chi == 0) {
-            rates[rate].chi = ONE;
-            rates[rate].lastUpdated = uint48(now);
-        } else { 
-            drip(rate);
-        }
-        rates[rate].ratePerSecond = ratePerSecond;
     }
 
     // accrue needs to be called before any debt amounts are modified by an external component
