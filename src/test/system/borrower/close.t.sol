@@ -31,7 +31,7 @@ contract CloseTest is BaseSystemTest {
         assertPostCondition(lookupId);
     }
 
-    function assertPreCondition(uint loanId, uint tokenId, bytes32 lookupId) public {
+    function assertPreCondition(uint loanId, uint tokenId, bytes32 lookupId) public view {
         // assert: borrower owner of loan or owner of nft
         assert(title.ownerOf(loanId) == borrower_ || collateralNFT.ownerOf(tokenId) == borrower_);
         // assert: loan has been issued
