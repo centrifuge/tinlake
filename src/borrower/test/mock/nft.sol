@@ -3,9 +3,7 @@ pragma solidity >=0.5.3;
 import "../../../test/mock/mock.sol";
 
 contract NFTMock is Mock {
-    function ownerOf(uint tokenId) public returns (address) {
-        calls["ownerOf"]++;
-        values_uint["ownerOf_tokenId"] = tokenId;
+    function ownerOf(uint tokenId) public view returns (address) {
         return values_address_return["ownerOf"];
     }
     function transferFrom(address from, address to, uint tokenId) public {

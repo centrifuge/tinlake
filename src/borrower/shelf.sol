@@ -22,7 +22,7 @@ import "tinlake-auth/auth.sol";
 import { TitleOwned } from "tinlake-title/title.sol";
 
 contract NFTLike {
-    function ownerOf(uint256 tokenId) public returns (address owner);
+    function ownerOf(uint256 tokenId) public view returns (address owner);
     function transferFrom(address from, address to, uint256 tokenId) public;
 }
 
@@ -99,11 +99,6 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         else if (contractName == "ceiling") { ceiling = CeilingLike(addr); }
         else if (contractName == "distributor") { distributor = DistributorLike(addr);}
         else revert();
-    }
-
-    function file(uint loan, address registry_, uint nft_) external auth {
-        shelf[loan].registry = registry_;
-        shelf[loan].tokenId = nft_;
     }
 
     function token(uint loan) public view returns (address registry, uint nft) {

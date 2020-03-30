@@ -43,11 +43,16 @@ contract ScenarioTest is BaseSystemTest {
         assertEq(currency.balanceOf(address(pile)), 0);
     }
 
-    function whitelist(uint tokenId, address collateralNFT_, uint principal, address borrowerAddr, uint rate) public returns (uint) {
+    function setupLoan(uint tokenId, address collateralNFT_, uint principal, uint rate) public returns (uint) {
         // define rate
         admin.doInitRate(rate, rate);
         // collateralNFT whitelist
-        uint loan = admin.doAdmit(collateralNFT_, tokenId, principal, borrowerAddr);
+
+        // borrower issue loans
+        uint loan =  borrower.issue(collateralNFT_, tokenId);
+
+        // admin define ceiling
+        admin.setCeiling(loan, principal);
 
         // add rate for loan
         admin.doAddRate(loan, rate);
@@ -73,7 +78,7 @@ contract ScenarioTest is BaseSystemTest {
         (principal, rate) = defaultLoan();
         // create borrower collateral collateralNFT
         tokenId = collateralNFT.issue(borrower_);
-        loan = whitelist(tokenId, collateralNFT_, principal,borrower_, rate);
+        loan = setupLoan(tokenId, collateralNFT_, principal, rate);
         borrow(loan, tokenId, principal);
 
         return (loan, tokenId, principal, rate);
@@ -100,7 +105,7 @@ contract ScenarioTest is BaseSystemTest {
 
         // create borrower collateral collateralNFT
         uint tokenId = collateralNFT.issue(borrower_);
-        uint loan = whitelist(tokenId, collateralNFT_, principal, borrower_, rate);
+        uint loan = setupLoan(tokenId, collateralNFT_, principal, rate);
 
         assertEq(ceiling_.ceiling(loan), principal);
         borrow(loan, tokenId, principal);
@@ -126,7 +131,11 @@ contract ScenarioTest is BaseSystemTest {
 
         // create borrower collateral collateralNFT
         uint tokenId = collateralNFT.issue(borrower_);
-        uint loan = admin.doAdmit(collateralNFT_, tokenId, principal, borrower_);
+        // borrower issue loan
+        uint loan =  borrower.issue(collateralNFT_, tokenId);
+
+        // admin define ceiling
+        admin.setCeiling(loan, principal);
         borrower.approveNFT(collateralNFT, address(shelf));
         setupCurrencyOnLender(principal);
         borrower.borrowAction(loan, principal);
@@ -200,7 +209,7 @@ contract ScenarioTest is BaseSystemTest {
             // create borrower collateral collateralNFT
             uint tokenId = collateralNFT.issue(borrower_);
             // collateralNFT whitelist
-            uint loan = whitelist(tokenId, collateralNFT_, principal, borrower_, rate);
+            uint loan = setupLoan(tokenId, collateralNFT_, principal, rate);
 
             borrower.approveNFT(collateralNFT, address(shelf));
 
@@ -234,7 +243,11 @@ contract ScenarioTest is BaseSystemTest {
 
         // create borrower collateral collateralNFT
         uint tokenId = collateralNFT.issue(borrower_);
-        uint loan = admin.doAdmit(collateralNFT_, tokenId, principal, borrower_);
+        // borrower issue loans
+        uint loan =  borrower.issue(collateralNFT_, tokenId);
+
+        // admin define ceiling
+        admin.setCeiling(loan, principal);
         borrower.approveNFT(collateralNFT, address(shelf));
         borrower.borrowAction(loan, principal);
         checkAfterBorrow(tokenId, principal);
@@ -255,14 +268,22 @@ contract ScenarioTest is BaseSystemTest {
     }
 
     function testFailAdmitNonExistingcollateralNFT() public {
-        uint loan = admin.doAdmit(collateralNFT_, 1, 100, borrower_);
+        // borrower issue loan
+        uint loan =  borrower.issue(collateralNFT_, 123);
+
+        // admin define ceiling
+        admin.setCeiling(loan, 100);
         borrower.borrowAction(loan, 100);
         assertEq(currency.balanceOf(borrower_), 0);
     }
 
     function testFailBorrowcollateralNFTNotApproved() public {
         uint tokenId = collateralNFT.issue(borrower_);
-        uint loan = admin.doAdmit(collateralNFT_, tokenId, 100, borrower_);
+        // borrower issue loans
+        uint loan =  borrower.issue(collateralNFT_, tokenId);
+
+        // admin define ceiling
+        admin.setCeiling(loan, 100);
         borrower.borrowAction(loan, 100);
         assertEq(currency.balanceOf(borrower_), 100);
     }

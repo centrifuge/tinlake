@@ -82,9 +82,12 @@ contract Collector is DSNote, Auth {
     }
 
     /// sets the liquidation-price of an NFT
-    function file(uint loan, address buyer, uint nftPrice) external auth {
-        require(nftPrice > 0, "no-nft-price-defined");
-        options[loan] = Option(buyer, nftPrice);
+    function file(bytes32 what, uint loan, address buyer, uint nftPrice) external auth {
+        if (what == "loan") {
+            require(nftPrice > 0, "no-nft-price-defined");
+            options[loan] = Option(buyer, nftPrice);
+        } else revert("unknown parameter");
+
     }
 
 

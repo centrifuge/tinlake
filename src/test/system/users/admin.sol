@@ -40,18 +40,11 @@ contract AdminUser {
     }
 
     function setCeiling(uint loan, uint principal) public {
-        ceiling.file(loan, principal);
-    }
-
-    function doAdmit(address registry, uint nft, uint principal, address usr) public returns (uint) {
-        uint loan = title.issue(usr);
-        setCeiling(loan, principal);
-        shelf.file(loan, registry, nft);
-        return loan;
+        ceiling.file("loan", loan, principal);
     }
 
     function doInitRate(uint rate, uint speed) public {
-        pile.file(rate, speed);
+        pile.file("rate", rate, speed);
     }
 
     function doAddRate(uint loan, uint rate) public {
@@ -59,11 +52,11 @@ contract AdminUser {
     }
 
     function setCollectPrice(uint loan, uint price) public {
-        collector.file(loan, address(0), price);
+        collector.file("loan", loan, address(0), price);
     }
 
     function addKeeper(uint loan, address usr, uint price) public {
-        collector.file(loan, usr, price);
+        collector.file("loan", loan, usr, price);
     }
 
     function whitelistKeeper(address usr) public {

@@ -35,7 +35,7 @@ contract CreditLineTest is Math, DSTest {
         uint debt = 50;
 
         pile.setReturn("debt_loan", debt);
-        creditLine.file(loanId, initial);
+        creditLine.file("loan", loanId, initial);
 
         uint borrowAmount = safeSub(initial, debt);
         creditLine.borrow(loanId, borrowAmount);
@@ -51,7 +51,7 @@ contract CreditLineTest is Math, DSTest {
 
         // set the loan debt
         pile.setReturn("debt_loan", debt);
-        creditLine.file(loanId, initial);
+        creditLine.file("loan", loanId, initial);
 
         uint borrowAmount = safeAdd(initial, 10);
         creditLine.borrow(loanId, borrowAmount);

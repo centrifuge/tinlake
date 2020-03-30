@@ -34,7 +34,7 @@ contract PileTest is Interest, DSTest {
     }
 
     function _setUpLoan(uint loan, uint rate) internal {
-        pile.file(rate, rate);
+        pile.file("rate", rate, rate);
         pile.setRate(loan, rate);
     }
 
@@ -70,7 +70,7 @@ contract PileTest is Interest, DSTest {
     }
 
     function _initRateGroup(uint rate_, uint ratePerSecond_) internal {
-        pile.file(rate_, ratePerSecond_);
+        pile.file("rate", rate_, ratePerSecond_);
         (, uint chi , uint ratePerSecond,) = pile.rates(rate_);
         assertEq(ratePerSecond, ratePerSecond_);
         assertEq(chi, ONE);
@@ -100,7 +100,7 @@ contract PileTest is Interest, DSTest {
         hevm.warp(now + 1 days);
         
         uint newRatePerSecond = 1000000564701133626865910626;
-        pile.file(rate, newRatePerSecond);
+        pile.file("rate", rate, newRatePerSecond);
         (, uint chi, uint ratePerSecond,) = pile.rates(rate);
         assertEq(ratePerSecond, 1000000564701133626865910626); 
         assertEq(chi, 1000310537755655376744337012);  
@@ -146,8 +146,8 @@ contract PileTest is Interest, DSTest {
         uint loan = 1;
         uint principal = 100 ether;
 
-        pile.file(highRate, highRate);
-        pile.file(lowRate, lowRate);
+        pile.file("rate", highRate, highRate);
+        pile.file("rate", lowRate, lowRate);
         pile.setRate(loan, lowRate);
         pile.incDebt(loan, principal);
         assertDebt(loan, 100 ether);
@@ -186,7 +186,7 @@ contract PileTest is Interest, DSTest {
         uint lowRate = uint(1000000564701133626865910626); // 5 % / day
         uint loan = 1;
 
-        pile.file(highRate, highRate);
+        pile.file("rate", highRate, highRate);
         // do not init lowRate
         pile.setRate(loan, highRate);
         // fail rate not initiated
@@ -217,7 +217,7 @@ contract PileTest is Interest, DSTest {
         uint rate = 1000000593415115246806684338; // 5 % per day compound in seconds
         uint loan = 1;
         uint principal = 66 ether;
-        pile.file(rate, rate);
+        pile.file("rate", rate, rate);
         pile.setRate(loan, rate);
         pile.drip(rate);
         pile.incDebt(loan, principal);
@@ -257,7 +257,7 @@ contract PileTest is Interest, DSTest {
         uint loan = 1;
         uint principal = 66 ether;
 
-        pile.file(rate, rate);
+        pile.file("rate", rate, rate);
         pile.setRate(loan, rate);
         pile.drip(rate);
         pile.incDebt(loan, principal);
@@ -284,7 +284,7 @@ contract PileTest is Interest, DSTest {
         uint rate = uint(1000000003593629043335673583); // 12 % per year
         uint loan = 1;
         uint principal = 66 ether;
-        pile.file(rate, rate);
+        pile.file("rate", rate, rate);
         pile.setRate(loan, rate);
         pile.drip(rate);
         pile.incDebt(loan, principal);
@@ -299,7 +299,7 @@ contract PileTest is Interest, DSTest {
 
     function testDrip() public {
         uint rate = uint(1000000564701133626865910626); // 5 % / day
-        pile.file(rate, rate);
+        pile.file("rate", rate, rate);
         (uint debt1, uint rateIndex1, uint ratePerSecond1, uint lastUpdated1 ) = pile.rates(rate);
         assertEq(ratePerSecond1, rate);
         assertEq(lastUpdated1, now);
@@ -326,7 +326,7 @@ contract PileTest is Interest, DSTest {
         // rateIndex is uint, max value = (2^256)-1 = 1.1579209e+77
         // rateIndex initial 10^27
         uint rate = uint(1000000564701133626865910626); // 5 % / daily
-        pile.file(rate, rate);
+        pile.file("rate", rate, rate);
         hevm.warp(now + 1050 days); // 1,05 ^1050 = 1.7732257e+22
 
         // init rateIndex 10^27 *  1.7732257 * 10^22  ~ rateIndex 10^49
@@ -339,7 +339,7 @@ contract PileTest is Interest, DSTest {
         // rateIndex is uint, max value = (2^256)-1 = 1.1579209e+77
         // rateIndex initial 10^27
         uint rate = uint(1000000564701133626865910626); // 5 % / daily
-        pile.file(rate, rate);
+        pile.file("rate", rate, rate);
         hevm.warp(now + 1100 days); // 1,05 ^1100 = 2.0334288e+23
 
         // init rateIndex 10^27 *  2.0334288 * 10^23  ~ rateIndex 10^50
@@ -350,7 +350,7 @@ contract PileTest is Interest, DSTest {
 
     function testMaxDebt() public {
         uint rate = uint(1000000564701133626865910626); // 5 % day
-        pile.file(rate, rate);
+        pile.file("rate", rate, rate);
         uint loan = 1;
         uint principal = 1000000000  ether; // one billion 10^9 * 10^18 = 10^28
         pile.drip(rate);

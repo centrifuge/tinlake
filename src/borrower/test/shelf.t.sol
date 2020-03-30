@@ -66,7 +66,7 @@ contract ShelfTest is DSTest {
 
     function _borrow(uint loan_, uint wad_) internal {
         shelf.borrow(loan_, wad_);
-        
+
         assertEq(ceiling.calls("borrow"), 1);
         assertEq(pile.calls("accrue"), 1);
         assertEq(pile.calls("incDebt"), 1);
@@ -74,14 +74,14 @@ contract ShelfTest is DSTest {
         uint loanBalance = shelf.balances(loan_);
         assertEq(loanBalance, wad_);
     }
-    
+
     function _withdraw(uint loan_, uint wad_) internal {
         uint totalBalance = shelf.balance();
         uint loanBalance = shelf.balances(loan_);
         assertEq(totalBalance, wad_);
         assertEq(loanBalance, wad_);
         assertEq(pile.values_uint("incDebt_currencyAmount"), wad_);
-        
+
         shelf.withdraw(loan_, wad_, address(this));
 
         assertEq(distributor.calls("balance"), 1);
@@ -238,15 +238,9 @@ contract ShelfTest is DSTest {
         _lock(tokenId, loan);
     }
 
-    function testFailLockInvalidNFT() public {
-        shelf.file(loan, address(1), tokenId);
-        _lock(tokenId, loan);
-    }
-
     function testFailDepositNotNFTOwner() public {
         // tokenId minted at some address
         nft.setReturn("ownerOf", address(1));
-        shelf.file(loan, address(nft), tokenId);
         _lock(tokenId, loan);
     }
 

@@ -29,7 +29,7 @@ contract PrincipalTest is Math, DSTest {
     function testBorrow() public {
         uint loanId = 1;
         uint initial = 100;
-        principal.file(loanId, initial);
+        principal.file("loan", loanId, initial);
        
         uint borrowAmount = safeSub(initial, 20);
         principal.borrow(loanId, borrowAmount);
@@ -40,7 +40,7 @@ contract PrincipalTest is Math, DSTest {
     function testFailBorrowAmountTooHigh() public {
         uint loanId = 1;
         uint initial = 100;
-        principal.file(loanId, initial);
+        principal.file("loan", loanId, initial);
        
         uint borrowAmount = safeAdd(initial, 20);
         principal.borrow(loanId, borrowAmount);
