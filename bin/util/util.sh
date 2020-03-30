@@ -48,9 +48,10 @@ build_contracts()
     fi
     # build contracts if required
     if [ "$CONTRACT_FILES" -lt  "2" ]; then
-        cd ./../../
+        cd ./../
         dapp update
         dapp build --extract
+        cd bin
     fi
     message contract build files are ready
 }
