@@ -22,11 +22,14 @@ import "tinlake-math/math.sol";
 
 contract ShelfLike {
     function shelf(uint loan) public view returns (address registry, uint tokenId);
+    function nftlookup(bytes32 nftID) public returns (uint loan);
 }
 
 contract PileLike {
     function setRate(uint loan, uint rate) public;
     function debt(uint loan) public returns (uint);
+    function pie(uint loan) public returns (uint);
+    function changeRate(uint loan, uint newRate) public;
 }
 
 contract NFTFeed is DSNote, Auth, Math {
@@ -98,8 +101,15 @@ contract NFTFeed is DSNote, Auth, Math {
         require(ceilingRatio[risk_] != 0, "ceiling for risk group not defined");
         require(rate[risk_] != 0, "rate for risk group not defined");
 
+        // change to new rate in pile if loan is ongoing
+        uint loan = shelf.nftlookup(nftID_);
+        if (pile.pie(loan) != 0) {
+            pile.changeRate(loan, rate[risk_]);
+        }
+
         risk[nftID_] = risk_;
         nftValues[nftID_] = value;
+
     }
 
     // sets the loan rate in pile
