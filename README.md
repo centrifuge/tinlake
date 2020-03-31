@@ -31,4 +31,4 @@ dapp test -r <REGEX>
 ## Community
 Join our public slack channel.
 
-[Centrifuge Slack](http://centrifuge-io.slack.com/)
+[Centrifuge Slack](http://centrifuge.io/slack)
