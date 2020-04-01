@@ -22,9 +22,8 @@ import "../../test/mock/distributor.sol";
 import "../../test/mock/nft.sol";
 import "../../test/mock/pile.sol";
 
-import "tinlake-registry/registry.sol";
+import "./../registry/threshold.sol";
 import "../collector.sol";
-
 
 
 contract CollectorTest is DSTest {
@@ -34,7 +33,7 @@ contract CollectorTest is DSTest {
     NFTMock         nft;
 
     Collector    collector;
-    PushRegistry threshold;
+    ThresholdRegistry threshold;
 
     function setUp() public {
         nft = new NFTMock();
@@ -42,7 +41,7 @@ contract CollectorTest is DSTest {
         pile = new PileMock();
         distributor = new DistributorMock();
 
-        threshold = new PushRegistry();
+        threshold = new ThresholdRegistry();
         collector = new Collector(address(shelf), address(pile), address(threshold));
         collector.depend("distributor", address(distributor));
     }
