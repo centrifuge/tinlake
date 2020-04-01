@@ -13,14 +13,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.3;
+pragma solidity >=0.5.15 <0.6.0;
 
 import "../base_system.sol";
 
 contract WithdrawTest is BaseSystemTest {
 
     DefaultDistributor distributor;
-        
+
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "default";
@@ -45,7 +45,7 @@ contract WithdrawTest is BaseSystemTest {
         assertEq(title.ownerOf(loanId), borrower_);
         // assert: shelf nftOwner
         assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
-        // assert: loan has enough balance 
+        // assert: loan has enough balance
         assert(shelf.balances(loanId) >= amount);
         // assert: enough funds available
         uint shelfBalance = currency.balanceOf(address(shelf));
@@ -125,7 +125,7 @@ contract WithdrawTest is BaseSystemTest {
         uint ceiling = 100 ether;
         (uint loanId, uint tokenId) = issueNFTAndCreateLoan(borrower_);
         lockNFT(loanId, borrower_);
-        // do not init Borrow & add loan balance 
+        // do not init Borrow & add loan balance
         withdraw(loanId, tokenId, ceiling, borrower_);
     }
 

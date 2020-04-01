@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.3;
+pragma solidity >=0.5.15 <0.6.0;
 
 import "ds-test/test.sol";
 import "tinlake-math/math.sol";
@@ -40,7 +40,7 @@ contract DefaultDistributorSingleTrancheTest is DSTest, Math {
     ShelfMock shelf;
 
     Hevm hevm;
-    
+
     bool requestWant = true;
 
     function setUp() public {
@@ -109,7 +109,7 @@ contract DefaultDistributorSingleTrancheTest is DSTest, Math {
         junior.setReturn("balance", 100 ether);
         balanceExpectBorrow(amount);
     }
-    
+
     function testRepay() public {
         uint amount = 200 ether;
         shelf.setReturn("balanceRequest", !requestWant, amount);

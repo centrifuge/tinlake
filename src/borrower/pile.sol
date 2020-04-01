@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.3;
+pragma solidity >=0.5.15 <0.6.0;
 
 import "ds-note/note.sol";
 import "tinlake-math/interest.sol";
@@ -25,7 +25,7 @@ import "tinlake-auth/auth.sol";
 // loan according to its interest rate category and pie value.
 contract Pile is DSNote, Auth, Interest {
     // --- Data ---
-    
+
     /// stores all needed information of an interest rate group
     struct Rate {
         uint   pie;                 // Total debt of all loans with this rate
@@ -56,7 +56,7 @@ contract Pile is DSNote, Auth, Interest {
         rates[0].ratePerSecond = ONE;
     }
 
-     // --- Public Debt Methods  --- 
+     // --- Public Debt Methods  ---
     /// increases the debt of a loan by a currencyAmount
     /// a change of the loan debt updates the rate debt and total debt
     function incDebt(uint loan, uint currencyAmount) external auth note {
@@ -98,9 +98,9 @@ contract Pile is DSNote, Auth, Interest {
 
         if (now >= rates[rate].lastUpdated) {
             chi_ = chargeInterest(rates[rate].chi, rates[rate].ratePerSecond, rates[rate].lastUpdated);
-        } 
+        }
         return toAmount(chi_, pie_);
-    } 
+    }
 
     // --- Interest Rate Group Implementation ---
 
@@ -145,7 +145,7 @@ contract Pile is DSNote, Auth, Interest {
     function accrue(uint loan) external {
         drip(loanRates[loan]);
     }
-    
+
     // drip updates the chi of the rate category by compounding the interest and
     // updates the total debt
     function drip(uint rate) public {

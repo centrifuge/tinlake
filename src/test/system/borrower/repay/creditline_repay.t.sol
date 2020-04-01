@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.3;
+pragma solidity >=0.5.15 <0.6.0;
 
 import "../../base_system.sol";
 
@@ -22,14 +22,14 @@ contract CreditLineRepayTest is BaseSystemTest {
     DefaultDistributor distributor;
 
     Hevm public hevm;
-        
+
     function setUp() public {
         bytes32 juniorOperator_ = "whitelist";
         bytes32 distributor_ = "default";
         bytes32 ceiling_ = "creditline";
         baseSetup(juniorOperator_, distributor_, false, ceiling_);
         createTestUsers(false);
-        
+
         distributor = DefaultDistributor(address(lenderDeployer.distributor()));
 
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
@@ -49,13 +49,13 @@ contract CreditLineRepayTest is BaseSystemTest {
         assertEq(title.ownerOf(loanId), borrower_);
         // assert: shelf nftOwner
         assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
-        // assert: loan has no open balance 
+        // assert: loan has no open balance
         assertEq(shelf.balances(loanId), 0);
         // assert: loan has open debt
         assert(pile.debt(loanId) > 0);
         // assert: debt includes accrued interest
         assertEq(pile.debt(loanId), expectedDebt);
-        // assert: borrower has enough funds 
+        // assert: borrower has enough funds
         assert(currency.balanceOf(borrower_) >= repayAmount);
 
     }
@@ -68,8 +68,8 @@ contract CreditLineRepayTest is BaseSystemTest {
         // assert: borrower funds decreased by the smaller of repaidAmount or totalLoanDebt
         if (repaidAmount > expectedDebt) {
             // make sure borrower did not pay more then hs debt
-            repaidAmount = expectedDebt;  
- 
+            repaidAmount = expectedDebt;
+
         }
         assertEq(safeSub(initialBorrowerBalance, repaidAmount), currency.balanceOf(borrower_));
         // assert: shelf/tranche received funds
@@ -92,9 +92,9 @@ contract CreditLineRepayTest is BaseSystemTest {
         //repay after 1 year
         hevm.warp(now + 365 days);
         assertPreCondition(loanId, tokenId, repayAmount, expectedDebt);
-        repay(loanId, tokenId, repayAmount, expectedDebt);  
+        repay(loanId, tokenId, repayAmount, expectedDebt);
     }
-    
+
     function testRepayFullDebt() public {
         uint ceiling = 66 ether;
         // 12 % per year compound in seconds
@@ -125,7 +125,7 @@ contract CreditLineRepayTest is BaseSystemTest {
         // expected debt after 1 year of compounding
         uint expectedDebt = 73.92 ether;
         uint repayAmount = expectedDebt;
-        
+
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
         // supply borrower with additional funds to pay for accrued interest
         topUp(borrower_);
@@ -134,7 +134,7 @@ contract CreditLineRepayTest is BaseSystemTest {
         //repay after 1 year
         hevm.warp(now + 365 days);
         assertPreCondition(loanId, tokenId, repayAmount, expectedDebt);
-        repay(loanId, tokenId, repayAmount, expectedDebt);  
+        repay(loanId, tokenId, repayAmount, expectedDebt);
 
         // should work creditline increased again after repay
         borrower.borrow(loanId, ceiling);

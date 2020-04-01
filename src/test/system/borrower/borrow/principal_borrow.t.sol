@@ -13,12 +13,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.3;
+pragma solidity >=0.5.15 <0.6.0;
 
 import "../../base_system.sol";
 
 contract PrincipalBorrowTest is BaseSystemTest {
-        
+
     Hevm public hevm;
 
     function setUp() public {
@@ -29,7 +29,7 @@ contract PrincipalBorrowTest is BaseSystemTest {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
     }
-    
+
     function borrow(uint loanId, uint tokenId, uint amount) public {
         uint initialTotalBalance = shelf.balance();
         uint initialLoanBalance = shelf.balances(loanId);
@@ -102,13 +102,13 @@ contract PrincipalBorrowTest is BaseSystemTest {
         // admin sets loan parameters
         setLoanParameters(loanId, ceiling, rate, speed);
         assertPreCondition(loanId, tokenId, amount);
-        // borrower borrows 50 ether fist 
+        // borrower borrows 50 ether fist
         borrow(loanId, tokenId, amount);
-    
+
         hevm.warp(now + 365 days); // expected debt after 1 year 19.2 ether
 
-        // borrower borrows rest of principal (50 ether) 
-        // should work even though total debt will result in 69.2 ether. daPrincipal ceiling ignores the accrued interest 
+        // borrower borrows rest of principal (50 ether)
+        // should work even though total debt will result in 69.2 ether. daPrincipal ceiling ignores the accrued interest
         borrow(loanId, tokenId, safeSub(ceiling, amount));
     }
 
@@ -126,7 +126,7 @@ contract PrincipalBorrowTest is BaseSystemTest {
         uint amount = ceiling;
          (uint tokenId, uint loanId) = issueNFTAndCreateLoan(randomUser_);
         // lock nft for random user
-        randomUser.lock(loanId); 
+        randomUser.lock(loanId);
         // admin sets loan ceiling
         admin.setCeiling(loanId, ceiling);
         // borrower tries to borrow against loan

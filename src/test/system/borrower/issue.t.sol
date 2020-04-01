@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.3;
+pragma solidity >=0.5.15 <0.6.0;
 
 import "../base_system.sol";
 
@@ -50,12 +50,12 @@ contract IssueTest is BaseSystemTest {
     function testIssueLoan() public {
         (uint tokenId, bytes32 lookupId) = issueNFT(borrower_);
         assertPreCondition(tokenId, lookupId);
-        issueLoan(tokenId, lookupId); 
+        issueLoan(tokenId, lookupId);
     }
 
     function testFailIssueMultipleLoansForOneNFT() public {
         (uint tokenId, bytes32 lookupId) = issueNFT(borrower_);
-        issueLoan(tokenId, lookupId); 
+        issueLoan(tokenId, lookupId);
 
         // issue second loan against same nft
         uint secondLoanId = borrower.issue(collateralNFT_, tokenId);
@@ -65,6 +65,6 @@ contract IssueTest is BaseSystemTest {
     function testFailIssueLoanNotNFTOwner() public {
         // issue nft for random user -> borrower != nftOwner
         (uint tokenId, bytes32 lookupId) = issueNFT(randomUser_);
-        issueLoan(tokenId, lookupId); 
+        issueLoan(tokenId, lookupId);
     }
 }
