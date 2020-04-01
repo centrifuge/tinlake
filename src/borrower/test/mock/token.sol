@@ -1,4 +1,4 @@
-pragma solidity >=0.5.3;
+pragma solidity >=0.5.15 <0.6.0;
 
 
 import "../../../test/mock/mock.sol";
@@ -8,7 +8,7 @@ contract TokenMock is Mock {
         values_address["balanceOf_usr"] = usr;
         return call("balanceOf");
     }
-    
+
     function mint(address usr, uint amount) public {
         calls["mint"]++;
         values_address["mint_usr"] = usr;

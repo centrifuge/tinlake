@@ -13,12 +13,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.3;
+pragma solidity >=0.5.15 <0.6.0;
 
 import "../../base_system.sol";
 
 contract CreditLineBorrowTest is BaseSystemTest {
-    
+
     Hevm public hevm;
 
     function setUp() public {
@@ -31,7 +31,7 @@ contract CreditLineBorrowTest is BaseSystemTest {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
     }
-    
+
     function borrow(uint loanId, uint tokenId, uint amount) public {
         uint initialTotalBalance = shelf.balance();
         uint initialLoanBalance = shelf.balances(loanId);
@@ -117,10 +117,10 @@ contract CreditLineBorrowTest is BaseSystemTest {
         assertPreCondition(loanId, tokenId, amount);
         // borrow half of the money
         borrow(loanId, tokenId, amount);
-    
+
         hevm.warp(now + 365 days); // expected debt after 1 year 36.96 ether
 
-        // borrower borrows other half of initial ceiling (33 ether) 
+        // borrower borrows other half of initial ceiling (33 ether)
         // -> should fail. Not enough ceiling left, because of accrued interest. 69.96 > 66 (creditline)
         borrow(loanId, tokenId, amount);
     }

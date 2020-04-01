@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.3;
+pragma solidity >=0.5.15 <0.6.0;
 
 import "ds-test/test.sol";
 import "tinlake-math/math.sol";
@@ -44,17 +44,17 @@ contract PileTest is Interest, DSTest {
         // 12 % per year compound in seconds
         _setUpLoan(loan, 1000000003593629043335673583);
         _increaseDebt(loan, amount);
-        
+
         hevm.warp(now + 365 days);
         pile.accrue(loan);
 
-        assertDebt(loan, 73.92 ether); 
+        assertDebt(loan, 73.92 ether);
     }
 
     function _increaseDebt(uint loan, uint amount) internal {
         pile.incDebt(loan, amount);
         assertEq(pile.total(), amount);
-        assertEq(pile.debt(loan), amount);  
+        assertEq(pile.debt(loan), amount);
     }
 
     function _decreaseDebt(uint loan, uint amount) internal {
@@ -62,7 +62,7 @@ contract PileTest is Interest, DSTest {
         uint loanDebt = pile.debt(loan);
         pile.decDebt(loan, amount);
         assertEq(pile.total(), safeSub(total, amount));
-        assertEq(pile.debt(loan), safeSub(loanDebt, amount));  
+        assertEq(pile.debt(loan), safeSub(loanDebt, amount));
     }
 
     function _calculateDebt(uint rate, uint principal, uint time) internal pure returns(uint z) {
@@ -81,7 +81,7 @@ contract PileTest is Interest, DSTest {
         uint amount = 66 ether;
         // 12 % per year compound in seconds
         _setUpLoan(loan, 1000000003593629043335673583);
-        _increaseDebt(loan, amount); 
+        _increaseDebt(loan, amount);
 
         hevm.warp(now + 1 days);
     }
@@ -89,21 +89,21 @@ contract PileTest is Interest, DSTest {
     function testInitRateGroup() public {
         uint rate = 1000000003593629043335673583;
         uint ratePerSecond = rate;
-        _initRateGroup(rate, ratePerSecond);  
+        _initRateGroup(rate, ratePerSecond);
     }
 
     function testUpdateRateGroup() public {
         uint rate = 1000000003593629043335673583;
         uint initRatePerSecond = rate;
         _initRateGroup(rate, initRatePerSecond);
-        
+
         hevm.warp(now + 1 days);
-        
+
         uint newRatePerSecond = 1000000564701133626865910626;
         pile.file("rate", rate, newRatePerSecond);
         (, uint chi, uint ratePerSecond,) = pile.rates(rate);
-        assertEq(ratePerSecond, 1000000564701133626865910626); 
-        assertEq(chi, 1000310537755655376744337012);  
+        assertEq(ratePerSecond, 1000000564701133626865910626);
+        assertEq(chi, 1000310537755655376744337012);
     }
 
 
@@ -123,7 +123,7 @@ contract PileTest is Interest, DSTest {
         uint amount = 66 ether;
         // 12 % per year compound in seconds
         _setUpLoan(loan, 1000000003593629043335673583);
-        _increaseDebt(loan, amount); 
+        _increaseDebt(loan, amount);
         _decreaseDebt(loan, amount);
     }
 
@@ -136,7 +136,7 @@ contract PileTest is Interest, DSTest {
 
         hevm.warp(now + 1 days);
 
-        _decreaseDebt(loan, amount); 
+        _decreaseDebt(loan, amount);
     }
 
     function testChangeRate() public {
@@ -158,7 +158,7 @@ contract PileTest is Interest, DSTest {
         assertEq(pile.rateDebt(lowRate), 105 ether);
         assertEq(pile.rateDebt(highRate), 0);
         assertEq(pile.total(), 105 ether);
-        
+
         // rate switch
         pile.changeRate(loan, highRate);
         assertDebt(loan, 105 ether);
@@ -176,7 +176,7 @@ contract PileTest is Interest, DSTest {
 
     function testFailSetRate() public {
         uint loan = 1;
-        uint rate = uint(1000001311675458706187136988); 
+        uint rate = uint(1000001311675458706187136988);
         // fail rate not initiated
         pile.setRate(loan, rate);
     }

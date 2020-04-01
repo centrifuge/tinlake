@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.3;
+pragma solidity >=0.5.15 <0.6.0;
 
 import "../base_system.sol";
 
@@ -25,7 +25,7 @@ contract LockTest is BaseSystemTest {
         baseSetup(juniorOperator_, distributor_, false);
         createTestUsers(false);
     }
-    
+
     function lock(uint loanId, uint tokenId) public {
         borrower.lock(loanId);
         assertPostCondition(loanId, tokenId);

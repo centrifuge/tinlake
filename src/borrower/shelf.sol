@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.3;
+pragma solidity >=0.5.15 <0.6.0;
 
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
@@ -215,7 +215,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         NFTLike(shelf[loan].registry).transferFrom(address(this), msg.sender, shelf[loan].tokenId);
     }
 
-    function nftLocked(uint loan) public returns (bool) {
+    function nftLocked(uint loan) public view returns (bool) {
         return NFTLike(shelf[loan].registry).ownerOf(shelf[loan].tokenId) == address(this);
     }
 

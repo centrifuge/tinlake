@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.3;
+pragma solidity >=0.5.15 <0.6.0;
 
 import "../base_system.sol";
 
@@ -33,7 +33,7 @@ contract UnlockTest is BaseSystemTest {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
     }
-    
+
     function unlockNFT(uint loanId, uint tokenId) public {
         borrower.unlock(loanId);
         assertPostCondition(loanId, tokenId);
@@ -65,7 +65,7 @@ contract UnlockTest is BaseSystemTest {
     function testUnlockNFTAfterRepay() public {
         uint ceiling = 100 ether;
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling);
-         
+
         hevm.warp(now + 365 days);
 
         // repay after 1 year  (no accrued interest, since loan per default in 0 rate group)
@@ -88,9 +88,9 @@ contract UnlockTest is BaseSystemTest {
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling);
         // borrower allows shelf full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
-        
+
         hevm.warp(now + 365 days);
-        // borrower does not repay 
+        // borrower does not repay
         unlockNFT(loanId, tokenId);
     }
 
