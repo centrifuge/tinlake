@@ -21,7 +21,7 @@ import { Pile } from "./pile.sol";
 import { Collector } from "./collect/collector.sol";
 import { Principal } from "./ceiling/principal.sol";
 import { CreditLine } from "./ceiling/creditline.sol";
-import { PushRegistry } from "tinlake-registry/registry.sol";
+import { ThresholdRegistry } from "./collect/registry/threshold.sol";
 import { PricePool } from "./price/pool.sol";
 
 contract DependLike {
@@ -94,7 +94,7 @@ contract PrincipalCeilingFab {
 
 contract ThresholdFab {
     function newThreshold() public returns (address) {
-        PushRegistry threshold = new PushRegistry();
+        ThresholdRegistry threshold = new ThresholdRegistry();
         threshold.rely(msg.sender);
         threshold.deny(address(this));
         return address(threshold);
