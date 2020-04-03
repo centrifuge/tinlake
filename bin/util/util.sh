@@ -50,7 +50,7 @@ build_contracts()
     if [ "$CONTRACT_FILES" -lt  "2" ]; then
         cd ../../
         dapp update
-        dapp build --extract
+        dapp --use solc:0.5.15 build --extract
         cd bin
     fi
     message contract build files are ready
