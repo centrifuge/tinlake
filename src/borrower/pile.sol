@@ -105,7 +105,7 @@ contract Pile is DSNote, Auth, Interest {
     // --- Interest Rate Group Implementation ---
 
     // set rate loanRates for a loan
-    function setRate(uint loan, uint rate) external auth {
+    function setRate(uint loan, uint rate) external auth note {
         require(pie[loan] == 0, "non-zero-debt");
         // rate category has to be initiated
         require(rates[rate].chi != 0, "rate-group-not-set");
