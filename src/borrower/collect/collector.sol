@@ -16,7 +16,6 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import "tinlake-registry/registry.sol";
 import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
 
@@ -29,8 +28,8 @@ contract DistributorLike {
     function balance() public;
 }
 
-contract RegistryLike {
-    function get(uint) public returns (uint);
+contract ThresholdRegistryLike {
+    function threshold(uint) public view returns (uint);
 }
 
 contract PileLike {
@@ -52,7 +51,7 @@ contract Collector is DSNote, Auth {
     modifier auth_collector { require(collectors[msg.sender] == 1); _; }
 
     // --- Data ---
-    RegistryLike threshold;
+    ThresholdRegistryLike threshold;
 
     struct Option {
         address buyer;
@@ -68,7 +67,7 @@ contract Collector is DSNote, Auth {
     constructor (address shelf_, address pile_, address threshold_) public {
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
-        threshold = RegistryLike(threshold_);
+        threshold = ThresholdRegistryLike(threshold_);
         wards[msg.sender] = 1;
     }
 
@@ -77,7 +76,7 @@ contract Collector is DSNote, Auth {
         if (contractName == "distributor") distributor = DistributorLike(addr);
         else if (contractName == "shelf") shelf = ShelfLike(addr);
         else if (contractName == "pile") pile = PileLike(addr);
-        else if (contractName == "threshold") threshold = RegistryLike(addr);
+        else if (contractName == "threshold") threshold = ThresholdRegistryLike(addr);
         else revert();
     }
 
@@ -96,7 +95,7 @@ contract Collector is DSNote, Auth {
     /// therefore the ownership of the nft is transferred to the collector
     function seize(uint loan) external {
         uint debt = pile.debt(loan);
-        require((threshold.get(loan) <= debt), "threshold-not-reached");
+        require((threshold.threshold(loan) <= debt), "threshold-not-reached");
         shelf.claim(loan, address(this));
     }
 
