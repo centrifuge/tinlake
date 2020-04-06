@@ -206,7 +206,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         if (currencyAmount > loanDebt) {
             currencyAmount = loanDebt;
         }
-        require(currency.transferFrom(usr, address(this), currencyAmount), "currency-tra    nsfer-failed");
+        require(currency.transferFrom(usr, address(this), currencyAmount), "currency-transfer-failed");
         ceiling.repay(loan, currencyAmount);
         pile.decDebt(loan, currencyAmount);
         distributor.balance();
