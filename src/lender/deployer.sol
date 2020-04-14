@@ -146,6 +146,7 @@ contract LenderDeployer {
     string public juniorTokenSymbol;
 
     // optional senior
+    bool seniorActive;
     address public senior;
     address public seniorOperator;
     uint public seniorRate;
@@ -162,11 +163,12 @@ contract LenderDeployer {
       address currency_,
       uint tokenAmountForONE_,
       string memory juniorTokenName_,
-      string memory seniorTokenSymbol_,
+      string memory juniorTokenSymbol_,
       address juniorTrancheFab_,
       address assessorFab_,
       address juniorOperatorFab_,
-      address distributorFab_
+      address distributorFab_,
+        bool seniorActive_
     ) public {
         deployUsr = msg.sender;
         root = root_;
@@ -174,7 +176,9 @@ contract LenderDeployer {
         currency = currency_;
         tokenAmountForONE = tokenAmountForONE_;
         juniorTokenName = juniorTokenName_;
-        seniorTokenSymbol = seniorTokenSymbol_;
+        juniorTokenSymbol = juniorTokenSymbol_;
+        seniorActive = seniorActive_;
+
 
         assessorFab = AssessorFab(assessorFab_);
         juniorTrancheFab = TrancheFab(juniorTrancheFab_);
@@ -183,7 +187,7 @@ contract LenderDeployer {
     }
 
     function initSenior(uint seniorRate_, string memory seniorTokenName_, string memory seniorTokenSymbol_, address seniorTrancheFab_, address seniorOperatorFab_) public {
-        require(deployUsr == msg.sender);
+        require(deployUsr == msg.sender && seniorActive);
         seniorRate = seniorRate_;
         seniorTokenName = seniorTokenName_;
         seniorTokenSymbol = seniorTokenSymbol_;

@@ -28,7 +28,12 @@ TOKEN_AMOUNT_FOR_ONE=$(seth --to-uint256 1)
 
 JUNIOR_TRANCHE_NAME=$(seth --from-ascii "TIN Token")
 JUNIOR_TRANCHE_SYMBOL=$(seth --from-ascii "TIN")
-export LENDER_DEPLOYER=$(seth send --create ./../out/LenderDeployer.bin 'LenderDeployer(address,address,uint,string,string,address,address,address,address)' $ROOT_CONTRACT $TINLAKE_CURRENCY $TOKEN_AMOUNT_FOR_ONE $JUNIOR_TRANCHE_NAME $JUNIOR_TRANCHE_SYMBOL $TRANCHE_FAB $ASSESSOR_FAB $OPERATOR_FAB $DISTRIBUTOR_FAB)
+SENIOR_ACTIVE=0
+if [ "$SENIOR_TRANCHE_FAB"  !=  "$ZERO_ADDRESS" ]; then
+    SENIOR_ACTIVE=1
+fi
+
+export LENDER_DEPLOYER=$(seth send --create ./../out/LenderDeployer.bin 'LenderDeployer(address,address,uint,string,string,address,address,address,address,bool)' $ROOT_CONTRACT $TINLAKE_CURRENCY $TOKEN_AMOUNT_FOR_ONE $JUNIOR_TRANCHE_NAME $JUNIOR_TRANCHE_SYMBOL $TRANCHE_FAB $ASSESSOR_FAB $OPERATOR_FAB $DISTRIBUTOR_FAB $SENIOR_ACTIVE)
 
 seth send $LENDER_DEPLOYER 'deployAssessor()'
 seth send $LENDER_DEPLOYER 'deployDistributor()'

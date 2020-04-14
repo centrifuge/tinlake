@@ -190,7 +190,7 @@ contract TestSetup {
 
         uint tokenAmountForONE = 1;
         lenderDeployer = new LenderDeployer(root_, currency_, tokenAmountForONE, "TIN Token", "TIN", address(new TrancheFab()), assessorFab_,
-            operatorFab_, distributorFab_);
+            operatorFab_, distributorFab_, senior_);
 
         lenderDeployer.deployAssessor();
         lenderDeployer.deployDistributor();
