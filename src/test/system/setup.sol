@@ -183,15 +183,14 @@ contract TestSetup {
         }
 
         if (senior_) {
-            uint ratePerSecond = 1000000564701133626865910626; // 5% per day
-            seniorTrancheFab_ = address(new SeniorTrancheFab(ratePerSecond));
+            seniorTrancheFab_ = address(new SeniorTrancheFab());
             seniorOperatorFab_ = operatorFab_;
         }
 
 
         uint tokenAmountForONE = 1;
-        lenderDeployer = new LenderDeployer(root_, currency_, tokenAmountForONE, address(new TrancheFab()), assessorFab_,
-            operatorFab_, distributorFab_, seniorTrancheFab_, seniorOperatorFab_);
+        lenderDeployer = new LenderDeployer(root_, currency_, tokenAmountForONE, "TIN Token", "TIN", address(new TrancheFab()), assessorFab_,
+            operatorFab_, distributorFab_, senior_);
 
         lenderDeployer.deployAssessor();
         lenderDeployer.deployDistributor();
@@ -199,6 +198,8 @@ contract TestSetup {
         lenderDeployer.deployJuniorOperator();
 
         if (senior_) {
+            uint ratePerSecond = 1000000564701133626865910626; // 5% per day
+            lenderDeployer.initSenior(ratePerSecond,"DROP Token","DROP", seniorTrancheFab_,  seniorOperatorFab_);
             lenderDeployer.deploySeniorTranche();
             lenderDeployer.deploySeniorOperator();
         }
