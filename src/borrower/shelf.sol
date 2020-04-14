@@ -56,6 +56,11 @@ contract DistributorLike {
     function balance() public;
 }
 
+contract SubscriberLike {
+    function borrowEvent(uint loan) public;
+    function unlockEvent(uint loan) public;
+}
+
 contract Shelf is DSNote, Auth, TitleOwned, Math {
 
     // --- Data ---
@@ -64,6 +69,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     PileLike public pile;
     TokenLike public currency;
     DistributorLike public distributor;
+    SubscriberLike public subscriber;
 
     struct Loan {
         address registry;
@@ -98,6 +104,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         else if (contractName == "pile") { pile = PileLike(addr); }
         else if (contractName == "ceiling") { ceiling = CeilingLike(addr); }
         else if (contractName == "distributor") { distributor = DistributorLike(addr);}
+        else if (contractName == "subscriber") { subscriber = SubscriberLike(addr);}
         else revert();
     }
 
@@ -148,6 +155,9 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     /// a max ceiling needs to be defined by an oracle
     function borrow(uint loan, uint currencyAmount) external owner(loan) note {
         require(nftLocked(loan), "nft-not-locked");
+        if(address(subscriber) != address(0)) {
+            subscriber.borrowEvent(loan);
+        }
         pile.accrue(loan);
         ceiling.borrow(loan, currencyAmount);
         pile.incDebt(loan, currencyAmount);
@@ -205,6 +215,9 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     /// locks an nft in the shelf
     /// requires an issued loan
     function lock(uint loan) external owner(loan) note {
+        if(address(subscriber) != address(0)) {
+            subscriber.unlockEvent(loan);
+        }
         NFTLike(shelf[loan].registry).transferFrom(msg.sender, address(this), shelf[loan].tokenId);
     }
 

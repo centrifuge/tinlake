@@ -23,6 +23,7 @@ import "./mock/nft.sol";
 import "./mock/token.sol";
 import "./mock/pile.sol";
 import "./mock/ceiling.sol";
+import "./mock/subscriber.sol";
 import "../../lender/test/mock/distributor.sol";
 
 contract ShelfTest is DSTest {
@@ -64,38 +65,38 @@ contract ShelfTest is DSTest {
 
     }
 
-    function _borrow(uint loan_, uint wad_) internal {
-        shelf.borrow(loan_, wad_);
+    function _borrow(uint loan_, uint currencyAmount_) internal {
+        shelf.borrow(loan_, currencyAmount_);
 
         assertEq(ceiling.calls("borrow"), 1);
         assertEq(pile.calls("accrue"), 1);
         assertEq(pile.calls("incDebt"), 1);
-        assertEq(shelf.balance(), wad_);
+        assertEq(shelf.balance(), currencyAmount_);
         uint loanBalance = shelf.balances(loan_);
-        assertEq(loanBalance, wad_);
+        assertEq(loanBalance, currencyAmount_);
     }
 
-    function _withdraw(uint loan_, uint wad_) internal {
+    function _withdraw(uint loan_, uint currencyAmount_) internal {
         uint totalBalance = shelf.balance();
         uint loanBalance = shelf.balances(loan_);
-        assertEq(totalBalance, wad_);
-        assertEq(loanBalance, wad_);
-        assertEq(pile.values_uint("incDebt_currencyAmount"), wad_);
+        assertEq(totalBalance, currencyAmount_);
+        assertEq(loanBalance, currencyAmount_);
+        assertEq(pile.values_uint("incDebt_currencyAmount"), currencyAmount_);
 
-        shelf.withdraw(loan_, wad_, address(this));
+        shelf.withdraw(loan_, currencyAmount_, address(this));
 
         assertEq(distributor.calls("balance"), 1);
-        assertEq(totalBalance-wad_, shelf.balance());
-        assertEq(loanBalance-wad_, shelf.balances(loan_));
+        assertEq(totalBalance-currencyAmount_, shelf.balance());
+        assertEq(loanBalance-currencyAmount_, shelf.balances(loan_));
         assertEq(currency.calls("transferFrom"), 1);
         assertEq(currency.values_address("transferFrom_from"), address(shelf));
         assertEq(currency.values_address("transferFrom_to"), address(this));
-        assertEq(currency.values_uint("transferFrom_amount"), wad_);
+        assertEq(currency.values_uint("transferFrom_amount"), currencyAmount_);
     }
 
-    function _repay(uint loan_, uint wad_) internal {
-        pile.setReturn("debt_loan", wad_);
-        shelf.repay(loan_, wad_);
+    function _repay(uint loan_, uint currencyAmount_) internal {
+        pile.setReturn("debt_loan", currencyAmount_);
+        shelf.repay(loan_, currencyAmount_);
 
         assertEq(distributor.calls("balance"), 2);
         assertEq(pile.calls("accrue"), 2);
@@ -106,88 +107,88 @@ contract ShelfTest is DSTest {
         assertEq(currency.calls("transferFrom"), 2);
         assertEq(currency.values_address("transferFrom_from"),address(this));
         assertEq(currency.values_address("transferFrom_to"),address(shelf));
-        assertEq(currency.values_uint("transferFrom_amount"),wad_);
+        assertEq(currency.values_uint("transferFrom_amount"),currencyAmount_);
     }
 
-    function _recover(uint loan_, address usr_, uint wad_, uint debt_) internal {
+    function _recover(uint loan_, address usr_, uint currencyAmount_, uint debt_) internal {
         pile.setReturn("debt_loan", debt_);
-        shelf.recover(loan_, usr_, wad_);
+        shelf.recover(loan_, usr_, currencyAmount_);
         assertEq(pile.calls("accrue"), 2);
         assertEq(pile.calls("decDebt"), 1);
 
         assertEq(currency.calls("transferFrom"), 2);
         assertEq(currency.values_address("transferFrom_from"), usr_);
         assertEq(currency.values_address("transferFrom_to"), address(shelf));
-        assertEq(currency.values_uint("transferFrom_amount"), wad_);
+        assertEq(currency.values_uint("transferFrom_amount"), currencyAmount_);
     }
 
     uint loan  = 1;
-    uint wad = 100;
+    uint currencyAmount = 100;
     uint256 tokenId = 55;
 
     function testBorrow() public {
         testLock();
-        _borrow(loan, wad);
+        _borrow(loan, currencyAmount);
     }
 
     function testFailBorrowCeilingReached() public {
         testLock();
         ceiling.setFail("borrow", true);
-        _borrow(loan, wad);
+        _borrow(loan, currencyAmount);
     }
 
     function testFailBorrowNFTNotLocked() public {
         nft.setReturn("ownerOf", address(this));
         _issue(tokenId,loan);
-        _borrow(loan, wad);
+        _borrow(loan, currencyAmount);
     }
 
     function testWithdraw() public {
         testLock();
-        _borrow(loan, wad);
-        _withdraw(loan, wad);
+        _borrow(loan, currencyAmount);
+        _withdraw(loan, currencyAmount);
     }
 
     function testFailWithdrawNFTNotLocked() public {
         nft.setReturn("ownerOf", address(this));
         _issue(tokenId,loan);
-        _borrow(loan, wad);
+        _borrow(loan, currencyAmount);
         shelf.claim(loan, address(1));
-        _withdraw(loan, wad);
+        _withdraw(loan, currencyAmount);
     }
 
     function testFailWithdrawNoBalance() public {
         testLock();
-        _withdraw(loan, wad);
+        _withdraw(loan, currencyAmount);
     }
 
     function testRepay() public {
         testLock();
-        _borrow(loan, wad);
-        _withdraw(loan, wad);
-        _repay(loan, wad);
+        _borrow(loan, currencyAmount);
+        _withdraw(loan, currencyAmount);
+        _repay(loan, currencyAmount);
     }
 
     function testRecover() public {
         testLock();
-        _borrow(loan, wad);
-        _withdraw(loan, wad);
-        _recover(loan, address(1), wad-10, wad);
+        _borrow(loan, currencyAmount);
+        _withdraw(loan, currencyAmount);
+        _recover(loan, address(1), currencyAmount-10, currencyAmount);
     }
 
     function testFailRepayNFTNotLocked() public {
         nft.setReturn("ownerOf", address(this));
         _issue(tokenId,loan);
-        _borrow(loan, wad);
-        _withdraw(loan, wad);
+        _borrow(loan, currencyAmount);
+        _withdraw(loan, currencyAmount);
         shelf.claim(loan, address(1));
-        _repay(loan, wad);
+        _repay(loan, currencyAmount);
     }
 
     function testFailRepayNFTNoWithdraw() public {
         testLock();
-        _borrow(loan, wad);
-        _repay(loan, wad);
+        _borrow(loan, currencyAmount);
+        _repay(loan, currencyAmount);
     }
 
     function testSetupPrecondition() public {
@@ -260,5 +261,20 @@ contract ShelfTest is DSTest {
         // debt not repaid in pile
         pile.setReturn("debt_loan", 100);
         shelf.unlock(loan);
+    }
+
+    function testEventSubscribe() public {
+        SubscriberMock sub = new SubscriberMock();
+        shelf.depend("subscriber", address(sub));
+        testLock();
+        _borrow(loan, currencyAmount);
+        assertEq(sub.calls("borrowEvent"), 1);
+        assertEq(sub.values_uint("borrowEvent"), loan);
+
+        _withdraw(loan, currencyAmount);
+        pile.setReturn("debt_loan", 0);
+        shelf.unlock(loan);
+        assertEq(sub.calls("unlockEvent"), 1);
+        assertEq(sub.values_uint("unlockEvent"), loan);
     }
 }
