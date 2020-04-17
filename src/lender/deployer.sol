@@ -36,10 +36,7 @@ contract DependLike {
 }
 
 contract TrancheFab {
-    string constant public symbol = "TIN";
-    string constant public name = "Tinlake TIN Token";
-
-    function newTranche(address currency) public returns (address) {
+    function newTranche(address currency, string memory name, string memory symbol) public returns (address) {
         ERC20 token = new ERC20(symbol, name);
         Tranche tranche = new Tranche(address(token), currency);
         tranche.rely(msg.sender);
@@ -50,15 +47,7 @@ contract TrancheFab {
 }
 
 contract SeniorTrancheFab {
-    string constant public symbol = "DROP";
-    string constant public name = "Tinlake Drop Token";
-    uint public ratePerSecond;
-
-    constructor (uint rate_) public {
-        ratePerSecond = rate_;
-    }
-
-    function newTranche(address currency, address assessor) public returns (address) {
+    function newTranche(address currency, address assessor, uint ratePerSecond, string memory name, string memory symbol) public returns (address) {
         ERC20 token = new ERC20(symbol, name);
         SeniorTranche senior = new SeniorTranche(address(token), currency, assessor);
         senior.rely(msg.sender);
@@ -153,38 +142,59 @@ contract LenderDeployer {
     // junior
     address public junior;
     address public juniorOperator;
+    string public juniorTokenName;
+    string public juniorTokenSymbol;
 
     // optional senior
+    bool seniorActive;
     address public senior;
     address public seniorOperator;
+    uint public seniorRate;
+    string public seniorTokenName;
+    string public seniorTokenSymbol;
 
     address constant ZERO = address(0);
+
+    address public deployUsr;
+
 
     constructor(
       address root_,
       address currency_,
       uint tokenAmountForONE_,
+      string memory juniorTokenName_,
+      string memory juniorTokenSymbol_,
       address juniorTrancheFab_,
       address assessorFab_,
       address juniorOperatorFab_,
       address distributorFab_,
-      address seniorTrancheFab_,
-      address seniorOperatorFab_
+        bool seniorActive_
     ) public {
+        deployUsr = msg.sender;
         root = root_;
 
         currency = currency_;
         tokenAmountForONE = tokenAmountForONE_;
+        juniorTokenName = juniorTokenName_;
+        juniorTokenSymbol = juniorTokenSymbol_;
+        seniorActive = seniorActive_;
+
 
         assessorFab = AssessorFab(assessorFab_);
         juniorTrancheFab = TrancheFab(juniorTrancheFab_);
         juniorOperatorFab = OperatorFab(juniorOperatorFab_);
-        seniorTrancheFab = SeniorTrancheFab(seniorTrancheFab_);
-        seniorOperatorFab = OperatorFab(seniorOperatorFab_);
-
         distributorFab = DistributorFab(distributorFab_);
     }
 
+    function initSenior(uint seniorRate_, string memory seniorTokenName_, string memory seniorTokenSymbol_, address seniorTrancheFab_, address seniorOperatorFab_) public {
+        require(deployUsr == msg.sender && seniorActive);
+        seniorRate = seniorRate_;
+        seniorTokenName = seniorTokenName_;
+        seniorTokenSymbol = seniorTokenSymbol_;
+        seniorTrancheFab = SeniorTrancheFab(seniorTrancheFab_);
+        seniorOperatorFab = OperatorFab(seniorOperatorFab_);
+        deployUsr = address(0);
+    }
     function deployDistributor() public {
         require(distributor == ZERO);
         distributor = distributorFab.newDistributor(currency);
@@ -199,7 +209,7 @@ contract LenderDeployer {
 
     function deployJuniorTranche() public {
         require(assessor != ZERO && junior == ZERO);
-        junior = juniorTrancheFab.newTranche(currency);
+        junior = juniorTrancheFab.newTranche(currency, juniorTokenName, juniorTokenSymbol);
         AuthLike(junior).rely(root);
     }
 
@@ -211,7 +221,7 @@ contract LenderDeployer {
 
     function deploySeniorTranche() public  {
         require(assessor != ZERO && senior == ZERO);
-        senior = seniorTrancheFab.newTranche(currency, assessor);
+        senior = seniorTrancheFab.newTranche(currency, assessor, seniorRate, seniorTokenName, seniorTokenSymbol);
         AuthLike(senior).rely(root);
     }
 
