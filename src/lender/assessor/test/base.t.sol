@@ -241,6 +241,35 @@ contract BaseAssessorTest is DSTest, Math {
         assertEq(assessor.currentJuniorRatio(), 333333333333333333333333333);
     }
 
+    function testCurrentJuniorRatioEdgeCases() public {
+        senior.setReturn("balance", 0);
+        pool.setReturn("totalValue", 0);
+
+        // case juniorAsset == 0 && seniorAsset == 0
+        assertEq(assessor.currentJuniorRatio(), 0);
+
+        pool.setReturn("totalValue", 200 ether);
+
+        // case juniorAsset > 0 && seniorAsset > 0
+        senior.setReturn("debt", 100 ether);
+        assertEq(assessor.calcAssetValue(assessor.junior()), 100 ether);
+        assertEq(assessor.calcAssetValue(assessor.senior()), 100 ether);
+        assertEq(assessor.currentJuniorRatio(), 5*ONE/10);
+
+        //  juniorAsset == 0
+        senior.setReturn("debt", 200 ether);
+        assertEq(assessor.calcAssetValue(assessor.junior()), 0 );
+        assertEq(assessor.calcAssetValue(assessor.senior()), 200 ether);
+        assertEq(assessor.currentJuniorRatio(), 0);
+
+        //  senior == 0
+        senior.setReturn("debt", 0);
+        assertEq(assessor.calcAssetValue(assessor.junior()), 200 ether );
+        assertEq(assessor.calcAssetValue(assessor.senior()), 0);
+        assertEq(assessor.currentJuniorRatio(), ONE);
+
+    }
+
     function testSupplyApprove() public {
         // define minJuniorRatio with 20 %
         uint minJuniorRatio = 2*ONE/10;
