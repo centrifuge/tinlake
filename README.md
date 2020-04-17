@@ -28,6 +28,11 @@ A regular expression can be used to only run specific tests.
 ```bash
 dapp test -r <REGEX> 
 ```
+
+
+### Deployment
+For deploying the Tinlake contracts to mainnet or a testnet see [Tinlake Deploy](https://github.com/centrifuge/tinlake-deploy)
+
 ## Community
 Join our public slack channel.
 
