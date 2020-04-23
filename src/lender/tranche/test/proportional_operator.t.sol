@@ -24,6 +24,7 @@ import "../../test/mock/distributor.sol";
 import "./../operator/proportional.sol";
 import "./investor.t.sol";
 
+
 contract ProportionalOperatorTest is DSTest {
     uint256 constant ONE = 10 ** 27;
 
@@ -105,26 +106,139 @@ contract ProportionalOperatorTest is DSTest {
         assertEq(operator.calcMaxRedeemToken(address(investorA)), 50 ether);
     }
 
-    function testSimplePropRedeem() public {
+    function setUpInvestors(uint amountA, uint amountB) public returns(uint) {
         supplyInvestor(investorA, 100 ether);
         supplyInvestor(investorB, 100 ether);
 
-        uint totalSupply = 200 ether;
+        uint totalSupply = amountA + amountB;
         tranche.setReturn("tokenSupply", totalSupply);
 
         // start redeem
         operator.file("supplyAllowed", false);
 
-        // simulate loan repayments
+        return totalSupply;
+    }
+
+    function testSimplePropRedeem() public {
+        uint amountInvestorA = 100 ether;
+        uint amountInvestorB = 100 ether;
+        uint totalSupply = setUpInvestors(amountInvestorA, amountInvestorB);
+
+        // simulate return loan 1 (50% of the principal)
         uint currencyReturned = 105 ether;
         uint principalReturned = 100 ether;
         operator.updateReturned(currencyReturned, principalReturned);
 
 
-        // max redeem should be 50 ether
-        assertEq(operator.calcMaxRedeemToken(address(investorA)), 50 ether);
+        // max redeem should be 50 ether of first investor
+        uint tokenAmount = 50 ether;
+        uint expectedCurrencyAmount = 52.5 ether;
+        assertEq(operator.calcMaxRedeemToken(address(investorA)), tokenAmount);
 
+        investorA.doRedeem(address(operator), tokenAmount);
+        assertEq(tranche.values_uint("redeem_currencyAmount"), expectedCurrencyAmount);
+        assertEq(tranche.values_uint("redeem_tokenAmount"), tokenAmount);
+
+        // simulate return loan 2 (50% of the principal)
+        currencyReturned = 105 ether;
+        principalReturned = 100 ether;
+        operator.updateReturned(currencyReturned, principalReturned);
+
+        // investor A
+        assertEq(operator.calcMaxRedeemToken(address(investorA)), tokenAmount);
+        investorA.doRedeem(address(operator), tokenAmount);
+        assertEq(tranche.values_uint("redeem_currencyAmount"), expectedCurrencyAmount);
+        assertEq(tranche.values_uint("redeem_tokenAmount"), tokenAmount);
+
+        // investor B only redeems once after loan 2
+        tokenAmount = 100 ether;
+        expectedCurrencyAmount = 105 ether;
+        assertEq(operator.calcMaxRedeemToken(address(investorB)), tokenAmount);
+        investorB.doRedeem(address(operator), tokenAmount);
+        assertEq(tranche.values_uint("redeem_currencyAmount"), expectedCurrencyAmount);
+        assertEq(tranche.values_uint("redeem_tokenAmount"), tokenAmount);
     }
+
+
+    function redeem(Investor investor, uint maxToken, uint tokenAmount, uint expectedCurrencyAmount) public {
+        // do redeem for investor
+        assertEq(operator.calcMaxRedeemToken(address(investor)), maxToken);
+        investor.doRedeem(address(operator), tokenAmount);
+        assertEq(tranche.values_uint("redeem_currencyAmount"), expectedCurrencyAmount);
+        assertEq(tranche.values_uint("redeem_tokenAmount"), tokenAmount);
+    }
+
+
+    uint constant loanAmount = 3;
+    function testScenarioRedeemA() public {
+        /*
+
+        Scenario Description:
+                    currencyAmount   tokenAmount
+        Investor A: $100                 100
+        Investor B: $100                 100
+        Total:      $200                 200
+
+        Loans
+
+        +---------+-----------+-----------+-------------------+-------------+
+        | Loan    | Principal | Repayment | % Principal       | Desc        |
+        +---------+-----------+-----------+-------------------+-------------+
+        | Loan 1  | 90        | 101       | 0.45              | profit: 11  |
+        +---------+-----------+-----------+-------------------+-------------+
+        | Loan 2  | 40        | 44        | 0.2               | profit: 4   |
+        +---------+-----------+-----------+-------------------+-------------+
+        | Loan 3  | 70        | 65        | 0.35              | loss: 5     |
+        +---------+-----------+-----------+-------------------+-------------+
+
+        Total Profit: 10
+        Investor A: 105
+        Investor B: 105
+
+        Investor A
+	                    max 	tokenAmount     currencyAmount
+        After Loan 1	45.00	    30.00	        $33.67
+        After loan 2 	35.00	    15.00	        $16.64
+        After Loan 3	55.00	    55.00	    	$54.69
+        Total:                                      $105
+
+
+        Investor B
+                            max 	tokenAmount     currencyAmount
+        After Loan 3    	100.00	    100.00	        $105
+        */
+
+        uint[loanAmount] memory principalReturned = [90 ether , uint(40 ether), uint(70 ether)];
+        uint[loanAmount] memory currencyReturned = [101 ether, uint(44 ether), uint(65 ether)];
+
+        // investor A
+        uint[loanAmount] memory maxToken = [45 ether ,uint(35000000000000000001), uint(55000000000000000001)];
+        uint[loanAmount] memory tokenAmount = [30 ether ,uint(15 ether), uint(55000000000000000001)];
+        uint[loanAmount] memory expectedCurrency = [33666666666666666666, uint(16642857142857142857), uint(54690476190476190477)];
+
+        uint amountInvestorA = 100 ether;
+        uint amountInvestorB = 100 ether;
+        uint totalSupply = setUpInvestors(amountInvestorA, amountInvestorB);
+
+        // investor A
+        uint totalInvestorA = 0;
+        for(uint i = 0; i < loanAmount; i++) {
+            // simulate loan repayment
+            operator.updateReturned(currencyReturned[i], principalReturned[i]);
+            redeem(investorA, maxToken[i], tokenAmount[i], expectedCurrency[i]);
+            totalInvestorA += expectedCurrency[i];
+        }
+
+        // investor B only redeems once after loan 3
+        uint maxTokenB = 100 ether;
+        uint tokenAmountB = 100 ether;
+        uint expectedReturnB = 105 ether;
+        redeem(investorB, maxTokenB, tokenAmountB, expectedReturnB);
+
+        // both investors should have the same amount of tokens in the end
+        assertEq(totalInvestorA, expectedReturnB);
+    }
+
 }
 
 

@@ -18,6 +18,7 @@ pragma solidity >=0.5.15 <0.6.0;
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
+import "ds-test/test.sol";
 
 
 contract TrancheLike {
@@ -36,7 +37,7 @@ contract DistributorLike {
     function balance() public;
 }
 
-contract ProportionalOperator is Math, DSNote, Auth  {
+contract ProportionalOperator is Math, DSNote, Auth, DSTest  {
     TrancheLike public tranche;
     AssessorLike public assessor;
     DistributorLike public distributor;
@@ -108,7 +109,7 @@ contract ProportionalOperator is Math, DSNote, Auth  {
     }
 
     /// redeem is proportional allowed
-    function redeem(uint tokenAmount) external  note {
+    function redeem(uint tokenAmount) external note {
         distributor.balance();
         uint currencyAmount = calcRedeemCurrencyAmount(msg.sender, tokenAmount);
         require(assessor.redeemApprove(address(tranche), currencyAmount), "redeem-not-approved");
@@ -118,12 +119,16 @@ contract ProportionalOperator is Math, DSNote, Auth  {
     /// calculates the current max amount of tokens a user can redeem
     /// the max amount of token depends on the total principal returned
     /// and previous redeem actions of the user
-    function calcMaxRedeemToken(address usr) public view returns(uint) {
+    function calcMaxRedeemToken(address usr) public returns(uint) {
         if (supplyAllowed) {
             return 0;
         }
-        uint previouslyRedeemed = rmul(rdiv(principalRedeemed[usr], totalPrincipalReturned),supplyMaximum[usr]);
+
+        // todo figure out if it is cheaper to just store the value in an extra variable
+        // instead of expensive of calculation
+        uint previouslyRedeemed = rmul(rmul(rdiv(principalRedeemed[usr], totalPrincipalReturned), supplyMaximum[usr]),rdiv(totalPrincipalReturned,totalTrancheVolume));
         uint maxRedeemToken = rmul(rdiv(totalPrincipalReturned, totalTrancheVolume), supplyMaximum[usr]);
+
         return safeSub(maxRedeemToken, previouslyRedeemed);
     }
 
@@ -132,15 +137,14 @@ contract ProportionalOperator is Math, DSNote, Auth  {
     /// redeem history.
     function calcRedeemCurrencyAmount(address usr, uint tokenAmount) public returns(uint) {
         uint maxTokenAmount = calcMaxRedeemToken(usr);
-        require(tokenAmount <= maxTokenAmount);
+
+        require(tokenAmount <= maxTokenAmount, "tokenAmount higher than maximum");
 
         uint tokenPrice = rdiv(safeSub(totalCurrencyReturned, currencyRedeemed[usr]),
                                 safeSub(totalPrincipalReturned, principalRedeemed[usr]));
 
         uint currencyAmount = rmul(tokenAmount, tokenPrice);
-
         uint redeemRatio = rdiv(tokenAmount, maxTokenAmount);
-
         currencyRedeemed[usr] += rmul(safeSub(totalCurrencyReturned, currencyRedeemed[usr]), redeemRatio);
         principalRedeemed[usr] += rmul(safeSub(totalPrincipalReturned, principalRedeemed[usr]), redeemRatio);
         return currencyAmount;
