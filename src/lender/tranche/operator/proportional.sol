@@ -41,9 +41,24 @@ contract ProportionalOperator is Math, DSNote, Auth  {
     AssessorLike public assessor;
     DistributorLike public distributor;
 
-    mapping (address => uint) public maxCurrency;  // uint(-1) unlimited access by convention
+    // lender mappings
+    // each value in a own map for gas-optimization
+    mapping (address => uint) public supplyMaximum;
+    mapping (address => uint) public currentSupplyLimit;
 
-    constructor(address tranche_, address assessor_, address distributor_) internal {
+    // expressed relative to totalCurrencyReturned
+    mapping (address => uint) public currencyRedeemed;
+
+    // expressed relative to totalPrincipalReturned
+    mapping (address => uint) public principalRedeemed;
+
+
+    bool public supplyAllowed  = true;
+    uint public totalCurrencyReturned;
+    uint public totalPrincipalReturned;
+    uint public totalTrancheVolume;
+
+    constructor(address tranche_, address assessor_, address distributor_) public {
         wards[msg.sender] = 1;
         tranche = TrancheLike(tranche_);
         assessor = AssessorLike(assessor_);
@@ -60,36 +75,35 @@ contract ProportionalOperator is Math, DSNote, Auth  {
 
     function file(bytes32 what, bool supplyAllowed_) public auth {
         if(what == "supplyAllowed") {
+            if(supplyAllowed_ == false) {
+                // requires an initial token price of ONE
+                totalTrancheVolume = tranche.tokenSupply();
+            }
             supplyAllowed = supplyAllowed_;
         }
     }
 
-    function updateReturned(uint currencyReturned_, uint principalReturned_) public auth {
-        currencyReturned += currencyReturned_;
-        principalReturned += principalReturned_;
+    function updateReturned(uint currencyReturned, uint principalReturned) public auth {
+        totalCurrencyReturned += currencyReturned;
+        totalPrincipalReturned += principalReturned;
     }
 
     /// defines the max amount of currency for supply
-    function approve(address usr, uint maxCurrency_) external auth {
-        maxCurrency[usr] = maxCurrency_;
+    function approve(address usr, uint currencyAmount) external auth {
+        supplyMaximum[usr] = currencyAmount;
+        currentSupplyLimit[usr] = currencyAmount;
     }
 
-    bool public supplyAllowed  = true;
-
-    uint currencyReturned;
-    uint principalReturned;
-
-
-    /// only approved investors can supply
+    /// only approved investors can supply and approved
     function supply(uint currencyAmount) external note {
         require(supplyAllowed);
-        if (maxCurrency[msg.sender] != uint(-1)) {
-            require(maxCurrency[msg.sender] >= currencyAmount, "not-enough-currency");
-            maxCurrency[msg.sender] = safeSub(maxCurrency[msg.sender], currencyAmount);
-        }
+
+        require(currentSupplyLimit[msg.sender] >= currencyAmount, "not-enough-currency");
+        currentSupplyLimit[msg.sender] = safeSub(currentSupplyLimit[msg.sender], currencyAmount);
+
 
         require(assessor.supplyApprove(address(tranche), currencyAmount), "supply-not-approved");
-        tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, assessor.calcAndUpdateTokenPrice(address(tranche))));
+        tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, ONE));
         distributor.balance();
     }
 
@@ -99,5 +113,18 @@ contract ProportionalOperator is Math, DSNote, Auth  {
         uint currencyAmount = rmul(tokenAmount, assessor.calcAndUpdateTokenPrice(address(tranche)));
         require(assessor.redeemApprove(address(tranche), currencyAmount), "redeem-not-approved");
         tranche.redeem(msg.sender, currencyAmount, tokenAmount);
+    }
+
+    function calcMaxRedeemToken(address usr) public view returns(uint) {
+        if (supplyAllowed) {
+            return 0;
+        }
+        uint previouslyRedeemed = rmul(rdiv(principalRedeemed[usr], totalPrincipalReturned),supplyMaximum[usr]);
+        uint maxRedeemToken = rmul(rdiv(totalPrincipalReturned, totalTrancheVolume), supplyMaximum[usr]);
+        return safeSub(maxRedeemToken, previouslyRedeemed);
+    }
+
+    function calcRedeemCurrencyAmount(address usr,uint tokenAmount) public {
+
     }
 }
