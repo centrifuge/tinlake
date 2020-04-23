@@ -47,10 +47,10 @@ contract ProportionalOperator is Math, DSNote, Auth, DSTest  {
     mapping (address => uint) public supplyMaximum;
     mapping (address => uint) public currentSupplyLimit;
 
-    // expressed relative to totalCurrencyReturned
+    // expressed in totalCurrencyReturned notation
     mapping (address => uint) public currencyRedeemed;
 
-    // expressed relative to totalPrincipalReturned
+    // expressed in totalPrincipalReturned notation
     mapping (address => uint) public principalRedeemed;
 
 
@@ -77,7 +77,7 @@ contract ProportionalOperator is Math, DSNote, Auth, DSTest  {
     function file(bytes32 what, bool supplyAllowed_) public auth {
         if(what == "supplyAllowed") {
             if(supplyAllowed_ == false) {
-                // requires an initial token price of ONE
+                // defines tokenPrice as ONE
                 totalTrancheVolume = tranche.tokenSupply();
             }
             supplyAllowed = supplyAllowed_;
@@ -102,8 +102,9 @@ contract ProportionalOperator is Math, DSNote, Auth, DSTest  {
         require(currentSupplyLimit[msg.sender] >= currencyAmount, "not-enough-currency");
         currentSupplyLimit[msg.sender] = safeSub(currentSupplyLimit[msg.sender], currencyAmount);
 
-
         require(assessor.supplyApprove(address(tranche), currencyAmount), "supply-not-approved");
+
+        // pre-defined tokenPrice of ONE
         tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, ONE));
         distributor.balance();
     }
@@ -119,13 +120,12 @@ contract ProportionalOperator is Math, DSNote, Auth, DSTest  {
     /// calculates the current max amount of tokens a user can redeem
     /// the max amount of token depends on the total principal returned
     /// and previous redeem actions of the user
-    function calcMaxRedeemToken(address usr) public returns(uint) {
+    function calcMaxRedeemToken(address usr) public view returns(uint) {
         if (supplyAllowed) {
             return 0;
         }
 
-        // todo figure out if it is cheaper to just store the value in an extra variable
-        // instead of expensive of calculation
+        // todo figure out if it is cheaper to just store the value instead of calculation
         uint previouslyRedeemed = rmul(rmul(rdiv(principalRedeemed[usr], totalPrincipalReturned), supplyMaximum[usr]),rdiv(totalPrincipalReturned,totalTrancheVolume));
         uint maxRedeemToken = rmul(rdiv(totalPrincipalReturned, totalTrancheVolume), supplyMaximum[usr]);
 
@@ -145,8 +145,8 @@ contract ProportionalOperator is Math, DSNote, Auth, DSTest  {
 
         uint currencyAmount = rmul(tokenAmount, tokenPrice);
         uint redeemRatio = rdiv(tokenAmount, maxTokenAmount);
-        currencyRedeemed[usr] += rmul(safeSub(totalCurrencyReturned, currencyRedeemed[usr]), redeemRatio);
-        principalRedeemed[usr] += rmul(safeSub(totalPrincipalReturned, principalRedeemed[usr]), redeemRatio);
+        currencyRedeemed[usr] = safeAdd(rmul(safeSub(totalCurrencyReturned, currencyRedeemed[usr]), redeemRatio), currencyRedeemed[usr]);
+        principalRedeemed[usr] = safeAdd(rmul(safeSub(totalPrincipalReturned, principalRedeemed[usr]), redeemRatio), principalRedeemed[usr]);
         return currencyAmount;
     }
 }

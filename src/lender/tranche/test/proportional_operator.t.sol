@@ -122,7 +122,7 @@ contract ProportionalOperatorTest is DSTest {
     function testSimplePropRedeem() public {
         uint amountInvestorA = 100 ether;
         uint amountInvestorB = 100 ether;
-        uint totalSupply = setUpInvestors(amountInvestorA, amountInvestorB);
+        setUpInvestors(amountInvestorA, amountInvestorB);
 
         // simulate return loan 1 (50% of the principal)
         uint currencyReturned = 105 ether;
@@ -218,7 +218,7 @@ contract ProportionalOperatorTest is DSTest {
 
         uint amountInvestorA = 100 ether;
         uint amountInvestorB = 100 ether;
-        uint totalSupply = setUpInvestors(amountInvestorA, amountInvestorB);
+        setUpInvestors(amountInvestorA, amountInvestorB);
 
         // investor A
         uint totalInvestorA = 0;
