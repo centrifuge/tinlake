@@ -107,14 +107,17 @@ contract ProportionalOperator is Math, DSNote, Auth  {
         distributor.balance();
     }
 
-    /// redeem is proportional always allowed if loans are returned
+    /// redeem is proportional allowed
     function redeem(uint tokenAmount) external  note {
         distributor.balance();
-        uint currencyAmount = rmul(tokenAmount, assessor.calcAndUpdateTokenPrice(address(tranche)));
+        uint currencyAmount = calcRedeemCurrencyAmount(msg.sender, tokenAmount);
         require(assessor.redeemApprove(address(tranche), currencyAmount), "redeem-not-approved");
         tranche.redeem(msg.sender, currencyAmount, tokenAmount);
     }
 
+    /// calculates the current max amount of tokens a user can redeem
+    /// the max amount of token depends on the total principal returned
+    /// and previous redeem actions of the user
     function calcMaxRedeemToken(address usr) public view returns(uint) {
         if (supplyAllowed) {
             return 0;
@@ -124,7 +127,22 @@ contract ProportionalOperator is Math, DSNote, Auth  {
         return safeSub(maxRedeemToken, previouslyRedeemed);
     }
 
-    function calcRedeemCurrencyAmount(address usr,uint tokenAmount) public {
+    /// calculates the amount of currency a user can redeem for a specific token amount
+    /// the used token price for the conversion can be different among users depending on their
+    /// redeem history.
+    function calcRedeemCurrencyAmount(address usr, uint tokenAmount) public returns(uint) {
+        uint maxTokenAmount = calcMaxRedeemToken(usr);
+        require(tokenAmount <= maxTokenAmount);
 
+        uint tokenPrice = rdiv(safeSub(totalCurrencyReturned, currencyRedeemed[usr]),
+                                safeSub(totalPrincipalReturned, principalRedeemed[usr]));
+
+        uint currencyAmount = rmul(tokenAmount, tokenPrice);
+
+        uint redeemRatio = rdiv(tokenAmount, maxTokenAmount);
+
+        currencyRedeemed[usr] += rmul(safeSub(totalCurrencyReturned, currencyRedeemed[usr]), redeemRatio);
+        principalRedeemed[usr] += rmul(safeSub(totalPrincipalReturned, principalRedeemed[usr]), redeemRatio);
+        return currencyAmount;
     }
 }
