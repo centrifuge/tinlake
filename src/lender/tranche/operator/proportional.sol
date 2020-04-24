@@ -18,8 +18,6 @@ pragma solidity >=0.5.15 <0.6.0;
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
-import "ds-test/test.sol";
-
 
 contract TrancheLike {
     function supply(address usr, uint currencyAmount, uint tokenAmount) public;
@@ -38,7 +36,7 @@ contract DistributorLike {
     function balance() public;
 }
 
-contract ProportionalOperator is Math, DSNote, Auth, DSTest  {
+contract ProportionalOperator is Math, DSNote, Auth  {
     TrancheLike public tranche;
     AssessorLike public assessor;
     DistributorLike public distributor;

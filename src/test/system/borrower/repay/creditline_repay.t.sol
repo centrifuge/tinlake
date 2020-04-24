@@ -83,7 +83,7 @@ contract CreditLineRepayTest is BaseSystemTest {
         assertEq(increasedCeiling, ceiling.ceiling(loanId));
     }
 
-    function borrowAndRepay(address usr, uint ceiling, uint rate, uint speed, uint expectedDebt, uint repayAmount) public returns (uint) {
+    function borrowAndRepay(address usr, uint ceiling, uint rate, uint speed, uint expectedDebt, uint repayAmount) public {
         (uint loanId, uint tokenId) = createLoanAndWithdraw(usr, ceiling, rate, speed);
         // supply borrower with additional funds to pay for accrued interest
         topUp(usr);

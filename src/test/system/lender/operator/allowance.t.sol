@@ -18,7 +18,7 @@ pragma solidity >=0.5.15 <0.6.0;
 import "../../base_system.sol";
 
 contract AllowanceOperatorLike {
-function approve(address usr, uint maxCurrency_, uint maxToken_) public;
+    function approve(address usr, uint maxCurrency_, uint maxToken_) public;
 }
 
 contract AllowanceOperatorTest is BaseSystemTest {
