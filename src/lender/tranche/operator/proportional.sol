@@ -76,10 +76,6 @@ contract ProportionalOperator is Math, DSNote, Auth, DSTest  {
 
     function file(bytes32 what, bool supplyAllowed_) public auth {
         if(what == "supplyAllowed") {
-            if(supplyAllowed_ == false) {
-                // defines tokenPrice as ONE
-                totalTrancheVolume = tranche.tokenSupply();
-            }
             supplyAllowed = supplyAllowed_;
         }
     }
@@ -106,6 +102,11 @@ contract ProportionalOperator is Math, DSNote, Auth, DSTest  {
 
         // pre-defined tokenPrice of ONE
         tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, ONE));
+
+        // todo we don't need the variable if first loan starts after all investors supplied
+        // instead tranche.balance could be used
+        totalTrancheVolume = safeAdd(totalTrancheVolume, currencyAmount);
+
         distributor.balance();
     }
 
@@ -125,7 +126,7 @@ contract ProportionalOperator is Math, DSNote, Auth, DSTest  {
             return 0;
         }
 
-        // todo figure out if it is cheaper to just store the value instead of calculation
+        // todo figure out if it is cheaper to store the value every time a user redeems
         uint previouslyRedeemed = rmul(rmul(rdiv(principalRedeemed[usr], totalPrincipalReturned), supplyMaximum[usr]),rdiv(totalPrincipalReturned,totalTrancheVolume));
         uint maxRedeemToken = rmul(rdiv(totalPrincipalReturned, totalTrancheVolume), supplyMaximum[usr]);
 
