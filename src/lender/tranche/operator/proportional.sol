@@ -31,6 +31,7 @@ contract AssessorLike {
     function calcAndUpdateTokenPrice(address tranche) public returns(uint);
     function supplyApprove(address tranche, uint currencyAmount) public returns(bool);
     function redeemApprove(address tranche, uint currencyAmount) public returns(bool);
+    function tokenAmountForONE() public returns(uint);
 }
 
 contract DistributorLike {
@@ -53,10 +54,13 @@ contract ProportionalOperator is Math, DSNote, Auth, DSTest  {
     // expressed in totalPrincipalReturned notation
     mapping (address => uint) public principalRedeemed;
 
-
     bool public supplyAllowed  = true;
+
     uint public totalCurrencyReturned;
     uint public totalPrincipalReturned;
+
+    // total invested amount of currency and total supply of token
+    // contract implements a fixed supply token price of ONE
     uint public totalTrancheVolume;
 
     constructor(address tranche_, address assessor_, address distributor_) public {
@@ -113,7 +117,9 @@ contract ProportionalOperator is Math, DSNote, Auth, DSTest  {
     /// redeem is proportional allowed
     function redeem(uint tokenAmount) external note {
         distributor.balance();
-        uint currencyAmount = calcRedeemCurrencyAmount(msg.sender, tokenAmount);
+        (uint currencyAmount, uint currencyRedeemed_,uint  principalRedeemed_) = calcRedeemCurrencyAmount(msg.sender, tokenAmount);
+        currencyRedeemed[msg.sender] = currencyRedeemed_;
+        principalRedeemed[msg.sender] = principalRedeemed_;
         require(assessor.redeemApprove(address(tranche), currencyAmount), "redeem-not-approved");
         tranche.redeem(msg.sender, currencyAmount, tokenAmount);
     }
@@ -127,8 +133,11 @@ contract ProportionalOperator is Math, DSNote, Auth, DSTest  {
         }
 
         // todo figure out if it is cheaper to store the value every time a user redeems
-        uint previouslyRedeemed = rmul(rmul(rdiv(principalRedeemed[usr], totalPrincipalReturned), supplyMaximum[usr]),rdiv(totalPrincipalReturned,totalTrancheVolume));
-        uint maxRedeemToken = rmul(rdiv(totalPrincipalReturned, totalTrancheVolume), supplyMaximum[usr]);
+        uint previouslyRedeemed = rmul(rmul(rdiv(principalRedeemed[usr], totalPrincipalReturned),
+            supplyMaximum[usr]),rdiv(totalPrincipalReturned,totalTrancheVolume));
+
+        // considers the case if a user didn't supply the maximum amount possible
+        uint maxRedeemToken = rmul(rdiv(totalPrincipalReturned, totalTrancheVolume), safeSub(supplyMaximum[usr], currentSupplyLimit[usr]));
 
         return safeSub(maxRedeemToken, previouslyRedeemed);
     }
@@ -136,18 +145,31 @@ contract ProportionalOperator is Math, DSNote, Auth, DSTest  {
     /// calculates the amount of currency a user can redeem for a specific token amount
     /// the used token price for the conversion can be different among users depending on their
     /// redeem history.
-    function calcRedeemCurrencyAmount(address usr, uint tokenAmount) public returns(uint) {
-        uint maxTokenAmount = calcMaxRedeemToken(usr);
+    function calcRedeemCurrencyAmount(address usr, uint tokenAmount) public view returns(uint, uint, uint) {
+        // solidity gas-optimized calculation avoiding local variable if possible
 
+        uint maxTokenAmount = calcMaxRedeemToken(usr);
         require(tokenAmount <= maxTokenAmount, "tokenAmount higher than maximum");
 
-        uint tokenPrice = rdiv(safeSub(totalCurrencyReturned, currencyRedeemed[usr]),
-                                safeSub(totalPrincipalReturned, principalRedeemed[usr]));
-
-        uint currencyAmount = rmul(tokenAmount, tokenPrice);
         uint redeemRatio = rdiv(tokenAmount, maxTokenAmount);
-        currencyRedeemed[usr] = safeAdd(rmul(safeSub(totalCurrencyReturned, currencyRedeemed[usr]), redeemRatio), currencyRedeemed[usr]);
-        principalRedeemed[usr] = safeAdd(rmul(safeSub(totalPrincipalReturned, principalRedeemed[usr]), redeemRatio), principalRedeemed[usr]);
-        return currencyAmount;
+
+        // c is the delta between total currency returned and the portion the user has redeemed of it.
+        uint c = safeSub(totalCurrencyReturned, currencyRedeemed[usr]);
+
+        // p is the delta between total currency returned and the portion the user has redeemed of it.
+        uint p = safeSub(totalPrincipalReturned, principalRedeemed[usr]);
+
+        return (
+        // calculates currencyAmount by multiplying the tokenAmount with the tokenPrice
+        rmul(tokenAmount, rdiv(c, p)),
+
+        // updated currencyRedeemed of the user
+        safeAdd(rmul(c, redeemRatio), currencyRedeemed[usr]),
+
+        // updated principalRedeemed of the user
+        safeAdd(rmul(p, redeemRatio), principalRedeemed[usr])
+        );
     }
+
+
 }

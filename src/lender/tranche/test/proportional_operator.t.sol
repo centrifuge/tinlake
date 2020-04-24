@@ -20,12 +20,13 @@ import "ds-test/test.sol";
 import "../../test/mock/tranche.sol";
 import "../../test/mock/assessor.sol";
 import "../../test/mock/distributor.sol";
+import "tinlake-math/math.sol";
 
 import "./../operator/proportional.sol";
 import "./investor.t.sol";
 
 
-contract ProportionalOperatorTest is DSTest {
+contract ProportionalOperatorTest is DSTest, Math {
     uint256 constant ONE = 10 ** 27;
 
     AssessorMock assessor;
@@ -238,7 +239,6 @@ contract ProportionalOperatorTest is DSTest {
         // both investors should have the same amount of tokens in the end
         assertEq(totalInvestorA, expectedReturnB);
     }
-
 }
 
 
