@@ -134,7 +134,7 @@ contract ProportionalOperator is Math, DSNote, Auth, DSTest  {
 
         // todo figure out if it is cheaper to store the value every time a user redeems
         uint previouslyRedeemed = rmul(rmul(rdiv(principalRedeemed[usr], totalPrincipalReturned),
-            supplyMaximum[usr]),rdiv(totalPrincipalReturned,totalTrancheVolume));
+            supplyMaximum[usr]),rdiv(totalPrincipalReturned, totalTrancheVolume));
 
         // considers the case if a user didn't supply the maximum amount possible
         uint maxRedeemToken = rmul(rdiv(totalPrincipalReturned, totalTrancheVolume), safeSub(supplyMaximum[usr], currentSupplyLimit[usr]));

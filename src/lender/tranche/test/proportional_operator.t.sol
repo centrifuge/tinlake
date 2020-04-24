@@ -160,7 +160,6 @@ contract ProportionalOperatorTest is DSTest, Math {
         assertEq(tranche.values_uint("redeem_tokenAmount"), tokenAmount);
     }
 
-
     function redeem(Investor investor, uint maxToken, uint tokenAmount, uint expectedCurrencyAmount) public {
         // do redeem for investor
         assertEq(operator.calcMaxRedeemToken(address(investor)), maxToken);
@@ -168,7 +167,6 @@ contract ProportionalOperatorTest is DSTest, Math {
         assertEq(tranche.values_uint("redeem_currencyAmount"), expectedCurrencyAmount);
         assertEq(tranche.values_uint("redeem_tokenAmount"), tokenAmount);
     }
-
 
     uint constant loanAmount = 3;
     function testScenarioRedeemA() public {
@@ -238,6 +236,34 @@ contract ProportionalOperatorTest is DSTest, Math {
 
         // both investors should have the same amount of tokens in the end
         assertEq(totalInvestorA, expectedReturnB);
+    }
+
+    function testNotSupplyAll() public {
+        uint max = 100 ether;
+        uint amountA = 100 ether;
+        uint amountB = 50 ether;
+        operator.approve(address(investorA), max);
+        operator.approve(address(investorB), max);
+
+        investorA.doSupply(operator_, amountA);
+        investorB.doSupply(operator_, amountB);
+
+        uint totalSupply = amountA + amountB;
+        tranche.setReturn("tokenSupply", totalSupply);
+
+        // start redeem
+        operator.file("supplyAllowed", false);
+
+
+        // simulate return loan 1 (66 % of the principal)
+        uint currencyReturned = 110 ether;
+        uint principalReturned = 100 ether;
+        operator.updateReturned(currencyReturned, principalReturned);
+
+
+        assertEq(operator.calcMaxRedeemToken(address(investorA)), 66666666666666666666);
+        assertEq(operator.calcMaxRedeemToken(address(investorB)), 33333333333333333333);
+
     }
 }
 
