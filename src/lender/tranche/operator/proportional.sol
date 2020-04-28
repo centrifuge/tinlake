@@ -44,7 +44,7 @@ contract ProportionalOperator is Math, DSNote, Auth  {
     // lender mappings
     // each value in a own map for gas-optimization
     mapping (address => uint) public supplyMaximum;
-    mapping (address => uint) public currentSupplyLimit;
+    mapping (address => uint) public tokenReceived;
     // helper we could also calculate it
     mapping (address => uint) public tokenRedeemed;
 
@@ -94,15 +94,14 @@ contract ProportionalOperator is Math, DSNote, Auth  {
     /// defines the max amount of currency for supply
     function approve(address usr, uint currencyAmount) external auth {
         supplyMaximum[usr] = currencyAmount;
-        currentSupplyLimit[usr] = currencyAmount;
     }
 
     /// only approved investors can supply and approved
     function supply(uint currencyAmount) external note {
         require(supplyAllowed);
 
-        require(currentSupplyLimit[msg.sender] >= currencyAmount, "not-enough-currency");
-        currentSupplyLimit[msg.sender] = safeSub(currentSupplyLimit[msg.sender], currencyAmount);
+        require(safeSub(supplyMaximum[msg.sender], tokenReceived[msg.sender]) >= currencyAmount, "not-enough-currency");
+        tokenReceived[msg.sender] = safeAdd(tokenReceived[msg.sender], currencyAmount);
 
         require(assessor.supplyApprove(address(tranche), currencyAmount), "supply-not-approved");
 
@@ -135,11 +134,8 @@ contract ProportionalOperator is Math, DSNote, Auth  {
         if (supplyAllowed) {
             return 0;
         }
-
-        // considers the case if a user didn't supply the maximum amount possible
-        uint maxRedeemToken = rmul(rdiv(totalPrincipalReturned, totalPrincipal), safeSub(supplyMaximum[usr], currentSupplyLimit[usr]));
-
-        return safeSub(maxRedeemToken, tokenRedeemed[usr]);
+        // assumes a initial token price of ONE
+        return safeSub(rmul(rdiv(totalPrincipalReturned, totalPrincipal), tokenReceived[usr]), tokenRedeemed[usr]);
     }
 
     /// calculates the amount of currency a user can redeem for a specific token amount
