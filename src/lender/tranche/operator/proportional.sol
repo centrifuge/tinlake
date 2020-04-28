@@ -45,6 +45,8 @@ contract ProportionalOperator is Math, DSNote, Auth  {
     // each value in a own map for gas-optimization
     mapping (address => uint) public supplyMaximum;
     mapping (address => uint) public currentSupplyLimit;
+    // helper we could also calculate it
+    mapping (address => uint) public tokenRedeemed;
 
     // expressed in totalCurrencyReturned notation
     mapping (address => uint) public currencyRedeemed;
@@ -54,12 +56,14 @@ contract ProportionalOperator is Math, DSNote, Auth  {
 
     bool public supplyAllowed  = true;
 
+    // denominated in currency
     uint public totalCurrencyReturned;
+
+    // denominated in currency
     uint public totalPrincipalReturned;
 
-    // total invested amount of currency and total supply of token
-    // contract implements a fixed supply token price of ONE
-    uint public totalTrancheVolume;
+    // denominated in currency
+    uint public totalPrincipal;
 
     constructor(address tranche_, address assessor_, address distributor_) public {
         wards[msg.sender] = 1;
@@ -103,11 +107,12 @@ contract ProportionalOperator is Math, DSNote, Auth  {
         require(assessor.supplyApprove(address(tranche), currencyAmount), "supply-not-approved");
 
         // pre-defined tokenPrice of ONE
-        tranche.supply(msg.sender, currencyAmount, rdiv(currencyAmount, ONE));
+        uint tokenAmount = rdiv(currencyAmount, ONE);
+        tranche.supply(msg.sender, currencyAmount, tokenAmount);
 
         // todo we don't need the variable if first loan starts after all investors supplied
         // instead tranche.balance could be used
-        totalTrancheVolume = safeAdd(totalTrancheVolume, currencyAmount);
+        totalPrincipal = safeAdd(totalPrincipal, currencyAmount);
 
         distributor.balance();
     }
@@ -119,6 +124,7 @@ contract ProportionalOperator is Math, DSNote, Auth  {
         currencyRedeemed[msg.sender] = currencyRedeemed_;
         principalRedeemed[msg.sender] = principalRedeemed_;
         require(assessor.redeemApprove(address(tranche), currencyAmount), "redeem-not-approved");
+        tokenRedeemed[msg.sender] = safeAdd(tokenRedeemed[msg.sender], tokenAmount);
         tranche.redeem(msg.sender, currencyAmount, tokenAmount);
     }
 
@@ -130,14 +136,10 @@ contract ProportionalOperator is Math, DSNote, Auth  {
             return 0;
         }
 
-        // todo figure out if it is cheaper to store the value every time a user redeems
-        uint previouslyRedeemed = rmul(rmul(rdiv(principalRedeemed[usr], totalPrincipalReturned),
-            supplyMaximum[usr]),rdiv(totalPrincipalReturned, totalTrancheVolume));
-
         // considers the case if a user didn't supply the maximum amount possible
-        uint maxRedeemToken = rmul(rdiv(totalPrincipalReturned, totalTrancheVolume), safeSub(supplyMaximum[usr], currentSupplyLimit[usr]));
+        uint maxRedeemToken = rmul(rdiv(totalPrincipalReturned, totalPrincipal), safeSub(supplyMaximum[usr], currentSupplyLimit[usr]));
 
-        return safeSub(maxRedeemToken, previouslyRedeemed);
+        return safeSub(maxRedeemToken, tokenRedeemed[usr]);
     }
 
     /// calculates the amount of currency a user can redeem for a specific token amount

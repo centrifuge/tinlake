@@ -211,9 +211,9 @@ contract ProportionalOperatorTest is DSTest, Math {
         uint[loanAmount] memory currencyReturned = [101 ether, uint(44 ether), uint(65 ether)];
 
         // investor A
-        uint[loanAmount] memory maxToken = [45 ether ,uint(35000000000000000001), uint(55000000000000000001)];
-        uint[loanAmount] memory tokenAmount = [30 ether ,uint(15 ether), uint(55000000000000000001)];
-        uint[loanAmount] memory expectedCurrency = [33666666666666666666, uint(16642857142857142857), uint(54690476190476190477)];
+        uint[loanAmount] memory maxToken = [45 ether ,uint(35000000000000000000), uint(55000000000000000000)];
+        uint[loanAmount] memory tokenAmount = [30 ether ,uint(15 ether), uint(55000000000000000000)];
+        uint[loanAmount] memory expectedCurrency = [33666666666666666666, uint(16642857142857142857), uint(54690476190476190476)];
 
         uint amountInvestorA = 100 ether;
         uint amountInvestorB = 100 ether;
@@ -235,7 +235,8 @@ contract ProportionalOperatorTest is DSTest, Math {
         redeem(investorB, maxTokenB, tokenAmountB, expectedReturnB);
 
         // both investors should have the same amount of tokens in the end
-        assertEq(totalInvestorA, expectedReturnB);
+        // 1 wei tolerance
+        assertTrue(expectedReturnB-totalInvestorA <= 1);
     }
 
     function testNotSupplyAll() public {
