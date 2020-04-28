@@ -45,7 +45,7 @@ contract ProportionalOperator is Math, DSNote, Auth  {
     // each value in a own map for gas-optimization
     mapping (address => uint) public supplyMaximum;
     mapping (address => uint) public tokenReceived;
-    // helper we could also calculate it
+    // helper we could also calculate based on principalRedeemed
     mapping (address => uint) public tokenRedeemed;
 
     // expressed in totalCurrencyReturned notation
@@ -87,8 +87,8 @@ contract ProportionalOperator is Math, DSNote, Auth  {
     }
 
     function updateReturned(uint currencyReturned, uint principalReturned) public auth {
-        totalCurrencyReturned += currencyReturned;
-        totalPrincipalReturned += principalReturned;
+        totalCurrencyReturned  = safeAdd(totalCurrencyReturned, currencyReturned);
+        totalPrincipalReturned = safeAdd(totalPrincipalReturned, principalReturned);
     }
 
     /// defines the max amount of currency for supply
@@ -106,11 +106,10 @@ contract ProportionalOperator is Math, DSNote, Auth  {
         require(assessor.supplyApprove(address(tranche), currencyAmount), "supply-not-approved");
 
         // pre-defined tokenPrice of ONE
-        uint tokenAmount = rdiv(currencyAmount, ONE);
+        uint tokenAmount = currencyAmount;
+
         tranche.supply(msg.sender, currencyAmount, tokenAmount);
 
-        // todo we don't need the variable if first loan starts after all investors supplied
-        // instead tranche.balance could be used
         totalPrincipal = safeAdd(totalPrincipal, currencyAmount);
 
         distributor.balance();
@@ -152,7 +151,7 @@ contract ProportionalOperator is Math, DSNote, Auth  {
         // c is the delta between total currency returned and the portion the user has redeemed of it.
         uint c = safeSub(totalCurrencyReturned, currencyRedeemed[usr]);
 
-        // p is the delta between total currency returned and the portion the user has redeemed of it.
+        // p is the delta between total principal returned and the portion the user has redeemed of it.
         uint p = safeSub(totalPrincipalReturned, principalRedeemed[usr]);
 
         return (
