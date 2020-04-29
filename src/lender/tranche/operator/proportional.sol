@@ -91,6 +91,11 @@ contract ProportionalOperator is Math, DSNote, Auth  {
         totalPrincipalReturned = safeAdd(totalPrincipalReturned, principalReturned);
     }
 
+    function setReturned(uint currencyReturned, uint principalReturned) public auth {
+        totalCurrencyReturned  = currencyReturned;
+        totalPrincipalReturned = principalReturned;
+    }
+
     /// defines the max amount of currency for supply
     function approve(address usr, uint currencyAmount) external auth {
         supplyMaximum[usr] = currencyAmount;

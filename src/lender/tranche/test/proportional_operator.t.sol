@@ -169,6 +169,31 @@ contract ProportionalOperatorTest is DSTest, Math {
     }
 
     uint constant loanAmount = 3;
+
+    function runScenario(uint amountInvestorA, uint amountInvestorB, uint[loanAmount] memory principalReturned, uint[loanAmount] memory currencyReturned,
+        uint[loanAmount] memory maxToken, uint[loanAmount] memory tokenAmount, uint[loanAmount] memory expectedCurrency, uint maxTokenB,uint tokenAmountB, uint expectedReturnB ) public {
+
+        setUpInvestors(amountInvestorA, amountInvestorB);
+
+        // investor A
+        uint totalInvestorA = 0;
+        for(uint i = 0; i < loanAmount; i++) {
+            // simulate loan repayment
+            operator.updateReturned(currencyReturned[i], principalReturned[i]);
+            redeem(investorA, maxToken[i], tokenAmount[i], expectedCurrency[i]);
+            totalInvestorA += expectedCurrency[i];
+        }
+
+        // investor B only redeems once after loan 3
+        redeem(investorB, maxTokenB, tokenAmountB, expectedReturnB);
+
+        // both investors should have the same amount of tokens in the end
+        // 1 wei tolerance
+        assertTrue(expectedReturnB-totalInvestorA <= 1);
+
+
+    }
+
     function testScenarioRedeemA() public {
         /*
 
@@ -217,26 +242,15 @@ contract ProportionalOperatorTest is DSTest, Math {
 
         uint amountInvestorA = 100 ether;
         uint amountInvestorB = 100 ether;
-        setUpInvestors(amountInvestorA, amountInvestorB);
-
-        // investor A
-        uint totalInvestorA = 0;
-        for(uint i = 0; i < loanAmount; i++) {
-            // simulate loan repayment
-            operator.updateReturned(currencyReturned[i], principalReturned[i]);
-            redeem(investorA, maxToken[i], tokenAmount[i], expectedCurrency[i]);
-            totalInvestorA += expectedCurrency[i];
-        }
 
         // investor B only redeems once after loan 3
         uint maxTokenB = 100 ether;
         uint tokenAmountB = 100 ether;
         uint expectedReturnB = 105 ether;
-        redeem(investorB, maxTokenB, tokenAmountB, expectedReturnB);
 
-        // both investors should have the same amount of tokens in the end
-        // 1 wei tolerance
-        assertTrue(expectedReturnB-totalInvestorA <= 1);
+        runScenario(amountInvestorA, amountInvestorB, principalReturned, currencyReturned, maxToken, tokenAmount,
+            expectedCurrency, maxTokenB, tokenAmountB, expectedReturnB);
+
     }
 
     function testNotSupplyAll() public {
