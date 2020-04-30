@@ -86,19 +86,30 @@ contract ProportionalOperator is Math, DSNote, Auth  {
         }
     }
 
-    function updateReturned(uint currencyReturned, uint principalReturned) public auth {
-        totalCurrencyReturned  = safeAdd(totalCurrencyReturned, currencyReturned);
-        totalPrincipalReturned = safeAdd(totalPrincipalReturned, principalReturned);
-    }
-
-    function setReturned(uint currencyReturned, uint principalReturned) public auth {
-        totalCurrencyReturned  = currencyReturned;
-        totalPrincipalReturned = principalReturned;
-    }
-
     /// defines the max amount of currency for supply
-    function approve(address usr, uint currencyAmount) external auth {
+    function approve(address usr, uint currencyAmount) public auth {
         supplyMaximum[usr] = currencyAmount;
+    }
+
+    function file(bytes32 what, address usr, uint supplyMaximum_, uint tokenReceived_, uint tokenRedeemed_, uint currencyRedeemed_, uint principalRedeemed_) external auth {
+        if(what == "approve") {
+            approve(usr, supplyMaximum_);
+            tokenReceived[usr] = tokenReceived_;
+            tokenRedeemed[usr] = tokenRedeemed_;
+            currencyRedeemed[usr] = currencyRedeemed_;
+            principalRedeemed[usr] = principalRedeemed_;
+        } else { revert("unkown parameter");}
+
+    }
+
+    function updateReturned(uint currencyReturned_, uint principalReturned_) public auth {
+        totalCurrencyReturned  = safeAdd(totalCurrencyReturned, currencyReturned_);
+        totalPrincipalReturned = safeAdd(totalPrincipalReturned, principalReturned_);
+    }
+
+    function setReturned(uint currencyReturned_, uint principalReturned_) public auth {
+        totalCurrencyReturned  = currencyReturned_;
+        totalPrincipalReturned = principalReturned_;
     }
 
     /// only approved investors can supply and approved
