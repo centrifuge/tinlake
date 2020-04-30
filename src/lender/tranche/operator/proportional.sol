@@ -41,17 +41,19 @@ contract ProportionalOperator is Math, DSNote, Auth  {
     AssessorLike public assessor;
     DistributorLike public distributor;
 
-    // lender mappings
+    // investor mappings
     // each value in a own map for gas-optimization
     mapping (address => uint) public supplyMaximum;
     mapping (address => uint) public tokenReceived;
     // helper we could also calculate based on principalRedeemed
     mapping (address => uint) public tokenRedeemed;
 
-    // expressed in totalCurrencyReturned notation
+    // currency amount of investor's share in the pool which has already been redeemed
+    // denominated: in totalCurrencyReturned units
     mapping (address => uint) public currencyRedeemed;
 
-    // expressed in totalPrincipalReturned notation
+    // principal amount of investor's share in the pool which has already been redeemed
+    // denominated: in totalPrincipalReturned units
     mapping (address => uint) public principalRedeemed;
 
     bool public supplyAllowed  = true;
@@ -159,6 +161,7 @@ contract ProportionalOperator is Math, DSNote, Auth  {
     function calcRedeemCurrencyAmount(address usr, uint tokenAmount) public view returns(uint, uint, uint) {
         // solidity gas-optimized calculation avoiding local variable if possible
 
+        // maxTokenAmount that can be redeemed based on the investor's share in the pool
         uint maxTokenAmount = calcMaxRedeemToken(usr);
         require(tokenAmount <= maxTokenAmount, "tokenAmount higher than maximum");
 
