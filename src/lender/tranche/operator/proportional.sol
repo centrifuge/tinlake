@@ -136,7 +136,15 @@ contract ProportionalOperator is Math, DSNote, Auth  {
     /// redeem is proportional allowed
     function redeem(uint tokenAmount) external note {
         distributor.balance();
-        (uint currencyAmount, uint currencyRedeemed_,uint  principalRedeemed_) = calcRedeemCurrencyAmount(msg.sender, tokenAmount);
+
+        // maxTokenAmount that can still be redeemed based on the investor's share in the pool
+        uint maxTokenAmount = calcMaxRedeemToken(msg.sender);
+
+        if (tokenAmount > maxTokenAmount) {
+            tokenAmount = maxTokenAmount;
+        }
+
+    (uint currencyAmount, uint currencyRedeemed_,uint  principalRedeemed_) = calcRedeemCurrencyAmount(msg.sender, tokenAmount, maxTokenAmount);
         currencyRedeemed[msg.sender] = currencyRedeemed_;
         principalRedeemed[msg.sender] = principalRedeemed_;
         require(assessor.redeemApprove(address(tranche), currencyAmount), "redeem-not-approved");
@@ -158,12 +166,8 @@ contract ProportionalOperator is Math, DSNote, Auth  {
     /// calculates the amount of currency a user can redeem for a specific token amount
     /// the used token price for the conversion can be different among users depending on their
     /// redeem history.
-    function calcRedeemCurrencyAmount(address usr, uint tokenAmount) public view returns(uint, uint, uint) {
+    function calcRedeemCurrencyAmount(address usr, uint tokenAmount, uint maxTokenAmount) public view returns(uint, uint, uint) {
         // solidity gas-optimized calculation avoiding local variable if possible
-
-        // maxTokenAmount that can be redeemed based on the investor's share in the pool
-        uint maxTokenAmount = calcMaxRedeemToken(usr);
-        require(tokenAmount <= maxTokenAmount, "tokenAmount higher than maximum");
 
         uint redeemRatio = rdiv(tokenAmount, maxTokenAmount);
 
@@ -184,6 +188,4 @@ contract ProportionalOperator is Math, DSNote, Auth  {
         safeAdd(rmul(p, redeemRatio), principalRedeemed[usr])
         );
     }
-
-
 }
