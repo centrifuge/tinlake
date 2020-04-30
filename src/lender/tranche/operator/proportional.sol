@@ -144,9 +144,8 @@ contract ProportionalOperator is Math, DSNote, Auth  {
             tokenAmount = maxTokenAmount;
         }
 
-    (uint currencyAmount, uint currencyRedeemed_,uint  principalRedeemed_) = calcRedeemCurrencyAmount(msg.sender, tokenAmount, maxTokenAmount);
-        currencyRedeemed[msg.sender] = currencyRedeemed_;
-        principalRedeemed[msg.sender] = principalRedeemed_;
+        uint currencyAmount = calcRedeemCurrencyAmount(msg.sender, tokenAmount, maxTokenAmount);
+
         require(assessor.redeemApprove(address(tranche), currencyAmount), "redeem-not-approved");
         tokenRedeemed[msg.sender] = safeAdd(tokenRedeemed[msg.sender], tokenAmount);
         tranche.redeem(msg.sender, currencyAmount, tokenAmount);
@@ -166,26 +165,23 @@ contract ProportionalOperator is Math, DSNote, Auth  {
     /// calculates the amount of currency a user can redeem for a specific token amount
     /// the used token price for the conversion can be different among users depending on their
     /// redeem history.
-    function calcRedeemCurrencyAmount(address usr, uint tokenAmount, uint maxTokenAmount) public view returns(uint, uint, uint) {
+    function calcRedeemCurrencyAmount(address usr, uint tokenAmount, uint maxTokenAmount) public returns(uint) {
         // solidity gas-optimized calculation avoiding local variable if possible
+        uint currencyAmount = rmul(tokenAmount, calcTokenPrice(usr));
 
         uint redeemRatio = rdiv(tokenAmount, maxTokenAmount);
 
-        // c is the delta between total currency returned and the portion the user has redeemed of it.
-        uint c = safeSub(totalCurrencyReturned, currencyRedeemed[usr]);
+        currencyRedeemed[usr] = safeAdd(rmul(safeSub(totalCurrencyReturned, currencyRedeemed[usr]),
+            redeemRatio), currencyRedeemed[usr]);
 
-        // p is the delta between total principal returned and the portion the user has redeemed of it.
-        uint p = safeSub(totalPrincipalReturned, principalRedeemed[usr]);
+        principalRedeemed[usr] = safeAdd(rmul(safeSub(totalPrincipalReturned, principalRedeemed[usr]),
+            redeemRatio), principalRedeemed[usr]);
 
-        return (
-        // calculates currencyAmount by multiplying the tokenAmount with the tokenPrice
-        rmul(tokenAmount, rdiv(c, p)),
+        return currencyAmount;
+    }
 
-        // updated currencyRedeemed of the user
-        safeAdd(rmul(c, redeemRatio), currencyRedeemed[usr]),
-
-        // updated principalRedeemed of the user
-        safeAdd(rmul(p, redeemRatio), principalRedeemed[usr])
-        );
+    function calcTokenPrice(address usr) public view returns (uint) {
+       return rdiv(safeSub(totalCurrencyReturned, currencyRedeemed[usr]),
+           safeSub(totalPrincipalReturned, principalRedeemed[usr]));
     }
 }
