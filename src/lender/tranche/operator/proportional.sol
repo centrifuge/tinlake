@@ -116,8 +116,9 @@ contract ProportionalOperator is Math, DSNote, Auth  {
     function supply(uint currencyAmount) external note {
         require(supplyAllowed);
 
-        require(safeSub(supplyMaximum[msg.sender], tokenReceived[msg.sender]) >= currencyAmount, "not-enough-currency");
         tokenReceived[msg.sender] = safeAdd(tokenReceived[msg.sender], currencyAmount);
+
+        require(tokenReceived[msg.sender] <= supplyMaximum[msg.sender], "currency-amount-above-supply-maximum");
 
         require(assessor.supplyApprove(address(tranche), currencyAmount), "supply-not-approved");
 
