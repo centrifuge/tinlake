@@ -50,21 +50,28 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         // setup deployment
         bytes32 assessor_ = "default";
         bytes32 ceiling_ = "default";
-        deployContracts(operator_, distributor_, assessor_, senior_, ceiling_);
+        deployContracts(operator_, distributor_, assessor_, senior_, ceiling_, operator_);
         root.relyLenderAdmin(address(this), senior_);
     }
 
     function baseSetup(bytes32 operator_, bytes32 distributor_, bool senior_, bytes32 ceiling_) public {
         // setup deployment
         bytes32 assessor_ = "default";
-        deployContracts(operator_, distributor_, assessor_, senior_, ceiling_);
+        deployContracts(operator_, distributor_, assessor_, senior_, ceiling_, operator_);
         root.relyLenderAdmin(address(this), senior_);
     }
 
     function baseSetup(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_) public {
         // setup deployment
         bytes32 ceiling_ = "default";
-        deployContracts(operator_, distributor_, assessor_, senior_, ceiling_);
+        deployContracts(operator_, distributor_, assessor_, senior_, ceiling_, operator_);
+        root.relyLenderAdmin(address(this), senior_);
+    }
+
+    function baseSetup(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_, bytes32 seniorOperator_) public {
+        // setup deployment
+        bytes32 ceiling_ = "default";
+        deployContracts(operator_, distributor_, assessor_, senior_, ceiling_, seniorOperator_);
         root.relyLenderAdmin(address(this), senior_);
     }
 
@@ -100,6 +107,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         juniorOperator.relyInvestor(juniorInvestor_);
 
         if (senior_) {
+            // by default whitelist operator
             WhitelistOperator seniorOperator = WhitelistOperator(address(seniorOperator));
 
             seniorInvestor = new Investor(address(seniorOperator), currency_, address(seniorToken));
