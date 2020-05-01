@@ -20,11 +20,13 @@ import { DefaultAssessor } from "./assessor/default.sol";
 import { FullInvestmentAssessor } from "./assessor/full_investment.sol";
 import { AllowanceOperator } from "./tranche/operator/allowance.sol";
 import { WhitelistOperator } from "./tranche/operator/whitelist.sol";
+import { ProportionalOperator } from "./tranche/operator/proportional.sol";
 import { Tranche } from "./tranche/tranche.sol";
 import { SeniorTranche } from "./tranche/senior_tranche.sol";
 import { DefaultDistributor } from "./distributor/default.sol";
 
 import "tinlake-erc20/erc20.sol";
+import "./tranche/operator/proportional.sol";
 
 contract AuthLike {
     function rely(address) public;
@@ -100,6 +102,15 @@ contract AllowanceOperatorFab {
 contract WhitelistOperatorFab {
     function newOperator(address tranche, address assessor, address distributor) public returns (address) {
         WhitelistOperator operator = new WhitelistOperator(tranche, assessor, distributor);
+        operator.rely(msg.sender);
+        operator.deny(address(this));
+        return address(operator);
+    }
+}
+
+contract ProportionalOperatorFab {
+    function newOperator(address tranche, address assessor, address distributor) public returns (address) {
+        ProportionalOperator operator = new ProportionalOperator(tranche, assessor, distributor);
         operator.rely(msg.sender);
         operator.deny(address(this));
         return address(operator);

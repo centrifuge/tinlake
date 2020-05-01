@@ -41,6 +41,7 @@ import {
   AllowanceOperatorFab,
   WhitelistOperatorFab,
   DefaultAssessorFab,
+  ProportionalOperatorFab,
   FullInvestmentAssessorFab,
   DefaultDistributorFab,
   LenderDeployer
@@ -106,7 +107,7 @@ contract TestSetup {
         return (tokenId, lookupId);
     }
 
-    function deployContracts(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_, bytes32 ceiling_) public {
+    function deployContracts(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_, bytes32 ceiling_, bytes32 seniorOperator_) public {
         collateralNFT = new Title("Collateral NFT", "collateralNFT");
         collateralNFT_ = address(collateralNFT);
 
@@ -118,7 +119,7 @@ contract TestSetup {
         // only admin is main deployer
         deployBorrower(ceiling_);
         // only admin is main deployer
-        deployLender(operator_, distributor_, assessor_, senior_);
+        deployLender(operator_, distributor_, assessor_, senior_, seniorOperator_);
 
         root.prepare(address(lenderDeployer), address(borrowerDeployer), address(this));
         root.deploy();
@@ -159,7 +160,7 @@ contract TestSetup {
         threshold = PushRegistry(borrowerDeployer.threshold());
     }
 
-    function deployLender(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_) public {
+    function deployLender(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_, bytes32 operatorSenior) public {
         address distributorFab_;
         address operatorFab_;
         address assessorFab_;
@@ -184,7 +185,13 @@ contract TestSetup {
 
         if (senior_) {
             seniorTrancheFab_ = address(new SeniorTrancheFab());
-            seniorOperatorFab_ = operatorFab_;
+            if(operatorSenior == "proportional") {
+
+                seniorOperatorFab_ = address(new ProportionalOperatorFab());
+            } else {
+                // senior operator uses the same fab junior
+                seniorOperatorFab_ = operatorFab_;
+            }
         }
 
 

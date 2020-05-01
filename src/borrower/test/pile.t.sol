@@ -174,6 +174,34 @@ contract PileTest is Interest, DSTest {
         assertDebt(loan, 117.6 ether);
     }
 
+    function testChangeRateNoDebt() public {
+        uint highRate = uint(1000001311675458706187136988); // 12 % per day
+        uint lowRate = uint(1000000564701133626865910626); // 5 % / day
+
+        uint loan = 1;
+
+        pile.file("rate", highRate, highRate);
+        pile.file("rate", lowRate, lowRate);
+
+        // set to 5%
+        pile.setRate(loan, lowRate);
+        assertDebt(loan, 0);
+        hevm.warp(now + 1 days);
+        pile.drip(lowRate);
+        pile.drip(highRate);
+
+        // rate switch without existing debt
+        pile.changeRate(loan, highRate);
+        assertDebt(loan, 0);
+
+        // check if rate is 12%
+        pile.incDebt(loan, 100 ether);
+        hevm.warp(now + 1 days);
+        pile.drip(highRate);
+        assertDebt(loan, 112 ether);
+
+    }
+
     function testFailSetRate() public {
         uint loan = 1;
         uint rate = uint(1000001311675458706187136988);

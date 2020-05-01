@@ -24,22 +24,8 @@ import "../operator/base.sol";
 import "../operator/allowance.sol";
 import "../operator/whitelist.sol";
 
-contract WhitelistOperatorLike {
-    function supply(uint currencyAmount) public;
-    function redeem(uint tokenAmount) public;
-}
+import "./investor.t.sol";
 
-contract Investor {
-
-    function doSupply(address operator, uint amount) public {
-        WhitelistOperatorLike(operator).supply(amount);
-    }
-
-    function doRedeem(address operator, uint amount) public {
-        WhitelistOperatorLike(operator).redeem(amount);
-    }
-
-}
 
 contract OperatorTest is DSTest {
 

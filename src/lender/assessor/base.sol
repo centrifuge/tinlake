@@ -188,6 +188,9 @@ contract BaseAssessor is Math, Auth {
             return ONE;
         }
         uint juniorAssetValue = calcAssetValue(junior);
+        if (juniorAssetValue == 0) {
+            return 0;
+        }
         return rdiv(juniorAssetValue, safeAdd(juniorAssetValue, calcAssetValue(senior)));
     }
 
