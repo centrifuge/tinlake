@@ -58,7 +58,11 @@ contract ProportionalOperatorTest is DSTest, Math {
 
         operator.depend("tranche", address(tranche));
 
-}
+    }
+
+    function testInitialTokenPrice() public {
+        assertEq(operator.calcTokenPrice(msg.sender), ONE);
+    }
 
     // basic tests
     function testApproveSupply() public {
