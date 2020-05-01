@@ -140,7 +140,7 @@ contract TestSetup {
             ceilingFab_ = address(new CreditLineCeilingFab());
         }
 
-        borrowerDeployer = new BorrowerDeployer(root_, titlefab, shelffab, pileFab, ceilingFab_, collectorFab, thresholdFab, pricePoolFab, currency_, "Tinlake Loan Token", "TLNT");
+        borrowerDeployer = new BorrowerDeployer(root_, titlefab, shelffab, pileFab, ceilingFab_, collectorFab, thresholdFab, pricePoolFab, address(0), currency_, "Tinlake Loan Token", "TLNT");
 
         borrowerDeployer.deployTitle();
         borrowerDeployer.deployPile();

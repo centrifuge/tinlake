@@ -46,7 +46,7 @@ contract DeployerTest is DSTest {
    }
 
     function testBorrowerDeploy() public logs_gas {
-        BorrowerDeployer deployer = new BorrowerDeployer(address(0), titlefab, shelffab, pilefab, ceilingFab_, collectorFab, thresholdFab, pricePoolFab, address(dai), "Test", "TEST");
+        BorrowerDeployer deployer = new BorrowerDeployer(address(0), titlefab, shelffab, pilefab, ceilingFab_, collectorFab, thresholdFab, pricePoolFab,address(0), address(dai), "Test", "TEST");
 
         deployer.deployTitle();
         deployer.deployPile();

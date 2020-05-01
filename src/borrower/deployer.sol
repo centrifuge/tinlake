@@ -23,6 +23,7 @@ import { Principal } from "./ceiling/principal.sol";
 import { CreditLine } from "./ceiling/creditline.sol";
 import { ThresholdRegistry } from "./collect/registry/threshold.sol";
 import { PricePool } from "./price/pool.sol";
+import { BaseNFTFeed } from "tinlake-nftfeed/nftfeed.sol";
 
 contract DependLike {
     function depend(bytes32, address) public;
@@ -37,6 +38,9 @@ contract CeilingFab {
     function newCeiling(address pile) public returns (address);
 }
 
+contract NFTFeedLike {
+    function init() public;
+}
 
 contract PileFab {
     function newPile() public returns (address) {
@@ -110,6 +114,15 @@ contract PricePoolFab {
     }
 }
 
+contract NFTFeedFab {
+    function newNFTFeed() public returns (address) {
+        BaseNFTFeed feed = new BaseNFTFeed();
+        feed.rely(msg.sender);
+        feed.deny(address(this));
+        return address(feed);
+    }
+}
+
 contract BorrowerDeployer {
     address      public root;
 
@@ -120,6 +133,7 @@ contract BorrowerDeployer {
     CollectorFab public collectorFab;
     ThresholdFab public thresholdFab;
     PricePoolFab public pricePoolFab;
+    NFTFeedFab   public nftFeedFab;
 
     address public title;
     address public shelf;
@@ -129,6 +143,7 @@ contract BorrowerDeployer {
     address public threshold;
     address public pricePool;
     address public currency;
+    address public nftFeed;
 
     string       public titleName;
     string       public titleSymbol;
@@ -144,6 +159,7 @@ contract BorrowerDeployer {
       CollectorFab collectorFab_,
       ThresholdFab thresholdFab_,
       PricePoolFab pricePoolFab_,
+      address nftFeedFab_,
       address currency_,
       string memory titleName_,
       string memory titleSymbol_
@@ -158,6 +174,8 @@ contract BorrowerDeployer {
         collectorFab = collectorFab_;
         thresholdFab = thresholdFab_;
         pricePoolFab = pricePoolFab_;
+        nftFeedFab = NFTFeedFab(nftFeedFab_);
+
         currency = currency_;
 
         titleName = titleName_;
@@ -205,12 +223,31 @@ contract BorrowerDeployer {
         AuthLike(ceiling).rely(root);
     }
 
+    function deployNFTFeed() public {
+        nftFeed = nftFeedFab.newNFTFeed();
+        AuthLike(nftFeed).rely(root);
+        threshold = nftFeed;
+        ceiling = nftFeed;
+    }
+
     function deploy() public {
         // ensures all required deploy methods were called
         require(shelf != ZERO && collector != ZERO && pricePool != ZERO);
 
         // shelf allowed to call
         AuthLike(pile).rely(shelf);
+
+        if(nftFeed != address(0)) {
+            NFTFeedLike(nftFeed).init();
+            DependLike(nftFeed).depend("pile", address(pile));
+            DependLike(nftFeed).depend("shelf", address(shelf));
+
+            // nft Feed allowed to call pile
+            AuthLike(pile).rely(nftFeed);
+
+            DependLike(shelf).depend("subscriber", address(nftFeed));
+        }
+
         AuthLike(ceiling).rely(shelf);
         AuthLike(title).rely(shelf);
 
