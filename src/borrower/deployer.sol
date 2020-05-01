@@ -225,7 +225,7 @@ contract BorrowerDeployer {
 
     function deployNFTFeed() public {
         nftFeed = nftFeedFab.newNFTFeed();
-        AuthLike(nftFeed).rely(nftFeed);
+        AuthLike(nftFeed).rely(root);
         threshold = nftFeed;
         ceiling = nftFeed;
     }
