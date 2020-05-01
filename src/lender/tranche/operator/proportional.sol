@@ -82,26 +82,24 @@ contract ProportionalOperator is Math, DSNote, Auth  {
         else revert();
     }
 
-    function file(bytes32 what, bool supplyAllowed_) public auth {
-        if(what == "supplyAllowed") {
-            supplyAllowed = supplyAllowed_;
-        }
-    }
-
-    /// defines the max amount of currency for supply
-    function approve(address usr, uint currencyAmount) public auth {
-        supplyMaximum[usr] = currencyAmount;
-    }
-
     function file(bytes32 what, address usr, uint supplyMaximum_, uint tokenReceived_, uint tokenRedeemed_, uint currencyRedeemed_, uint principalRedeemed_) external auth {
-        if(what == "approve") {
+        if(what == "resetUsr") {
             approve(usr, supplyMaximum_);
             tokenReceived[usr] = tokenReceived_;
             tokenRedeemed[usr] = tokenRedeemed_;
             currencyRedeemed[usr] = currencyRedeemed_;
             principalRedeemed[usr] = principalRedeemed_;
-        } else { revert("unkown parameter");}
+        } else { revert("unknown parameter");}
+    }
 
+    function file(bytes32 what, bool supplyAllowed_) public auth {
+        if(what == "supplyAllowed") {
+            supplyAllowed = supplyAllowed_;
+        }
+    }
+    /// defines the max amount of currency for supply
+    function approve(address usr, uint currencyAmount) public auth {
+        supplyMaximum[usr] = currencyAmount;
     }
 
     function updateReturned(uint currencyReturned_, uint principalReturned_) public auth {
