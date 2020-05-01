@@ -238,9 +238,9 @@ contract BorrowerDeployer {
         AuthLike(pile).rely(shelf);
 
         if(nftFeed != address(0)) {
-            NFTFeedLike(nftFeed).init();
             DependLike(nftFeed).depend("pile", address(pile));
             DependLike(nftFeed).depend("shelf", address(shelf));
+            NFTFeedLike(nftFeed).init();
 
             // nft Feed allowed to call pile
             AuthLike(pile).rely(nftFeed);
