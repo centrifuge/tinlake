@@ -414,7 +414,7 @@ contract ProportionalOperatorTest is DSTest, Math {
         (uint totalA, uint totalB) = runScenario(amountInvestorA, amountInvestorB, principalReturned, currencyReturned, maxToken, tokenAmount,
             expectedCurrency, maxTokenB, tokenAmountB, expectedReturnB);
 
-        assertEq(totalA, uint(142999999999999999999));
+        assertEq(totalA, uint(142999999999999999998));
     }
 }
 
