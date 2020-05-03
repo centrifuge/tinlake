@@ -78,6 +78,12 @@ contract Pile is DSNote, Auth, Interest {
 
         pie[loan] = safeSub(pie[loan], pieAmount);
         rates[rate].pie = safeSub(rates[rate].pie, pieAmount);
+
+        if (currencyAmount > total) {
+            total = 0;
+            return;
+        }
+
         total = safeSub(total, currencyAmount);
     }
 
