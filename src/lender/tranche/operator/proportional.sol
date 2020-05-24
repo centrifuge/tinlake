@@ -164,7 +164,7 @@ contract ProportionalOperator is Math, DSNote, Auth  {
     /// calculates the amount of currency a user can redeem for a specific token amount
     /// the used token price for the conversion can be different among users depending on their
     /// redeem history.
-    function calcRedeemCurrencyAmount(address usr, uint tokenAmount, uint maxTokenAmount) public returns(uint) {
+    function calcRedeemCurrencyAmount(address usr, uint tokenAmount, uint maxTokenAmount) internal returns(uint) {
         // solidity gas-optimized calculation avoiding local variable if possible
         uint currencyAmount = rmul(tokenAmount, calcTokenPrice(usr));
 
