@@ -15,15 +15,17 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import { Title } from "tinlake-title/title.sol";
-import { Shelf } from "./shelf.sol";
-import { Pile } from "./pile.sol";
-import { Collector } from "./collect/collector.sol";
-import { Principal } from "./ceiling/principal.sol";
-import { CreditLine } from "./ceiling/creditline.sol";
-import { ThresholdRegistry } from "./collect/registry/threshold.sol";
-import { PricePool } from "./price/pool.sol";
-import { BaseNFTFeed } from "tinlake-nftfeed/nftfeed.sol";
+
+import { ShelfFab} from "./fabs/shelf.sol";
+import { CollectorFab} from "./fabs/collector.sol";
+import { PileFab} from "./fabs/pile.sol";
+import { TitleFab} from "./fabs/title.sol";
+import { PrincipalCeilingFab} from "./fabs/principal.sol";
+import { CreditLineCeilingFab} from "./fabs/creditline.sol";
+import { ThresholdFab} from "./fabs/threshold.sol";
+import { PricePoolFab} from "./fabs/pricepool.sol";
+import { NFTFeedFab} from "./fabs/nftfeed.sol";
+
 
 contract DependLike {
     function depend(bytes32, address) public;
@@ -40,87 +42,6 @@ contract CeilingFab {
 
 contract NFTFeedLike {
     function init() public;
-}
-
-contract PileFab {
-    function newPile() public returns (address) {
-        Pile pile = new Pile();
-        pile.rely(msg.sender);
-        pile.deny(address(this));
-        return address(pile);
-    }
-}
-
-contract TitleFab {
-    function newTitle(string memory name, string memory symbol) public returns (address) {
-        Title title = new Title(name, symbol);
-        title.rely(msg.sender);
-        title.deny(address(this));
-        return address(title);
-    }
-}
-
-contract ShelfFab {
-    function newShelf(address tkn_, address title_, address debt_, address ceiling_) public returns (address) {
-        Shelf shelf = new Shelf(tkn_, title_, debt_, ceiling_);
-        shelf.rely(msg.sender);
-        shelf.deny(address(this));
-        return address(shelf);
-    }
-}
-
-contract CollectorFab {
-    function newCollector(address shelf, address pile, address threshold) public returns (address) {
-        Collector collector = new Collector(shelf, pile, threshold);
-        collector.rely(msg.sender);
-        collector.deny(address(this));
-        return address(collector);
-    }
-}
-
-contract CreditLineCeilingFab {
-    function newCeiling(address pile) public returns (address) {
-        CreditLine ceiling = new CreditLine(pile);
-        ceiling.rely(msg.sender);
-        ceiling.deny(address(this));
-        return address(ceiling);
-    }
-}
-
-contract PrincipalCeilingFab {
-    function newCeiling(address pile) public returns (address) {
-        Principal ceiling = new Principal();
-        ceiling.rely(msg.sender);
-        ceiling.deny(address(this));
-        return address(ceiling);
-    }
-}
-
-contract ThresholdFab {
-    function newThreshold() public returns (address) {
-        ThresholdRegistry threshold = new ThresholdRegistry();
-        threshold.rely(msg.sender);
-        threshold.deny(address(this));
-        return address(threshold);
-    }
-}
-
-contract PricePoolFab {
-    function newPricePool() public returns (address) {
-        PricePool pricePool = new PricePool();
-        pricePool.rely(msg.sender);
-        pricePool.deny(address(this));
-        return address(pricePool);
-    }
-}
-
-contract NFTFeedFab {
-    function newNFTFeed() public returns (address) {
-        BaseNFTFeed feed = new BaseNFTFeed();
-        feed.rely(msg.sender);
-        feed.deny(address(this));
-        return address(feed);
-    }
 }
 
 contract BorrowerDeployer {
