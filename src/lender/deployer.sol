@@ -14,19 +14,14 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 pragma solidity >=0.5.15 <0.6.0;
 
-
-// lender contracts
-import { DefaultAssessor } from "./assessor/default.sol";
-import { FullInvestmentAssessor } from "./assessor/full_investment.sol";
-import { AllowanceOperator } from "./tranche/operator/allowance.sol";
-import { WhitelistOperator } from "./tranche/operator/whitelist.sol";
-import { ProportionalOperator } from "./tranche/operator/proportional.sol";
-import { Tranche } from "./tranche/tranche.sol";
-import { SeniorTranche } from "./tranche/senior_tranche.sol";
-import { DefaultDistributor } from "./distributor/default.sol";
-
-import "tinlake-erc20/erc20.sol";
-import "./tranche/operator/proportional.sol";
+import { AllowanceOperatorFab } from "./fabs/allowance_operator.sol";
+import { DefaultAssessorFab } from "./fabs/default_assessor.sol";
+import { DefaultDistributorFab } from "./fabs/default_distributor.sol";
+import { FullInvestmentAssessorFab } from "./fabs/full_investment_assessor.sol";
+import { ProportionalOperatorFab } from "./fabs/proportional_operator.sol";
+import { SeniorTrancheFab } from "./fabs/senior_tranche.sol";
+import { TrancheFab } from "./fabs/tranche.sol";
+import { WhitelistOperatorFab } from "./fabs/whitelist_operator.sol";
 
 contract AuthLike {
     function rely(address) public;
@@ -36,100 +31,21 @@ contract AuthLike {
 contract DependLike {
     function depend(bytes32, address) public;
 }
-
-contract TrancheFab {
-    function newTranche(address currency, string memory name, string memory symbol) public returns (address) {
-        ERC20 token = new ERC20(symbol, name);
-        Tranche tranche = new Tranche(address(token), currency);
-        tranche.rely(msg.sender);
-        tranche.deny(address(this));
-        token.rely(address(tranche));
-        return address(tranche);
-    }
-}
-
-contract SeniorTrancheFab {
-    function newTranche(address currency, address assessor, uint ratePerSecond, string memory name, string memory symbol) public returns (address) {
-        ERC20 token = new ERC20(symbol, name);
-        SeniorTranche senior = new SeniorTranche(address(token), currency, assessor);
-        senior.rely(msg.sender);
-        senior.file("rate", ratePerSecond);
-        senior.deny(address(this));
-        token.rely(address(senior));
-        return address(senior);
-    }
-}
-
+// abstract assessor fab
 contract AssessorFab {
     function newAssessor(uint tokenAmountForONE) public returns (address);
 }
-
-contract FullInvestmentAssessorFab {
-    function newAssessor(uint tokenAmountForONE) public returns (address) {
-        FullInvestmentAssessor assessor = new FullInvestmentAssessor(tokenAmountForONE);
-        assessor.rely(msg.sender);
-        assessor.deny(address(this));
-        return address(assessor);
-    }
-}
-
-contract DefaultAssessorFab {
-    function newAssessor(uint tokenAmountForONE) public returns (address) {
-        DefaultAssessor assessor = new DefaultAssessor(tokenAmountForONE);
-        assessor.rely(msg.sender);
-        assessor.deny(address(this));
-        return address(assessor);
-    }
-}
-
-
-// Operator Fabs
 
 // abstract operator fab
 contract OperatorFab {
     function newOperator(address tranche, address assessor, address distributor) public returns (address);
 }
 
-contract AllowanceOperatorFab {
-    function newOperator(address tranche, address assessor, address distributor) public returns (address) {
-        AllowanceOperator operator = new AllowanceOperator(tranche, assessor, distributor);
-        operator.rely(msg.sender);
-        operator.deny(address(this));
-        return address(operator);
-    }
-}
-
-contract WhitelistOperatorFab {
-    function newOperator(address tranche, address assessor, address distributor) public returns (address) {
-        WhitelistOperator operator = new WhitelistOperator(tranche, assessor, distributor);
-        operator.rely(msg.sender);
-        operator.deny(address(this));
-        return address(operator);
-    }
-}
-
-contract ProportionalOperatorFab {
-    function newOperator(address tranche, address assessor, address distributor) public returns (address) {
-        ProportionalOperator operator = new ProportionalOperator(tranche, assessor, distributor);
-        operator.rely(msg.sender);
-        operator.deny(address(this));
-        return address(operator);
-    }
-}
-
-// Distributor Fabs
 // abstract distributor fab
 contract DistributorFab {
     function newDistributor(address currency) public returns (address);
 }
-contract DefaultDistributorFab {
-    function newDistributor(address currency) public returns (address) {
-        DefaultDistributor distributor = new DefaultDistributor(currency);
-        distributor.rely(msg.sender);
-        distributor.deny(address(this));
-        return address(distributor);
-    }
-}
+
 
 contract LenderDeployer {
     address root;
