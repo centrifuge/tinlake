@@ -16,8 +16,8 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 import "tinlake-math/math.sol";
-import "ds-test/test.sol";
-contract Ticker is Math, DSTest {
+
+contract Ticker is Math {
     uint public firstEpochTimestamp;
     uint public epochCount;
 
@@ -26,7 +26,7 @@ contract Ticker is Math, DSTest {
         firstEpochTimestamp = normalizeTimestamp(now);
     }
 
-    // normalizes timestamp to 00:00 of the certain day
+    // normalizes timestamp to 00:00
     function normalizeTimestamp(uint timestamp) internal returns (uint) {
         return safeAdd(rmul((1 days), rdiv(timestamp, 1 days)), 1 days);
     }

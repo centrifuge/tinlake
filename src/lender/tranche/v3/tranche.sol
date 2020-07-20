@@ -15,8 +15,6 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import "ds-test/test.sol";
-import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 
@@ -32,7 +30,7 @@ contract TickerLike {
     function currentEpoch() public returns (uint);
 }
 
-contract Tranche is DSTest, DSNote, Math, Auth {
+contract Tranche is Math, Auth {
 mapping (uint => Epoch) public epochs;
 struct Epoch {
     uint totalRedeem;
@@ -118,7 +116,7 @@ function redeemOrder(uint epochID, uint redeemAmount) public {
         token.burn(self, redeemAmount);
         return;
     } 
-    
+
     uint delta = safeSub(currentRedeemAmount, redeemAmount);
     if (delta > 0) {
       token.mint(msg.sender, delta);
