@@ -19,7 +19,7 @@ import "ds-note/note.sol";
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
 
-contract TokenLike{
+contract TokenLike {
     function totalSupply() public view returns (uint);
     function balanceOf(address) public view returns (uint);
     function transferFrom(address,address,uint) public returns (bool);
@@ -30,7 +30,7 @@ contract TokenLike{
 
 // Tranche
 // Interface of a tranche. Coordinates investments and borrows to/from the tranche.
-contract Tranche is DSNote, Auth {
+contract Tranche is DSNote, Math, Auth {
 
     // --- Data ---
     TokenLike public currency;
