@@ -17,7 +17,8 @@ import "./ticker.sol";
 import "tinlake-auth/auth.sol";
 
 interface EpochTrancheLike {
-
+    function epochUpdate(uint epochID, uint supplyFulfillment_,
+        uint redeemFulfillment_, uint tokenPrice_) external;
 }
 
 interface ReserveLike {

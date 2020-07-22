@@ -20,6 +20,9 @@ import "../../../test/mock/mock.sol";
 
 contract EpochTrancheMock is Mock {
 
+    function epochUpdate(uint epochID, uint supplyFulfillment_,
+        uint redeemFulfillment_, uint tokenPrice_) external {
 
+    }
 }
 

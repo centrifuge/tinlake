@@ -42,9 +42,9 @@ contract CoordinatorTest is DSTest, Math {
     address reserve_;
 
     function setUp() public {
-        EpochTrancheMock seniorTranche = new EpochTrancheMock();
-        EpochTrancheMock juniorTranche = new EpochTrancheMock();
-        ReserveMock reserve = new ReserveMock();
+        seniorTranche = new EpochTrancheMock();
+        juniorTranche = new EpochTrancheMock();
+        reserve = new ReserveMock();
         seniorTranche_ = address(seniorTranche);
         juniorTranche_ = address(juniorTranche);
         reserve_ = address(reserve);
@@ -75,7 +75,7 @@ contract CoordinatorTest is DSTest, Math {
         assertEq(coordinator.lastEpochExecuted(), 21);
     }
 
-    function calcNextEpochIn() public returns(uint) {
+    function calcNextEpochIn() public view returns(uint) {
         return 1 days - (now - coordinator.normalizeTimestamp(now));
     }
 

@@ -27,7 +27,7 @@ contract Ticker is Math {
     }
 
     // normalizes timestamp to 00:00
-    function normalizeTimestamp(uint timestamp) public returns (uint) {
+    function normalizeTimestamp(uint timestamp) public pure returns (uint) {
         return safeMul((1 days), safeDiv(timestamp, 1 days));
     }
 
