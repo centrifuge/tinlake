@@ -49,6 +49,9 @@ contract CoordinatorTest is DSTest, Math {
         juniorTranche_ = address(juniorTranche);
         reserve_ = address(reserve);
 
+        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm.warp(1234567);
+
         coordinator = new EpochCoordinator();
         coordinator.depend("juniorTranche", juniorTranche_);
         coordinator.depend("seniorTranche", seniorTranche_);
@@ -56,8 +59,46 @@ contract CoordinatorTest is DSTest, Math {
 
     }
 
-    function testEpochStarts() public {
+    function testEpochExecuteTime() public {
+        assertEq(coordinator.currentEpoch(), 0);
+        assertEq(coordinator.lastEpochExecuted(), 0);
+        hevm.warp(now + 1 days);
 
+        assertEq(coordinator.currentEpoch(), 1);
+        coordinator.executeEpoch();
+        assertEq(coordinator.lastEpochExecuted(), 1);
+
+        hevm.warp(now + 20 days);
+
+        assertEq(coordinator.currentEpoch(), 21);
+        coordinator.executeEpoch();
+        assertEq(coordinator.lastEpochExecuted(), 21);
     }
+
+    function calcNextEpochIn() public returns(uint) {
+        return 1 days - (now - coordinator.normalizeTimestamp(now));
+    }
+
+    function testEpochTimeEdgeCase() public {
+        uint secsForNextDay = calcNextEpochIn();
+        assertEq(coordinator.currentEpoch(), 0);
+        // exact 00:00 time
+        hevm.warp(now + secsForNextDay);
+
+        assertEq(coordinator.currentEpoch(), 1);
+        coordinator.executeEpoch();
+    }
+
+    function testFailEpochTime() public {
+        uint secsForNextDay = calcNextEpochIn();
+        assertEq(coordinator.currentEpoch(), 0);
+        assertEq(coordinator.lastEpochExecuted(), 0);
+
+        // should fail one sec too early
+        hevm.warp(now + secsForNextDay - 1);
+        coordinator.executeEpoch();
+    }
+
+
 }
 

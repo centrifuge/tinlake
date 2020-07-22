@@ -31,6 +31,8 @@ contract EpochCoordinator is Ticker, Auth {
 
     ReserveLike reserve;
 
+    uint public lastEpochExecuted;
+
     constructor() public {
         wards[msg.sender] = 1;
     }
@@ -41,6 +43,13 @@ contract EpochCoordinator is Ticker, Auth {
         else if (contractName == "seniorTranche") { seniorTranche = EpochTrancheLike(addr); }
         else if (contractName == "reserve") { reserve = ReserveLike(addr); }
         else revert();
+    }
+
+    function executeEpoch() external {
+        uint currEpoch = currentEpoch();
+        require(lastEpochExecuted < currentEpoch());
+
+        lastEpochExecuted = currEpoch;
     }
 
 }

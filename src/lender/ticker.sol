@@ -27,13 +27,11 @@ contract Ticker is Math {
     }
 
     // normalizes timestamp to 00:00
-    function normalizeTimestamp(uint timestamp) internal returns (uint) {
-        return rmul((1 days), rdiv(timestamp, 1 days));
+    function normalizeTimestamp(uint timestamp) public returns (uint) {
+        return safeMul((1 days), safeDiv(timestamp, 1 days));
     }
 
     function currentEpoch() public returns (uint) {
-        uint current = rdiv(safeSub(normalizeTimestamp(now), firstEpochTimestamp), (1 days));
-        // epoch count should start at 1
-        return current + 1;
+        return safeDiv(safeSub(normalizeTimestamp(now), firstEpochTimestamp), (1 days));
     }
 }
