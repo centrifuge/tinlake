@@ -20,6 +20,7 @@ import "tinlake-math/math.sol";
 
 import "./../coordinator.sol";
 import "./mock/epoch-tranche.sol";
+import "./mock/reserve.sol";
 
 
 contract Hevm {
@@ -34,23 +35,28 @@ contract CoordinatorTest is DSTest, Math {
     EpochTrancheMock seniorTranche;
     EpochTrancheMock juniorTranche;
 
+    ReserveMock reserve;
+
     address seniorTranche_;
     address juniorTranche_;
+    address reserve_;
 
     function setUp() public {
-
         EpochTrancheMock seniorTranche = new EpochTrancheMock();
         EpochTrancheMock juniorTranche = new EpochTrancheMock();
+        ReserveMock reserve = new ReserveMock();
         seniorTranche_ = address(seniorTranche);
         juniorTranche_ = address(juniorTranche);
+        reserve_ = address(reserve);
 
         coordinator = new EpochCoordinator();
         coordinator.depend("juniorTranche", juniorTranche_);
         coordinator.depend("seniorTranche", seniorTranche_);
+        coordinator.depend("reserve", reserve_);
 
     }
 
-    function testCoordinatorSimple() public {
+    function testEpochStarts() public {
 
     }
 }

@@ -20,11 +20,16 @@ interface EpochTrancheLike {
 
 }
 
+interface ReserveLike {
+    function updateMaxCurrency(uint currencyAmount) external;
+}
 
 contract EpochCoordinator is Ticker, Auth {
 
     EpochTrancheLike juniorTranche;
     EpochTrancheLike seniorTranche;
+
+    ReserveLike reserve;
 
     constructor() public {
         wards[msg.sender] = 1;
@@ -34,6 +39,7 @@ contract EpochCoordinator is Ticker, Auth {
     function depend (bytes32 contractName, address addr) public auth {
         if (contractName == "juniorTranche") { juniorTranche = EpochTrancheLike(addr); }
         else if (contractName == "seniorTranche") { seniorTranche = EpochTrancheLike(addr); }
+        else if (contractName == "reserve") { reserve = ReserveLike(addr); }
         else revert();
     }
 
