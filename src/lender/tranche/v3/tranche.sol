@@ -35,10 +35,10 @@ mapping (uint => Epoch) public epochs;
 struct Epoch {
     uint totalRedeem;
     uint totalSupply;
-    // denominated in WAD
+    // denominated in RAY
     // percentage ONE == 100%
     uint redeemFulfillment;
-    // denominated in WAD
+    // denominated in RAY
     // percentage ONE == 100%
     uint supplyFulfillment;
     // tokenPrice after end of epoch
@@ -61,13 +61,11 @@ constructor(address currency_, address token_, address ticker_) public {
 }
 
 function supplyCurrencyAmount(uint epochID, address addr) public view returns (uint) {
-    Epoch storage epoch = epochs[epochID];
-    return epoch.supplyCurrencyAmount[addr];
+    return epochs[epochID].supplyCurrencyAmount[addr];
 }
 
 function redeemTokenAmount(uint epochID, address addr) public view returns (uint) {
-    Epoch storage epoch = epochs[epochID];
-    return epoch.redeemTokenAmount[addr];
+    return epochs[epochID].redeemTokenAmount[addr];
 }
 
 function balance() external view returns (uint) {
