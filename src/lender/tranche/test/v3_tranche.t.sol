@@ -88,7 +88,7 @@ contract TrancheTest is DSTest, Math {
         // new investor token balance: initialBlance - redeemAmount
         assertEq(token.balanceOf(self), safeSub(investorBalance, redeemAmount));
         // tranche balance = 0 -> tokens burned
-        assertEq(token.balanceOf(tranche_), 0);
+        assertEq(token.balanceOf(tranche_), redeemAmount);
         (uint totalRedeem,,,,) = tranche.epochs(redeemEpochID);
         uint redeemTokenAmountTranche = tranche.redeemTokenAmount(redeemEpochID, self);
         // assert investor's redeem amount for redeemEpochID equals redeemAmount
@@ -144,7 +144,8 @@ contract TrancheTest is DSTest, Math {
         uint investorBalance = 100 ether;
         uint supplyAmount = 100 ether;
         uint disburseEpochID = 10;
-        uint tokenPrice = 1;
+        uint tokenPrice = ONE;
+        
         // supplyFullFillMent 80 %
         uint supplyFullfillment = rdiv(80, 100);
         uint redeemFullfillment = ONE;
@@ -159,11 +160,13 @@ contract TrancheTest is DSTest, Math {
         tranche.supplyOrder(disburseEpochID, supplyAmount);
 
         // settle epoch
-        tranche.epochUpdate(disburseEpochID,supplyFullfillment, redeemFullfillment, tokenPrice);
+        tranche.epochUpdate(disburseEpochID, supplyFullfillment, redeemFullfillment, tokenPrice);
 
+        // assert tokens were minted for disbursement 
+        assertEq(token.balanceOf(tranche_), rmul(supplyAmount, supplyFullfillment));
+        
         // disburse
         tranche.disburse(disburseEpochID);
-
         // check investor received correct amount of tokens
         assertEq(token.balanceOf(self), rdiv(rmul(supplyAmount, supplyFullfillment), tokenPrice));
         // check investor received correct amount of currency
@@ -174,10 +177,11 @@ contract TrancheTest is DSTest, Math {
         // check redeemTokenAmount of investor set to 0
         uint redeemTokenAmountTranche = tranche.redeemTokenAmount(disburseEpochID, self);
         assertEq(redeemTokenAmountTranche, 0);
+        
+        // assert tranche token balance is 0
+        assertEq(token.balanceOf(tranche_), 0);
     }
     // test case: redeem disburse
     // test case: tokenPrice != 1
     // fail case: epoche not settled
-
-
 }
