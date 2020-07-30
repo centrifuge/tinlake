@@ -90,6 +90,8 @@ function depend(bytes32 contractName, address addr) public auth {
 // supplyOrder function can be used to place or revoke an supply 
 function supplyOrder(uint epochID, uint newSupplyAmount) public {
     require((epochID >= ticker.currentEpoch()), "epoch-already-over");
+    require((epochs[epochID].tokenPrice == 0), "epoch-already-settled");
+
     uint currentSupplyAmount = epochs[epochID].supplyCurrencyAmount[msg.sender];
     epochs[epochID].supplyCurrencyAmount[msg.sender] = newSupplyAmount;
     epochs[epochID].totalSupply = safeAdd(safeSub(epochs[epochID].totalSupply, currentSupplyAmount), newSupplyAmount);
@@ -107,7 +109,8 @@ function supplyOrder(uint epochID, uint newSupplyAmount) public {
 // redeemOrder function can be used to place or revoke a redeem
 function redeemOrder(uint epochID, uint newRedeemAmount) public {
     require((epochID >= ticker.currentEpoch()), "epoch-already-over");
-    
+    require((epochs[epochID].tokenPrice == 0), "epoch-already-settled");
+
     uint currentRedeemAmount = epochs[epochID].redeemTokenAmount[msg.sender];
     epochs[epochID].redeemTokenAmount[msg.sender] = newRedeemAmount;
     epochs[epochID].totalRedeem = safeAdd(safeSub(epochs[epochID].totalRedeem, currentRedeemAmount), newRedeemAmount);
