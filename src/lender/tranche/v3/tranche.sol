@@ -187,20 +187,20 @@ function adjustTokenBalance(uint epochID, uint supplyFulfillment_, uint redeemFu
 
 // adjust currency balance after epoch execution -> receive/send currency from/to reserve
 function adjustCurrencyBalance(uint epochID, uint supplyFulfillment_, uint redeemFulfillment_, uint tokenPrice_) internal {
-    // currency that was supplied in this epoch -> overflow
+    // currency that was supplied in this epoch
     uint currencySupplied = rmul(epochs[epochID].totalSupply, epochs[epochID].supplyFulfillment);
-
-    // currency required from reedemption -> undeflow
+    // currency required for redemption
     uint currencyRequired = rmul(rmul(epochs[epochID].totalRedeem, epochs[epochID].redeemFulfillment), epochs[epochID].tokenPrice);
-    // send surplus funds to reserve
+   
     if (currencySupplied > currencyRequired) {
+        // send surplus currency to reserve
         uint diff = safeSub(currencySupplied, currencyRequired);
         require(currency.transferFrom(self, reserve, diff), "currency-transfer-failed"); 
         return;
-    }
-    // get required currency from reserve
+    } 
     uint diff = safeSub(currencyRequired, currencySupplied);
     if (diff > 0) {
+        // get missing currency from reserve
         require(currency.transferFrom(reserve, self, diff), "currency-transfer-failed"); 
     }
 }
