@@ -20,6 +20,7 @@ import "tinlake-math/math.sol";
 
 import "./../v3/tranche.sol";
 import "../../../test/simple/token.sol";
+import "../../test/mock/reserve.sol";
 import "./../v3/ticker.sol";
 
 contract Hevm {
@@ -30,11 +31,14 @@ contract TrancheTest is DSTest, Math {
     Tranche tranche;
     SimpleToken token;
     SimpleToken currency;
+    ReserveMock reserve;
     Ticker ticker;
+
 
     Hevm hevm;
 
     address tranche_;
+    address reserve_;
     address self;
 
     uint256 constant ONE = 10**27;
@@ -44,9 +48,11 @@ contract TrancheTest is DSTest, Math {
         hevm.warp(1595247588);
 
         ticker = new Ticker();
+        reserve = new ReserveMock();
+        reserve_ = address(reserve);
         token = new SimpleToken("TIN", "Tranche", "1", 0);
         currency = new SimpleToken("CUR", "Currency", "1", 0);
-        tranche = new Tranche(address(currency), address(token), address(ticker));
+        tranche = new Tranche(address(currency), address(token), address(ticker), reserve_);
         tranche_ = address(tranche);
     
         self = address(this);
@@ -177,6 +183,8 @@ contract TrancheTest is DSTest, Math {
         // check redeemTokenAmount of investor set to 0
         uint redeemTokenAmountTranche = tranche.redeemTokenAmount(disburseEpochID, self);
         assertEq(redeemTokenAmountTranche, 0);
+        // check reserve received correct a,ount of currency
+        assertEq(currency.balanceOf(reserve_), rmul(supplyAmount, supplyFullfillment));
         
         // assert tranche token balance is 0
         assertEq(token.balanceOf(tranche_), 0);

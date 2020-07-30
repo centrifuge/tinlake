@@ -50,13 +50,16 @@ struct Epoch {
 ERC20Like public currency;
 ERC20Like public token;
 TickerLike public ticker;
+address public reserve;
+
 address self;
 
-constructor(address currency_, address token_, address ticker_) public {
+constructor(address currency_, address token_, address ticker_, address reserve_) public {
     wards[msg.sender] = 1;
     token = ERC20Like(token_);
     currency = ERC20Like(currency_);
     ticker = TickerLike(ticker_);
+    reserve = reserve_;
     self = address(this);
 }
 
@@ -80,6 +83,7 @@ function depend(bytes32 contractName, address addr) public auth {
     if (contractName == "token") { token = ERC20Like(addr); }
     if (contractName == "currency") { currency = ERC20Like(addr); }
     if (contractName == "ticker") { ticker = TickerLike(addr); }
+    if (contractName == "reserve") { reserve = addr; }
     else revert();
 }
 
@@ -158,9 +162,14 @@ function epochUpdate(uint epochID, uint supplyFulfillment_, uint redeemFulfillme
     epochs[epochID].redeemFulfillment = redeemFulfillment_;
     epochs[epochID].tokenPrice = tokenPrice_;
      
+    adjustTokenBalance(epochID, supplyFulfillment_, redeemFulfillment_, tokenPrice_);
+    adjustCurrencyBalance(epochID, supplyFulfillment_, redeemFulfillment_, tokenPrice_);
+}
+
+// adjust token balance after epoch execution -> min/burn tokens
+function adjustTokenBalance(uint epochID, uint supplyFulfillment_, uint redeemFulfillment_, uint tokenPrice_) internal {
     // burn amount of tokens for that epoch
     uint burnAmount = rmul(epochs[epochID].totalRedeem, epochs[epochID].redeemFulfillment);
-
     // mint amount of tokens for that epoch
     uint mintAmount = rdiv(rmul(epochs[epochID].totalSupply, epochs[epochID].supplyFulfillment), epochs[epochID].tokenPrice);
     // burn tokens that are not needed for disbursement
@@ -169,11 +178,30 @@ function epochUpdate(uint epochID, uint supplyFulfillment_, uint redeemFulfillme
         token.burn(self, diff);
         return;
     }
-
     // mint tokens that are required for disbursement
     uint diff = safeSub(mintAmount, burnAmount);
     if (diff > 0) {
         token.mint(self, diff);
+    }
+}
+
+// adjust currency balance after epoch execution -> receive/send currency from/to reserve
+function adjustCurrencyBalance(uint epochID, uint supplyFulfillment_, uint redeemFulfillment_, uint tokenPrice_) internal {
+    // currency that was supplied in this epoch -> overflow
+    uint currencySupplied = rmul(epochs[epochID].totalSupply, epochs[epochID].supplyFulfillment);
+
+    // currency required from reedemption -> undeflow
+    uint currencyRequired = rmul(rmul(epochs[epochID].totalRedeem, epochs[epochID].redeemFulfillment), epochs[epochID].tokenPrice);
+    // send surplus funds to reserve
+    if (currencySupplied > currencyRequired) {
+        uint diff = safeSub(currencySupplied, currencyRequired);
+        require(currency.transferFrom(self, reserve, diff), "currency-transfer-failed"); 
+        return;
+    }
+    // get required currency from reserve
+    uint diff = safeSub(currencyRequired, currencySupplied);
+    if (diff > 0) {
+        require(currency.transferFrom(reserve, self, diff), "currency-transfer-failed"); 
     }
 }
 }
