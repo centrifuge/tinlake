@@ -183,7 +183,7 @@ contract TrancheTest is DSTest, Math {
         // check redeemTokenAmount of investor set to 0
         uint redeemTokenAmountTranche = tranche.redeemTokenAmount(disburseEpochID, self);
         assertEq(redeemTokenAmountTranche, 0);
-        // check reserve received correct a,ount of currency
+        // check reserve received correct amount of currency
         assertEq(currency.balanceOf(reserve_), rmul(supplyAmount, supplyFullfillment));
         
         // assert tranche token balance is 0
