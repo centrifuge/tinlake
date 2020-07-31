@@ -170,7 +170,7 @@ function epochUpdate(uint epochID, uint supplyFulfillment_, uint redeemFulfillme
 }
 
 // adjust token balance after epoch execution -> min/burn tokens
-function adjustTokenBalance(uint epochID, uint supplyFulfillment_, uint redeemFulfillment_, uint tokenPrice_) internal {
+function adjustTokenBalance(uint epochID) internal {
     // burn amount of tokens for that epoch
     uint burnAmount = rmul(epochs[epochID].totalRedeem, epochs[epochID].redeemFulfillment);
     // mint amount of tokens for that epoch
