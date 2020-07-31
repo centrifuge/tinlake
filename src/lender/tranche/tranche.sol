@@ -16,10 +16,9 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 import "ds-note/note.sol";
-import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
 
-contract TokenLike{
+contract TokenLike {
     function totalSupply() public view returns (uint);
     function balanceOf(address) public view returns (uint);
     function transferFrom(address,address,uint) public returns (bool);
