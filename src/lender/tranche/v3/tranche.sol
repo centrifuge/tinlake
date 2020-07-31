@@ -165,8 +165,8 @@ function epochUpdate(uint epochID, uint supplyFulfillment_, uint redeemFulfillme
     epochs[epochID].redeemFulfillment = redeemFulfillment_;
     epochs[epochID].tokenPrice = tokenPrice_;
      
-    adjustTokenBalance(epochID, supplyFulfillment_, redeemFulfillment_, tokenPrice_);
-    adjustCurrencyBalance(epochID, supplyFulfillment_, redeemFulfillment_, tokenPrice_);
+    adjustTokenBalance(epochID);
+    adjustCurrencyBalance(epochID);
 }
 
 // adjust token balance after epoch execution -> min/burn tokens
@@ -189,7 +189,7 @@ function adjustTokenBalance(uint epochID) internal {
 }
 
 // adjust currency balance after epoch execution -> receive/send currency from/to reserve
-function adjustCurrencyBalance(uint epochID, uint supplyFulfillment_, uint redeemFulfillment_, uint tokenPrice_) internal {
+function adjustCurrencyBalance(uint epochID) internal {
     // currency that was supplied in this epoch
     uint currencySupplied = rmul(epochs[epochID].totalSupply, epochs[epochID].supplyFulfillment);
     // currency required for redemption
