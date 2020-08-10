@@ -21,33 +21,38 @@ import "tinlake-math/math.sol";
 import "./../coordinator.sol";
 import "./mock/epoch-tranche.sol";
 import "./mock/reserve.sol";
-
+import "./mock/assessor.sol";
 
 contract Hevm {
     function warp(uint256) public;
 }
 
 contract CoordinatorTest is DSTest, Math {
-
     Hevm hevm;
     EpochCoordinator coordinator;
 
     EpochTrancheMock seniorTranche;
     EpochTrancheMock juniorTranche;
 
+    AssessorMock assessor;
+
     ReserveMock reserve;
 
     address seniorTranche_;
     address juniorTranche_;
     address reserve_;
+    address assessor_;
 
     function setUp() public {
         seniorTranche = new EpochTrancheMock();
         juniorTranche = new EpochTrancheMock();
         reserve = new ReserveMock();
+        assessor = new AssessorMock();
+
         seniorTranche_ = address(seniorTranche);
         juniorTranche_ = address(juniorTranche);
         reserve_ = address(reserve);
+        assessor_ = address(assessor);
 
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
@@ -56,7 +61,20 @@ contract CoordinatorTest is DSTest, Math {
         coordinator.depend("juniorTranche", juniorTranche_);
         coordinator.depend("seniorTranche", seniorTranche_);
         coordinator.depend("reserve", reserve_);
+        coordinator.depend("assessor", assessor_);
 
+        initDefaultConfig();
+
+    }
+
+    function initDefaultConfig() internal {
+        assessor.setReturn("maxReserve", 10000 ether);
+        assessor.setReturn("calcJuniorTokenPrice", ONE);
+        assessor.setReturn("calcSeniorTokenPrice", ONE);
+        assessor.setReturn("calcNAV", 800 ether);
+        reserve.setReturn("balance", 200 ether);
+        assessor.setReturn("seniorDebt", 700 ether);
+        assessor.setReturn("seniorBalance", 100 ether);
     }
 
     function testEpochExecuteTime() public {
@@ -71,8 +89,12 @@ contract CoordinatorTest is DSTest, Math {
         hevm.warp(now + 20 days);
 
         assertEq(coordinator.currentEpoch(), 21);
-        coordinator.executeEpoch();
-        assertEq(coordinator.lastEpochExecuted(), 21);
+
+        for (uint i =1; i<=20; i++) {
+            coordinator.executeEpoch();
+            assertEq(coordinator.lastEpochExecuted(), i+1);
+        }
+
     }
 
     function calcNextEpochIn() public view returns(uint) {
@@ -99,6 +121,35 @@ contract CoordinatorTest is DSTest, Math {
         coordinator.executeEpoch();
     }
 
+    // only junior investment
+    function testSimpleEpochExecute() public {
+        uint totalCurrency = 100 ether;
+        juniorTranche.setEpochReturn(totalCurrency, 0);
+        assessor.setTokenPrice(seniorTranche_, ONE);
+        assessor.setTokenPrice(juniorTranche_, ONE);
+        assessor.setReturn("calcMaxSeniorAssetValue", 1000 ether);
+        assessor.setReturn("calcMinJuniorAssetValue", 1000 ether);
+        assessor.setReturn("minSeniorRatio", 75 * 10**25);
+        assessor.setReturn("maxSeniorRatio", 85 * 10**25);
+
+
+    }
+
+    function testSimpleClose() public {
+        assertEq(coordinator.currentEpoch(), 0);
+        assertEq(coordinator.lastEpochExecuted(), 0);
+        hevm.warp(now + 1 days);
+
+        juniorTranche.setEpochReturn(100 ether, 100 ether);
+        seniorTranche.setEpochReturn(500 ether, 500 ether);
+
+        coordinator.closeEpoch();
+
+    }
+
+    function logState() public {
+
+    }
 
 }
 

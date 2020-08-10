@@ -19,9 +19,12 @@ import "ds-test/test.sol";
 import "../../../test/mock/mock.sol";
 
 contract ReserveMock is Mock {
-
     function updateMaxCurrency(uint currencyAmount) external {
 
+    }
+
+    function balance() public returns (uint) {
+        return call("balance");
     }
 
 }
