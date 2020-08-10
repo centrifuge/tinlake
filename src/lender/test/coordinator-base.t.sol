@@ -78,74 +78,9 @@ contract CoordinatorTest is DSTest, Math {
         juniorTranche.setEpochReturn(100 ether, 100 ether);
         seniorTranche.setEpochReturn(500 ether, 500 ether);
     }
-//
-//    function testEpochExecuteTime() public {
-//        assertEq(coordinator.currentEpoch(), 0);
-//        assertEq(coordinator.lastEpochExecuted(), 0);
-//        hevm.warp(now + 1 days);
-//
-//        assertEq(coordinator.currentEpoch(), 1);
-//        coordinator.executeEpoch();
-//        assertEq(coordinator.lastEpochExecuted(), 1);
-//
-//        hevm.warp(now + 20 days);
-//
-//        assertEq(coordinator.currentEpoch(), 21);
-//
-//        for (uint i =1; i<=20; i++) {
-//            coordinator.executeEpoch();
-//            assertEq(coordinator.lastEpochExecuted(), i+1);
-//        }
-//
-//    }
 
     function calcNextEpochIn() public view returns(uint) {
         return 1 days - (now - coordinator.normalizeTimestamp(now));
     }
-
-//    function testEpochTimeEdgeCase() public {
-//        uint secsForNextDay = calcNextEpochIn();
-//        assertEq(coordinator.currentEpoch(), 0);
-//        // exact 00:00 time
-//        hevm.warp(now + secsForNextDay);
-//
-//        assertEq(coordinator.currentEpoch(), 1);
-//        coordinator.executeEpoch();
-//    }
-//
-//    function testFailEpochTime() public {
-//        uint secsForNextDay = calcNextEpochIn();
-//        assertEq(coordinator.currentEpoch(), 0);
-//        assertEq(coordinator.lastEpochExecuted(), 0);
-//
-//        // should fail one sec too early
-//        hevm.warp(now + secsForNextDay - 1);
-//        coordinator.executeEpoch();
-//    }
-
-    // only junior investment
-    function testSimpleEpochExecute() public {
-        uint totalCurrency = 100 ether;
-        juniorTranche.setEpochReturn(totalCurrency, 0);
-        assessor.setTokenPrice(seniorTranche_, ONE);
-        assessor.setTokenPrice(juniorTranche_, ONE);
-        assessor.setReturn("minSeniorRatio", 75 * 10**25);
-        assessor.setReturn("maxSeniorRatio", 85 * 10**25);
-
-
-    }
-
-    function testSimpleClose() public {
-        assertEq(coordinator.currentEpoch(), 0);
-        assertEq(coordinator.lastEpochExecuted(), 0);
-        hevm.warp(now + 1 days);
-
-        coordinator.closeEpoch();
-    }
-
-    function logState() public {
-
-    }
-
 }
 

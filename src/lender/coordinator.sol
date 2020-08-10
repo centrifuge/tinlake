@@ -103,7 +103,7 @@ contract EpochCoordinator is Ticker, Auth {
 
         /// calculate currency amounts
         order.seniorRedeem = rmul(orderSeniorRedeem, epochSeniorTokenPrice);
-        order.juniorRedeem = rmul(orderJuniorRedeem,epochJuniorTokenPrice);
+        order.juniorRedeem = rmul(orderJuniorRedeem, epochJuniorTokenPrice);
         order.juniorSupply = orderJuniorSupply;
         order.seniorSupply = orderSeniorSupply;
 
