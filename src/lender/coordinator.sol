@@ -156,10 +156,11 @@ contract EpochCoordinator is Ticker, Auth {
 
         // max currency available constraint
 
+        // todo implement all constraints
         return true;
     }
 
-    function execute() public {
+    function executeEpoch() public {
         require(block.timestamp >= challengePeriodEnd && challengePeriodEnd != 0);
         executeEpoch(bestSubmission.seniorRedeem ,bestSubmission.juniorRedeem, bestSubmission.seniorSupply, bestSubmission.juniorSupply);
     }
@@ -177,13 +178,4 @@ contract EpochCoordinator is Ticker, Auth {
         challengePeriodEnd = 0;
         bestSubScore = 0;
     }
-
-    function executeEpoch() external {
-        uint currEpoch = currentEpoch();
-        require(lastEpochExecuted < currentEpoch());
-
-        lastEpochExecuted++;
-
-    }
-
 }

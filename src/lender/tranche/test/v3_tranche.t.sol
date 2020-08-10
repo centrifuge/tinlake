@@ -21,13 +21,13 @@ import "tinlake-math/math.sol";
 import "./../v3/tranche.sol";
 import "../../../test/simple/token.sol";
 import "../../test/mock/reserve.sol";
-import "./../v3/ticker.sol";
+import "./../../ticker.sol";
 
 contract Hevm {
     function warp(uint256) public;
 }
 
-contract TrancheTest is DSTest, Math { 
+contract TrancheTest is DSTest, Math {
     Tranche tranche;
     SimpleToken token;
     SimpleToken currency;
@@ -54,7 +54,7 @@ contract TrancheTest is DSTest, Math {
         currency = new SimpleToken("CUR", "Currency", "1", 0);
         tranche = new Tranche(address(currency), address(token), address(ticker), reserve_);
         tranche_ = address(tranche);
-    
+
         self = address(this);
     }
 
@@ -74,7 +74,7 @@ contract TrancheTest is DSTest, Math {
     function testSubmitRedeemOrder() public {
         uint investorBalance = 100 ether;
         uint redeemAmount = 80 ether;
-        uint currentEpoch = 1;
+        uint currentEpoch = 0;
         uint redeemEpochID = 10;
 
         // topup investor with tokens
@@ -84,7 +84,7 @@ contract TrancheTest is DSTest, Math {
         tranche.rely(self);
         // investor approves tokens to be redeemed
         token.approve(tranche_, redeemAmount);
-        // assert current epoch is currentEpoch => 1 
+        // assert current epoch is currentEpoch => 1
         assertEq(ticker.currentEpoch(), currentEpoch);
 
         // submit redeem order for certain epoch -> epoch 10 amount 80 TKN
@@ -110,7 +110,7 @@ contract TrancheTest is DSTest, Math {
     function testSubmitSupplyOrder() public {
         uint investorBalance = 100 ether;
         uint supplyAmount = 80 ether;
-        uint currentEpoch = 1;
+        uint currentEpoch = 0;
         uint supplyEpochID = 10;
         uint trancheInitialBalance = currency.balanceOf(tranche_);
 
@@ -121,7 +121,7 @@ contract TrancheTest is DSTest, Math {
         tranche.rely(self);
         // investor approves currency to be supplied
         currency.approve(tranche_, supplyAmount);
-        // assert current epoch is currentEpoch => 1 
+        // assert current epoch is currentEpoch => 1
         assertEq(ticker.currentEpoch(), currentEpoch);
 
         // submit supply order for certain epoch -> epoch 10 amount 80 DAI
@@ -151,7 +151,7 @@ contract TrancheTest is DSTest, Math {
         uint supplyAmount = 100 ether;
         uint disburseEpochID = 10;
         uint tokenPrice = ONE;
-        
+
         // supplyFullFillMent 80 %
         uint supplyFullfillment = rdiv(80, 100);
         uint redeemFullfillment = ONE;
@@ -168,9 +168,9 @@ contract TrancheTest is DSTest, Math {
         // settle epoch
         tranche.epochUpdate(disburseEpochID, supplyFullfillment, redeemFullfillment, tokenPrice);
 
-        // assert tokens were minted for disbursement 
+        // assert tokens were minted for disbursement
         assertEq(token.balanceOf(tranche_), rmul(supplyAmount, supplyFullfillment));
-        
+
         // disburse
         tranche.disburse(disburseEpochID);
         // check investor received correct amount of tokens
@@ -185,7 +185,7 @@ contract TrancheTest is DSTest, Math {
         assertEq(redeemTokenAmountTranche, 0);
         // check reserve received correct amount of currency
         assertEq(currency.balanceOf(reserve_), rmul(supplyAmount, supplyFullfillment));
-        
+
         // assert tranche token balance is 0
         assertEq(token.balanceOf(tranche_), 0);
     }
