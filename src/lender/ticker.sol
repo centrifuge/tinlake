@@ -1,5 +1,5 @@
 // Copyright (C) 2020 Centrifuge
-
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -15,14 +15,23 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import "ds-test/test.sol";
-import "../../../test/mock/mock.sol";
+import "tinlake-math/math.sol";
 
-contract ReserveMock is Mock {
+contract Ticker is Math {
+    uint public firstEpochTimestamp;
+    uint public epochCount;
 
-    function updateMaxCurrency(uint currencyAmount) external {
-
+    constructor() public {
+        // 00:00 next day first epoch starts
+        firstEpochTimestamp = normalizeTimestamp(now);
     }
 
-}
+    // normalizes timestamp to 00:00
+    function normalizeTimestamp(uint timestamp) public pure returns (uint) {
+        return safeMul((1 days), safeDiv(timestamp, 1 days));
+    }
 
+    function currentEpoch() public returns (uint) {
+        return safeDiv(safeSub(normalizeTimestamp(now), firstEpochTimestamp), (1 days));
+    }
+}

@@ -18,11 +18,11 @@ pragma solidity >=0.5.15 <0.6.0;
 import "ds-test/test.sol";
 import "../../../test/mock/mock.sol";
 
-contract ReserveMock is Mock {
+contract EpochTrancheMock is Mock {
 
-    function updateMaxCurrency(uint currencyAmount) external {
+    function epochUpdate(uint epochID, uint supplyFulfillment_,
+        uint redeemFulfillment_, uint tokenPrice_) external {
 
     }
-
 }
 
