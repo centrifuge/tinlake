@@ -62,6 +62,7 @@ contract EpochCoordinator is Ticker, Auth {
     uint public epochNAV;
     uint public epochSeniorDebt;
     uint public epochSeniorBalance;
+    uint public epochReserve;
 
     bool public submissionPeriod;
 
@@ -100,6 +101,7 @@ contract EpochCoordinator is Ticker, Auth {
 
         epochSeniorDebt = assessor.seniorDebt();
         epochSeniorBalance = assessor.seniorBalance();
+        epochReserve = reserve.balance();
 
         /// calculate currency amounts
         order.seniorRedeem = rmul(orderSeniorRedeem, epochSeniorTokenPrice);
@@ -119,41 +121,74 @@ contract EpochCoordinator is Ticker, Auth {
 
     /// number denominated in WAD
     /// all variables expressed as currency
-    function submitSolution(uint redeemSenior, uint redeemJunior, uint supplySenior, uint supplyJunior) public {
+    function submitSolution(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) public {
         require(submissionPeriod == true);
-        uint score = scoreSolution(redeemSenior, redeemJunior, supplySenior, supplyJunior);
+        uint score = scoreSolution(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
 
         if (score < bestSubScore) {
             return;
         }
 
-        if(validate(redeemSenior, redeemJunior, supplySenior, supplyJunior)) {
+        if(validate(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply)) {
             if (challengePeriodEnd == 0) {
                 challengePeriodEnd = safeAdd(block.timestamp, challengeTime);
             }
 
-            bestSubmission.seniorRedeem = redeemSenior;
-            bestSubmission.juniorRedeem = redeemJunior;
-            bestSubmission.juniorSupply = supplyJunior;
-            bestSubmission.seniorSupply = supplySenior;
+            bestSubmission.seniorRedeem = seniorRedeem;
+            bestSubmission.juniorRedeem = juniorRedeem;
+            bestSubmission.juniorSupply = juniorSupply;
+            bestSubmission.seniorSupply = seniorSupply;
         }
     }
 
-    function scoreSolution(uint redeemSenior, uint redeemJunior, uint supplySenior, uint supplyJunior) public pure returns(uint) {
+    function scoreSolution(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) public pure returns(uint) {
         // todo improve scoring func
-        return safeAdd(safeAdd(safeMul(redeemSenior, 10000), safeMul(redeemJunior, 1000)),safeAdd(safeMul(supplyJunior, 100), safeMul(supplySenior, 10)));
+        return safeAdd(safeAdd(safeMul(seniorRedeem, 10000), safeMul(juniorRedeem, 1000)),safeAdd(safeMul(juniorSupply, 100), safeMul(seniorSupply, 10)));
     }
 
     // all parameters in WAD and denominated in currency
-    function validate(uint redeemSenior, uint redeemJunior, uint supplySenior, uint supplyJunior) public returns (bool) {
-        uint newReserve = safeSub(safeSub(safeAdd(safeAdd(reserve.balance(), supplyJunior), supplySenior), redeemSenior), redeemJunior);
+    function validate(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) public returns (bool) {
 
-        // max ratio constraint
+        uint currencyAvailable = safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply);
+        uint currencyOut = safeAdd(seniorRedeem, juniorRedeem);
+
+        // constraint: currency available
+        if (currencyOut >= currencyAvailable) {
+            return false;
+        }
+
+        uint newReserve = safeSub(currencyAvailable, currencyOut);
+        // constraint: max reserve
         if (newReserve >= assessor.maxReserve()) {
             return false;
         }
 
-        // max currency available constraint
+        // constraint: max order
+        if (seniorSupply > order.seniorSupply ||
+            juniorSupply > order.juniorSupply ||
+            seniorRedeem > order.seniorRedeem ||
+            juniorRedeem > order.juniorRedeem) {
+            return false;
+        }
+
+        uint assets = safeAdd(epochNAV, epochReserve);
+
+        (uint minSeniorRatio, uint maxSeniorRatio) = assessor.seniorRatioBounds();
+
+        // todo make seniorBalance an integer
+        uint newSeniorBalance = safeSub(safeAdd(epochSeniorBalance, seniorSupply), seniorRedeem);
+
+        uint newSeniorAsset = safeAdd(epochSeniorDebt,newSeniorBalance);
+
+        // min senior ratio constraint
+        if (newSeniorAsset< rmul(assets, minSeniorRatio)) {
+            return false;
+        }
+
+        // max senior ratio constraint
+        if (newSeniorAsset > rmul(assets, maxSeniorRatio)) {
+            return false;
+        }
 
         // todo implement all constraints
         return true;
@@ -164,7 +199,7 @@ contract EpochCoordinator is Ticker, Auth {
         executeEpoch(bestSubmission.seniorRedeem ,bestSubmission.juniorRedeem, bestSubmission.seniorSupply, bestSubmission.juniorSupply);
     }
 
-    function executeEpoch(uint redeemSenior, uint redeemJunior, uint supplySenior, uint supplyJunior) internal {
+    function executeEpoch(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) internal {
 
         // todo call transfers on operators
 
