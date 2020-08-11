@@ -73,11 +73,11 @@ contract AssessorMock is Mock {
     // - new funcs
 
     function calcNAV() external returns (uint) {
-        return call("calculateNAV");
+        return call("calcNAV");
     }
 
-    function maxReserve() external returns (uint) {
-        return call("maxReserve");
+    function maxReserve() external view returns (uint) {
+        return values_return["maxReserve"];
     }
 
     function calcSeniorTokenPrice(uint NAV_) external returns(uint) {

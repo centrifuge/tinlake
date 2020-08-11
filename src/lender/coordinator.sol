@@ -15,6 +15,7 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "./ticker.sol";
 import "tinlake-auth/auth.sol";
+import "ds-test/test.sol";
 
 interface EpochTrancheLike {
     function epochUpdate(uint epochID, uint supplyFulfillment_,
@@ -30,13 +31,14 @@ interface ReserveLike {
 interface AssessorLike {
     function calcSeniorTokenPrice(uint NAV_) external returns(uint);
     function calcJuniorTokenPrice(uint NAV_) external returns(uint);
-    function maxReserve() external returns(uint);
+    function maxReserve() external view returns(uint);
     function calcNAV() external returns (uint);
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
+    function seniorRatioBounds() external returns(uint minSeniorRatio, uint maxSeniorRatio);
 }
 
-contract EpochCoordinator is Ticker, Auth {
+contract EpochCoordinator is Ticker, Auth, DSTest {
     EpochTrancheLike juniorTranche;
     EpochTrancheLike seniorTranche;
 
@@ -148,18 +150,20 @@ contract EpochCoordinator is Ticker, Auth {
 
     // all parameters in WAD and denominated in currency
     function validate(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) public returns (bool) {
-
         uint currencyAvailable = safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply);
         uint currencyOut = safeAdd(seniorRedeem, juniorRedeem);
 
         // constraint: currency available
         if (currencyOut >= currencyAvailable) {
+            emit log_named_int("constraint-currency-available", int(currencyOut));
             return false;
         }
 
         uint newReserve = safeSub(currencyAvailable, currencyOut);
         // constraint: max reserve
         if (newReserve >= assessor.maxReserve()) {
+
+            emit log_named_int("constraint-max-reserve", -1);
             return false;
         }
 
@@ -168,6 +172,7 @@ contract EpochCoordinator is Ticker, Auth {
             juniorSupply > order.juniorSupply ||
             seniorRedeem > order.seniorRedeem ||
             juniorRedeem > order.juniorRedeem) {
+            emit log_named_int("constraint-max-order", int(order.seniorSupply));
             return false;
         }
 
@@ -182,15 +187,16 @@ contract EpochCoordinator is Ticker, Auth {
 
         // min senior ratio constraint
         if (newSeniorAsset< rmul(assets, minSeniorRatio)) {
+            emit log_named_int("constraint-min-senior-ratio", -1);
             return false;
         }
 
         // max senior ratio constraint
         if (newSeniorAsset > rmul(assets, maxSeniorRatio)) {
+            emit log_named_int("constraint-max-senior-ratio", -1);
             return false;
         }
 
-        // todo implement all constraints
         return true;
     }
 

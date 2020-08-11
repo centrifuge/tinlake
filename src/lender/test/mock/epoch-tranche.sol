@@ -31,7 +31,7 @@ contract EpochTrancheMock is Mock {
         totalRedeem = totalRedeem_;
     }
 
-    function getTotalOrders(uint epochID) public returns(uint, uint) {
+    function getTotalOrders(uint epochID) public view returns(uint, uint) {
         return (totalSupply, totalRedeem);
     }
 

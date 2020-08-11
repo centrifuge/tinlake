@@ -22,6 +22,7 @@ import "./../coordinator.sol";
 import "./mock/epoch-tranche.sol";
 import "./mock/reserve.sol";
 import "./mock/assessor.sol";
+import "../deployer.sol";
 
 contract Hevm {
     function warp(uint256) public;
@@ -43,6 +44,34 @@ contract CoordinatorTest is DSTest, Math {
     address reserve_;
     address assessor_;
 
+    struct LenderModel {
+        uint maxReserve;
+        uint reserve;
+        uint maxSeniorRatio;
+        uint minSeniorRatio;
+        uint seniorDebt;
+        uint seniorBalance;
+        uint NAV;
+        uint seniorRedeemOrder;
+        uint seniorSupplyOrder;
+        uint juniorSupplyOrder;
+        uint juniorRedeemOrder;
+    }
+
+    struct ModelInput {
+        uint seniorSupply;
+        uint juniorSupply;
+        uint seniorRedeem;
+        uint juniorRedeem;
+    }
+
+    struct TestCaseDesc {
+        bool successful;
+        bytes32 name;
+    }
+
+    LenderModel public defaultSetup;
+
     function setUp() public {
         seniorTranche = new EpochTrancheMock();
         juniorTranche = new EpochTrancheMock();
@@ -63,20 +92,45 @@ contract CoordinatorTest is DSTest, Math {
         coordinator.depend("reserve", reserve_);
         coordinator.depend("assessor", assessor_);
 
-        initDefaultConfig();
+        defaultSetup = initDefaultValues();
+        initTestConfig(defaultSetup);
 
     }
 
-    function initDefaultConfig() internal {
-        assessor.setReturn("maxReserve", 10000 ether);
+    function initDefaultValues() internal returns (LenderModel memory) {
+        return LenderModel({maxReserve: 10000 ether,
+        reserve: 200 ether,
+        maxSeniorRatio: 80 * 10 **25,
+        minSeniorRatio: 75 * 10 **25,
+        seniorDebt: 700 ether,
+        seniorBalance: 100 ether,
+        NAV: 800 ether,
+        seniorRedeemOrder: 0,
+        seniorSupplyOrder: 0,
+        juniorSupplyOrder: 0,
+        juniorRedeemOrder: 0});
+    }
+
+    function consoleLog(LenderModel memory setup) internal {
+        emit log_named_uint("maxReserve", setup.maxReserve);
+        emit log_named_uint("NAV", setup.NAV);
+        emit log_named_uint("reserve", setup.reserve);
+        emit log_named_uint("seniorDebt", setup.seniorDebt);
+    }
+
+    function initTestConfig(LenderModel memory setup) internal {
+        assessor.setReturn("maxReserve", setup.maxReserve);
         assessor.setReturn("calcJuniorTokenPrice", ONE);
         assessor.setReturn("calcSeniorTokenPrice", ONE);
-        assessor.setReturn("calcNAV", 800 ether);
-        reserve.setReturn("balance", 200 ether);
-        assessor.setReturn("seniorDebt", 700 ether);
-        assessor.setReturn("seniorBalance", 100 ether);
-        juniorTranche.setEpochReturn(100 ether, 100 ether);
-        seniorTranche.setEpochReturn(500 ether, 500 ether);
+        assessor.setReturn("calcNAV", setup.NAV);
+        reserve.setReturn("balance", setup.reserve);
+        assessor.setReturn("seniorDebt", setup.seniorDebt);
+        assessor.setReturn("seniorBalance", setup.seniorBalance);
+        assessor.setReturn("minSeniorRatio", setup.minSeniorRatio);
+        assessor.setReturn("maxSeniorRatio", setup.maxSeniorRatio);
+
+        juniorTranche.setEpochReturn(setup.juniorSupplyOrder, setup.juniorRedeemOrder);
+        seniorTranche.setEpochReturn(setup.seniorSupplyOrder, setup.seniorSupplyOrder);
     }
 
     function calcNextEpochIn() public view returns(uint) {
