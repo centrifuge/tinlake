@@ -154,14 +154,14 @@ contract EpochCoordinator is Ticker, Auth, DSTest {
         uint currencyOut = safeAdd(seniorRedeem, juniorRedeem);
 
         // constraint: currency available
-        if (currencyOut >= currencyAvailable) {
+        if (currencyOut > currencyAvailable) {
             emit log_named_int("constraint-currency-available", int(currencyOut));
             return false;
         }
 
         uint newReserve = safeSub(currencyAvailable, currencyOut);
         // constraint: max reserve
-        if (newReserve >= assessor.maxReserve()) {
+        if (newReserve > assessor.maxReserve()) {
 
             emit log_named_int("constraint-max-reserve", -1);
             return false;
@@ -172,30 +172,34 @@ contract EpochCoordinator is Ticker, Auth, DSTest {
             juniorSupply > order.juniorSupply ||
             seniorRedeem > order.seniorRedeem ||
             juniorRedeem > order.juniorRedeem) {
-            emit log_named_int("constraint-max-order", int(order.seniorSupply));
+            emit log_named_int("constraint-max-order", int(order.seniorRedeem));
             return false;
         }
 
-        uint assets = safeAdd(epochNAV, epochReserve);
+        uint assets = safeAdd(epochNAV, newReserve);
 
         (uint minSeniorRatio, uint maxSeniorRatio) = assessor.seniorRatioBounds();
 
         // todo make seniorBalance an integer
         uint newSeniorBalance = safeSub(safeAdd(epochSeniorBalance, seniorSupply), seniorRedeem);
 
+
         uint newSeniorAsset = safeAdd(epochSeniorDebt,newSeniorBalance);
 
+        emit log_named_int("step 6",int(assets));
+
         // min senior ratio constraint
-        if (newSeniorAsset< rmul(assets, minSeniorRatio)) {
-            emit log_named_int("constraint-min-senior-ratio", -1);
+        if (newSeniorAsset < rmul(assets, minSeniorRatio)) {
+            emit log_named_int("constraint-min-senior-ratio", int(rmul(assets, minSeniorRatio)));
             return false;
         }
 
         // max senior ratio constraint
         if (newSeniorAsset > rmul(assets, maxSeniorRatio)) {
-            emit log_named_int("constraint-max-senior-ratio", -1);
+            emit log_named_int("constraint-max-senior-ratio", int(rmul(assets, maxSeniorRatio)));
             return false;
         }
+
 
         return true;
     }

@@ -23,8 +23,8 @@ contract CoordinatorValidateTest is CoordinatorTest {
         super.setUp();
     }
 
-    function executeTestCase(LenderModel memory testState, ModelInput memory input, TestCaseDesc memory tCase) public {
-        initTestConfig(testState);
+    function executeTestCase(LenderModel memory model, ModelInput memory input, TestCaseDesc memory tCase) public {
+        initTestConfig(model);
         hevm.warp(now + 1 days);
         coordinator.closeEpoch();
 
@@ -114,6 +114,124 @@ contract CoordinatorValidateTest is CoordinatorTest {
             juniorRedeem : 101 ether
 
             }), TestCaseDesc({name: "juniorRedeem too high",successful: false}));
+    }
+
+    function testCurrencyAvailable() public {
+        LenderModel memory model = getDefaultModel();
+        model.seniorRedeemOrder = 1000 ether;
+        model.reserve = 100 ether;
+        model.NAV = 900 ether;
+
+        executeTestCase(model,
+            ModelInput({
+            seniorSupply : 0 ether,
+            juniorSupply : 0 ether,
+            seniorRedeem : 101 ether,
+            juniorRedeem : 0 ether
+
+            }), TestCaseDesc({name: "not enough currency available",successful: false}));
+
+
+        executeTestCase(model,
+            ModelInput({
+            seniorSupply : 0 ether,
+            juniorSupply : 0 ether,
+            seniorRedeem : 51 ether,
+            juniorRedeem : 50 ether
+
+            }), TestCaseDesc({name: "not enough currency two redeems",successful: false}));
+
+        executeTestCase(model,
+            ModelInput({
+            seniorSupply : 0 ether,
+            juniorSupply : 0 ether,
+            seniorRedeem : 50 ether,
+            juniorRedeem : 50 ether
+
+            }), TestCaseDesc({name: "not enough currency edge case",successful: true}));
+    }
+
+    function testMaxReserve() public {
+        LenderModel memory model = getDefaultModel();
+        model.maxReserve = 210 ether;
+
+        executeTestCase(model,
+            ModelInput({
+            seniorSupply : 10 ether,
+            juniorSupply : 0 ether,
+            seniorRedeem : 0 ether,
+            juniorRedeem : 0 ether
+
+            }), TestCaseDesc({name: "max reserve edge case",successful: true}));
+
+
+        executeTestCase(model,
+            ModelInput({
+            seniorSupply : 11 ether,
+            juniorSupply : 0 ether,
+            seniorRedeem : 0 ether,
+            juniorRedeem : 0 ether
+
+            }), TestCaseDesc({name: "reserve > maxReserve", successful: false}));
+
+    }
+
+    function testSeniorRatioTooHigh() public {
+        LenderModel memory model = getDefaultModel();
+        model.seniorSupplyOrder = 1000 ether;
+
+        executeTestCase(model,
+            ModelInput({
+            seniorSupply : 1000 ether,
+            juniorSupply : 0 ether,
+            seniorRedeem : 0 ether,
+            juniorRedeem : 0 ether
+
+            }), TestCaseDesc({name: "senior ratio too high" ,successful: false}));
+
+        executeTestCase(model,
+            ModelInput({
+            seniorSupply : 333 ether,
+            juniorSupply : 0 ether,
+            seniorRedeem : 0 ether,
+            juniorRedeem : 0 ether
+
+            }), TestCaseDesc({name: "senior ratio not to high" ,successful: true}));
+
+        executeTestCase(model,
+            ModelInput({
+            seniorSupply : 334 ether,
+            juniorSupply : 0 ether,
+            seniorRedeem : 0 ether,
+            juniorRedeem : 0 ether
+
+            }), TestCaseDesc({name: "senior ratio too high edge" ,successful: false}));
+    }
+
+    function testSeniorRatioTooLow() public {
+        LenderModel memory model = getDefaultModel();
+        model.juniorSupplyOrder = 1000 ether;
+
+        executeTestCase(model,
+            ModelInput({
+            seniorSupply : 0 ether,
+            juniorSupply : 1000 ether,
+            seniorRedeem : 0 ether,
+            juniorRedeem : 0 ether
+
+            }), TestCaseDesc({name: "senior ratio too low" ,successful: false}));
+
+        executeTestCase(model,
+            ModelInput({
+            seniorSupply : 0 ether,
+            juniorSupply : 50 ether,
+            seniorRedeem : 0 ether,
+            juniorRedeem : 0 ether
+
+            }), TestCaseDesc({name: "junior ratio not too low" ,successful: true}));
+
+            // todo add edge case
+
     }
 
 }

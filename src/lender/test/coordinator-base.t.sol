@@ -111,26 +111,26 @@ contract CoordinatorTest is DSTest, Math {
         juniorRedeemOrder: 0});
     }
 
-    function consoleLog(LenderModel memory setup) internal {
-        emit log_named_uint("maxReserve", setup.maxReserve);
-        emit log_named_uint("NAV", setup.NAV);
-        emit log_named_uint("reserve", setup.reserve);
-        emit log_named_uint("seniorDebt", setup.seniorDebt);
+    function consoleLog(LenderModel memory model) internal {
+        emit log_named_uint("maxReserve", model.maxReserve);
+        emit log_named_uint("NAV", model.NAV);
+        emit log_named_uint("reserve", model.reserve);
+        emit log_named_uint("seniorDebt", model.seniorDebt);
     }
 
-    function initTestConfig(LenderModel memory setup) internal {
-        assessor.setReturn("maxReserve", setup.maxReserve);
+    function initTestConfig(LenderModel memory model) internal {
+        assessor.setReturn("maxReserve", model.maxReserve);
         assessor.setReturn("calcJuniorTokenPrice", ONE);
         assessor.setReturn("calcSeniorTokenPrice", ONE);
-        assessor.setReturn("calcNAV", setup.NAV);
-        reserve.setReturn("balance", setup.reserve);
-        assessor.setReturn("seniorDebt", setup.seniorDebt);
-        assessor.setReturn("seniorBalance", setup.seniorBalance);
-        assessor.setReturn("minSeniorRatio", setup.minSeniorRatio);
-        assessor.setReturn("maxSeniorRatio", setup.maxSeniorRatio);
+        assessor.setReturn("calcNAV", model.NAV);
+        reserve.setReturn("balance", model.reserve);
+        assessor.setReturn("seniorDebt", model.seniorDebt);
+        assessor.setReturn("seniorBalance", model.seniorBalance);
+        assessor.setReturn("minSeniorRatio", model.minSeniorRatio);
+        assessor.setReturn("maxSeniorRatio", model.maxSeniorRatio);
 
-        juniorTranche.setEpochReturn(setup.juniorSupplyOrder, setup.juniorRedeemOrder);
-        seniorTranche.setEpochReturn(setup.seniorSupplyOrder, setup.seniorSupplyOrder);
+        juniorTranche.setEpochReturn(model.juniorSupplyOrder, model.juniorRedeemOrder);
+        seniorTranche.setEpochReturn(model.seniorSupplyOrder, model.seniorRedeemOrder);
     }
 
     function calcNextEpochIn() public view returns(uint) {
