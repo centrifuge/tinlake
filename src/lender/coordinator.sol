@@ -142,7 +142,6 @@ contract EpochCoordinator is Ticker, Auth {
     function scoreSolution(uint redeemSenior, uint redeemJunior, uint supplySenior, uint supplyJunior) public pure returns(uint) {
         // todo improve scoring func
         return safeAdd(safeAdd(safeMul(redeemSenior, 10000), safeMul(redeemJunior, 1000)),safeAdd(safeMul(supplyJunior, 100), safeMul(supplySenior, 10)));
-
     }
 
     // all parameters in WAD and denominated in currency

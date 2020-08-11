@@ -81,5 +81,27 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
             assertEq(coordinator.lastEpochExecuted(), i+1);
         }
     }
+
+    function testCloseEpochNoSubmission() public {
+        assertEq(coordinator.currentEpoch(), 0);
+        assertEq(coordinator.lastEpochExecuted(), 0);
+        hevm.warp(now + 1 days);
+
+        coordinator.closeEpoch();
+        assertEq(coordinator.lastEpochExecuted(), 1);
+        assertTrue(coordinator.submissionPeriod() == false);
+    }
+
+    function testCloseEpochSubmissionPeriod() public {
+        // higher junior supply demand
+        juniorTranche.setEpochReturn(1000000000000 ether, 0);
+        assertEq(coordinator.currentEpoch(), 0);
+        assertEq(coordinator.lastEpochExecuted(), 0);
+        hevm.warp(now + 1 days);
+
+        coordinator.closeEpoch();
+        assertEq(coordinator.lastEpochExecuted(), 0);
+        assertTrue(coordinator.submissionPeriod() == true);
+    }
 }
 
