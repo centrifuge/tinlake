@@ -191,6 +191,7 @@ contract EpochCoordinator is Ticker, Auth, DSTest {
         // min senior ratio constraint
         if (newSeniorAsset < rmul(assets, minSeniorRatio)) {
             emit log_named_int("constraint-min-senior-ratio", int(rmul(assets, minSeniorRatio)));
+            emit log_named_uint("newSeniorAsset", newSeniorAsset);
             return false;
         }
 

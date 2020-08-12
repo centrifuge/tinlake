@@ -230,9 +230,39 @@ contract CoordinatorValidateTest is CoordinatorTest {
 
             }), TestCaseDesc({name: "junior ratio not too low" ,successful: true}));
 
-            // todo add edge case
 
+        // edge case
+        /*
+        NAV + Reserve = 1000
+        seniorDebt  + seniorBalance = 800
+        minSeniorRatio = 0.75
+
+        NAV + Reserve + juniorSupply * seniorMinRatio =  seniorDebt  + seniorBalance
+
+        juniorSupply * seniorMinRatio = seniorDebt + seniorBalance - minRatio(NAV + Reserve) // *(1/minSeniorRatio)
+
+        juniorSupply = (seniorDebt + seniorBalance - minRatio(NAV + Reserve))*(1/minSeniorRatio)
+
+        juniorSupply = (800 - 0.75 * 1000) * 1/0.75
+        */
+
+        executeTestCase(model,
+            ModelInput({
+            seniorSupply : 0 ether,
+            juniorSupply : 66 ether,
+            seniorRedeem : 0 ether,
+            juniorRedeem : 0 ether
+
+            }), TestCaseDesc({name: "junior ratio edge case in range" ,successful: true}));
+
+        executeTestCase(model,
+            ModelInput({
+            seniorSupply : 0 ether,
+            juniorSupply : 67 ether,
+            seniorRedeem : 0 ether,
+            juniorRedeem : 0 ether
+
+            }), TestCaseDesc({name: "junior ratio edge case too high" ,successful: false}));
     }
-
 }
 
