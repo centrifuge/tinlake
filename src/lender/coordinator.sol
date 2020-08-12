@@ -19,7 +19,7 @@ import "tinlake-auth/auth.sol";
 interface EpochTrancheLike {
     function epochUpdate(uint epochID, uint supplyFulfillment_,
         uint redeemFulfillment_, uint tokenPrice_) external;
-    function getTotalOrders(uint epochID) external returns(uint totalSupply, uint totalRedeem);
+    function getTotalOrders(uint epochID) external view returns(uint totalSupply, uint totalRedeem);
 }
 
 interface ReserveLike {
@@ -34,7 +34,7 @@ interface AssessorLike {
     function calcNAV() external returns (uint);
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
-    function seniorRatioBounds() external returns(uint minSeniorRatio, uint maxSeniorRatio);
+    function seniorRatioBounds() external view returns(uint minSeniorRatio, uint maxSeniorRatio);
 }
 
 contract EpochCoordinator is Ticker, Auth  {
@@ -142,13 +142,15 @@ contract EpochCoordinator is Ticker, Auth  {
         }
     }
 
-    function scoreSolution(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) public pure returns(uint) {
+    function scoreSolution(uint seniorRedeem, uint juniorRedeem,
+        uint seniorSupply, uint juniorSupply) public pure returns(uint) {
         // todo improve scoring func
-        return safeAdd(safeAdd(safeMul(seniorRedeem, 10000), safeMul(juniorRedeem, 1000)),safeAdd(safeMul(juniorSupply, 100), safeMul(seniorSupply, 10)));
+        return safeAdd(safeAdd(safeMul(seniorRedeem, 10000), safeMul(juniorRedeem, 1000)),
+            safeAdd(safeMul(juniorSupply, 100), safeMul(seniorSupply, 10)));
     }
 
     // all parameters in WAD and denominated in currency
-    function validate(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) public returns (int) {
+    function validate(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) public view returns (int) {
         uint currencyAvailable = safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply);
         uint currencyOut = safeAdd(seniorRedeem, juniorRedeem);
 

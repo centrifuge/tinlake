@@ -88,9 +88,9 @@ contract AssessorMock is Mock {
         return call("calcJuniorTokenPrice");
     }
 
-    function seniorRatioBounds() public returns (uint minSeniorRatio, uint maxSeniorRatio) {
-        uint minSeniorRatio = call("minSeniorRatio");
-        uint maxSeniorRatio = call("maxSeniorRatio");
+    function seniorRatioBounds() public view returns (uint minSeniorRatio, uint maxSeniorRatio) {
+        uint minSeniorRatio = values_return["minSeniorRatio"];
+        uint maxSeniorRatio = values_return["maxSeniorRatio"];
         return (minSeniorRatio, maxSeniorRatio);
     }
 
