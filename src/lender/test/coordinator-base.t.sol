@@ -92,23 +92,24 @@ contract CoordinatorTest is DSTest, Math {
         coordinator.depend("reserve", reserve_);
         coordinator.depend("assessor", assessor_);
 
-        defaultSetup = initDefaultValues();
+        defaultSetup = getDefaultModel();
         initTestConfig(defaultSetup);
 
     }
 
-    function initDefaultValues() internal returns (LenderModel memory) {
-        return LenderModel({maxReserve: 10000 ether,
-        reserve: 200 ether,
-        maxSeniorRatio: 80 * 10 **25,
-        minSeniorRatio: 75 * 10 **25,
-        seniorDebt: 700 ether,
-        seniorBalance: 100 ether,
-        NAV: 800 ether,
-        seniorRedeemOrder: 0,
-        seniorSupplyOrder: 0,
-        juniorSupplyOrder: 0,
-        juniorRedeemOrder: 0});
+    function getDefaultModel()  public returns (LenderModel memory model)  {
+        return LenderModel({
+            maxReserve: 10000 ether,
+            reserve: 200 ether,
+            maxSeniorRatio: 85 * 10 **25,
+            minSeniorRatio: 75 * 10 **25,
+            seniorDebt: 700 ether,
+            seniorBalance: 100 ether,
+            NAV: 800 ether,
+            seniorRedeemOrder: 100 ether,
+            seniorSupplyOrder: 100 ether,
+            juniorSupplyOrder: 100 ether,
+            juniorRedeemOrder: 100 ether});
     }
 
     function consoleLog(LenderModel memory model) internal {

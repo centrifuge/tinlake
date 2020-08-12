@@ -57,21 +57,6 @@ contract CoordinatorValidateTest is CoordinatorTest {
         assertTrue(tCase.status == result);
     }
 
-    function getDefaultModel()  public returns (LenderModel memory model)  {
-        return LenderModel({
-        maxReserve: 10000 ether,
-        reserve: 200 ether,
-        maxSeniorRatio: 85 * 10 **25,
-        minSeniorRatio: 75 * 10 **25,
-        seniorDebt: 700 ether,
-        seniorBalance: 100 ether,
-        NAV: 800 ether,
-        seniorRedeemOrder: 100 ether,
-        seniorSupplyOrder: 100 ether,
-        juniorSupplyOrder: 100 ether,
-        juniorRedeemOrder: 100 ether});
-    }
-
     function testBasicValidate() public {
         LenderModel memory model = getDefaultModel();
 
