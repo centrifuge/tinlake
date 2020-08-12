@@ -1,6 +1,7 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 import "../../../test/mock/mock.sol";
+import "../../../test/simple/token.sol";
 
 contract ShelfMock is Mock {
 
@@ -52,5 +53,10 @@ contract ShelfMock is Mock {
     function balanceRequest() public returns (bool, uint) {
         calls["balanceRequest"]++;
         return (values_bool_return["balanceRequest"], values_return["balanceRequest"]);
+    }
+
+    function doApprove(address currency_, address recepeint, uint amount) public {
+        SimpleToken currency = SimpleToken(currency_);
+        currency.approve(recepeint, amount);
     }
 }
