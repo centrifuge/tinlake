@@ -22,8 +22,6 @@ contract Reserve is Math, Auth {
     bool public poolActive;
     uint256 public currencyAvailable;
 
-
-
     address self;
 
     constructor(address currency_) public {
