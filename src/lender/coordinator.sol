@@ -15,7 +15,6 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "./ticker.sol";
 import "tinlake-auth/auth.sol";
-import "ds-test/test.sol";
 
 interface EpochTrancheLike {
     function epochUpdate(uint epochID, uint supplyFulfillment_,
@@ -38,7 +37,7 @@ interface AssessorLike {
     function seniorRatioBounds() external returns(uint minSeniorRatio, uint maxSeniorRatio);
 }
 
-contract EpochCoordinator is Ticker, Auth, DSTest {
+contract EpochCoordinator is Ticker, Auth  {
     EpochTrancheLike juniorTranche;
     EpochTrancheLike seniorTranche;
 
@@ -112,7 +111,7 @@ contract EpochCoordinator is Ticker, Auth, DSTest {
         order.seniorSupply = orderSeniorSupply;
 
         /// can orders be to 100% fulfilled
-        if (validate(orderSeniorRedeem, orderJuniorRedeem, orderSeniorSupply, orderJuniorSupply)) {
+        if (validate(orderSeniorRedeem, orderJuniorRedeem, orderSeniorSupply, orderJuniorSupply) == 0) {
 
             executeEpoch(orderSeniorRedeem, orderJuniorRedeem, orderSeniorSupply, orderJuniorSupply);
             return;
@@ -131,7 +130,7 @@ contract EpochCoordinator is Ticker, Auth, DSTest {
             return;
         }
 
-        if(validate(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply)) {
+        if(validate(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply) == 0) {
             if (challengePeriodEnd == 0) {
                 challengePeriodEnd = safeAdd(block.timestamp, challengeTime);
             }
@@ -149,60 +148,52 @@ contract EpochCoordinator is Ticker, Auth, DSTest {
     }
 
     // all parameters in WAD and denominated in currency
-    function validate(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) public returns (bool) {
+    function validate(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) public returns (int) {
         uint currencyAvailable = safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply);
         uint currencyOut = safeAdd(seniorRedeem, juniorRedeem);
 
-        // constraint: currency available
+        // constraint 1: currency available
         if (currencyOut > currencyAvailable) {
-            emit log_named_int("constraint-currency-available", int(currencyOut));
-            return false;
+            // currencyAvailableConstraint => -1
+            return -1;
         }
 
         uint newReserve = safeSub(currencyAvailable, currencyOut);
-        // constraint: max reserve
+        // constraint 2: max reserve
         if (newReserve > assessor.maxReserve()) {
-
-            emit log_named_int("constraint-max-reserve", -1);
-            return false;
+            // maxReserveConstraint => -2
+            return -2;
         }
 
-        // constraint: max order
+        // constraint 3: max order
         if (seniorSupply > order.seniorSupply ||
             juniorSupply > order.juniorSupply ||
             seniorRedeem > order.seniorRedeem ||
             juniorRedeem > order.juniorRedeem) {
-            emit log_named_int("constraint-max-order", int(order.seniorRedeem));
-            return false;
+            // maxOrderConstraint => -3
+            return -3;
         }
 
         uint assets = safeAdd(epochNAV, newReserve);
 
         (uint minSeniorRatio, uint maxSeniorRatio) = assessor.seniorRatioBounds();
 
-        // todo make seniorBalance an integer
+        // todo make seniorBalance an integer or substract from seniorBalance and seniorDebt
         uint newSeniorBalance = safeSub(safeAdd(epochSeniorBalance, seniorSupply), seniorRedeem);
-
-
         uint newSeniorAsset = safeAdd(epochSeniorDebt,newSeniorBalance);
 
-        emit log_named_int("step 6",int(assets));
-
-        // min senior ratio constraint
+        // constraint 4: min senior ratio constraint
         if (newSeniorAsset < rmul(assets, minSeniorRatio)) {
-            emit log_named_int("constraint-min-senior-ratio", int(rmul(assets, minSeniorRatio)));
-            emit log_named_uint("newSeniorAsset", newSeniorAsset);
-            return false;
+            // minSeniorRatioConstraint => -4
+            return -4;
         }
-
-        // max senior ratio constraint
+        // constraint 5: max senior ratio constraint
         if (newSeniorAsset > rmul(assets, maxSeniorRatio)) {
-            emit log_named_int("constraint-max-senior-ratio", int(rmul(assets, maxSeniorRatio)));
-            return false;
+            // maxSeniorRatioConstraint => -5
+            return -5;
         }
-
-
-        return true;
+        // successful => 0
+        return 0;
     }
 
     function executeEpoch() public {

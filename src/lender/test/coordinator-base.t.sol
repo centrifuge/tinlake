@@ -66,7 +66,7 @@ contract CoordinatorTest is DSTest, Math {
     }
 
     struct TestCaseDesc {
-        bool successful;
+        int status;
         bytes32 name;
     }
 
