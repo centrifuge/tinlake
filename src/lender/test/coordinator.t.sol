@@ -59,46 +59,8 @@ contract CoordinatorTest is DSTest, Math {
 
     }
 
-    function testEpochExecuteTime() public {
-        assertEq(coordinator.currentEpoch(), 0);
-        assertEq(coordinator.lastEpochExecuted(), 0);
-        hevm.warp(now + 1 days);
-
-        assertEq(coordinator.currentEpoch(), 1);
-        coordinator.executeEpoch();
-        assertEq(coordinator.lastEpochExecuted(), 1);
-
-        hevm.warp(now + 20 days);
-
-        assertEq(coordinator.currentEpoch(), 21);
-        coordinator.executeEpoch();
-        assertEq(coordinator.lastEpochExecuted(), 21);
-    }
-
     function calcNextEpochIn() public view returns(uint) {
         return 1 days - (now - coordinator.normalizeTimestamp(now));
     }
-
-    function testEpochTimeEdgeCase() public {
-        uint secsForNextDay = calcNextEpochIn();
-        assertEq(coordinator.currentEpoch(), 0);
-        // exact 00:00 time
-        hevm.warp(now + secsForNextDay);
-
-        assertEq(coordinator.currentEpoch(), 1);
-        coordinator.executeEpoch();
-    }
-
-    function testFailEpochTime() public {
-        uint secsForNextDay = calcNextEpochIn();
-        assertEq(coordinator.currentEpoch(), 0);
-        assertEq(coordinator.lastEpochExecuted(), 0);
-
-        // should fail one sec too early
-        hevm.warp(now + secsForNextDay - 1);
-        coordinator.executeEpoch();
-    }
-
-
 }
 
