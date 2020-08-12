@@ -47,9 +47,9 @@ contract EpochCoordinator is Ticker, Auth  {
     uint public lastEpochExecuted;
 
     struct Order {
+        uint  seniorRedeem;
         uint  juniorRedeem;
         uint  juniorSupply;
-        uint  seniorRedeem;
         uint  seniorSupply;
     }
 
@@ -68,7 +68,7 @@ contract EpochCoordinator is Ticker, Auth  {
     bool public submissionPeriod;
 
     // challenge period end timestamp
-    uint public challengePeriodEnd;
+    uint public minChallengePeriodEnd;
 
     uint public challengeTime;
 
@@ -122,7 +122,7 @@ contract EpochCoordinator is Ticker, Auth  {
 
     /// number denominated in WAD
     /// all variables expressed as currency
-    function submitSolution(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) public {
+    function submitSolution(uint seniorRedeem, uint juniorRedeem, uint juniorSupply, uint seniorSupply) public {
         require(submissionPeriod == true);
         uint score = scoreSolution(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
 
@@ -130,9 +130,11 @@ contract EpochCoordinator is Ticker, Auth  {
             return;
         }
 
+        bestSubScore = score;
+
         if(validate(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply) == 0) {
-            if (challengePeriodEnd == 0) {
-                challengePeriodEnd = safeAdd(block.timestamp, challengeTime);
+            if (minChallengePeriodEnd == 0) {
+                minChallengePeriodEnd = safeAdd(block.timestamp, challengeTime);
             }
 
             bestSubmission.seniorRedeem = seniorRedeem;
@@ -143,7 +145,7 @@ contract EpochCoordinator is Ticker, Auth  {
     }
 
     function scoreSolution(uint seniorRedeem, uint juniorRedeem,
-        uint seniorSupply, uint juniorSupply) public pure returns(uint) {
+        uint juniorSupply, uint seniorSupply) public pure returns(uint) {
         // todo improve scoring func
         return safeAdd(safeAdd(safeMul(seniorRedeem, 10000), safeMul(juniorRedeem, 1000)),
             safeAdd(safeMul(juniorSupply, 100), safeMul(seniorSupply, 10)));
@@ -199,7 +201,7 @@ contract EpochCoordinator is Ticker, Auth  {
     }
 
     function executeEpoch() public {
-        require(block.timestamp >= challengePeriodEnd && challengePeriodEnd != 0);
+        require(block.timestamp >= minChallengePeriodEnd && minChallengePeriodEnd != 0);
         executeEpoch(bestSubmission.seniorRedeem ,bestSubmission.juniorRedeem, bestSubmission.seniorSupply, bestSubmission.juniorSupply);
     }
 
@@ -213,7 +215,7 @@ contract EpochCoordinator is Ticker, Auth  {
 
         lastEpochExecuted++;
         submissionPeriod = false;
-        challengePeriodEnd = 0;
+        minChallengePeriodEnd = 0;
         bestSubScore = 0;
     }
 }

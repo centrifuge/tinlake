@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pragma solidity >=0.5.15 <0.6.0;
+pragma experimental ABIEncoderV2;
 
 import "ds-test/test.sol";
 import "tinlake-math/math.sol";
@@ -70,7 +71,7 @@ contract CoordinatorTest is DSTest, Math {
         bytes32 name;
     }
 
-    LenderModel public defaultSetup;
+    LenderModel public model;
 
     function setUp() public {
         seniorTranche = new EpochTrancheMock();
@@ -92,12 +93,26 @@ contract CoordinatorTest is DSTest, Math {
         coordinator.depend("reserve", reserve_);
         coordinator.depend("assessor", assessor_);
 
-        defaultSetup = getDefaultModel();
-        initTestConfig(defaultSetup);
+        model = getNoOrderModel();
+        initTestConfig(model);
 
     }
 
-    function getDefaultModel()  public returns (LenderModel memory model)  {
+    function getNoOrderModel() internal returns (LenderModel memory) {
+        return LenderModel({maxReserve: 10000 ether,
+        reserve: 200 ether,
+        maxSeniorRatio: 80 * 10 **25,
+        minSeniorRatio: 75 * 10 **25,
+        seniorDebt: 700 ether,
+        seniorBalance: 100 ether,
+        NAV: 800 ether,
+        seniorRedeemOrder: 0,
+        seniorSupplyOrder: 0,
+        juniorSupplyOrder: 0,
+        juniorRedeemOrder: 0});
+    }
+
+    function getDefaultModel()  internal returns (LenderModel memory)  {
         return LenderModel({
             maxReserve: 10000 ether,
             reserve: 200 ether,
