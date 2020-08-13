@@ -101,4 +101,9 @@ contract AssessorMock is Mock {
     function seniorBalance() external returns (uint) {
         return call("seniorBalance");
     }
+
+    function updateSenior(uint seniorDebt, uint seniorBalance) public {
+        values_uint["updateSenior_seniorDebt"] = seniorDebt;
+        values_uint["updateSenior_seniorBalance"] = seniorBalance;
+    }
 }

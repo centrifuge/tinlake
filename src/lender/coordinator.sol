@@ -35,6 +35,8 @@ interface AssessorLike {
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
     function seniorRatioBounds() external view returns(uint minSeniorRatio, uint maxSeniorRatio);
+    function updateSenior(uint seniorDebt, uint seniorBalance) public;
+
 }
 
 contract EpochCoordinator is Ticker, Auth  {
@@ -183,7 +185,7 @@ contract EpochCoordinator is Ticker, Auth  {
 
         (uint minSeniorRatio, uint maxSeniorRatio) = assessor.seniorRatioBounds();
 
-        // todo make seniorBalance an integer or substract from seniorBalance and seniorDebt
+        // todo make seniorBalance an integer or subtract from seniorBalance and seniorDebt
         uint newSeniorBalance = safeSub(safeAdd(epochSeniorBalance, seniorSupply), seniorRedeem);
         uint newSeniorAsset = safeAdd(epochSeniorDebt,newSeniorBalance);
 
@@ -206,13 +208,35 @@ contract EpochCoordinator is Ticker, Auth  {
         executeEpoch(bestSubmission.seniorRedeem ,bestSubmission.juniorRedeem, bestSubmission.seniorSupply, bestSubmission.juniorSupply);
     }
 
+
+    function calcSeniorState(uint redeem, uint supply, uint seniorDebt, uint seniorBalance) internal returns (uint seniorDebt, uint seniorBalance) {
+        uint seniorBalanceDelta;
+        if(seniorSupply >= seniorRedeem) {
+            seniorBalanceDelta = safeSub(seniorSupply, seniorRedeem);
+        }
+        else
+        {
+            seniorBalanceDelta = safeSub(seniorSupply, seniorRedeem);
+        }
+
+        if (delta > seniorBalance) {
+            return (safeSub(seniorDebt,safeSub(delta, seniorBalance)),0);
+        }
+        return (seniorDebt,safeSub(seniorBalance,delta));
+
+    }
+
     function executeEpoch(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) internal {
+        uint currEpoch = ++lastEpochExecuted;
 
-        // todo call transfers on operators
+        (uint seniorDebt, uint seniorBalance) = calcSeniorState(seniorRedeem, seniorSupply, seniorDebt, seniorBalance);
 
-        // todo re-balance of senior debt
 
-        // todo update update seniorBalance;
+        seniorTranche.epochUpdate(currEpoch, rdiv(seniorSupply, order.seniorSupply), rdiv(seniorRedeem, order.seniorRedeem), epochSeniorTokenPrice);
+        juniorTranche.epochUpdate(currEpoch, rdiv(juniorSupply, order.juniorSupply), rdiv(juniorRedeem, order.juniorRedeem), epochSeniorTokenPrice);
+
+        // todo re-balance before
+        updateSenior(seniorDebt, seniorBalance);
 
         lastEpochExecuted++;
         submissionPeriod = false;
