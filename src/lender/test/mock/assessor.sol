@@ -88,7 +88,7 @@ contract AssessorMock is Mock {
         return call("calcJuniorTokenPrice");
     }
 
-    function seniorRatioBounds() public view returns (uint minSeniorRatio, uint maxSeniorRatio) {
+    function seniorRatioBounds() public view returns (uint minSeniorRatio_, uint maxSeniorRatio_) {
         uint minSeniorRatio = values_return["minSeniorRatio"];
         uint maxSeniorRatio = values_return["maxSeniorRatio"];
         return (minSeniorRatio, maxSeniorRatio);
@@ -102,8 +102,8 @@ contract AssessorMock is Mock {
         return call("seniorBalance");
     }
 
-    function updateSenior(uint seniorDebt, uint seniorBalance) public {
-        values_uint["updateSenior_seniorDebt"] = seniorDebt;
-        values_uint["updateSenior_seniorBalance"] = seniorBalance;
+    function updateSenior(uint seniorDebt_, uint seniorBalance_) public {
+        values_uint["updateSenior_seniorDebt"] = seniorDebt_;
+        values_uint["updateSenior_seniorBalance"] = seniorBalance_;
     }
 }
