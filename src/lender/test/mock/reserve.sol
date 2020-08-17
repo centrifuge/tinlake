@@ -27,5 +27,9 @@ contract ReserveMock is Mock {
         return call("balance");
     }
 
+    function totalBalance() public returns (uint) {
+        return call("balance");
+    }
+
 }
 

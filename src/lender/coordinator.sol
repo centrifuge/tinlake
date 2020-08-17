@@ -24,7 +24,7 @@ interface EpochTrancheLike {
 
 interface ReserveLike {
     function updateMaxCurrency(uint currencyAmount) external;
-    function balance() external returns (uint);
+    function totalBalance() external returns (uint);
 }
 
 interface AssessorLike {
@@ -46,16 +46,16 @@ contract EpochCoordinator is Ticker, Auth  {
 
     uint public lastEpochExecuted;
 
-    struct Order {
+    struct OrderSummary {
         uint  seniorRedeem;
         uint  juniorRedeem;
         uint  juniorSupply;
         uint  seniorSupply;
     }
 
-    Order public bestSubmission;
+    OrderSummary public bestSubmission;
     uint public  bestSubScore;
-    Order public order;
+    OrderSummary public order;
 
 
     uint public epochSeniorTokenPrice;
@@ -88,6 +88,7 @@ contract EpochCoordinator is Ticker, Auth  {
 
     function closeEpoch() external {
         require(lastEpochExecuted < currentEpoch());
+        require(submissionPeriod == false);
 
         uint closingEpoch = safeAdd(lastEpochExecuted, 1);
 
@@ -102,7 +103,7 @@ contract EpochCoordinator is Ticker, Auth  {
 
         epochSeniorDebt = assessor.seniorDebt();
         epochSeniorBalance = assessor.seniorBalance();
-        epochReserve = reserve.balance();
+        epochReserve = reserve.totalBalance();
 
         /// calculate currency amounts
         order.seniorRedeem = rmul(orderSeniorRedeem, epochSeniorTokenPrice);
@@ -130,8 +131,6 @@ contract EpochCoordinator is Ticker, Auth  {
             return;
         }
 
-        bestSubScore = score;
-
         if(validate(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply) == 0) {
             if (minChallengePeriodEnd == 0) {
                 minChallengePeriodEnd = safeAdd(block.timestamp, challengeTime);
@@ -141,6 +140,8 @@ contract EpochCoordinator is Ticker, Auth  {
             bestSubmission.juniorRedeem = juniorRedeem;
             bestSubmission.juniorSupply = juniorSupply;
             bestSubmission.seniorSupply = seniorSupply;
+
+            bestSubScore = score;
         }
     }
 

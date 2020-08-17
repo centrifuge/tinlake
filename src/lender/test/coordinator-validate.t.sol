@@ -43,6 +43,14 @@ contract CoordinatorValidateTest is CoordinatorTest {
         successful = 0;
     }
 
+    function cleanUpTestCase() public {
+        if(coordinator.submissionPeriod() == true) {
+            coordinator.submitSolution(0,0,0,0);
+            hevm.warp(now + 1 days);
+            coordinator.executeEpoch();
+        }
+    }
+
     function executeTestCase(LenderModel memory model, ModelInput memory input, TestCaseDesc memory tCase) public {
         initTestConfig(model);
         hevm.warp(now + 1 days);
@@ -55,6 +63,9 @@ contract CoordinatorValidateTest is CoordinatorTest {
         }
 
         assertTrue(tCase.status == result);
+
+        // execute epoch to clean up state
+        cleanUpTestCase();
     }
 
     function testBasicValidate() public {
