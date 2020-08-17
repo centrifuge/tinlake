@@ -29,7 +29,21 @@ contract Hevm {
     function warp(uint256) public;
 }
 
-contract CoordinatorTest is DSTest, Math {
+contract BaseTypes {
+    struct Order {
+        uint  seniorRedeem;
+        uint  juniorRedeem;
+        uint  juniorSupply;
+        uint  seniorSupply;
+    }
+}
+
+contract CoordinatorLike is BaseTypes {
+    function bestSubmission() public returns (Order memory);
+    function order() public returns (Order memory);
+}
+
+contract CoordinatorTest is DSTest, Math, BaseTypes {
     Hevm hevm;
     EpochCoordinator coordinator;
 
@@ -71,7 +85,13 @@ contract CoordinatorTest is DSTest, Math {
         bytes32 name;
     }
 
-    LenderModel public model;
+    struct SubmitSolutionReturn {
+        int NEW_BEST;
+        int NOT_VALID;
+        int NOT_NEW_BEST;
+    }
+
+    SubmitSolutionReturn submitSolutionReturn;
 
     function setUp() public {
         seniorTranche = new EpochTrancheMock();
@@ -93,9 +113,11 @@ contract CoordinatorTest is DSTest, Math {
         coordinator.depend("reserve", reserve_);
         coordinator.depend("assessor", assessor_);
 
-        model = getNoOrderModel();
-        initTestConfig(model);
+        initTestConfig(getNoOrderModel());
 
+        submitSolutionReturn.NEW_BEST = 0;
+        submitSolutionReturn.NOT_NEW_BEST = -1;
+        submitSolutionReturn.NOT_VALID = -2;
     }
 
     function getNoOrderModel() internal returns (LenderModel memory) {
@@ -151,6 +173,14 @@ contract CoordinatorTest is DSTest, Math {
 
     function calcNextEpochIn() public view returns(uint) {
         return 1 days - (now - coordinator.normalizeTimestamp(now));
+    }
+
+    function compareWithBest(ModelInput memory model_) internal {
+        Order memory bestSubmission = CoordinatorLike(address(coordinator)).bestSubmission();
+        assertEq(bestSubmission.seniorRedeem, model_.seniorRedeem);
+        assertEq(bestSubmission.juniorRedeem, model_.juniorRedeem);
+        assertEq(bestSubmission.seniorSupply, model_.seniorSupply);
+        assertEq(bestSubmission.juniorSupply, model_.juniorSupply);
     }
 }
 

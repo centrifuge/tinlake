@@ -125,26 +125,32 @@ contract EpochCoordinator is Ticker, Auth  {
 
     /// number denominated in WAD
     /// all variables expressed as currency
-    function submitSolution(uint seniorRedeem, uint juniorRedeem, uint juniorSupply, uint seniorSupply) public {
+    function submitSolution(uint seniorRedeem, uint juniorRedeem, uint juniorSupply, uint seniorSupply) public returns(int) {
         require(submissionPeriod == true);
         uint score = scoreSolution(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
 
         if (score < bestSubScore) {
-            return;
+            // solution is not the best => -1
+            return -1;
         }
 
-        if(validate(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply) == 0) {
-            if (minChallengePeriodEnd == 0) {
-                minChallengePeriodEnd = safeAdd(block.timestamp, challengeTime);
-            }
-
-            bestSubmission.seniorRedeem = seniorRedeem;
-            bestSubmission.juniorRedeem = juniorRedeem;
-            bestSubmission.juniorSupply = juniorSupply;
-            bestSubmission.seniorSupply = seniorSupply;
-
-            bestSubScore = score;
+        if(validate(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply) != 0) {
+            // solution is not valid => -2
+            return -2;
         }
+        if (minChallengePeriodEnd == 0) {
+            minChallengePeriodEnd = safeAdd(block.timestamp, challengeTime);
+        }
+
+        bestSubmission.seniorRedeem = seniorRedeem;
+        bestSubmission.juniorRedeem = juniorRedeem;
+        bestSubmission.juniorSupply = juniorSupply;
+        bestSubmission.seniorSupply = seniorSupply;
+
+        bestSubScore = score;
+
+        // solution is new best => 0
+        return 0;
     }
 
     function scoreSolution(uint seniorRedeem, uint juniorRedeem,
@@ -245,14 +251,14 @@ contract EpochCoordinator is Ticker, Auth  {
     }
 
     function executeEpoch(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) internal {
-        uint currEpoch = lastEpochExecuted+1;
+        uint epochID = lastEpochExecuted+1;
 
         (uint seniorDebt, uint seniorBalance) = calcSeniorState(seniorRedeem, seniorSupply, assessor.seniorDebt(), assessor.seniorBalance());
 
         uint newReserve = safeSub(safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply), safeAdd(seniorRedeem, juniorRedeem));
 
-        seniorTranche.epochUpdate(currEpoch, calcFulfillment(seniorSupply, order.seniorSupply), calcFulfillment(seniorRedeem, order.seniorRedeem), epochSeniorTokenPrice);
-        juniorTranche.epochUpdate(currEpoch, calcFulfillment(juniorSupply, order.juniorSupply), calcFulfillment(juniorRedeem, order.juniorRedeem), epochSeniorTokenPrice);
+        seniorTranche.epochUpdate(epochID, calcFulfillment(seniorSupply, order.seniorSupply), calcFulfillment(seniorRedeem, order.seniorRedeem), epochSeniorTokenPrice);
+        juniorTranche.epochUpdate(epochID, calcFulfillment(juniorSupply, order.juniorSupply), calcFulfillment(juniorRedeem, order.juniorRedeem), epochSeniorTokenPrice);
 
         uint newSeniorRatio = calcSeniorRatio(seniorDebt, seniorBalance, epochNAV, newReserve);
 
@@ -260,7 +266,7 @@ contract EpochCoordinator is Ticker, Auth  {
 
         assessor.updateSenior(seniorDebt, seniorBalance);
 
-        lastEpochExecuted = currEpoch;
+        lastEpochExecuted = epochID;
         submissionPeriod = false;
         minChallengePeriodEnd = 0;
         bestSubScore = 0;

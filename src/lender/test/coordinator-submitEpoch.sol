@@ -18,20 +18,7 @@ pragma experimental ABIEncoderV2;
 
 import "./coordinator-base.t.sol";
 
-contract BaseTypes {
-    struct Order {
-        uint  seniorRedeem;
-        uint  juniorRedeem;
-        uint  juniorSupply;
-        uint  seniorSupply;
-    }
-}
-
-contract CoordinatorLike is BaseTypes {
-    function bestSubmission() public returns (Order memory);
-}
-
-contract CoordinatorSubmitEpochTest is CoordinatorTest, BaseTypes {
+contract CoordinatorSubmitEpochTest is CoordinatorTest {
     function setUp() public {
         super.setUp();
     }
@@ -39,14 +26,6 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, BaseTypes {
     function submitSolution(ModelInput memory solution) internal {
         coordinator.submitSolution(solution.seniorRedeem, solution.juniorRedeem,
             solution.juniorSupply, solution.seniorSupply);
-    }
-
-    function compareWithBest(ModelInput memory model) internal {
-        Order memory bestSubmission = CoordinatorLike(address(coordinator)).bestSubmission();
-        assertEq(bestSubmission.seniorRedeem, model.seniorRedeem);
-        assertEq(bestSubmission.juniorRedeem, model.juniorRedeem);
-        assertEq(bestSubmission.seniorSupply, model.seniorSupply);
-        assertEq(bestSubmission.juniorSupply, model.juniorSupply);
     }
 
     function testFailNoSubmission() public {
