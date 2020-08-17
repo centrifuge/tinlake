@@ -214,15 +214,15 @@ contract EpochCoordinator is Ticker, Auth  {
         executeEpoch(bestSubmission.seniorRedeem ,bestSubmission.juniorRedeem, bestSubmission.seniorSupply, bestSubmission.juniorSupply);
     }
 
-    function calcSeniorState(uint seniorRedeem, uint seniorSupply,uint seniorDebt, uint seniorBalance) public returns (uint seniorDebt_, uint seniorBalance_) {
+    function calcSeniorState(uint seniorRedeem, uint seniorSupply,uint seniorDebt, uint seniorBalance) public view returns (uint seniorDebt_, uint seniorBalance_) {
         uint delta;
         if(seniorSupply >= seniorRedeem) {
             delta = safeSub(seniorSupply, seniorRedeem);
+            return (seniorDebt,safeAdd(seniorBalance,delta));
+
         }
-        else
-        {
-            delta = safeSub(seniorSupply, seniorRedeem);
-        }
+
+        delta = safeSub(seniorRedeem, seniorSupply);
 
         if (delta > seniorBalance) {
             return (safeSub(seniorDebt,safeSub(delta, seniorBalance)),0);

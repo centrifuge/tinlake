@@ -20,6 +20,12 @@ pragma experimental ABIEncoderV2;
 import "./coordinator-base.t.sol";
 
 contract CoordinatorExecuteEpochTest is CoordinatorTest {
+
+    struct SeniorState {
+        uint seniorDebt;
+        uint seniorBalance;
+    }
+
     function setUp() public {
         super.setUp();
     }
@@ -33,7 +39,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
 
         seniorTranche.setEpochReturn(model_.seniorSupplyOrder, model_.seniorRedeemOrder);
 
-        int result = coordinator.submitSolution(input.seniorRedeem, input.juniorRedeem, input.seniorSupply, input.juniorSupply);
+        int result = coordinator.submitSolution(input.seniorRedeem, input.juniorRedeem, input.juniorSupply, input.seniorSupply);
         assertEq(result, submitSolutionReturn.NEW_BEST);
 
         hevm.warp(now + 1 days);
@@ -53,15 +59,15 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
             rdiv(input.juniorRedeem, model_.juniorRedeemOrder));
     }
 
-    function testSimpleExecute() public {
+    function testExecuteEpoch() public {
         LenderModel memory model_ = getDefaultModel();
         model_.seniorSupplyOrder = 300000 ether;
 
-        ModelInput memory input =   ModelInput({
-            seniorSupply : 10 ether,
-            juniorSupply : 10 ether,
-            seniorRedeem : 10 ether,
-            juniorRedeem : 10 ether
+        ModelInput memory input = ModelInput({
+            seniorSupply : 1 ether,
+            juniorSupply : 2 ether,
+            seniorRedeem : 3 ether,
+            juniorRedeem : 4 ether
 
             });
 
@@ -91,37 +97,37 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
     }
 
     function testRebalanceSeniorDebt() public {
+        SeniorState memory input = SeniorState({seniorDebt: 300 ether,
+        seniorBalance: 200 ether});
         // default case
-        uint seniorDebt = 300 ether;
-        uint seniorBalance = 200 ether;
         uint ratio = 8 * 10 **26;
 
-        (uint seniorDebt_, uint seniorBalance_) = coordinator.reBalanceSeniorDebt(seniorDebt, seniorBalance, ratio);
+        (uint seniorDebt_, uint seniorBalance_) = coordinator.reBalanceSeniorDebt(input.seniorDebt, input.seniorBalance, ratio);
         assertEq(seniorDebt_, 400 ether);
         assertEq(seniorBalance_, 100 ether);
 
         // all in seniorDebt
-        seniorDebt = 500 ether;
-        seniorBalance = 0;
+        input.seniorDebt = 500 ether;
+        input.seniorBalance = 0;
 
-        (seniorDebt_, seniorBalance_) = coordinator.reBalanceSeniorDebt(seniorDebt, seniorBalance, ratio);
+        (seniorDebt_, seniorBalance_) = coordinator.reBalanceSeniorDebt(input.seniorDebt, input.seniorBalance, ratio);
         assertEq(seniorDebt_, 400 ether);
         assertEq(seniorBalance_, 100 ether);
 
         // all in seniorBalance
-        seniorDebt = 0 ether;
-        seniorBalance = 500 ether;
+        input.seniorDebt = 0 ether;
+        input.seniorBalance = 500 ether;
 
-        (seniorDebt_, seniorBalance_) = coordinator.reBalanceSeniorDebt(seniorDebt, seniorBalance, ratio);
+        (seniorDebt_, seniorBalance_) = coordinator.reBalanceSeniorDebt(input.seniorDebt, input.seniorBalance, ratio);
         assertEq(seniorDebt_, 400 ether);
         assertEq(seniorBalance_, 100 ether);
 
         // ratio already the same
         // all in seniorBalance
-        seniorDebt = 400 ether;
-        seniorBalance = 100 ether;
+        input.seniorDebt = 400 ether;
+        input.seniorBalance = 100 ether;
 
-        (seniorDebt_, seniorBalance_) = coordinator.reBalanceSeniorDebt(seniorDebt, seniorBalance, ratio);
+        (seniorDebt_, seniorBalance_) = coordinator.reBalanceSeniorDebt(input.seniorDebt, input.seniorBalance, ratio);
         assertEq(seniorDebt_, 400 ether);
         assertEq(seniorBalance_, 100 ether);
 
@@ -131,22 +137,72 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
         assertEq(seniorBalance_, 0);
 
         // ratio zero
-         seniorDebt = 300 ether;
-         seniorBalance = 200 ether;
+        input.seniorDebt = 300 ether;
+        input.seniorBalance = 200 ether;
          ratio = 0;
 
-        (seniorDebt_, seniorBalance_) = coordinator.reBalanceSeniorDebt(seniorDebt, seniorBalance, ratio);
+        (seniorDebt_, seniorBalance_) = coordinator.reBalanceSeniorDebt(input.seniorDebt, input.seniorBalance, ratio);
         assertEq(seniorDebt_, 0 );
         assertEq(seniorBalance_, 500 ether);
 
 
         // ratio 100%
-         seniorDebt = 300 ether;
-         seniorBalance = 200 ether;
+        input.seniorDebt = 300 ether;
+        input.seniorBalance = 200 ether;
          ratio = ONE;
 
-        (seniorDebt_, seniorBalance_) = coordinator.reBalanceSeniorDebt(seniorDebt, seniorBalance, ratio);
+        (seniorDebt_, seniorBalance_) = coordinator.reBalanceSeniorDebt(input.seniorDebt, input.seniorBalance, ratio);
         assertEq(seniorDebt_, 500 ether );
+        assertEq(seniorBalance_, 0);
+    }
+
+    function testCalcSeniorState() public {
+        SeniorState memory input = SeniorState({seniorDebt: 0,
+            seniorBalance: 0});
+
+        uint seniorRedeem = 0;
+        uint seniorSupply = 0;
+
+        (uint seniorDebt_, uint seniorBalance_) = coordinator.calcSeniorState(seniorRedeem, seniorSupply, input.seniorDebt, input.seniorBalance);
+
+        assertEq(seniorDebt_, 0);
+        assertEq(seniorBalance_, 0);
+
+        // seniorSupply > seniorRedeem
+        // delta + 10
+        input = SeniorState({seniorDebt: 100 ether,
+            seniorBalance: 100 ether});
+
+         seniorRedeem = 20 ether;
+         seniorSupply = 30 ether;
+
+        (seniorDebt_, seniorBalance_) = coordinator.calcSeniorState(seniorRedeem, seniorSupply, input.seniorDebt, input.seniorBalance);
+
+        assertEq(seniorDebt_, input.seniorDebt);
+        assertEq(seniorBalance_, 110 ether);
+
+        // seniorSupply < seniorRedeem
+        // delta  -10
+        input = SeniorState({seniorDebt: 100 ether,
+            seniorBalance: 100 ether});
+
+        seniorRedeem = 30 ether;
+        seniorSupply = 20 ether;
+
+        (seniorDebt_, seniorBalance_) = coordinator.calcSeniorState(seniorRedeem, seniorSupply, input.seniorDebt, input.seniorBalance);
+
+        assertEq(seniorDebt_, input.seniorDebt);
+        assertEq(seniorBalance_, 90 ether);
+
+        // seniorSupply < seniorRedeem
+        // delta higher than seniorBalance
+
+        seniorRedeem = 120 ether;
+        seniorSupply = 10 ether;
+
+        (seniorDebt_, seniorBalance_) = coordinator.calcSeniorState(seniorRedeem, seniorSupply, input.seniorDebt, input.seniorBalance);
+
+        assertEq(seniorDebt_, input.seniorDebt-10 ether);
         assertEq(seniorBalance_, 0);
     }
 }
