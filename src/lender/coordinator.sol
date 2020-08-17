@@ -231,14 +231,23 @@ contract EpochCoordinator is Ticker, Auth  {
         return (seniorDebt,safeSub(seniorBalance,delta));
     }
 
+    function calcAssets(uint NAV, uint reserve_) public view returns(uint) {
+        return safeAdd(NAV, reserve_);
+    }
+
 
     function calcSeniorRatio(uint seniorDebt, uint seniorBalance, uint NAV, uint reserve_) public view returns(uint) {
-        return rdiv(safeAdd(seniorDebt, seniorBalance), safeAdd(NAV, reserve_));
+        uint assets = calcAssets(NAV, reserve_);
+        if(assets == 0) {
+            return 0;
+        }
+
+        return rdiv(safeAdd(seniorDebt, seniorBalance), assets);
     }
 
     function reBalanceSeniorDebt(uint seniorDebt, uint seniorBalance, uint currSeniorRatio) public view returns (uint seniorDebt_, uint seniorBalance_) {
         uint seniorAsset = safeAdd(seniorDebt, seniorBalance);
-        uint seniorDebt_ = rmul(seniorAsset, currSeniorRatio);
+        seniorDebt = rmul(seniorAsset, currSeniorRatio);
         return (seniorDebt, safeSub(seniorAsset, seniorDebt));
     }
 
