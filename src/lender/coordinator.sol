@@ -187,7 +187,8 @@ contract EpochCoordinator is Ticker, Auth  {
         return 0;
     }
 
-    function distanceToRatioMean(uint ratio) public returns(int) {
+    function distanceToRatioMean(uint ratio) public returns(uint) {
+        (uint minSeniorRatio, uint maxSeniorRatio) = assessor.seniorRatioBounds();
         uint meanRatio = safeDiv(safeAdd(minSeniorRatio, maxSeniorRatio), 2);
 
         if (meanRatio >= ratio) {
@@ -198,14 +199,13 @@ contract EpochCoordinator is Ticker, Auth  {
     }
 
     function calcImprovementScore(uint seniorRedeem, uint juniorRedeem, uint juniorSupply, uint seniorSupply) public view returns(uint) {
-        if(bestSubScore == 0) {
-            // define no orders as benchmark
-            uint currSeniorRatio = calcSeniorRatio(safeAdd(epochSeniorBalance, epochSeniorDebt), epochNAV, newReserve);
-            uint distance = distanceToRatioMean(currSeniorRatio);
-
-        }
-
-        // todo impl
+        // todo implement score
+//        if(bestSubScore == 0) {
+//            // define no orders as benchmark
+//            uint currSeniorRatio = calcSeniorRatio(safeAdd(epochSeniorBalance, epochSeniorDebt), epochNAV, newReserve);
+//            uint distance = distanceToRatioMean(currSeniorRatio);
+//
+//        }
 
         return 0;
     }
