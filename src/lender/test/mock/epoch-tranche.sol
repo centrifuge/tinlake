@@ -19,10 +19,24 @@ import "ds-test/test.sol";
 import "../../../test/mock/mock.sol";
 
 contract EpochTrancheMock is Mock {
+    uint totalSupply;
+    uint totalRedeem;
+
+    constructor() public {
+
+    }
+
+    function setEpochReturn(uint totalSupply_, uint totalRedeem_) public {
+        totalSupply = totalSupply_;
+        totalRedeem = totalRedeem_;
+    }
+
+    function getTotalOrders(uint epochID) public view returns(uint, uint) {
+        return (totalSupply, totalRedeem);
+    }
 
     function epochUpdate(uint epochID, uint supplyFulfillment_,
         uint redeemFulfillment_, uint tokenPrice_) external {
-
     }
 }
 
