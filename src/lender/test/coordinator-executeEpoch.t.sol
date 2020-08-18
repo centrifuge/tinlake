@@ -82,6 +82,25 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
         assertEq(coordinator.bestSubScore(), 0);
 
         checkTrancheUpdates(model_, input);
+
+        // check for rebalancing
+        uint shouldNewReserve = safeSub(safeAdd(safeAdd(model_.reserve, input.seniorSupply), input.juniorSupply),
+            safeAdd(input.seniorRedeem, input.juniorRedeem));
+
+        (uint seniorDebt_, uint seniorBalance_) = coordinator.calcSeniorState(input.seniorRedeem, input.seniorSupply, model_.seniorDebt, model_.seniorBalance);
+
+        // change or orders delta = -2 ether
+        uint seniorAsset = safeSub(safeAdd(model_.seniorDebt, model_.seniorBalance), 2 ether);
+
+        assertEq(seniorDebt_+ seniorBalance_, seniorAsset);
+
+        uint shouldRatio = rdiv(seniorAsset, safeAdd(shouldNewReserve, model_.NAV));
+
+        uint currSeniorRatio = coordinator.calcSeniorRatio(seniorDebt_, seniorBalance_, model_.NAV, shouldNewReserve);
+
+        assertEq(currSeniorRatio, shouldRatio);
+
+        assertEq(assessor.values_uint("updateSenior_seniorDebt"), rmul(seniorAsset, currSeniorRatio));
     }
 
     function testCalcSeniorRatio() public {
