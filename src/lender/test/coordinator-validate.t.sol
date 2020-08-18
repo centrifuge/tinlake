@@ -45,7 +45,8 @@ contract CoordinatorValidateTest is CoordinatorTest {
 
     function cleanUpTestCase() public {
         if(coordinator.submissionPeriod() == true) {
-            coordinator.submitSolution(0,0,0,0);
+            int status = coordinator.submitSolution(0,0,0,0);
+            assertEq(status, submitSolutionReturn.NEW_BEST);
             hevm.warp(now + 1 days);
             coordinator.executeEpoch();
         }
@@ -64,7 +65,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
 
         assertTrue(tCase.status == result);
 
-        // execute epoch to clean up state
+      // execute epoch to clean up state
         cleanUpTestCase();
     }
 
