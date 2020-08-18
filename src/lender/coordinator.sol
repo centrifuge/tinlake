@@ -214,21 +214,8 @@ contract EpochCoordinator is Ticker, Auth  {
         executeEpoch(bestSubmission.seniorRedeem ,bestSubmission.juniorRedeem, bestSubmission.seniorSupply, bestSubmission.juniorSupply);
     }
 
-    function calcSeniorState(uint seniorRedeem, uint seniorSupply,uint seniorDebt, uint seniorBalance) public view returns (uint seniorDebt_, uint seniorBalance_) {
-        uint delta;
-        if(seniorSupply >= seniorRedeem) {
-            delta = safeSub(seniorSupply, seniorRedeem);
-            return (seniorDebt,safeAdd(seniorBalance,delta));
-
-        }
-
-        delta = safeSub(seniorRedeem, seniorSupply);
-
-        if (delta > seniorBalance) {
-            return (safeSub(seniorDebt,safeSub(delta, seniorBalance)),0);
-        }
-
-        return (seniorDebt,safeSub(seniorBalance,delta));
+    function calcSeniorState(uint seniorRedeem, uint seniorSupply,uint seniorDebt, uint seniorBalance) public view returns (uint seniorAsset) {
+        return safeSub(safeAdd(safeAdd(seniorDebt, seniorBalance), seniorSupply), seniorRedeem);
     }
 
     function calcAssets(uint NAV, uint reserve_) public view returns(uint) {
@@ -236,18 +223,16 @@ contract EpochCoordinator is Ticker, Auth  {
     }
 
 
-    function calcSeniorRatio(uint seniorDebt, uint seniorBalance, uint NAV, uint reserve_) public view returns(uint) {
+    function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) public view returns(uint) {
         uint assets = calcAssets(NAV, reserve_);
         if(assets == 0) {
             return 0;
         }
-
-        return rdiv(safeAdd(seniorDebt, seniorBalance), assets);
+        return rdiv(seniorAsset, assets);
     }
 
-    function reBalanceSeniorDebt(uint seniorDebt, uint seniorBalance, uint currSeniorRatio) public view returns (uint seniorDebt_, uint seniorBalance_) {
-        uint seniorAsset = safeAdd(seniorDebt, seniorBalance);
-        seniorDebt = rmul(seniorAsset, currSeniorRatio);
+    function reBalanceSeniorDebt(uint seniorAsset, uint currSeniorRatio) public view returns (uint seniorDebt_, uint seniorBalance_) {
+        uint seniorDebt = rmul(seniorAsset, currSeniorRatio);
         return (seniorDebt, safeSub(seniorAsset, seniorDebt));
     }
 
@@ -255,23 +240,19 @@ contract EpochCoordinator is Ticker, Auth  {
         if(amount == 0 || totalOrder == 0) {
             return 0;
         }
-
         return rdiv(amount, totalOrder);
     }
 
     function executeEpoch(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) internal {
         uint epochID = lastEpochExecuted+1;
 
-        (uint seniorDebt, uint seniorBalance) = calcSeniorState(seniorRedeem, seniorSupply, assessor.seniorDebt(), assessor.seniorBalance());
-
-        uint newReserve = safeSub(safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply), safeAdd(seniorRedeem, juniorRedeem));
-
         seniorTranche.epochUpdate(epochID, calcFulfillment(seniorSupply, order.seniorSupply), calcFulfillment(seniorRedeem, order.seniorRedeem), epochSeniorTokenPrice);
         juniorTranche.epochUpdate(epochID, calcFulfillment(juniorSupply, order.juniorSupply), calcFulfillment(juniorRedeem, order.juniorRedeem), epochSeniorTokenPrice);
 
-        uint newSeniorRatio = calcSeniorRatio(seniorDebt, seniorBalance, epochNAV, newReserve);
+        uint seniorAsset = calcSeniorState(seniorRedeem, seniorSupply, assessor.seniorDebt(), assessor.seniorBalance());
+        uint newReserve = safeSub(safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply), safeAdd(seniorRedeem, juniorRedeem));
 
-        (seniorDebt, seniorBalance) = reBalanceSeniorDebt(seniorDebt, seniorBalance, newSeniorRatio);
+        (uint seniorDebt, uint seniorBalance) = reBalanceSeniorDebt(seniorAsset, calcSeniorRatio(seniorAsset, epochNAV, newReserve));
 
         assessor.updateSenior(seniorDebt, seniorBalance);
 

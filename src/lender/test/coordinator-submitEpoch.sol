@@ -104,7 +104,6 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest {
         // submit invalid solution
         solution.seniorSupply = 100000000 ether;
         assertEq(submitSolution(solution), submitSolutionReturn.NOT_VALID);
-
     }
 }
 
