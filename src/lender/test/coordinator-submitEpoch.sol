@@ -23,8 +23,8 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest {
         super.setUp();
     }
 
-    function submitSolution(ModelInput memory solution) internal {
-        coordinator.submitSolution(solution.seniorRedeem, solution.juniorRedeem,
+    function submitSolution(ModelInput memory solution) internal returns(int) {
+        return coordinator.submitSolution(solution.seniorRedeem, solution.juniorRedeem,
             solution.juniorSupply, solution.seniorSupply);
     }
 
@@ -61,7 +61,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest {
         juniorRedeem : 4 ether
         });
 
-        submitSolution(solution);
+        assertEq(submitSolution(solution), submitSolutionReturn.NEW_BEST);
         compareWithBest(solution);
 
         // challenge period started
@@ -78,7 +78,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest {
         juniorRedeem : 5 ether
         });
 
-        submitSolution(betterSolution);
+        assertEq(submitSolution(betterSolution), submitSolutionReturn.NEW_BEST);
 
         // better solution should be new best
         compareWithBest(betterSolution);
@@ -89,17 +89,22 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest {
         hevm.warp(now + 2 hours);
 
         // re submit solution with lower score
-        submitSolution(solution);
+        assertEq(submitSolution(solution),submitSolutionReturn.NOT_NEW_BEST);
 
         // better solution should be still the best
         compareWithBest(betterSolution);
 
         // re submit solution with lower score
         solution.seniorSupply = 2 ether;
-        submitSolution(solution);
+        assertEq(submitSolution(solution), submitSolutionReturn.NOT_NEW_BEST);
 
         // better solution should be still the best
         compareWithBest(betterSolution);
+
+        // submit invalid solution
+        solution.seniorSupply = 100000000 ether;
+        assertEq(submitSolution(solution), submitSolutionReturn.NOT_VALID);
+
     }
 }
 
