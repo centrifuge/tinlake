@@ -209,7 +209,6 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         return 0;
     }
 
-
     function abs(uint x, uint y) public view returns(uint delta) {
         if(x >= y) {
             return safeSub(x, y);
@@ -217,44 +216,51 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         return safeSub(y, x);
     }
 
-    function scoreImprovement(uint newSeniorRatio, uint currSeniorRatio,
+    function checkRatio(Fixed27 memory ratio, Fixed27 memory minRatio,
+        Fixed27 memory maxRatio) public view returns (bool) {
+        if (ratio.value >= minRatio.value && ratio.value <= maxRatio.value ) {
+            return true;
+        }
+        return false;
+    }
+
+    function scoreImprovement(Fixed27 memory newSeniorRatio, Fixed27 memory currSeniorRatio,
         uint newReserve_) public view returns(uint) {
 
         (Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio) = assessor.seniorRatioBounds();
 
-        // normalize reserve
-//        uint normalizedReserve = rdiv();
+        // normalize reserve by defining maxReserve as ONE
+        Fixed27 memory normalizedReserve = Fixed27({value: rdiv(newReserve_, assessor.maxReserve())});
 
-
-//        if(currSeniorRatio >= minSeniorRatio && currSeniorRatio <= maxSeniorRatio) {
-//
-//        }
+        // current ratio is healthy but proposed new ratio would not be in the min max range
+        if (checkRatio(currSeniorRatio, minSeniorRatio, maxSeniorRatio) == true &&
+            checkRatio(newSeniorRatio, minSeniorRatio, maxSeniorRatio) == false) {
+            return 0;
+        }
 
         // gas optimized implementation
         // abs of ratio can never be zero
-        return safeAdd(rmul(1000, rdiv(ONE, abs(currSeniorRatio,
+        return safeAdd(rmul(1000, rdiv(ONE, abs(newSeniorRatio.value,
             safeDiv(safeAdd(minSeniorRatio.value, maxSeniorRatio.value), 2)))),
-            rdiv(ONE,rmul(abs(assessor.maxReserve(), newReserve_),ONE)));
+            rmul(10, rdiv(ONE, abs(safeDiv(ONE, 2), newReserve_))));
     }
 
     function calcImprovementScore(uint seniorRedeem, uint juniorRedeem,
         uint juniorSupply, uint seniorSupply) public view returns(uint) {
 
-        // todo implement score
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
         if(bestSubScore == 0) {
             // define no orders as benchmark
-            uint currSeniorRatio = calcSeniorRatio(safeAdd(epochSeniorBalance, epochSeniorDebt),
-                epochNAV, epochReserve);
+            Fixed27 memory currSeniorRatio = Fixed27({value: calcSeniorRatio(safeAdd(epochSeniorBalance, epochSeniorDebt),
+                epochNAV, epochReserve)});
 
-            uint newSeniorRatio =  calcSeniorRatio(calcSeniorState( seniorRedeem, seniorSupply,
-                epochSeniorDebt, epochSeniorBalance), epochNAV, newReserve);
-
-            uint score = scoreImprovement(currSeniorRatio, newSeniorRatio, newReserve);
-
+            bestSubScore = scoreImprovement(currSeniorRatio, currSeniorRatio, epochReserve);
         }
 
-        return 0;
+        Fixed27 memory newSeniorRatio =  Fixed27({value: calcSeniorRatio(calcSeniorState( seniorRedeem, seniorSupply,
+            epochSeniorDebt, epochSeniorBalance), epochNAV, newReserve)});
+
+        return scoreImprovement(newSeniorRatio, currSeniorRatio, newReserve);
     }
 
     function scoreSolution(uint seniorRedeem, uint juniorRedeem,
