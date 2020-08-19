@@ -54,5 +54,9 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest {
         //assertTrue(false);
     }
 
+    function testSpeed() public {
+        coordinator.calcFulfillment(100, 200);
+    }
+
 }
 

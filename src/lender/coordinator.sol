@@ -338,11 +338,11 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         return (seniorDebt, safeSub(seniorAsset, seniorDebt));
     }
 
-    function calcFulfillment(uint amount, uint totalOrder) public view returns(uint percent) {
+    function calcFulfillment(uint amount, uint totalOrder) public view returns(Fixed27 memory percent) {
         if(amount == 0 || totalOrder == 0) {
-            return 0;
+            return Fixed27({value: 0});
         }
-        return rdiv(amount, totalOrder);
+        return Fixed27({value: rdiv(amount, totalOrder)});
     }
 
     function calcNewReserve(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) public view returns(uint) {
@@ -352,8 +352,8 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     function executeEpoch(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) internal {
         uint epochID = lastEpochExecuted+1;
 
-        seniorTranche.epochUpdate(epochID, calcFulfillment(seniorSupply, order.seniorSupply), calcFulfillment(seniorRedeem, order.seniorRedeem), epochSeniorTokenPrice.value);
-        juniorTranche.epochUpdate(epochID, calcFulfillment(juniorSupply, order.juniorSupply), calcFulfillment(juniorRedeem, order.juniorRedeem), epochSeniorTokenPrice.value);
+        seniorTranche.epochUpdate(epochID, calcFulfillment(seniorSupply, order.seniorSupply).value, calcFulfillment(seniorRedeem, order.seniorRedeem).value, epochSeniorTokenPrice.value);
+        juniorTranche.epochUpdate(epochID, calcFulfillment(juniorSupply, order.juniorSupply).value, calcFulfillment(juniorRedeem, order.juniorRedeem).value, epochSeniorTokenPrice.value);
 
 
         uint seniorAsset = calcSeniorState(seniorRedeem, seniorSupply, assessor.seniorDebt(), assessor.seniorBalance());
