@@ -157,6 +157,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint juniorSupply, uint seniorSupply) public returns(int) {
 
         int valid = _submitSolution(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply);
+
         if(valid == 0 && minChallengePeriodEnd == 0) {
             minChallengePeriodEnd = safeAdd(block.timestamp, challengeTime);
         }
@@ -197,16 +198,8 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
             return 0;
         }
 
-        uint score = calcImprovementScore(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply);
+        return _improvementScoreCase(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply);
 
-        if (score < bestSubScore) {
-            // solution is not the best => -1
-            return -1;
-        }
-
-        // solution doesn't satisfy the pool constraints but improves the current violation
-        saveNewOptimum(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply, score);
-        return 0;
     }
 
     function abs(uint x, uint y) public view returns(uint delta) {
@@ -222,6 +215,33 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
             return true;
         }
         return false;
+    }
+
+    function _improvementScoreCase(uint seniorRedeem, uint juniorRedeem,
+uint juniorSupply, uint seniorSupply) internal returns(int) {
+        Fixed27 memory currSeniorRatio = Fixed27({value: calcSeniorRatio(safeAdd(epochSeniorBalance, epochSeniorDebt),
+            epochNAV, epochReserve)});
+
+        if(bestSubScore == 0) {
+            // define no orders score as benchmark if no previous submission exists
+            bestSubScore = scoreImprovement(currSeniorRatio, currSeniorRatio, epochReserve);
+        }
+
+        uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
+
+        Fixed27 memory newSeniorRatio =  Fixed27({value: calcSeniorRatio(calcSeniorState( seniorRedeem, seniorSupply,
+            epochSeniorDebt, epochSeniorBalance), epochNAV, newReserve)});
+
+        uint score =  scoreImprovement(newSeniorRatio, currSeniorRatio, newReserve);
+
+        if (score < bestSubScore) {
+            // solution is not the best => -1
+            return -1;
+        }
+
+        // solution doesn't satisfy the pool constraints but improves the current violation
+        saveNewOptimum(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply, score);
+        return 0;
     }
 
     function scoreImprovement(Fixed27 memory newSeniorRatio, Fixed27 memory currSeniorRatio,
@@ -243,24 +263,6 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         return safeAdd(rmul(1000, rdiv(ONE, abs(newSeniorRatio.value,
             safeDiv(safeAdd(minSeniorRatio.value, maxSeniorRatio.value), 2)))),
             rmul(10, rdiv(ONE, abs(safeDiv(ONE, 2), newReserve_))));
-    }
-
-    function calcImprovementScore(uint seniorRedeem, uint juniorRedeem,
-        uint juniorSupply, uint seniorSupply) public view returns(uint) {
-
-        uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
-        if(bestSubScore == 0) {
-            // define no orders as benchmark
-            Fixed27 memory currSeniorRatio = Fixed27({value: calcSeniorRatio(safeAdd(epochSeniorBalance, epochSeniorDebt),
-                epochNAV, epochReserve)});
-
-            bestSubScore = scoreImprovement(currSeniorRatio, currSeniorRatio, epochReserve);
-        }
-
-        Fixed27 memory newSeniorRatio =  Fixed27({value: calcSeniorRatio(calcSeniorState( seniorRedeem, seniorSupply,
-            epochSeniorDebt, epochSeniorBalance), epochNAV, newReserve)});
-
-        return scoreImprovement(newSeniorRatio, currSeniorRatio, newReserve);
     }
 
     function scoreSolution(uint seniorRedeem, uint juniorRedeem,
