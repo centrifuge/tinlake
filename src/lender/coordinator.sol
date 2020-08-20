@@ -142,8 +142,8 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     /// number denominated in WAD
     /// all variables expressed as currency
 
-    function saveNewOptimum(uint seniorRedeem, uint juniorRedeem, uint seniorSupply,
-        uint juniorSupply, uint score) internal {
+    function saveNewOptimum(uint seniorRedeem, uint juniorRedeem, uint juniorSupply,
+        uint seniorSupply, uint score) internal {
 
         bestSubmission.seniorRedeem = seniorRedeem;
         bestSubmission.juniorRedeem = juniorRedeem;
@@ -182,7 +182,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
             if(validPoolConstraints == false) {
                 validPoolConstraints = true;
-                saveNewOptimum(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply, score);
+                saveNewOptimum(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply, score);
                 // solution is new best => 0
                 return 0;
             }
@@ -192,7 +192,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
                 return -1;
             }
 
-            saveNewOptimum(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply, score);
+            saveNewOptimum(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply, score);
 
             // solution is new best => 0
             return 0;
@@ -240,7 +240,7 @@ uint juniorSupply, uint seniorSupply) internal returns(int) {
         }
 
         // solution doesn't satisfy the pool constraints but improves the current violation
-        saveNewOptimum(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply, score);
+        saveNewOptimum(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply, score);
         return 0;
     }
 
