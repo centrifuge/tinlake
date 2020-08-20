@@ -17,7 +17,7 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import { NAVFeed } from "tinlake-nftfeed/feed.sol";
 
-contract NFTFeedFab {
+contract NAVFeedFab {
     function newNFTFeed() public returns (address) {
         NAVFeed feed = new NAVFeed();
         feed.rely(msg.sender);
