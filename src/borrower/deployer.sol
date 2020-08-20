@@ -161,16 +161,18 @@ contract BorrowerDeployer {
 
         if(nftFeed != address(0)) {
             DependLike(nftFeed).depend("shelf", address(shelf));
-
+            DependLike(nftFeed).depend("pile", address(pile));
             // nft Feed allowed to call pile
             AuthLike(pile).rely(nftFeed);
 
             NFTFeedLike(nftFeed).init();
             DependLike(shelf).depend("subscriber", address(nftFeed));
+        } else {
+            // pool needs pile
+            DependLike(pricePool).depend("pile", address(pile));
         }
 
-        // pool needs pile
-        DependLike(pricePool).depend("pile", address(pile));
+       
 
         AuthLike(ceiling).rely(shelf);
         AuthLike(title).rely(shelf);
