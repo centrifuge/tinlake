@@ -89,6 +89,7 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         int NEW_BEST;
         int NOT_VALID;
         int NOT_NEW_BEST;
+        int ONLY_HEALTHY_SUB;
     }
 
     SubmitSolutionReturn submitSolutionReturn;

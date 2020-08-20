@@ -18,7 +18,7 @@ pragma experimental ABIEncoderV2;
 
 import "./coordinator-base.t.sol";
 
-contract CoordinatorSubmitEpochTest is CoordinatorTest {
+contract CoordinatorSubmitEpochTest is CoordinatorTest, DataTypes {
     function setUp() public {
         super.setUp();
     }
@@ -104,6 +104,72 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest {
         // submit invalid solution
         solution.seniorSupply = 100000000 ether;
         assertEq(submitSolution(solution), submitSolutionReturn.NOT_VALID);
+    }
+
+    function checkPoolPrecondition(LenderModel memory model, bool currSeniorRatioInRange, bool reserveHealthy) public {
+        // check if current ratio is healthy
+        Fixed27 memory currSeniorRatio = Fixed27(coordinator.calcSeniorRatio(safeAdd(coordinator.epochSeniorBalance(), coordinator.epochSeniorDebt()),
+            coordinator.epochNAV(), coordinator.epochReserve()));
+
+        assertTrue(coordinator.checkRatioInRange(currSeniorRatio, Fixed27(model.minSeniorRatio), Fixed27(model.maxSeniorRatio)) == currSeniorRatioInRange);
+        assertTrue((coordinator.epochReserve() <= assessor.maxReserve()) == reserveHealthy);
+
+    }
+
+    // from unhealthy to healthy with submission
+    function testSubmitEpochUnhealthyState() public {
+        LenderModel memory model = getDefaultModel();
+        model.seniorSupplyOrder = 10000 ether;
+        model.maxReserve = 1000 ether;
+
+        // reserve constraint violated
+        // 800 ether
+        model.reserve = 1150 ether;
+        model.seniorBalance = 850 ether;
+
+
+        initTestConfig(model);
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
+
+        bool currSeniorRatioInRange = true;
+        bool reserveHealthy = false;
+        checkPoolPrecondition(model, currSeniorRatioInRange, reserveHealthy);
+
+        ModelInput memory solution = ModelInput({
+            seniorSupply : 0 ether,
+            juniorSupply : 0 ether,
+            seniorRedeem : 100 ether,
+            juniorRedeem : 100 ether
+            });
+
+        assertEq(submitSolution(solution), submitSolutionReturn.NEW_BEST);
+        assertTrue(coordinator.gotValidPoolConSubmission() == true);
+    }
+
+    function testSubmitOnlyImprovement() public {
+        LenderModel memory model = getDefaultModel();
+        model.seniorSupplyOrder = 10000 ether;
+        model.maxReserve = 1000 ether;
+        model.reserve = 1150 ether;
+
+        initTestConfig(model);
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
+
+        bool currSeniorRatioInRange = false;
+        bool reserveHealthy = false;
+        checkPoolPrecondition(model, currSeniorRatioInRange, reserveHealthy);
+
+        ModelInput memory solution = ModelInput({
+            seniorRedeem : 0 ether,
+            juniorSupply : 0 ether,
+            seniorSupply : 800 ether,
+            juniorRedeem : 0 ether
+            });
+
+        assertEq(submitSolution(solution), submitSolutionReturn.NEW_BEST);
+
     }
 }
 

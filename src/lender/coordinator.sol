@@ -18,7 +18,8 @@ pragma experimental ABIEncoderV2;
 import "./ticker.sol";
 import "tinlake-auth/auth.sol";
 
-contract DataTypes {
+import "ds-test/test.sol";
+contract DataTypes is DSTest {
     struct Fixed27 {
         uint value;
     }
@@ -167,15 +168,23 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
         require(submissionPeriod == true);
 
-        (uint newReserve, int valid) = validateCoreConstraints(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
+        uint currencyAvailable = safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply);
+        uint currencyOut = safeAdd(seniorRedeem, juniorRedeem);
+
+
+        int valid = validateCoreConstraints(currencyAvailable,  currencyOut, seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
         if(valid != 0) {
             // every proposed solution needs to satisfy the core constraints
             // solution is not valid => -2
             return -2;
         }
 
+        uint newReserve = safeSub(currencyAvailable, currencyOut);
+
         if(validatePoolConstraints(newReserve, calcSeniorState(seniorRedeem, seniorSupply,
             epochSeniorDebt, epochSeniorBalance)) == 0) {
+
+            emit log_named_uint("valid pool constraints", 1);
 
             uint score = scoreSolution(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
 
@@ -196,6 +205,8 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
             // solution is new best => 0
             return 0;
         }
+
+        emit log_named_uint("not pool constraints", 1);
 
         // proposed solution does not satisfy all pool constraints
         // if we never received a solution which satisfies all constraints for this epoch
@@ -264,6 +275,8 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     function scoreImprovement(Fixed27 memory newSeniorRatio, Fixed27 memory currSeniorRatio,
         uint newReserve_) public  returns(uint) {
 
+        emit log_named_uint("new senior ratio", newSeniorRatio.value);
+
         (Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio) = assessor.seniorRatioBounds();
 
         // normalize reserve by defining maxReserve as ONE
@@ -308,25 +321,15 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     /*
         returns newReserve for gas efficiency reasons to only calc it once
     */
-    function validateCoreConstraints(uint seniorRedeem, uint juniorRedeem,
-        uint seniorSupply, uint juniorSupply) public view returns (uint newReserve, int err) {
-
-        uint currencyAvailable = safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply);
-        uint currencyOut = safeAdd(seniorRedeem, juniorRedeem);
-
-
+    function validateCoreConstraints(uint currencyAvailable, uint currencyOut, uint seniorRedeem, uint juniorRedeem,
+        uint seniorSupply, uint juniorSupply) public view returns (int err) {
         // constraint 1: currency available
         if (currencyOut > currencyAvailable) {
             // currencyAvailableConstraint => -1
-            return (0, -1);
+            return -1;
         }
 
         uint newReserve = safeSub(currencyAvailable, currencyOut);
-        // constraint 2: max reserve
-        if (newReserve > assessor.maxReserve()) {
-            // maxReserveConstraint => -2
-            return (0, -2);
-        }
 
         // constraint 3: max order
         if (seniorSupply > order.seniorSupply ||
@@ -334,14 +337,20 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         seniorRedeem > order.seniorRedeem ||
             juniorRedeem > order.juniorRedeem) {
             // maxOrderConstraint => -3
-            return (0, -3);
+            return -3;
         }
 
         // successful => 0
-        return (newReserve, 0);
+        return  0;
     }
 
     function validatePoolConstraints(uint newReserve, uint newSeniorAsset) public view returns (int err) {
+        // constraint 2: max reserve
+        if (newReserve > assessor.maxReserve()) {
+            // maxReserveConstraint => -2
+            return -2;
+        }
+
         uint assets = safeAdd(epochNAV, newReserve);
 
         (Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio) = assessor.seniorRatioBounds();
@@ -364,10 +373,15 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     function validate(uint seniorRedeem, uint juniorRedeem,
         uint seniorSupply, uint juniorSupply) public view returns (int) {
 
-        (uint newReserve, int err) = validateCoreConstraints(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
+        uint currencyAvailable = safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply);
+        uint currencyOut = safeAdd(seniorRedeem, juniorRedeem);
+
+        int err = validateCoreConstraints(currencyAvailable, currencyOut, seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
         if(err != 0) {
             return err;
         }
+
+        uint newReserve = safeSub(currencyAvailable, currencyOut);
 
         return validatePoolConstraints(newReserve, calcSeniorState(seniorRedeem, seniorSupply,
             epochSeniorDebt, epochSeniorBalance));
