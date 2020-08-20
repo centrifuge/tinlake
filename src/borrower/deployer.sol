@@ -149,6 +149,7 @@ contract BorrowerDeployer {
         AuthLike(nftFeed).rely(root);
         threshold = nftFeed;
         ceiling = nftFeed;
+        pricePool = nftFeed;
     }
 
     function deploy() public {
@@ -167,6 +168,9 @@ contract BorrowerDeployer {
 
             NFTFeedLike(nftFeed).init();
             DependLike(shelf).depend("subscriber", address(nftFeed));
+        } else {
+            // pool needs pile
+             DependLike(pricePool).depend("pile", address(pile));
         }
 
         AuthLike(ceiling).rely(shelf);
@@ -175,8 +179,7 @@ contract BorrowerDeployer {
         // collector allowed to call
         AuthLike(shelf).rely(collector);
 
-        // pool needs pile
-        DependLike(pricePool).depend("pile", address(pile));
+       
     }
 
 }
