@@ -67,7 +67,6 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     bool public validPoolConstraints;
     OrderSummary public order;
 
-
     Fixed27 public epochSeniorTokenPrice;
     Fixed27 public epochJuniorTokenPrice;
 
@@ -141,7 +140,6 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
     /// number denominated in WAD
     /// all variables expressed as currency
-
     function saveNewOptimum(uint seniorRedeem, uint juniorRedeem, uint juniorSupply,
         uint seniorSupply, uint score) internal {
 
@@ -203,13 +201,18 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     }
 
     function abs(uint x, uint y) public view returns(uint delta) {
-        if(x >= y) {
+        if(x == y) {
+            // todo add explanation
+            return 1;
+        }
+
+        if(x > y) {
             return safeSub(x, y);
         }
         return safeSub(y, x);
     }
 
-    function checkRatio(Fixed27 memory ratio, Fixed27 memory minRatio,
+    function checkRatioInRange(Fixed27 memory ratio, Fixed27 memory minRatio,
         Fixed27 memory maxRatio) public view returns (bool) {
         if (ratio.value >= minRatio.value && ratio.value <= maxRatio.value ) {
             return true;
@@ -218,9 +221,9 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     }
 
     function _improvementScoreCase(uint seniorRedeem, uint juniorRedeem,
-uint juniorSupply, uint seniorSupply) internal returns(int) {
-        Fixed27 memory currSeniorRatio = Fixed27({value: calcSeniorRatio(safeAdd(epochSeniorBalance, epochSeniorDebt),
-            epochNAV, epochReserve)});
+        uint juniorSupply, uint seniorSupply) internal returns(int) {
+        Fixed27 memory currSeniorRatio = Fixed27(calcSeniorRatio(safeAdd(epochSeniorBalance, epochSeniorDebt),
+            epochNAV, epochReserve));
 
         if(bestSubScore == 0) {
             // define no orders score as benchmark if no previous submission exists
@@ -229,8 +232,8 @@ uint juniorSupply, uint seniorSupply) internal returns(int) {
 
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
 
-        Fixed27 memory newSeniorRatio =  Fixed27({value: calcSeniorRatio(calcSeniorState( seniorRedeem, seniorSupply,
-            epochSeniorDebt, epochSeniorBalance), epochNAV, newReserve)});
+        Fixed27 memory newSeniorRatio = Fixed27(calcSeniorRatio(calcSeniorState( seniorRedeem, seniorSupply,
+            epochSeniorDebt, epochSeniorBalance), epochNAV, newReserve));
 
         uint score =  scoreImprovement(newSeniorRatio, currSeniorRatio, newReserve);
 
@@ -244,25 +247,42 @@ uint juniorSupply, uint seniorSupply) internal returns(int) {
         return 0;
     }
 
+    // returns the normalized distance (maxReserve = ONE) from the newReserve and maxReserve/2
+    function scoreDistanceReserve(uint newReserve_) public view returns (uint score) {
+        return rmul(100, rdiv(ONE, abs(safeDiv(ONE, 2), newReserve_)));
+    }
+
     function scoreImprovement(Fixed27 memory newSeniorRatio, Fixed27 memory currSeniorRatio,
         uint newReserve_) public view returns(uint) {
 
         (Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio) = assessor.seniorRatioBounds();
 
         // normalize reserve by defining maxReserve as ONE
-        Fixed27 memory normalizedReserve = Fixed27({value: rdiv(newReserve_, assessor.maxReserve())});
+        Fixed27 memory normalizedReserve = Fixed27(rdiv(newReserve_, assessor.maxReserve()));
 
-        // current ratio is healthy but proposed new ratio would not be in the min max range
-        if (checkRatio(currSeniorRatio, minSeniorRatio, maxSeniorRatio) == true &&
-            checkRatio(newSeniorRatio, minSeniorRatio, maxSeniorRatio) == false) {
-            return 0;
+        // current ratio is healthy
+        if (checkRatioInRange(currSeniorRatio, minSeniorRatio, maxSeniorRatio) == true) {
+
+            // the new proposed solution would violate the ratio constraints
+            if (checkRatioInRange(newSeniorRatio, minSeniorRatio, maxSeniorRatio) == false)
+            {
+                return 0;
+            }
+            // only points for maxRatio improvement
+            return scoreDistanceReserve(newReserve_);
         }
 
         // gas optimized implementation
         // abs of ratio can never be zero
-        return safeAdd(rmul(1000, rdiv(ONE, abs(newSeniorRatio.value,
-            safeDiv(safeAdd(minSeniorRatio.value, maxSeniorRatio.value), 2)))),
-            rmul(10, rdiv(ONE, abs(safeDiv(ONE, 2), newReserve_))));
+        uint score = rmul(10000, rdiv(ONE, abs(newSeniorRatio.value,
+            safeDiv(safeAdd(minSeniorRatio.value, maxSeniorRatio.value), 2))));
+
+        // ratio constraints and maxReserve are in the current state violated
+        // additional score
+        if (epochReserve >= assessor.maxReserve()) {
+            score = safeAdd(score, scoreDistanceReserve(newReserve_));
+        }
+        return score;
     }
 
     function scoreSolution(uint seniorRedeem, uint juniorRedeem,
@@ -377,9 +397,9 @@ uint juniorSupply, uint seniorSupply) internal returns(int) {
 
     function calcFulfillment(uint amount, uint totalOrder) public view returns(Fixed27 memory percent) {
         if(amount == 0 || totalOrder == 0) {
-            return Fixed27({value: 0});
+            return Fixed27(0);
         }
-        return Fixed27({value: rdiv(amount, totalOrder)});
+        return Fixed27(rdiv(amount, totalOrder));
     }
 
     function calcNewReserve(uint seniorRedeem, uint juniorRedeem,

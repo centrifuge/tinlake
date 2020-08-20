@@ -18,45 +18,42 @@ pragma experimental ABIEncoderV2;
 
 import "./coordinator-base.t.sol";
 
-contract CoordinatorImprovementScoreTest is CoordinatorTest {
+contract CoordinatorImprovementScoreTest is CoordinatorTest, DataTypes {
     function setUp() public {
         super.setUp();
 
     }
 
     function testImprovement() public {
-        uint maxReserve = 1300 ether;
-        uint newReserve = 300 ether;
+        LenderModel memory model = getDefaultModel();
+        initTestConfig(model);
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
 
-        newReserve = rdiv(newReserve, maxReserve);
-        maxReserve = ONE;
-
-        emit log_named_uint("inputReserve", newReserve);
-        emit log_named_uint("maxReserve", maxReserve);
-
-
-        uint currSeniorRatio = 90 * 10 **25;
-        uint minSeniorRatio = 75 * 10 ** 25;
-        uint maxSeniorRatio = 85 * 10 ** 25;
-
-        currSeniorRatio = 92 * 10 **25;
-
-        emit log_named_uint("distance", coordinator.abs(currSeniorRatio, safeDiv(safeAdd(minSeniorRatio, maxSeniorRatio), 2)));
-
-         uint ratioScore = rmul(1000, rdiv(ONE, coordinator.abs(currSeniorRatio, safeDiv(safeAdd(minSeniorRatio, maxSeniorRatio), 2))));
-
-        emit log_named_uint("distance:" ,rdiv(ONE,coordinator.abs(safeDiv(maxReserve,2), newReserve)));
-        uint reserveScore = rmul(10, rdiv(ONE,coordinator.abs(safeDiv(maxReserve,2), newReserve)));
-
-        emit log_named_uint("ratioScore", ratioScore);
-        emit log_named_uint("reserveScore", reserveScore);
-
-        //assertTrue(false);
     }
 
-    function testSpeed() public {
-        coordinator.calcFulfillment(100, 200);
-    }
+    function testScoreImprovement() public {
+        LenderModel memory model = getDefaultModel();
+        initTestConfig(model);
 
+        //  0.75 >= seniorRatio <= 0.85
+        emit log_named_uint("maxSeniorRatio", model.maxSeniorRatio);
+        emit log_named_uint("maxSeniorRatio", model.minSeniorRatio);
+
+        Fixed27 memory newSeniorRatio = Fixed27(92 * 10**25);
+        Fixed27 memory currentSeniorRatio = Fixed27(95 * 10**25);
+
+        uint score = coordinator.scoreImprovement(newSeniorRatio, currentSeniorRatio, model.reserve);
+
+        newSeniorRatio = Fixed27(83 * 10**25);
+        uint betterScore = coordinator.scoreImprovement(newSeniorRatio, currentSeniorRatio, model.reserve);
+
+        assertTrue(betterScore > score);
+
+        newSeniorRatio = Fixed27(80 * 10**25);
+        uint maxRatioScore = coordinator.scoreImprovement(newSeniorRatio, currentSeniorRatio, model.reserve);
+
+        assertTrue(maxRatioScore >  betterScore);
+    }
 }
 
