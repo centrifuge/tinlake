@@ -71,25 +71,49 @@ contract PileTest is Interest, DSTest {
 
     function _initRateGroup(uint rate_, uint ratePerSecond_) internal {
         pile.file("rate", rate_, ratePerSecond_);
-        (, uint chi , uint ratePerSecond,) = pile.rates(rate_);
+        (, uint chi , uint ratePerSecond,,) = pile.rates(rate_);
         assertEq(ratePerSecond, ratePerSecond_);
         assertEq(chi, ONE);
     }
 
-    function testIncDebt() public {
+    function testIncDebtNoFixedFee() public {
         uint loan = 1;
         uint amount = 66 ether;
         // 12 % per year compound in seconds
         _setUpLoan(loan, 1000000003593629043335673583);
         _increaseDebt(loan, amount);
+    }
 
-        hevm.warp(now + 1 days);
+    function testIncDebtWithFixedFee() public {
+        uint loan = 1;
+        uint amount = 60 ether;
+        uint rateGroup = 1000000003593629043335673583;
+        // 10% fixed Rate
+        uint fixedRate = safeDiv(ONE, 10);
+        uint fixedBorrowFee = rmul(amount, fixedRate);
+        // set fixedRate for group
+        pile.file("fixedRate", rateGroup, fixedRate);
+        // add loan to rate group
+        _setUpLoan(loan, rateGroup);
+        pile.incDebt(loan, amount);
+    
+        assertEq(pile.total(), safeAdd(amount, fixedBorrowFee));
+        assertEq(pile.debt(loan), safeAdd(amount, fixedBorrowFee));
     }
 
     function testInitRateGroup() public {
         uint rate = 1000000003593629043335673583;
         uint ratePerSecond = rate;
         _initRateGroup(rate, ratePerSecond);
+    }
+
+    function testSetFixedRate() public {
+        uint rate = 1000000003593629043335673583;
+         // 10% fixed Rate
+        uint fixedRate_ = safeDiv(ONE, 10);
+        pile.file("fixedRate", rate, fixedRate_);
+        (,,,,uint fixedRate) = pile.rates(rate);
+        assertEq(fixedRate, fixedRate_);
     }
 
     function testUpdateRateGroup() public {
@@ -101,7 +125,7 @@ contract PileTest is Interest, DSTest {
 
         uint newRatePerSecond = 1000000564701133626865910626;
         pile.file("rate", rate, newRatePerSecond);
-        (, uint chi, uint ratePerSecond,) = pile.rates(rate);
+        (, uint chi, uint ratePerSecond,,) = pile.rates(rate);
         assertEq(ratePerSecond, 1000000564701133626865910626);
         assertEq(chi, 1000310537755655376744337012);
     }
@@ -328,7 +352,7 @@ contract PileTest is Interest, DSTest {
     function testDrip() public {
         uint rate = uint(1000000564701133626865910626); // 5 % / day
         pile.file("rate", rate, rate);
-        (uint debt1, uint rateIndex1, uint ratePerSecond1, uint lastUpdated1 ) = pile.rates(rate);
+        (uint debt1, uint rateIndex1, uint ratePerSecond1, uint lastUpdated1, ) = pile.rates(rate);
         assertEq(ratePerSecond1, rate);
         assertEq(lastUpdated1, now);
         assertEq(debt1, 0);
@@ -336,14 +360,14 @@ contract PileTest is Interest, DSTest {
         // on day later
         hevm.warp(now + 1 days);
 
-        (debt1,  rateIndex1,  ratePerSecond1,  lastUpdated1 ) = pile.rates(rate);
+        (debt1,  rateIndex1,  ratePerSecond1, lastUpdated1, ) = pile.rates(rate);
         assertEq(ratePerSecond1, rate);
         assertEq(debt1, 0);
         assertTrue(lastUpdated1 != now);
 
         pile.drip(rate);
 
-        (uint debt2, uint rateIndex2, uint ratePerSecond2, uint lastUpdated2 ) = pile.rates(rate);
+        (uint debt2, uint rateIndex2, uint ratePerSecond2, uint lastUpdated2, ) = pile.rates(rate);
         assertEq(ratePerSecond2, rate);
         assertEq(lastUpdated2, now);
         assertEq(debt2, 0);

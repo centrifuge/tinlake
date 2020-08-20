@@ -32,6 +32,7 @@ contract Pile is DSNote, Auth, Interest {
         uint   chi;                 // Accumulated rates
         uint   ratePerSecond;       // Accumulation per second
         uint48 lastUpdated;         // Last time the rate was accumulated
+        uint   fixedRate;           // fixed rate applied to each loan of the group
     }
 
     /// Interest Rate Groups are identified by a `uint` and stored in a mapping
@@ -59,9 +60,10 @@ contract Pile is DSNote, Auth, Interest {
      // --- Public Debt Methods  ---
     /// increases the debt of a loan by a currencyAmount
     /// a change of the loan debt updates the rate debt and total debt
-    function incDebt(uint loan, uint currencyAmount) external auth note {
+    function incDebt(uint loan, uint currencyAmount) external auth note { 
         uint rate = loanRates[loan];
         require(now == rates[rate].lastUpdated, "rate-group-not-updated");
+        currencyAmount = safeAdd(currencyAmount, rmul(currencyAmount, rates[rate].fixedRate));
         uint pieAmount = toPie(rates[rate].chi, currencyAmount);
 
         pie[loan] = safeAdd(pie[loan], pieAmount);
@@ -133,18 +135,19 @@ contract Pile is DSNote, Auth, Interest {
     }
 
     // set/change the interest rate of a rate category
-    function file(bytes32 what, uint rate, uint ratePerSecond) external auth note {
+    function file(bytes32 what, uint rate, uint value) external auth note {
         if (what == "rate") {
-            require(ratePerSecond != 0, "rate-per-second-can-not-be-0");
+            require(value != 0, "rate-per-second-can-not-be-0");
             if (rates[rate].chi == 0) {
                 rates[rate].chi = ONE;
                 rates[rate].lastUpdated = uint48(now);
             } else {
                 drip(rate);
-            }
-            rates[rate].ratePerSecond = ratePerSecond;
+            } 
+            rates[rate].ratePerSecond = value;
+        } else if (what == "fixedRate") {
+            rates[rate].fixedRate = value;
         } else revert("unknown parameter");
-
     }
 
     // accrue needs to be called before any debt amounts are modified by an external component
