@@ -248,17 +248,17 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     }
 
     // returns the normalized distance (maxReserve = ONE) from the newReserve and maxReserve/2
-    function scoreDistanceReserve(uint newReserve_) public view returns (uint score) {
-        return rmul(100, rdiv(ONE, abs(safeDiv(ONE, 2), newReserve_)));
+    function scoreDistanceReserve(Fixed27 memory newReserve_) public view returns (uint score) {
+        return rmul(1000, rdiv(ONE, abs(safeDiv(ONE, 2), newReserve_.value)));
     }
 
     function scoreImprovement(Fixed27 memory newSeniorRatio, Fixed27 memory currSeniorRatio,
-        uint newReserve_) public view returns(uint) {
+        uint newReserve_) public  returns(uint) {
 
         (Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio) = assessor.seniorRatioBounds();
 
         // normalize reserve by defining maxReserve as ONE
-        Fixed27 memory normalizedReserve = Fixed27(rdiv(newReserve_, assessor.maxReserve()));
+        Fixed27 memory normalizedNewReserve = Fixed27(rdiv(newReserve_, assessor.maxReserve()));
 
         // current ratio is healthy
         if (checkRatioInRange(currSeniorRatio, minSeniorRatio, maxSeniorRatio) == true) {
@@ -269,7 +269,9 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
                 return 0;
             }
             // only points for maxRatio improvement
-            return scoreDistanceReserve(newReserve_);
+
+            return scoreDistanceReserve(normalizedNewReserve);
+
         }
 
         // gas optimized implementation
@@ -280,7 +282,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         // ratio constraints and maxReserve are in the current state violated
         // additional score
         if (epochReserve >= assessor.maxReserve()) {
-            score = safeAdd(score, scoreDistanceReserve(newReserve_));
+           score = safeAdd(score, scoreDistanceReserve(normalizedNewReserve));
         }
         return score;
     }
