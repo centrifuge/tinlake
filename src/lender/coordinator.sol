@@ -121,9 +121,11 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         order.juniorSupply = orderJuniorSupply;
         order.seniorSupply = orderSeniorSupply;
 
-        if (orderSeniorRedeem == 0 && orderSeniorRedeem == 0 &&
-            orderSeniorSupply == 0 && orderSeniorSupply == 0) {
-           // executeEpoch(0, 0, 0, 0);
+        //  if no orders exist epoch can be executed without validation
+        if (orderSeniorRedeem == 0 && orderJuniorRedeem == 0 &&
+            orderSeniorSupply == 0 && orderJuniorSupply == 0) {
+            executeEpoch(0, 0, 0, 0);
+            return;
         }
 
         /// can orders be to 100% fulfilled
