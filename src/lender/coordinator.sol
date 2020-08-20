@@ -331,13 +331,13 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
         uint newReserve = safeSub(currencyAvailable, currencyOut);
 
-        // constraint 3: max order
+        // constraint 2: max order
         if (seniorSupply > order.seniorSupply ||
         juniorSupply > order.juniorSupply ||
         seniorRedeem > order.seniorRedeem ||
             juniorRedeem > order.juniorRedeem) {
-            // maxOrderConstraint => -3
-            return -3;
+            // maxOrderConstraint => -2
+            return -2;
         }
 
         // successful => 0
@@ -345,10 +345,10 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     }
 
     function validatePoolConstraints(uint newReserve, uint newSeniorAsset) public view returns (int err) {
-        // constraint 2: max reserve
+        // constraint 3: max reserve
         if (newReserve > assessor.maxReserve()) {
-            // maxReserveConstraint => -2
-            return -2;
+            // maxReserveConstraint => -3
+            return -3;
         }
 
         uint assets = safeAdd(epochNAV, newReserve);

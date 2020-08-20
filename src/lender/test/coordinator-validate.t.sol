@@ -35,8 +35,8 @@ contract CoordinatorValidateTest is CoordinatorTest {
         super.setUp();
         validateErr = ValidateErr({
             CURRENCY_AVAILABLE: -1,
-            MAX_RESERVE: -2,
-            MAX_ORDER: -3,
+            MAX_ORDER: -2,
+            MAX_RESERVE: -3,
             MIN_SENIOR_RATIO: -4,
             MAX_SENIOR_RATIO: -5
             });
