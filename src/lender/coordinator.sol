@@ -18,8 +18,7 @@ pragma experimental ABIEncoderV2;
 import "./ticker.sol";
 import "tinlake-auth/auth.sol";
 
-import "ds-test/test.sol";
-contract DataTypes is DSTest {
+contract DataTypes  {
     struct Fixed27 {
         uint value;
     }
@@ -184,8 +183,6 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         if(validatePoolConstraints(newReserve, calcSeniorState(seniorRedeem, seniorSupply,
             epochSeniorDebt, epochSeniorBalance)) == 0) {
 
-            emit log_named_uint("valid pool constraints", 1);
-
             uint score = scoreSolution(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
 
             if(gotValidPoolConSubmission == false) {
@@ -205,8 +202,6 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
             // solution is new best => 0
             return 0;
         }
-
-        emit log_named_uint("not pool constraints", 1);
 
         // proposed solution does not satisfy all pool constraints
         // if we never received a solution which satisfies all constraints for this epoch
@@ -274,8 +269,6 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
     function scoreImprovement(Fixed27 memory newSeniorRatio, Fixed27 memory currSeniorRatio,
         uint newReserve_) public  returns(uint) {
-
-        emit log_named_uint("new senior ratio", newSeniorRatio.value);
 
         (Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio) = assessor.seniorRatioBounds();
 

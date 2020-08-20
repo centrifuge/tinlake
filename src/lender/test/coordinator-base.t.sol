@@ -119,6 +119,7 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         submitSolutionReturn.NEW_BEST = 0;
         submitSolutionReturn.NOT_NEW_BEST = -1;
         submitSolutionReturn.NOT_VALID = -2;
+        submitSolutionReturn.ONLY_HEALTHY_SUB = -3;
     }
 
     function getNoOrderModel() internal returns (LenderModel memory) {
