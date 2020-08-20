@@ -64,7 +64,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
     OrderSummary public bestSubmission;
     uint public  bestSubScore;
-    bool public validPoolConstraints;
+    bool public gotValidPoolConSubmission;
     OrderSummary public order;
 
     Fixed27 public epochSeniorTokenPrice;
@@ -169,6 +169,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
         (uint newReserve, int valid) = validateCoreConstraints(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
         if(valid != 0) {
+            // every proposed solution needs to satisfy the core constraints
             // solution is not valid => -2
             return -2;
         }
@@ -178,8 +179,8 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
             uint score = scoreSolution(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
 
-            if(validPoolConstraints == false) {
-                validPoolConstraints = true;
+            if(gotValidPoolConSubmission == false) {
+                gotValidPoolConSubmission = true;
                 saveNewOptimum(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply, score);
                 // solution is new best => 0
                 return 0;
@@ -196,8 +197,16 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
             return 0;
         }
 
-        return _improvementScoreCase(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply);
+        // proposed solution does not satisfy all pool constraints
+        // if we never received a solution which satisfies all constraints for this epoch
+        // we might accept it as an improvement
+        if (gotValidPoolConSubmission == false) {
+            return _improvementScoreCase(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply);
+        }
 
+        // proposed solution doesn't satisfy the pool constraints but a previous submission did
+        // previous solutions satisfied all constraints
+        return -3;
     }
 
     function abs(uint x, uint y) public view returns(uint delta) {
@@ -242,7 +251,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
             return -1;
         }
 
-        // solution doesn't satisfy the pool constraints but improves the current violation
+        // solution doesn't satisfy all pool constraints but improves the current violation
         saveNewOptimum(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply, score);
         return 0;
     }
@@ -439,6 +448,6 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         submissionPeriod = false;
         minChallengePeriodEnd = 0;
         bestSubScore = 0;
-        validPoolConstraints = false;
+        gotValidPoolConSubmission = false;
     }
 }
