@@ -29,7 +29,21 @@ contract Hevm {
     function warp(uint256) public;
 }
 
-contract CoordinatorTest is DSTest, Math {
+contract BaseTypes {
+    struct Order {
+        uint  seniorRedeem;
+        uint  juniorRedeem;
+        uint  juniorSupply;
+        uint  seniorSupply;
+    }
+}
+
+contract CoordinatorLike is BaseTypes {
+    function bestSubmission() public returns (Order memory);
+    function order() public returns (Order memory);
+}
+
+contract CoordinatorTest is DSTest, Math, BaseTypes {
     Hevm hevm;
     EpochCoordinator coordinator;
 
@@ -71,7 +85,13 @@ contract CoordinatorTest is DSTest, Math {
         bytes32 name;
     }
 
-    LenderModel public model;
+    struct SubmitSolutionReturn {
+        int NEW_BEST;
+        int NOT_VALID;
+        int NOT_NEW_BEST;
+    }
+
+    SubmitSolutionReturn submitSolutionReturn;
 
     function setUp() public {
         seniorTranche = new EpochTrancheMock();
@@ -93,9 +113,11 @@ contract CoordinatorTest is DSTest, Math {
         coordinator.depend("reserve", reserve_);
         coordinator.depend("assessor", assessor_);
 
-        model = getNoOrderModel();
-        initTestConfig(model);
+        initTestConfig(getNoOrderModel());
 
+        submitSolutionReturn.NEW_BEST = 0;
+        submitSolutionReturn.NOT_NEW_BEST = -1;
+        submitSolutionReturn.NOT_VALID = -2;
     }
 
     function getNoOrderModel() internal returns (LenderModel memory) {
@@ -127,30 +149,38 @@ contract CoordinatorTest is DSTest, Math {
             juniorRedeemOrder: 100 ether});
     }
 
-    function consoleLog(LenderModel memory model) internal {
-        emit log_named_uint("maxReserve", model.maxReserve);
-        emit log_named_uint("NAV", model.NAV);
-        emit log_named_uint("reserve", model.reserve);
-        emit log_named_uint("seniorDebt", model.seniorDebt);
+    function consoleLog(LenderModel memory model_) internal {
+        emit log_named_uint("maxReserve", model_.maxReserve);
+        emit log_named_uint("NAV", model_.NAV);
+        emit log_named_uint("reserve", model_.reserve);
+        emit log_named_uint("seniorDebt", model_.seniorDebt);
     }
 
-    function initTestConfig(LenderModel memory model) internal {
-        assessor.setReturn("maxReserve", model.maxReserve);
+    function initTestConfig(LenderModel memory model_) internal {
+        assessor.setReturn("maxReserve", model_.maxReserve);
         assessor.setReturn("calcJuniorTokenPrice", ONE);
         assessor.setReturn("calcSeniorTokenPrice", ONE);
-        assessor.setReturn("calcNAV", model.NAV);
-        reserve.setReturn("balance", model.reserve);
-        assessor.setReturn("seniorDebt", model.seniorDebt);
-        assessor.setReturn("seniorBalance", model.seniorBalance);
-        assessor.setReturn("minSeniorRatio", model.minSeniorRatio);
-        assessor.setReturn("maxSeniorRatio", model.maxSeniorRatio);
+        assessor.setReturn("calcNAV", model_.NAV);
+        reserve.setReturn("balance", model_.reserve);
+        assessor.setReturn("seniorDebt", model_.seniorDebt);
+        assessor.setReturn("seniorBalance", model_.seniorBalance);
+        assessor.setReturn("minSeniorRatio", model_.minSeniorRatio);
+        assessor.setReturn("maxSeniorRatio", model_.maxSeniorRatio);
 
-        juniorTranche.setEpochReturn(model.juniorSupplyOrder, model.juniorRedeemOrder);
-        seniorTranche.setEpochReturn(model.seniorSupplyOrder, model.seniorRedeemOrder);
+        juniorTranche.setEpochReturn(model_.juniorSupplyOrder, model_.juniorRedeemOrder);
+        seniorTranche.setEpochReturn(model_.seniorSupplyOrder, model_.seniorRedeemOrder);
     }
 
     function calcNextEpochIn() public view returns(uint) {
         return 1 days - (now - coordinator.normalizeTimestamp(now));
+    }
+
+    function compareWithBest(ModelInput memory model_) internal {
+        Order memory bestSubmission = CoordinatorLike(address(coordinator)).bestSubmission();
+        assertEq(bestSubmission.seniorRedeem, model_.seniorRedeem);
+        assertEq(bestSubmission.juniorRedeem, model_.juniorRedeem);
+        assertEq(bestSubmission.seniorSupply, model_.seniorSupply);
+        assertEq(bestSubmission.juniorSupply, model_.juniorSupply);
     }
 }
 

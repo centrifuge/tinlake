@@ -35,6 +35,8 @@ interface AssessorLike {
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
     function seniorRatioBounds() external view returns(uint minSeniorRatio, uint maxSeniorRatio);
+    function updateSenior(uint seniorDebt, uint seniorBalance) external;
+
 }
 
 contract EpochCoordinator is Ticker, Auth  {
@@ -123,26 +125,32 @@ contract EpochCoordinator is Ticker, Auth  {
 
     /// number denominated in WAD
     /// all variables expressed as currency
-    function submitSolution(uint seniorRedeem, uint juniorRedeem, uint juniorSupply, uint seniorSupply) public {
+    function submitSolution(uint seniorRedeem, uint juniorRedeem, uint juniorSupply, uint seniorSupply) public returns(int) {
         require(submissionPeriod == true);
         uint score = scoreSolution(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
 
         if (score < bestSubScore) {
-            return;
+            // solution is not the best => -1
+            return -1;
         }
 
-        if(validate(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply) == 0) {
-            if (minChallengePeriodEnd == 0) {
-                minChallengePeriodEnd = safeAdd(block.timestamp, challengeTime);
-            }
-
-            bestSubmission.seniorRedeem = seniorRedeem;
-            bestSubmission.juniorRedeem = juniorRedeem;
-            bestSubmission.juniorSupply = juniorSupply;
-            bestSubmission.seniorSupply = seniorSupply;
-
-            bestSubScore = score;
+        if(validate(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply) != 0) {
+            // solution is not valid => -2
+            return -2;
         }
+        if (minChallengePeriodEnd == 0) {
+            minChallengePeriodEnd = safeAdd(block.timestamp, challengeTime);
+        }
+
+        bestSubmission.seniorRedeem = seniorRedeem;
+        bestSubmission.juniorRedeem = juniorRedeem;
+        bestSubmission.juniorSupply = juniorSupply;
+        bestSubmission.seniorSupply = seniorSupply;
+
+        bestSubScore = score;
+
+        // solution is new best => 0
+        return 0;
     }
 
     function scoreSolution(uint seniorRedeem, uint juniorRedeem,
@@ -183,9 +191,9 @@ contract EpochCoordinator is Ticker, Auth  {
 
         (uint minSeniorRatio, uint maxSeniorRatio) = assessor.seniorRatioBounds();
 
-        // todo make seniorBalance an integer or substract from seniorBalance and seniorDebt
+        // todo make seniorBalance an integer or subtract from seniorBalance and seniorDebt
         uint newSeniorBalance = safeSub(safeAdd(epochSeniorBalance, seniorSupply), seniorRedeem);
-        uint newSeniorAsset = safeAdd(epochSeniorDebt,newSeniorBalance);
+        uint newSeniorAsset = safeAdd(epochSeniorDebt, newSeniorBalance);
 
         // constraint 4: min senior ratio constraint
         if (newSeniorAsset < rmul(assets, minSeniorRatio)) {
@@ -206,15 +214,49 @@ contract EpochCoordinator is Ticker, Auth  {
         executeEpoch(bestSubmission.seniorRedeem ,bestSubmission.juniorRedeem, bestSubmission.seniorSupply, bestSubmission.juniorSupply);
     }
 
+    function calcSeniorState(uint seniorRedeem, uint seniorSupply,uint seniorDebt, uint seniorBalance) public view returns (uint seniorAsset) {
+        return safeSub(safeAdd(safeAdd(seniorDebt, seniorBalance), seniorSupply), seniorRedeem);
+    }
+
+    function calcAssets(uint NAV, uint reserve_) public view returns(uint) {
+        return safeAdd(NAV, reserve_);
+    }
+
+
+    function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) public view returns(uint) {
+        uint assets = calcAssets(NAV, reserve_);
+        if(assets == 0) {
+            return 0;
+        }
+        return rdiv(seniorAsset, assets);
+    }
+
+    function reBalanceSeniorDebt(uint seniorAsset, uint currSeniorRatio) public view returns (uint seniorDebt_, uint seniorBalance_) {
+        uint seniorDebt = rmul(seniorAsset, currSeniorRatio);
+        return (seniorDebt, safeSub(seniorAsset, seniorDebt));
+    }
+
+    function calcFulfillment(uint amount, uint totalOrder) public view returns(uint percent) {
+        if(amount == 0 || totalOrder == 0) {
+            return 0;
+        }
+        return rdiv(amount, totalOrder);
+    }
+
     function executeEpoch(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) internal {
+        uint epochID = lastEpochExecuted+1;
 
-        // todo call transfers on operators
+        seniorTranche.epochUpdate(epochID, calcFulfillment(seniorSupply, order.seniorSupply), calcFulfillment(seniorRedeem, order.seniorRedeem), epochSeniorTokenPrice);
+        juniorTranche.epochUpdate(epochID, calcFulfillment(juniorSupply, order.juniorSupply), calcFulfillment(juniorRedeem, order.juniorRedeem), epochSeniorTokenPrice);
 
-        // todo re-balance of senior debt
+        uint seniorAsset = calcSeniorState(seniorRedeem, seniorSupply, assessor.seniorDebt(), assessor.seniorBalance());
+        uint newReserve = safeSub(safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply), safeAdd(seniorRedeem, juniorRedeem));
 
-        // todo update update seniorBalance;
+        (uint seniorDebt, uint seniorBalance) = reBalanceSeniorDebt(seniorAsset, calcSeniorRatio(seniorAsset, epochNAV, newReserve));
 
-        lastEpochExecuted++;
+        assessor.updateSenior(seniorDebt, seniorBalance);
+
+        lastEpochExecuted = epochID;
         submissionPeriod = false;
         minChallengePeriodEnd = 0;
         bestSubScore = 0;

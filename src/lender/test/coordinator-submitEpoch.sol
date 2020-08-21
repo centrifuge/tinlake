@@ -18,35 +18,14 @@ pragma experimental ABIEncoderV2;
 
 import "./coordinator-base.t.sol";
 
-contract BaseTypes {
-    struct Order {
-        uint  seniorRedeem;
-        uint  juniorRedeem;
-        uint  juniorSupply;
-        uint  seniorSupply;
-    }
-}
-
-contract CoordinatorLike is BaseTypes {
-    function bestSubmission() public returns (Order memory);
-}
-
-contract CoordinatorSubmitEpochTest is CoordinatorTest, BaseTypes {
+contract CoordinatorSubmitEpochTest is CoordinatorTest {
     function setUp() public {
         super.setUp();
     }
 
-    function submitSolution(ModelInput memory solution) internal {
-        coordinator.submitSolution(solution.seniorRedeem, solution.juniorRedeem,
+    function submitSolution(ModelInput memory solution) internal returns(int) {
+        return coordinator.submitSolution(solution.seniorRedeem, solution.juniorRedeem,
             solution.juniorSupply, solution.seniorSupply);
-    }
-
-    function compareWithBest(ModelInput memory model) internal {
-        Order memory bestSubmission = CoordinatorLike(address(coordinator)).bestSubmission();
-        assertEq(bestSubmission.seniorRedeem, model.seniorRedeem);
-        assertEq(bestSubmission.juniorRedeem, model.juniorRedeem);
-        assertEq(bestSubmission.seniorSupply, model.seniorSupply);
-        assertEq(bestSubmission.juniorSupply, model.juniorSupply);
     }
 
     function testFailNoSubmission() public {
@@ -82,7 +61,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, BaseTypes {
         juniorRedeem : 4 ether
         });
 
-        submitSolution(solution);
+        assertEq(submitSolution(solution), submitSolutionReturn.NEW_BEST);
         compareWithBest(solution);
 
         // challenge period started
@@ -99,7 +78,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, BaseTypes {
         juniorRedeem : 5 ether
         });
 
-        submitSolution(betterSolution);
+        assertEq(submitSolution(betterSolution), submitSolutionReturn.NEW_BEST);
 
         // better solution should be new best
         compareWithBest(betterSolution);
@@ -110,17 +89,21 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, BaseTypes {
         hevm.warp(now + 2 hours);
 
         // re submit solution with lower score
-        submitSolution(solution);
+        assertEq(submitSolution(solution),submitSolutionReturn.NOT_NEW_BEST);
 
         // better solution should be still the best
         compareWithBest(betterSolution);
 
         // re submit solution with lower score
         solution.seniorSupply = 2 ether;
-        submitSolution(solution);
+        assertEq(submitSolution(solution), submitSolutionReturn.NOT_NEW_BEST);
 
         // better solution should be still the best
         compareWithBest(betterSolution);
+
+        // submit invalid solution
+        solution.seniorSupply = 100000000 ether;
+        assertEq(submitSolution(solution), submitSolutionReturn.NOT_VALID);
     }
 }
 
