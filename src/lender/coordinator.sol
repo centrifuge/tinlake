@@ -411,10 +411,10 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     }
 
     function reBalanceSeniorDebt(uint seniorAsset,
-        uint currSeniorRatio) public view returns (uint seniorDebt_, uint seniorBalance_) {
+        uint currSeniorRatio) public  returns (uint seniorDebt_, uint seniorBalance_) {
 
-        uint seniorDebt = rmul(seniorAsset, currSeniorRatio);
-        return (seniorDebt, safeSub(seniorAsset, seniorDebt));
+        seniorDebt_ =  rmul(epochNAV, currSeniorRatio);
+        return (seniorDebt_, safeSub(seniorAsset, seniorDebt_));
     }
 
     function calcFulfillment(uint amount, uint totalOrder) public view returns(Fixed27 memory percent) {

@@ -100,7 +100,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
 
         assertEq(currSeniorRatio, shouldRatio);
 
-        assertEq(assessor.values_uint("updateSenior_seniorDebt"), rmul(seniorAsset, currSeniorRatio));
+        assertEq(assessor.values_uint("updateSenior_seniorDebt"), rmul(model_.NAV, currSeniorRatio));
     }
 
     function testCalcSeniorRatio() public {
@@ -116,31 +116,32 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
     }
 
     function testRebalanceSeniorDebt() public {
-        uint seniorAsset = 500 ether;
+        LenderModel memory model_ = getDefaultModel();
+        model_.NAV = 1000 ether;
+
+        initTestConfig(model_);
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
+
+        uint seniorAsset = 1500 ether;
         uint ratio = 8 * 10 **26;
 
         (uint seniorDebt_, uint seniorBalance_) = coordinator.reBalanceSeniorDebt(seniorAsset, ratio);
-        assertEq(seniorDebt_, 400 ether);
-        assertEq(seniorBalance_, 100 ether);
+        assertEq(seniorDebt_, 800 ether);
+        assertEq(seniorBalance_, 700 ether);
 
-        // zero asset value case
-        (seniorDebt_, seniorBalance_) = coordinator.reBalanceSeniorDebt(0, ratio);
+
+        // zero asset value case and 0 percent
+        (seniorDebt_, seniorBalance_) = coordinator.reBalanceSeniorDebt(0, 0);
         assertEq(seniorDebt_, 0);
         assertEq(seniorBalance_, 0);
-
-        // ratio zero
-        ratio = 0;
-
-        (seniorDebt_, seniorBalance_) = coordinator.reBalanceSeniorDebt(seniorAsset, ratio);
-        assertEq(seniorDebt_, 0 );
-        assertEq(seniorBalance_, 500 ether);
 
         // ratio 100%
          ratio = ONE;
 
         (seniorDebt_, seniorBalance_) = coordinator.reBalanceSeniorDebt(seniorAsset, ratio);
-        assertEq(seniorDebt_, 500 ether );
-        assertEq(seniorBalance_, 0);
+        assertEq(seniorDebt_, 1000 ether );
+        assertEq(seniorBalance_, 500 ether);
     }
 
     function testCalcSeniorState() public {
