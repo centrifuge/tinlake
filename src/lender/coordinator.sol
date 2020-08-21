@@ -173,7 +173,9 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint currencyOut = safeAdd(seniorRedeem, juniorRedeem);
 
 
-        int valid = validateCoreConstraints(currencyAvailable,  currencyOut, seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
+        int valid = validateCoreConstraints(currencyAvailable,  currencyOut, seniorRedeem,
+            juniorRedeem, seniorSupply, juniorSupply);
+
         if(valid != 0) {
             // every proposed solution needs to satisfy the core constraints
             // solution is not valid => -2
@@ -182,7 +184,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
         uint newReserve = safeSub(currencyAvailable, currencyOut);
 
-        if(validatePoolConstraints(newReserve, calcSeniorState(seniorRedeem, seniorSupply,
+        if(validatePoolConstraints(newReserve, calcNewSeniorAssetValue(seniorRedeem, seniorSupply,
             epochSeniorDebt, epochSeniorBalance)) == 0) {
 
             uint score = scoreSolution(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
@@ -249,7 +251,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
 
-        Fixed27 memory newSeniorRatio = Fixed27(calcSeniorRatio(calcSeniorState( seniorRedeem, seniorSupply,
+        Fixed27 memory newSeniorRatio = Fixed27(calcSeniorRatio(calcNewSeniorAssetValue( seniorRedeem, seniorSupply,
             epochSeniorDebt, epochSeniorBalance), epochNAV, newReserve));
 
         uint score =  scoreImprovement(newSeniorRatio, currSeniorRatio, newReserve);
@@ -271,7 +273,6 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
     function scoreImprovement(Fixed27 memory newSeniorRatio, Fixed27 memory currSeniorRatio,
         uint newReserve_) public  returns(uint) {
-
         (Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio) = assessor.seniorRatioBounds();
 
         // normalize reserve by defining maxReserve as ONE
@@ -306,7 +307,6 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
     function scoreSolution(uint seniorRedeem, uint juniorRedeem,
         uint juniorSupply, uint seniorSupply) public pure returns(uint) {
-
         // todo improve scoring func
         return safeAdd(safeAdd(safeMul(seniorRedeem, 10000), safeMul(juniorRedeem, 1000)),
             safeAdd(safeMul(juniorSupply, 100), safeMul(seniorSupply, 10)));
@@ -371,14 +371,16 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint currencyAvailable = safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply);
         uint currencyOut = safeAdd(seniorRedeem, juniorRedeem);
 
-        int err = validateCoreConstraints(currencyAvailable, currencyOut, seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
+        int err = validateCoreConstraints(currencyAvailable, currencyOut, seniorRedeem,
+            juniorRedeem, seniorSupply, juniorSupply);
+
         if(err != 0) {
             return err;
         }
 
         uint newReserve = safeSub(currencyAvailable, currencyOut);
 
-        return validatePoolConstraints(newReserve, calcSeniorState(seniorRedeem, seniorSupply,
+        return validatePoolConstraints(newReserve, calcNewSeniorAssetValue(seniorRedeem, seniorSupply,
             epochSeniorDebt, epochSeniorBalance));
     }
 
@@ -389,7 +391,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
             bestSubmission.seniorSupply, bestSubmission.juniorSupply);
     }
 
-    function calcSeniorState(uint seniorRedeem, uint seniorSupply,
+    function calcNewSeniorAssetValue(uint seniorRedeem, uint seniorSupply,
         uint seniorDebt, uint seniorBalance) public view returns (uint seniorAsset) {
 
         return safeSub(safeAdd(safeAdd(seniorDebt, seniorBalance), seniorSupply), seniorRedeem);
@@ -442,7 +444,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
             calcFulfillment(juniorRedeem, order.juniorRedeem).value,
             epochSeniorTokenPrice.value);
 
-        uint seniorAsset = calcSeniorState(seniorRedeem, seniorSupply,
+        uint seniorAsset = calcNewSeniorAssetValue(seniorRedeem, seniorSupply,
             assessor.seniorDebt(), assessor.seniorBalance());
 
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem

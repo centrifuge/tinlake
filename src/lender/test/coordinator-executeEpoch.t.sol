@@ -87,7 +87,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
         uint shouldNewReserve = safeSub(safeAdd(safeAdd(model_.reserve, input.seniorSupply), input.juniorSupply),
             safeAdd(input.seniorRedeem, input.juniorRedeem));
 
-        uint seniorAsset = coordinator.calcSeniorState(input.seniorRedeem, input.seniorSupply, model_.seniorDebt, model_.seniorBalance);
+        uint seniorAsset = coordinator.calcNewSeniorAssetValue(input.seniorRedeem, input.seniorSupply, model_.seniorDebt, model_.seniorBalance);
 
         // change or orders delta = -2 ether
         uint shouldSeniorAsset = safeSub(safeAdd(model_.seniorDebt, model_.seniorBalance), 2 ether);
@@ -150,7 +150,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
         uint seniorRedeem = 0;
         uint seniorSupply = 0;
 
-        uint seniorAsset = coordinator.calcSeniorState(seniorRedeem, seniorSupply, input.seniorDebt, input.seniorBalance);
+        uint seniorAsset = coordinator.calcNewSeniorAssetValue(seniorRedeem, seniorSupply, input.seniorDebt, input.seniorBalance);
 
         assertEq(seniorAsset, 0);
 
@@ -162,7 +162,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
          seniorRedeem = 20 ether;
          seniorSupply = 30 ether;
 
-        seniorAsset = coordinator.calcSeniorState(seniorRedeem, seniorSupply, input.seniorDebt, input.seniorBalance);
+        seniorAsset = coordinator.calcNewSeniorAssetValue(seniorRedeem, seniorSupply, input.seniorDebt, input.seniorBalance);
         assertEq(seniorAsset, 210 ether);
 
         // seniorSupply < seniorRedeem
@@ -174,7 +174,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
         seniorSupply = 20 ether;
 
 
-        seniorAsset = coordinator.calcSeniorState(seniorRedeem, seniorSupply, input.seniorDebt, input.seniorBalance);
+        seniorAsset = coordinator.calcNewSeniorAssetValue(seniorRedeem, seniorSupply, input.seniorDebt, input.seniorBalance);
         assertEq(seniorAsset, 190 ether);
 
         // seniorSupply < seniorRedeem
@@ -183,7 +183,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
         seniorRedeem = 120 ether;
         seniorSupply = 10 ether;
 
-        seniorAsset = coordinator.calcSeniorState(seniorRedeem, seniorSupply, input.seniorDebt, input.seniorBalance);
+        seniorAsset = coordinator.calcNewSeniorAssetValue(seniorRedeem, seniorSupply, input.seniorDebt, input.seniorBalance);
         assertEq(seniorAsset, 90 ether);
     }
 }
