@@ -20,9 +20,7 @@ import "../base_system.sol";
 contract WithdrawTest is BaseSystemTest {
 
     function setUp() public {
-        bytes32 distributorOperator_ = "whitelist";
-        bytes32 distributor_ = "default";
-        baseSetup(distributorOperator_, distributor_, false);
+        baseSetup();
         createTestUsers(false);
     }
 

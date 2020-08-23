@@ -22,10 +22,7 @@ contract UnlockTest is BaseSystemTest {
     Hevm public hevm;
 
     function setUp() public {
-
-        bytes32 juniorOperator_ = "whitelist";
-        bytes32 distributor_ = "default";
-        baseSetup(juniorOperator_, distributor_, false);
+        baseSetup();
         createTestUsers(false);
         fundTranches();
 

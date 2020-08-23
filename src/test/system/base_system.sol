@@ -39,44 +39,15 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     Keeper keeper;
     address keeper_;
 
-    function baseSetup(bytes32 operator_, bytes32 distributor_, bool senior_) public {
-        // setup deployment
-        bytes32 assessor_ = "default";
-        bytes32 ceiling_ = "default";
-        deployContracts(operator_, distributor_, assessor_, senior_, ceiling_, operator_);
-
-    }
-
-    function baseSetup(bytes32 operator_, bytes32 distributor_, bool senior_, bytes32 ceiling_) public {
-        // setup deployment
-        bytes32 assessor_ = "default";
-        deployContracts(operator_, distributor_, assessor_, senior_, ceiling_, operator_);
-
-    }
-
-    function baseSetup(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_) public {
+    function baseSetup() public {
         // setup deployment
         bytes32 ceiling_ = "default";
-        deployContracts(operator_, distributor_, assessor_, senior_, ceiling_, operator_);
-
+        deployContracts(ceiling_);
     }
 
-    function baseSetup(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_, bytes32 seniorOperator_) public {
-        // setup deployment
-        bytes32 ceiling_ = "default";
-        deployContracts(operator_, distributor_, assessor_, senior_, ceiling_, seniorOperator_);
-
+    function baseSetup(bytes32 ceiling_) public {
+        deployContracts(ceiling_);
     }
-
-//    function supplySenior(uint amount) public {
-//        currency.mint(seniorInvestor_, amount);
-//        seniorInvestor.doSupply(amount);
-//    }
-//
-//    function supplyJunior(uint amount) public {
-//        currency.mint(juniorInvestor_, amount);
-//        juniorInvestor.doSupply(amount);
-//    }
 
     function createTestUsers(bool senior_) public {
         borrower = new Borrower(address(shelf), address(lenderDeployer.distributor()), currency_, address(pile));

@@ -87,7 +87,7 @@ contract TestSetup {
         return (tokenId, lookupId);
     }
 
-    function deployContracts(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_, bytes32 ceiling_, bytes32 seniorOperator_) public {
+    function deployContracts(bytes32 ceiling_) public {
         collateralNFT = new Title("Collateral NFT", "collateralNFT");
         collateralNFT_ = address(collateralNFT);
 
@@ -99,7 +99,8 @@ contract TestSetup {
         // only admin is main deployer
         deployBorrower(ceiling_);
         // only admin is main deployer
-        deployLender(operator_, distributor_, assessor_, senior_, seniorOperator_);
+
+        deployMockLender();
 
         root.prepare(address(lenderDeployer), address(borrowerDeployer), address(this));
         root.deploy();
@@ -140,8 +141,7 @@ contract TestSetup {
         threshold = PushRegistry(borrowerDeployer.threshold());
     }
 
-    function deployLender(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_, bytes32 operatorSenior) public {
-
+    function deployMockLender() public {
         lenderDeployer = new LenderDeployer(root_, currency_);
         distributor = DistributorLike(lenderDeployer.distributor_());
 
