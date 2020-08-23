@@ -16,8 +16,6 @@ pragma solidity >=0.5.15 <0.6.0;
 import { TinlakeRoot } from "../../root.sol";
 
 contract TestRoot is TinlakeRoot {
-
-
     constructor (address deployUsr) public TinlakeRoot(deployUsr) {
     }
 
@@ -32,31 +30,6 @@ contract TestRoot is TinlakeRoot {
         relyContract(borrowerDeployer.ceiling(), usr);
         relyContract(borrowerDeployer.collector(), usr);
         relyContract(borrowerDeployer.threshold(), usr);
-    }
-
-    // Needed for System Tests
-    function relyLenderAdmin(address usr, bool senior_) public auth {
-        relyContract(lenderDeployer.juniorOperator(), usr);
-        relyContract(lenderDeployer.assessor(), usr);
-        relyContract(lenderDeployer.distributor(), usr);
-        relyContract(lenderDeployer.junior(), usr);
-
-        if (senior_) {
-            relyContract(lenderDeployer.seniorOperator(), usr);
-            relyContract(lenderDeployer.senior(), usr);
-        }
-    }
-
-    function denyLenderAdmin(address usr, bool senior_) public auth {
-        denyContract(lenderDeployer.juniorOperator(), usr);
-        denyContract(lenderDeployer.assessor(), usr);
-        denyContract(lenderDeployer.distributor(), usr);
-        denyContract(lenderDeployer.junior(), usr);
-
-        if (senior_) {
-            denyContract(lenderDeployer.seniorOperator(), usr);
-            denyContract(lenderDeployer.senior(), usr);
-        }
     }
 
     function denyBorrowAdmin(address usr) public auth {
