@@ -34,11 +34,11 @@ contract AssessorLike is DataTypes {
     function calcSeniorTokenPrice(uint epochNAV, uint epochReserve) external returns(Fixed27 memory tokenPrice);
     function calcJuniorTokenPrice(uint epochNAV, uint epochReserve) external returns(Fixed27 memory tokenPrice);
     function maxReserve() external view returns(uint);
-    function calcNAV() external returns (uint);
+    function currentNAV() external returns (uint);
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
     function seniorRatioBounds() external view returns(Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio);
-    function updateSenior(uint seniorDebt, uint seniorBalance) external;
+    function updateSeniorAsset(uint seniorDebt, uint seniorBalance, uint seniorRatio) external;
 }
 
 contract EpochCoordinator is Ticker, Auth, DataTypes  {
@@ -100,7 +100,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.getTotalOrders(closingEpoch);
         (uint orderSeniorSupply, uint orderSeniorRedeem) = seniorTranche.getTotalOrders(closingEpoch);
 
-        epochNAV = assessor.calcNAV();
+        epochNAV = assessor.currentNAV();
         epochReserve = reserve.totalBalance();
 
         // calculate in DAI
@@ -453,10 +453,13 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint seniorAsset = calcNewSeniorAssetValue(seniorRedeem, seniorSupply,
             assessor.seniorDebt(), assessor.seniorBalance(), newReserve);
 
-        (uint seniorDebt, uint seniorBalance) = reBalanceSeniorDebt(seniorAsset,
-            calcSeniorRatio(seniorAsset, epochNAV, newReserve));
 
-        assessor.updateSenior(seniorDebt, seniorBalance);
+        uint epochSeniorRatio = calcSeniorRatio(seniorAsset, epochNAV, newReserve);
+
+        (uint seniorDebt, uint seniorBalance) = reBalanceSeniorDebt(seniorAsset,
+            epochSeniorRatio);
+
+        assessor.updateSeniorAsset(seniorDebt, seniorBalance, epochSeniorRatio);
 
         lastEpochExecuted = epochID;
         submissionPeriod = false;

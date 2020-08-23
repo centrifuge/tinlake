@@ -99,7 +99,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
 
         assertEq(currSeniorRatio, shouldRatio);
 
-      //  assertEq(assessor.values_uint("updateSenior_seniorDebt"), rmul(model_.NAV, currSeniorRatio));
+      //  assertEq(assessor.values_uint("updateSeniorAsset_seniorDebt"), rmul(model_.NAV, currSeniorRatio));
     }
 
     function testCalcSeniorRatio() public {

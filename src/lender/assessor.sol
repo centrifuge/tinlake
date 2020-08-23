@@ -65,7 +65,7 @@ contract Assessor is Auth, DataTypes, Interest  {
 
     function file(bytes32 name, uint value) public auth {
         if(name == "seniorInterestRate") {
-            seniorInterestRate  = Fixed27(value);
+            seniorInterestRate = Fixed27(value);
         }
         else if (name == "maxReserve") {maxReserve = value;}
         else if (name == "maxSeniorRatio") {
@@ -76,19 +76,31 @@ contract Assessor is Auth, DataTypes, Interest  {
             require(value < maxSeniorRatio.value);
             minSeniorRatio = Fixed27(value);
         }
-        else {revert("unkown-variable");}
+        else {revert("unknown-variable");}
     }
 
-    function updateSenior(uint seniorDebt_, uint seniorBalance_) external auth {
-        seniorDebt = seniorDebt_;
-        seniorBalance = seniorBalance_;
+    function updateSeniorAsset(uint epochSeniorDebt, uint epochSeniorBalance, uint seniorRatio) external auth {
+        uint currSeniorAsset = safeAdd(seniorDebt, seniorBalance);
+        uint epochSeniorAsset = safeAdd(epochSeniorDebt, epochSeniorBalance);
+
+        // todo think about edge cases here and move maybe rebalancing method here
+        // loan repayments happened during epoch execute
+        if(currSeniorAsset > epochSeniorAsset) {
+            uint delta = safeSub(currSeniorAsset, epochSeniorAsset);
+            uint seniorDebtInc = rmul(delta, seniorRatio);
+            epochSeniorDebt = safeAdd(epochSeniorDebt, seniorDebtInc);
+            epochSeniorBalance = safeAdd(epochSeniorBalance, safeSub(delta, seniorDebtInc));
+
+        }
+        seniorDebt = epochSeniorDebt;
+        seniorBalance = epochSeniorBalance;
     }
 
     function seniorRatioBounds() public view returns (uint minSeniorRatio_, uint maxSeniorRatio_) {
         return (minSeniorRatio.value, maxSeniorRatio.value);
     }
 
-    function calcNAV() external view returns (uint) {
+    function currentNAV() external view returns (uint) {
         return navFeed.currentNAV();
     }
 

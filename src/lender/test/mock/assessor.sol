@@ -73,8 +73,8 @@ contract AssessorMock is Mock {
     }
     // - new funcs
 
-    function calcNAV() external returns (uint) {
-        return call("calcNAV");
+    function currentNAV() external returns (uint) {
+        return call("currentNAV");
     }
 
     function maxReserve() external view returns (uint) {
@@ -103,8 +103,9 @@ contract AssessorMock is Mock {
         return call("seniorBalance");
     }
 
-    function updateSenior(uint seniorDebt_, uint seniorBalance_) public {
-        values_uint["updateSenior_seniorDebt"] = seniorDebt_;
-        values_uint["updateSenior_seniorBalance"] = seniorBalance_;
+    function updateSeniorAsset(uint seniorDebt_, uint seniorBalance_, uint seniorRatio_) public {
+        values_uint["updateSeniorAsset_seniorDebt"] = seniorDebt_;
+        values_uint["updateSeniorAsset_seniorBalance"] = seniorBalance_;
+        values_uint["updateSeniorAsset_seniorRatio"] = seniorRatio_;
     }
 }
