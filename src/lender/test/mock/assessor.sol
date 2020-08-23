@@ -21,6 +21,7 @@ contract AssessorMock is Mock {
 
     mapping(address => uint) public tokenPrice;
 
+    // legacy code Tinlake v0.2
     function calcAndUpdateTokenPrice (address tranche) public returns (uint) {
         values_address["calcAndUpdateTokenPrice_tranche"]= tranche;
         return call("tokenPrice");
