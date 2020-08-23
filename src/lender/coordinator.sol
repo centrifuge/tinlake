@@ -172,7 +172,6 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint currencyAvailable = safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply);
         uint currencyOut = safeAdd(seniorRedeem, juniorRedeem);
 
-
         int valid = validateCoreConstraints(currencyAvailable,  currencyOut, seniorRedeem,
             juniorRedeem, seniorSupply, juniorSupply);
 
