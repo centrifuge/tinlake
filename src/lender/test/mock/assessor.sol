@@ -108,4 +108,13 @@ contract AssessorMock is Mock {
         values_uint["updateSeniorAsset_seniorBalance"] = seniorBalance_;
         values_uint["updateSeniorAsset_seniorRatio"] = seniorRatio_;
     }
+
+    function repaymentUpdate(uint currencyAmount) public  {
+        values_uint["repaymentUpdate_currencyAmount"] = currencyAmount;
+
+    }
+
+    function borrowUpdate(uint currencyAmount) public  {
+        values_uint["borrowUpdate_currencyAmount"] = currencyAmount;
+    }
 }

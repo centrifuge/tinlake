@@ -132,16 +132,16 @@ contract Assessor is Auth, DataTypes, Interest  {
         return rdiv(safeSub(totalAssets, seniorAssetValue), juniorTranche.tokenSupply());
     }
 
-    function repaymentUpdate(uint amount) public auth {
-        uint decAmount = rmul(amount, lastSeniorRatio.value);
+    function repaymentUpdate(uint currencyAmount) public auth {
+        uint decAmount = rmul(currencyAmount, lastSeniorRatio.value);
         // todo think about edge cases here
         // seniorDebt needs to be decreased for loan repayments
         seniorDebt_ = safeSub(seniorDebt_, decAmount);
         seniorBalance_ = safeAdd(seniorBalance_, decAmount);
     }
 
-    function borrowUpdate(uint amount) public auth {
-        uint incAmount = rmul(amount, lastSeniorRatio.value);
+    function borrowUpdate(uint currencyAmount) public auth {
+        uint incAmount = rmul(currencyAmount, lastSeniorRatio.value);
         // todo think about edge cases here
         // seniorDebt needs to be increased for loan borrows
         seniorDebt_ = safeAdd(seniorDebt_, incAmount);
