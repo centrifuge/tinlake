@@ -20,8 +20,12 @@ import "tinlake-auth/auth.sol";
 import "./data_types.sol";
 import "tinlake-math/interest.sol";
 
-interface NAVFeed {
+interface NAVFeedLike {
     function currentNAV() external;
+}
+
+interface TrancheLike {
+    function tokenSupply() public returns (uint);
 }
 
 contract Assessor is Auth, DataTypes, Interest  {
@@ -39,9 +43,23 @@ contract Assessor is Auth, DataTypes, Interest  {
 
     uint public maxReserve;
 
+    TrancheLike seniorTranche;
+    TrancheLike juniorTranche;
+    NAVFeedLike navFeed;
+
     constructor() public {
         wards[msg.sender] = 1;
         seniorInterestRate.value = ONE;
+    }
+
+    function depend(bytes32 contractName, address addr) public auth {
+        if (contractName == "navFeed") {
+            navFeed = NAVFeedLike(addr);
+        } else if (contractName == "seniorTranche") {
+            seniorTranche = TrancheLike(addr);
+        } else if (contractName == "juniorTranche") {
+            juniorTranche = TrancheLike(addr);
+        } else revert();
     }
 
     function file(bytes32 name, uint value) public auth {
@@ -60,31 +78,52 @@ contract Assessor is Auth, DataTypes, Interest  {
         else {revert("unkown-variable");}
     }
 
-    function updateSenior(uint seniorDebt_, uint seniorBalance_) public auth {
-
+    function updateSenior(uint seniorDebt_, uint seniorBalance_) external auth {
+        seniorDebt = seniorDebt_;
+        seniorBalance = seniorBalance_;
     }
 
     function seniorRatioBounds() public view returns (uint minSeniorRatio_, uint maxSeniorRatio_) {
-        return (0, 0);
+        return (minSeniorRatio, maxSeniorRatio);
     }
 
-    function calcNAV() external returns (uint) {
-        return 0;
+    function calcNAV() external view returns (uint) {
+        return navFeed.currentNAV();
     }
 
     function calcSeniorTokenPrice(uint epochNAV, uint epochReserve) external returns(uint) {
-        return 0;
+        uint totalAssets = safeAdd(epochNAV, epochReserve);
+        uint seniorAssetValue = safeAdd(seniorBalance, seniorDebt);
+        if(totalAssets < seniorAssetValue) {
+            seniorAssetValue = totalAssets;
+        }
+
+        return rdiv(seniorAssetValue, seniorTranche.totalSupply());
     }
 
     function calcJuniorTokenPrice(uint epochNAV, uint epochReserve) external returns(uint) {
-        return 0;
+        uint totalAssets = safeAdd(epochNAV, epochReserve);
+        uint seniorAssetValue = safeAdd(seniorBalance, seniorDebt);
+        if(totalAssets < seniorAssetValue) {
+            return 0;
+        }
+
+        return rdiv(safeSub(totalAssets, seniorAssetValue), juniorTranche.totalSupply());
     }
 
     function repaymentUpdate(uint amount) public auth {
-
+        uint decAmount = rmul(amount, lastSeniorRatio.value);
+        // todo think about edge cases here
+        // seniorDebt needs to be decreased for loan repayments
+        seniorDebt = safeSub(seniorDebt, decAmount);
+        seniorBalance = safeAdd(seniorBalance, decAmount);
     }
 
     function borrowUpdate(uint amount) public auth {
-
+        uint incAmount = rmul(amount, lastSeniorRatio.value);
+        // todo think about edge cases here
+        // seniorDebt needs to be increased for loan borrows
+        seniorDebt = safeAdd(seniorDebt, incAmount);
+        seniorBalance = safeSub(seniorBalance, incAmount);
     }
 }

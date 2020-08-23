@@ -31,8 +31,8 @@ interface ReserveLike {
 }
 
 contract AssessorLike is DataTypes {
-    function calcSeniorTokenPrice(uint NAV_) external returns(Fixed27 memory tokenPrice);
-    function calcJuniorTokenPrice(uint NAV_) external returns(Fixed27 memory tokenPrice);
+    function calcSeniorTokenPrice(uint epochNAV, uint epochReserve) external returns(Fixed27 memory tokenPrice);
+    function calcJuniorTokenPrice(uint epochNAV, uint epochReserve) external returns(Fixed27 memory tokenPrice);
     function maxReserve() external view returns(uint);
     function calcNAV() external returns (uint);
     function seniorDebt() external returns(uint);
@@ -101,14 +101,15 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         (uint orderSeniorSupply, uint orderSeniorRedeem) = seniorTranche.getTotalOrders(closingEpoch);
 
         epochNAV = assessor.calcNAV();
+        epochReserve = reserve.totalBalance();
 
         // calculate in DAI
-        epochSeniorTokenPrice = assessor.calcSeniorTokenPrice(epochNAV);
-        epochJuniorTokenPrice = assessor.calcJuniorTokenPrice(epochNAV);
+        epochSeniorTokenPrice = assessor.calcSeniorTokenPrice(epochNAV, epochReserve);
+        epochJuniorTokenPrice = assessor.calcJuniorTokenPrice(epochNAV, epochReserve);
 
         epochSeniorDebt = assessor.seniorDebt();
         epochSeniorBalance = assessor.seniorBalance();
-        epochReserve = reserve.totalBalance();
+
 
         /// calculate currency amounts
         order.seniorRedeem = rmul(orderSeniorRedeem, epochSeniorTokenPrice.value);
