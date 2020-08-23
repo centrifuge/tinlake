@@ -18,10 +18,10 @@ pragma solidity >=0.5.15 <0.6.0;
 import "ds-test/test.sol";
 import "tinlake-math/math.sol";
 
-import "./../v3/tranche.sol";
-import "../../../test/simple/token.sol";
-import "../../test/mock/reserve.sol";
-import "./../../ticker.sol";
+import "./../tranche.sol";
+import "../../test/simple/token.sol";
+import "./mock/reserve.sol";
+import "./../ticker.sol";
 
 contract Hevm {
     function warp(uint256) public;
@@ -33,7 +33,6 @@ contract TrancheTest is DSTest, Math {
     SimpleToken currency;
     ReserveMock reserve;
     Ticker ticker;
-
 
     Hevm hevm;
 
