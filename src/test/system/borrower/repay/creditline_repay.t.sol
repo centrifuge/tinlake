@@ -19,8 +19,6 @@ import "../../base_system.sol";
 
 contract CreditLineRepayTest is BaseSystemTest {
 
-    DefaultDistributor distributor;
-
     Hevm public hevm;
 
     function setUp() public {
@@ -29,8 +27,6 @@ contract CreditLineRepayTest is BaseSystemTest {
         bytes32 ceiling_ = "creditline";
         baseSetup(juniorOperator_, distributor_, false, ceiling_);
         createTestUsers(false);
-
-        distributor = DefaultDistributor(address(lenderDeployer.distributor()));
 
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);

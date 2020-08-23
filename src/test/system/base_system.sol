@@ -17,8 +17,7 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "ds-test/test.sol";
 import "./setup.sol";
-import { WhitelistOperator } from "../../lender/tranche/operator/whitelist.sol";
-import { DefaultDistributor } from "../../lender/distributor/default.sol";
+
 import "./users/admin.sol";
 import "./users/investor.sol";
 import "./users/borrower.sol";

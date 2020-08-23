@@ -36,8 +36,6 @@ import { Principal } from "../../borrower/ceiling/principal.sol";
 import { CreditLine } from "../../borrower/ceiling/creditline.sol";
 
 import "../../lender/deployer.sol";
-import { Tranche } from "../../lender/tranche/tranche.sol";
-import { SeniorTranche } from "../../lender/tranche/senior_tranche.sol";
 
 import { TestRoot } from "./root.sol";
 
@@ -71,15 +69,10 @@ contract TestSetup {
     Collector    collector;
     PushRegistry threshold;
 
+
     // Lender contracts
-    Tranche          junior;
-    SeniorTranche    senior;
     DistributorLike  distributor;
-    TokenLike public juniorToken;
-    address public   juniorOperator;
-    TokenLike public seniorToken;
-    address public   seniorOperator;
-    address public   assessor;
+
 
     // Deployers
     BorrowerDeployer public borrowerDeployer;
