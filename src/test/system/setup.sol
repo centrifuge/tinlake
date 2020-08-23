@@ -50,11 +50,6 @@ contract DistributorLike {
     function balance() public;
 }
 
-contract AuthLike {
-    function rely(address) public;
-    function deny(address) public;
-}
-
 contract TestSetup {
     Title public collateralNFT;
     address      public collateralNFT_;
@@ -76,7 +71,7 @@ contract TestSetup {
 
     // Deployers
     BorrowerDeployer public borrowerDeployer;
-    LenderDeployer public   lenderDeployer;
+    MockLenderDeployer public   lenderDeployer;
 
     TestRoot root;
     address  root_;
@@ -142,7 +137,7 @@ contract TestSetup {
     }
 
     function deployMockLender() public {
-        lenderDeployer = new LenderDeployer(root_, currency_);
+        lenderDeployer = new MockLenderDeployer(root_, currency_);
         distributor = DistributorLike(lenderDeployer.distributor_());
 
     }

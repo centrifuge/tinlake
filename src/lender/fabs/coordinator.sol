@@ -15,12 +15,13 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import { Tranche } from "./../tranche.sol";
+import { EpochCoordinator } from "./../coordinator.sol";
 import "tinlake-erc20/erc20.sol";
+import "../coordinator.sol";
 
 contract CoordinatorFab {
-    function newCoordinator() public returns (address) {
-        Coordinator coordinator = new Coordinator();
+    function newCoordinator(uint challengeTime) public returns (address) {
+        EpochCoordinator coordinator = new EpochCoordinator(challengeTime);
         coordinator.rely(msg.sender);
         coordinator.deny(address(this));
         return address(coordinator);

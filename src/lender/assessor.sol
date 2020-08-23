@@ -13,7 +13,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pragma solidity >=0.5.15 <0.6.0;
-pragma experimental ABIEncoderV2;
 
 import "./ticker.sol";
 import "./data_types.sol";
@@ -31,25 +30,22 @@ interface TrancheLike {
 
 contract Assessor is Auth, DataTypes, Interest  {
     // senior ratio from the last epoch executed
-    Fixed27 public lastSeniorRatio;
-
-    uint public seniorDebt_;
-    uint public seniorBalance_;
-
-    // system parameter
+    Fixed27        public lastSeniorRatio;
+    uint           public seniorDebt_;
+    uint           public seniorBalance_;
 
     // interest rate per second for senior tranche
-    Fixed27 public seniorInterestRate;
-    uint public lastUpdateSeniorInterest;
+    Fixed27         public seniorInterestRate;
+    uint            public lastUpdateSeniorInterest;
 
-    Fixed27 public maxSeniorRatio;
-    Fixed27 public minSeniorRatio;
+    Fixed27         public maxSeniorRatio;
+    Fixed27         public minSeniorRatio;
 
-    uint public maxReserve;
+    uint            public maxReserve;
 
-    TrancheLike seniorTranche;
-    TrancheLike juniorTranche;
-    NAVFeedLike navFeed;
+    TrancheLike     public seniorTranche;
+    TrancheLike     public juniorTranche;
+    NAVFeedLike     public navFeed;
 
     constructor() public {
         wards[msg.sender] = 1;
@@ -89,7 +85,7 @@ contract Assessor is Auth, DataTypes, Interest  {
         uint currSeniorAsset = safeAdd(seniorDebt_, seniorBalance_);
         uint epochSeniorAsset = safeAdd(epochSeniorDebt, epochSeniorBalance);
 
-        // todo think about edge cases here and move maybe rebalancing method here
+        // todo think about edge cases here and move maybe rebalancing method
         // todo consider multiple epoch executes
 
         // loan repayments happened during epoch execute

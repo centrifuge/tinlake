@@ -42,14 +42,6 @@ contract AssessorLike is DataTypes {
 }
 
 contract EpochCoordinator is Ticker, Auth, DataTypes  {
-    EpochTrancheLike juniorTranche;
-    EpochTrancheLike seniorTranche;
-
-    ReserveLike reserve;
-    AssessorLike assessor;
-
-    uint public lastEpochExecuted;
-
     struct OrderSummary {
         uint  seniorRedeem;
         uint  juniorRedeem;
@@ -57,29 +49,44 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint  seniorSupply;
     }
 
-    OrderSummary public bestSubmission;
-    uint public  bestSubScore;
-    bool public gotValidPoolConSubmission;
-    OrderSummary public order;
+    EpochTrancheLike public juniorTranche;
+    EpochTrancheLike public seniorTranche;
 
-    Fixed27 public epochSeniorTokenPrice;
-    Fixed27 public epochJuniorTokenPrice;
+    ReserveLike      public reserve;
+    AssessorLike     public assessor;
 
-    uint public epochNAV;
-    uint public epochSeniorDebt;
-    uint public epochSeniorBalance;
-    uint public epochReserve;
+    uint             public lastEpochExecuted;
 
-    bool public submissionPeriod;
+    OrderSummary    public bestSubmission;
+    uint            public  bestSubScore;
+    bool            public gotValidPoolConSubmission;
+    OrderSummary    public order;
+
+    Fixed27         public epochSeniorTokenPrice;
+    Fixed27         public epochJuniorTokenPrice;
+
+    uint            public epochNAV;
+    uint            public epochSeniorDebt;
+    uint            public epochSeniorBalance;
+    uint            public epochReserve;
+
+    bool            public submissionPeriod;
 
     // challenge period end timestamp
-    uint public minChallengePeriodEnd;
+    uint            public minChallengePeriodEnd;
+    uint            public challengeTime;
 
-    uint public challengeTime;
-
-    constructor() public {
+    constructor(uint challengeTime_) public {
         wards[msg.sender] = 1;
-        challengeTime = 1 hours;
+        challengeTime = challengeTime_;
+    }
+
+    function file(bytes32 name, uint value) public auth {
+        if(name == "challengeTime") {
+            challengeTime = value;
+        } else {
+            revert("unknown-name");
+        }
     }
 
     /// sets the dependency to another contract
