@@ -32,13 +32,16 @@ interface TrancheLike {
 contract Assessor is Auth, DataTypes, Interest  {
     // senior ratio from the last epoch executed
     Fixed27 public lastSeniorRatio;
-    uint public seniorDebt;
-    uint public seniorBalance;
+
+    uint public seniorDebt_;
+    uint public seniorBalance_;
 
     // system parameter
 
     // interest rate per second for senior tranche
     Fixed27 public seniorInterestRate;
+    uint public lastUpdateSeniorInterest;
+
     Fixed27 public maxSeniorRatio;
     Fixed27 public minSeniorRatio;
 
@@ -51,6 +54,7 @@ contract Assessor is Auth, DataTypes, Interest  {
     constructor() public {
         wards[msg.sender] = 1;
         seniorInterestRate.value = ONE;
+        lastUpdateSeniorInterest = block.timestamp;
     }
 
     function depend(bytes32 contractName, address addr) public auth {
@@ -80,10 +84,14 @@ contract Assessor is Auth, DataTypes, Interest  {
     }
 
     function updateSeniorAsset(uint epochSeniorDebt, uint epochSeniorBalance, uint seniorRatio) external auth {
-        uint currSeniorAsset = safeAdd(seniorDebt, seniorBalance);
+        dripSeniorDebt();
+
+        uint currSeniorAsset = safeAdd(seniorDebt_, seniorBalance_);
         uint epochSeniorAsset = safeAdd(epochSeniorDebt, epochSeniorBalance);
 
         // todo think about edge cases here and move maybe rebalancing method here
+        // todo consider multiple epoch executes
+
         // loan repayments happened during epoch execute
         if(currSeniorAsset > epochSeniorAsset) {
             uint delta = safeSub(currSeniorAsset, epochSeniorAsset);
@@ -92,8 +100,8 @@ contract Assessor is Auth, DataTypes, Interest  {
             epochSeniorBalance = safeAdd(epochSeniorBalance, safeSub(delta, seniorDebtInc));
 
         }
-        seniorDebt = epochSeniorDebt;
-        seniorBalance = epochSeniorBalance;
+        seniorDebt_ = epochSeniorDebt;
+        seniorBalance_ = epochSeniorBalance;
     }
 
     function seniorRatioBounds() public view returns (uint minSeniorRatio_, uint maxSeniorRatio_) {
@@ -106,7 +114,7 @@ contract Assessor is Auth, DataTypes, Interest  {
 
     function calcSeniorTokenPrice(uint epochNAV, uint epochReserve) external returns(uint) {
         uint totalAssets = safeAdd(epochNAV, epochReserve);
-        uint seniorAssetValue = safeAdd(seniorBalance, seniorDebt);
+        uint seniorAssetValue = safeAdd(seniorBalance_, seniorDebt_);
         if(totalAssets < seniorAssetValue) {
             seniorAssetValue = totalAssets;
         }
@@ -116,7 +124,7 @@ contract Assessor is Auth, DataTypes, Interest  {
 
     function calcJuniorTokenPrice(uint epochNAV, uint epochReserve) external returns(uint) {
         uint totalAssets = safeAdd(epochNAV, epochReserve);
-        uint seniorAssetValue = safeAdd(seniorBalance, seniorDebt);
+        uint seniorAssetValue = safeAdd(seniorBalance_, seniorDebt_);
         if(totalAssets < seniorAssetValue) {
             return 0;
         }
@@ -128,15 +136,32 @@ contract Assessor is Auth, DataTypes, Interest  {
         uint decAmount = rmul(amount, lastSeniorRatio.value);
         // todo think about edge cases here
         // seniorDebt needs to be decreased for loan repayments
-        seniorDebt = safeSub(seniorDebt, decAmount);
-        seniorBalance = safeAdd(seniorBalance, decAmount);
+        seniorDebt_ = safeSub(seniorDebt_, decAmount);
+        seniorBalance_ = safeAdd(seniorBalance_, decAmount);
     }
 
     function borrowUpdate(uint amount) public auth {
         uint incAmount = rmul(amount, lastSeniorRatio.value);
         // todo think about edge cases here
         // seniorDebt needs to be increased for loan borrows
-        seniorDebt = safeAdd(seniorDebt, incAmount);
-        seniorBalance = safeSub(seniorBalance, incAmount);
+        seniorDebt_ = safeAdd(seniorDebt_, incAmount);
+        seniorBalance_ = safeSub(seniorBalance_, incAmount);
+    }
+
+    function dripSeniorDebt() public returns (uint) {
+        uint newSeniorDebt = seniorDebt();
+
+        if (newSeniorDebt > seniorDebt_) {
+            seniorDebt_ = newSeniorDebt;
+            lastUpdateSeniorInterest = block.timestamp;
+        }
+        return seniorDebt_;
+    }
+
+    function seniorDebt() public view returns (uint) {
+        if (now >= lastUpdateSeniorInterest) {
+            return chargeInterest(seniorDebt_, seniorInterestRate.value, lastUpdateSeniorInterest);
+        }
+        return seniorDebt_;
     }
 }
