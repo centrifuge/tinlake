@@ -184,7 +184,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint newReserve = safeSub(currencyAvailable, currencyOut);
 
         if(validatePoolConstraints(newReserve, calcNewSeniorAssetValue(seniorRedeem, seniorSupply,
-            epochSeniorDebt, epochSeniorBalance)) == 0) {
+            epochSeniorDebt, epochSeniorBalance, newReserve)) == 0) {
 
             uint score = scoreSolution(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
 
@@ -251,7 +251,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
 
         Fixed27 memory newSeniorRatio = Fixed27(calcSeniorRatio(calcNewSeniorAssetValue( seniorRedeem, seniorSupply,
-            epochSeniorDebt, epochSeniorBalance), epochNAV, newReserve));
+            epochSeniorDebt, epochSeniorBalance, newReserve), epochNAV, newReserve));
 
         uint score =  scoreImprovement(newSeniorRatio, currSeniorRatio, newReserve);
 
@@ -380,7 +380,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint newReserve = safeSub(currencyAvailable, currencyOut);
 
         return validatePoolConstraints(newReserve, calcNewSeniorAssetValue(seniorRedeem, seniorSupply,
-            epochSeniorDebt, epochSeniorBalance));
+            epochSeniorDebt, epochSeniorBalance, newReserve));
     }
 
     function executeEpoch() public {
@@ -391,9 +391,15 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     }
 
     function calcNewSeniorAssetValue(uint seniorRedeem, uint seniorSupply,
-        uint seniorDebt, uint seniorBalance) public view returns (uint seniorAsset) {
+        uint seniorDebt, uint seniorBalance, uint newReserve) public view returns (uint seniorAsset) {
 
-        return safeSub(safeAdd(safeAdd(seniorDebt, seniorBalance), seniorSupply), seniorRedeem);
+        uint seniorAsset =  safeSub(safeAdd(safeAdd(seniorDebt, seniorBalance), seniorSupply), seniorRedeem);
+        uint totalPoolValue = safeAdd(epochNAV, newReserve);
+        if(seniorAsset > totalPoolValue) {
+            seniorAsset =  totalPoolValue;
+        }
+
+        return seniorAsset;
     }
 
     function calcAssets(uint NAV, uint reserve_) public view returns(uint) {
@@ -408,6 +414,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         }
         return rdiv(seniorAsset, assets);
     }
+
 
     function reBalanceSeniorDebt(uint seniorAsset,
         uint currSeniorRatio) public  returns (uint seniorDebt_, uint seniorBalance_) {
@@ -443,11 +450,12 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
             calcFulfillment(juniorRedeem, order.juniorRedeem).value,
             epochSeniorTokenPrice.value);
 
-        uint seniorAsset = calcNewSeniorAssetValue(seniorRedeem, seniorSupply,
-            assessor.seniorDebt(), assessor.seniorBalance());
 
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem
         , seniorSupply, juniorSupply);
+
+        uint seniorAsset = calcNewSeniorAssetValue(seniorRedeem, seniorSupply,
+            assessor.seniorDebt(), assessor.seniorBalance(), newReserve);
 
         (uint seniorDebt, uint seniorBalance) = reBalanceSeniorDebt(seniorAsset,
             calcSeniorRatio(seniorAsset, epochNAV, newReserve));
