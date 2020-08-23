@@ -56,7 +56,7 @@ contract TinlakeRoot is Auth {
         require(address(borrowerDeployer) != address(0) && address(lenderDeployer) != address(0) && deployed == false);
         deployed = true;
 
-        address distributor_ = lenderDeployer.distributor();
+        address distributor_ = lenderDeployer.distributor_();
         address shelf_ = borrowerDeployer.shelf();
 
         // Borrower depends
@@ -66,8 +66,7 @@ contract TinlakeRoot is Auth {
 
         //  Lender depends
         address poolValue = borrowerDeployer.pricePool();
-        DependLike(lenderDeployer.distributor()).depend("shelf", shelf_);
-        DependLike(lenderDeployer.assessor()).depend("pool", poolValue);
+        DependLike(address(lenderDeployer.distributor())).depend("shelf", shelf_);
     }
 
     // --- Governance Functions ---

@@ -36,7 +36,7 @@ contract CollectTest is BaseSystemTest {
     function collect(uint loanId, uint tokenId, bool whitelisted) public {
         ( , uint recoveryAmount ) = collector.options(loanId);
         uint initialKeeperBalance = currency.balanceOf(keeper_);
-        uint initialJuniorBalance = currency.balanceOf(address(lenderDeployer.junior()));
+        uint initialJuniorBalance = currency.balanceOf(address(lenderDeployer.distributor()));
         uint initialTotalBalance = shelf.balance();
         uint initialLoanBalance = shelf.balances(loanId);
         if (whitelisted) {
@@ -69,7 +69,7 @@ contract CollectTest is BaseSystemTest {
         // assert: keeper transferred funds
         assertEq(currency.balanceOf(keeper_), safeSub(initialKeeperBalance, recoveryAmount));
         // assert: shelf received recoveryAmount
-        assertEq(currency.balanceOf(address(lenderDeployer.junior())), safeAdd(initialJuniorBalance, recoveryAmount));
+        assertEq(currency.balanceOf(address(lenderDeployer.distributor())), safeAdd(initialJuniorBalance, recoveryAmount));
         // assert: loan balance = 0
         assertEq(shelf.balances(loanId), 0);
         // assert: total balance got decreased by initial loanBalance

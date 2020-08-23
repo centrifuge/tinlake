@@ -39,7 +39,7 @@ contract CreditLineRepayTest is BaseSystemTest {
 
     function repay(uint loanId, uint tokenId, uint amount, uint expectedDebt) public {
         uint initialBorrowerBalance = currency.balanceOf(borrower_);
-        uint initialTrancheBalance = currency.balanceOf(address(junior));
+        uint initialTrancheBalance = currency.balanceOf(address(distributor));
         borrower.repay(loanId, amount);
         assertPostCondition(loanId, tokenId, amount, initialBorrowerBalance, initialTrancheBalance, expectedDebt);
     }
@@ -74,7 +74,7 @@ contract CreditLineRepayTest is BaseSystemTest {
         assertEq(safeSub(initialBorrowerBalance, repaidAmount), currency.balanceOf(borrower_));
         // assert: shelf/tranche received funds
         // since we are calling balance inside repay, money is directly transferred to the tranche through shelf
-        assertEq(safeAdd(initialTrancheBalance, repaidAmount), currency.balanceOf(address(junior)));
+        assertEq(safeAdd(initialTrancheBalance, repaidAmount), currency.balanceOf(address(distributor)));
         // assert: debt amounts reduced by repayAmount
         assertEq(pile.debt(loanId), safeSub(expectedDebt, repaidAmount));
         assertEq(pile.total(), safeSub(expectedDebt, repaidAmount));
