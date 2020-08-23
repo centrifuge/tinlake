@@ -16,16 +16,17 @@ pragma solidity >=0.5.15 <0.6.0;
 pragma experimental ABIEncoderV2;
 
 import "./ticker.sol";
-import "tinlake-auth/auth.sol";
 import "./data_types.sol";
+
+import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
 
 interface NAVFeedLike {
-    function currentNAV() external;
+    function currentNAV() external view returns (uint);
 }
 
 interface TrancheLike {
-    function tokenSupply() public returns (uint);
+    function tokenSupply() external returns (uint);
 }
 
 contract Assessor is Auth, DataTypes, Interest  {
@@ -84,7 +85,7 @@ contract Assessor is Auth, DataTypes, Interest  {
     }
 
     function seniorRatioBounds() public view returns (uint minSeniorRatio_, uint maxSeniorRatio_) {
-        return (minSeniorRatio, maxSeniorRatio);
+        return (minSeniorRatio.value, maxSeniorRatio.value);
     }
 
     function calcNAV() external view returns (uint) {
@@ -98,7 +99,7 @@ contract Assessor is Auth, DataTypes, Interest  {
             seniorAssetValue = totalAssets;
         }
 
-        return rdiv(seniorAssetValue, seniorTranche.totalSupply());
+        return rdiv(seniorAssetValue, seniorTranche.tokenSupply());
     }
 
     function calcJuniorTokenPrice(uint epochNAV, uint epochReserve) external returns(uint) {
@@ -108,7 +109,7 @@ contract Assessor is Auth, DataTypes, Interest  {
             return 0;
         }
 
-        return rdiv(safeSub(totalAssets, seniorAssetValue), juniorTranche.totalSupply());
+        return rdiv(safeSub(totalAssets, seniorAssetValue), juniorTranche.tokenSupply());
     }
 
     function repaymentUpdate(uint amount) public auth {
