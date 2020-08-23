@@ -59,12 +59,11 @@ contract Tranche is Math, Auth {
 
     address self;
 
-    constructor(address currency_, address token_, address ticker_, address reserve_) public {
+    constructor(address currency_, address token_) public {
         wards[msg.sender] = 1;
         token = ERC20Like(token_);
         currency = ERC20Like(currency_);
-        ticker = TickerLike(ticker_);
-        reserve = reserve_;
+
         self = address(this);
     }
 
@@ -86,9 +85,9 @@ contract Tranche is Math, Auth {
 
     function depend(bytes32 contractName, address addr) public auth {
         if (contractName == "token") {token = ERC20Like(addr);}
-        if (contractName == "currency") {currency = ERC20Like(addr);}
-        if (contractName == "ticker") {ticker = TickerLike(addr);}
-        if (contractName == "reserve") {reserve = addr;}
+        else if (contractName == "currency") {currency = ERC20Like(addr);}
+        else if (contractName == "ticker") {ticker = TickerLike(addr);}
+        else if (contractName == "reserve") {reserve = addr;}
         else revert();
     }
 
