@@ -182,7 +182,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
         uint newReserve = safeSub(currencyAvailable, currencyOut);
 
-        if(validatePoolConstraints(newReserve, calcNewSeniorAssetValue(seniorRedeem, seniorSupply,
+        if(validatePoolConstraints(newReserve, calcSeniorAssetValue(seniorRedeem, seniorSupply,
             epochSeniorDebt, epochSeniorBalance, newReserve)) == 0) {
 
             uint score = scoreSolution(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
@@ -249,7 +249,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
 
-        Fixed27 memory newSeniorRatio = Fixed27(calcSeniorRatio(calcNewSeniorAssetValue( seniorRedeem, seniorSupply,
+        Fixed27 memory newSeniorRatio = Fixed27(calcSeniorRatio(calcSeniorAssetValue( seniorRedeem, seniorSupply,
             epochSeniorDebt, epochSeniorBalance, newReserve), epochNAV, newReserve));
 
         uint score =  scoreImprovement(newSeniorRatio, currSeniorRatio, newReserve);
@@ -322,8 +322,6 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
             return -1;
         }
 
-        uint newReserve = safeSub(currencyAvailable, currencyOut);
-
         // constraint 2: max order
         if (seniorSupply > order.seniorSupply ||
         juniorSupply > order.juniorSupply ||
@@ -337,24 +335,24 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         return  0;
     }
 
-    function validatePoolConstraints(uint newReserve, uint newSeniorAsset) public view returns (int err) {
+    function validatePoolConstraints(uint reserve, uint seniorAsset) public view returns (int err) {
         // constraint 3: max reserve
-        if (newReserve > assessor.maxReserve()) {
+        if (reserve > assessor.maxReserve()) {
             // maxReserveConstraint => -3
             return -3;
         }
 
-        uint assets = safeAdd(epochNAV, newReserve);
+        uint assets = safeAdd(epochNAV, reserve);
 
         (Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio) = assessor.seniorRatioBounds();
 
         // constraint 4: min senior ratio constraint
-        if (newSeniorAsset < rmul(assets, minSeniorRatio.value)) {
+        if (seniorAsset < rmul(assets, minSeniorRatio.value)) {
             // minSeniorRatioConstraint => -4
             return -4;
         }
         // constraint 5: max senior ratio constraint
-        if (newSeniorAsset > rmul(assets, maxSeniorRatio.value)) {
+        if (seniorAsset > rmul(assets, maxSeniorRatio.value)) {
             // maxSeniorRatioConstraint => -5
             return -5;
         }
@@ -378,7 +376,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
         uint newReserve = safeSub(currencyAvailable, currencyOut);
 
-        return validatePoolConstraints(newReserve, calcNewSeniorAssetValue(seniorRedeem, seniorSupply,
+        return validatePoolConstraints(newReserve, calcSeniorAssetValue(seniorRedeem, seniorSupply,
             epochSeniorDebt, epochSeniorBalance, newReserve));
     }
 
@@ -389,13 +387,13 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
             bestSubmission.seniorSupply, bestSubmission.juniorSupply);
     }
 
-    function calcNewSeniorAssetValue(uint seniorRedeem, uint seniorSupply,
-        uint seniorDebt, uint seniorBalance, uint newReserve) public view returns (uint seniorAsset) {
+    function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply,
+        uint seniorDebt, uint seniorBalance, uint reserve) public view returns (uint seniorAsset) {
 
         uint seniorAsset =  safeSub(safeAdd(safeAdd(seniorDebt, seniorBalance), seniorSupply), seniorRedeem);
-        uint totalPoolValue = safeAdd(epochNAV, newReserve);
+        uint totalPoolValue = safeAdd(epochNAV, reserve);
         if(seniorAsset > totalPoolValue) {
-            seniorAsset =  totalPoolValue;
+            seniorAsset = totalPoolValue;
         }
 
         return seniorAsset;
@@ -453,7 +451,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem
         , seniorSupply, juniorSupply);
 
-        uint seniorAsset = calcNewSeniorAssetValue(seniorRedeem, seniorSupply,
+        uint seniorAsset = calcSeniorAssetValue(seniorRedeem, seniorSupply,
             assessor.seniorDebt(), assessor.seniorBalance(), newReserve);
 
         (uint seniorDebt, uint seniorBalance) = reBalanceSeniorDebt(seniorAsset,
