@@ -1,29 +1,29 @@
 pragma solidity >=0.5.15 <0.6.0;
 import "tinlake-auth/auth.sol";
 
-contract TokenLike {
+contract DistTokenLike {
     function transferFrom(address, address, uint) public;
     function mint(address, uint) public;
 }
 
-contract ShelfLike {
+contract DShelfLike {
     function balanceRequest() public returns (bool, uint);
 }
 
 contract Distributor is Auth {
 
     // --- Data ---
-    ShelfLike public shelf;
+    DShelfLike public shelf;
     // simple tranche manager = 1 tranche/1 operator for now
-    TokenLike public token;
+    DistTokenLike public token;
     constructor (address token_) public {
         wards[msg.sender] = 1;
-        token = TokenLike(token_);
+        token = DistTokenLike(token_);
     }
 
     /// sets the dependency to another contract
     function depend(bytes32 contractName, address addr) public {
-        if(contractName == "shelf") shelf = ShelfLike(addr);
+        if(contractName == "shelf") shelf = DShelfLike(addr);
         else revert();
     }
 
@@ -43,7 +43,8 @@ contract Distributor is Auth {
     }
 
     function give(address usr, uint wad) public {
-        token.mint(usr, wad);
+        //token.mint(usr, wad);
+        token.transferFrom(address(this), usr, wad);
     }
 
     function take(address usr, uint wad) public {
