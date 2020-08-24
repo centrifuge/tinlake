@@ -19,7 +19,6 @@ pragma experimental ABIEncoderV2;
 import "./coordinator-base.t.sol";
 
 contract CoordinatorValidateTest is CoordinatorTest {
-
     struct ValidateErr {
         int CURRENCY_AVAILABLE;
         int MAX_RESERVE;
@@ -46,7 +45,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
     function cleanUpTestCase() public {
         if(coordinator.submissionPeriod() == true) {
             int status = coordinator.submitSolution(0,0,0,0);
-            assertEq(status, submitSolutionReturn.NEW_BEST);
+            assertEq(status, coordinator.SUCCESS());
             hevm.warp(now + 1 days);
             coordinator.executeEpoch();
         }

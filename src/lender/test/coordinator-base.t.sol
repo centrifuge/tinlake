@@ -85,15 +85,6 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         bytes32 name;
     }
 
-    struct SubmitSolutionReturn {
-        int NEW_BEST;
-        int NOT_VALID;
-        int NOT_NEW_BEST;
-        int ONLY_HEALTHY_SUB;
-    }
-
-    SubmitSolutionReturn submitSolutionReturn;
-
     function setUp() public {
         seniorTranche = new EpochTrancheMock();
         juniorTranche = new EpochTrancheMock();
@@ -116,11 +107,6 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         coordinator.depend("assessor", assessor_);
 
         initTestConfig(getNoOrderModel());
-
-        submitSolutionReturn.NEW_BEST = 0;
-        submitSolutionReturn.NOT_NEW_BEST = -1;
-        submitSolutionReturn.NOT_VALID = -2;
-        submitSolutionReturn.ONLY_HEALTHY_SUB = -3;
     }
 
     function getNoOrderModel() internal returns (LenderModel memory) {
