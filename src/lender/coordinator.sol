@@ -124,7 +124,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         //  if no orders exist epoch can be executed without validation
         if (orderSeniorRedeem == 0 && orderJuniorRedeem == 0 &&
             orderSeniorSupply == 0 && orderJuniorSupply == 0) {
-            executeEpoch(0, 0, 0, 0);
+            _executeEpoch(0, 0, 0, 0);
             return;
         }
 
@@ -132,7 +132,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         if (validate(orderSeniorRedeem, orderJuniorRedeem,
             orderSeniorSupply, orderJuniorSupply) == 0) {
 
-            executeEpoch(orderSeniorRedeem, orderJuniorRedeem,
+            _executeEpoch(orderSeniorRedeem, orderJuniorRedeem,
                 orderSeniorSupply, orderJuniorSupply);
             return;
         }
@@ -155,6 +155,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
     function submitSolution(uint seniorRedeem, uint juniorRedeem,
         uint juniorSupply, uint seniorSupply) public returns(int) {
+        require(submissionPeriod == true, "submission-period-not-active");
 
         int valid = _submitSolution(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply);
 
@@ -166,8 +167,6 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
     function _submitSolution(uint seniorRedeem, uint juniorRedeem,
         uint juniorSupply, uint seniorSupply) internal returns(int) {
-
-        require(submissionPeriod == true);
 
         uint currencyAvailable = safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply);
         uint currencyOut = safeAdd(seniorRedeem, juniorRedeem);
@@ -210,7 +209,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         // if we never received a solution which satisfies all constraints for this epoch
         // we might accept it as an improvement
         if (gotValidPoolConSubmission == false) {
-            return _improvementScoreCase(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply);
+            return _improveScore(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply);
         }
 
         // proposed solution doesn't satisfy the pool constraints but a previous submission did
@@ -238,7 +237,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         return false;
     }
 
-    function _improvementScoreCase(uint seniorRedeem, uint juniorRedeem,
+    function _improveScore(uint seniorRedeem, uint juniorRedeem,
         uint juniorSupply, uint seniorSupply) internal returns(int) {
         Fixed27 memory currSeniorRatio = Fixed27(calcSeniorRatio(safeAdd(epochSeniorBalance, epochSeniorDebt),
             epochNAV, epochReserve));
@@ -386,7 +385,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     function executeEpoch() public {
         require(block.timestamp >= minChallengePeriodEnd && minChallengePeriodEnd != 0);
 
-        executeEpoch(bestSubmission.seniorRedeem ,bestSubmission.juniorRedeem,
+        _executeEpoch(bestSubmission.seniorRedeem ,bestSubmission.juniorRedeem,
             bestSubmission.seniorSupply, bestSubmission.juniorSupply);
     }
 
@@ -437,7 +436,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
             safeAdd(seniorRedeem, juniorRedeem));
     }
 
-    function executeEpoch(uint seniorRedeem, uint juniorRedeem,
+    function _executeEpoch(uint seniorRedeem, uint juniorRedeem,
         uint seniorSupply, uint juniorSupply) internal {
 
         uint epochID = lastEpochExecuted+1;
