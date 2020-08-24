@@ -61,7 +61,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, DataTypes {
         juniorRedeem : 4 ether
         });
 
-        assertEq(submitSolution(solution), submitSolutionReturn.NEW_BEST);
+        assertEq(submitSolution(solution), coordinator.SUCCESS());
         compareWithBest(solution);
 
         // challenge period started
@@ -78,7 +78,8 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, DataTypes {
         juniorRedeem : 5 ether
         });
 
-        assertEq(submitSolution(betterSolution), submitSolutionReturn.NEW_BEST);
+        // new best
+        assertEq(submitSolution(betterSolution), coordinator.SUCCESS());
 
         // better solution should be new best
         compareWithBest(betterSolution);
@@ -89,7 +90,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, DataTypes {
         hevm.warp(now + 2 hours);
 
         // re submit solution with lower score
-        assertEq(submitSolution(solution),coordinator.ERR_NOT_NEW_BEST());
+        assertEq(submitSolution(solution), coordinator.ERR_NOT_NEW_BEST());
 
         // better solution should be still the best
         compareWithBest(betterSolution);
@@ -103,7 +104,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, DataTypes {
 
         // submit invalid solution
         solution.seniorSupply = 100000000 ether;
-        assertEq(submitSolution(solution), submitSolutionReturn.NOT_VALID);
+        assertEq(submitSolution(solution), coordinator.ERR_MAX_ORDER());
     }
 
     function checkPoolPrecondition(LenderModel memory model, bool currSeniorRatioInRange, bool reserveHealthy) public {
@@ -151,7 +152,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, DataTypes {
             juniorRedeem : 100 ether
             });
 
-        assertEq(submitSolution(solution), submitSolutionReturn.NEW_BEST);
+        assertEq(submitSolution(solution), coordinator.SUCCESS());
         assertTrue(coordinator.gotValidPoolConSubmission() == true);
     }
 
@@ -177,7 +178,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, DataTypes {
             juniorRedeem : 0 ether
             });
 
-        assertEq(submitSolution(solution), submitSolutionReturn.NEW_BEST);
+        assertEq(submitSolution(solution), coordinator.SUCCESS());
         assertTrue(coordinator.gotValidPoolConSubmission() == false);
 
         solution = ModelInput({
@@ -187,7 +188,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, DataTypes {
             juniorRedeem : 500 ether
             });
 
-        assertEq(submitSolution(solution), submitSolutionReturn.NEW_BEST);
+        assertEq(submitSolution(solution), coordinator.SUCCESS());
         assertTrue(coordinator.gotValidPoolConSubmission() == false);
 
 
@@ -198,7 +199,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, DataTypes {
             juniorRedeem : 1000 ether
             });
 
-        assertEq(submitSolution(solution), submitSolutionReturn.NEW_BEST);
+        assertEq(submitSolution(solution), coordinator.SUCCESS());
         assertTrue(coordinator.gotValidPoolConSubmission() == false);
 
 
@@ -210,7 +211,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, DataTypes {
             juniorRedeem : 950 ether
             });
 
-        assertEq(submitSolution(solution), submitSolutionReturn.NEW_BEST);
+        assertEq(submitSolution(solution), coordinator.SUCCESS());
         assertTrue(coordinator.gotValidPoolConSubmission() == true);
 
 
@@ -234,7 +235,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, DataTypes {
             juniorRedeem : 950 ether
             });
 
-        assertEq(submitSolution(solution), submitSolutionReturn.NEW_BEST);
+        assertEq(submitSolution(solution), coordinator.SUCCESS());
         assertTrue(coordinator.gotValidPoolConSubmission() == true);
     }
 
@@ -262,7 +263,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, DataTypes {
             juniorRedeem : 0 ether
             });
 
-        assertEq(submitSolution(solution), submitSolutionReturn.NOT_NEW_BEST);
+        assertEq(submitSolution(solution), coordinator.ERR_MAX_ORDER());
     }
 }
 

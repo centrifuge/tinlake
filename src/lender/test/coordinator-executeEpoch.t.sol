@@ -40,7 +40,8 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
         seniorTranche.setEpochReturn(model_.seniorSupplyOrder, model_.seniorRedeemOrder);
 
         int result = coordinator.submitSolution(input.seniorRedeem, input.juniorRedeem, input.juniorSupply, input.seniorSupply);
-        assertEq(result, submitSolutionReturn.NEW_BEST);
+        // new best solution
+        assertEq(result, coordinator.SUCCESS());
 
         hevm.warp(now + 1 days);
     }
