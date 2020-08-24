@@ -16,13 +16,8 @@ pragma solidity >=0.5.15 <0.6.0;
 pragma experimental ABIEncoderV2;
 
 import "./ticker.sol";
+import "./data_types.sol";
 import "tinlake-auth/auth.sol";
-
-contract DataTypes  {
-    struct Fixed27 {
-        uint value;
-    }
-}
 
 interface EpochTrancheLike {
     function epochUpdate(uint epochID, uint supplyFulfillment_,
