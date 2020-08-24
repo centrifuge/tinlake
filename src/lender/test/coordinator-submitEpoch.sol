@@ -18,7 +18,7 @@ pragma experimental ABIEncoderV2;
 
 import "./coordinator-base.t.sol";
 
-contract CoordinatorSubmitEpochTest is CoordinatorTest {
+contract CoordinatorSubmitEpochTest is CoordinatorTest, DataTypes {
     function setUp() public {
         super.setUp();
     }
@@ -61,7 +61,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest {
         juniorRedeem : 4 ether
         });
 
-        assertEq(submitSolution(solution), submitSolutionReturn.NEW_BEST);
+        assertEq(submitSolution(solution), coordinator.SUCCESS());
         compareWithBest(solution);
 
         // challenge period started
@@ -78,7 +78,8 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest {
         juniorRedeem : 5 ether
         });
 
-        assertEq(submitSolution(betterSolution), submitSolutionReturn.NEW_BEST);
+        // new best
+        assertEq(submitSolution(betterSolution), coordinator.SUCCESS());
 
         // better solution should be new best
         compareWithBest(betterSolution);
@@ -89,21 +90,180 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest {
         hevm.warp(now + 2 hours);
 
         // re submit solution with lower score
-        assertEq(submitSolution(solution),submitSolutionReturn.NOT_NEW_BEST);
+        assertEq(submitSolution(solution), coordinator.ERR_NOT_NEW_BEST());
 
         // better solution should be still the best
         compareWithBest(betterSolution);
 
         // re submit solution with lower score
         solution.seniorSupply = 2 ether;
-        assertEq(submitSolution(solution), submitSolutionReturn.NOT_NEW_BEST);
+        assertEq(submitSolution(solution), coordinator.ERR_NOT_NEW_BEST());
 
         // better solution should be still the best
         compareWithBest(betterSolution);
 
         // submit invalid solution
         solution.seniorSupply = 100000000 ether;
-        assertEq(submitSolution(solution), submitSolutionReturn.NOT_VALID);
+        assertEq(submitSolution(solution), coordinator.ERR_MAX_ORDER());
+    }
+
+    function checkPoolPrecondition(LenderModel memory model, bool currSeniorRatioInRange, bool reserveHealthy) public {
+        // check if current ratio is healthy
+        Fixed27 memory currSeniorRatio = Fixed27(coordinator.calcSeniorRatio(safeAdd(coordinator.epochSeniorBalance(), coordinator.epochSeniorDebt()),
+            coordinator.epochNAV(), coordinator.epochReserve()));
+
+        assertTrue(coordinator.checkRatioInRange(currSeniorRatio, Fixed27(model.minSeniorRatio), Fixed27(model.maxSeniorRatio)) == currSeniorRatioInRange);
+        assertTrue((coordinator.epochReserve() <= assessor.maxReserve()) == reserveHealthy);
+    }
+
+    function calcNewSeniorRatio(LenderModel memory model, ModelInput memory input) public returns (uint) {
+        uint currencyAvailable = model.reserve + input.seniorSupply + input.juniorSupply;
+        uint currencyOut = input.seniorRedeem + input.juniorRedeem;
+
+        uint seniorAsset = (model.seniorBalance + model.seniorDebt + input.seniorSupply) - input.seniorRedeem;
+
+        return rdiv(seniorAsset, model.NAV + currencyAvailable-currencyOut);
+    }
+
+    // from unhealthy to healthy with submission
+    function testSubmitEpochUnhealthyState() public {
+        LenderModel memory model = getDefaultModel();
+        model.seniorSupplyOrder = 10000 ether;
+        model.maxReserve = 1000 ether;
+
+        // reserve constraint violated
+        // 800 ether
+        model.reserve = 1150 ether;
+        model.seniorBalance = 850 ether;
+
+
+        initTestConfig(model);
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
+
+        bool currSeniorRatioInRange = true;
+        bool reserveHealthy = false;
+        checkPoolPrecondition(model, currSeniorRatioInRange, reserveHealthy);
+
+        ModelInput memory solution = ModelInput({
+            seniorSupply : 0 ether,
+            juniorSupply : 0 ether,
+            seniorRedeem : 100 ether,
+            juniorRedeem : 100 ether
+            });
+
+        assertEq(submitSolution(solution), coordinator.SUCCESS());
+        assertTrue(coordinator.gotValidPoolConSubmission() == true);
+    }
+
+    function testSubmitImprovement() public {
+        LenderModel memory model = getDefaultModel();
+        model.seniorSupplyOrder = 10000 ether;
+        model.juniorRedeemOrder = 10000 ether;
+        model.maxReserve = 1000 ether;
+        model.reserve = 1150 ether;
+
+        initTestConfig(model);
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
+
+        bool currSeniorRatioInRange = false;
+        bool reserveHealthy = false;
+        checkPoolPrecondition(model, currSeniorRatioInRange, reserveHealthy);
+
+        ModelInput memory solution = ModelInput({
+            seniorRedeem : 0 ether,
+            juniorSupply : 0 ether,
+            seniorSupply : 800 ether,
+            juniorRedeem : 0 ether
+            });
+
+        assertEq(submitSolution(solution), coordinator.SUCCESS());
+        assertTrue(coordinator.gotValidPoolConSubmission() == false);
+
+        solution = ModelInput({
+            seniorRedeem : 0 ether,
+            juniorSupply : 0 ether,
+            seniorSupply : 800 ether,
+            juniorRedeem : 500 ether
+            });
+
+        assertEq(submitSolution(solution), coordinator.SUCCESS());
+        assertTrue(coordinator.gotValidPoolConSubmission() == false);
+
+
+        solution = ModelInput({
+            seniorRedeem : 0 ether,
+            juniorSupply : 0 ether,
+            seniorSupply : 300 ether,
+            juniorRedeem : 1000 ether
+            });
+
+        assertEq(submitSolution(solution), coordinator.SUCCESS());
+        assertTrue(coordinator.gotValidPoolConSubmission() == false);
+
+
+        // solution would satisfy all constraints
+        solution = ModelInput({
+            seniorRedeem : 0 ether,
+            juniorSupply : 0 ether,
+            seniorSupply : 0 ether,
+            juniorRedeem : 950 ether
+            });
+
+        assertEq(submitSolution(solution), coordinator.SUCCESS());
+        assertTrue(coordinator.gotValidPoolConSubmission() == true);
+
+
+        // should be not possible to submit unhealthy solutions again
+        solution = ModelInput({
+            seniorRedeem : 0 ether,
+            juniorSupply : 0 ether,
+            seniorSupply : 300 ether,
+            juniorRedeem : 1000 ether
+            });
+
+        assertEq(submitSolution(solution), coordinator.ERR_NOT_NEW_BEST());
+        assertTrue(coordinator.gotValidPoolConSubmission() == true);
+
+        // submit better healthy solution
+        // solution would satisfy all constraints
+        solution = ModelInput({
+            seniorRedeem : 50 ether,
+            juniorSupply : 0 ether,
+            seniorSupply : 250 ether,
+            juniorRedeem : 950 ether
+            });
+
+        assertEq(submitSolution(solution), coordinator.SUCCESS());
+        assertTrue(coordinator.gotValidPoolConSubmission() == true);
+    }
+
+    function submitSolutionWorseThanBenchmark() public {
+        LenderModel memory model = getDefaultModel();
+        model.seniorSupplyOrder = 10000 ether;
+        model.juniorRedeemOrder = 10000 ether;
+        model.maxReserve = 1000 ether;
+        model.reserve = 1150 ether;
+
+        initTestConfig(model);
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
+
+        bool currSeniorRatioInRange = false;
+        bool reserveHealthy = false;
+
+        // current seniorRatio below minSeniorRatio & maxReserve violated
+        checkPoolPrecondition(model, currSeniorRatioInRange, reserveHealthy);
+
+        ModelInput memory solution = ModelInput({
+            seniorRedeem : 0 ether,
+            juniorSupply : 100 ether,
+            seniorSupply : 0 ether,
+            juniorRedeem : 0 ether
+            });
+
+        assertEq(submitSolution(solution), coordinator.ERR_MAX_ORDER());
     }
 }
 

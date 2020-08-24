@@ -19,7 +19,6 @@ pragma experimental ABIEncoderV2;
 import "./coordinator-base.t.sol";
 
 contract CoordinatorValidateTest is CoordinatorTest {
-
     struct ValidateErr {
         int CURRENCY_AVAILABLE;
         int MAX_RESERVE;
@@ -35,8 +34,8 @@ contract CoordinatorValidateTest is CoordinatorTest {
         super.setUp();
         validateErr = ValidateErr({
             CURRENCY_AVAILABLE: -1,
-            MAX_RESERVE: -2,
-            MAX_ORDER: -3,
+            MAX_ORDER: -2,
+            MAX_RESERVE: -3,
             MIN_SENIOR_RATIO: -4,
             MAX_SENIOR_RATIO: -5
             });
@@ -45,7 +44,8 @@ contract CoordinatorValidateTest is CoordinatorTest {
 
     function cleanUpTestCase() public {
         if(coordinator.submissionPeriod() == true) {
-            coordinator.submitSolution(0,0,0,0);
+            int status = coordinator.submitSolution(0,0,0,0);
+            assertEq(status, coordinator.SUCCESS());
             hevm.warp(now + 1 days);
             coordinator.executeEpoch();
         }
@@ -64,7 +64,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
 
         assertTrue(tCase.status == result);
 
-        // execute epoch to clean up state
+      // execute epoch to clean up state
         cleanUpTestCase();
     }
 
