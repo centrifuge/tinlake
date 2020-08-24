@@ -17,8 +17,7 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "ds-test/test.sol";
 import "./setup.sol";
-import { WhitelistOperator } from "../../lender/tranche/operator/whitelist.sol";
-import { DefaultDistributor } from "../../lender/distributor/default.sol";
+
 import "./users/admin.sol";
 import "./users/investor.sol";
 import "./users/borrower.sol";
@@ -34,56 +33,20 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     AdminUser public admin;
     address admin_;
 
-    Investor public juniorInvestor;
-    address public juniorInvestor_;
-
-    Investor seniorInvestor;
-    address  seniorInvestor_;
-
     Borrower randomUser;
     address randomUser_;
 
     Keeper keeper;
     address keeper_;
 
-    function baseSetup(bytes32 operator_, bytes32 distributor_, bool senior_) public {
-        // setup deployment
-        bytes32 assessor_ = "default";
-        bytes32 ceiling_ = "default";
-        deployContracts(operator_, distributor_, assessor_, senior_, ceiling_, operator_);
-        root.relyLenderAdmin(address(this), senior_);
-    }
-
-    function baseSetup(bytes32 operator_, bytes32 distributor_, bool senior_, bytes32 ceiling_) public {
-        // setup deployment
-        bytes32 assessor_ = "default";
-        deployContracts(operator_, distributor_, assessor_, senior_, ceiling_, operator_);
-        root.relyLenderAdmin(address(this), senior_);
-    }
-
-    function baseSetup(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_) public {
+    function baseSetup() public {
         // setup deployment
         bytes32 ceiling_ = "default";
-        deployContracts(operator_, distributor_, assessor_, senior_, ceiling_, operator_);
-        root.relyLenderAdmin(address(this), senior_);
+        deployContracts(ceiling_);
     }
 
-    function baseSetup(bytes32 operator_, bytes32 distributor_, bytes32 assessor_, bool senior_, bytes32 seniorOperator_) public {
-        // setup deployment
-        bytes32 ceiling_ = "default";
-        deployContracts(operator_, distributor_, assessor_, senior_, ceiling_, seniorOperator_);
-        root.relyLenderAdmin(address(this), senior_);
-    }
-
-    function supplySenior(uint amount) public {
-        currency.mint(seniorInvestor_, amount);
-        seniorInvestor.doSupply(amount);
-    }
-
-    function supplyJunior(uint amount) public {
-        currency.mint(juniorInvestor_, amount);
-
-        juniorInvestor.doSupply(amount);
+    function baseSetup(bytes32 ceiling_) public {
+        deployContracts(ceiling_);
     }
 
     function createTestUsers(bool senior_) public {
@@ -100,21 +63,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         admin_ = address(admin);
         root.relyBorrowAdmin(admin_);
 
-        juniorInvestor = new Investor(address(juniorOperator), currency_, address(juniorToken));
-        juniorInvestor_ = address(juniorInvestor);
-
-        WhitelistOperator juniorOperator = WhitelistOperator(address(juniorOperator));
-        juniorOperator.relyInvestor(juniorInvestor_);
-
-        if (senior_) {
-            // by default whitelist operator
-            WhitelistOperator seniorOperator = WhitelistOperator(address(seniorOperator));
-
-            seniorInvestor = new Investor(address(seniorOperator), currency_, address(seniorToken));
-            seniorInvestor_ = address(seniorInvestor);
-
-            seniorOperator.relyInvestor(seniorInvestor_);
-        }
     }
 
     function lockNFT(uint loanId, address usr) public {
@@ -127,14 +75,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         collateralNFT.transferFrom(sender, recipient, tokenId);
     }
 
-    // helpers borrower
-    function createSeniorInvestor() public {
-        seniorInvestor = new Investor(seniorOperator, currency_, address(seniorToken));
-        seniorInvestor_ = address(seniorInvestor);
-
-        WhitelistOperator seniorOperator = WhitelistOperator(address(seniorOperator));
-        seniorOperator.relyInvestor(seniorInvestor_);
-    }
 
     function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
         tokenId = collateralNFT.issue(usr);
@@ -201,8 +141,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
     // helpers lenders
     function invest(uint currencyAmount) public {
-        currency.mint(juniorInvestor_, currencyAmount);
-        juniorInvestor.doSupply(currencyAmount);
+        currency.mint(address(distributor), currencyAmount);
     }
 
     // helpers keeper
@@ -225,16 +164,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
 
     function setupCurrencyOnLender(uint amount) public {
-        // mint currency
-        currency.mint(address(this), amount);
-        currency.approve(address(junior), amount);
-        uint balanceBefore = juniorToken.balanceOf(address(this));
-        // move currency into junior tranche
-        address operator_ = address(juniorOperator);
-        WhitelistOperator(operator_).relyInvestor(address(this));
-        WhitelistOperator(operator_).supply(amount);
-        // same amount of junior tokens
-        assertEq(juniorToken.balanceOf(address(this)), balanceBefore + amount);
+        invest(amount);
     }
 
     function supplyFunds(uint amount, address addr) public {
