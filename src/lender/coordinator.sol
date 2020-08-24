@@ -82,6 +82,14 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
     uint public challengeTime;
 
+    int public constant SUCCESS = 0;
+    int public constant ERR_CURRENCY_AVAILABLE = -1;
+    int public constant ERR_MAX_ORDER = -2;
+    int public constant ERR_MAX_RESERVE = - 3;
+    int public constant ERR_MIN_SENIOR_RATIO = -4;
+    int public constant ERR_MAX_SENIOR_RATIO = -5;
+    int public constant ERR_NOT_NEW_BEST = -6;
+
     constructor() public {
         wards[msg.sender] = 1;
         challengeTime = 1 hours;
@@ -130,7 +138,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
         /// can orders be to 100% fulfilled
         if (validate(orderSeniorRedeem, orderJuniorRedeem,
-            orderSeniorSupply, orderJuniorSupply) == 0) {
+            orderSeniorSupply, orderJuniorSupply) == SUCCESS) {
 
             _executeEpoch(orderSeniorRedeem, orderJuniorRedeem,
                 orderSeniorSupply, orderJuniorSupply);
@@ -159,7 +167,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
         int valid = _submitSolution(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply);
 
-        if(valid == 0 && minChallengePeriodEnd == 0) {
+        if(valid == SUCCESS && minChallengePeriodEnd == 0) {
             minChallengePeriodEnd = safeAdd(block.timestamp, challengeTime);
         }
         return valid;
@@ -168,41 +176,33 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     function _submitSolution(uint seniorRedeem, uint juniorRedeem,
         uint juniorSupply, uint seniorSupply) internal returns(int) {
 
-        uint currencyAvailable = safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply);
-        uint currencyOut = safeAdd(seniorRedeem, juniorRedeem);
+        int valid = validate(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
 
-        int valid = validateCoreConstraints(currencyAvailable,  currencyOut, seniorRedeem,
-            juniorRedeem, seniorSupply, juniorSupply);
-
-        if(valid != 0) {
-            // every proposed solution needs to satisfy the core constraints
-            // solution is not valid => -2
-            return -2;
+        if(valid  == ERR_CURRENCY_AVAILABLE || valid == ERR_MAX_ORDER) {
+            // core constraint violated
+            return valid;
         }
 
-        uint newReserve = safeSub(currencyAvailable, currencyOut);
-
-        if(validatePoolConstraints(newReserve, calcSeniorAssetValue(seniorRedeem, seniorSupply,
-            epochSeniorDebt, epochSeniorBalance, newReserve)) == 0) {
-
+        // core constraints and pool constraints are satisfied
+        if(valid == SUCCESS) {
             uint score = scoreSolution(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
 
             if(gotValidPoolConSubmission == false) {
                 gotValidPoolConSubmission = true;
                 saveNewOptimum(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply, score);
                 // solution is new best => 0
-                return 0;
+                return SUCCESS;
             }
 
             if (score < bestSubScore) {
-                // solution is not the best => -1
-                return -1;
+                // solution is not the best => -6
+                return ERR_NOT_NEW_BEST;
             }
 
             saveNewOptimum(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply, score);
 
             // solution is new best => 0
-            return 0;
+            return SUCCESS;
         }
 
         // proposed solution does not satisfy all pool constraints
@@ -213,8 +213,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         }
 
         // proposed solution doesn't satisfy the pool constraints but a previous submission did
-        // previous solutions satisfied all constraints
-        return -3;
+        return ERR_NOT_NEW_BEST;
     }
 
     function abs(uint x, uint y) public view returns(uint delta) {
@@ -310,7 +309,6 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
             safeAdd(safeMul(juniorSupply, 100), safeMul(seniorSupply, 10)));
     }
 
-
     /*
         returns newReserve for gas efficiency reasons to only calc it once
     */
@@ -319,7 +317,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         // constraint 1: currency available
         if (currencyOut > currencyAvailable) {
             // currencyAvailableConstraint => -1
-            return -1;
+            return ERR_CURRENCY_AVAILABLE;
         }
 
         // constraint 2: max order
@@ -328,18 +326,18 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         seniorRedeem > order.seniorRedeem ||
             juniorRedeem > order.juniorRedeem) {
             // maxOrderConstraint => -2
-            return -2;
+            return ERR_MAX_ORDER;
         }
 
         // successful => 0
-        return  0;
+        return  SUCCESS;
     }
 
     function validatePoolConstraints(uint reserve, uint seniorAsset) public view returns (int err) {
         // constraint 3: max reserve
         if (reserve > assessor.maxReserve()) {
             // maxReserveConstraint => -3
-            return -3;
+            return ERR_MAX_RESERVE;
         }
 
         uint assets = safeAdd(epochNAV, reserve);
@@ -349,15 +347,15 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         // constraint 4: min senior ratio constraint
         if (seniorAsset < rmul(assets, minSeniorRatio.value)) {
             // minSeniorRatioConstraint => -4
-            return -4;
+            return ERR_MIN_SENIOR_RATIO;
         }
         // constraint 5: max senior ratio constraint
         if (seniorAsset > rmul(assets, maxSeniorRatio.value)) {
             // maxSeniorRatioConstraint => -5
-            return -5;
+            return ERR_MAX_SENIOR_RATIO;
         }
         // successful => 0
-        return 0;
+        return SUCCESS;
     }
 
     // all parameters in WAD and denominated in currency
@@ -370,7 +368,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         int err = validateCoreConstraints(currencyAvailable, currencyOut, seniorRedeem,
             juniorRedeem, seniorSupply, juniorSupply);
 
-        if(err != 0) {
+        if(err != SUCCESS) {
             return err;
         }
 
