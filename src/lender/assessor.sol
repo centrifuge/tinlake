@@ -22,7 +22,8 @@ import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
 
 interface NAVFeedLike {
-    function currentNAV() external view returns (uint);
+    function calcUpdateNAV() external returns (uint);
+    function approximatedNAV() external view returns (uint);
 }
 
 interface TrancheLike {
@@ -50,9 +51,6 @@ contract Assessor is Auth, DataTypes, Interest  {
     TrancheLike seniorTranche;
     TrancheLike juniorTranche;
     NAVFeedLike navFeed;
-
-    // todo add desc
-    uint public NAV;
 
     constructor() public {
         wards[msg.sender] = 1;
@@ -92,7 +90,9 @@ contract Assessor is Auth, DataTypes, Interest  {
         uint seniorAsset = safeAdd(seniorDebt_, seniorBalance_);
 
         // re-balancing according to new ratio
-        seniorDebt_ = rmul(NAV, seniorRatio);
+        // we use the approximated NAV here because during the submission period
+        // new loans might have been repaid in the meanwhile which are not considered in the epochNAV
+        seniorDebt_ = rmul(navFeed.approximatedNAV(), seniorRatio);
         seniorBalance_ = safeSub(seniorAsset, seniorDebt_);
     }
 
@@ -100,9 +100,8 @@ contract Assessor is Auth, DataTypes, Interest  {
         return (minSeniorRatio.value, maxSeniorRatio.value);
     }
 
-    function currentNAV() external returns (uint) {
-        NAV = navFeed.currentNAV();
-        return NAV;
+    function calcUpdateNAV() external returns (uint) {
+         return navFeed.calcUpdateNAV();
     }
 
     function calcSeniorTokenPrice(uint epochNAV, uint epochReserve) external returns(uint) {

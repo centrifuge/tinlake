@@ -73,8 +73,8 @@ contract AssessorMock is Mock {
     }
     // - new funcs
 
-    function currentNAV() external returns (uint) {
-        return call("currentNAV");
+    function calcUpdateNAV() external returns (uint) {
+        return call("calcUpdateNAV");
     }
 
     function maxReserve() external view returns (uint) {

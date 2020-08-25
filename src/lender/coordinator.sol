@@ -34,7 +34,7 @@ contract AssessorLike is DataTypes {
     function calcSeniorTokenPrice(uint NAV, uint reserve) external returns(Fixed27 memory tokenPrice);
     function calcJuniorTokenPrice(uint NAV, uint reserve) external returns(Fixed27 memory tokenPrice);
     function maxReserve() external view returns(uint);
-    function currentNAV() external returns (uint);
+    function calcUpdateNAV() external returns (uint);
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
     function seniorRatioBounds() external view returns(Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio);
@@ -108,7 +108,8 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.getTotalOrders(closingEpoch);
         (uint orderSeniorSupply, uint orderSeniorRedeem) = seniorTranche.getTotalOrders(closingEpoch);
 
-        epochNAV = assessor.currentNAV();
+        // take a snapshot of the current system state
+        epochNAV = assessor.calcUpdateNAV();
         epochReserve = reserve.totalBalance();
 
         // calculate in DAI
