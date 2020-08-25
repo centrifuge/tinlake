@@ -31,7 +31,7 @@ interface TrancheLike {
 
 contract Assessor is Auth, DataTypes, Interest  {
     // senior ratio from the last epoch executed
-    Fixed27 public lastSeniorRatio;
+    Fixed27 public seniorRatio;
 
     uint public seniorDebt_;
     uint public seniorBalance_;
@@ -73,11 +73,11 @@ contract Assessor is Auth, DataTypes, Interest  {
         }
         else if (name == "maxReserve") {maxReserve = value;}
         else if (name == "maxSeniorRatio") {
-            require(value > minSeniorRatio.value);
+            require(value > minSeniorRatio.value, "value-too-small");
             maxSeniorRatio = Fixed27(value);
         }
         else if (name == "minSeniorRatio") {
-            require(value < maxSeniorRatio.value);
+            require(value < maxSeniorRatio.value, "value-too-big");
             minSeniorRatio = Fixed27(value);
         }
         else {revert("unknown-variable");}
@@ -133,18 +133,30 @@ contract Assessor is Auth, DataTypes, Interest  {
     }
 
     function repaymentUpdate(uint currencyAmount) public auth {
-        uint decAmount = rmul(currencyAmount, lastSeniorRatio.value);
-        // todo think about edge cases here
-        // seniorDebt needs to be decreased for loan repayments
-        seniorDebt_ = safeSub(seniorDebt_, decAmount);
+        dripSeniorDebt();
+
+        uint decAmount = rmul(currencyAmount, seniorRatio.value);
         seniorBalance_ = safeAdd(seniorBalance_, decAmount);
+        // seniorDebt needs to be decreased for loan repayments
+        if (seniorDebt_ < decAmount) {
+            seniorDebt_ = 0;
+            return;
+        }
+        seniorDebt_ = safeSub(seniorDebt_, decAmount);
+
     }
 
     function borrowUpdate(uint currencyAmount) public auth {
-        uint incAmount = rmul(currencyAmount, lastSeniorRatio.value);
-        // todo think about edge cases here
+        dripSeniorDebt();
+
+        uint incAmount = rmul(currencyAmount, seniorRatio.value);
         // seniorDebt needs to be increased for loan borrows
         seniorDebt_ = safeAdd(seniorDebt_, incAmount);
+
+        if(seniorBalance_ < incAmount) {
+            seniorBalance_ = 0;
+            return;
+        }
         seniorBalance_ = safeSub(seniorBalance_, incAmount);
     }
 
