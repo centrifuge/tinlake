@@ -83,25 +83,11 @@ contract Assessor is Auth, DataTypes, Interest  {
         else {revert("unknown-variable");}
     }
 
-    function updateSeniorAsset(uint epochSeniorDebt, uint epochSeniorBalance, uint seniorRatio) external auth {
+    function updateSeniorAsset(uint seniorRatio) external auth {
         dripSeniorDebt();
 
-        uint currSeniorAsset = safeAdd(seniorDebt_, seniorBalance_);
-        uint epochSeniorAsset = safeAdd(epochSeniorDebt, epochSeniorBalance);
+        // todo rebalance with NAV' and take
 
-        // todo think about edge cases here and move maybe rebalancing method here
-        // todo consider multiple epoch executes
-
-        // loan repayments happened during epoch execute
-        if(currSeniorAsset > epochSeniorAsset) {
-            uint delta = safeSub(currSeniorAsset, epochSeniorAsset);
-            uint seniorDebtInc = rmul(delta, seniorRatio);
-            epochSeniorDebt = safeAdd(epochSeniorDebt, seniorDebtInc);
-            epochSeniorBalance = safeAdd(epochSeniorBalance, safeSub(delta, seniorDebtInc));
-
-        }
-        seniorDebt_ = epochSeniorDebt;
-        seniorBalance_ = epochSeniorBalance;
     }
 
     function seniorRatioBounds() public view returns (uint minSeniorRatio_, uint maxSeniorRatio_) {

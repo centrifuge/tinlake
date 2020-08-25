@@ -103,9 +103,7 @@ contract AssessorMock is Mock {
         return call("seniorBalance");
     }
 
-    function updateSeniorAsset(uint seniorDebt_, uint seniorBalance_, uint seniorRatio_) public {
-        values_uint["updateSeniorAsset_seniorDebt"] = seniorDebt_;
-        values_uint["updateSeniorAsset_seniorBalance"] = seniorBalance_;
+    function updateSeniorAsset(uint seniorRatio_) public {
         values_uint["updateSeniorAsset_seniorRatio"] = seniorRatio_;
     }
 
