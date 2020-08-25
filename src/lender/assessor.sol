@@ -51,6 +51,9 @@ contract Assessor is Auth, DataTypes, Interest  {
     TrancheLike juniorTranche;
     NAVFeedLike navFeed;
 
+    // todo add desc
+    uint public NAV;
+
     constructor() public {
         wards[msg.sender] = 1;
         seniorInterestRate.value = ONE;
@@ -86,16 +89,20 @@ contract Assessor is Auth, DataTypes, Interest  {
     function updateSeniorAsset(uint seniorRatio) external auth {
         dripSeniorDebt();
 
-        // todo rebalance with NAV' and take
+        uint seniorAsset = safeAdd(seniorDebt_, seniorBalance_);
 
+        // re-balancing according to new ratio
+        seniorDebt_ = rmul(NAV, seniorRatio);
+        seniorBalance_ = safeSub(seniorAsset, seniorDebt_);
     }
 
     function seniorRatioBounds() public view returns (uint minSeniorRatio_, uint maxSeniorRatio_) {
         return (minSeniorRatio.value, maxSeniorRatio.value);
     }
 
-    function currentNAV() external view returns (uint) {
-        return navFeed.currentNAV();
+    function currentNAV() external returns (uint) {
+        NAV = navFeed.currentNAV();
+        return NAV;
     }
 
     function calcSeniorTokenPrice(uint epochNAV, uint epochReserve) external returns(uint) {
@@ -130,6 +137,7 @@ contract Assessor is Auth, DataTypes, Interest  {
         }
         seniorDebt_ = safeSub(seniorDebt_, decAmount);
 
+        // todo update NAV in assessor with decrease
     }
 
     function borrowUpdate(uint currencyAmount) public auth {
@@ -144,6 +152,8 @@ contract Assessor is Auth, DataTypes, Interest  {
             return;
         }
         seniorBalance_ = safeSub(seniorBalance_, incAmount);
+
+        // todo update NAV in assessor with increase
     }
 
     function dripSeniorDebt() public returns (uint) {

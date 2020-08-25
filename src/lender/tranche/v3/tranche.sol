@@ -213,7 +213,7 @@ contract Tranche is Math, Auth {
         }
     }
 
-    function getTotalOrders(uint epochID) public returns(uint, uint) {
+    function getTotalOrders(uint epochID) public view returns(uint, uint) {
         return (epochs[epochID].totalRedeem , epochs[epochID].totalSupply);
     }
 }
