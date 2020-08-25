@@ -15,13 +15,13 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import { DefaultDistributor } from "./../distributor/default.sol";
+import { NAVFeed } from "tinlake-nftfeed/feed.sol";
 
-contract DefaultDistributorFab {
-    function newDistributor(address currency) public returns (address) {
-        DefaultDistributor distributor = new DefaultDistributor(currency);
-        distributor.rely(msg.sender);
-        distributor.deny(address(this));
-        return address(distributor);
+contract NAVFeedFab {
+    function newNFTFeed() public returns (address) {
+        NAVFeed feed = new NAVFeed();
+        feed.rely(msg.sender);
+        feed.deny(address(this));
+        return address(feed);
     }
 }

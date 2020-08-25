@@ -18,7 +18,7 @@ pragma solidity >=0.5.15 <0.6.0;
 import "ds-test/test.sol";
 import "../../../test/mock/mock.sol";
 
-contract EpochTrancheMock is Mock {
+contract EpochTrancheMock is Mock, DSTest {
     uint totalSupply;
     uint totalRedeem;
 
@@ -37,6 +37,11 @@ contract EpochTrancheMock is Mock {
 
     function epochUpdate(uint epochID, uint supplyFulfillment_,
         uint redeemFulfillment_, uint tokenPrice_) external {
+
+        values_uint["epochUpdate_epochID"] = epochID;
+        values_uint["epochUpdate_supplyFulfillment"] = supplyFulfillment_;
+        values_uint["epochUpdate_redeemFulfillment"] = redeemFulfillment_;
+
     }
 }
 

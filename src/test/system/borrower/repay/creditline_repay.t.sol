@@ -19,18 +19,12 @@ import "../../base_system.sol";
 
 contract CreditLineRepayTest is BaseSystemTest {
 
-    DefaultDistributor distributor;
-
     Hevm public hevm;
 
     function setUp() public {
-        bytes32 juniorOperator_ = "whitelist";
-        bytes32 distributor_ = "default";
         bytes32 ceiling_ = "creditline";
-        baseSetup(juniorOperator_, distributor_, false, ceiling_);
+        baseSetup(ceiling_);
         createTestUsers(false);
-
-        distributor = DefaultDistributor(address(lenderDeployer.distributor()));
 
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
@@ -39,7 +33,7 @@ contract CreditLineRepayTest is BaseSystemTest {
 
     function repay(uint loanId, uint tokenId, uint amount, uint expectedDebt) public {
         uint initialBorrowerBalance = currency.balanceOf(borrower_);
-        uint initialTrancheBalance = currency.balanceOf(address(junior));
+        uint initialTrancheBalance = currency.balanceOf(address(distributor));
         borrower.repay(loanId, amount);
         assertPostCondition(loanId, tokenId, amount, initialBorrowerBalance, initialTrancheBalance, expectedDebt);
     }
@@ -74,7 +68,7 @@ contract CreditLineRepayTest is BaseSystemTest {
         assertEq(safeSub(initialBorrowerBalance, repaidAmount), currency.balanceOf(borrower_));
         // assert: shelf/tranche received funds
         // since we are calling balance inside repay, money is directly transferred to the tranche through shelf
-        assertEq(safeAdd(initialTrancheBalance, repaidAmount), currency.balanceOf(address(junior)));
+        assertEq(safeAdd(initialTrancheBalance, repaidAmount), currency.balanceOf(address(distributor)));
         // assert: debt amounts reduced by repayAmount
         assertEq(pile.debt(loanId), safeSub(expectedDebt, repaidAmount));
         assertEq(pile.total(), safeSub(expectedDebt, repaidAmount));

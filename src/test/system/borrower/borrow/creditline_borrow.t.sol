@@ -22,10 +22,8 @@ contract CreditLineBorrowTest is BaseSystemTest {
     Hevm public hevm;
 
     function setUp() public {
-        bytes32 juniorOperator_ = "whitelist";
-        bytes32 distributor_ = "default";
         bytes32 ceiling_ = "creditline";
-        baseSetup(juniorOperator_, distributor_, false, ceiling_);
+        baseSetup(ceiling_);
         createTestUsers(false);
 
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);

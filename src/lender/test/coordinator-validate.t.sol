@@ -19,13 +19,12 @@ pragma experimental ABIEncoderV2;
 import "./coordinator-base.t.sol";
 
 contract CoordinatorValidateTest is CoordinatorTest {
-
     struct ValidateErr {
-        int currencyAvailableConstraint;
-        int maxReserveConstraint;
-        int maxOrderConstraint;
-        int minSeniorRatioConstraint;
-        int maxSeniorRatioConstraint;
+        int CURRENCY_AVAILABLE;
+        int MAX_RESERVE;
+        int MAX_ORDER;
+        int MIN_SENIOR_RATIO;
+        int MAX_SENIOR_RATIO;
     }
 
     ValidateErr public validateErr;
@@ -34,18 +33,19 @@ contract CoordinatorValidateTest is CoordinatorTest {
     function setUp() public {
         super.setUp();
         validateErr = ValidateErr({
-            currencyAvailableConstraint: -1,
-            maxReserveConstraint: -2,
-            maxOrderConstraint: -3,
-            minSeniorRatioConstraint: -4,
-            maxSeniorRatioConstraint: -5
+            CURRENCY_AVAILABLE: -1,
+            MAX_ORDER: -2,
+            MAX_RESERVE: -3,
+            MIN_SENIOR_RATIO: -4,
+            MAX_SENIOR_RATIO: -5
             });
         successful = 0;
     }
 
     function cleanUpTestCase() public {
         if(coordinator.submissionPeriod() == true) {
-            coordinator.submitSolution(0,0,0,0);
+            int status = coordinator.submitSolution(0,0,0,0);
+            assertEq(status, coordinator.SUCCESS());
             hevm.warp(now + 1 days);
             coordinator.executeEpoch();
         }
@@ -64,7 +64,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
 
         assertTrue(tCase.status == result);
 
-        // execute epoch to clean up state
+      // execute epoch to clean up state
         cleanUpTestCase();
     }
 
@@ -99,7 +99,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
             seniorRedeem : 0 ether,
             juniorRedeem : 0 ether
 
-            }), TestCaseDesc({name: "seniorSupply too high",status: validateErr.maxOrderConstraint}));
+            }), TestCaseDesc({name: "seniorSupply too high",status: validateErr.MAX_ORDER}));
 
         // case 3: juniorSupply too high
         executeTestCase(model,
@@ -109,7 +109,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
             seniorRedeem : 0 ether,
             juniorRedeem : 0 ether
 
-            }), TestCaseDesc({name: "juniorSupply too high", status: validateErr.maxOrderConstraint}));
+            }), TestCaseDesc({name: "juniorSupply too high", status: validateErr.MAX_ORDER}));
 
         // case 3: seniorRedeem too high
         executeTestCase(model,
@@ -119,7 +119,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
             seniorRedeem : 101 ether,
             juniorRedeem : 0 ether
 
-            }), TestCaseDesc({name: "seniorRedeem too high", status: validateErr.maxOrderConstraint}));
+            }), TestCaseDesc({name: "seniorRedeem too high", status: validateErr.MAX_ORDER}));
 
         // case 4: juniorRedeem too high
         executeTestCase(model,
@@ -129,7 +129,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
             seniorRedeem : 0 ether,
             juniorRedeem : 101 ether
 
-            }), TestCaseDesc({name: "juniorRedeem too high", status: validateErr.maxOrderConstraint}));
+            }), TestCaseDesc({name: "juniorRedeem too high", status: validateErr.MAX_ORDER}));
     }
 
     function testCurrencyAvailable() public {
@@ -145,7 +145,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
             seniorRedeem : 101 ether,
             juniorRedeem : 0 ether
 
-            }), TestCaseDesc({name: "not enough currency available", status: validateErr.currencyAvailableConstraint}));
+            }), TestCaseDesc({name: "not enough currency available", status: validateErr.CURRENCY_AVAILABLE}));
 
 
         executeTestCase(model,
@@ -155,7 +155,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
             seniorRedeem : 51 ether,
             juniorRedeem : 50 ether
 
-            }), TestCaseDesc({name: "not enough currency two redeems", status: validateErr.currencyAvailableConstraint}));
+            }), TestCaseDesc({name: "not enough currency two redeems", status: validateErr.CURRENCY_AVAILABLE}));
 
         executeTestCase(model,
             ModelInput({
@@ -188,7 +188,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
             seniorRedeem : 0 ether,
             juniorRedeem : 0 ether
 
-            }), TestCaseDesc({name: "reserve > maxReserve", status: validateErr.maxReserveConstraint}));
+            }), TestCaseDesc({name: "reserve > maxReserve", status: validateErr.MAX_RESERVE}));
 
     }
 
@@ -203,7 +203,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
             seniorRedeem : 0 ether,
             juniorRedeem : 0 ether
 
-            }), TestCaseDesc({name: "senior ratio too high", status: validateErr.maxSeniorRatioConstraint}));
+            }), TestCaseDesc({name: "senior ratio too high", status: validateErr.MAX_SENIOR_RATIO}));
 
         executeTestCase(model,
             ModelInput({
@@ -221,7 +221,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
             seniorRedeem : 0 ether,
             juniorRedeem : 0 ether
 
-            }), TestCaseDesc({name: "senior ratio too high edge", status: validateErr.maxSeniorRatioConstraint}));
+            }), TestCaseDesc({name: "senior ratio too high edge", status: validateErr.MAX_SENIOR_RATIO}));
     }
 
     function testSeniorRatioTooLow() public {
@@ -235,7 +235,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
             seniorRedeem : 0 ether,
             juniorRedeem : 0 ether
 
-            }), TestCaseDesc({name: "senior ratio too low", status: validateErr.minSeniorRatioConstraint}));
+            }), TestCaseDesc({name: "senior ratio too low", status: validateErr.MIN_SENIOR_RATIO}));
 
         executeTestCase(model,
             ModelInput({
@@ -278,7 +278,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
             seniorRedeem : 0 ether,
             juniorRedeem : 0 ether
 
-            }), TestCaseDesc({name: "junior ratio edge case too high", status: validateErr.minSeniorRatioConstraint}));
+            }), TestCaseDesc({name: "junior ratio edge case too high", status: validateErr.MIN_SENIOR_RATIO}));
     }
 }
 
