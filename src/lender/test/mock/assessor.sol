@@ -81,11 +81,11 @@ contract AssessorMock is Mock {
         return values_return["maxReserve"];
     }
 
-    function calcSeniorTokenPrice(uint NAV_, uint reserve_) external returns(uint) {
+    function calcSeniorTokenPrice(uint NAV_, uint reserve) external returns(uint) {
         return call("calcSeniorTokenPrice");
     }
 
-    function calcJuniorTokenPrice(uint NAV_, uint reserve_) external returns(uint) {
+    function calcJuniorTokenPrice(uint NAV_, uint reserve) external returns(uint) {
         return call("calcJuniorTokenPrice");
     }
 

@@ -17,51 +17,53 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "ds-test/test.sol";
 import "../../../test/mock/mock.sol";
+import "tinlake-auth/auth.sol";
 
-contract BaseTrancheMock is Mock {
-    function debt() public view returns (uint) {
-        return values_return["debt"];
+contract TrancheMock is Mock, Auth, DSTest {
+    uint totalSupply;
+    uint totalRedeem;
+
+    constructor() public {
+        wards[msg.sender] = 1;
     }
 
-    function updatedDebt() public returns (uint) {
-        calls["debt"]++;
-        return values_return["debt"];
+    function setEpochReturn(uint totalSupply_, uint totalRedeem_) public {
+        totalSupply = totalSupply_;
+        totalRedeem = totalRedeem_;
     }
 
-    function drip() public {
-        calls["drip"]++;
+    function getTotalOrders(uint epochID) public view returns(uint, uint) {
+        return (totalSupply, totalRedeem);
     }
-    function supply(address usr, uint currencyAmount, uint tokenAmount) public {
-        calls["supply"]++;
-        values_address["usr"] = usr;
-        values_uint["supply_currencyAmount"] = currencyAmount;
-        values_uint["supply_tokenAmount"] = tokenAmount;
+
+    function epochUpdate(uint epochID, uint supplyFulfillment_,
+        uint redeemFulfillment_, uint tokenPrice_) external {
+
+        values_uint["epochUpdate_epochID"] = epochID;
+        values_uint["epochUpdate_supplyFulfillment"] = supplyFulfillment_;
+        values_uint["epochUpdate_redeemFulfillment"] = redeemFulfillment_;
     }
-    function redeem(address usr, uint currencyAmount, uint tokenAmount) public {
-        calls["redeem"]++;
+
+    function supplyOrder(address usr, uint epochID, uint newSupplyAmount) public auth {
+        calls["supplyOrder"]++;
+        values_address["supply_usr"] = usr;
+        values_uint["supply_epochID"] = epochID;
+        values_uint["supplyAmount"] = newSupplyAmount;
+    }
+
+    function redeemOrder(address usr, uint epochID, uint newRedeemAmount) public auth {
+        calls["redeemOrder"]++;
         values_address["redeem_usr"] = usr;
-        values_uint["redeem_currencyAmount"] = currencyAmount;
-        values_uint["redeem_tokenAmount"] = tokenAmount;
-    }
-    function tokenSupply() public view returns (uint) {
-        return values_return["tokenSupply"];
+        values_uint["redeem_epochID"] = epochID;
+        values_uint["redeemAmount"] = newRedeemAmount;
     }
 
-    function borrow(address usr, uint amount) public {
-        calls["borrow"]++;
-        values_address["borrow_usr"] = usr;
-        values_uint["borrow_amount"] = amount;
+    function disburse(address usr, uint epochID) public auth {
+        calls["disburse"]++;
+        values_address["disburse_usr"] = usr;
+        values_uint["disburse_epochID"] = epochID;
     }
 
-    function repay(address usr, uint amount) public {
-        calls["repay"]++;
-        values_address["repay_usr"] = usr;
-        values_uint["repay_amount"] = amount;
-    }
+
 }
 
-contract TrancheMock is BaseTrancheMock {
-    function balance() public view returns (uint) {
-        return values_return["balance"];
-    }
-}
