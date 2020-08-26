@@ -18,10 +18,10 @@ pragma solidity >=0.5.15 <0.6.0;
 import "ds-test/test.sol";
 import "tinlake-math/math.sol";
 
-import "./../v3/tranche.sol";
-import "../../../test/simple/token.sol";
-import "../../test/mock/reserve.sol";
-import "./../../ticker.sol";
+import "./../tranche.sol";
+import "../../test/simple/token.sol";
+import "../test/mock/reserve.sol";
+import "./../ticker.sol";
 
 contract Hevm {
     function warp(uint256) public;
@@ -88,7 +88,7 @@ contract TrancheTest is DSTest, Math {
         assertEq(ticker.currentEpoch(), currentEpoch);
 
         // submit redeem order for certain epoch -> epoch 10 amount 80 TKN
-        tranche.redeemOrder(redeemEpochID, redeemAmount);
+        tranche.redeemOrder(self, redeemEpochID, redeemAmount);
 
         // assert redeemAmount was transferred to the tranche & burned
         // new investor token balance: initialBlance - redeemAmount
@@ -125,7 +125,7 @@ contract TrancheTest is DSTest, Math {
         assertEq(ticker.currentEpoch(), currentEpoch);
 
         // submit supply order for certain epoch -> epoch 10 amount 80 DAI
-        tranche.supplyOrder(supplyEpochID, supplyAmount);
+        tranche.supplyOrder(self, supplyEpochID, supplyAmount);
 
         // assert supplyAmount was transferred to the tranche
         // new investor balance: initialBlance - supplyAmount
@@ -163,7 +163,7 @@ contract TrancheTest is DSTest, Math {
         // investor approves currency to be supplied
         currency.approve(tranche_, supplyAmount);
         // submit supply order for certain epoch -> epoch 10 amount 80 DAI
-        tranche.supplyOrder(disburseEpochID, supplyAmount);
+        tranche.supplyOrder(self, disburseEpochID, supplyAmount);
 
         // settle epoch
         tranche.epochUpdate(disburseEpochID, supplyFullfillment, redeemFullfillment, tokenPrice);
@@ -172,7 +172,7 @@ contract TrancheTest is DSTest, Math {
         assertEq(token.balanceOf(tranche_), rmul(supplyAmount, supplyFullfillment));
 
         // disburse
-        tranche.disburse(disburseEpochID);
+        tranche.disburse(self, disburseEpochID);
         // check investor received correct amount of tokens
         assertEq(token.balanceOf(self), rdiv(rmul(supplyAmount, supplyFullfillment), tokenPrice));
         // check investor received correct amount of currency
