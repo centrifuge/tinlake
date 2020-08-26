@@ -265,5 +265,6 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, DataTypes {
 
         assertEq(submitSolution(solution), coordinator.ERR_MAX_ORDER());
     }
+
 }
 

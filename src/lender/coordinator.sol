@@ -16,13 +16,8 @@ pragma solidity >=0.5.15 <0.6.0;
 pragma experimental ABIEncoderV2;
 
 import "./ticker.sol";
+import "./data_types.sol";
 import "tinlake-auth/auth.sol";
-
-contract DataTypes  {
-    struct Fixed27 {
-        uint value;
-    }
-}
 
 interface EpochTrancheLike {
     function epochUpdate(uint epochID, uint supplyFulfillment_,
@@ -36,14 +31,14 @@ interface ReserveLike {
 }
 
 contract AssessorLike is DataTypes {
-    function calcSeniorTokenPrice(uint NAV_) external returns(Fixed27 memory tokenPrice);
-    function calcJuniorTokenPrice(uint NAV_) external returns(Fixed27 memory tokenPrice);
+    function calcSeniorTokenPrice(uint NAV, uint reserve) external returns(Fixed27 memory tokenPrice);
+    function calcJuniorTokenPrice(uint NAV, uint reserve) external returns(Fixed27 memory tokenPrice);
     function maxReserve() external view returns(uint);
-    function calcNAV() external returns (uint);
+    function currentNAV() external returns (uint);
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
     function seniorRatioBounds() external view returns(Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio);
-    function updateSenior(uint seniorDebt, uint seniorBalance) external;
+    function updateSeniorAsset(uint seniorDebt, uint seniorBalance, uint seniorRatio) external;
 }
 
 contract EpochCoordinator is Ticker, Auth, DataTypes  {
@@ -113,15 +108,15 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.getTotalOrders(closingEpoch);
         (uint orderSeniorSupply, uint orderSeniorRedeem) = seniorTranche.getTotalOrders(closingEpoch);
 
-        epochNAV = assessor.calcNAV();
+        epochNAV = assessor.currentNAV();
+        epochReserve = reserve.totalBalance();
 
         // calculate in DAI
-        epochSeniorTokenPrice = assessor.calcSeniorTokenPrice(epochNAV);
-        epochJuniorTokenPrice = assessor.calcJuniorTokenPrice(epochNAV);
+        epochSeniorTokenPrice = assessor.calcSeniorTokenPrice(epochNAV, epochReserve);
+        epochJuniorTokenPrice = assessor.calcJuniorTokenPrice(epochNAV, epochReserve);
 
         epochSeniorDebt = assessor.seniorDebt();
         epochSeniorBalance = assessor.seniorBalance();
-        epochReserve = reserve.totalBalance();
 
         /// calculate currency amounts
         order.seniorRedeem = rmul(orderSeniorRedeem, epochSeniorTokenPrice.value);
@@ -452,10 +447,12 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint seniorAsset = calcSeniorAssetValue(seniorRedeem, seniorSupply,
             assessor.seniorDebt(), assessor.seniorBalance(), newReserve);
 
-        (uint seniorDebt, uint seniorBalance) = reBalanceSeniorDebt(seniorAsset,
-            calcSeniorRatio(seniorAsset, epochNAV, newReserve));
 
-        assessor.updateSenior(seniorDebt, seniorBalance);
+        uint newSeniorRatio = calcSeniorRatio(seniorAsset, epochNAV, newReserve);
+        (uint seniorDebt, uint seniorBalance) = reBalanceSeniorDebt(seniorAsset,
+            newSeniorRatio);
+
+        assessor.updateSeniorAsset(seniorDebt, seniorBalance, newSeniorRatio);
 
         lastEpochExecuted = epochID;
         submissionPeriod = false;

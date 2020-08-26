@@ -23,9 +23,15 @@ contract ShelfLike {
     function balanceRequest() public returns (bool requestWant, uint256 amount);
 }
 
+contract AssessorLike {
+    function repaymentUpdate(uint amount) public;
+    function borrowUpdate(uint amount) public;
+}
+
 contract Reserve is Math, Auth {
     ERC20Like public currency;
     ShelfLike public shelf;
+    AssessorLike public assessor;
 
     uint256 public currencyAvailable;
 
@@ -42,6 +48,8 @@ contract Reserve is Math, Auth {
             shelf = ShelfLike(addr);
         } else if (contractName == "currency") {
             currency = ERC20Like(addr);
+        } else if (contractName == "assessor") {
+            assessor = AssessorLike(addr);
         } else revert();
     }
 
@@ -61,11 +69,13 @@ contract Reserve is Math, Auth {
                 currency.transferFrom(self, address(shelf), currencyAmount),
                 "currency-transfer-from-reserve-failed"
             );
+            assessor.borrowUpdate(currencyAmount);
             return;
         }
         require(
             currency.transferFrom(address(shelf), self, currencyAmount),
             "currency-transfer-from-shelf-failed"
         );
+        assessor.repaymentUpdate(currencyAmount);
     }
 }
