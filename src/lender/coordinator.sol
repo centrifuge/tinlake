@@ -114,6 +114,15 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.getTotalOrders(closingEpoch);
         (uint orderSeniorSupply, uint orderSeniorRedeem) = seniorTranche.getTotalOrders(closingEpoch);
 
+        //  if no orders exist epoch can be executed without validation
+        //  an updated NAV is not required because nobody wants to supply or redeem
+        if (orderSeniorRedeem == 0 && orderJuniorRedeem == 0 &&
+        orderSeniorSupply == 0 && orderJuniorSupply == 0) {
+            // skip entire epoch because of no orders
+            lastEpochExecuted = safeAdd(lastEpochExecuted, 1);
+            return;
+        }
+
         // take a snapshot of the current system state
         epochNAV = assessor.calcUpdateNAV();
         epochReserve = reserve.totalBalance();
@@ -131,12 +140,6 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         order.juniorSupply = orderJuniorSupply;
         order.seniorSupply = orderSeniorSupply;
 
-        //  if no orders exist epoch can be executed without validation
-        if (orderSeniorRedeem == 0 && orderJuniorRedeem == 0 &&
-            orderSeniorSupply == 0 && orderJuniorSupply == 0) {
-            _executeEpoch(0, 0, 0, 0);
-            return;
-        }
 
         /// can orders be to 100% fulfilled
         if (validate(orderSeniorRedeem, orderJuniorRedeem,
