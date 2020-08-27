@@ -38,8 +38,6 @@ contract Tranche is Math, Auth {
     mapping(uint => Epoch) public epochs;
 
     struct Epoch {
-        uint totalRedeem;
-        uint totalSupply;
         // denominated in RAY
         // percentage ONE == 100%
         uint redeemFulfillment;
@@ -48,9 +46,19 @@ contract Tranche is Math, Auth {
         uint supplyFulfillment;
         // tokenPrice after end of epoch
         uint tokenPrice;
-        mapping(address => uint) supplyCurrencyAmount;
-        mapping(address => uint) redeemTokenAmount;
+        bool executed;
     }
+
+    struct UserOrder {
+        uint epoch;
+        uint supplyCurrencyAmount;
+        uint redeemTokenAmount;
+    }
+
+    mapping(address => UserOrder) users;
+
+    uint public  globalSupply;
+    uint public  globalRedeem;
 
     ERC20Like public currency;
     ERC20Like public token;
@@ -59,10 +67,13 @@ contract Tranche is Math, Auth {
 
     address self;
 
+    uint currentEpoch = 0;
+
     constructor(address currency_, address token_) public {
         wards[msg.sender] = 1;
         token = ERC20Like(token_);
         currency = ERC20Like(currency_);
+
 
         self = address(this);
     }
@@ -92,13 +103,17 @@ contract Tranche is Math, Auth {
     }
 
     // supplyOrder function can be used to place or revoke an supply
-    function supplyOrder(address usr, uint epochID, uint newSupplyAmount) public auth {
-        require((epochID >= ticker.currentEpoch()), "epoch-already-over");
-        require((epochs[epochID].tokenPrice == 0), "epoch-already-settled");
+    function supplyOrder(address usr, uint newSupplyAmount) public auth {
+        require(users[usr].epochID == 0 || users[usr].epochID == currentEpoch, "disburse required");
+        users[usr].epochID = currentEpoch;
 
-        uint currentSupplyAmount = epochs[epochID].supplyCurrencyAmount[usr];
-        epochs[epochID].supplyCurrencyAmount[usr] = newSupplyAmount;
-        epochs[epochID].totalSupply = safeAdd(safeSub(epochs[epochID].totalSupply, currentSupplyAmount), newSupplyAmount);
+        uint currentSupplyAmount = users[usr].supplyCurrencyAmount;
+
+        users[usr].epochID = epochID;
+        users[usr].supplyCurrencyAmount = newSupplyAmount;
+
+        globalSupply = safeAdd(safeSub(globalSupply, currentSupplyAmount), newSupplyAmount);
+
         if (newSupplyAmount > currentSupplyAmount) {
             uint delta = safeSub(newSupplyAmount, currentSupplyAmount);
             require(currency.transferFrom(usr, self, delta), "currency-transfer-failed");
@@ -111,13 +126,13 @@ contract Tranche is Math, Auth {
     }
 
     // redeemOrder function can be used to place or revoke a redeem
-    function redeemOrder(address usr, uint epochID, uint newRedeemAmount) public auth {
-        require((epochID >= ticker.currentEpoch()), "epoch-already-over");
-        require((epochs[epochID].tokenPrice == 0), "epoch-already-settled");
+    function redeemOrder(address usr, uint newRedeemAmount) public auth {
+        require(users[usr].epochID == 0 || users[usr].epochID == currentEpoch, "disbursment-required");
+        users[usr].epochID = currentEpoch;
 
-        uint currentRedeemAmount = epochs[epochID].redeemTokenAmount[usr];
-        epochs[epochID].redeemTokenAmount[usr] = newRedeemAmount;
-        epochs[epochID].totalRedeem = safeAdd(safeSub(epochs[epochID].totalRedeem, currentRedeemAmount), newRedeemAmount);
+        uint currentRedeemAmount = users[usr].redeemTokenAmount;
+        users[usr].redeemTokenAmount = newRedeemAmount;
+        globalRedeem = safeAdd(safeSub(globalRedeem, currentRedeemAmount), newRedeemAmount);
 
         if (newRedeemAmount > currentRedeemAmount) {
             uint delta = safeSub(newRedeemAmount, currentRedeemAmount);
@@ -132,8 +147,18 @@ contract Tranche is Math, Auth {
     }
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
-    function disburse(address usr, uint epochID) public auth {
-        // require epoch is settled
+    function disburse(address usr) public auth {
+        require(users[usr].epoch < currentEpoch);
+
+        // todo add end epochID if zero current epoch
+
+        uint currEpoch = users[usr].epoch;
+
+        while(currEpoch == true) {
+            // todo
+
+
+        }
         require((epochs[epochID].tokenPrice > 0), "epoch-not-settled-yet");
 
         uint currencyAmount = calcCurrencyDisbursement(usr, epochID);
@@ -164,14 +189,27 @@ contract Tranche is Math, Auth {
     }
 
     // called by epoch coordinator in epoch execute method
-    function epochUpdate(uint epochID, uint supplyFulfillment_, uint redeemFulfillment_, uint tokenPrice_) public auth {
+    function epochUpdate(uint supplyFulfillment_, uint redeemFulfillment_, uint tokenPrice_, uint epochSnapshotSupply, uint epochSnapshotRedeem) public auth {
+        uint epochID = safeSub(currentEpoch, 1);
+
         epochs[epochID].supplyFulfillment = supplyFulfillment_;
         epochs[epochID].redeemFulfillment = redeemFulfillment_;
         epochs[epochID].tokenPrice = tokenPrice_;
+        epochs[epochID].executed = true;
 
         adjustTokenBalance(epochID);
         adjustCurrencyBalance(epochID);
+
+        globalSupply = safeAdd(safeSub(globalSupply, epochSnapshotSupply), rmul(epochSnapshotSupply, safSub(ONE, supplyFulfillment_)));
+        globalRedeem = safeAdd(safeSub(globalRedeem, epochSnapshotRedeem), rmul(epochSnapshotRedeem, safeSub(ONE, redeemFulfillment_)));
+
     }
+
+    function closeEpoch() public auth returns(uint globalSupply, uint globalRedeem) {
+        currentEpoch = safeAdd(currentEpoch, 1);
+        return (globalSupply, globalRedeem);
+    }
+
 
     // adjust token balance after epoch execution -> min/burn tokens
     function adjustTokenBalance(uint epochID) internal {
