@@ -252,7 +252,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint impScoreRatio = 0;
         uint impScoreReserve = 0;
 
-        if(bestRatioImprovement == 0) {
+        if (bestRatioImprovement == 0) {
             // define no orders score as benchmark if no previous submission exists
             (err, impScoreRatio, impScoreReserve) = scoreImprovement(currSeniorRatio, epochReserve);
             saveNewImprovement(impScoreRatio, impScoreReserve);
