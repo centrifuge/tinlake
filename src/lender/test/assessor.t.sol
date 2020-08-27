@@ -57,8 +57,8 @@ contract AssessorTest is DSTest, Math {
     }
 
     function testCurrentNAV() public {
-        navFeed.setReturn("currentNAV", 100 ether);
-        assertEq(assessor.currentNAV(), 100 ether);
+        navFeed.setReturn("calcUpdateNAV", 100 ether);
+        assertEq(assessor.calcUpdateNAV(), 100 ether);
     }
 
     function testFileAssessor() public {

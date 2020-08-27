@@ -148,7 +148,7 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         assessor.setReturn("maxReserve", model_.maxReserve);
         assessor.setReturn("calcJuniorTokenPrice", ONE);
         assessor.setReturn("calcSeniorTokenPrice", ONE);
-        assessor.setReturn("currentNAV", model_.NAV);
+        assessor.setReturn("calcUpdateNAV", model_.NAV);
         reserve.setReturn("balance", model_.reserve);
         assessor.setReturn("seniorDebt", model_.seniorDebt);
         assessor.setReturn("seniorBalance", model_.seniorBalance);

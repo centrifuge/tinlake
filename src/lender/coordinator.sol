@@ -34,11 +34,11 @@ contract AssessorLike is DataTypes {
     function calcSeniorTokenPrice(uint NAV, uint reserve) external returns(Fixed27 memory tokenPrice);
     function calcJuniorTokenPrice(uint NAV, uint reserve) external returns(Fixed27 memory tokenPrice);
     function maxReserve() external view returns(uint);
-    function currentNAV() external returns (uint);
+    function calcUpdateNAV() external returns (uint);
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
     function seniorRatioBounds() external view returns(Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio);
-    function updateSeniorAsset(uint seniorDebt, uint seniorBalance, uint seniorRatio) external;
+    function updateSeniorAsset(uint seniorRatio) external;
 }
 
 contract EpochCoordinator is Ticker, Auth, DataTypes  {
@@ -66,8 +66,8 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     Fixed27 public epochJuniorTokenPrice;
 
     uint public epochNAV;
-    uint public epochSeniorDebt;
-    uint public epochSeniorBalance;
+    uint public epochSeniorAsset;
+
     uint public epochReserve;
 
     bool public submissionPeriod;
@@ -108,15 +108,16 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.getTotalOrders(closingEpoch);
         (uint orderSeniorSupply, uint orderSeniorRedeem) = seniorTranche.getTotalOrders(closingEpoch);
 
-        epochNAV = assessor.currentNAV();
+        // take a snapshot of the current system state
+        epochNAV = assessor.calcUpdateNAV();
         epochReserve = reserve.totalBalance();
 
         // calculate in DAI
         epochSeniorTokenPrice = assessor.calcSeniorTokenPrice(epochNAV, epochReserve);
         epochJuniorTokenPrice = assessor.calcJuniorTokenPrice(epochNAV, epochReserve);
 
-        epochSeniorDebt = assessor.seniorDebt();
-        epochSeniorBalance = assessor.seniorBalance();
+        epochSeniorAsset = safeAdd(assessor.seniorDebt(), assessor.seniorBalance());
+
 
         /// calculate currency amounts
         order.seniorRedeem = rmul(orderSeniorRedeem, epochSeniorTokenPrice.value);
@@ -233,7 +234,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
     function _improveScore(uint seniorRedeem, uint juniorRedeem,
         uint juniorSupply, uint seniorSupply) internal returns(int) {
-        Fixed27 memory currSeniorRatio = Fixed27(calcSeniorRatio(safeAdd(epochSeniorBalance, epochSeniorDebt),
+        Fixed27 memory currSeniorRatio = Fixed27(calcSeniorRatio(epochSeniorAsset,
             epochNAV, epochReserve));
 
         if(bestSubScore == 0) {
@@ -244,7 +245,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
 
         Fixed27 memory newSeniorRatio = Fixed27(calcSeniorRatio(calcSeniorAssetValue( seniorRedeem, seniorSupply,
-            epochSeniorDebt, epochSeniorBalance, newReserve), epochNAV, newReserve));
+            epochSeniorAsset, newReserve), epochNAV, newReserve));
 
         uint score =  scoreImprovement(newSeniorRatio, currSeniorRatio, newReserve);
 
@@ -370,7 +371,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint newReserve = safeSub(currencyAvailable, currencyOut);
 
         return validatePoolConstraints(newReserve, calcSeniorAssetValue(seniorRedeem, seniorSupply,
-            epochSeniorDebt, epochSeniorBalance, newReserve));
+            epochSeniorAsset, newReserve));
     }
 
     function executeEpoch() public {
@@ -381,9 +382,9 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     }
 
     function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply,
-        uint seniorDebt, uint seniorBalance, uint reserve) public view returns (uint seniorAsset) {
+        uint currSeniorAsset, uint reserve) public view returns (uint seniorAsset) {
 
-        uint seniorAsset =  safeSub(safeAdd(safeAdd(seniorDebt, seniorBalance), seniorSupply), seniorRedeem);
+        uint seniorAsset =  safeSub(safeAdd(currSeniorAsset, seniorSupply), seniorRedeem);
         uint totalPoolValue = safeAdd(epochNAV, reserve);
         if(seniorAsset > totalPoolValue) {
             seniorAsset = totalPoolValue;
@@ -405,14 +406,6 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         return rdiv(seniorAsset, assets);
     }
 
-
-    function reBalanceSeniorDebt(uint seniorAsset,
-        uint currSeniorRatio) public  returns (uint seniorDebt_, uint seniorBalance_) {
-
-        seniorDebt_ =  rmul(epochNAV, currSeniorRatio);
-        return (seniorDebt_, safeSub(seniorAsset, seniorDebt_));
-    }
-
     function calcFulfillment(uint amount, uint totalOrder) public view returns(Fixed27 memory percent) {
         if(amount == 0 || totalOrder == 0) {
             return Fixed27(0);
@@ -430,7 +423,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     function _executeEpoch(uint seniorRedeem, uint juniorRedeem,
         uint seniorSupply, uint juniorSupply) internal {
 
-        uint epochID = lastEpochExecuted+1;
+        uint epochID = safeAdd(lastEpochExecuted, 1);
 
         seniorTranche.epochUpdate(epochID, calcFulfillment(seniorSupply, order.seniorSupply).value,
             calcFulfillment(seniorRedeem, order.seniorRedeem).value,
@@ -445,14 +438,13 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         , seniorSupply, juniorSupply);
 
         uint seniorAsset = calcSeniorAssetValue(seniorRedeem, seniorSupply,
-            assessor.seniorDebt(), assessor.seniorBalance(), newReserve);
+           epochSeniorAsset, newReserve);
 
 
         uint newSeniorRatio = calcSeniorRatio(seniorAsset, epochNAV, newReserve);
-        (uint seniorDebt, uint seniorBalance) = reBalanceSeniorDebt(seniorAsset,
-            newSeniorRatio);
 
-        assessor.updateSeniorAsset(seniorDebt, seniorBalance, newSeniorRatio);
+
+        assessor.updateSeniorAsset(newSeniorRatio);
 
         lastEpochExecuted = epochID;
         submissionPeriod = false;

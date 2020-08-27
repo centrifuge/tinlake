@@ -22,7 +22,8 @@ import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
 
 interface NAVFeedLike {
-    function currentNAV() external view returns (uint);
+    function calcUpdateNAV() external returns (uint);
+    function approximatedNAV() external view returns (uint);
 }
 
 interface TrancheLike {
@@ -83,33 +84,24 @@ contract Assessor is Auth, DataTypes, Interest  {
         else {revert("unknown-variable");}
     }
 
-    function updateSeniorAsset(uint epochSeniorDebt, uint epochSeniorBalance, uint seniorRatio) external auth {
+    function updateSeniorAsset(uint seniorRatio) external auth {
         dripSeniorDebt();
 
-        uint currSeniorAsset = safeAdd(seniorDebt_, seniorBalance_);
-        uint epochSeniorAsset = safeAdd(epochSeniorDebt, epochSeniorBalance);
+        uint seniorAsset = safeAdd(seniorDebt_, seniorBalance_);
 
-        // todo think about edge cases here and move maybe rebalancing method here
-        // todo consider multiple epoch executes
-
-        // loan repayments happened during epoch execute
-        if(currSeniorAsset > epochSeniorAsset) {
-            uint delta = safeSub(currSeniorAsset, epochSeniorAsset);
-            uint seniorDebtInc = rmul(delta, seniorRatio);
-            epochSeniorDebt = safeAdd(epochSeniorDebt, seniorDebtInc);
-            epochSeniorBalance = safeAdd(epochSeniorBalance, safeSub(delta, seniorDebtInc));
-
-        }
-        seniorDebt_ = epochSeniorDebt;
-        seniorBalance_ = epochSeniorBalance;
+        // re-balancing according to new ratio
+        // we use the approximated NAV here because during the submission period
+        // new loans might have been repaid in the meanwhile which are not considered in the epochNAV
+        seniorDebt_ = rmul(navFeed.approximatedNAV(), seniorRatio);
+        seniorBalance_ = safeSub(seniorAsset, seniorDebt_);
     }
 
     function seniorRatioBounds() public view returns (uint minSeniorRatio_, uint maxSeniorRatio_) {
         return (minSeniorRatio.value, maxSeniorRatio.value);
     }
 
-    function currentNAV() external view returns (uint) {
-        return navFeed.currentNAV();
+    function calcUpdateNAV() external returns (uint) {
+         return navFeed.calcUpdateNAV();
     }
 
     function calcSeniorTokenPrice(uint epochNAV, uint epochReserve) external returns(uint) {
@@ -144,6 +136,7 @@ contract Assessor is Auth, DataTypes, Interest  {
         }
         seniorDebt_ = safeSub(seniorDebt_, decAmount);
 
+        // todo update NAV in assessor with decrease
     }
 
     function borrowUpdate(uint currencyAmount) public auth {
@@ -158,6 +151,8 @@ contract Assessor is Auth, DataTypes, Interest  {
             return;
         }
         seniorBalance_ = safeSub(seniorBalance_, incAmount);
+
+        // todo update NAV in assessor with increase
     }
 
     function dripSeniorDebt() public returns (uint) {
