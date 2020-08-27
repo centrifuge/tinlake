@@ -19,7 +19,7 @@ import "ds-test/test.sol";
 import "tinlake-math/math.sol";
 
 import "./../assessor.sol";
-import "./mock/epoch-tranche.sol";
+import "./mock/tranche.sol";
 import "./mock/navFeed.sol";
 
 contract Hevm {
@@ -29,8 +29,8 @@ contract Hevm {
 contract AssessorTest is DSTest, Math {
     Hevm hevm;
     Assessor assessor;
-    EpochTrancheMock seniorTranche;
-    EpochTrancheMock juniorTranche;
+    TrancheMock seniorTranche;
+    TrancheMock juniorTranche;
     NAVFeedMock navFeed;
 
     address seniorTranche_;
@@ -41,8 +41,8 @@ contract AssessorTest is DSTest, Math {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
 
-        seniorTranche = new EpochTrancheMock();
-        juniorTranche = new EpochTrancheMock();
+        seniorTranche = new TrancheMock();
+        juniorTranche = new TrancheMock();
 
         seniorTranche_ = address(seniorTranche);
         juniorTranche_ = address(juniorTranche);
