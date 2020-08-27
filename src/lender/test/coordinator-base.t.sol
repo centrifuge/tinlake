@@ -99,7 +99,8 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
 
-        coordinator = new EpochCoordinator();
+        uint challengeTime = 1 hours;
+        coordinator = new EpochCoordinator(challengeTime);
         coordinator.depend("juniorTranche", juniorTranche_);
         coordinator.depend("seniorTranche", seniorTranche_);
         coordinator.depend("reserve", reserve_);
