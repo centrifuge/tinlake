@@ -32,25 +32,22 @@ interface TrancheLike {
 
 contract Assessor is Auth, DataTypes, Interest  {
     // senior ratio from the last epoch executed
-    Fixed27 public seniorRatio;
-
-    uint public seniorDebt_;
-    uint public seniorBalance_;
-
-    // system parameter
+    Fixed27        public seniorRatio;
+    uint           public seniorDebt_;
+    uint           public seniorBalance_;
 
     // interest rate per second for senior tranche
-    Fixed27 public seniorInterestRate;
-    uint public lastUpdateSeniorInterest;
+    Fixed27         public seniorInterestRate;
+    uint            public lastUpdateSeniorInterest;
 
-    Fixed27 public maxSeniorRatio;
-    Fixed27 public minSeniorRatio;
+    Fixed27         public maxSeniorRatio;
+    Fixed27         public minSeniorRatio;
 
-    uint public maxReserve;
+    uint            public maxReserve;
 
-    TrancheLike seniorTranche;
-    TrancheLike juniorTranche;
-    NAVFeedLike navFeed;
+    TrancheLike     public seniorTranche;
+    TrancheLike     public juniorTranche;
+    NAVFeedLike     public navFeed;
 
     constructor() public {
         wards[msg.sender] = 1;
@@ -84,7 +81,7 @@ contract Assessor is Auth, DataTypes, Interest  {
         else {revert("unknown-variable");}
     }
 
-    function updateSeniorAsset(uint seniorRatio) external auth {
+    function updateSeniorAsset(uint seniorRatio_) external auth {
         dripSeniorDebt();
 
         uint seniorAsset = safeAdd(seniorDebt_, seniorBalance_);
@@ -92,8 +89,10 @@ contract Assessor is Auth, DataTypes, Interest  {
         // re-balancing according to new ratio
         // we use the approximated NAV here because during the submission period
         // new loans might have been repaid in the meanwhile which are not considered in the epochNAV
-        seniorDebt_ = rmul(navFeed.approximatedNAV(), seniorRatio);
+        seniorDebt_ = rmul(navFeed.approximatedNAV(), seniorRatio_);
         seniorBalance_ = safeSub(seniorAsset, seniorDebt_);
+
+        seniorRatio  = Fixed27(seniorRatio_);
     }
 
     function seniorRatioBounds() public view returns (uint minSeniorRatio_, uint maxSeniorRatio_) {
@@ -135,8 +134,6 @@ contract Assessor is Auth, DataTypes, Interest  {
             return;
         }
         seniorDebt_ = safeSub(seniorDebt_, decAmount);
-
-        // todo update NAV in assessor with decrease
     }
 
     function borrowUpdate(uint currencyAmount) public auth {
@@ -151,8 +148,6 @@ contract Assessor is Auth, DataTypes, Interest  {
             return;
         }
         seniorBalance_ = safeSub(seniorBalance_, incAmount);
-
-        // todo update NAV in assessor with increase
     }
 
     function dripSeniorDebt() public returns (uint) {

@@ -34,7 +34,6 @@ contract TrancheTest is DSTest, Math {
     ReserveMock reserve;
     Ticker ticker;
 
-
     Hevm hevm;
 
     address tranche_;
@@ -52,7 +51,10 @@ contract TrancheTest is DSTest, Math {
         reserve_ = address(reserve);
         token = new SimpleToken("TIN", "Tranche", "1", 0);
         currency = new SimpleToken("CUR", "Currency", "1", 0);
-        tranche = new Tranche(address(currency), address(token), address(ticker), reserve_);
+        tranche = new Tranche(address(currency), address(token));
+        tranche.depend("ticker", address(ticker));
+        tranche.depend("reserve", reserve_);
+
         tranche_ = address(tranche);
 
         self = address(this);

@@ -42,14 +42,6 @@ contract AssessorLike is DataTypes {
 }
 
 contract EpochCoordinator is Ticker, Auth, DataTypes  {
-    EpochTrancheLike juniorTranche;
-    EpochTrancheLike seniorTranche;
-
-    ReserveLike reserve;
-    AssessorLike assessor;
-
-    uint public lastEpochExecuted;
-
     struct OrderSummary {
         uint  seniorRedeem;
         uint  juniorRedeem;
@@ -57,25 +49,31 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint  seniorSupply;
     }
 
-    OrderSummary public bestSubmission;
-    uint public  bestSubScore;
-    bool public gotValidPoolConSubmission;
-    OrderSummary public order;
+    EpochTrancheLike public juniorTranche;
+    EpochTrancheLike public seniorTranche;
 
-    Fixed27 public epochSeniorTokenPrice;
-    Fixed27 public epochJuniorTokenPrice;
+    ReserveLike      public reserve;
+    AssessorLike     public assessor;
 
-    uint public epochNAV;
-    uint public epochSeniorAsset;
+    uint             public lastEpochExecuted;
 
-    uint public epochReserve;
+    OrderSummary    public bestSubmission;
+    uint            public  bestSubScore;
+    bool            public gotValidPoolConSubmission;
+    OrderSummary    public order;
 
-    bool public submissionPeriod;
+    Fixed27         public epochSeniorTokenPrice;
+    Fixed27         public epochJuniorTokenPrice;
+
+    uint            public epochNAV;
+    uint            public epochSeniorAsset;
+    uint            public epochReserve;
+
+    bool            public submissionPeriod;
 
     // challenge period end timestamp
-    uint public minChallengePeriodEnd;
-
-    uint public challengeTime;
+    uint            public minChallengePeriodEnd;
+    uint            public challengeTime;
 
     int public constant SUCCESS = 0;
     int public constant ERR_CURRENCY_AVAILABLE = -1;
@@ -85,9 +83,17 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     int public constant ERR_MAX_SENIOR_RATIO = -5;
     int public constant ERR_NOT_NEW_BEST = -6;
 
-    constructor() public {
+    constructor(uint challengeTime_) public {
         wards[msg.sender] = 1;
-        challengeTime = 1 hours;
+        challengeTime = challengeTime_;
+    }
+
+    function file(bytes32 name, uint value) public auth {
+        if(name == "challengeTime") {
+            challengeTime = value;
+        } else {
+            revert("unknown-name");
+        }
     }
 
     /// sets the dependency to another contract
