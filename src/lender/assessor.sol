@@ -134,6 +134,7 @@ contract Assessor is Auth, DataTypes, Interest  {
             return;
         }
         seniorDebt_ = safeSub(seniorDebt_, decAmount);
+
     }
 
     function borrowUpdate(uint currencyAmount) public auth {

@@ -23,11 +23,6 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, DataTypes {
         super.setUp();
     }
 
-    function submitSolution(ModelInput memory solution) internal returns(int) {
-        return coordinator.submitSolution(solution.seniorRedeem, solution.juniorRedeem,
-            solution.juniorSupply, solution.seniorSupply);
-    }
-
     function testFailNoSubmission() public {
         coordinator.submitSolution(10 ether, 10 ether, 10 ether, 10 ether);
     }
@@ -114,15 +109,6 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, DataTypes {
 
         assertTrue(coordinator.checkRatioInRange(currSeniorRatio, Fixed27(model.minSeniorRatio), Fixed27(model.maxSeniorRatio)) == currSeniorRatioInRange);
         assertTrue((coordinator.epochReserve() <= assessor.maxReserve()) == reserveHealthy);
-    }
-
-    function calcNewSeniorRatio(LenderModel memory model, ModelInput memory input) public returns (uint) {
-        uint currencyAvailable = model.reserve + input.seniorSupply + input.juniorSupply;
-        uint currencyOut = input.seniorRedeem + input.juniorRedeem;
-
-        uint seniorAsset = (model.seniorBalance + model.seniorDebt + input.seniorSupply) - input.seniorRedeem;
-
-        return rdiv(seniorAsset, model.NAV + currencyAvailable-currencyOut);
     }
 
     // from unhealthy to healthy with submission
