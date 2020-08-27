@@ -242,39 +242,46 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         Fixed27 memory currSeniorRatio = Fixed27(calcSeniorRatio(epochSeniorAsset,
             epochNAV, epochReserve));
 
+        int err = 0;
+        uint impScoreRatio = 0;
+        uint impScoreReserve = 0;
+
         if(bestRatioImprovement == 0) {
             // define no orders score as benchmark if no previous submission exists
-            scoreImprovement(currSeniorRatio, currSeniorRatio, epochReserve);
+            (err, impScoreRatio, impScoreReserve) = scoreImprovement(currSeniorRatio, epochReserve);
+            saveNewImprovement(impScoreRatio, impScoreReserve);
         }
 
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
 
-        Fixed27 memory newSeniorRatio = Fixed27(calcSeniorRatio(calcSeniorAssetValue( seniorRedeem, seniorSupply,
-            epochSeniorAsset, newReserve), epochNAV, newReserve));
+        Fixed27 memory newSeniorRatio = Fixed27(calcSeniorRatio(calcSeniorAssetValue(seniorRedeem, seniorSupply,
+            epochSeniorAsset, newReserve, epochNAV), epochNAV, newReserve));
 
-        int err = scoreImprovement(newSeniorRatio, currSeniorRatio, newReserve);
+        (err, impScoreRatio, impScoreReserve) = scoreImprovement(newSeniorRatio, newReserve);
 
         if (err  == ERR_NOT_NEW_BEST) {
             // solution is not the best => -1
             return err;
         }
 
+        saveNewImprovement(impScoreRatio, impScoreReserve);
+
         // solution doesn't satisfy all pool constraints but improves the current violation
-        // improvement only gets 0 points for comparing with full satisfaction
+        // improvement only gets 0 points for alternative solutions in the feasible region
         saveNewOptimum(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply, 0);
-        return 0;
+        return NEW_BEST;
     }
 
-    function scoreReserveImprovement(Fixed27 memory newReserve_) public view returns (uint score) {
+    function scoreReserveImprovement(uint newReserve_) public view returns (uint score) {
         if (newReserve_ <= assessor.maxReserve()) {
             return bigNumber;
         }
         // normalize reserve by defining maxReserve as ONE
         Fixed27 memory normalizedNewReserve = Fixed27(rdiv(newReserve_, assessor.maxReserve()));
-        return rmul(1000, rdiv(ONE, abs(safeDiv(ONE, 2), newReserve_.value)));
+        return rmul(1000, rdiv(ONE, abs(safeDiv(ONE, 2), normalizedNewReserve.value)));
     }
 
-    function scoreRatioImprovement(Fixed27 memory newSeniorRatio) public returns (uint) {
+    function scoreRatioImprovement(Fixed27 memory newSeniorRatio) public view returns (uint) {
         (Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio) = assessor.seniorRatioBounds();
         if (checkRatioInRange(newSeniorRatio, minSeniorRatio, maxSeniorRatio) == true) {
             return bigNumber;
@@ -289,30 +296,26 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         bestReserveImprovement = impScoreReserve;
     }
 
-
-    function scoreImprovement(Fixed27 memory newSeniorRatio, Fixed27 memory currSeniorRatio, uint newReserve_) public returns(int) {
-        uint impScoreRatio = scoreRatioImprovement(newSeniorRatio);
+    function scoreImprovement(Fixed27 memory newSeniorRatio_, uint newReserve_) public view returns(int, uint, uint) {
+        uint impScoreRatio = scoreRatioImprovement(newSeniorRatio_);
         uint impScoreReserve = scoreReserveImprovement(newReserve_);
 
+        // the highest priority has fixing the currentSeniorRatio
+        // if the ratio is improved, we can ignore reserve
         if (impScoreRatio > bestRatioImprovement) {
-            // we found new best
-            saveNewImprovement(impScoreRatio, impScoreReserve);
-            return NEW_BEST;
-
+            // we found a new best
+            return (NEW_BEST, impScoreRatio, impScoreReserve);
         }
 
+        // only if the submitted solution ratio score equals the current best ratio
+        // we determine if the submitted solution improves the reserve
         if (impScoreRatio == bestRatioImprovement) {
-
               if (impScoreReserve > bestReserveImprovement) {
-                  saveNewImprovement(impScoreRatio, impScoreReserve);
-                return NEW_BEST;
+                  return (NEW_BEST, impScoreRatio, impScoreReserve);
               }
-
         }
-
-        return ERR_NOT_NEW_BEST;
+        return (ERR_NOT_NEW_BEST, impScoreRatio, impScoreReserve);
     }
-
 
     function scoreSolution(uint seniorRedeem, uint juniorRedeem,
         uint juniorSupply, uint seniorSupply) public pure returns(uint) {
@@ -342,7 +345,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         }
 
         // successful => 0
-        return  SUCCESS;
+        return SUCCESS;
     }
 
     function validatePoolConstraints(uint reserve, uint seniorAsset) public view returns (int err) {
@@ -387,7 +390,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint newReserve = safeSub(currencyAvailable, currencyOut);
 
         return validatePoolConstraints(newReserve, calcSeniorAssetValue(seniorRedeem, seniorSupply,
-            epochSeniorAsset, newReserve));
+            epochSeniorAsset, newReserve, epochNAV));
     }
 
     function executeEpoch() public {
@@ -398,18 +401,18 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     }
 
     function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply,
-        uint currSeniorAsset, uint reserve) public view returns (uint seniorAsset) {
+        uint currSeniorAsset, uint reserve, uint NAV) public view returns (uint seniorAsset) {
 
         uint seniorAsset =  safeSub(safeAdd(currSeniorAsset, seniorSupply), seniorRedeem);
-        uint totalPoolValue = safeAdd(epochNAV, reserve);
-        if(seniorAsset > totalPoolValue) {
-            seniorAsset = totalPoolValue;
+        uint assets = calcAssets(NAV, reserve);
+        if(seniorAsset > assets) {
+            seniorAsset = assets;
         }
 
         return seniorAsset;
     }
 
-    function calcAssets(uint NAV, uint reserve_) public view returns(uint) {
+    function calcAssets(uint NAV, uint reserve_) public pure returns(uint) {
         return safeAdd(NAV, reserve_);
     }
 
@@ -454,7 +457,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         , seniorSupply, juniorSupply);
 
         uint seniorAsset = calcSeniorAssetValue(seniorRedeem, seniorSupply,
-           epochSeniorAsset, newReserve);
+           epochSeniorAsset, newReserve, epochNAV);
 
 
         uint newSeniorRatio = calcSeniorRatio(seniorAsset, epochNAV, newReserve);
@@ -462,6 +465,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
         assessor.updateSeniorAsset(newSeniorRatio);
 
+        // reset state for next epochs
         lastEpochExecuted = epochID;
         submissionPeriod = false;
         minChallengePeriodEnd = 0;
