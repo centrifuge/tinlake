@@ -144,7 +144,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
 
         // should receive 80% => 80 ether
         (uint payoutCurrencyAmount, uint payoutTokenAmount,
-        uint usrRemainingSupply,  uint usrRemainingRedeem) =  tranche.disburse(self);
+        uint usrRemainingSupply,  uint usrRemainingRedeem) =  tranche.calcDisburse(self);
 
         assertEq(payoutCurrencyAmount, 80 ether);
         assertEq(usrRemainingSupply, 20 ether);
