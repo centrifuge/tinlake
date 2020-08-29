@@ -14,7 +14,9 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-contract FixedPoint  {
+import "ds-test/test.sol";
+
+contract FixedPoint is DSTest {
     struct Fixed27 {
         uint value;
     }

@@ -143,7 +143,7 @@ contract Tranche is Math, Auth, FixedPoint {
         }
     }
 
-    function calcDisburse(address usr) public view returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint usrRemainingSupply, uint usrRemainingRedeem) {
+    function calcDisburse(address usr) public view returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         // no disburse possible in this epoch
         if (users[usr].orderedInEpoch  == currentEpoch) {
             return (0, 0, users[usr].supplyCurrencyAmount, users[usr].redeemTokenAmount);
@@ -151,38 +151,47 @@ contract Tranche is Math, Auth, FixedPoint {
 
         uint epochIdx = users[usr].orderedInEpoch;
 
-        uint usrRemainingSupply = users[usr].supplyCurrencyAmount;
-        uint usrRemainingRedeem = users[usr].redeemTokenAmount;
+        uint remainingSupplyCurrency = users[usr].supplyCurrencyAmount;
+        uint remainingRedeemToken = users[usr].redeemTokenAmount;
 
-        while(epochIdx != currentEpoch && (usrRemainingSupply != 0 || usrRemainingRedeem != 0 )){
-            if(usrRemainingSupply != 0) {
-                usrRemainingSupply = safeSub(usrRemainingSupply, rmul(usrRemainingSupply, epochs[epochIdx].tokenPrice.value));
+        uint amount = 0;
+        uint payoutCurrencyAmount = 0;
+        uint payoutTokenAmount = 0;
+
+        while(epochIdx != currentEpoch && (remainingSupplyCurrency != 0 || remainingRedeemToken != 0 )){
+            if(remainingSupplyCurrency != 0) {
+                amount = rmul(remainingSupplyCurrency, epochs[epochIdx].supplyFulfillment.value);
+                // supply currency payout in token
+                if (amount != 0) {
+                    payoutTokenAmount = safeAdd(payoutTokenAmount, rdiv(amount, epochs[epochIdx].tokenPrice.value));
+                    remainingSupplyCurrency = safeSub(remainingSupplyCurrency, amount);
+                }
             }
 
-            if(usrRemainingRedeem != 0) {
-                usrRemainingRedeem = safeSub(usrRemainingRedeem, rmul(usrRemainingRedeem, epochs[epochIdx].tokenPrice.value));
-
+            if(remainingRedeemToken != 0) {
+                amount = rmul(remainingRedeemToken, epochs[epochIdx].redeemFulfillment.value);
+                // redeem token payout in currency
+                if (amount != 0) {
+                    payoutCurrencyAmount = safeAdd(payoutCurrencyAmount, rmul(amount, epochs[epochIdx].tokenPrice.value));
+                    remainingRedeemToken = safeSub(remainingRedeemToken, amount);
+                }
             }
             epochIdx = safeAdd(epochIdx, 1);
         }
 
-        // calc payout amount
-        uint payoutCurrencyAmount = safeSub(users[usr].supplyCurrencyAmount, usrRemainingSupply);
-        uint payoutTokenAmount = safeSub(users[usr].redeemTokenAmount, usrRemainingRedeem);
-
-        return (payoutCurrencyAmount, payoutTokenAmount, usrRemainingSupply, usrRemainingRedeem);
+        return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
 
     }
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
-    function disburse(address usr) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint usrRemainingSupply, uint usrRemainingRedeem) {
+    function disburse(address usr) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         require(users[usr].orderedInEpoch < currentEpoch);
 
         (payoutCurrencyAmount, payoutTokenAmount,
-         usrRemainingSupply,  usrRemainingRedeem)  = calcDisburse(usr);
+         remainingSupplyCurrency,  remainingRedeemToken)  = calcDisburse(usr);
 
-        users[usr].supplyCurrencyAmount = usrRemainingSupply;
-        users[usr].redeemTokenAmount = usrRemainingRedeem;
+        users[usr].supplyCurrencyAmount = remainingSupplyCurrency;
+        users[usr].redeemTokenAmount = remainingRedeemToken;
 
         // remaining orders are placed in the current epoch
         // which allows to change the order and therefore receive it back
@@ -193,9 +202,9 @@ contract Tranche is Math, Auth, FixedPoint {
         }
 
         if (payoutTokenAmount > 0) {
-            require(token.transferFrom(self, usr, payoutCurrencyAmount), "token-transfer-failed");
+            require(token.transferFrom(self, usr, payoutTokenAmount), "token-transfer-failed");
         }
-        return (payoutCurrencyAmount, payoutTokenAmount, usrRemainingSupply, usrRemainingRedeem);
+        return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
 
     }
 

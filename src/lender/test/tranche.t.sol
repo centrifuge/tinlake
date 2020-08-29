@@ -136,18 +136,57 @@ contract TrancheTest is DSTest, Math, FixedPoint {
 
         tranche.epochUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_, amount, 0);
 
-        tranche.closeEpoch();
+        // should receive 60% => 60 ether
+        (uint payoutCurrencyAmount, uint payoutTokenAmount,
+        uint remainingSupplyCurrency,  uint remainingRedeemToken) =  tranche.calcDisburse(self);
 
-        // 20 %
-        supplyFulfillment_ = 2 * 10**26;
+        assertEq(payoutTokenAmount, 60 ether);
+        assertEq(remainingSupplyCurrency, 40 ether);
+
+        // 50 %
+        supplyFulfillment_ = 5 * 10**26;
         redeemFulfillment_ = ONE;
 
+        (uint globalSupply, uint globalRedeem) = tranche.closeEpoch();
+
+        tranche.epochUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_, globalSupply, globalRedeem);
+
         // should receive 80% => 80 ether
+        (payoutCurrencyAmount, payoutTokenAmount,
+         remainingSupplyCurrency, remainingRedeemToken) =  tranche.calcDisburse(self);
+
+        // 100 * 0.6 + 40 * 0.5
+        assertEq(payoutTokenAmount, 80 ether);
+        assertEq(remainingSupplyCurrency, 20 ether);
+
+        // execute disburse
+        (payoutCurrencyAmount, payoutTokenAmount,
+        remainingSupplyCurrency, remainingRedeemToken) =  tranche.disburse(self);
+        assertEq(payoutTokenAmount, 80 ether);
+        assertEq(remainingSupplyCurrency, 20 ether);
+
+        assertEq(token.balanceOf(self), 80 ether);
+    }
+
+    function testChangeOrderAfterDisburse() public {
+        uint amount = 100 ether;
+        supplyOrder(amount);
+        tranche.closeEpoch();
+
+        // 60 % fulfillment
+        uint supplyFulfillment_ = 6 * 10**26;
+        uint redeemFulfillment_ = ONE;
+        uint tokenPrice_ = ONE;
+
+        tranche.epochUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_, amount, 0);
+
+        // execute disburse
         (uint payoutCurrencyAmount, uint payoutTokenAmount,
-        uint usrRemainingSupply,  uint usrRemainingRedeem) =  tranche.calcDisburse(self);
+        uint remainingSupplyCurrency, uint remainingRedeemToken) =  tranche.disburse(self);
 
-        assertEq(payoutCurrencyAmount, 80 ether);
-        assertEq(usrRemainingSupply, 20 ether);
-
+        // by changing the supply order to 0 currency is received back
+        tranche.supplyOrder(self, 0);
+        assertEq(currency.balanceOf(self), 40 ether);
+        assertEq(token.balanceOf(self), 60 ether);
     }
 }
