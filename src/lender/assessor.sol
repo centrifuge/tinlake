@@ -16,7 +16,7 @@ pragma solidity >=0.5.15 <0.6.0;
 pragma experimental ABIEncoderV2;
 
 import "./ticker.sol";
-import "./data_types.sol";
+import "./fixed_point.sol";
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
@@ -30,7 +30,7 @@ interface TrancheLike {
     function tokenSupply() external returns (uint);
 }
 
-contract Assessor is Auth, DataTypes, Interest  {
+contract Assessor is Auth, FixedPoint, Interest  {
     // senior ratio from the last epoch executed
     Fixed27        public seniorRatio;
     uint           public seniorDebt_;

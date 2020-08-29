@@ -14,9 +14,12 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pragma solidity >=0.5.15 <0.6.0;
+pragma experimental ABIEncoderV2;
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
+import "./fixed_point.sol";
+
 
 contract ERC20Like {
     function balanceOf(address) public view returns (uint);
@@ -34,28 +37,28 @@ contract TickerLike {
     function currentEpoch() public returns (uint);
 }
 
-contract Tranche is Math, Auth {
+contract Tranche is Math, Auth, FixedPoint {
     mapping(uint => Epoch) public epochs;
 
     struct Epoch {
-        // denominated in RAY
+        // denominated in 10^27
         // percentage ONE == 100%
-        uint redeemFulfillment;
-        // denominated in RAY
+        Fixed27 redeemFulfillment;
+        // denominated in 10^27
         // percentage ONE == 100%
-        uint supplyFulfillment;
+        Fixed27 supplyFulfillment;
         // tokenPrice after end of epoch
-        uint tokenPrice;
+        Fixed27 tokenPrice;
         bool executed;
     }
 
     struct UserOrder {
-        uint epoch;
+        uint orderedInEpoch;
         uint supplyCurrencyAmount;
         uint redeemTokenAmount;
     }
 
-    mapping(address => UserOrder) users;
+    mapping(address => UserOrder) public users;
 
     uint public  globalSupply;
     uint public  globalRedeem;
@@ -67,23 +70,18 @@ contract Tranche is Math, Auth {
 
     address self;
 
-    uint currentEpoch = 0;
+    uint public currentEpoch;
+
+    bool public waitingForUpdate  = false;
 
     constructor(address currency_, address token_) public {
         wards[msg.sender] = 1;
+        currentEpoch = 1;
         token = ERC20Like(token_);
         currency = ERC20Like(currency_);
 
 
         self = address(this);
-    }
-
-    function supplyCurrencyAmount(uint epochID, address addr) public view returns (uint) {
-        return epochs[epochID].supplyCurrencyAmount[addr];
-    }
-
-    function redeemTokenAmount(uint epochID, address addr) public view returns (uint) {
-        return epochs[epochID].redeemTokenAmount[addr];
     }
 
     function balance() external view returns (uint) {
@@ -104,12 +102,11 @@ contract Tranche is Math, Auth {
 
     // supplyOrder function can be used to place or revoke an supply
     function supplyOrder(address usr, uint newSupplyAmount) public auth {
-        require(users[usr].epochID == 0 || users[usr].epochID == currentEpoch, "disburse required");
-        users[usr].epochID = currentEpoch;
+        require(users[usr].orderedInEpoch == 0 || users[usr].orderedInEpoch == currentEpoch, "disburse required");
+        users[usr].orderedInEpoch = currentEpoch;
 
         uint currentSupplyAmount = users[usr].supplyCurrencyAmount;
 
-        users[usr].epochID = epochID;
         users[usr].supplyCurrencyAmount = newSupplyAmount;
 
         globalSupply = safeAdd(safeSub(globalSupply, currentSupplyAmount), newSupplyAmount);
@@ -127,8 +124,8 @@ contract Tranche is Math, Auth {
 
     // redeemOrder function can be used to place or revoke a redeem
     function redeemOrder(address usr, uint newRedeemAmount) public auth {
-        require(users[usr].epochID == 0 || users[usr].epochID == currentEpoch, "disbursment-required");
-        users[usr].epochID = currentEpoch;
+        require(users[usr].orderedInEpoch == 0 || users[usr].orderedInEpoch == currentEpoch, "disburse required");
+        users[usr].orderedInEpoch = currentEpoch;
 
         uint currentRedeemAmount = users[usr].redeemTokenAmount;
         users[usr].redeemTokenAmount = newRedeemAmount;
@@ -146,78 +143,98 @@ contract Tranche is Math, Auth {
         }
     }
 
+    function calcDisburse(address usr) public view returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint usrRemainingSupply, uint usrRemainingRedeem) {
+        // no disburse possible in this epoch
+        if (users[usr].orderedInEpoch  == currentEpoch) {
+            return (0, 0, users[usr].supplyCurrencyAmount, users[usr].redeemTokenAmount);
+        }
+
+        uint epochIdx = users[usr].orderedInEpoch;
+
+        uint usrRemainingSupply = users[usr].supplyCurrencyAmount;
+        uint usrRemainingRedeem = users[usr].redeemTokenAmount;
+
+        while(epochIdx != currentEpoch && (usrRemainingSupply != 0 || usrRemainingRedeem != 0 )){
+            if(usrRemainingSupply != 0) {
+                usrRemainingSupply = safeSub(usrRemainingSupply, rmul(usrRemainingSupply, epochs[epochIdx].tokenPrice.value));
+            }
+
+            if(usrRemainingRedeem != 0) {
+                usrRemainingRedeem = safeSub(usrRemainingRedeem, rmul(usrRemainingRedeem, epochs[epochIdx].tokenPrice.value));
+
+            }
+            epochIdx = safeAdd(epochIdx, 1);
+        }
+
+        // calc payout amount
+        uint payoutCurrencyAmount = safeSub(users[usr].supplyCurrencyAmount, usrRemainingSupply);
+        uint payoutTokenAmount = safeSub(users[usr].redeemTokenAmount, usrRemainingRedeem);
+
+        return (payoutCurrencyAmount, payoutTokenAmount, usrRemainingSupply, usrRemainingRedeem);
+
+    }
+
     // the disburse function can be used after an epoch is over to receive currency and tokens
-    function disburse(address usr) public auth {
-        require(users[usr].epoch < currentEpoch);
+    function disburse(address usr) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint usrRemainingSupply, uint usrRemainingRedeem) {
+        require(users[usr].orderedInEpoch < currentEpoch);
 
-        // todo add end epochID if zero current epoch
+        (payoutCurrencyAmount, payoutTokenAmount,
+         usrRemainingSupply,  usrRemainingRedeem)  = calcDisburse(usr);
 
-        uint currEpoch = users[usr].epoch;
+        users[usr].supplyCurrencyAmount = usrRemainingSupply;
+        users[usr].redeemTokenAmount = usrRemainingRedeem;
 
-        while(currEpoch == true) {
-            // todo
+        // remaining orders are placed in the current epoch
+        // which allows to change the order and therefore receive it back
+        users[usr].orderedInEpoch = currentEpoch;
 
-
-        }
-        require((epochs[epochID].tokenPrice > 0), "epoch-not-settled-yet");
-
-        uint currencyAmount = calcCurrencyDisbursement(usr, epochID);
-        uint tokenAmount = calcTokenDisbursement(usr, epochID);
-        epochs[epochID].supplyCurrencyAmount[usr] = 0;
-        if (currencyAmount > 0) {
-            require(currency.transferFrom(self, usr, currencyAmount), "currency-transfer-failed");
+        if (payoutCurrencyAmount > 0) {
+            require(currency.transferFrom(self, usr, payoutCurrencyAmount), "currency-transfer-failed");
         }
 
-        epochs[epochID].redeemTokenAmount[usr] = 0;
-        if (tokenAmount > 0) {
-            require(token.transferFrom(self, usr, tokenAmount), "token-transfer-failed");
+        if (payoutTokenAmount > 0) {
+            require(token.transferFrom(self, usr, payoutCurrencyAmount), "token-transfer-failed");
         }
-    }
+        return (payoutCurrencyAmount, payoutTokenAmount, usrRemainingSupply, usrRemainingRedeem);
 
-    function calcCurrencyDisbursement(address usr, uint epochID) public view returns (uint) {
-        // currencyAmount = tokenAmount * percentage * tokenPrice
-        uint currencyAmount = rmul(rmul(epochs[epochID].redeemTokenAmount[usr], epochs[epochID].redeemFulfillment), epochs[epochID].tokenPrice);
-        // currencyAmount += unused dai from supply
-        return safeAdd(currencyAmount, rmul(epochs[epochID].supplyCurrencyAmount[usr], safeSub(ONE, epochs[epochID].supplyFulfillment)));
-    }
-
-    function calcTokenDisbursement(address usr, uint epochID) public view returns (uint) {
-        // take currencyAmount from redeemOrder
-        uint tokenAmount = rdiv(rmul(epochs[epochID].supplyCurrencyAmount[usr], epochs[epochID].supplyFulfillment), epochs[epochID].tokenPrice);
-        // add leftovers from supplies
-        return safeAdd(tokenAmount, rmul(epochs[epochID].redeemTokenAmount[usr], safeSub(ONE, epochs[epochID].redeemFulfillment)));
     }
 
     // called by epoch coordinator in epoch execute method
-    function epochUpdate(uint supplyFulfillment_, uint redeemFulfillment_, uint tokenPrice_, uint epochSnapshotSupply, uint epochSnapshotRedeem) public auth {
+    function epochUpdate(uint supplyFulfillment_, uint redeemFulfillment_, uint tokenPrice_, uint epochSupplyCurrency, uint epochRedeemCurrency) public auth {
+        require(waitingForUpdate == true);
+        waitingForUpdate = false;
+
         uint epochID = safeSub(currentEpoch, 1);
 
-        epochs[epochID].supplyFulfillment = supplyFulfillment_;
-        epochs[epochID].redeemFulfillment = redeemFulfillment_;
-        epochs[epochID].tokenPrice = tokenPrice_;
+        epochs[epochID].supplyFulfillment.value = supplyFulfillment_;
+        epochs[epochID].redeemFulfillment.value = redeemFulfillment_;
+        epochs[epochID].tokenPrice.value = tokenPrice_;
         epochs[epochID].executed = true;
 
-        adjustTokenBalance(epochID);
-        adjustCurrencyBalance(epochID);
+        // currency needs to be converted to tokenAmount with current token price
+        adjustTokenBalance(epochID, rdiv(epochSupplyCurrency, tokenPrice_), rdiv(epochRedeemCurrency, tokenPrice_));
+        adjustCurrencyBalance(epochID, epochSupplyCurrency, epochRedeemCurrency);
 
-        globalSupply = safeAdd(safeSub(globalSupply, epochSnapshotSupply), rmul(epochSnapshotSupply, safSub(ONE, supplyFulfillment_)));
-        globalRedeem = safeAdd(safeSub(globalRedeem, epochSnapshotRedeem), rmul(epochSnapshotRedeem, safeSub(ONE, redeemFulfillment_)));
+        globalSupply = safeAdd(safeSub(globalSupply, epochSupplyCurrency), rmul(epochSupplyCurrency, safeSub(ONE, epochs[epochID].supplyFulfillment.value)));
+        globalRedeem = safeAdd(safeSub(globalRedeem, epochRedeemCurrency), rmul(epochRedeemCurrency, safeSub(ONE, epochs[epochID].redeemFulfillment.value)));
 
     }
 
-    function closeEpoch() public auth returns(uint globalSupply, uint globalRedeem) {
+    function closeEpoch() public auth returns (uint globalSupply_, uint globalRedeem_) {
         currentEpoch = safeAdd(currentEpoch, 1);
+        waitingForUpdate = true;
         return (globalSupply, globalRedeem);
     }
 
 
     // adjust token balance after epoch execution -> min/burn tokens
-    function adjustTokenBalance(uint epochID) internal {
-        // burn amount of tokens for that epoch
-        uint burnAmount = rmul(epochs[epochID].totalRedeem, epochs[epochID].redeemFulfillment);
+    function adjustTokenBalance(uint epochID, uint epochSupply, uint epochRedeem) internal {
         // mint amount of tokens for that epoch
-        uint mintAmount = rdiv(rmul(epochs[epochID].totalSupply, epochs[epochID].supplyFulfillment), epochs[epochID].tokenPrice);
-        // burn tokens that are not needed for disbursement
+        uint mintAmount = rdiv(rmul(epochSupply, epochs[epochID].supplyFulfillment.value), epochs[epochID].tokenPrice.value);
+
+        // burn amount of tokens for that epoch
+        uint burnAmount = rmul(epochRedeem, epochs[epochID].redeemFulfillment.value);
+       // burn tokens that are not needed for disbursement
         if (burnAmount > mintAmount) {
             uint diff = safeSub(burnAmount, mintAmount);
             token.burn(self, diff);
@@ -231,11 +248,11 @@ contract Tranche is Math, Auth {
     }
 
     // adjust currency balance after epoch execution -> receive/send currency from/to reserve
-    function adjustCurrencyBalance(uint epochID) internal {
+    function adjustCurrencyBalance(uint epochID, uint epochSupply, uint epochRedeem) internal {
         // currency that was supplied in this epoch
-        uint currencySupplied = rmul(epochs[epochID].totalSupply, epochs[epochID].supplyFulfillment);
+        uint currencySupplied = rmul(epochSupply, epochs[epochID].supplyFulfillment.value);
         // currency required for redemption
-        uint currencyRequired = rmul(rmul(epochs[epochID].totalRedeem, epochs[epochID].redeemFulfillment), epochs[epochID].tokenPrice);
+        uint currencyRequired = rmul(rmul(epochRedeem, epochs[epochID].redeemFulfillment.value), epochs[epochID].tokenPrice.value);
 
         if (currencySupplied > currencyRequired) {
             // send surplus currency to reserve
@@ -250,7 +267,4 @@ contract Tranche is Math, Auth {
         }
     }
 
-    function getTotalOrders(uint epochID) public view returns(uint, uint) {
-        return (epochs[epochID].totalRedeem , epochs[epochID].totalSupply);
-    }
 }

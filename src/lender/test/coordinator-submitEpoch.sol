@@ -18,7 +18,7 @@ pragma experimental ABIEncoderV2;
 
 import "./coordinator-base.t.sol";
 
-contract CoordinatorSubmitEpochTest is CoordinatorTest, DataTypes {
+contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
     function setUp() public {
         super.setUp();
     }

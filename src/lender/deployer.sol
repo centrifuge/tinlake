@@ -19,7 +19,7 @@ import {AssessorFab}    from "./fabs/assessor.sol";
 import {TrancheFab}     from "./fabs/tranche.sol";
 import {CoordinatorFab} from "./fabs/coordinator.sol";
 
-import {DataTypes}      from "./data_types.sol";
+import {FixedPoint}      from "./fixed_point.sol";
 
 // todo needs to be removed
 import { Distributor } from "../test/simple/distributor.sol";
@@ -33,7 +33,7 @@ interface AuthLike {
     function deny(address) external;
 }
 
-contract LenderDeployer is DataTypes {
+contract LenderDeployer is FixedPoint {
     address public root;
     address public currency;
 

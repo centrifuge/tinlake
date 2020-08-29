@@ -27,7 +27,15 @@ contract Hevm {
     function warp(uint256) public;
 }
 
-contract TrancheTest is DSTest, Math {
+
+
+contract ReserveMockTranche is ReserveMock {
+    constructor(SimpleToken currency, address tranche) public {
+        currency.approve(tranche, uint(-1));
+    }
+}
+
+contract TrancheTest is DSTest, Math, FixedPoint {
     Tranche tranche;
     SimpleToken token;
     SimpleToken currency;
@@ -45,153 +53,101 @@ contract TrancheTest is DSTest, Math {
     function setUp() public {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1595247588);
+        self = address(this);
 
         ticker = new Ticker();
-        reserve = new ReserveMock();
-        reserve_ = address(reserve);
         token = new SimpleToken("TIN", "Tranche", "1", 0);
         currency = new SimpleToken("CUR", "Currency", "1", 0);
+        reserve = new ReserveMockTranche(currency, self);
+        reserve_ = address(reserve);
+
         tranche = new Tranche(address(currency), address(token));
         tranche.depend("ticker", address(ticker));
         tranche.depend("reserve", reserve_);
 
         tranche_ = address(tranche);
 
-        self = address(this);
+
     }
 
-    function testBalance() public {
-        currency.mint(tranche_, 100 ether);
-        currency.mint(self, 100 ether);
-        uint256 b = tranche.balance();
-        assertEq(b, 100 ether);
+    function supplyOrder(uint amount) public {
+        currency.mint(self, amount);
+        currency.approve(tranche_, amount);
+        tranche.supplyOrder(self, amount);
+
+        (,uint supply,) = tranche.users(self);
+        assertEq(supply, amount);
+
     }
 
-    function testTokenSupply() public {
-        token.mint(self, 100 ether);
-        uint256 s = tranche.tokenSupply();
-        assertEq(s, 100 ether);
+    function testSupplyOrder() public {
+        uint amount = 100 ether;
+        supplyOrder(amount);
+        assertEq(tranche.globalSupply(), amount);
+
+        // change order
+        amount = 120 ether;
+        supplyOrder(amount);
+        assertEq(tranche.globalSupply(), amount);
+
     }
 
-    function testSubmitRedeemOrder() public {
-        uint investorBalance = 100 ether;
-        uint redeemAmount = 80 ether;
-        uint currentEpoch = 0;
-        uint redeemEpochID = 10;
-
-        // topup investor with tokens
-        token.mint(self, investorBalance);
-        assertEq(token.balanceOf(self), investorBalance);
-        // rely investor on tranche
-        tranche.rely(self);
-        // investor approves tokens to be redeemed
-        token.approve(tranche_, redeemAmount);
-        // assert current epoch is currentEpoch => 1
-        assertEq(ticker.currentEpoch(), currentEpoch);
-
-        // submit redeem order for certain epoch -> epoch 10 amount 80 TKN
-        tranche.redeemOrder(self, redeemEpochID, redeemAmount);
-
-        // assert redeemAmount was transferred to the tranche & burned
-        // new investor token balance: initialBlance - redeemAmount
-        assertEq(token.balanceOf(self), safeSub(investorBalance, redeemAmount));
-        // tranche balance = 0 -> tokens burned
-        assertEq(token.balanceOf(tranche_), redeemAmount);
-        (uint totalRedeem,,,,) = tranche.epochs(redeemEpochID);
-        uint redeemTokenAmountTranche = tranche.redeemTokenAmount(redeemEpochID, self);
-        // assert investor's redeem amount for redeemEpochID equals redeemAmount
-        assertEq(redeemTokenAmountTranche, redeemAmount);
-        // assert totalRedeem equals redeemAmount
-        assertEq(totalRedeem, redeemAmount);
+    function testSimpleCloseEpoch() public {
+        uint amount = 100 ether;
+        supplyOrder(amount);
+        assertEq(tranche.globalSupply(), amount);
+        (uint globalSupply, uint globalRedeem) = tranche.closeEpoch();
+        assertEq(globalSupply, amount);
     }
-    // fail case: epochID too low
-    // fail case: not enough token balance
-    // fail case: no allowance
-    // fail case: tokens not approved
 
-    function testSubmitSupplyOrder() public {
-        uint investorBalance = 100 ether;
-        uint supplyAmount = 80 ether;
-        uint currentEpoch = 0;
-        uint supplyEpochID = 10;
-        uint trancheInitialBalance = currency.balanceOf(tranche_);
+    function testFailSupplyAfterCloseEpoch() public {
+        uint amount = 100 ether;
+        supplyOrder(amount);
+        tranche.closeEpoch();
+        supplyOrder(120 ether);
 
-        // topup investor with currency
-        currency.mint(self, investorBalance);
-        assertEq(currency.balanceOf(self), investorBalance);
-        // rely investor on tranche
-        tranche.rely(self);
-        // investor approves currency to be supplied
-        currency.approve(tranche_, supplyAmount);
-        // assert current epoch is currentEpoch => 1
-        assertEq(ticker.currentEpoch(), currentEpoch);
-
-        // submit supply order for certain epoch -> epoch 10 amount 80 DAI
-        tranche.supplyOrder(self, supplyEpochID, supplyAmount);
-
-        // assert supplyAmount was transferred to the tranche
-        // new investor balance: initialBlance - supplyAmount
-        assertEq(currency.balanceOf(self), safeSub(investorBalance, supplyAmount));
-        // tranche balance = trancheInitialBalance + supplyAmount
-        assertEq(currency.balanceOf(tranche_), safeAdd(trancheInitialBalance, supplyAmount));
-        (, uint totalSupply,,,) = tranche.epochs(supplyEpochID);
-        uint supplyCurrencyAmountTranche = tranche.supplyCurrencyAmount(supplyEpochID, self);
-        // assert investor's supply amount for supplyEpochID equals supplyAmount
-        assertEq(supplyCurrencyAmountTranche, supplyAmount);
-        // assert totalSupply equals supplyAmount
-        assertEq(totalSupply, supplyAmount);
     }
-    // fail case: epoch too low, not enough balance
-    // fail case: no allowance
-    // fail case: currency not approved
 
-    function testUpdateSupplyOrder() public {}
-    function testUpdateRedeemOrder() public {}
+    function testSimpleEpochUpdate() public {
+        uint amount = 100 ether;
+        supplyOrder(amount);
+        tranche.closeEpoch();
 
-    function testDisburse() public {
-        uint investorBalance = 100 ether;
-        uint supplyAmount = 100 ether;
-        uint disburseEpochID = 10;
-        uint tokenPrice = ONE;
+        // 60 % fulfillment
+        uint supplyFulfillment_ = 6 * 10**26;
+        uint redeemFulfillment_ = ONE;
+        uint tokenPrice_ = ONE;
 
-        // supplyFullFillMent 80 %
-        uint supplyFullfillment = rdiv(80, 100);
-        uint redeemFullfillment = ONE;
+        tranche.epochUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_, amount, 0);
 
-        // topup investor with currency
-        currency.mint(self, investorBalance);
-        // rely investor on tranche
-        tranche.rely(self);
-        // investor approves currency to be supplied
-        currency.approve(tranche_, supplyAmount);
-        // submit supply order for certain epoch -> epoch 10 amount 80 DAI
-        tranche.supplyOrder(self, disburseEpochID, supplyAmount);
-
-        // settle epoch
-        tranche.epochUpdate(disburseEpochID, supplyFullfillment, redeemFullfillment, tokenPrice);
-
-        // assert tokens were minted for disbursement
-        assertEq(token.balanceOf(tranche_), rmul(supplyAmount, supplyFullfillment));
-
-        // disburse
-        tranche.disburse(self, disburseEpochID);
-        // check investor received correct amount of tokens
-        assertEq(token.balanceOf(self), rdiv(rmul(supplyAmount, supplyFullfillment), tokenPrice));
-        // check investor received correct amount of currency
-        assertEq(currency.balanceOf(self), rmul(supplyAmount, safeSub(ONE, supplyFullfillment)));
-        // check supplyCurrencyAmount of investor set to 0
-        uint supplyCurrencyAmountTranche = tranche.supplyCurrencyAmount(disburseEpochID, self);
-        assertEq(supplyCurrencyAmountTranche, 0);
-        // check redeemTokenAmount of investor set to 0
-        uint redeemTokenAmountTranche = tranche.redeemTokenAmount(disburseEpochID, self);
-        assertEq(redeemTokenAmountTranche, 0);
-        // check reserve received correct amount of currency
-        assertEq(currency.balanceOf(reserve_), rmul(supplyAmount, supplyFullfillment));
-
-        // assert tranche token balance is 0
-        assertEq(token.balanceOf(tranche_), 0);
+        assertEq(tranche.globalSupply(), 40 ether);
+        assertTrue(tranche.waitingForUpdate() == false);
     }
-    // test case: redeem disburse
-    // test case: tokenPrice != 1
-    // fail case: epoche not settled
+
+    function testSimpleDisburse() public {
+        uint amount = 100 ether;
+        supplyOrder(amount);
+        tranche.closeEpoch();
+
+        // 60 % fulfillment
+        uint supplyFulfillment_ = 6 * 10**26;
+        uint redeemFulfillment_ = ONE;
+        uint tokenPrice_ = ONE;
+
+        tranche.epochUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_, amount, 0);
+
+        tranche.closeEpoch();
+
+        // 20 %
+        supplyFulfillment_ = 2 * 10**26;
+        redeemFulfillment_ = ONE;
+
+        // should receive 80% => 80 ether
+        (uint payoutCurrencyAmount, uint payoutTokenAmount,
+        uint usrRemainingSupply,  uint usrRemainingRedeem) =  tranche.disburse(self);
+
+        assertEq(payoutCurrencyAmount, 80 ether);
+        assertEq(usrRemainingSupply, 20 ether);
+
+    }
 }
