@@ -236,6 +236,19 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         tranche.redeemOrder(self, 0);
         assertEq(token.balanceOf(self), 15 ether);
 
+
+        // redeem again
+        tranche.redeemOrder(self, 15 ether);
+        // 20 % for redeem Fulfillment
+        closeAndUpdate(0, 2 * 10**26, ONE);
+
+        ( payoutCurrencyAmount, payoutTokenAmount,
+         remainingSupplyCurrency, remainingRedeemToken) =  tranche.disburse(self);
+        assertEq(payoutCurrencyAmount, 3 ether);
+
+
+
+
     }
 
     function testChangeOrderAfterDisburse() public {

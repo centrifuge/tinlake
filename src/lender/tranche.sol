@@ -45,7 +45,6 @@ contract Tranche is Math, Auth, FixedPoint {
         Fixed27 supplyFulfillment;
         // tokenPrice after end of epoch
         Fixed27 tokenPrice;
-        bool executed;
     }
 
     struct UserOrder {
@@ -75,8 +74,6 @@ contract Tranche is Math, Auth, FixedPoint {
         currentEpoch = 1;
         token = ERC20Like(token_);
         currency = ERC20Like(currency_);
-
-
         self = address(this);
     }
 
@@ -233,7 +230,6 @@ contract Tranche is Math, Auth, FixedPoint {
         epochs[epochID].supplyFulfillment.value = supplyFulfillment_;
         epochs[epochID].redeemFulfillment.value = redeemFulfillment_;
         epochs[epochID].tokenPrice.value = tokenPrice_;
-        epochs[epochID].executed = true;
 
         // currency needs to be converted to tokenAmount with current token price
         uint redeemInToken = 0;
