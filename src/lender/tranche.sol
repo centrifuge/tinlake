@@ -23,13 +23,9 @@ import "./fixed_point.sol";
 
 contract ERC20Like {
     function balanceOf(address) public view returns (uint);
-
     function transferFrom(address, address, uint) public returns (bool);
-
     function mint(address, uint) public;
-
     function burn(address, uint) public;
-
     function totalSupply() public view returns (uint);
 }
 
@@ -144,21 +140,30 @@ contract Tranche is Math, Auth, FixedPoint {
     }
 
     function calcDisburse(address usr) public view returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
-        // no disburse possible in this epoch
-        if (users[usr].orderedInEpoch  == currentEpoch) {
-            return (0, 0, users[usr].supplyCurrencyAmount, users[usr].redeemTokenAmount);
-        }
+        return calcDisburse(usr, safeSub(currentEpoch, 1));
+    }
 
+    function calcDisburse(address usr, uint endEpoch) public view returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         uint epochIdx = users[usr].orderedInEpoch;
 
-        uint remainingSupplyCurrency = users[usr].supplyCurrencyAmount;
-        uint remainingRedeemToken = users[usr].redeemTokenAmount;
-
-        uint amount = 0;
         uint payoutCurrencyAmount = 0;
         uint payoutTokenAmount = 0;
 
-        while(epochIdx != currentEpoch && (remainingSupplyCurrency != 0 || remainingRedeemToken != 0 )){
+        // no disburse possible in this epoch
+        if (users[usr].orderedInEpoch  == currentEpoch) {
+            return (payoutCurrencyAmount, payoutTokenAmount, users[usr].supplyCurrencyAmount, users[usr].redeemTokenAmount);
+        }
+
+        if (endEpoch >= currentEpoch) {
+            // it is only possible to disburse epochs which are already over
+            endEpoch = safeSub(currentEpoch, 1);
+        }
+
+        uint remainingSupplyCurrency = users[usr].supplyCurrencyAmount;
+        uint remainingRedeemToken = users[usr].redeemTokenAmount;
+        uint amount = 0;
+
+        while(epochIdx <= endEpoch && (remainingSupplyCurrency != 0 || remainingRedeemToken != 0 )){
             if(remainingSupplyCurrency != 0) {
                 amount = rmul(remainingSupplyCurrency, epochs[epochIdx].supplyFulfillment.value);
                 // supply currency payout in token
@@ -185,17 +190,27 @@ contract Tranche is Math, Auth, FixedPoint {
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
     function disburse(address usr) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
+        return disburse(usr, safeSub(currentEpoch, 1));
+    }
+
+    // the disburse function can be used after an epoch is over to receive currency and tokens
+    function disburse(address usr,  uint endEpoch) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         require(users[usr].orderedInEpoch < currentEpoch);
 
         (payoutCurrencyAmount, payoutTokenAmount,
-         remainingSupplyCurrency,  remainingRedeemToken)  = calcDisburse(usr);
+         remainingSupplyCurrency,  remainingRedeemToken)  = calcDisburse(usr, endEpoch);
 
         users[usr].supplyCurrencyAmount = remainingSupplyCurrency;
         users[usr].redeemTokenAmount = remainingRedeemToken;
 
-        // remaining orders are placed in the current epoch
+        // remaining orders are placed in the current epoch to allow
         // which allows to change the order and therefore receive it back
-        users[usr].orderedInEpoch = currentEpoch;
+        // this is only possible if all previous epochs are disbursed (no orders reserved)
+        if (endEpoch == safeSub(currentEpoch, 1)) {
+            users[usr].orderedInEpoch = currentEpoch;
+        } else {
+            users[usr].orderedInEpoch = endEpoch;
+        }
 
         if (payoutCurrencyAmount > 0) {
             require(currency.transferFrom(self, usr, payoutCurrencyAmount), "currency-transfer-failed");
@@ -221,14 +236,18 @@ contract Tranche is Math, Auth, FixedPoint {
         epochs[epochID].executed = true;
 
         // currency needs to be converted to tokenAmount with current token price
-        adjustTokenBalance(epochID, rdiv(epochSupplyCurrency, tokenPrice_), rdiv(epochRedeemCurrency, tokenPrice_));
+        uint redeemInToken = 0;
+        uint supplyInToken = 0;
+        if(tokenPrice_ > 0) {
+            supplyInToken = rdiv(epochSupplyCurrency, tokenPrice_);
+            redeemInToken = rdiv(epochRedeemCurrency, tokenPrice_);
+        }
+        adjustTokenBalance(epochID, supplyInToken, redeemInToken);
         adjustCurrencyBalance(epochID, epochSupplyCurrency, epochRedeemCurrency);
 
         globalSupply = safeAdd(safeSub(globalSupply, epochSupplyCurrency), rmul(epochSupplyCurrency, safeSub(ONE, epochs[epochID].supplyFulfillment.value)));
         globalRedeem = safeAdd(safeSub(globalRedeem, epochRedeemCurrency), rmul(epochRedeemCurrency, safeSub(ONE, epochs[epochID].redeemFulfillment.value)));
-
-    }
-
+       }
     function closeEpoch() public auth returns (uint globalSupply_, uint globalRedeem_) {
         currentEpoch = safeAdd(currentEpoch, 1);
         waitingForUpdate = true;
@@ -238,10 +257,13 @@ contract Tranche is Math, Auth, FixedPoint {
 
     // adjust token balance after epoch execution -> min/burn tokens
     function adjustTokenBalance(uint epochID, uint epochSupply, uint epochRedeem) internal {
-        // mint amount of tokens for that epoch
-        uint mintAmount = rdiv(rmul(epochSupply, epochs[epochID].supplyFulfillment.value), epochs[epochID].tokenPrice.value);
+        // mint token amount for supply
+        uint mintAmount = 0;
+        if (epochs[epochID].tokenPrice.value > 0) {
+            mintAmount = rdiv(rmul(epochSupply, epochs[epochID].supplyFulfillment.value), epochs[epochID].tokenPrice.value);
+        }
 
-        // burn amount of tokens for that epoch
+      // burn token amount for redeem
         uint burnAmount = rmul(epochRedeem, epochs[epochID].redeemFulfillment.value);
        // burn tokens that are not needed for disbursement
         if (burnAmount > mintAmount) {
@@ -275,5 +297,4 @@ contract Tranche is Math, Auth, FixedPoint {
             require(currency.transferFrom(reserve, self, diff), "currency-transfer-failed");
         }
     }
-
 }
