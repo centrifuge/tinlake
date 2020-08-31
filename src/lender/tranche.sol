@@ -60,13 +60,11 @@ contract Tranche is Math, Auth, FixedPoint {
 
     ERC20Like public currency;
     ERC20Like public token;
-    TickerLike public ticker;
     address public reserve;
 
     address self;
 
     uint public currentEpoch;
-
     bool public waitingForUpdate  = false;
 
     constructor(address currency_, address token_) public {
@@ -88,7 +86,6 @@ contract Tranche is Math, Auth, FixedPoint {
     function depend(bytes32 contractName, address addr) public auth {
         if (contractName == "token") {token = ERC20Like(addr);}
         else if (contractName == "currency") {currency = ERC20Like(addr);}
-        else if (contractName == "ticker") {ticker = TickerLike(addr);}
         else if (contractName == "reserve") {reserve = addr;}
         else revert();
     }

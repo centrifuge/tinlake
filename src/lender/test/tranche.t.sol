@@ -38,7 +38,6 @@ contract TrancheTest is DSTest, Math, FixedPoint {
     SimpleToken token;
     SimpleToken currency;
     ReserveMockTranche reserve;
-    Ticker ticker;
 
     Hevm hevm;
 
@@ -53,14 +52,12 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         hevm.warp(1595247588);
         self = address(this);
 
-        ticker = new Ticker();
         token = new SimpleToken("TIN", "Tranche", "1", 0);
         currency = new SimpleToken("CUR", "Currency", "1", 0);
         reserve = new ReserveMockTranche();
         reserve_ = address(reserve);
 
         tranche = new Tranche(address(currency), address(token));
-        tranche.depend("ticker", address(ticker));
         tranche.depend("reserve", reserve_);
 
         tranche_ = address(tranche);
