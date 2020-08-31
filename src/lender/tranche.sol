@@ -56,8 +56,8 @@ contract Tranche is Math, Auth, FixedPoint {
 
     mapping(address => UserOrder) public users;
 
-    uint public  globalSupply;
-    uint public  globalRedeem;
+    uint public  totalSupply;
+    uint public  totalRedeem;
 
     ERC20Like public currency;
     ERC20Like public token;
@@ -105,7 +105,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
         users[usr].supplyCurrencyAmount = newSupplyAmount;
 
-        globalSupply = safeAdd(safeSub(globalSupply, currentSupplyAmount), newSupplyAmount);
+        totalSupply = safeAdd(safeSub(totalSupply, currentSupplyAmount), newSupplyAmount);
 
         if (newSupplyAmount > currentSupplyAmount) {
             uint delta = safeSub(newSupplyAmount, currentSupplyAmount);
@@ -125,7 +125,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
         uint currentRedeemAmount = users[usr].redeemTokenAmount;
         users[usr].redeemTokenAmount = newRedeemAmount;
-        globalRedeem = safeAdd(safeSub(globalRedeem, currentRedeemAmount), newRedeemAmount);
+        totalRedeem = safeAdd(safeSub(totalRedeem, currentRedeemAmount), newRedeemAmount);
 
         if (newRedeemAmount > currentRedeemAmount) {
             uint delta = safeSub(newRedeemAmount, currentRedeemAmount);
@@ -245,13 +245,13 @@ contract Tranche is Math, Auth, FixedPoint {
         adjustTokenBalance(epochID, supplyInToken, redeemInToken);
         adjustCurrencyBalance(epochID, epochSupplyCurrency, epochRedeemCurrency);
 
-        globalSupply = safeAdd(safeSub(globalSupply, epochSupplyCurrency), rmul(epochSupplyCurrency, safeSub(ONE, epochs[epochID].supplyFulfillment.value)));
-        globalRedeem = safeAdd(safeSub(globalRedeem, epochRedeemCurrency), rmul(epochRedeemCurrency, safeSub(ONE, epochs[epochID].redeemFulfillment.value)));
+        totalSupply = safeAdd(safeSub(totalSupply, epochSupplyCurrency), rmul(epochSupplyCurrency, safeSub(ONE, epochs[epochID].supplyFulfillment.value)));
+        totalRedeem = safeAdd(safeSub(totalRedeem, epochRedeemCurrency), rmul(epochRedeemCurrency, safeSub(ONE, epochs[epochID].redeemFulfillment.value)));
        }
-    function closeEpoch() public auth returns (uint globalSupply_, uint globalRedeem_) {
+    function closeEpoch() public auth returns (uint totalSupply_, uint totalRedeem_) {
         currentEpoch = safeAdd(currentEpoch, 1);
         waitingForUpdate = true;
-        return (globalSupply, globalRedeem);
+        return (totalSupply, totalRedeem);
     }
 
 

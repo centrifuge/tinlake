@@ -73,8 +73,8 @@ contract TrancheTest is DSTest, Math, FixedPoint {
     }
 
     function closeAndUpdate(uint supplyFulfillment, uint redeemFulfillment, uint tokenPrice) public {
-        (uint globalSupply, uint globalRedeem) = tranche.closeEpoch();
-        tranche.epochUpdate(supplyFulfillment, redeemFulfillment, tokenPrice, globalSupply, globalRedeem);
+        (uint totalSupply, uint totalRedeem) = tranche.closeEpoch();
+        tranche.epochUpdate(supplyFulfillment, redeemFulfillment, tokenPrice, totalSupply, totalRedeem);
     }
 
     function supplyOrder(uint amount) public {
@@ -97,21 +97,21 @@ contract TrancheTest is DSTest, Math, FixedPoint {
     function testSupplyOrder() public {
         uint amount = 100 ether;
         supplyOrder(amount);
-        assertEq(tranche.globalSupply(), amount);
+        assertEq(tranche.totalSupply(), amount);
 
         // change order
         amount = 120 ether;
         supplyOrder(amount);
-        assertEq(tranche.globalSupply(), amount);
+        assertEq(tranche.totalSupply(), amount);
 
     }
 
     function testSimpleCloseEpoch() public {
         uint amount = 100 ether;
         supplyOrder(amount);
-        assertEq(tranche.globalSupply(), amount);
-        (uint globalSupply, uint globalRedeem) = tranche.closeEpoch();
-        assertEq(globalSupply, amount);
+        assertEq(tranche.totalSupply(), amount);
+        (uint totalSupply, uint totalRedeem) = tranche.closeEpoch();
+        assertEq(totalSupply, amount);
     }
 
     function testFailSupplyAfterCloseEpoch() public {
@@ -134,7 +134,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
 
         tranche.epochUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_, amount, 0);
 
-        assertEq(tranche.globalSupply(), 40 ether);
+        assertEq(tranche.totalSupply(), 40 ether);
         assertTrue(tranche.waitingForUpdate() == false);
     }
 
