@@ -105,7 +105,7 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         coordinator.depend("seniorTranche", seniorTranche_);
         coordinator.depend("reserve", reserve_);
         coordinator.depend("assessor", assessor_);
-
+        reserve.rely(address(coordinator));
         initTestConfig(getNoOrderModel());
     }
 
@@ -170,6 +170,20 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         assertEq(bestSubmission.juniorRedeem, model_.juniorRedeem);
         assertEq(bestSubmission.seniorSupply, model_.seniorSupply);
         assertEq(bestSubmission.juniorSupply, model_.juniorSupply);
+    }
+
+    function submitSolution(ModelInput memory solution) internal returns(int) {
+        return coordinator.submitSolution(solution.seniorRedeem, solution.juniorRedeem,
+            solution.juniorSupply, solution.seniorSupply);
+    }
+
+    function calcNewSeniorRatio(LenderModel memory model, ModelInput memory input) public returns (uint) {
+        uint currencyAvailable = model.reserve + input.seniorSupply + input.juniorSupply;
+        uint currencyOut = input.seniorRedeem + input.juniorRedeem;
+
+        uint seniorAsset = (model.seniorBalance + model.seniorDebt + input.seniorSupply) - input.seniorRedeem;
+
+        return rdiv(seniorAsset, model.NAV + currencyAvailable-currencyOut);
     }
 }
 
