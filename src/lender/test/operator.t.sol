@@ -51,94 +51,83 @@ contract OperatorTest is DSTest {
         tranche.rely(operator_);
         // rely address (investor) on operator
         operator.relyInvestor(self);
-        operator.supplyOrder(epochID, amount);
-    
+        operator.supplyOrder(amount);
+
         assertEq(tranche.calls("supplyOrder"), 1);
         assertEq(tranche.values_address("supply_usr"), self);
-        assertEq(tranche.values_uint("supply_epochID"), epochID);
         assertEq(tranche.values_uint("supplyAmount"), amount);
     }
 
     function testFailSupplyOrderNotMember() public {
-        uint epochID = 3;
         uint amount = 10;
 
         // rely operator on tranche
         tranche.rely(operator_);
-        
-        operator.supplyOrder(epochID, amount);
+
+        operator.supplyOrder(amount);
     }
 
     function testFailSupplyOrderOperatorNotWard() public {
-        uint epochID = 3;
         uint amount = 10;
         // rely address (investor) on operator
         operator.relyInvestor(self);
-        operator.supplyOrder(epochID, amount);
+        operator.supplyOrder(amount);
     }
 
     function testRedeemOrder() public {
-        uint epochID = 3;
         uint amount = 10;
 
         // rely operator on tranche
         tranche.rely(operator_);
         // rely address (investor) on operator
         operator.relyInvestor(self);
-        operator.redeemOrder(epochID, amount);
-    
+        operator.redeemOrder(amount);
+
         assertEq(tranche.calls("redeemOrder"), 1);
         assertEq(tranche.values_address("redeem_usr"), self);
-        assertEq(tranche.values_uint("redeem_epochID"), epochID);
         assertEq(tranche.values_uint("redeemAmount"), amount);
     }
 
     function testFailRedeemOrderNotMember() public {
-        uint epochID = 3;
         uint amount = 10;
 
         // rely operator on tranche
         tranche.rely(operator_);
-       
-        operator.redeemOrder(epochID, amount);        
+
+        operator.redeemOrder(amount);
     }
 
     function testFailRedeemOrderOperatorNotWard() public {
-        uint epochID = 3;
         uint amount = 10;
         // rely address (investor) on operator
         operator.relyInvestor(self);
-        operator.redeemOrder(epochID, amount);
+        operator.redeemOrder(amount);
     }
 
     function testDisburse() public {
-        uint epochID = 3;
         // rely operator on tranche
         tranche.rely(operator_);
         // rely address (investor) on operator
         operator.relyInvestor(self);
-        
-        operator.disburse(epochID);
-    
+
+        operator.disburse();
+
         assertEq(tranche.calls("disburse"), 1);
         assertEq(tranche.values_address("disburse_usr"), self);
-        assertEq(tranche.values_uint("disburse_epochID"), epochID);
     }
 
     function testFailDisburseNotMember() public {
-        uint epochID = 3;
         // rely operator on tranche
         tranche.rely(operator_);
-        
-        operator.disburse(epochID);
+
+        operator.disburse();
     }
 
     function testFailDisburseOperatorNotWard() public {
-        uint epochID = 3;
         // rely address (investor) on operator
         operator.relyInvestor(self);
-        
-        operator.disburse(epochID);
+
+        operator.disburse();
     }
 
 }

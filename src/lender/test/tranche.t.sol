@@ -276,3 +276,4 @@ contract TrancheTest is DSTest, Math, FixedPoint {
     function testDisburseSupplyAndRedeem() public {
        // todo test supply and redeem simultaneously
     }
+}

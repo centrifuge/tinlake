@@ -19,14 +19,14 @@ import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
 
 contract TrancheLike {
-    function supplyOrder(address, uint, uint) public;
-    function redeemOrder(address, uint, uint) public;
-    function disburse(address, uint) public;
+    function supplyOrder(address usr, uint currencyAmount) public;
+    function redeemOrder(address usr, uint tokenAmount) public;
+    function disburse(address usr) public;
 }
 
 contract Operator is DSNote, Auth {
     TrancheLike public tranche;
-   
+
     // -- Investors --
     mapping (address => uint) public investors;
     function relyInvestor(address usr) public auth note { investors[usr] = 1; }
@@ -45,17 +45,17 @@ contract Operator is DSNote, Auth {
     }
 
     /// only investors that are on the memberlist can submit supplyOrders
-    function supplyOrder(uint epochID, uint amount) public auth_investor note {
-        tranche.supplyOrder(msg.sender, epochID, amount);
+    function supplyOrder(uint amount) public auth_investor note {
+        tranche.supplyOrder(msg.sender, amount);
     }
 
     /// only investors that are on the memberlist can submit redeemOrders
-    function redeemOrder(uint epochID, uint amount) public auth_investor note {
-        tranche.redeemOrder(msg.sender, epochID, amount);
+    function redeemOrder(uint amount) public auth_investor note {
+        tranche.redeemOrder(msg.sender, amount);
     }
 
     /// only investors that are on the memberlist can disburse
-    function disburse(uint epochID) external auth_investor note {
-        tranche.disburse(msg.sender, epochID);
+    function disburse() external auth_investor note {
+        tranche.disburse(msg.sender);
     }
 }
