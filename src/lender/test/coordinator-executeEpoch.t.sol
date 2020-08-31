@@ -99,6 +99,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
         uint currSeniorRatio = coordinator.calcSeniorRatio(shouldSeniorAsset, model_.NAV, shouldNewReserve);
 
         assertEq(currSeniorRatio, shouldRatio);
+        assertEq(reserve.values_uint("currency_available"), shouldNewReserve);
 
       //  assertEq(assessor.values_uint("updateSenior_seniorDebt"), rmul(model_.NAV, currSeniorRatio));
     }

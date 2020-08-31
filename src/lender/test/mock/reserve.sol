@@ -16,11 +16,17 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 import "ds-test/test.sol";
+import "tinlake-auth/auth.sol";
 import "../../../test/mock/mock.sol";
 
-contract ReserveMock is Mock {
-    function updateMaxCurrency(uint currencyAmount) external {
+contract ReserveMock is Mock, Auth {
 
+    constructor() public {
+        wards[msg.sender] = 1;
+    }
+
+    function file(bytes32 what, uint currencyAmount) public auth {
+        values_uint["currency_available"] = currencyAmount;
     }
 
     function balance() public returns (uint) {
@@ -30,6 +36,5 @@ contract ReserveMock is Mock {
     function totalBalance() public returns (uint) {
         return call("balance");
     }
-
 }
 

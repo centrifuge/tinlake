@@ -68,7 +68,7 @@ contract ReserveTest is DSTest, Math {
         uint shelfBalance = currency.balanceOf(shelf_);
 
           // set maxCurrencyAvailable allowance to exact borrowAmount
-        reserve.updateMaxCurrency(borrowAmount);
+        reserve.file("maxcurrency", borrowAmount);
         uint currencyAvailable = reserve.currencyAvailable();
 
         reserve.balance();
@@ -92,7 +92,7 @@ contract ReserveTest is DSTest, Math {
         uint shelfBalance = currency.balanceOf(shelf_);
 
         // set maxCurrencyAvailable allowance to twice as much as borrowAmount
-        reserve.updateMaxCurrency( safeMul(borrowAmount, 2));
+        reserve.file("maxcurrency",  safeMul(borrowAmount, 2));
         uint currencyAvailable = reserve.currencyAvailable();
 
         reserve.balance();
@@ -133,9 +133,9 @@ contract ReserveTest is DSTest, Math {
         // borrow action: shelf requests currency
         shelf.setReturn("balanceRequest", requestWant, borrowAmount);
         // set max available currency
-        reserve.updateMaxCurrency(200 ether);
+        reserve.file("maxcurrency", 200 ether);
         // deactivate pool
-        reserve.updateMaxCurrency(0 ether);
+        reserve.file("maxcurrency", 0 ether);
 
         reserve.balance();
     }
@@ -148,7 +148,7 @@ contract ReserveTest is DSTest, Math {
         // borrow action: shelf requests too much currency
         shelf.setReturn("balanceRequest", requestWant, safeMul(borrowAmount, 2));
         // set max available currency
-        reserve.updateMaxCurrency(borrowAmount);
+        reserve.file("maxcurrency", borrowAmount);
         reserve.balance();
     }
 
@@ -160,7 +160,7 @@ contract ReserveTest is DSTest, Math {
         // borrow action: shelf requests too much currency
         shelf.setReturn("balanceRequest", requestWant, safeMul(borrowAmount, 2));
         // set max available currency to borrowAmount
-        reserve.updateMaxCurrency(borrowAmount);
+        reserve.file("maxcurrency", borrowAmount);
         reserve.balance();
     }
 

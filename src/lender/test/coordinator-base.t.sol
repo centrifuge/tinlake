@@ -105,7 +105,7 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         coordinator.depend("seniorTranche", seniorTranche_);
         coordinator.depend("reserve", reserve_);
         coordinator.depend("assessor", assessor_);
-
+        reserve.rely(address(coordinator));
         initTestConfig(getNoOrderModel());
     }
 

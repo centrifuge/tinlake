@@ -26,7 +26,7 @@ interface EpochTrancheLike {
 }
 
 interface ReserveLike {
-    function updateMaxCurrency(uint currencyAmount) external;
+    function file(bytes32 what, uint currencyAmount) external;
     function totalBalance() external returns (uint);
 }
 
@@ -115,6 +115,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         require(submissionPeriod == false);
 
         uint closingEpoch = safeAdd(lastEpochExecuted, 1);
+        reserve.file("maxcurrency", 0);
 
         (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.getTotalOrders(closingEpoch);
         (uint orderSeniorSupply, uint orderSeniorRedeem) = seniorTranche.getTotalOrders(closingEpoch);
@@ -469,8 +470,8 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint newSeniorRatio = calcSeniorRatio(seniorAsset, epochNAV, newReserve);
 
 
-        assessor.updateSeniorAsset(newSeniorRatio);
-
+        assessor.updateSeniorAsset(newReserve);
+        reserve.file("maxcurrency", newReserve);
         // reset state for next epochs
         lastEpochExecuted = epochID;
         submissionPeriod = false;
