@@ -53,8 +53,14 @@ contract Reserve is Math, Auth {
         } else revert();
     }
 
-    function updateMaxCurrency(uint256 currencyAmount) public auth {
-        currencyAvailable = currencyAmount;
+    function file(bytes32 what, uint amount) public auth {
+        if (what == "maxcurrency") {
+            currencyAvailable = amount;
+        } else revert();
+    }
+
+    function increaseMaxCurrency(uint256 amount) public auth {
+        currencyAvailable = safeAdd(currencyAvailable, amount);
     }
 
     function balance() public {
