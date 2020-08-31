@@ -20,17 +20,21 @@ import "tinlake-math/math.sol";
 
 import "../../test/simple/token.sol";
 import "./../reserve.sol";
+import "./mock/assessor.sol";
 import "../../borrower/test/mock/shelf.sol";
 
-contract ReserveTest is DSTest, Math { 
+contract ReserveTest is DSTest, Math {
 
     SimpleToken currency;
     Reserve reserve;
     ShelfMock shelf;
+    AssessorMock assessor;
 
     address shelf_;
     address reserve_;
     address currency_;
+    address assessor_;
+
     address self;
 
     uint256 constant ONE = 10**27;
@@ -38,14 +42,18 @@ contract ReserveTest is DSTest, Math {
     function setUp() public {
         currency = new SimpleToken("CUR", "Currency", "1", 0);
         shelf = new ShelfMock();
+        assessor = new AssessorMock();
+
         reserve = new Reserve(address(currency));
 
         shelf_ = address(shelf);
         reserve_ = address(reserve);
         currency_ = address(currency);
+        assessor_ = address(assessor);
         self = address(this);
 
         reserve.depend("shelf", shelf_);
+        reserve.depend("assessor", assessor_);
     }
 
     function testReserveBalanceBorrowFullReserve() public {
@@ -62,13 +70,14 @@ contract ReserveTest is DSTest, Math {
           // set maxCurrencyAvailable allowance to exact borrowAmount
         reserve.updateMaxCurrency(borrowAmount);
         uint currencyAvailable = reserve.currencyAvailable();
-        
+
         reserve.balance();
 
         // assert currency was transferred from reserve to shelf
         assertEq(currency.balanceOf(reserve_), safeSub(reserveBalance, borrowAmount));
         assertEq(currency.balanceOf(shelf_), safeAdd(shelfBalance, borrowAmount));
         assertEq(reserve.currencyAvailable(), safeSub(currencyAvailable, borrowAmount));
+        assertEq(assessor.values_uint("borrowUpdate_currencyAmount"), borrowAmount);
     }
 
     function testReserveBalanceBorrowPartialReserve() public {
@@ -85,13 +94,14 @@ contract ReserveTest is DSTest, Math {
         // set maxCurrencyAvailable allowance to twice as much as borrowAmount
         reserve.updateMaxCurrency( safeMul(borrowAmount, 2));
         uint currencyAvailable = reserve.currencyAvailable();
-        
+
         reserve.balance();
 
         // assert currency was transferred from reserve to shelf
         assertEq(currency.balanceOf(reserve_), safeSub(reserveBalance, borrowAmount));
         assertEq(currency.balanceOf(shelf_), safeAdd(shelfBalance, borrowAmount));
         assertEq(reserve.currencyAvailable(), safeSub(currencyAvailable, borrowAmount));
+        assertEq(assessor.values_uint("borrowUpdate_currencyAmount"), borrowAmount);
     }
 
     function testReserveBalanceRepay() public {
@@ -112,6 +122,7 @@ contract ReserveTest is DSTest, Math {
         assertEq(currency.balanceOf(reserve_), safeAdd(reserveBalance, repayAmount));
         assertEq(currency.balanceOf(shelf_), safeSub(shelfBalance, repayAmount));
         assertEq(reserve.currencyAvailable(), currencyAvailable);
+        assertEq(assessor.values_uint("repaymentUpdate_currencyAmount"), repayAmount);
     }
 
     function testFailBalancePoolInactive() public {
@@ -125,7 +136,7 @@ contract ReserveTest is DSTest, Math {
         reserve.updateMaxCurrency(200 ether);
         // deactivate pool
         reserve.updateMaxCurrency(0 ether);
-        
+
         reserve.balance();
     }
 
@@ -138,7 +149,7 @@ contract ReserveTest is DSTest, Math {
         shelf.setReturn("balanceRequest", requestWant, safeMul(borrowAmount, 2));
         // set max available currency
         reserve.updateMaxCurrency(borrowAmount);
-        reserve.balance(); 
+        reserve.balance();
     }
 
     function testFailBalanceReserveUnderfunded() public {
@@ -150,7 +161,7 @@ contract ReserveTest is DSTest, Math {
         shelf.setReturn("balanceRequest", requestWant, safeMul(borrowAmount, 2));
         // set max available currency to borrowAmount
         reserve.updateMaxCurrency(borrowAmount);
-        reserve.balance(); 
+        reserve.balance();
     }
 
     function testFailBalanceShelfNotEnoughFunds() public {
@@ -164,6 +175,4 @@ contract ReserveTest is DSTest, Math {
         shelf.doApprove(currency_, reserve_, repayAmount);
         reserve.balance();
     }
-
-
 }

@@ -20,7 +20,7 @@ import "ds-test/test.sol";
 import "tinlake-math/math.sol";
 
 import "./../coordinator.sol";
-import "./mock/epoch-tranche.sol";
+import "./mock/tranche.sol";
 import "./mock/reserve.sol";
 import "./mock/assessor.sol";
 import "../deployer.sol";
@@ -47,8 +47,8 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
     Hevm hevm;
     EpochCoordinator coordinator;
 
-    EpochTrancheMock seniorTranche;
-    EpochTrancheMock juniorTranche;
+    TrancheMock seniorTranche;
+    TrancheMock juniorTranche;
 
     AssessorMock assessor;
 
@@ -86,8 +86,8 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
     }
 
     function setUp() public {
-        seniorTranche = new EpochTrancheMock();
-        juniorTranche = new EpochTrancheMock();
+        seniorTranche = new TrancheMock();
+        juniorTranche = new TrancheMock();
         reserve = new ReserveMock();
         assessor = new AssessorMock();
 
@@ -99,7 +99,8 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
 
-        coordinator = new EpochCoordinator();
+        uint challengeTime = 1 hours;
+        coordinator = new EpochCoordinator(challengeTime);
         coordinator.depend("juniorTranche", juniorTranche_);
         coordinator.depend("seniorTranche", seniorTranche_);
         coordinator.depend("reserve", reserve_);
@@ -148,7 +149,7 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         assessor.setReturn("maxReserve", model_.maxReserve);
         assessor.setReturn("calcJuniorTokenPrice", ONE);
         assessor.setReturn("calcSeniorTokenPrice", ONE);
-        assessor.setReturn("calcNAV", model_.NAV);
+        assessor.setReturn("calcUpdateNAV", model_.NAV);
         reserve.setReturn("balance", model_.reserve);
         assessor.setReturn("seniorDebt", model_.seniorDebt);
         assessor.setReturn("seniorBalance", model_.seniorBalance);
@@ -169,6 +170,20 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         assertEq(bestSubmission.juniorRedeem, model_.juniorRedeem);
         assertEq(bestSubmission.seniorSupply, model_.seniorSupply);
         assertEq(bestSubmission.juniorSupply, model_.juniorSupply);
+    }
+
+    function submitSolution(ModelInput memory solution) internal returns(int) {
+        return coordinator.submitSolution(solution.seniorRedeem, solution.juniorRedeem,
+            solution.juniorSupply, solution.seniorSupply);
+    }
+
+    function calcNewSeniorRatio(LenderModel memory model, ModelInput memory input) public returns (uint) {
+        uint currencyAvailable = model.reserve + input.seniorSupply + input.juniorSupply;
+        uint currencyOut = input.seniorRedeem + input.juniorRedeem;
+
+        uint seniorAsset = (model.seniorBalance + model.seniorDebt + input.seniorSupply) - input.seniorRedeem;
+
+        return rdiv(seniorAsset, model.NAV + currencyAvailable-currencyOut);
     }
 }
 

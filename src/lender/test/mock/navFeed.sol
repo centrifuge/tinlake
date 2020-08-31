@@ -1,5 +1,4 @@
 // Copyright (C) 2020 Centrifuge
-
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -12,36 +11,17 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 pragma solidity >=0.5.15 <0.6.0;
-
 import "ds-test/test.sol";
+
 import "../../../test/mock/mock.sol";
 
-contract EpochTrancheMock is Mock, DSTest {
-    uint totalSupply;
-    uint totalRedeem;
-
-    constructor() public {
-
+contract NAVFeedMock is Mock {
+    function approximatedNAV() public returns (uint) {
+        return values_return["approximatedNAV"];
     }
 
-    function setEpochReturn(uint totalSupply_, uint totalRedeem_) public {
-        totalSupply = totalSupply_;
-        totalRedeem = totalRedeem_;
-    }
-
-    function getTotalOrders(uint epochID) public view returns(uint, uint) {
-        return (totalSupply, totalRedeem);
-    }
-
-    function epochUpdate(uint epochID, uint supplyFulfillment_,
-        uint redeemFulfillment_, uint tokenPrice_) external {
-
-        values_uint["epochUpdate_epochID"] = epochID;
-        values_uint["epochUpdate_supplyFulfillment"] = supplyFulfillment_;
-        values_uint["epochUpdate_redeemFulfillment"] = redeemFulfillment_;
-
+    function calcUpdateNAV() public returns (uint) {
+        return values_return["calcUpdateNAV"];
     }
 }
-

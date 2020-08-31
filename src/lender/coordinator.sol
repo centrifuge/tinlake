@@ -16,13 +16,8 @@ pragma solidity >=0.5.15 <0.6.0;
 pragma experimental ABIEncoderV2;
 
 import "./ticker.sol";
+import "./data_types.sol";
 import "tinlake-auth/auth.sol";
-
-contract DataTypes  {
-    struct Fixed27 {
-        uint value;
-    }
-}
 
 interface EpochTrancheLike {
     function epochUpdate(uint epochID, uint supplyFulfillment_,
@@ -36,25 +31,17 @@ interface ReserveLike {
 }
 
 contract AssessorLike is DataTypes {
-    function calcSeniorTokenPrice(uint NAV_) external returns(Fixed27 memory tokenPrice);
-    function calcJuniorTokenPrice(uint NAV_) external returns(Fixed27 memory tokenPrice);
+    function calcSeniorTokenPrice(uint NAV, uint reserve) external returns(Fixed27 memory tokenPrice);
+    function calcJuniorTokenPrice(uint NAV, uint reserve) external returns(Fixed27 memory tokenPrice);
     function maxReserve() external view returns(uint);
-    function calcNAV() external returns (uint);
+    function calcUpdateNAV() external returns (uint);
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
     function seniorRatioBounds() external view returns(Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio);
-    function updateSenior(uint seniorDebt, uint seniorBalance) external;
+    function updateSeniorAsset(uint seniorRatio) external;
 }
 
 contract EpochCoordinator is Ticker, Auth, DataTypes  {
-    EpochTrancheLike juniorTranche;
-    EpochTrancheLike seniorTranche;
-
-    ReserveLike reserve;
-    AssessorLike assessor;
-
-    uint public lastEpochExecuted;
-
     struct OrderSummary {
         uint  seniorRedeem;
         uint  juniorRedeem;
@@ -62,37 +49,56 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint  seniorSupply;
     }
 
-    OrderSummary public bestSubmission;
-    uint public  bestSubScore;
-    bool public gotValidPoolConSubmission;
-    OrderSummary public order;
+    EpochTrancheLike public juniorTranche;
+    EpochTrancheLike public seniorTranche;
 
-    Fixed27 public epochSeniorTokenPrice;
-    Fixed27 public epochJuniorTokenPrice;
+    ReserveLike      public reserve;
+    AssessorLike     public assessor;
 
-    uint public epochNAV;
-    uint public epochSeniorDebt;
-    uint public epochSeniorBalance;
-    uint public epochReserve;
+    uint             public lastEpochExecuted;
 
-    bool public submissionPeriod;
+    OrderSummary    public bestSubmission;
+    uint            public  bestSubScore;
+    bool            public gotValidPoolConSubmission;
+    OrderSummary    public order;
+
+    Fixed27         public epochSeniorTokenPrice;
+    Fixed27         public epochJuniorTokenPrice;
+
+    uint            public epochNAV;
+    uint            public epochSeniorAsset;
+    uint            public epochReserve;
+
+    bool            public submissionPeriod;
 
     // challenge period end timestamp
-    uint public minChallengePeriodEnd;
+    uint            public minChallengePeriodEnd;
+    uint            public challengeTime;
 
-    uint public challengeTime;
+    uint            public bestRatioImprovement;
+    uint            public bestReserveImprovement;
 
-    int public constant SUCCESS = 0;
-    int public constant ERR_CURRENCY_AVAILABLE = -1;
-    int public constant ERR_MAX_ORDER = -2;
-    int public constant ERR_MAX_RESERVE = - 3;
-    int public constant ERR_MIN_SENIOR_RATIO = -4;
-    int public constant ERR_MAX_SENIOR_RATIO = -5;
-    int public constant ERR_NOT_NEW_BEST = -6;
+    uint            public constant bigNumber = 1000000000000000000000;
+    int             public constant SUCCESS = 0;
+    int             public constant NEW_BEST = 0;
+    int             public constant ERR_CURRENCY_AVAILABLE = -1;
+    int             public constant ERR_MAX_ORDER = -2;
+    int             public constant ERR_MAX_RESERVE = - 3;
+    int             public constant ERR_MIN_SENIOR_RATIO = -4;
+    int             public constant ERR_MAX_SENIOR_RATIO = -5;
+    int             public constant ERR_NOT_NEW_BEST = -6;
 
-    constructor() public {
+    constructor(uint challengeTime_) public {
         wards[msg.sender] = 1;
-        challengeTime = 1 hours;
+        challengeTime = challengeTime_;
+    }
+
+    function file(bytes32 name, uint value) public auth {
+        if(name == "challengeTime") {
+            challengeTime = value;
+        } else {
+            revert("unknown-name");
+        }
     }
 
     /// sets the dependency to another contract
@@ -113,15 +119,16 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.getTotalOrders(closingEpoch);
         (uint orderSeniorSupply, uint orderSeniorRedeem) = seniorTranche.getTotalOrders(closingEpoch);
 
-        epochNAV = assessor.calcNAV();
+        // take a snapshot of the current system state
+        epochNAV = assessor.calcUpdateNAV();
+        epochReserve = reserve.totalBalance();
 
         // calculate in DAI
-        epochSeniorTokenPrice = assessor.calcSeniorTokenPrice(epochNAV);
-        epochJuniorTokenPrice = assessor.calcJuniorTokenPrice(epochNAV);
+        epochSeniorTokenPrice = assessor.calcSeniorTokenPrice(epochNAV, epochReserve);
+        epochJuniorTokenPrice = assessor.calcJuniorTokenPrice(epochNAV, epochReserve);
 
-        epochSeniorDebt = assessor.seniorDebt();
-        epochSeniorBalance = assessor.seniorBalance();
-        epochReserve = reserve.totalBalance();
+        epochSeniorAsset = safeAdd(assessor.seniorDebt(), assessor.seniorBalance());
+
 
         /// calculate currency amounts
         order.seniorRedeem = rmul(orderSeniorRedeem, epochSeniorTokenPrice.value);
@@ -238,68 +245,82 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
     function _improveScore(uint seniorRedeem, uint juniorRedeem,
         uint juniorSupply, uint seniorSupply) internal returns(int) {
-        Fixed27 memory currSeniorRatio = Fixed27(calcSeniorRatio(safeAdd(epochSeniorBalance, epochSeniorDebt),
+        Fixed27 memory currSeniorRatio = Fixed27(calcSeniorRatio(epochSeniorAsset,
             epochNAV, epochReserve));
 
-        if(bestSubScore == 0) {
+        int err = 0;
+        uint impScoreRatio = 0;
+        uint impScoreReserve = 0;
+
+        if (bestRatioImprovement == 0) {
             // define no orders score as benchmark if no previous submission exists
-            bestSubScore = scoreImprovement(currSeniorRatio, currSeniorRatio, epochReserve);
+            (err, impScoreRatio, impScoreReserve) = scoreImprovement(currSeniorRatio, epochReserve);
+            saveNewImprovement(impScoreRatio, impScoreReserve);
         }
 
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
 
-        Fixed27 memory newSeniorRatio = Fixed27(calcSeniorRatio(calcSeniorAssetValue( seniorRedeem, seniorSupply,
-            epochSeniorDebt, epochSeniorBalance, newReserve), epochNAV, newReserve));
+        Fixed27 memory newSeniorRatio = Fixed27(calcSeniorRatio(calcSeniorAssetValue(seniorRedeem, seniorSupply,
+            epochSeniorAsset, newReserve, epochNAV), epochNAV, newReserve));
 
-        uint score =  scoreImprovement(newSeniorRatio, currSeniorRatio, newReserve);
+        (err, impScoreRatio, impScoreReserve) = scoreImprovement(newSeniorRatio, newReserve);
 
-        if (score < bestSubScore) {
+        if (err  == ERR_NOT_NEW_BEST) {
             // solution is not the best => -1
-            return -1;
+            return err;
         }
+
+        saveNewImprovement(impScoreRatio, impScoreReserve);
 
         // solution doesn't satisfy all pool constraints but improves the current violation
-        saveNewOptimum(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply, score);
-        return 0;
+        // improvement only gets 0 points for alternative solutions in the feasible region
+        saveNewOptimum(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply, 0);
+        return NEW_BEST;
     }
 
-    // returns the normalized distance (maxReserve = ONE) from the newReserve and maxReserve/2
-    function scoreDistanceReserve(Fixed27 memory newReserve_) public view returns (uint score) {
-        return rmul(1000, rdiv(ONE, abs(safeDiv(ONE, 2), newReserve_.value)));
-    }
-
-    function scoreImprovement(Fixed27 memory newSeniorRatio, Fixed27 memory currSeniorRatio,
-        uint newReserve_) public  returns(uint) {
-        (Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio) = assessor.seniorRatioBounds();
-
+    function scoreReserveImprovement(uint newReserve_) public view returns (uint score) {
+        if (newReserve_ <= assessor.maxReserve()) {
+            return bigNumber;
+        }
         // normalize reserve by defining maxReserve as ONE
         Fixed27 memory normalizedNewReserve = Fixed27(rdiv(newReserve_, assessor.maxReserve()));
+        return rmul(1000, rdiv(ONE, abs(safeDiv(ONE, 2), normalizedNewReserve.value)));
+    }
 
-        // current ratio is healthy
-        if (checkRatioInRange(currSeniorRatio, minSeniorRatio, maxSeniorRatio) == true) {
-
-            // the new proposed solution would violate the ratio constraints
-            if (checkRatioInRange(newSeniorRatio, minSeniorRatio, maxSeniorRatio) == false)
-            {
-                return 0;
-            }
-            // only points for maxRatio improvement
-
-            return scoreDistanceReserve(normalizedNewReserve);
-
+    function scoreRatioImprovement(Fixed27 memory newSeniorRatio) public view returns (uint) {
+        (Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio) = assessor.seniorRatioBounds();
+        if (checkRatioInRange(newSeniorRatio, minSeniorRatio, maxSeniorRatio) == true) {
+            return bigNumber;
         }
-
-        // gas optimized implementation
         // abs of ratio can never be zero
-        uint score = rmul(10000, rdiv(ONE, abs(newSeniorRatio.value,
-            safeDiv(safeAdd(minSeniorRatio.value, maxSeniorRatio.value), 2))));
+        return rmul(10000, rdiv(ONE, abs(newSeniorRatio.value,
+                safeDiv(safeAdd(minSeniorRatio.value, maxSeniorRatio.value), 2))));
+    }
 
-        // ratio constraints and maxReserve are in the current state violated
-        // additional score
-        if (epochReserve >= assessor.maxReserve()) {
-           score = safeAdd(score, scoreDistanceReserve(normalizedNewReserve));
+    function saveNewImprovement(uint impScoreRatio, uint impScoreReserve) internal {
+        bestRatioImprovement = impScoreRatio;
+        bestReserveImprovement = impScoreReserve;
+    }
+
+    function scoreImprovement(Fixed27 memory newSeniorRatio_, uint newReserve_) public view returns(int, uint, uint) {
+        uint impScoreRatio = scoreRatioImprovement(newSeniorRatio_);
+        uint impScoreReserve = scoreReserveImprovement(newReserve_);
+
+        // the highest priority has fixing the currentSeniorRatio
+        // if the ratio is improved, we can ignore reserve
+        if (impScoreRatio > bestRatioImprovement) {
+            // we found a new best
+            return (NEW_BEST, impScoreRatio, impScoreReserve);
         }
-        return score;
+
+        // only if the submitted solution ratio score equals the current best ratio
+        // we determine if the submitted solution improves the reserve
+        if (impScoreRatio == bestRatioImprovement) {
+              if (impScoreReserve > bestReserveImprovement) {
+                  return (NEW_BEST, impScoreRatio, impScoreReserve);
+              }
+        }
+        return (ERR_NOT_NEW_BEST, impScoreRatio, impScoreReserve);
     }
 
     function scoreSolution(uint seniorRedeem, uint juniorRedeem,
@@ -330,7 +351,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         }
 
         // successful => 0
-        return  SUCCESS;
+        return SUCCESS;
     }
 
     function validatePoolConstraints(uint reserve, uint seniorAsset) public view returns (int err) {
@@ -375,7 +396,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint newReserve = safeSub(currencyAvailable, currencyOut);
 
         return validatePoolConstraints(newReserve, calcSeniorAssetValue(seniorRedeem, seniorSupply,
-            epochSeniorDebt, epochSeniorBalance, newReserve));
+            epochSeniorAsset, newReserve, epochNAV));
     }
 
     function executeEpoch() public {
@@ -386,18 +407,18 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     }
 
     function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply,
-        uint seniorDebt, uint seniorBalance, uint reserve) public view returns (uint seniorAsset) {
+        uint currSeniorAsset, uint reserve, uint NAV) public view returns (uint seniorAsset) {
 
-        uint seniorAsset =  safeSub(safeAdd(safeAdd(seniorDebt, seniorBalance), seniorSupply), seniorRedeem);
-        uint totalPoolValue = safeAdd(epochNAV, reserve);
-        if(seniorAsset > totalPoolValue) {
-            seniorAsset = totalPoolValue;
+        uint seniorAsset =  safeSub(safeAdd(currSeniorAsset, seniorSupply), seniorRedeem);
+        uint assets = calcAssets(NAV, reserve);
+        if(seniorAsset > assets) {
+            seniorAsset = assets;
         }
 
         return seniorAsset;
     }
 
-    function calcAssets(uint NAV, uint reserve_) public view returns(uint) {
+    function calcAssets(uint NAV, uint reserve_) public pure returns(uint) {
         return safeAdd(NAV, reserve_);
     }
 
@@ -408,14 +429,6 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
             return 0;
         }
         return rdiv(seniorAsset, assets);
-    }
-
-
-    function reBalanceSeniorDebt(uint seniorAsset,
-        uint currSeniorRatio) public  returns (uint seniorDebt_, uint seniorBalance_) {
-
-        seniorDebt_ =  rmul(epochNAV, currSeniorRatio);
-        return (seniorDebt_, safeSub(seniorAsset, seniorDebt_));
     }
 
     function calcFulfillment(uint amount, uint totalOrder) public view returns(Fixed27 memory percent) {
@@ -435,7 +448,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
     function _executeEpoch(uint seniorRedeem, uint juniorRedeem,
         uint seniorSupply, uint juniorSupply) internal {
 
-        uint epochID = lastEpochExecuted+1;
+        uint epochID = safeAdd(lastEpochExecuted, 1);
 
         seniorTranche.epochUpdate(epochID, calcFulfillment(seniorSupply, order.seniorSupply).value,
             calcFulfillment(seniorRedeem, order.seniorRedeem).value,
@@ -450,17 +463,21 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         , seniorSupply, juniorSupply);
 
         uint seniorAsset = calcSeniorAssetValue(seniorRedeem, seniorSupply,
-            assessor.seniorDebt(), assessor.seniorBalance(), newReserve);
+           epochSeniorAsset, newReserve, epochNAV);
 
-        (uint seniorDebt, uint seniorBalance) = reBalanceSeniorDebt(seniorAsset,
-            calcSeniorRatio(seniorAsset, epochNAV, newReserve));
 
-        assessor.updateSenior(seniorDebt, seniorBalance);
+        uint newSeniorRatio = calcSeniorRatio(seniorAsset, epochNAV, newReserve);
 
+
+        assessor.updateSeniorAsset(newSeniorRatio);
+
+        // reset state for next epochs
         lastEpochExecuted = epochID;
         submissionPeriod = false;
         minChallengePeriodEnd = 0;
         bestSubScore = 0;
         gotValidPoolConSubmission = false;
+        bestRatioImprovement = 0;
+        bestReserveImprovement = 0;
     }
 }

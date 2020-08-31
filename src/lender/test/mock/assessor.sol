@@ -21,6 +21,7 @@ contract AssessorMock is Mock {
 
     mapping(address => uint) public tokenPrice;
 
+    // legacy code Tinlake v0.2
     function calcAndUpdateTokenPrice (address tranche) public returns (uint) {
         values_address["calcAndUpdateTokenPrice_tranche"]= tranche;
         return call("tokenPrice");
@@ -72,19 +73,19 @@ contract AssessorMock is Mock {
     }
     // - new funcs
 
-    function calcNAV() external returns (uint) {
-        return call("calcNAV");
+    function calcUpdateNAV() external returns (uint) {
+        return call("calcUpdateNAV");
     }
 
     function maxReserve() external view returns (uint) {
         return values_return["maxReserve"];
     }
 
-    function calcSeniorTokenPrice(uint NAV_) external returns(uint) {
+    function calcSeniorTokenPrice(uint NAV_, uint reserve) external returns(uint) {
         return call("calcSeniorTokenPrice");
     }
 
-    function calcJuniorTokenPrice(uint NAV_) external returns(uint) {
+    function calcJuniorTokenPrice(uint NAV_, uint reserve) external returns(uint) {
         return call("calcJuniorTokenPrice");
     }
 
@@ -102,8 +103,16 @@ contract AssessorMock is Mock {
         return call("seniorBalance");
     }
 
-    function updateSenior(uint seniorDebt_, uint seniorBalance_) public {
-        values_uint["updateSenior_seniorDebt"] = seniorDebt_;
-        values_uint["updateSenior_seniorBalance"] = seniorBalance_;
+    function updateSeniorAsset(uint seniorRatio_) public {
+        values_uint["updateSeniorAsset_seniorRatio"] = seniorRatio_;
+    }
+
+    function repaymentUpdate(uint currencyAmount) public  {
+        values_uint["repaymentUpdate_currencyAmount"] = currencyAmount;
+
+    }
+
+    function borrowUpdate(uint currencyAmount) public  {
+        values_uint["borrowUpdate_currencyAmount"] = currencyAmount;
     }
 }

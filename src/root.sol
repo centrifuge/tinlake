@@ -14,7 +14,7 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 import { BorrowerDeployer } from "./borrower/deployer.sol";
-import { LenderDeployer } from "./lender/deployer.sol";
+import { MockLenderDeployer } from "./lender/deployer.sol";
 
 import "tinlake-auth/auth.sol";
 
@@ -27,10 +27,9 @@ contract DependLike {
     function depend(bytes32, address) public;
 }
 
-
 contract TinlakeRoot is Auth {
     BorrowerDeployer public borrowerDeployer;
-    LenderDeployer public   lenderDeployer;
+    MockLenderDeployer public   lenderDeployer;
 
     bool public             deployed;
     address public          deployUsr;
@@ -44,7 +43,7 @@ contract TinlakeRoot is Auth {
     function prepare(address lender_, address borrower_, address ward_) public {
         require(deployUsr == msg.sender);
         borrowerDeployer = BorrowerDeployer(borrower_);
-        lenderDeployer = LenderDeployer(lender_);
+        lenderDeployer = MockLenderDeployer(lender_);
         wards[ward_] = 1;
         deployUsr = address(0); // disallow the deploy user to call this more than once.
     }
