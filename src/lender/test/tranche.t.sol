@@ -233,21 +233,17 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         // get token back
         assertEq(token.balanceOf(self), 0);
         assertEq(remainingRedeemToken, 15 ether);
-        tranche.redeemOrder(self, 0);
+        redeemOrder(0);
         assertEq(token.balanceOf(self), 15 ether);
 
-
         // redeem again
-        tranche.redeemOrder(self, 15 ether);
+        redeemOrder(15 ether);
         // 20 % for redeem Fulfillment
         closeAndUpdate(0, 2 * 10**26, ONE);
 
         ( payoutCurrencyAmount, payoutTokenAmount,
          remainingSupplyCurrency, remainingRedeemToken) =  tranche.disburse(self);
         assertEq(payoutCurrencyAmount, 3 ether);
-
-
-
 
     }
 
@@ -272,4 +268,11 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         assertEq(currency.balanceOf(self), 40 ether);
         assertEq(token.balanceOf(self), 60 ether);
     }
-}
+
+    function testDisburseEndEpoch() public {
+        // todo pass different end epochs
+    }
+
+    function testDisburseSupplyAndRedeem() public {
+       // todo test supply and redeem simultaneously
+    }

@@ -119,7 +119,7 @@ contract Tranche is Math, Auth, FixedPoint {
     function redeemOrder(address usr, uint newRedeemAmount) public auth {
         require(users[usr].orderedInEpoch == 0 || users[usr].orderedInEpoch == currentEpoch, "disburse required");
         users[usr].orderedInEpoch = currentEpoch;
-
+       // emit log_named_uint("fu", 2);
         uint currentRedeemAmount = users[usr].redeemTokenAmount;
         users[usr].redeemTokenAmount = newRedeemAmount;
         totalRedeem = safeAdd(safeSub(totalRedeem, currentRedeemAmount), newRedeemAmount);
