@@ -46,18 +46,14 @@ contract ScenarioTest is BaseSystemTest {
     }
 
     function setupLoan(uint tokenId, address collateralNFT_, uint principal, uint rate) public returns (uint) {
-        // define rate
-        admin.doInitRate(rate, rate);
-        // collateralNFT whitelist
-
+       
         // borrower issue loans
         uint loan =  borrower.issue(collateralNFT_, tokenId);
 
-        // admin define ceiling
-        admin.setCeiling(loan, principal);
 
-        // add rate for loan
-        admin.doAddRate(loan, rate);
+        // set ceiling based on the collateral value and riskgroup 1
+        uint riskGroup = 1;
+        // setCeiling(loan, principal, riskGroup);
         return loan;
     }
 
@@ -103,7 +99,7 @@ contract ScenarioTest is BaseSystemTest {
     }
 
     function borrowRepay(uint principal, uint rate) public {
-        CeilingLike ceiling_ = CeilingLike(address(ceiling));
+        NFTFeedLike ceiling_ = NFTFeedLike(address(nftFeed));
 
         // create borrower collateral collateralNFT
         uint tokenId = collateralNFT.issue(borrower_);
@@ -137,7 +133,8 @@ contract ScenarioTest is BaseSystemTest {
         uint loan =  borrower.issue(collateralNFT_, tokenId);
 
         // admin define ceiling
-        admin.setCeiling(loan, principal);
+        uint riskGroup = 1;
+        // setCeiling(loan, principal, riskGroup);
         borrower.approveNFT(collateralNFT, address(shelf));
         setupCurrencyOnLender(principal);
         borrower.borrowAction(loan, principal);
@@ -249,7 +246,8 @@ contract ScenarioTest is BaseSystemTest {
         uint loan =  borrower.issue(collateralNFT_, tokenId);
 
         // admin define ceiling
-        admin.setCeiling(loan, principal);
+        uint riskGroup = 1;
+        //// setCeiling(loan, principal, riskGroup);
         borrower.approveNFT(collateralNFT, address(shelf));
         borrower.borrowAction(loan, principal);
         checkAfterBorrow(tokenId, principal);
@@ -273,9 +271,11 @@ contract ScenarioTest is BaseSystemTest {
         // borrower issue loan
         uint loan =  borrower.issue(collateralNFT_, 123);
 
-        // admin define ceiling
-        admin.setCeiling(loan, 100);
-        borrower.borrowAction(loan, 100);
+        // set ceiling based on riskgroup and nft value
+        uint ceiling = 100;
+        uint riskGroup = 1;
+        //setCeiling(loan, ceiling, riskGroup);
+        borrower.borrowAction(loan, ceiling);
         assertEq(currency.balanceOf(borrower_), 0);
     }
 
@@ -284,8 +284,10 @@ contract ScenarioTest is BaseSystemTest {
         // borrower issue loans
         uint loan =  borrower.issue(collateralNFT_, tokenId);
 
-        // admin define ceiling
-        admin.setCeiling(loan, 100);
+        // set ceiling based on riskgroup and nft value
+        uint ceiling = 100;
+        uint riskGroup = 1;
+        //setCeiling(loan, ceiling, riskGroup);
         borrower.borrowAction(loan, 100);
         assertEq(currency.balanceOf(borrower_), 100);
     }

@@ -27,6 +27,7 @@ contract Mock {
     // passed parameter
     mapping (bytes32 => uint) public values_uint;
     mapping (bytes32 => address) public values_address;
+    mapping (bytes32 => bytes32) public values_bytes32;
 
     mapping (bytes32 =>bool) method_fail;
 

@@ -64,76 +64,102 @@ contract WithdrawTest is BaseSystemTest {
     }
 
     function testWithdraw() public {
-          fundTranches();
-          uint ceiling = 100 ether;
-         (uint loanId, uint tokenId) = createLoanAndBorrow(borrower_, ceiling, 0);
-          assertPreCondition(loanId, tokenId, ceiling);
-//        withdraw(loanId, tokenId, ceiling, borrower_);
+        fundTranches();
+        uint nftPrice = 100 ether; // -> ceiling 50 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint ceiling = computeCeiling(riskGroup, nftPrice);
+        (uint loanId, uint tokenId) = createLoanAndBorrow(borrower_, nftPrice, riskGroup);
+        assertPreCondition(loanId, tokenId, ceiling);
+        withdraw(loanId, tokenId, ceiling, borrower_);
     }
 
     function testWithdrawToOtherUserAccount() public {
         fundTranches();
-        uint ceiling = 100 ether;
-        (uint loanId, uint tokenId) = createLoanAndBorrow(borrower_, ceiling, 0);
+        uint nftPrice = 100 ether; // -> ceiling 50 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint ceiling = computeCeiling(riskGroup, nftPrice);
+
+        (uint loanId, uint tokenId) = createLoanAndBorrow(borrower_, nftPrice, riskGroup);
         assertPreCondition(loanId, tokenId, ceiling);
         // recipient not borrower account
         withdraw(loanId, tokenId, ceiling, randomUser_);
     }
 
     function testWithdrawFromShelfHasFunds() public {
-        uint ceiling = 100 ether;
+        uint nftPrice = 100 ether; // -> ceiling 50 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint ceiling = computeCeiling(riskGroup, nftPrice);
+
         // transfer funds directly into the shelf, without calling tranche.supply()
         uint investAmount = safeMul(ceiling, 2);
         supplyFunds(investAmount, address(shelf));
-        (uint loanId, uint tokenId) = createLoanAndBorrow(borrower_, ceiling, 0);
+        (uint loanId, uint tokenId) = createLoanAndBorrow(borrower_, nftPrice, riskGroup);
         assertPreCondition(loanId, tokenId, ceiling);
         withdraw(loanId, tokenId, ceiling, borrower_);
     }
 
     function testPartialWithdraw() public {
         fundTranches();
-        uint ceiling = 100 ether;
+        uint nftPrice = 100 ether; // -> ceiling 50 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint ceiling = computeCeiling(riskGroup, nftPrice);
+        
         // withdraw amount half of your loan balance
         uint withdrawAmount = safeDiv(ceiling, 2);
-        (uint loanId, uint tokenId) = createLoanAndBorrow(borrower_, ceiling, 0);
+        (uint loanId, uint tokenId) = createLoanAndBorrow(borrower_, nftPrice, riskGroup);
         assertPreCondition(loanId, tokenId, withdrawAmount);
         withdraw(loanId, tokenId, withdrawAmount, borrower_);
     }
 
     function testFailWithdrawNFTnotLocked() public {
         fundTranches();
-        uint ceiling = 100 ether;
+        uint nftPrice = 100 ether; // -> ceiling 50 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint ceiling = computeCeiling(riskGroup, nftPrice);
+        
         (uint loanId, uint tokenId) = issueNFTAndCreateLoan(borrower_);
+        priceNFT(tokenId, nftPrice);
         // do not lock nft
         withdraw(loanId, tokenId, ceiling, borrower_);
     }
 
     function testFailWithdrawNotLoanOwner() public {
         fundTranches();
-        uint ceiling = 100 ether;
-        (uint loanId, uint tokenId) = createLoanAndBorrow(randomUser_, ceiling, 0);
+        uint nftPrice = 100 ether; // -> ceiling 50 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint ceiling = computeCeiling(riskGroup, nftPrice);
+        
+        (uint loanId, uint tokenId) = createLoanAndBorrow(randomUser_, nftPrice, riskGroup);
         withdraw(loanId, tokenId, ceiling, borrower_);
     }
 
-    function testFailLoanHasNoBalance() public {
+    function testFailLoanHasNFTNotPriced() public {
         fundTranches();
-        uint ceiling = 100 ether;
+        uint nftPrice = 100 ether; // -> ceiling 50 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint ceiling = computeCeiling(riskGroup, nftPrice);
+        
         (uint loanId, uint tokenId) = issueNFTAndCreateLoan(borrower_);
         lockNFT(loanId, borrower_);
-        // do not init Borrow & add loan balance
         withdraw(loanId, tokenId, ceiling, borrower_);
     }
 
     function testFailWithdrawNotEnoughFundsAvailable() public {
-        uint ceiling = 100 ether;
-        (uint loanId, uint tokenId) = createLoanAndBorrow(randomUser_, ceiling, 0);
+        uint nftPrice = 100 ether; // -> ceiling 50 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint ceiling = computeCeiling(riskGroup, nftPrice);
+        
+        (uint loanId, uint tokenId) = createLoanAndBorrow(randomUser_, nftPrice, riskGroup);
         withdraw(loanId, tokenId, ceiling, borrower_);
     }
 
     function testFailWithdrawTwice() public {
         fundTranches();
-        uint ceiling = 100 ether;
-        (uint loanId, uint tokenId) = createLoanAndBorrow(randomUser_, ceiling, 0);
+        uint nftPrice = 100 ether; // -> ceiling 50 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint ceiling = computeCeiling(riskGroup, nftPrice);
+        
+        (uint loanId, uint tokenId) = createLoanAndBorrow(randomUser_, nftPrice, riskGroup);
         assertPreCondition(loanId, tokenId, ceiling);
         withdraw(loanId, tokenId, ceiling, borrower_);
         withdraw(loanId, tokenId, ceiling, borrower_);

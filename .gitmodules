@@ -16,6 +16,3 @@
 [submodule "lib/tinlake-auth"]
 	path = lib/tinlake-auth
 	url = https://github.com/centrifuge/tinlake-auth
-[submodule "lib/tinlake-nftfeed"]
-	path = lib/tinlake-nftfeed
-	url = https://github.com/centrifuge/tinlake-nftfeed

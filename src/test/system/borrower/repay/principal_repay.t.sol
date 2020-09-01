@@ -32,7 +32,7 @@ contract PrincipalRepayTest is BaseSystemTest {
     function repay(uint loanId, uint tokenId, uint amount, uint expectedDebt) public {
         uint initialBorrowerBalance = currency.balanceOf(borrower_);
         uint initialTrancheBalance = currency.balanceOf(address(distributor));
-        uint initialCeiling = ceiling.ceiling(loanId);
+        uint initialCeiling = nftFeed.ceiling(loanId);
         borrower.repay(loanId, amount);
         assertPostCondition(loanId, tokenId, amount, initialBorrowerBalance, initialTrancheBalance, expectedDebt, initialCeiling);
     }
@@ -46,8 +46,8 @@ contract PrincipalRepayTest is BaseSystemTest {
         assertEq(shelf.balances(loanId), 0);
         // assert: loan has open debt
         assert(pile.debt(loanId) > 0);
-        // assert: debt includes accrued interest
-        assertEq(pile.debt(loanId), expectedDebt);
+        // assert: debt includes accrued interest (tolerance +/- 1)
+        assert(safeSub(pile.debt(loanId),1) <= expectedDebt && expectedDebt <= safeAdd(pile.debt(loanId), 1));
         // assert: borrower has enough funds
         assert(currency.balanceOf(borrower_) >= repayAmount);
 
@@ -64,19 +64,21 @@ contract PrincipalRepayTest is BaseSystemTest {
             repaidAmount = expectedDebt;
 
         }
-        assertEq(safeSub(initialBorrowerBalance, repaidAmount), currency.balanceOf(borrower_));
+        uint newBorrowerBalance = safeSub(initialBorrowerBalance, repaidAmount);
+        assert(safeSub(newBorrowerBalance, currency.balanceOf(borrower_)) <= 1); // (tolerance +/- 1)
         // assert: shelf/tranche received funds
         // since we are calling balance inside repay, money is directly transferred to the tranche through shelf
-        assertEq(safeAdd(initialTrancheBalance, repaidAmount), currency.balanceOf(address(distributor)));
-        // assert: debt amounts reduced by repayAmount
-        assertEq(pile.debt(loanId), safeSub(expectedDebt, repaidAmount));
-        assertEq(pile.total(), safeSub(expectedDebt, repaidAmount));
+        uint newTrancheBalance = safeAdd(initialTrancheBalance, repaidAmount);
+        assert(safeSub(currency.balanceOf(address(distributor)), newTrancheBalance) <= 1); // (tolerance +/- 1)
+        // assert: debt amounts reduced by repayAmount (tolerance +/- 1)
+        uint newDebt = safeSub(expectedDebt, repaidAmount);
+        assert(safeSub(pile.debt(loanId), newDebt) <= 1);
         // aseert: initialCeiling did not increase
-        assertEq(initialCeiling, ceiling.ceiling(loanId));
+        assertEq(initialCeiling, nftFeed.ceiling(loanId));
     }
 
-    function borrowAndRepay(address usr, uint ceiling, uint rate, uint speed, uint expectedDebt, uint repayAmount) public {
-        (uint loanId, uint tokenId) = createLoanAndWithdraw(usr, ceiling, rate, speed);
+    function borrowAndRepay(address usr, uint nftPrice, uint riskGroup, uint expectedDebt, uint repayAmount) public {
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(usr, nftPrice, riskGroup);
         // supply borrower with additional funds to pay for accrued interest
         topUp(usr);
         // borrower allows shelf full control over borrower tokens
@@ -88,45 +90,52 @@ contract PrincipalRepayTest is BaseSystemTest {
     }
 
     function testRepayFullDebt() public {
-        uint ceiling = 66 ether;
-        // 12 % per year compound in seconds
-        uint rate = 1000000003593629043335673583;
-        uint speed = rate;
+        uint nftPrice = 200 ether; // -> ceiling 100 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint rate = getRateByRisk(riskGroup);
+        uint ceiling = computeCeiling(riskGroup, nftPrice); 
+
         // expected debt after 1 year of compounding
-        uint expectedDebt = 73.92 ether;
+        uint expectedDebt = 112 ether;
         uint repayAmount = expectedDebt;
-        borrowAndRepay(borrower_, ceiling, rate, speed, expectedDebt, repayAmount);
+        borrowAndRepay(borrower_, nftPrice, riskGroup, expectedDebt, repayAmount);
     }
 
     function testRepayMaxLoanDebt() public {
-        uint ceiling = 66 ether;
-        // 12 % per year compound in seconds
-        uint rate = 1000000003593629043335673583;
-        uint speed = rate;
+        uint nftPrice = 200 ether; // -> ceiling 100 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint rate = getRateByRisk(riskGroup);
+        uint ceiling = computeCeiling(riskGroup, nftPrice); 
+
         // expected debt after 1 year of compounding
-        uint expectedDebt = 73.92 ether;
+        uint expectedDebt = 112 ether;
         // borrower tries to repay twice his debt amount
         uint repayAmount = safeMul(expectedDebt, 2);
-        borrowAndRepay(borrower_, ceiling, rate, speed, expectedDebt, repayAmount);
+        borrowAndRepay(borrower_, nftPrice, riskGroup, expectedDebt, repayAmount);
     }
 
     function testPartialRepay() public {
-        uint ceiling = 66 ether;
-        // 12 % per year compound in seconds
-        uint rate = 1000000003593629043335673583;
-        uint speed = rate;
+        uint nftPrice = 200 ether; // -> ceiling 100 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint rate = getRateByRisk(riskGroup);
+        uint ceiling = computeCeiling(riskGroup, nftPrice); 
+
         // expected debt after 1 year of compounding
-        uint expectedDebt =  73.92 ether;
+        uint expectedDebt = 112 ether;
         uint repayAmount = safeDiv(expectedDebt, 2);
-        borrowAndRepay(borrower_, ceiling, rate, speed, expectedDebt, repayAmount);
+        borrowAndRepay(borrower_, nftPrice, riskGroup, expectedDebt, repayAmount);
     }
 
     function testRepayDebtNoRate() public {
-        uint ceiling = 66 ether;
-        // do not set rate - default rate group: 0
-        uint expectedDebt = ceiling;
+        uint nftPrice = 100 ether; // -> ceiling 100 ether
+        uint riskGroup = 0; // -> no interest rate
+        uint rate = getRateByRisk(riskGroup);
+        uint ceiling = computeCeiling(riskGroup, nftPrice); // 60 %
+
+        // expected debt after 1 year of compounding
+        uint expectedDebt =  60 ether; 
         uint repayAmount = expectedDebt;
-        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling);
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
 
         // borrower allows shelf full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
@@ -137,28 +146,30 @@ contract PrincipalRepayTest is BaseSystemTest {
     }
 
     function testFailRepayNotLoanOwner() public {
-        uint ceiling = 66 ether;
-        // 12 % per year compound in seconds
-        uint rate = 1000000003593629043335673583;
-        uint speed = rate;
+        uint nftPrice = 200 ether; // -> ceiling 100 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint rate = getRateByRisk(riskGroup);
+        uint ceiling = computeCeiling(riskGroup, nftPrice); 
+
         // expected debt after 1 year of compounding
-        uint expectedDebt = 73.92 ether;
+        uint expectedDebt = 112 ether;
         uint repayAmount = expectedDebt;
 
          // supply borrower with additional funds to pay for accrued interest
         topUp(borrower_);
-        borrowAndRepay(randomUser_, ceiling, rate, speed, expectedDebt, repayAmount);
+        borrowAndRepay(randomUser_, nftPrice, riskGroup, expectedDebt, repayAmount);
     }
 
     function testFailRepayNotEnoughFunds() public {
-        uint ceiling = 66 ether;
-        // 12 % per year compound in seconds
-        uint rate = 1000000003593629043335673583;
-        uint speed = rate;
+        uint nftPrice = 200 ether; // -> ceiling 100 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint rate = getRateByRisk(riskGroup);
+        uint ceiling = computeCeiling(riskGroup, nftPrice); 
+
         // expected debt after 1 year of compounding
-        uint expectedDebt = 73.92 ether;
+        uint expectedDebt = 112 ether;
         uint repayAmount = expectedDebt;
-        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
 
         hevm.warp(now + 365 days);
 
@@ -170,22 +181,24 @@ contract PrincipalRepayTest is BaseSystemTest {
     }
 
     function testFailRepayLoanNotFullyWithdrawn() public {
-        uint ceiling = 66 ether;
-        // 12 % per year compound in seconds
-        uint rate = 1000000003593629043335673583;
-        uint speed = rate;
-        // expected debt after 1 year of compounding
-        uint expectedDebt = 73.92 ether;
-        uint repayAmount = ceiling;
-        (uint loanId, uint tokenId) = issueNFTAndCreateLoan(borrower_);
+       uint nftPrice = 200 ether; // -> ceiling 100 ether
+       uint riskGroup = 1; // -> 12% per year
+       uint rate = getRateByRisk(riskGroup);
+       uint ceiling = computeCeiling(riskGroup, nftPrice); // 50% 100 ether
+       uint borrowAmount = ceiling;
+       uint withdrawAmount = safeSub(ceiling, 2); // half the borrowAmount
+       uint repayAmount = ceiling;
+       uint expectedDebt = 56 ether; // borrowamount + interest
+
+       (uint loanId, uint tokenId) = issueNFTAndCreateLoan(borrower_);
         // lock nft
         lockNFT(loanId, borrower_);
-        // admin sets parameters for the loan
-        setLoanParameters(loanId, ceiling, rate, speed);
+        // priceNFT
+        priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
         // borrower add loan balance of full ceiling
-        borrower.borrow(loanId, ceiling);
+        borrower.borrow(loanId, borrowAmount);
         // borrower just withdraws half of ceiling -> loanBalance remains
-        borrower.withdraw(loanId, safeSub(ceiling, 2), borrower_);
+        borrower.withdraw(loanId, withdrawAmount, borrower_);
         hevm.warp(now + 365 days);
 
         // supply borrower with additional funds to pay for accrued interest
@@ -196,18 +209,19 @@ contract PrincipalRepayTest is BaseSystemTest {
     }
 
     function testFailRepayZeroDebt() public {
-        uint ceiling = 66 ether;
-        // 12 % per year compound in seconds
-        uint rate = 1000000003593629043335673583;
-        uint speed = rate;
+        uint nftPrice = 200 ether; // -> ceiling 100 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint rate = getRateByRisk(riskGroup);
+        uint ceiling = computeCeiling(riskGroup, nftPrice); 
+       
         // expected debt after 1 year of compounding
-        uint expectedDebt = 73.92 ether;
+        uint expectedDebt = 112 ether;
         uint repayAmount = expectedDebt;
         (uint loanId, uint tokenId) = issueNFTAndCreateLoan(borrower_);
         // lock nft
         lockNFT(loanId, borrower_);
-        // admin sets parameters for the loan
-        setLoanParameters(loanId, ceiling, rate, speed);
+         // priceNFT
+        priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
 
         // borrower does not borrow
 
@@ -219,14 +233,15 @@ contract PrincipalRepayTest is BaseSystemTest {
     }
 
     function testFailRepayCurrencyNotApproved() public {
-        uint ceiling = 66 ether;
-        // 12 % per year compound in seconds
-        uint rate = 1000000003593629043335673583;
-        uint speed = rate;
+        uint nftPrice = 200 ether; // -> ceiling 100 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint rate = getRateByRisk(riskGroup);
+        uint ceiling = computeCeiling(riskGroup, nftPrice); 
+       
         // expected debt after 1 year of compounding
-        uint expectedDebt = 73.92 ether;
-        uint repayAmount = ceiling;
-        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
+        uint expectedDebt = 112 ether;
+        uint repayAmount = expectedDebt;
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
 
         //repay after 1 year
         hevm.warp(now + 365 days);
@@ -237,15 +252,16 @@ contract PrincipalRepayTest is BaseSystemTest {
     }
 
     function testFailBorowFullAmountTwice() public {
-               uint ceiling = 66 ether;
-        // 12 % per year compound in seconds
-        uint rate = 1000000003593629043335673583;
-        uint speed = rate;
+        uint nftPrice = 200 ether; // -> ceiling 100 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint rate = getRateByRisk(riskGroup);
+        uint ceiling = computeCeiling(riskGroup, nftPrice); 
+       
         // expected debt after 1 year of compounding
-        uint expectedDebt = 73.92 ether;
+        uint expectedDebt = 112 ether;
         uint repayAmount = expectedDebt;
 
-        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
         // supply borrower with additional funds to pay for accrued interest
         topUp(borrower_);
         // borrower allows shelf full control over borrower tokens

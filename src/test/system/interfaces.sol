@@ -34,10 +34,15 @@ contract TokenLike{
     function burn(address, uint) public;
 }
 
-contract CeilingLike {
+contract NFTFeedLike {
+    function update(bytes32 nftID, uint value) public;
+    function update(bytes32 nftID, uint value, uint risk) public;
     function ceiling(uint loan) public view returns(uint);
     function values(uint) public view returns(uint);
-    function file(bytes32 what, uint loan, uint currencyAmount) public;
+    function ceilingRatio(uint) public view returns(uint);
+    function thresholdRatio(uint) public view returns(uint);
+    function threshold(uint) public view returns (uint);
+    // function file(bytes32 what, uint loan, uint currencyAmount) public;
     function borrow(uint loan, uint currencyAmount) public;
     function repay(uint loan, uint currencyAmount) public;
 }

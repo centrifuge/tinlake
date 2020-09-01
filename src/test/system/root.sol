@@ -27,14 +27,13 @@ contract TestRoot is TinlakeRoot {
         relyContract(borrowerDeployer.title(), usr);
         relyContract(borrowerDeployer.shelf(), usr);
         relyContract(borrowerDeployer.pile(), usr);
-        relyContract(borrowerDeployer.ceiling(), usr);
+        relyContract(borrowerDeployer.feed(), usr);
         relyContract(borrowerDeployer.collector(), usr);
-        relyContract(borrowerDeployer.threshold(), usr);
     }
 
     function denyBorrowAdmin(address usr) public auth {
         denyContract(borrowerDeployer.title(), usr);
-        denyContract(borrowerDeployer.ceiling(), usr);
+        denyContract(borrowerDeployer.feed(), usr);
         denyContract(borrowerDeployer.shelf(), usr);
         denyContract(borrowerDeployer.pile(), usr);
     }

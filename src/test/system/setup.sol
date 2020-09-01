@@ -19,12 +19,9 @@ import {
   TitleFab,
   ShelfFab,
   PileFab,
-  PrincipalCeilingFab,
-  CreditLineCeilingFab,
-  CeilingFab,
-  ThresholdFab,
+  NFTFeedFab,
+  NAVFeedFab,
   CollectorFab,
-  PricePoolFab,
   BorrowerDeployer
 } from "../../borrower/deployer.sol";
 
@@ -32,8 +29,6 @@ import { Title } from "tinlake-title/title.sol";
 import { Pile } from "../../borrower/pile.sol";
 import { Shelf } from "../../borrower/shelf.sol";
 import { Collector } from "../../borrower/collect/collector.sol";
-import { Principal } from "../../borrower/ceiling/principal.sol";
-import { CreditLine } from "../../borrower/ceiling/creditline.sol";
 
 import "../../lender/deployer.sol";
 
@@ -44,7 +39,7 @@ import "../simple/distributor.sol";
 
 import "tinlake-erc20/erc20.sol";
 import { PushRegistry } from "tinlake-registry/registry.sol";
-import { TokenLike, CeilingLike } from "./interfaces.sol";
+import { TokenLike, NFTFeedLike } from "./interfaces.sol";
 
 contract DistributorLike {
     function balance() public;
@@ -60,9 +55,8 @@ contract TestSetup {
     Shelf        shelf;
     Pile         pile;
     Title        title;
-    CeilingLike    ceiling;
+    NFTFeedLike  nftFeed;
     Collector    collector;
-    PushRegistry threshold;
 
 
     // Lender contracts
@@ -82,7 +76,7 @@ contract TestSetup {
         return (tokenId, lookupId);
     }
 
-    function deployContracts(bytes32 ceiling_) public {
+    function deployContracts(bytes32 feed_) public {
         collateralNFT = new Title("Collateral NFT", "collateralNFT");
         collateralNFT_ = address(collateralNFT);
 
@@ -91,8 +85,9 @@ contract TestSetup {
 
         root = new TestRoot(address(this));
         root_ = address(root);
+
         // only admin is main deployer
-        deployBorrower(ceiling_);
+        deployBorrower(feed_);
         // only admin is main deployer
 
         deployMockLender();
@@ -101,39 +96,33 @@ contract TestSetup {
         root.deploy();
     }
 
-    function deployBorrower(bytes32 ceiling_) private {
+    function deployBorrower(bytes32 feed_) private {
         TitleFab titlefab = new TitleFab();
         ShelfFab shelffab = new ShelfFab();
         PileFab pileFab = new PileFab();
         CollectorFab collectorFab = new CollectorFab();
-        ThresholdFab thresholdFab = new ThresholdFab();
-        PricePoolFab pricePoolFab = new PricePoolFab();
-        address ceilingFab_;
+        address nftFeedFab_;
 
-        if (ceiling_ == "default") {
-            ceilingFab_ = address(new PrincipalCeilingFab());
-        } else if (ceiling_ == "creditline") {
-            ceilingFab_ = address(new CreditLineCeilingFab());
+        if (feed_ == "default") {
+            nftFeedFab_ = address(new NFTFeedFab());
+        } else if (feed_ == "nav") {
+            nftFeedFab_ = address(new NAVFeedFab());
         }
 
-        borrowerDeployer = new BorrowerDeployer(root_, titlefab, shelffab, pileFab, ceilingFab_, collectorFab, thresholdFab, pricePoolFab, address(0), currency_, "Tinlake Loan Token", "TLNT");
+        borrowerDeployer = new BorrowerDeployer(root_, titlefab, shelffab, pileFab, collectorFab, nftFeedFab_, currency_, "Tinlake Loan Token", "TLNT");
 
         borrowerDeployer.deployTitle();
         borrowerDeployer.deployPile();
-        borrowerDeployer.deployCeiling();
+        borrowerDeployer.deployFeed();
         borrowerDeployer.deployShelf();
-        borrowerDeployer.deployThreshold();
         borrowerDeployer.deployCollector();
-        borrowerDeployer.deployPricePool();
         borrowerDeployer.deploy();
 
         shelf = Shelf(borrowerDeployer.shelf());
         pile = Pile(borrowerDeployer.pile());
-        ceiling = CeilingLike(borrowerDeployer.ceiling());
-
         title = Title(borrowerDeployer.title());
         collector = Collector(borrowerDeployer.collector());
-        threshold = PushRegistry(borrowerDeployer.threshold());
+        nftFeed = NFTFeedLike(borrowerDeployer.feed());
     }
 
     function deployMockLender() public {
