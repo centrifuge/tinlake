@@ -156,7 +156,7 @@ contract ReserveTest is DSTest, Math {
         uint borrowAmount = 100 ether;
         bool requestWant = true;
         // fund reserve with amount smaller than borrowAmount
-        currency.mint(reserve_, safeSub(borrowAmount,1));
+        currency.mint(reserve_, safeSub(borrowAmount, 1));
         // borrow action: shelf requests too much currency
         shelf.setReturn("balanceRequest", requestWant, safeMul(borrowAmount, 2));
         // set max available currency to borrowAmount
