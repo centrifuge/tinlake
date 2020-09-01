@@ -466,9 +466,7 @@ contract EpochCoordinator is Ticker, Auth, FixedPoint  {
         uint seniorAsset = calcSeniorAssetValue(seniorRedeem, seniorSupply,
            epochSeniorAsset, newReserve, epochNAV);
 
-
         uint newSeniorRatio = calcSeniorRatio(seniorAsset, epochNAV, newReserve);
-
 
         assessor.updateSeniorAsset(newReserve);
         reserve.file("maxcurrency", newReserve);

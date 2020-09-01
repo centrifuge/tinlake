@@ -37,10 +37,18 @@ contract Reserve is Math, Auth {
 
     address self;
 
+    uint public balance_;
+
     constructor(address currency_) public {
         wards[msg.sender] = 1;
         currency = ERC20Like(currency_);
         self = address(this);
+    }
+
+    function file(bytes32 what, uint amount) public auth {
+        if (what == "maxcurrency") {
+            currencyAvailable = amount;
+        } else revert();
     }
 
     function depend(bytes32 contractName, address addr) public auth {
@@ -53,14 +61,18 @@ contract Reserve is Math, Auth {
         } else revert();
     }
 
-    function file(bytes32 what, uint amount) public auth {
-        if (what == "maxcurrency") {
-            currencyAvailable = amount;
-        } else revert();
+    function totalBalance() public view returns (uint) {
+        return balance_;
     }
 
-    function increaseMaxCurrency(uint256 amount) public auth {
-        currencyAvailable = safeAdd(currencyAvailable, amount);
+    function deposit(uint currencyAmount) public auth {
+        currency.transferFrom(msg.sender, self, currencyAmount);
+        balance_ = safeAdd(balance_, currencyAmount);
+    }
+
+    function payout(uint currencyAmount) public auth {
+        currency.transferFrom(self, msg.sender, currencyAmount);
+        balance_ = safeSub(balance_, currencyAmount);
     }
 
     function balance() public {

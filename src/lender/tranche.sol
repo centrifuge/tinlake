@@ -271,6 +271,10 @@ contract Tranche is Math, Auth, FixedPoint {
         }
     }
 
+    function mint(address usr, uint amount) public auth {
+        token.mint(usr, amount);
+    }
+
     // adjust currency balance after epoch execution -> receive/send currency from/to reserve
     function adjustCurrencyBalance(uint epochID, uint epochSupply, uint epochRedeem) internal {
         // currency that was supplied in this epoch

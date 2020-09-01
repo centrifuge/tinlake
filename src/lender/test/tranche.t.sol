@@ -266,6 +266,12 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         assertEq(token.balanceOf(self), 60 ether);
     }
 
+    function testMint() public {
+        uint amount = 120 ether;
+        tranche.mint(self, amount);
+        assertEq(token.balanceOf(self), amount);
+    }
+
     function testDisburseEndEpoch() public {
         // todo pass different end epochs
     }

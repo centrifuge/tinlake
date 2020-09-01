@@ -175,4 +175,20 @@ contract ReserveTest is DSTest, Math {
         shelf.doApprove(currency_, reserve_, repayAmount);
         reserve.balance();
     }
+
+    function testDepositPayout() public {
+        uint amount = 100 ether;
+        currency.mint(self, amount);
+        assertEq(reserve.totalBalance(), 0);
+        currency.approve(reserve_, amount);
+        reserve.deposit(amount);
+        assertEq(reserve.totalBalance(), amount);
+        assertEq(currency.balanceOf(reserve_), amount);
+
+        amount = 60 ether;
+        reserve.payout(amount);
+        assertEq(reserve.totalBalance(), 40 ether);
+        assertEq(currency.balanceOf(reserve_), 40 ether);
+        assertEq(currency.balanceOf(self), 60 ether);
+    }
 }
