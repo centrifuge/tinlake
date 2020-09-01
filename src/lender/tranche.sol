@@ -241,9 +241,9 @@ contract Tranche is Math, Auth, FixedPoint {
         adjustCurrencyBalance(epochID, epochSupplyCurrency, epochRedeemCurrency);
 
         totalSupply = safeAdd(safeSub(totalSupply, epochSupplyCurrency), rmul(epochSupplyCurrency, safeSub(ONE, epochs[epochID].supplyFulfillment.value)));
-        totalRedeem = safeAdd(safeSub(totalRedeem, epochRedeemCurrency), rmul(epochRedeemCurrency, safeSub(ONE, epochs[epochID].redeemFulfillment.value)));
+        totalRedeem = safeAdd(safeSub(totalRedeem, redeemInToken), rmul(redeemInToken, safeSub(ONE, epochs[epochID].redeemFulfillment.value)));
        }
-    function closeEpoch() public auth returns (uint totalSupply_, uint totalRedeem_) {
+    function closeEpoch() public auth returns (uint totalSupplyCurrency_, uint totalRedeemToken_) {
         currentEpoch = safeAdd(currentEpoch, 1);
         waitingForUpdate = true;
         return (totalSupply, totalRedeem);

@@ -21,7 +21,8 @@ import "tinlake-auth/auth.sol";
 contract TrancheLike {
     function supplyOrder(address usr, uint currencyAmount) public;
     function redeemOrder(address usr, uint tokenAmount) public;
-    function disburse(address usr) public;
+    function disburse(address usr) public returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
+    function disburse(address usr, uint endEpoch) public returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
 }
 
 contract Operator is DSNote, Auth {
@@ -55,7 +56,17 @@ contract Operator is DSNote, Auth {
     }
 
     /// only investors that are on the memberlist can disburse
-    function disburse() external auth_investor note {
-        tranche.disburse(msg.sender);
+    function disburse() external auth_investor note
+        returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken)
+    {
+        return tranche.disburse(msg.sender);
     }
+
+    function disburse(uint endEpoch) external auth_investor note
+    returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken)
+    {
+        return tranche.disburse(msg.sender, endEpoch);
+    }
+
+
 }
