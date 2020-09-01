@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pragma solidity >=0.5.15 <0.6.0;
+pragma experimental ABIEncoderV2;
 
 import "./coordinator-base.t.sol";
 
@@ -21,6 +22,8 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
 
     function setUp() public {
         super.setUp();
+        // set max available currency to 1 to check if it was set to 0 on close
+        reserve.file("maxcurrency", 1);
     }
 
     function testSimpleClose() public {
@@ -102,6 +105,7 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
         coordinator.closeEpoch();
         assertEq(coordinator.lastEpochExecuted(), 0);
         assertTrue(coordinator.submissionPeriod() == true);
+        assertEq(reserve.values_uint("currency_available"), 0);
     }
 }
 

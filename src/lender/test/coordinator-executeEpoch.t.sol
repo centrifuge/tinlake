@@ -87,7 +87,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
         uint shouldNewReserve = safeSub(safeAdd(safeAdd(model_.reserve, input.seniorSupply), input.juniorSupply),
             safeAdd(input.seniorRedeem, input.juniorRedeem));
 
-        uint seniorAsset = coordinator.calcSeniorAssetValue(input.seniorRedeem, input.seniorSupply, safeAdd(model_.seniorDebt, model_.seniorBalance), shouldNewReserve);
+        uint seniorAsset = coordinator.calcSeniorAssetValue(input.seniorRedeem, input.seniorSupply, safeAdd(model_.seniorDebt, model_.seniorBalance), shouldNewReserve, model_.NAV);
 
         // change or orders delta = -2 ether
         uint shouldSeniorAsset = safeSub(safeAdd(model_.seniorDebt, model_.seniorBalance), 2 ether);
@@ -99,6 +99,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
         uint currSeniorRatio = coordinator.calcSeniorRatio(shouldSeniorAsset, model_.NAV, shouldNewReserve);
 
         assertEq(currSeniorRatio, shouldRatio);
+        assertEq(reserve.values_uint("currency_available"), shouldNewReserve);
 
       //  assertEq(assessor.values_uint("updateSenior_seniorDebt"), rmul(model_.NAV, currSeniorRatio));
     }
@@ -125,7 +126,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
         uint seniorRedeem = 0;
         uint seniorSupply = 0;
 
-        uint seniorAsset = coordinator.calcSeniorAssetValue(seniorRedeem, seniorSupply, currSeniorAsset, model.reserve);
+        uint seniorAsset = coordinator.calcSeniorAssetValue(seniorRedeem, seniorSupply, currSeniorAsset, model.reserve, model.NAV);
 
         assertEq(seniorAsset, 0);
 
@@ -138,7 +139,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
 
         uint newReserve = coordinator.calcNewReserve(seniorRedeem, 0, seniorSupply, 0);
 
-        seniorAsset = coordinator.calcSeniorAssetValue(seniorRedeem, seniorSupply, currSeniorAsset, newReserve);
+        seniorAsset = coordinator.calcSeniorAssetValue(seniorRedeem, seniorSupply, currSeniorAsset, newReserve, model.NAV);
         assertEq(seniorAsset, 210 ether);
 
         // seniorSupply < seniorRedeem
@@ -150,7 +151,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
 
 
          newReserve = coordinator.calcNewReserve(seniorRedeem, 0, seniorSupply, 0);
-        seniorAsset = coordinator.calcSeniorAssetValue(seniorRedeem, seniorSupply, currSeniorAsset, newReserve);
+        seniorAsset = coordinator.calcSeniorAssetValue(seniorRedeem, seniorSupply, currSeniorAsset, newReserve, model.NAV);
         assertEq(seniorAsset, 190 ether);
 
         // seniorSupply < seniorRedeem
@@ -160,7 +161,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
         seniorSupply = 10 ether;
 
         newReserve = coordinator.calcNewReserve(seniorRedeem, 0, seniorSupply, 0);
-        seniorAsset = coordinator.calcSeniorAssetValue(seniorRedeem, seniorSupply, currSeniorAsset, newReserve);
+        seniorAsset = coordinator.calcSeniorAssetValue(seniorRedeem, seniorSupply, currSeniorAsset, newReserve, model.NAV);
         assertEq(seniorAsset, 90 ether);
     }
 }
