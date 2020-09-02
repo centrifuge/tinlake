@@ -81,10 +81,10 @@ contract Assessor is Auth, DataTypes, Interest  {
         else {revert("unknown-variable");}
     }
 
-    function updateSeniorAsset(uint seniorRatio_) external auth {
+    function updateSeniorAsset(uint seniorRatio_, uint seniorSupply, uint seniorRedeem) external auth {
         dripSeniorDebt();
 
-        uint seniorAsset = safeAdd(seniorDebt_, seniorBalance_);
+        uint seniorAsset = safeSub(safeAdd(safeAdd(seniorDebt_, seniorBalance_), seniorSupply), seniorRedeem);
 
         // re-balancing according to new ratio
         // we use the approximated NAV here because during the submission period

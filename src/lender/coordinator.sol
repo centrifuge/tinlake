@@ -38,7 +38,7 @@ contract AssessorLike is DataTypes {
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
     function seniorRatioBounds() external view returns(Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio);
-    function updateSeniorAsset(uint seniorRatio) external;
+    function updateSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
 }
 
 contract EpochCoordinator is Ticker, Auth, DataTypes  {
@@ -470,7 +470,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint newSeniorRatio = calcSeniorRatio(seniorAsset, epochNAV, newReserve);
 
 
-        assessor.updateSeniorAsset(newReserve);
+        assessor.updateSeniorAsset(newSeniorRatio, seniorSupply, seniorRedeem);
         reserve.file("maxcurrency", newReserve);
         // reset state for next epochs
         lastEpochExecuted = epochID;
