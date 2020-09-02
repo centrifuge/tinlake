@@ -191,7 +191,7 @@ contract Tranche is Math, Auth, FixedPoint {
     }
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
-    function disburse(address usr,  uint endEpoch) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
+    function disburse(address usr, uint endEpoch) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         require(users[usr].orderedInEpoch < currentEpoch);
 
         (payoutCurrencyAmount, payoutTokenAmount,
