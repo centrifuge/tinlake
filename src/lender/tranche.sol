@@ -95,6 +95,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
     // supplyOrder function can be used to place or revoke an supply
     function supplyOrder(address usr, uint newSupplyAmount) public auth {
+        // orders can only be changed in the current epoch. Otherwise user needs to disburse first
         require(users[usr].orderedInEpoch == 0 || users[usr].orderedInEpoch == currentEpoch, "disburse required");
         users[usr].orderedInEpoch = currentEpoch;
 
