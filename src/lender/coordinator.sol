@@ -41,7 +41,7 @@ contract AssessorLike is FixedPoint {
     function updateSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
 }
 
-contract EpochCoordinator is Ticker, Auth, FixedPoint  {
+contract EpochCoordinator is Ticker,Auth, FixedPoint  {
     struct OrderSummary {
         // all variables are stored in currency
         uint  seniorRedeem;
@@ -92,6 +92,7 @@ contract EpochCoordinator is Ticker, Auth, FixedPoint  {
     constructor(uint challengeTime_) public {
         wards[msg.sender] = 1;
         challengeTime = challengeTime_;
+        // todo super constructor call
     }
 
     function file(bytes32 name, uint value) public auth {

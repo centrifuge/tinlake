@@ -1,5 +1,5 @@
 // Copyright (C) 2020 Centrifuge
-//
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -14,25 +14,13 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pragma solidity >=0.5.15 <0.6.0;
+import { Operator } from "./../operator.sol";
 
-import "tinlake-math/math.sol";
-import "tinlake-auth/auth.sol";
-
-contract Ticker is Math {
-    uint public firstEpochTimestamp;
-    uint public epochCount;
-
-    constructor() public {
-        // 00:00 next day first epoch starts
-        firstEpochTimestamp = normalizeTimestamp(now);
-    }
-
-    // normalizes timestamp to 00:00
-    function normalizeTimestamp(uint timestamp) public pure returns (uint) {
-        return safeMul((1 days), safeDiv(timestamp, 1 days));
-    }
-
-    function currentEpoch() public returns (uint) {
-        return safeDiv(safeSub(normalizeTimestamp(now), firstEpochTimestamp), (1 days));
+contract OperatorFab {
+    function newOperator(address tranche) public returns (address) {
+        Operator operator = new Operator(tranche);
+        operator.rely(msg.sender);
+        operator.deny(address(this));
+        return address(operator);
     }
 }

@@ -28,14 +28,23 @@ import {
   BorrowerDeployer
 } from "../../borrower/deployer.sol";
 
+
+import {
+  TrancheFab,
+  AssessorFab,
+  ReserveFab,
+  CoordinatorFab,
+  OperatorFab,
+  LenderDeployer,
+  MockLenderDeployer
+} from "../../lender/deployer.sol";
+
 import { Title } from "tinlake-title/title.sol";
 import { Pile } from "../../borrower/pile.sol";
 import { Shelf } from "../../borrower/shelf.sol";
 import { Collector } from "../../borrower/collect/collector.sol";
 import { Principal } from "../../borrower/ceiling/principal.sol";
 import { CreditLine } from "../../borrower/ceiling/creditline.sol";
-
-import "../../lender/deployer.sol";
 
 import { TestRoot } from "./root.sol";
 
@@ -147,10 +156,38 @@ contract TestSetup {
 
     }
 
-    function deployLender() public {
-
-        lenderDeployer_ = LenderDeployer();
-
+    function deployLenderMockBorrower() public {
+        currency = new SimpleToken("C", "Currency", "1", 0);
+        currency_ = address(currency);
+        prepareDeployLender();
     }
 
+    function prepareDeployLender() public {
+//        CoordinatorFab  coordinatorFab = new CoordinatorFab();
+        ReserveFab reserveFab = new ReserveFab();
+        AssessorFab assessorFab = new AssessorFab();
+        TrancheFab  trancheFab = new TrancheFab();
+        OperatorFab operatorFab = new OperatorFab();
+        CoordinatorFab coordinatorFab = new CoordinatorFab();
+
+        string memory seniorTokenName = "DROP Token";
+        string memory seniorTokenSymbol = "DROP";
+        string memory juniorTokenName = "TIN Token";
+        string memory juniorTokenSymbol = "TIN";
+
+        // root is testcase
+        lenderDeployer_ = new LenderDeployer(address(this), currency_, trancheFab, reserveFab, assessorFab, coordinatorFab, operatorFab,
+            seniorTokenName, seniorTokenSymbol, juniorTokenName, juniorTokenSymbol);
+    }
+
+    function deployLender() public {
+        // 12 % per year
+        uint seniorInterestRate = uint(1000000003593629043335673583);
+        uint maxReserve = 2000 ether;
+        uint maxSeniorRatio = 85 * 10 **25;
+        uint minSeniorRatio = 75 * 10 **25;
+        uint challengeTime = 1 hours;
+
+//        lenderDeployer_.init();
+    }
 }

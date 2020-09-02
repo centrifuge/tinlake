@@ -15,18 +15,18 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import "../../base_system.sol";
+import "./../base_system.sol";
 
-contract CreditLineBorrowTest is BaseSystemTest {
+contract LenderIntegrationTest is BaseSystemTest {
 
     Hevm public hevm;
 
     function setUp() public {
-        deployLender();
-        createTestUsers(false);
-
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
+
+        deployLenderMockBorrower();
+
     }
 
     function testLenderSetup() public {

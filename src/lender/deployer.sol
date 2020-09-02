@@ -18,11 +18,13 @@ import {ReserveFab}     from "./fabs/reserve.sol";
 import {AssessorFab}    from "./fabs/assessor.sol";
 import {TrancheFab}     from "./fabs/tranche.sol";
 import {CoordinatorFab} from "./fabs/coordinator.sol";
+import {OperatorFab}    from "./fabs/operator.sol";
 
 import {FixedPoint}      from "./fixed_point.sol";
 
 // todo needs to be removed
 import { Distributor } from "../test/simple/distributor.sol";
+
 
 interface DependLike {
     function depend(bytes32, address) external;
@@ -42,7 +44,7 @@ contract LenderDeployer is FixedPoint {
     ReserveFab          public reserveFab;
     AssessorFab         public assessorFab;
     CoordinatorFab      public coordinatorFab;
-
+    OperatorFab         public operatorFab;
 
     // lender state variables
     Fixed27             public minSeniorRatio;
@@ -56,6 +58,8 @@ contract LenderDeployer is FixedPoint {
     address             public assessor;
     address             public seniorTranche;
     address             public juniorTranche;
+    address             public seniorOperator;
+    address             public juniorOperator;
     address             public reserve;
     address             public coordinator;
 
@@ -65,22 +69,18 @@ contract LenderDeployer is FixedPoint {
     string              public juniorName;
     string              public juniorSymbol;
 
-    constructor(address root_, address currency_, TrancheFab trancheFab_, ReserveFab reserveFab_, AssessorFab assessorFab_, CoordinatorFab coordinatorFab_,
-                uint minSeniorRatio_, uint maxSeniorRatio_, uint maxReserve_, uint challengeTime_, uint seniorInterestRate_,
+    address             public deployer;
+
+    constructor(address root_, address currency_, TrancheFab trancheFab_, ReserveFab reserveFab_, AssessorFab assessorFab_, CoordinatorFab coordinatorFab_, OperatorFab operatorFab_,
                 string memory seniorName_, string memory seniorSymbol_, string memory juniorName_, string memory juniorSymbol_) public {
 
+        deployer = msg.sender;
         root = root_;
         trancheFab = trancheFab_;
         reserveFab = reserveFab_;
         assessorFab = assessorFab_;
         coordinatorFab = coordinatorFab_;
-
-        // lender state variables
-        minSeniorRatio = Fixed27(minSeniorRatio_);
-        maxSeniorRatio = Fixed27(maxSeniorRatio_);
-        maxReserve = maxReserve_;
-        challengeTime = challengeTime_;
-        seniorInterestRate = Fixed27(seniorInterestRate_);
+        operatorFab = operatorFab_;
 
         // token names
         seniorName = seniorName_;
@@ -89,30 +89,46 @@ contract LenderDeployer is FixedPoint {
         juniorSymbol =juniorSymbol_;
     }
 
+    function init(uint minSeniorRatio_, uint maxSeniorRatio_, uint maxReserve_, uint challengeTime_, uint seniorInterestRate_) public {
+        require(msg.sender == deployer);
+        challengeTime = challengeTime_;
+        minSeniorRatio = Fixed27(minSeniorRatio_);
+        maxSeniorRatio = Fixed27(maxSeniorRatio_);
+        maxReserve = maxReserve_;
+        seniorInterestRate = Fixed27(seniorInterestRate_);
+
+        deployer = address(1);
+    }
+
     function deployTranches() public {
-        require(seniorTranche == address(0));
+        require(seniorTranche == address(0) && deployer == address(1));
         // todo check for gas maximum otherwise split into two methods
         seniorTranche = trancheFab.newTranche(currency,seniorName, seniorSymbol);
         juniorTranche = trancheFab.newTranche(currency, juniorName, juniorSymbol);
 
+        seniorOperator = operatorFab.newOperator(seniorTranche);
+        juniorOperator = operatorFab.newOperator(juniorTranche);
+
+        AuthLike(seniorOperator).rely(root);
+        AuthLike(juniorOperator).rely(root);
         AuthLike(seniorTranche).rely(root);
         AuthLike(juniorTranche).rely(root);
     }
 
     function deployReserve() public {
-        require(reserve == address(0));
+        require(reserve == address(0) && deployer == address(1));
         reserve = reserveFab.newReserve(currency);
         AuthLike(reserve).rely(root);
     }
 
     function deployAssessor() public {
-        require(assessor == address(0));
+        require(assessor == address(0) && deployer == address(1));
         assessor = assessorFab.newAssessor();
         AuthLike(assessor).rely(root);
     }
 
     function deployCoordinator() public {
-        require(coordinator == address(0));
+        require(coordinator == address(0) && deployer == address(1));
         coordinator = coordinatorFab.newCoordinator(challengeTime);
         AuthLike(coordinator).rely(root);
     }
