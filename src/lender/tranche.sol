@@ -147,7 +147,7 @@ contract Tranche is Math, Auth, FixedPoint {
         uint payoutTokenAmount = 0;
 
         // no disburse possible in this epoch
-        if (users[usr].orderedInEpoch  == currentEpoch) {
+        if (users[usr].orderedInEpoch == currentEpoch) {
             return (payoutCurrencyAmount, payoutTokenAmount, users[usr].supplyCurrencyAmount, users[usr].redeemTokenAmount);
         }
 
