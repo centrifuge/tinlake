@@ -16,7 +16,7 @@ pragma solidity >=0.5.15 <0.6.0;
 pragma experimental ABIEncoderV2;
 
 import "./ticker.sol";
-import "./data_types.sol";
+import "./fixed_point.sol";
 import "tinlake-auth/auth.sol";
 
 interface EpochTrancheLike {
@@ -30,7 +30,7 @@ interface ReserveLike {
     function totalBalance() external returns (uint);
 }
 
-contract AssessorLike is DataTypes {
+contract AssessorLike is FixedPoint {
     function calcSeniorTokenPrice(uint NAV, uint reserve) external returns(Fixed27 memory tokenPrice);
     function calcJuniorTokenPrice(uint NAV, uint reserve) external returns(Fixed27 memory tokenPrice);
     function maxReserve() external view returns(uint);
@@ -41,7 +41,7 @@ contract AssessorLike is DataTypes {
     function updateSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
 }
 
-contract EpochCoordinator is Ticker, Auth, DataTypes  {
+contract EpochCoordinator is Ticker, Auth, FixedPoint  {
     struct OrderSummary {
         uint  seniorRedeem;
         uint  juniorRedeem;
