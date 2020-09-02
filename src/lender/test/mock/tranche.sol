@@ -37,9 +37,11 @@ contract TrancheMock is Mock, Auth, DSTest {
     }
 
     function epochUpdate(uint supplyFulfillment_,
-        uint redeemFulfillment_, uint tokenPrice_) external {
+        uint redeemFulfillment_, uint tokenPrice_, uint epochSupplyCurrency, uint epochRedeemCurrency) external {
         values_uint["epochUpdate_supplyFulfillment"] = supplyFulfillment_;
         values_uint["epochUpdate_redeemFulfillment"] = redeemFulfillment_;
+        values_uint["epochUpdate_epochSupply"] = epochSupplyCurrency;
+        values_uint["epochUpdate_epochRedeem"] = epochRedeemCurrency;
     }
 
     function supplyOrder(address usr, uint newSupplyAmount) public auth {
@@ -54,9 +56,17 @@ contract TrancheMock is Mock, Auth, DSTest {
         values_uint["redeemAmount"] = newRedeemAmount;
     }
 
-    function disburse(address usr) public auth {
-        calls["disburse"]++;
+    function disburse(address usr) public auth returns(uint,uint,uint,uint) {
+        call("disburse");
         values_address["disburse_usr"] = usr;
+        return(0,0,0,0);
+    }
+
+    function disburse(address usr, uint endEpoch) public auth returns(uint, uint, uint, uint) {
+        call("disburse");
+        values_address["disburse_usr"] = usr;
+        values_uint["disburse_endEpoch"] = endEpoch;
+        return (0,0,0,0);
     }
 }
 

@@ -27,17 +27,11 @@ contract Hevm {
     function warp(uint256) public;
 }
 
-contract ReserveMockTranche is ReserveMock {
-    function approve(SimpleToken currency, address tranche) public {
-        currency.approve(tranche, uint(-1));
-    }
-}
-
 contract TrancheTest is DSTest, Math, FixedPoint {
     Tranche tranche;
     SimpleToken token;
     SimpleToken currency;
-    ReserveMockTranche reserve;
+    ReserveMock reserve;
 
     Hevm hevm;
 
@@ -54,16 +48,13 @@ contract TrancheTest is DSTest, Math, FixedPoint {
 
         token = new SimpleToken("TIN", "Tranche", "1", 0);
         currency = new SimpleToken("CUR", "Currency", "1", 0);
-        reserve = new ReserveMockTranche();
+        reserve = new ReserveMock(address(currency));
         reserve_ = address(reserve);
 
         tranche = new Tranche(address(currency), address(token));
         tranche.depend("reserve", reserve_);
 
         tranche_ = address(tranche);
-
-        // reserve allows tranche to take currency
-        reserve.approve(currency, tranche_);
 
         // give reserve a lot of currency
         currency.mint(reserve_, 1000000000000 ether);
@@ -194,7 +185,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         (uint payoutCurrencyAmount, uint payoutTokenAmount,
         uint remainingSupplyCurrency, uint remainingRedeemToken) =  tranche.disburse(self);
 
-        // 50 * 1.5 = 150 ether
+//        // 50 * 1.5 = 150 ether
         assertEq(payoutCurrencyAmount, 75 ether);
     }
 
@@ -264,6 +255,12 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         tranche.supplyOrder(self, 0);
         assertEq(currency.balanceOf(self), 40 ether);
         assertEq(token.balanceOf(self), 60 ether);
+    }
+
+    function testMint() public {
+        uint amount = 120 ether;
+        tranche.mint(self, amount);
+        assertEq(token.balanceOf(self), amount);
     }
 
     function testDisburseEndEpoch() public {

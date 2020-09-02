@@ -21,7 +21,7 @@ import "tinlake-auth/auth.sol";
 
 interface EpochTrancheLike {
     function epochUpdate(uint supplyFulfillment_,
-        uint redeemFulfillment_, uint tokenPrice_) external;
+        uint redeemFulfillment_, uint tokenPrice_, uint epochSupplyCurrency, uint epochRedeemCurrency) external;
     function closeEpoch() external view returns(uint totalSupply, uint totalRedeem);
 }
 
@@ -43,6 +43,7 @@ contract AssessorLike is FixedPoint {
 
 contract EpochCoordinator is Ticker, Auth, FixedPoint  {
     struct OrderSummary {
+        // all variables are stored in currency
         uint  seniorRedeem;
         uint  juniorRedeem;
         uint  juniorSupply;
@@ -120,6 +121,16 @@ contract EpochCoordinator is Ticker, Auth, FixedPoint  {
         (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.closeEpoch();
         (uint orderSeniorSupply, uint orderSeniorRedeem) = seniorTranche.closeEpoch();
 
+        //  if no orders exist epoch can be executed without validation
+        if (orderSeniorRedeem == 0 && orderJuniorRedeem == 0 &&
+        orderSeniorSupply == 0 && orderJuniorSupply == 0) {
+
+            juniorTranche.epochUpdate(0, 0, 0, orderJuniorSupply, orderJuniorRedeem);
+            seniorTranche.epochUpdate(0, 0, 0, orderSeniorSupply, orderSeniorRedeem);
+            lastEpochExecuted = safeAdd(lastEpochExecuted, 1);
+            return;
+        }
+
         // take a snapshot of the current system state
         epochNAV = assessor.calcUpdateNAV();
         epochReserve = reserve.totalBalance();
@@ -136,13 +147,6 @@ contract EpochCoordinator is Ticker, Auth, FixedPoint  {
         order.juniorRedeem = rmul(orderJuniorRedeem, epochJuniorTokenPrice.value);
         order.juniorSupply = orderJuniorSupply;
         order.seniorSupply = orderSeniorSupply;
-
-        //  if no orders exist epoch can be executed without validation
-        if (orderSeniorRedeem == 0 && orderJuniorRedeem == 0 &&
-            orderSeniorSupply == 0 && orderJuniorSupply == 0) {
-            _executeEpoch(0, 0, 0, 0);
-            return;
-        }
 
         /// can orders be to 100% fulfilled
         if (validate(orderSeniorRedeem, orderJuniorRedeem,
@@ -453,11 +457,11 @@ contract EpochCoordinator is Ticker, Auth, FixedPoint  {
 
         seniorTranche.epochUpdate(calcFulfillment(seniorSupply, order.seniorSupply).value,
             calcFulfillment(seniorRedeem, order.seniorRedeem).value,
-            epochSeniorTokenPrice.value);
+            epochSeniorTokenPrice.value,order.seniorSupply, order.seniorRedeem);
 
         juniorTranche.epochUpdate(calcFulfillment(juniorSupply, order.juniorSupply).value,
             calcFulfillment(juniorRedeem, order.juniorRedeem).value,
-            epochSeniorTokenPrice.value);
+            epochSeniorTokenPrice.value, order.juniorSupply, order.juniorRedeem);
 
 
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem

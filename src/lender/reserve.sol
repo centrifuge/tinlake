@@ -33,14 +33,24 @@ contract Reserve is Math, Auth {
     ShelfLike public shelf;
     AssessorLike public assessor;
 
+    // currency available for borrowing new loans
     uint256 public currencyAvailable;
 
     address self;
+
+    // total currency in the reserve
+    uint public balance_;
 
     constructor(address currency_) public {
         wards[msg.sender] = 1;
         currency = ERC20Like(currency_);
         self = address(this);
+    }
+
+    function file(bytes32 what, uint amount) public auth {
+        if (what == "maxcurrency") {
+            currencyAvailable = amount;
+        } else revert();
     }
 
     function depend(bytes32 contractName, address addr) public auth {
@@ -53,15 +63,28 @@ contract Reserve is Math, Auth {
         } else revert();
     }
 
-    function file(bytes32 what, uint amount) public auth {
-        if (what == "maxcurrency") {
-            currencyAvailable = amount;
-        } else revert();
+    function totalBalance() public view returns (uint) {
+        return balance_;
     }
 
-    function increaseMaxCurrency(uint256 amount) public auth {
-        currencyAvailable = safeAdd(currencyAvailable, amount);
+    function deposit(uint currencyAmount) public auth {
+        _deposit(msg.sender, currencyAmount);
     }
+
+    function _deposit(address usr, uint currencyAmount) internal {
+        require(currency.transferFrom(usr, self, currencyAmount), "reserve-deposit-failed");
+        balance_ = safeAdd(balance_, currencyAmount);
+    }
+
+    function payout(uint currencyAmount) public auth {
+        _payout(msg.sender, currencyAmount);
+    }
+
+    function _payout(address usr, uint currencyAmount)  internal {
+        require(currency.transferFrom(self, usr, currencyAmount), "reserve-payout-failed");
+        balance_ = safeSub(balance_, currencyAmount);
+    }
+
 
     function balance() public {
         (bool requestWant, uint256 currencyAmount) = shelf.balanceRequest();
@@ -71,17 +94,12 @@ contract Reserve is Math, Auth {
                 "not-enough-currency-reserve"
             );
             currencyAvailable = safeSub(currencyAvailable, currencyAmount);
-            require(
-                currency.transferFrom(self, address(shelf), currencyAmount),
-                "currency-transfer-from-reserve-failed"
-            );
+            _payout(address(shelf), currencyAmount);
             assessor.borrowUpdate(currencyAmount);
             return;
         }
-        require(
-            currency.transferFrom(address(shelf), self, currencyAmount),
-            "currency-transfer-from-shelf-failed"
-        );
+
+        _deposit(address(shelf), currencyAmount);
         assessor.repaymentUpdate(currencyAmount);
     }
 }

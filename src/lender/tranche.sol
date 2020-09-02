@@ -21,16 +21,18 @@ import "tinlake-math/math.sol";
 import "./fixed_point.sol";
 
 
-contract ERC20Like {
-    function balanceOf(address) public view returns (uint);
-    function transferFrom(address, address, uint) public returns (bool);
-    function mint(address, uint) public;
-    function burn(address, uint) public;
-    function totalSupply() public view returns (uint);
+interface ERC20Like {
+    function balanceOf(address) external view returns (uint);
+    function transferFrom(address, address, uint) external returns (bool);
+    function mint(address, uint) external;
+    function burn(address, uint) external;
+    function totalSupply() external view returns (uint);
+    function approve(address usr, uint amount) external;
 }
 
-contract TickerLike {
-    function currentEpoch() public returns (uint);
+interface ReserveLike {
+    function deposit(uint amount) external;
+    function payout(uint amount) external;
 }
 
 contract Tranche is Math, Auth, FixedPoint {
@@ -60,7 +62,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
     ERC20Like public currency;
     ERC20Like public token;
-    address public reserve;
+    ReserveLike public reserve;
 
     address self;
 
@@ -89,7 +91,7 @@ contract Tranche is Math, Auth, FixedPoint {
     function depend(bytes32 contractName, address addr) public auth {
         if (contractName == "token") {token = ERC20Like(addr);}
         else if (contractName == "currency") {currency = ERC20Like(addr);}
-        else if (contractName == "reserve") {reserve = addr;}
+        else if (contractName == "reserve") {reserve = ReserveLike(addr);}
         else revert();
     }
 
@@ -242,11 +244,11 @@ contract Tranche is Math, Auth, FixedPoint {
         adjustCurrencyBalance(epochID, epochSupplyCurrency, epochRedeemCurrency);
 
         totalSupply = safeAdd(safeSub(totalSupply, epochSupplyCurrency), rmul(epochSupplyCurrency, safeSub(ONE, epochs[epochID].supplyFulfillment.value)));
-        totalRedeem = safeAdd(safeSub(totalRedeem, epochRedeemCurrency), rmul(epochRedeemCurrency, safeSub(ONE, epochs[epochID].redeemFulfillment.value)));
+        totalRedeem = safeAdd(safeSub(totalRedeem, redeemInToken), rmul(redeemInToken, safeSub(ONE, epochs[epochID].redeemFulfillment.value)));
 
         lastEpochExecuted = safeAdd(lastEpochExecuted, 1);
-       }
-    function closeEpoch() public auth returns (uint totalSupply_, uint totalRedeem_) {
+    }
+    function closeEpoch() public auth returns (uint totalSupplyCurrency_, uint totalRedeemToken_) {
         require(waitingForUpdate == false);
         currentEpoch = safeAdd(currentEpoch, 1);
         waitingForUpdate = true;
@@ -277,6 +279,12 @@ contract Tranche is Math, Auth, FixedPoint {
         }
     }
 
+    // additional minting of tokens produces a dilution of all token holders
+    // interface is required for adapters
+    function mint(address usr, uint amount) public auth {
+        token.mint(usr, amount);
+    }
+
     // adjust currency balance after epoch execution -> receive/send currency from/to reserve
     function adjustCurrencyBalance(uint epochID, uint epochSupply, uint epochRedeem) internal {
         // currency that was supplied in this epoch
@@ -287,13 +295,14 @@ contract Tranche is Math, Auth, FixedPoint {
         if (currencySupplied > currencyRequired) {
             // send surplus currency to reserve
             uint diff = safeSub(currencySupplied, currencyRequired);
-            require(currency.transferFrom(self, reserve, diff), "currency-transfer-failed");
+            currency.approve(address(reserve), diff);
+            reserve.deposit(diff);
             return;
         }
         uint diff = safeSub(currencyRequired, currencySupplied);
         if (diff > 0) {
             // get missing currency from reserve
-            require(currency.transferFrom(reserve, self, diff), "currency-transfer-failed");
+            reserve.payout(diff);
         }
     }
 }

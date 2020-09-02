@@ -53,6 +53,7 @@ contract Assessor is Auth, FixedPoint, Interest  {
         wards[msg.sender] = 1;
         seniorInterestRate.value = ONE;
         lastUpdateSeniorInterest = block.timestamp;
+        seniorRatio.value = 0;
     }
 
     function depend(bytes32 contractName, address addr) public auth {
@@ -81,17 +82,17 @@ contract Assessor is Auth, FixedPoint, Interest  {
         else {revert("unknown-variable");}
     }
 
-    function updateSeniorAsset(uint seniorRatio_, uint seniorSupply, uint seniorRedeem) external auth {
-        dripSeniorDebt();
-
-        uint seniorAsset = safeSub(safeAdd(safeAdd(seniorDebt_, seniorBalance_), seniorSupply), seniorRedeem);
-
+    function _rebalance(uint seniorAsset_, uint seniorRatio_) internal {
         // re-balancing according to new ratio
         // we use the approximated NAV here because during the submission period
         // new loans might have been repaid in the meanwhile which are not considered in the epochNAV
         seniorDebt_ = rmul(navFeed.approximatedNAV(), seniorRatio_);
-        seniorBalance_ = safeSub(seniorAsset, seniorDebt_);
+        seniorBalance_ = safeSub(seniorAsset_, seniorDebt_);
+    }
 
+    function updateSeniorAsset(uint seniorRatio_) external auth {
+        dripSeniorDebt();
+        _rebalance(safeAdd(seniorDebt_, seniorBalance_), seniorRatio_);
         seniorRatio  = Fixed27(seniorRatio_);
     }
 
@@ -166,5 +167,24 @@ contract Assessor is Auth, FixedPoint, Interest  {
             return chargeInterest(seniorDebt_, seniorInterestRate.value, lastUpdateSeniorInterest);
         }
         return seniorDebt_;
+    }
+
+    function increaseSeniorAsset(uint currencyAmount, uint newSeniorRatio) public auth {
+        dripSeniorDebt();
+
+        uint seniorAsset = safeAdd(safeAdd(seniorDebt_, seniorBalance_), currencyAmount);
+        // the seniorDebtRatio defines the seniorDebt and seniorBalance
+        // split for the increased amount
+        _rebalance(seniorAsset, newSeniorRatio);
+    }
+
+
+    function decreaseSeniorAsset(uint currencyAmount, uint newSeniorRatio) public auth {
+        dripSeniorDebt();
+
+        uint seniorAsset = safeSub(safeAdd(seniorDebt_, seniorBalance_), currencyAmount);
+        // the seniorDebtRatio defines the seniorDebt and seniorBalance
+        // split for the increased amount
+        _rebalance(seniorAsset, newSeniorRatio);
     }
 }

@@ -88,7 +88,7 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
     function setUp() public {
         seniorTranche = new TrancheMock();
         juniorTranche = new TrancheMock();
-        reserve = new ReserveMock();
+        reserve = new ReserveMock(address(0));
         assessor = new AssessorMock();
 
         seniorTranche_ = address(seniorTranche);
