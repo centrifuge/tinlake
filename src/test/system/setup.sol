@@ -46,6 +46,7 @@ import "tinlake-erc20/erc20.sol";
 import { PushRegistry } from "tinlake-registry/registry.sol";
 import { TokenLike, CeilingLike } from "./interfaces.sol";
 
+// todo legacy code
 contract DistributorLike {
     function balance() public;
 }
@@ -71,7 +72,11 @@ contract TestSetup {
 
     // Deployers
     BorrowerDeployer public borrowerDeployer;
-    MockLenderDeployer public   lenderDeployer;
+    LenderDeployer public  lenderDeployer_;
+
+    // todo will be removed
+    MockLenderDeployer public  lenderDeployer;
+
 
     TestRoot root;
     address  root_;
@@ -139,6 +144,12 @@ contract TestSetup {
     function deployMockLender() public {
         lenderDeployer = new MockLenderDeployer(root_, currency_);
         distributor = DistributorLike(lenderDeployer.distributor_());
+
+    }
+
+    function deployLender() public {
+
+        lenderDeployer_ = LenderDeployer();
 
     }
 
