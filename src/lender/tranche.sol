@@ -195,7 +195,7 @@ contract Tranche is Math, Auth, FixedPoint {
         require(users[usr].orderedInEpoch < currentEpoch);
 
         (payoutCurrencyAmount, payoutTokenAmount,
-         remainingSupplyCurrency,  remainingRedeemToken)  = calcDisburse(usr, endEpoch);
+         remainingSupplyCurrency, remainingRedeemToken) = calcDisburse(usr, endEpoch);
 
         users[usr].supplyCurrencyAmount = remainingSupplyCurrency;
         users[usr].redeemTokenAmount = remainingRedeemToken;
