@@ -32,38 +32,31 @@ contract TrancheMock is Mock, Auth, DSTest {
         totalRedeem = totalRedeem_;
     }
 
-    function getTotalOrders(uint epochID) public view returns(uint, uint) {
+    function closeEpoch() public view returns(uint, uint) {
         return (totalSupply, totalRedeem);
     }
 
-    function epochUpdate(uint epochID, uint supplyFulfillment_,
+    function epochUpdate(uint supplyFulfillment_,
         uint redeemFulfillment_, uint tokenPrice_) external {
-
-        values_uint["epochUpdate_epochID"] = epochID;
         values_uint["epochUpdate_supplyFulfillment"] = supplyFulfillment_;
         values_uint["epochUpdate_redeemFulfillment"] = redeemFulfillment_;
     }
 
-    function supplyOrder(address usr, uint epochID, uint newSupplyAmount) public auth {
+    function supplyOrder(address usr, uint newSupplyAmount) public auth {
         calls["supplyOrder"]++;
         values_address["supply_usr"] = usr;
-        values_uint["supply_epochID"] = epochID;
         values_uint["supplyAmount"] = newSupplyAmount;
     }
 
-    function redeemOrder(address usr, uint epochID, uint newRedeemAmount) public auth {
+    function redeemOrder(address usr, uint newRedeemAmount) public auth {
         calls["redeemOrder"]++;
         values_address["redeem_usr"] = usr;
-        values_uint["redeem_epochID"] = epochID;
         values_uint["redeemAmount"] = newRedeemAmount;
     }
 
-    function disburse(address usr, uint epochID) public auth {
+    function disburse(address usr) public auth {
         calls["disburse"]++;
         values_address["disburse_usr"] = usr;
-        values_uint["disburse_epochID"] = epochID;
     }
-
-
 }
 

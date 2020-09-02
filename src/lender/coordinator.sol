@@ -20,9 +20,9 @@ import "./fixed_point.sol";
 import "tinlake-auth/auth.sol";
 
 interface EpochTrancheLike {
-    function epochUpdate(uint epochID, uint supplyFulfillment_,
+    function epochUpdate(uint supplyFulfillment_,
         uint redeemFulfillment_, uint tokenPrice_) external;
-    function getTotalOrders(uint epochID) external view returns(uint totalSupply, uint totalRedeem);
+    function closeEpoch() external view returns(uint totalSupply, uint totalRedeem);
 }
 
 interface ReserveLike {
@@ -117,8 +117,8 @@ contract EpochCoordinator is Ticker, Auth, FixedPoint  {
         uint closingEpoch = safeAdd(lastEpochExecuted, 1);
         reserve.file("maxcurrency", 0);
 
-        (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.getTotalOrders(closingEpoch);
-        (uint orderSeniorSupply, uint orderSeniorRedeem) = seniorTranche.getTotalOrders(closingEpoch);
+        (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.closeEpoch();
+        (uint orderSeniorSupply, uint orderSeniorRedeem) = seniorTranche.closeEpoch();
 
         // take a snapshot of the current system state
         epochNAV = assessor.calcUpdateNAV();
@@ -451,11 +451,11 @@ contract EpochCoordinator is Ticker, Auth, FixedPoint  {
 
         uint epochID = safeAdd(lastEpochExecuted, 1);
 
-        seniorTranche.epochUpdate(epochID, calcFulfillment(seniorSupply, order.seniorSupply).value,
+        seniorTranche.epochUpdate(calcFulfillment(seniorSupply, order.seniorSupply).value,
             calcFulfillment(seniorRedeem, order.seniorRedeem).value,
             epochSeniorTokenPrice.value);
 
-        juniorTranche.epochUpdate(epochID, calcFulfillment(juniorSupply, order.juniorSupply).value,
+        juniorTranche.epochUpdate(calcFulfillment(juniorSupply, order.juniorSupply).value,
             calcFulfillment(juniorRedeem, order.juniorRedeem).value,
             epochSeniorTokenPrice.value);
 
