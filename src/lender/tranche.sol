@@ -66,12 +66,14 @@ contract Tranche is Math, Auth, FixedPoint {
     address self;
 
     uint public currentEpoch;
+    uint public lastEpochExecuted;
 
     bool public waitingForUpdate  = false;
 
     constructor(address currency_, address token_) public {
         wards[msg.sender] = 1;
         currentEpoch = 1;
+        lastEpochExecuted = 0;
         token = ERC20Like(token_);
         currency = ERC20Like(currency_);
         self = address(this);
@@ -119,7 +121,7 @@ contract Tranche is Math, Auth, FixedPoint {
     function redeemOrder(address usr, uint newRedeemAmount) public auth {
         require(users[usr].orderedInEpoch == 0 || users[usr].orderedInEpoch == currentEpoch, "disburse required");
         users[usr].orderedInEpoch = currentEpoch;
-       // emit log_named_uint("fu", 2);
+
         uint currentRedeemAmount = users[usr].redeemTokenAmount;
         users[usr].redeemTokenAmount = newRedeemAmount;
         totalRedeem = safeAdd(safeSub(totalRedeem, currentRedeemAmount), newRedeemAmount);
@@ -137,7 +139,7 @@ contract Tranche is Math, Auth, FixedPoint {
     }
 
     function calcDisburse(address usr) public view returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
-        return calcDisburse(usr, safeSub(currentEpoch, 1));
+        return calcDisburse(usr, lastEpochExecuted);
     }
 
     function calcDisburse(address usr, uint endEpoch) public view returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
@@ -151,9 +153,9 @@ contract Tranche is Math, Auth, FixedPoint {
             return (payoutCurrencyAmount, payoutTokenAmount, users[usr].supplyCurrencyAmount, users[usr].redeemTokenAmount);
         }
 
-        if (endEpoch >= currentEpoch) {
+        if (endEpoch > lastEpochExecuted) {
             // it is only possible to disburse epochs which are already over
-            endEpoch = safeSub(currentEpoch, 1);
+            endEpoch = lastEpochExecuted;
         }
 
         uint remainingSupplyCurrency = users[usr].supplyCurrencyAmount;
@@ -187,12 +189,12 @@ contract Tranche is Math, Auth, FixedPoint {
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
     function disburse(address usr) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
-        return disburse(usr, safeSub(currentEpoch, 1));
+        return disburse(usr, lastEpochExecuted);
     }
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
     function disburse(address usr,  uint endEpoch) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
-        require(users[usr].orderedInEpoch < currentEpoch);
+        require(users[usr].orderedInEpoch <= lastEpochExecuted);
 
         (payoutCurrencyAmount, payoutTokenAmount,
          remainingSupplyCurrency,  remainingRedeemToken)  = calcDisburse(usr, endEpoch);
@@ -243,8 +245,11 @@ contract Tranche is Math, Auth, FixedPoint {
 
         totalSupply = safeAdd(safeSub(totalSupply, epochSupplyCurrency), rmul(epochSupplyCurrency, safeSub(ONE, epochs[epochID].supplyFulfillment.value)));
         totalRedeem = safeAdd(safeSub(totalRedeem, epochRedeemCurrency), rmul(epochRedeemCurrency, safeSub(ONE, epochs[epochID].redeemFulfillment.value)));
+
+        lastEpochExecuted = safeAdd(lastEpochExecuted, 1);
        }
     function closeEpoch() public auth returns (uint totalSupply_, uint totalRedeem_) {
+        require(waitingForUpdate == false);
         currentEpoch = safeAdd(currentEpoch, 1);
         waitingForUpdate = true;
         return (totalSupply, totalRedeem);
