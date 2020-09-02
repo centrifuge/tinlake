@@ -29,6 +29,13 @@ import {
 } from "../../borrower/deployer.sol";
 
 
+import { EpochCoordinator } from "../../lender/coordinator.sol";
+import { Reserve } from "../../lender/reserve.sol";
+import { Tranche } from "../../lender/tranche.sol";
+import { Operator } from "../../lender/operator.sol";
+import { Assessor } from "../../lender/assessor.sol";
+
+
 import {
   TrancheFab,
   AssessorFab,
@@ -60,6 +67,9 @@ contract DistributorLike {
     function balance() public;
 }
 
+import "../../borrower/test/mock/shelf.sol";
+import "../../lender/test/mock/navFeed.sol";
+
 contract TestSetup {
     Title public collateralNFT;
     address      public collateralNFT_;
@@ -76,7 +86,17 @@ contract TestSetup {
 
 
     // Lender contracts
+    // mock
     DistributorLike  distributor;
+
+    Reserve reserve;
+    EpochCoordinator coordinator;
+    Tranche seniorTranche;
+    Tranche juniorTranche;
+    Operator juniorOperator;
+    Operator seniorOperator;
+    Assessor assessor;
+
 
 
     // Deployers
@@ -160,6 +180,14 @@ contract TestSetup {
         currency = new SimpleToken("C", "Currency", "1", 0);
         currency_ = address(currency);
         prepareDeployLender();
+        deployLender();
+
+        // add root mock
+        ShelfMock shelf = new ShelfMock();
+        NAVFeedMock nav = new NAVFeedMock();
+
+        assessor.depend("navFeed", address(nav));
+        reserve.depend("shelf", address(shelf));
     }
 
     function prepareDeployLender() public {
@@ -188,6 +216,22 @@ contract TestSetup {
         uint minSeniorRatio = 75 * 10 **25;
         uint challengeTime = 1 hours;
 
-//        lenderDeployer_.init();
+        lenderDeployer_.init(minSeniorRatio, maxSeniorRatio, maxReserve, challengeTime, seniorInterestRate);
+
+        lenderDeployer_.deployTranches();
+        lenderDeployer_.deployReserve();
+        lenderDeployer_.deployAssessor();
+        lenderDeployer_.deployCoordinator();
+        lenderDeployer_.deploy();
+
+
+        assessor = Assessor(lenderDeployer_.assessor());
+        reserve = Reserve(lenderDeployer_.reserve());
+        coordinator = EpochCoordinator(lenderDeployer_.coordinator());
+        seniorTranche = Tranche(lenderDeployer_.seniorTranche());
+        juniorTranche = Tranche(lenderDeployer_.juniorTranche());
+        juniorOperator = Operator(lenderDeployer_.juniorOperator());
+        seniorOperator = Operator(lenderDeployer_.seniorOperator());
+
     }
 }

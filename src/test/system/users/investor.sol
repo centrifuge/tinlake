@@ -15,26 +15,23 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "../interfaces.sol";
 
+interface InvestorOperator {
+    function supplyOrder(uint currencyAmount);
+    function redeemOrder(uint redeemAmount);
+    function disburse();
+}
+
 contract Investor {
-    TOperatorLike operator;
+
     ERC20Like currency;
     ERC20Like token;
 
+    InvestorOperator operator;
+
     constructor(address operator_, address currency_, address token_) public {
-        operator = TOperatorLike(operator_);
         currency = ERC20Like(currency_);
         token = ERC20Like(token_);
+        operator = InvestorOperator(operator_);
     }
 
-    function doSupply(uint amount) public {
-        address tranche_ = address(operator.tranche());
-        currency.approve(tranche_, amount);
-        operator.supply(amount);
-    }
-
-    function doRedeem(uint amount) public {
-        address tranche_ = address(operator.tranche());
-        token.approve(tranche_, amount);
-        operator.redeem(amount);
-    }
 }

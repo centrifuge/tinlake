@@ -29,7 +29,7 @@ contract LenderIntegrationTest is BaseSystemTest {
 
     }
 
-    function testLenderSetup() public {
+    function testSimpleOrder() public {
 
     }
 }

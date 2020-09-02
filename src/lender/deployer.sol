@@ -35,6 +35,10 @@ interface AuthLike {
     function deny(address) external;
 }
 
+interface FileLike {
+    function file(bytes32 name, uint value) external;
+}
+
 contract LenderDeployer is FixedPoint {
     address public root;
     address public currency;
@@ -165,6 +169,11 @@ contract LenderDeployer is FixedPoint {
         // required auth
         AuthLike(reserve).rely(assessor);
         AuthLike(assessor).rely(coordinator);
+
+        FileLike(assessor).file("seniorInterestRate", seniorInterestRate.value);
+        FileLike(assessor).file("maxReserve", maxReserve);
+        FileLike(assessor).file("maxSeniorRatio", maxSeniorRatio.value);
+        FileLike(assessor).file("maxSeniorRatio", minSeniorRatio.value);
     }
 
 }
