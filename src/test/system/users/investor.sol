@@ -16,13 +16,12 @@ pragma solidity >=0.5.15 <0.6.0;
 import "../interfaces.sol";
 
 interface InvestorOperator {
-    function supplyOrder(uint currencyAmount);
-    function redeemOrder(uint redeemAmount);
-    function disburse();
+    function supplyOrder(uint currencyAmount) external;
+    function redeemOrder(uint redeemAmount) external;
+    function disburse() external;
 }
 
 contract Investor {
-
     ERC20Like currency;
     ERC20Like token;
 
@@ -32,6 +31,10 @@ contract Investor {
         currency = ERC20Like(currency_);
         token = ERC20Like(token_);
         operator = InvestorOperator(operator_);
+    }
+
+    function supplyOrder(uint currencyAmount) public {
+        // todo
     }
 
 }
