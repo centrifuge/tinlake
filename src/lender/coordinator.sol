@@ -21,7 +21,7 @@ import "./fixed_point.sol";
 interface EpochTrancheLike {
     function epochUpdate(uint supplyFulfillment_,
         uint redeemFulfillment_, uint tokenPrice_, uint epochSupplyCurrency, uint epochRedeemCurrency) external;
-    function closeEpoch() external view returns(uint totalSupply, uint totalRedeem);
+    function closeEpoch() external returns(uint totalSupply, uint totalRedeem);
 }
 
 interface ReserveLike {
@@ -143,7 +143,6 @@ contract EpochCoordinator is Ticker, FixedPoint  {
         epochJuniorTokenPrice = assessor.calcJuniorTokenPrice(epochNAV, epochReserve);
 
         epochSeniorAsset = safeAdd(assessor.seniorDebt(), assessor.seniorBalance());
-
 
         /// calculate currency amounts
         order.seniorRedeem = rmul(orderSeniorRedeem, epochSeniorTokenPrice.value);

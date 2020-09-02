@@ -76,6 +76,7 @@ contract TestSetup {
     SimpleToken  public currency;
     address      public currency_;
 
+
     // Borrower contracts
     Shelf        shelf;
     Pile         pile;
@@ -96,8 +97,8 @@ contract TestSetup {
     Operator juniorOperator;
     Operator seniorOperator;
     Assessor assessor;
-
-
+    SimpleToken seniorToken;
+    SimpleToken juniorToken;
 
     // Deployers
     BorrowerDeployer public borrowerDeployer;
@@ -224,7 +225,6 @@ contract TestSetup {
         lenderDeployer_.deployCoordinator();
         lenderDeployer_.deploy();
 
-
         assessor = Assessor(lenderDeployer_.assessor());
         reserve = Reserve(lenderDeployer_.reserve());
         coordinator = EpochCoordinator(lenderDeployer_.coordinator());
@@ -232,6 +232,7 @@ contract TestSetup {
         juniorTranche = Tranche(lenderDeployer_.juniorTranche());
         juniorOperator = Operator(lenderDeployer_.juniorOperator());
         seniorOperator = Operator(lenderDeployer_.seniorOperator());
-
+        seniorToken = SimpleToken(address(lenderDeployer_.seniorToken()));
+        juniorToken = SimpleToken(address(lenderDeployer_.juniorToken()));
     }
 }

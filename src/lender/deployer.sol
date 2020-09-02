@@ -67,6 +67,9 @@ contract LenderDeployer is FixedPoint {
     address             public reserve;
     address             public coordinator;
 
+    address             public seniorToken;
+    address             public juniorToken;
+
     // token names
     string              public seniorName;
     string              public seniorSymbol;
@@ -80,6 +83,8 @@ contract LenderDeployer is FixedPoint {
 
         deployer = msg.sender;
         root = root_;
+        currency = currency_;
+
         trancheFab = trancheFab_;
         reserveFab = reserveFab_;
         assessorFab = assessorFab_;
@@ -107,8 +112,8 @@ contract LenderDeployer is FixedPoint {
     function deployTranches() public {
         require(seniorTranche == address(0) && deployer == address(1));
         // todo check for gas maximum otherwise split into two methods
-        seniorTranche = trancheFab.newTranche(currency,seniorName, seniorSymbol);
-        juniorTranche = trancheFab.newTranche(currency, juniorName, juniorSymbol);
+        (seniorTranche, seniorToken) = trancheFab.newTranche(currency, seniorName, seniorSymbol);
+        (juniorTranche, juniorToken) = trancheFab.newTranche(currency, juniorName, juniorSymbol);
 
         seniorOperator = operatorFab.newOperator(seniorTranche);
         juniorOperator = operatorFab.newOperator(juniorTranche);
@@ -146,6 +151,8 @@ contract LenderDeployer is FixedPoint {
         DependLike(reserve).depend("assessor", assessor);
         AuthLike(reserve).rely(seniorTranche);
         AuthLike(reserve).rely(juniorTranche);
+        AuthLike(reserve).rely(coordinator);
+        AuthLike(reserve).rely(assessor);
 
 
         // tranches
@@ -153,7 +160,12 @@ contract LenderDeployer is FixedPoint {
         DependLike(juniorTranche).depend("reserve",reserve);
         AuthLike(seniorTranche).rely(coordinator);
         AuthLike(juniorTranche).rely(coordinator);
+        AuthLike(seniorTranche).rely(seniorOperator);
+        AuthLike(juniorTranche).rely(juniorOperator);
 
+        // operator
+        DependLike(seniorOperator).depend("tranche", seniorTranche);
+        DependLike(juniorOperator).depend("tranche", juniorTranche);
 
         // coordinator
         DependLike(coordinator).depend("reserve", reserve);
@@ -166,14 +178,12 @@ contract LenderDeployer is FixedPoint {
         DependLike(assessor).depend("seniorTranche", seniorTranche);
         DependLike(assessor).depend("juniorTranche", juniorTranche);
 
-        // required auth
-        AuthLike(reserve).rely(assessor);
         AuthLike(assessor).rely(coordinator);
 
         FileLike(assessor).file("seniorInterestRate", seniorInterestRate.value);
         FileLike(assessor).file("maxReserve", maxReserve);
         FileLike(assessor).file("maxSeniorRatio", maxSeniorRatio.value);
-        FileLike(assessor).file("maxSeniorRatio", minSeniorRatio.value);
+        FileLike(assessor).file("minSeniorRatio", minSeniorRatio.value);
     }
 
 }

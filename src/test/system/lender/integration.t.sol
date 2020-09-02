@@ -18,7 +18,6 @@ pragma solidity >=0.5.15 <0.6.0;
 import "./../base_system.sol";
 
 contract LenderIntegrationTest is BaseSystemTest {
-
     Hevm public hevm;
 
     function setUp() public {
@@ -26,10 +25,73 @@ contract LenderIntegrationTest is BaseSystemTest {
         hevm.warp(1234567);
 
         deployLenderMockBorrower();
+        createInvestorUser();
+
+        // whitelist seniorInvestor
+        seniorOperator.relyInvestor(seniorInvestor_);
+        juniorOperator.relyInvestor(juniorInvestor_);
 
     }
 
-    function testSimpleOrder() public {
+    function testSimpleSeniorOrder() public {
+        uint amount = 100 ether;
+        currency.mint(address(seniorInvestor), amount);
+
+        // invest
+        seniorInvestor.supplyOrder(amount);
+
+        (,uint supplyAmount, ) = seniorTranche.users(seniorInvestor_);
+        assertEq(supplyAmount, amount);
+
+        // change order
+        seniorInvestor.supplyOrder(amount/2);
+
+        (, supplyAmount, ) = seniorTranche.users(seniorInvestor_);
+        assertEq(supplyAmount, amount/2);
+    }
+
+    function seniorSupply(uint currencyAmount) public {
+        currency.mint(address(seniorInvestor), currencyAmount);
+        seniorInvestor.supplyOrder(currencyAmount);
+        (,uint supplyAmount, ) = seniorTranche.users(seniorInvestor_);
+        assertEq(supplyAmount, currencyAmount);
+    }
+
+    function juniorSupply(uint currencyAmount) public {
+        currency.mint(address(juniorInvestor), currencyAmount);
+        juniorInvestor.supplyOrder(currencyAmount);
+        (,uint supplyAmount, ) = juniorTranche.users(juniorInvestor_);
+        assertEq(supplyAmount, currencyAmount);
+    }
+
+    function testExecuteSimpleEpoch() public {
+        uint seniorAmount =  82 ether;
+        uint juniorAmount = 18 ether;
+        seniorSupply(seniorAmount);
+        juniorSupply(juniorAmount);
+        hevm.warp(now + 1 days);
+
+        coordinator.closeEpoch();
+        // no submission required
+
+        // submission was valid
+        assertTrue(coordinator.submissionPeriod() == false);
+
+        // inital token price is ONE
+        // senior
+        (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken) = seniorInvestor.disburse();
+        assertEq(payoutCurrencyAmount, 0);
+        assertEq(payoutTokenAmount, seniorAmount);
+        assertEq(seniorToken.balanceOf(seniorInvestor_), seniorAmount);
+        assertEq(remainingSupplyCurrency, 0);
+        assertEq(remainingRedeemToken, 0);
+
+        // junior
+        ( payoutCurrencyAmount,  payoutTokenAmount,  remainingSupplyCurrency,   remainingRedeemToken) = juniorInvestor.disburse();
+        assertEq(payoutCurrencyAmount, 0);
+        assertEq(payoutTokenAmount, juniorAmount);
+        assertEq(juniorToken.balanceOf(juniorInvestor_), juniorAmount);
 
     }
 }
+
