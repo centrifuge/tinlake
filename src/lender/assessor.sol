@@ -52,6 +52,8 @@ contract Assessor is Auth, FixedPoint, Interest  {
     constructor() public {
         wards[msg.sender] = 1;
         seniorInterestRate.value = ONE;
+        // todo intialize lastUpdateSeniorInterest the first time seniorDebt changes from 0 to positive
+        // otherwise interest calculation would be wrong
         lastUpdateSeniorInterest = block.timestamp;
         seniorRatio.value = 0;
     }
@@ -90,8 +92,9 @@ contract Assessor is Auth, FixedPoint, Interest  {
         seniorBalance_ = safeSub(seniorAsset_, seniorDebt_);
     }
 
-    function updateSeniorAsset(uint seniorRatio_) external auth {
+    function updateSeniorAsset(uint seniorRatio_, uint seniorSupply, uint seniorRedeem) external auth {
         dripSeniorDebt();
+        uint seniorAsset = safeSub(safeAdd(safeAdd(seniorDebt_, seniorBalance_),seniorSupply), seniorRedeem);
         _rebalance(safeAdd(seniorDebt_, seniorBalance_), seniorRatio_);
         seniorRatio  = Fixed27(seniorRatio_);
     }
@@ -105,6 +108,11 @@ contract Assessor is Auth, FixedPoint, Interest  {
     }
 
     function calcSeniorTokenPrice(uint epochNAV, uint epochReserve) external returns(uint) {
+        if (epochNAV == 0 && epochReserve == 0) {
+            // initial token price at start 1.00
+            return ONE;
+        }
+
         uint totalAssets = safeAdd(epochNAV, epochReserve);
         uint seniorAssetValue = safeAdd(seniorBalance_, seniorDebt_);
         if(totalAssets < seniorAssetValue) {
@@ -115,6 +123,10 @@ contract Assessor is Auth, FixedPoint, Interest  {
     }
 
     function calcJuniorTokenPrice(uint epochNAV, uint epochReserve) external returns(uint) {
+        if (epochNAV == 0 && epochReserve == 0) {
+            // initial token price at start 1.00
+            return ONE;
+        }
         uint totalAssets = safeAdd(epochNAV, epochReserve);
         uint seniorAssetValue = safeAdd(seniorBalance_, seniorDebt_);
         if(totalAssets < seniorAssetValue) {
@@ -186,5 +198,9 @@ contract Assessor is Auth, FixedPoint, Interest  {
         // the seniorDebtRatio defines the seniorDebt and seniorBalance
         // split for the increased amount
         _rebalance(seniorAsset, newSeniorRatio);
+    }
+
+    function seniorBalance() public returns (uint) {
+        return seniorBalance_;
     }
 }

@@ -39,6 +39,11 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     Keeper keeper;
     address keeper_;
 
+    Investor seniorInvestor;
+    address  seniorInvestor_;
+    Investor juniorInvestor;
+    address  juniorInvestor_;
+
     function baseSetup() public {
         // setup deployment
         bytes32 feed_ = "default";
@@ -63,6 +68,14 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         admin_ = address(admin);
         root.relyBorrowAdmin(admin_);
 
+    }
+
+    function createInvestorUser() public {
+        // investors
+        seniorInvestor = new Investor(address(seniorOperator), address(seniorTranche), currency_, address(seniorToken));
+        seniorInvestor_ = address(seniorInvestor);
+        juniorInvestor = new Investor(address(juniorOperator), address(juniorTranche), currency_, address(juniorToken));
+        juniorInvestor_ = address(juniorInvestor);
     }
 
     function lockNFT(uint loanId, address usr) public {

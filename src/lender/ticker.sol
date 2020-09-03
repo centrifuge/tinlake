@@ -16,19 +16,31 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 import "tinlake-math/math.sol";
+import "tinlake-auth/auth.sol";
 
-contract Ticker is Math {
+contract Ticker is Auth, Math {
     uint public firstEpochTimestamp;
     uint public epochCount;
+
+    uint public epochTime = 1 days;
 
     constructor() public {
         // 00:00 next day first epoch starts
         firstEpochTimestamp = normalizeTimestamp(now);
+        epochTime = 1 days;
+    }
+
+    function file(bytes32 name, uint value) public auth {
+        if(name == "epochTime") {
+            epochTime = value;
+        } else {
+            revert("unknown-name");
+        }
     }
 
     // normalizes timestamp to 00:00
-    function normalizeTimestamp(uint timestamp) public pure returns (uint) {
-        return safeMul((1 days), safeDiv(timestamp, 1 days));
+    function normalizeTimestamp(uint timestamp) public view returns (uint) {
+        return safeMul((1 days), safeDiv(timestamp, epochTime));
     }
 
     function currentEpoch() public returns (uint) {

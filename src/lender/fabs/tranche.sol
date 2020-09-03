@@ -19,12 +19,12 @@ import { Tranche } from "./../tranche.sol";
 import "tinlake-erc20/erc20.sol";
 
 contract TrancheFab {
-    function newTranche(address currency, string memory name, string memory symbol) public returns (address) {
+    function newTranche(address currency, string memory name, string memory symbol) public returns (address tranche, address token) {
         ERC20 token = new ERC20(symbol, name);
-        Tranche tranche = new Tranche(address(token), currency);
+        Tranche tranche = new Tranche(currency, address(token));
         tranche.rely(msg.sender);
         tranche.deny(address(this));
         token.rely(address(tranche));
-        return address(tranche);
+        return (address(tranche), address(token));
     }
 }
