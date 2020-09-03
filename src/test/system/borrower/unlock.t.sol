@@ -60,8 +60,10 @@ contract UnlockTest is BaseSystemTest {
     }
 
     function testUnlockNFTAfterRepay() public {
-        uint ceiling = 100 ether;
-        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling);
+        uint nftPrice = 200 ether; // -> ceiling 100 ether
+        uint riskGroup = 0; // -> 0% per year
+        uint ceiling = computeCeiling(riskGroup, nftPrice); 
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
 
         hevm.warp(now + 365 days);
 
@@ -80,9 +82,10 @@ contract UnlockTest is BaseSystemTest {
     }
 
     function testFailUnlockOpenDebt() public {
-        uint ceiling = 100 ether;
-        // borrower creates loan and borrows funds
-        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling);
+        uint nftPrice = 200 ether; // -> ceiling 100 ether
+        uint riskGroup = 1; // -> 12% per year
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
+    
         // borrower allows shelf full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
 
@@ -92,14 +95,14 @@ contract UnlockTest is BaseSystemTest {
     }
 
     function testFailUnlockCollected() public {
-        uint ceiling = 66 ether;
-        uint threshold = 70 ether;
-        uint rate = 1000000003593629043335673583; // 12 % per year compound in seconds
-        uint speed = rate;
-        (uint loanId, uint tokenId) = createLoanAndWithdraw(randomUser_, ceiling, rate, speed);
-        // debt after 1 year: 73.92 ether -> threshold reached
-        hevm.warp(now + 365 days);
-        setThresholdAndSeize(loanId, threshold);
+        uint nftPrice = 200 ether; // -> ceiling 100 ether
+        // thresholdRatio => 80% -> 160 ether
+        uint riskGroup = 1; // -> 12% per year 
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
+    
+        // threshold reached after 10 years
+        hevm.warp(now + 3650 days);
+        seize(loanId);
         unlockNFT(loanId, tokenId);
     }
 }

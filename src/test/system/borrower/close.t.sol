@@ -90,8 +90,10 @@ contract CloseTest is BaseSystemTest {
     }
 
     function testFailCloseLoanHasDebt() public {
-        uint ceiling = 100 ether;
-        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling);
+        uint nftPrice = 200 ether; // -> ceiling 100 ether
+        uint riskGroup = 1; // -> 12% per year
+
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
         bytes32 lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
         closeLoan(loanId, lookupId);
     }

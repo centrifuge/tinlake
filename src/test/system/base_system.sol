@@ -41,12 +41,12 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
     function baseSetup() public {
         // setup deployment
-        bytes32 ceiling_ = "default";
-        deployContracts(ceiling_);
+        bytes32 feed_ = "default";
+        deployContracts(feed_);
     }
 
-    function baseSetup(bytes32 ceiling_) public {
-        deployContracts(ceiling_);
+    function baseSetup(bytes32 feed_) public {
+        deployContracts(feed_);
     }
 
     function createTestUsers(bool senior_) public {
@@ -59,7 +59,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         keeper = new Keeper(address(collector), currency_);
         keeper_ = address(keeper);
 
-        admin = new AdminUser(address(shelf), address(pile), address(ceiling), address(title), address(distributor), address(collector), address(threshold));
+        admin = new AdminUser(address(shelf), address(pile), address(nftFeed), address(title), address(distributor), address(collector));
         admin_ = address(admin);
         root.relyBorrowAdmin(admin_);
 
@@ -75,11 +75,20 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         collateralNFT.transferFrom(sender, recipient, tokenId);
     }
 
-
     function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
         tokenId = collateralNFT.issue(usr);
         lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
         return (tokenId, lookupId);
+    }
+
+    function computeCeiling(uint riskGroup, uint nftPrice) public returns (uint) {
+        uint ceilingRatio = nftFeed.ceilingRatio(riskGroup);
+        return rmul(ceilingRatio, nftPrice);
+    }
+
+    function getRateByRisk(uint riskGroup) public returns (uint) {
+        (,,uint ratePerSecond,,) = pile.rates(riskGroup);
+        return ratePerSecond;
     }
 
     function issueNFTAndCreateLoan(address usr) public returns (uint, uint) {
@@ -90,31 +99,33 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         return (tokenId, loanId);
     }
 
-    function createLoanAndBorrow(address usr, uint ceiling, uint rate) public returns (uint, uint) {
-     (uint loanId, uint tokenId) = issueNFTAndCreateLoan(usr);
+    function priceNFTandSetRisk(uint tokenId, uint nftPrice, uint riskGroup) public {
+        bytes32 lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
+        admin.priceNFTAndSetRiskGroup(lookupId, nftPrice, riskGroup);
+    }
+
+    function priceNFT(uint tokenId, uint nftPrice) public {
+        bytes32 lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
+        admin.priceNFT(lookupId, nftPrice);
+    }
+
+    function createLoanAndBorrow(address usr, uint nftPrice, uint riskGroup) public returns (uint, uint) {
+        (uint loanId, uint tokenId) = issueNFTAndCreateLoan(usr);
+
+        priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
         // lock nft
         lockNFT(loanId, usr);
-        // admin sets ceiling
-        admin.setCeiling(loanId, ceiling);
-        // admit sets loan rate
-        if (rate > 0) {
-            admin.doAddRate(loanId, rate);
-        }
-        // borrower borrows funds
+
+        // compute ceiling based on nftPrice & riskgroup
+        uint ceiling = computeCeiling(riskGroup, nftPrice);
+        //borrow
         Borrower(usr).borrow(loanId, ceiling);
         return (loanId, tokenId);
     }
 
-    function createLoanAndWithdraw(address usr, uint ceiling) public returns (uint, uint) {
-        (uint loanId, uint tokenId ) = createLoanAndBorrow(usr, ceiling, 0);
-        Borrower(usr).withdraw(loanId, ceiling, borrower_);
-        return (loanId, tokenId);
-    }
-
-    function createLoanAndWithdraw(address usr, uint ceiling, uint rate, uint speed) public returns (uint, uint) {
-        // init rate group
-        admin.doInitRate(rate, speed);
-        (uint loanId, uint tokenId) = createLoanAndBorrow(usr, ceiling, rate);
+    function createLoanAndWithdraw(address usr, uint nftPrice, uint riskGroup) public returns (uint, uint) {
+        (uint loanId, uint tokenId) = createLoanAndBorrow(usr, nftPrice, riskGroup);
+        uint ceiling = computeCeiling(riskGroup, nftPrice);
         Borrower(usr).withdraw(loanId, ceiling, borrower_);
         return (loanId, tokenId);
     }
@@ -128,30 +139,19 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         borrower.repay(loanId, currencyAmount);
     }
 
-    // helpers admin
-    function setLoanParameters(uint loanId, uint ceiling, uint rate, uint speed) public {
-        // admin sets loan ceiling
-        admin.setCeiling(loanId, ceiling);
-        // init rate group
-        admin.doInitRate(rate, speed);
-        // add loan to rate group
-        admin.doAddRate(loanId, rate);
-        // admin sets loan rate
-    }
-
     // helpers lenders
     function invest(uint currencyAmount) public {
         currency.mint(address(distributor), currencyAmount);
     }
 
     // helpers keeper
-    function setThresholdAndSeize(uint loanId, uint threshold) public {
-        admin.setThreshold(loanId, threshold);
+
+    function seize(uint loanId) public {
         collector.seize(loanId);
     }
 
     function addKeeperAndCollect(uint loanId, uint threshold, address usr, uint recoveryPrice) public {
-        setThresholdAndSeize(loanId, threshold);
+        seize(loanId);
         admin.addKeeper(loanId, usr, recoveryPrice);
         topUp(usr);
         Borrower(usr).doApproveCurrency(address(shelf), uint(-1));
