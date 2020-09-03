@@ -99,7 +99,7 @@ contract TestSetup {
     LenderDeployer public  lenderDeployer_;
 
     // todo will be removed
-    MockLenderDeployer public  lenderDeployer;
+    LenderDeployer public  lenderDeployer;
 
 
     TestRoot root;
@@ -125,7 +125,10 @@ contract TestSetup {
         deployBorrower(feed_);
         // only admin is main deployer
 
-        deployMockLender();
+        prepareDeployLender(root_);
+        deployLender();
+
+        lenderDeployer = lenderDeployer_;
 
         root.prepare(address(lenderDeployer), address(borrowerDeployer), address(this));
         root.deploy();
@@ -160,16 +163,11 @@ contract TestSetup {
         nftFeed = NFTFeedLike(borrowerDeployer.feed());
     }
 
-    function deployMockLender() public {
-        lenderDeployer = new MockLenderDeployer(root_, currency_);
-        distributor = DistributorLike(lenderDeployer.distributor_());
-
-    }
-
     function deployLenderMockBorrower() public {
         currency = new SimpleToken("C", "Currency", "1", 0);
         currency_ = address(currency);
-        prepareDeployLender();
+
+        prepareDeployLender(address(this));
         deployLender();
 
         // add root mock
@@ -180,7 +178,7 @@ contract TestSetup {
         reserve.depend("shelf", address(shelf));
     }
 
-    function prepareDeployLender() public {
+    function prepareDeployLender(address root) public {
 //        CoordinatorFab  coordinatorFab = new CoordinatorFab();
         ReserveFab reserveFab = new ReserveFab();
         AssessorFab assessorFab = new AssessorFab();
@@ -194,7 +192,7 @@ contract TestSetup {
         string memory juniorTokenSymbol = "TIN";
 
         // root is testcase
-        lenderDeployer_ = new LenderDeployer(address(this), currency_, trancheFab, reserveFab, assessorFab, coordinatorFab, operatorFab,
+        lenderDeployer_ = new LenderDeployer(root, currency_, trancheFab, reserveFab, assessorFab, coordinatorFab, operatorFab,
             seniorTokenName, seniorTokenSymbol, juniorTokenName, juniorTokenSymbol);
     }
 

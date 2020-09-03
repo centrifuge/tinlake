@@ -55,7 +55,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
 
     function createTestUsers(bool senior_) public {
-        borrower = new Borrower(address(shelf), address(lenderDeployer.distributor()), currency_, address(pile));
+        borrower = new Borrower(address(shelf), address(lenderDeployer.reserve()), currency_, address(pile));
         borrower_ = address(borrower);
 
         randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
@@ -67,7 +67,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         admin = new AdminUser(address(shelf), address(pile), address(nftFeed), address(title), address(distributor), address(collector));
         admin_ = address(admin);
         root.relyBorrowAdmin(admin_);
-
     }
 
     function createInvestorUser() public {
