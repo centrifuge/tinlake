@@ -101,7 +101,6 @@ contract TestSetup {
     // todo will be removed
     LenderDeployer public  lenderDeployer;
 
-
     TestRoot root;
     address  root_;
 
