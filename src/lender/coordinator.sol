@@ -16,13 +16,13 @@ pragma solidity >=0.5.15 <0.6.0;
 pragma experimental ABIEncoderV2;
 
 import "./ticker.sol";
-import "./data_types.sol";
+import "./fixed_point.sol";
 import "tinlake-auth/auth.sol";
 
 interface EpochTrancheLike {
-    function epochUpdate(uint epochID, uint supplyFulfillment_,
-        uint redeemFulfillment_, uint tokenPrice_) external;
-    function getTotalOrders(uint epochID) external view returns(uint totalSupply, uint totalRedeem);
+    function epochUpdate(uint supplyFulfillment_,
+        uint redeemFulfillment_, uint tokenPrice_, uint epochSupplyCurrency, uint epochRedeemCurrency) external;
+    function closeEpoch() external view returns(uint totalSupply, uint totalRedeem);
 }
 
 interface ReserveLike {
@@ -30,7 +30,7 @@ interface ReserveLike {
     function totalBalance() external returns (uint);
 }
 
-contract AssessorLike is DataTypes {
+contract AssessorLike is FixedPoint {
     function calcSeniorTokenPrice(uint NAV, uint reserve) external returns(Fixed27 memory tokenPrice);
     function calcJuniorTokenPrice(uint NAV, uint reserve) external returns(Fixed27 memory tokenPrice);
     function maxReserve() external view returns(uint);
@@ -38,11 +38,12 @@ contract AssessorLike is DataTypes {
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
     function seniorRatioBounds() external view returns(Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio);
-    function updateSeniorAsset(uint seniorRatio) external;
+    function updateSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
 }
 
-contract EpochCoordinator is Ticker, Auth, DataTypes  {
+contract EpochCoordinator is Ticker, Auth, FixedPoint  {
     struct OrderSummary {
+        // all variables are stored in currency
         uint  seniorRedeem;
         uint  juniorRedeem;
         uint  juniorSupply;
@@ -117,8 +118,18 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint closingEpoch = safeAdd(lastEpochExecuted, 1);
         reserve.file("maxcurrency", 0);
 
-        (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.getTotalOrders(closingEpoch);
-        (uint orderSeniorSupply, uint orderSeniorRedeem) = seniorTranche.getTotalOrders(closingEpoch);
+        (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.closeEpoch();
+        (uint orderSeniorSupply, uint orderSeniorRedeem) = seniorTranche.closeEpoch();
+
+        //  if no orders exist epoch can be executed without validation
+        if (orderSeniorRedeem == 0 && orderJuniorRedeem == 0 &&
+        orderSeniorSupply == 0 && orderJuniorSupply == 0) {
+
+            juniorTranche.epochUpdate(0, 0, 0, orderJuniorSupply, orderJuniorRedeem);
+            seniorTranche.epochUpdate(0, 0, 0, orderSeniorSupply, orderSeniorRedeem);
+            lastEpochExecuted = safeAdd(lastEpochExecuted, 1);
+            return;
+        }
 
         // take a snapshot of the current system state
         epochNAV = assessor.calcUpdateNAV();
@@ -136,13 +147,6 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         order.juniorRedeem = rmul(orderJuniorRedeem, epochJuniorTokenPrice.value);
         order.juniorSupply = orderJuniorSupply;
         order.seniorSupply = orderSeniorSupply;
-
-        //  if no orders exist epoch can be executed without validation
-        if (orderSeniorRedeem == 0 && orderJuniorRedeem == 0 &&
-            orderSeniorSupply == 0 && orderJuniorSupply == 0) {
-            _executeEpoch(0, 0, 0, 0);
-            return;
-        }
 
         /// can orders be to 100% fulfilled
         if (validate(orderSeniorRedeem, orderJuniorRedeem,
@@ -451,13 +455,13 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
 
         uint epochID = safeAdd(lastEpochExecuted, 1);
 
-        seniorTranche.epochUpdate(epochID, calcFulfillment(seniorSupply, order.seniorSupply).value,
+        seniorTranche.epochUpdate(calcFulfillment(seniorSupply, order.seniorSupply).value,
             calcFulfillment(seniorRedeem, order.seniorRedeem).value,
-            epochSeniorTokenPrice.value);
+            epochSeniorTokenPrice.value,order.seniorSupply, order.seniorRedeem);
 
-        juniorTranche.epochUpdate(epochID, calcFulfillment(juniorSupply, order.juniorSupply).value,
+        juniorTranche.epochUpdate(calcFulfillment(juniorSupply, order.juniorSupply).value,
             calcFulfillment(juniorRedeem, order.juniorRedeem).value,
-            epochSeniorTokenPrice.value);
+            epochSeniorTokenPrice.value, order.juniorSupply, order.juniorRedeem);
 
 
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem
@@ -470,7 +474,7 @@ contract EpochCoordinator is Ticker, Auth, DataTypes  {
         uint newSeniorRatio = calcSeniorRatio(seniorAsset, epochNAV, newReserve);
 
 
-        assessor.updateSeniorAsset(newReserve);
+        assessor.updateSeniorAsset(newSeniorRatio, seniorSupply, seniorRedeem);
         reserve.file("maxcurrency", newReserve);
         // reset state for next epochs
         lastEpochExecuted = epochID;

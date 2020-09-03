@@ -56,11 +56,17 @@ contract ReserveTest is DSTest, Math {
         reserve.depend("assessor", assessor_);
     }
 
+    function fundReserve(uint amount) public {
+        currency.mint(self, amount);
+        currency.approve(reserve_, amount);
+        reserve.deposit(amount);
+    }
+
     function testReserveBalanceBorrowFullReserve() public {
         uint borrowAmount = 100 ether;
         bool requestWant = true;
         // fund reserve with exact borrowAmount
-        currency.mint(reserve_, borrowAmount);
+        fundReserve(borrowAmount);
         // borrow action: shelf requests currency
         shelf.setReturn("balanceRequest", requestWant, borrowAmount);
 
@@ -84,7 +90,7 @@ contract ReserveTest is DSTest, Math {
         uint borrowAmount = 100 ether;
         bool requestWant = true;
         // fund reserve with twice as much currency then borrowAmount
-        currency.mint(reserve_, safeMul(borrowAmount, 2));
+        fundReserve(safeMul(borrowAmount, 2));
         // borrow action: shelf requests currency
         shelf.setReturn("balanceRequest", requestWant, borrowAmount);
 
@@ -109,6 +115,7 @@ contract ReserveTest is DSTest, Math {
         bool requestWant = false;
         // fund shelf with enough currency
         currency.mint(shelf_, repayAmount);
+
         // borrow action: shelf requests currency
         shelf.setReturn("balanceRequest", requestWant, repayAmount);
         // shelf approve reserve to take currency
@@ -129,7 +136,7 @@ contract ReserveTest is DSTest, Math {
         uint borrowAmount = 100 ether;
         bool requestWant = true;
         // fund reserve with enough currency
-        currency.mint(reserve_, 200 ether);
+        fundReserve(200 ether);
         // borrow action: shelf requests currency
         shelf.setReturn("balanceRequest", requestWant, borrowAmount);
         // set max available currency
@@ -144,7 +151,7 @@ contract ReserveTest is DSTest, Math {
         uint borrowAmount = 100 ether;
         bool requestWant = true;
         // fund reserve with enough currency
-        currency.mint(reserve_, borrowAmount);
+        fundReserve(borrowAmount);
         // borrow action: shelf requests too much currency
         shelf.setReturn("balanceRequest", requestWant, safeMul(borrowAmount, 2));
         // set max available currency
@@ -156,7 +163,7 @@ contract ReserveTest is DSTest, Math {
         uint borrowAmount = 100 ether;
         bool requestWant = true;
         // fund reserve with amount smaller than borrowAmount
-        currency.mint(reserve_, safeSub(borrowAmount,1));
+        fundReserve(borrowAmount-1);
         // borrow action: shelf requests too much currency
         shelf.setReturn("balanceRequest", requestWant, safeMul(borrowAmount, 2));
         // set max available currency to borrowAmount
@@ -174,5 +181,21 @@ contract ReserveTest is DSTest, Math {
         // shelf approve reserve to take currency
         shelf.doApprove(currency_, reserve_, repayAmount);
         reserve.balance();
+    }
+
+    function testDepositPayout() public {
+        uint amount = 100 ether;
+        currency.mint(self, amount);
+        assertEq(reserve.totalBalance(), 0);
+        currency.approve(reserve_, amount);
+        reserve.deposit(amount);
+        assertEq(reserve.totalBalance(), amount);
+        assertEq(currency.balanceOf(reserve_), amount);
+
+        amount = 60 ether;
+        reserve.payout(amount);
+        assertEq(reserve.totalBalance(), 40 ether);
+        assertEq(currency.balanceOf(reserve_), 40 ether);
+        assertEq(currency.balanceOf(self), 60 ether);
     }
 }

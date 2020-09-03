@@ -102,4 +102,24 @@ contract AssessorTest is DSTest, Math {
         assessor.file("maxSeniorRatio", minSeniorRatio-1);
     }
 
+    function testChangeSeniorAsset() public {
+        navFeed.setReturn("approximatedNAV", 100 ether);
+        uint amount = 100 ether;
+        // if seniorRatio 80% => NAV+reserve = 125 ether (100 ether already in reserve)
+        uint seniorDebtRatio = 8 * 10 ** 26;
+        assessor.increaseSeniorAsset(amount, seniorDebtRatio);
+
+        // 80% of NAV
+        assertEq(assessor.seniorDebt(), 80 ether);
+        // rest
+        assertEq(assessor.seniorBalance_(), 20 ether);
+
+        amount = 50 ether;
+        // NAV only depends on ongoing loans can be any value
+        navFeed.setReturn("approximatedNAV", 10 ether);
+        assessor.decreaseSeniorAsset(50 ether, 4 * 10 ** 26);
+        // 40 % of NAV
+        assertEq(assessor.seniorDebt(), 4 ether);
+        assertEq(assessor.seniorBalance_(), 46 ether);
+    }
 }

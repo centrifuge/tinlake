@@ -16,7 +16,7 @@ pragma solidity >=0.5.15 <0.6.0;
 pragma experimental ABIEncoderV2;
 
 import "./ticker.sol";
-import "./data_types.sol";
+import "./fixed_point.sol";
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
@@ -30,7 +30,7 @@ interface TrancheLike {
     function tokenSupply() external returns (uint);
 }
 
-contract Assessor is Auth, DataTypes, Interest  {
+contract Assessor is Auth, FixedPoint, Interest  {
     // senior ratio from the last epoch executed
     Fixed27        public seniorRatio;
     uint           public seniorDebt_;
@@ -53,6 +53,7 @@ contract Assessor is Auth, DataTypes, Interest  {
         wards[msg.sender] = 1;
         seniorInterestRate.value = ONE;
         lastUpdateSeniorInterest = block.timestamp;
+        seniorRatio.value = 0;
     }
 
     function depend(bytes32 contractName, address addr) public auth {
@@ -81,17 +82,17 @@ contract Assessor is Auth, DataTypes, Interest  {
         else {revert("unknown-variable");}
     }
 
-    function updateSeniorAsset(uint seniorRatio_) external auth {
-        dripSeniorDebt();
-
-        uint seniorAsset = safeAdd(seniorDebt_, seniorBalance_);
-
+    function _rebalance(uint seniorAsset_, uint seniorRatio_) internal {
         // re-balancing according to new ratio
         // we use the approximated NAV here because during the submission period
         // new loans might have been repaid in the meanwhile which are not considered in the epochNAV
         seniorDebt_ = rmul(navFeed.approximatedNAV(), seniorRatio_);
-        seniorBalance_ = safeSub(seniorAsset, seniorDebt_);
+        seniorBalance_ = safeSub(seniorAsset_, seniorDebt_);
+    }
 
+    function updateSeniorAsset(uint seniorRatio_) external auth {
+        dripSeniorDebt();
+        _rebalance(safeAdd(seniorDebt_, seniorBalance_), seniorRatio_);
         seniorRatio  = Fixed27(seniorRatio_);
     }
 
@@ -166,5 +167,24 @@ contract Assessor is Auth, DataTypes, Interest  {
             return chargeInterest(seniorDebt_, seniorInterestRate.value, lastUpdateSeniorInterest);
         }
         return seniorDebt_;
+    }
+
+    function increaseSeniorAsset(uint currencyAmount, uint newSeniorRatio) public auth {
+        dripSeniorDebt();
+
+        uint seniorAsset = safeAdd(safeAdd(seniorDebt_, seniorBalance_), currencyAmount);
+        // the seniorDebtRatio defines the seniorDebt and seniorBalance
+        // split for the increased amount
+        _rebalance(seniorAsset, newSeniorRatio);
+    }
+
+
+    function decreaseSeniorAsset(uint currencyAmount, uint newSeniorRatio) public auth {
+        dripSeniorDebt();
+
+        uint seniorAsset = safeSub(safeAdd(seniorDebt_, seniorBalance_), currencyAmount);
+        // the seniorDebtRatio defines the seniorDebt and seniorBalance
+        // split for the increased amount
+        _rebalance(seniorAsset, newSeniorRatio);
     }
 }
