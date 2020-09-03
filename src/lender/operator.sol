@@ -68,5 +68,4 @@ contract Operator is DSNote, Auth, DSTest {
     {
         return tranche.disburse(msg.sender, endEpoch);
     }
-
 }

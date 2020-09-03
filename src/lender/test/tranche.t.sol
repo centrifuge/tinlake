@@ -40,6 +40,9 @@ contract TrancheTest is DSTest, Math, FixedPoint {
 
     uint256 constant ONE = 10**27;
 
+    uint public currentEpoch;
+    uint public lastEpochExecuted;
+
     function setUp() public {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1595247588);
@@ -52,6 +55,12 @@ contract TrancheTest is DSTest, Math, FixedPoint {
 
         tranche = new Tranche(address(currency), address(token));
         tranche.depend("reserve", reserve_);
+
+        currentEpoch = 1;
+        lastEpochExecuted = 0;
+
+        // epoch ticker is implemented in test suite
+        tranche.depend("epochTicker", address(this));
 
         tranche_ = address(tranche);
 

@@ -19,7 +19,6 @@ pragma experimental ABIEncoderV2;
 import "./coordinator-base.t.sol";
 
 contract CoordinatorCloseEpochTest is CoordinatorTest {
-
     function setUp() public {
         super.setUp();
         // set max available currency to 1 to check if it was set to 0 on close
