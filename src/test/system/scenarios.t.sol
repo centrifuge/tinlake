@@ -24,11 +24,11 @@ contract ScenarioTest is BaseSystemTest {
     NFTFeedLike nftFeed_;
 
     function setUp() public {
+        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm.warp(1234567);
         baseSetup();
         createTestUsers(false);
         // setup hevm
-        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-        hevm.warp(1234567);
         nftFeed_ = NFTFeedLike(address(nftFeed));
     }
 
@@ -46,7 +46,6 @@ contract ScenarioTest is BaseSystemTest {
     }
 
     function setupLoan(uint tokenId, address collateralNFT_, uint nftPrice, uint riskGroup) public returns (uint) {
-       
         // borrower issue loans
         uint loan = borrower.issue(collateralNFT_, tokenId);
 
@@ -60,6 +59,10 @@ contract ScenarioTest is BaseSystemTest {
     function borrow(uint loan, uint tokenId, uint borrowAmount) public {
         borrower.approveNFT(collateralNFT, address(shelf));
         setupCurrencyOnLender(borrowAmount);
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
+        emit log_named_uint("lender: currency available", reserve.currencyAvailable());
+        emit log_named_uint("lender: reserve", currency.balanceOf(address(reserve)));
         borrower.borrowAction(loan, borrowAmount);
         checkAfterBorrow(tokenId, borrowAmount);
     }
@@ -185,9 +188,9 @@ contract ScenarioTest is BaseSystemTest {
 
         // close without defined amount
         borrower.doClose(loan);
-
-        uint totalT = uint(currency.totalSupply());
-        checkAfterRepay(loan, tokenId, totalT, distributorShould);
+//
+//        uint totalT = uint(currency.totalSupply());
+//        checkAfterRepay(loan, tokenId, totalT, distributorShould);
     }
 
     function testMultipleBorrowAndRepay() public {
@@ -206,7 +209,7 @@ contract ScenarioTest is BaseSystemTest {
             // collateralNFT whitelist
             uint loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup);
             uint ceiling = nftFeed_.ceiling(i);
-    
+
             borrower.approveNFT(collateralNFT, address(shelf));
 
             setupCurrencyOnLender(ceiling);

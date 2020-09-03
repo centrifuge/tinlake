@@ -121,7 +121,7 @@ contract TestSetup {
         root_ = address(root);
 
         // only admin is main deployer
-        deployBorrower(feed_);
+        deployBorrower("nav");
         // only admin is main deployer
 
         prepareDeployLender(root_);
@@ -131,6 +131,7 @@ contract TestSetup {
 
         root.prepare(address(lenderDeployer), address(borrowerDeployer), address(this));
         root.deploy();
+
     }
 
     function deployBorrower(bytes32 feed_) private {

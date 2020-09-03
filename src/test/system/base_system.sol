@@ -44,6 +44,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     Investor juniorInvestor;
     address  juniorInvestor_;
 
+
     function baseSetup() public {
         // setup deployment
         bytes32 feed_ = "default";
@@ -67,6 +68,10 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         admin = new AdminUser(address(shelf), address(pile), address(nftFeed), address(title), address(distributor), address(collector));
         admin_ = address(admin);
         root.relyBorrowAdmin(admin_);
+
+        createInvestorUser();
+
+        root.relyInvestorAdmin(admin_);
     }
 
     function createInvestorUser() public {
@@ -153,7 +158,17 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
     // helpers lenders
     function invest(uint currencyAmount) public {
-        currency.mint(address(distributor), currencyAmount);
+        admin.whitelistInvestor(address(seniorOperator), seniorInvestor_);
+        admin.whitelistInvestor(address(juniorOperator), juniorInvestor_);
+
+        uint amountSenior = rmul(currencyAmount, 82 * 10**25);
+        uint amountJunior = rmul(currencyAmount, 18 * 10**25);
+
+        currency.mint(seniorInvestor_, amountSenior);
+        currency.mint(juniorInvestor_, amountJunior);
+
+        seniorInvestor.supplyOrder(amountSenior);
+        juniorInvestor.supplyOrder(amountJunior);
     }
 
     // helpers keeper

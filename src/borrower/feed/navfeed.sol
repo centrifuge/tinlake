@@ -37,8 +37,10 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
         uint percentage;
     }
 
-    uint public discountRate;
-    uint public maxDays;
+    // default 3% a day
+    uint public discountRate = uint(1000000342100000000000000000);
+    // 120 days
+    uint public maxDays = 120;
 
     // approximated NAV
     uint public approximatedNAV;
@@ -90,9 +92,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
         return navIncrease;
     }
 
-
     function _borrow(uint loan, uint amount) internal returns(uint navIncrease) {
-
         // ceiling check uses existing loan debt
         require(ceiling(loan) >= safeAdd(pile.debt(loan), amount), "borrow-amount-too-high");
         bytes32 nftID_ = nftID(loan);

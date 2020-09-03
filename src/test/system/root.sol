@@ -37,4 +37,9 @@ contract TestRoot is TinlakeRoot {
         denyContract(borrowerDeployer.shelf(), usr);
         denyContract(borrowerDeployer.pile(), usr);
     }
+
+    function relyInvestorAdmin(address usr) public auth {
+        relyContract(lenderDeployer.seniorOperator(), usr);
+        relyContract(lenderDeployer.juniorOperator(), usr);
+    }
 }

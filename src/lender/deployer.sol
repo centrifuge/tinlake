@@ -180,8 +180,10 @@ contract LenderDeployer is FixedPoint {
         // assessor
         DependLike(assessor).depend("seniorTranche", seniorTranche);
         DependLike(assessor).depend("juniorTranche", juniorTranche);
+        DependLike(assessor).depend("juniorTranche", juniorTranche);
 
         AuthLike(assessor).rely(coordinator);
+        AuthLike(assessor).rely(reserve);
 
         FileLike(assessor).file("seniorInterestRate", seniorInterestRate.value);
         FileLike(assessor).file("maxReserve", maxReserve);
