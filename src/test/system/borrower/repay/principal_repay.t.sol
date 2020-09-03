@@ -124,18 +124,17 @@ contract PrincipalRepayTest is BaseSystemTest {
         borrowAndRepay(borrower_, nftPrice, riskGroup, expectedDebt, repayAmount);
     }
 
-//    function testPartialRepay() public {
-//    // todo figure out why loop
-//        uint nftPrice = 200 ether; // -> ceiling 100 ether
-//        uint riskGroup = 1; // -> 12% per year
-//        uint rate = getRateByRisk(riskGroup);
-//        uint ceiling = computeCeiling(riskGroup, nftPrice);
-//
-//        // expected debt after 1 year of compounding
-//        uint expectedDebt = 112 ether;
-//        uint repayAmount = safeDiv(expectedDebt, 2);
-//        borrowAndRepay(borrower_, nftPrice, riskGroup, expectedDebt, repayAmount);
-//    }
+    function testPartialRepay() public {
+        uint nftPrice = 200 ether; // -> ceiling 100 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint rate = getRateByRisk(riskGroup);
+        uint ceiling = computeCeiling(riskGroup, nftPrice);
+
+        // expected debt after 1 year of compounding
+        uint expectedDebt = 112 ether;
+        uint repayAmount = safeDiv(expectedDebt, 2);
+        borrowAndRepay(borrower_, nftPrice, riskGroup, expectedDebt, repayAmount);
+    }
 
     function testRepayDebtNoRate() public {
         uint nftPrice = 100 ether; // -> ceiling 100 ether
