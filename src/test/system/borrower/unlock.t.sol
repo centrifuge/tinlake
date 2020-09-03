@@ -24,11 +24,20 @@ contract UnlockTest is BaseSystemTest {
     function setUp() public {
         baseSetup();
         createTestUsers(false);
-        fundTranches();
 
         // setup hevm
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
+        fundTranches();
+
+    }
+
+    function fundTranches() public {
+        uint defaultAmount = 1000 ether;
+        invest(defaultAmount);
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
+        emit log_named_uint("reserve", reserve.totalBalance());
     }
 
     function unlockNFT(uint loanId, uint tokenId) public {

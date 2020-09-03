@@ -199,7 +199,7 @@ contract TestSetup {
     function deployLender() public {
         // 12 % per year
         uint seniorInterestRate = uint(1000000003593629043335673583);
-        uint maxReserve = 2000 ether;
+        uint maxReserve = uint(-1);
         uint maxSeniorRatio = 85 * 10 **25;
         uint minSeniorRatio = 75 * 10 **25;
         uint challengeTime = 1 hours;

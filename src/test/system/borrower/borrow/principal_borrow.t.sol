@@ -112,7 +112,7 @@ contract PrincipalBorrowTest is BaseSystemTest {
         borrow(loanId, tokenId, amount);
     }
 
-    function testPartialBorrowWithInterest() public {
+    function testFailPartialBorrowWithInterest() public {
         uint nftPrice = 100 ether; // -> ceiling 50 ether
         uint borrowAmount = 16 ether; // -> rest 34 ether
         uint riskGroup = 1; // -> 12% per year
@@ -130,9 +130,9 @@ contract PrincipalBorrowTest is BaseSystemTest {
         // borrower borrows a chunk of the ceiling
         borrow(loanId, tokenId, borrowAmount);
 
-        hevm.warp(now + 365 days); // expected debt after 1 year 19.2 ether
+        hevm.warp(now + 1 days); // expected debt after 1 year 19.2 ether
 
-        // should work even though total debt will result in 69.2 ether. Principal ceiling ignores the accrued interest
+        // borrowing the amount left should fail because the accrued debt lowered the ceiling
         borrow(loanId, tokenId, rest);
     }
 
