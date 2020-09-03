@@ -25,7 +25,7 @@ import "./users/keeper.sol";
 import "tinlake-math/math.sol";
 
 
-contract BaseSystemTest is TestSetup, Math {
+contract BaseSystemTest is TestSetup, Math, DSTest {
     // users
     Borrower borrower;
     address borrower_;
@@ -67,7 +67,6 @@ contract BaseSystemTest is TestSetup, Math {
         admin = new AdminUser(address(shelf), address(pile), address(nftFeed), address(title), address(distributor), address(collector), address(juniorMemberlist), address(seniorMemberlist));
         admin_ = address(admin);
         root.relyBorrowAdmin(admin_);
-
     }
 
     function createInvestorUser() public {

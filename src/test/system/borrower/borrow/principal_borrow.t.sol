@@ -95,7 +95,6 @@ contract PrincipalBorrowTest is BaseSystemTest {
         // price nft 
         priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
         uint ceiling = computeCeiling(riskGroup, nftPrice);
-        emit log_named_uint("ceiling", ceiling);
          // borrow amount smaller then ceiling
         uint amount = safeDiv(ceiling , 2);
 

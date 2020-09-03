@@ -33,16 +33,15 @@ contract LenderIntegrationTest is BaseSystemTest {
     function testSimpleSeniorOrder() public {
         uint amount = 100 ether;
         currency.mint(address(seniorInvestor), amount);
-emit log_named_uint("moin", 1);
+
         // invest
         seniorInvestor.supplyOrder(amount);
-emit log_named_uint("moin", 1);
+
         (,uint supplyAmount, ) = seniorTranche.users(seniorInvestor_);
         assertEq(supplyAmount, amount);
 
         // change order
         seniorInvestor.supplyOrder(amount/2);
-emit log_named_uint("moin", 1);
         (, supplyAmount, ) = seniorTranche.users(seniorInvestor_);
         assertEq(supplyAmount, amount/2);
     }

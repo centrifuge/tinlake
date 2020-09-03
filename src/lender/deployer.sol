@@ -19,7 +19,6 @@ import {AssessorFab}    from "./fabs/assessor.sol";
 import {TrancheFab}     from "./fabs/tranche.sol";
 import {CoordinatorFab} from "./fabs/coordinator.sol";
 import {OperatorFab}    from "./fabs/operator.sol";
-import "ds-test/test.sol";
 import {FixedPoint}      from "./fixed_point.sol";
 
 // todo needs to be removed
@@ -39,7 +38,7 @@ interface FileLike {
     function file(bytes32 name, uint value) external;
 }
 
-contract LenderDeployer is FixedPoint, DSTest {
+contract LenderDeployer is FixedPoint {
     address public root;
     address public currency;
 
@@ -78,6 +77,8 @@ contract LenderDeployer is FixedPoint, DSTest {
     // restricted token member list
     address             public seniorMemberlist;
     address             public juniorMemberlist;
+
+    address             public deployer;
 
     address             public deployer;
 
@@ -130,6 +131,8 @@ contract LenderDeployer is FixedPoint, DSTest {
         AuthLike(seniorOperator).rely(root);
         AuthLike(juniorOperator).rely(root);
 
+        AuthLike(seniorOperator).rely(root);
+        AuthLike(juniorOperator).rely(root);
         AuthLike(seniorTranche).rely(root);
         AuthLike(juniorTranche).rely(root);
     }

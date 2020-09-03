@@ -67,7 +67,7 @@ contract DistributorLike {
 import "../../borrower/test/mock/shelf.sol";
 import "../../lender/test/mock/navFeed.sol";
 
-contract TestSetup is DSTest{
+contract TestSetup {
     Title public collateralNFT;
     address      public collateralNFT_;
     SimpleToken  public currency;
