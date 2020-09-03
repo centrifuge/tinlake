@@ -78,30 +78,9 @@ contract ERC20Like {
     function balanceOf(address usr) public returns (uint);
 }
 
-contract TOperatorLike {
-    TrancheLike public tranche;
-    TAssessorLike public assessor;
-    TDistributorLike public distributor;
-
-    function rely(address usr) public;
-    function deny(address usr) public;
-
-    function supply(uint amount) public;
-    function redeem(uint amount) public;
-}
-
 contract TrancheLike {
     function balance() public returns(uint);
     function tokenSupply() public returns(uint);
-}
-
-contract TAssessorLike {
-    function rely(address usr) public;
-    function deny(address usr) public;
-    function depend(bytes32 contractName, address addr_) public;
-    function file(bytes32 what, uint value) public;
-    function accrueTrancheInterest(address tranche_) public returns (uint);
-
 }
 
 contract CollectorLike {

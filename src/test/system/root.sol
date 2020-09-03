@@ -29,6 +29,7 @@ contract TestRoot is TinlakeRoot {
         relyContract(borrowerDeployer.pile(), usr);
         relyContract(borrowerDeployer.feed(), usr);
         relyContract(borrowerDeployer.collector(), usr);
+        
     }
 
     function denyBorrowAdmin(address usr) public auth {
@@ -36,5 +37,7 @@ contract TestRoot is TinlakeRoot {
         denyContract(borrowerDeployer.feed(), usr);
         denyContract(borrowerDeployer.shelf(), usr);
         denyContract(borrowerDeployer.pile(), usr);
+        denyContract(borrowerDeployer.feed(), usr);
+        denyContract(borrowerDeployer.collector(), usr);
     }
 }

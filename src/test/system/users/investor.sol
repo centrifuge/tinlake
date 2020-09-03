@@ -14,27 +14,35 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 import "../interfaces.sol";
+import "ds-test/test.sol";
 
-contract Investor {
-    TOperatorLike operator;
+interface InvestorOperator {
+    function supplyOrder(uint currencyAmount) external;
+    function redeemOrder(uint redeemAmount) external;
+    function disburse() external returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
+}
+
+contract Investor is DSTest {
     ERC20Like currency;
     ERC20Like token;
 
-    constructor(address operator_, address currency_, address token_) public {
-        operator = TOperatorLike(operator_);
+    InvestorOperator operator;
+    address tranche;
+
+    constructor(address operator_, address tranche_,  address currency_, address token_) public {
         currency = ERC20Like(currency_);
         token = ERC20Like(token_);
+        operator = InvestorOperator(operator_);
+        tranche = tranche_;
     }
 
-    function doSupply(uint amount) public {
-        address tranche_ = address(operator.tranche());
-        currency.approve(tranche_, amount);
-        operator.supply(amount);
+    function supplyOrder(uint currencyAmount) public {
+        currency.approve(tranche, currencyAmount);
+        operator.supplyOrder(currencyAmount);
     }
 
-    function doRedeem(uint amount) public {
-        address tranche_ = address(operator.tranche());
-        token.approve(tranche_, amount);
-        operator.redeem(amount);
+    function disburse() public returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken) {
+       return operator.disburse();
     }
+
 }

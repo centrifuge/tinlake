@@ -67,9 +67,8 @@ contract Tranche is Math, Auth, FixedPoint {
     address self;
 
     uint public currentEpoch;
-    bool public waitingForUpdate  = false;
+    bool public waitingForUpdate = false;
     uint public lastEpochExecuted;
-
 
     constructor(address currency_, address token_) public {
         wards[msg.sender] = 1;
@@ -218,6 +217,7 @@ contract Tranche is Math, Auth, FixedPoint {
         if (payoutTokenAmount > 0) {
             require(token.transferFrom(self, usr, payoutTokenAmount), "token-transfer-failed");
         }
+
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
 
     }

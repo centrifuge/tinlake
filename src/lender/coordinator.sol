@@ -17,12 +17,11 @@ pragma experimental ABIEncoderV2;
 
 import "./ticker.sol";
 import "./fixed_point.sol";
-import "tinlake-auth/auth.sol";
 
 interface EpochTrancheLike {
     function epochUpdate(uint supplyFulfillment_,
         uint redeemFulfillment_, uint tokenPrice_, uint epochSupplyCurrency, uint epochRedeemCurrency) external;
-    function closeEpoch() external view returns(uint totalSupply, uint totalRedeem);
+    function closeEpoch() external returns(uint totalSupply, uint totalRedeem);
 }
 
 interface ReserveLike {
@@ -41,7 +40,7 @@ contract AssessorLike is FixedPoint {
     function updateSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
 }
 
-contract EpochCoordinator is Ticker, Auth, FixedPoint  {
+contract EpochCoordinator is Ticker, FixedPoint  {
     struct OrderSummary {
         // all variables are stored in currency
         uint  seniorRedeem;
@@ -92,13 +91,17 @@ contract EpochCoordinator is Ticker, Auth, FixedPoint  {
     constructor(uint challengeTime_) public {
         wards[msg.sender] = 1;
         challengeTime = challengeTime_;
+
+        // todo init ticker with super constructor call
+        firstEpochTimestamp = normalizeTimestamp(now);
+        epochTime = 1 days;
     }
 
     function file(bytes32 name, uint value) public auth {
         if(name == "challengeTime") {
             challengeTime = value;
         } else {
-            revert("unknown-name");
+            super.file(name, value);
         }
     }
 
@@ -140,7 +143,6 @@ contract EpochCoordinator is Ticker, Auth, FixedPoint  {
         epochJuniorTokenPrice = assessor.calcJuniorTokenPrice(epochNAV, epochReserve);
 
         epochSeniorAsset = safeAdd(assessor.seniorDebt(), assessor.seniorBalance());
-
 
         /// calculate currency amounts
         order.seniorRedeem = rmul(orderSeniorRedeem, epochSeniorTokenPrice.value);

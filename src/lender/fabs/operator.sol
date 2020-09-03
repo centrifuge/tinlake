@@ -1,4 +1,5 @@
 // Copyright (C) 2020 Centrifuge
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -13,9 +14,13 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pragma solidity >=0.5.15 <0.6.0;
+import { Operator } from "./../operator.sol";
 
-contract FixedPoint  {
-    struct Fixed27 {
-        uint value;
+contract OperatorFab {
+    function newOperator(address tranche) public returns (address) {
+        Operator operator = new Operator(tranche);
+        operator.rely(msg.sender);
+        operator.deny(address(this));
+        return address(operator);
     }
 }

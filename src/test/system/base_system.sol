@@ -25,7 +25,7 @@ import "./users/keeper.sol";
 import "tinlake-math/math.sol";
 
 
-contract BaseSystemTest is TestSetup, Math, DSTest {
+contract BaseSystemTest is TestSetup, Math {
     // users
     Borrower borrower;
     address borrower_;
@@ -38,6 +38,11 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
     Keeper keeper;
     address keeper_;
+
+    Investor seniorInvestor;
+    address  seniorInvestor_;
+    Investor juniorInvestor;
+    address  juniorInvestor_;
 
     function baseSetup() public {
         // setup deployment
@@ -59,10 +64,18 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         keeper = new Keeper(address(collector), currency_);
         keeper_ = address(keeper);
 
-        admin = new AdminUser(address(shelf), address(pile), address(nftFeed), address(title), address(distributor), address(collector));
+        admin = new AdminUser(address(shelf), address(pile), address(nftFeed), address(title), address(distributor), address(collector), address(juniorMemberlist), address(seniorMemberlist));
         admin_ = address(admin);
         root.relyBorrowAdmin(admin_);
 
+    }
+
+    function createInvestorUser() public {
+        // investors
+        seniorInvestor = new Investor(address(seniorOperator), address(seniorTranche), currency_, address(seniorToken));
+        seniorInvestor_ = address(seniorInvestor);
+        juniorInvestor = new Investor(address(juniorOperator), address(juniorTranche), currency_, address(juniorToken));
+        juniorInvestor_ = address(juniorInvestor);
     }
 
     function lockNFT(uint loanId, address usr) public {
