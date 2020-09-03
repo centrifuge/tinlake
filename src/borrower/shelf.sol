@@ -192,7 +192,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
 
         require(currency.transferFrom(usr, address(this), currencyAmount), "currency-transfer-failed");
 
-        ceiling.repay(loan, currencyAmount);
+      //  ceiling.repay(loan, currencyAmount);
         // sets loan debt to 0
         pile.decDebt(loan, loanDebt);
         resetLoanBalance(loan);
