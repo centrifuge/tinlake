@@ -27,10 +27,8 @@ contract DeployerTest is DSTest {
     TitleFab titlefab;
     ShelfFab shelffab;
     PileFab pilefab;
-    address ceilingFab_;
+    NFTFeedFab nftFeedFab;
     CollectorFab collectorFab;
-    ThresholdFab thresholdFab;
-    PricePoolFab pricePoolFab;
     Title title;
 
     function setUp() public {
@@ -39,23 +37,18 @@ contract DeployerTest is DSTest {
         titlefab = new TitleFab();
         shelffab = new ShelfFab();
         pilefab = new PileFab();
-        ceilingFab_ = address(new PrincipalCeilingFab());
         collectorFab = new CollectorFab();
-        thresholdFab = new ThresholdFab();
-        pricePoolFab = new PricePoolFab();
+        nftFeedFab = new NFTFeedFab();
    }
 
     function testBorrowerDeploy() public logs_gas {
-        BorrowerDeployer deployer = new BorrowerDeployer(address(0), titlefab, shelffab, pilefab, ceilingFab_, collectorFab, thresholdFab, pricePoolFab,address(0), address(dai), "Test", "TEST");
+        BorrowerDeployer deployer = new BorrowerDeployer(address(0), titlefab, shelffab, pilefab, collectorFab, address(nftFeedFab), address(dai), "Test", "TEST");
 
         deployer.deployTitle();
         deployer.deployPile();
-        deployer.deployCeiling();
+        deployer.deployFeed();
         deployer.deployShelf();
-        deployer.deployThreshold();
         deployer.deployCollector();
-        deployer.deployPricePool();
-
         deployer.deploy();
     }
 }

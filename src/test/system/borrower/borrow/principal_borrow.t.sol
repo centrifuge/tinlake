@@ -32,7 +32,9 @@ contract PrincipalBorrowTest is BaseSystemTest {
         uint initialTotalBalance = shelf.balance();
         uint initialLoanBalance = shelf.balances(loanId);
         uint initialLoanDebt = pile.debt(loanId);
-        uint initialCeiling = ceiling.ceiling(loanId);
+        emit log_named_uint("debt", pile.debt(loanId));
+        uint initialCeiling = nftFeed.ceiling(loanId);
+        emit log_named_uint("ceiling", nftFeed.ceiling(loanId));
 
         borrower.borrow(loanId, amount);
         assertPostCondition(loanId, tokenId, amount, initialTotalBalance, initialLoanBalance, initialLoanDebt, initialCeiling);
@@ -43,8 +45,8 @@ contract PrincipalBorrowTest is BaseSystemTest {
         assertEq(title.ownerOf(loanId), borrower_);
         // assert: shelf nftOwner
         assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
-        // assert: borrowAmount <= ceiling
-        assert(amount <= ceiling.ceiling(loanId));
+        // assert: borrowAmount <= ceiling        
+        assert(amount <= nftFeed.ceiling(loanId));
     }
 
     function assertPostCondition(uint loanId, uint tokenId, uint amount, uint initialTotalBalance, uint initialLoanBalance,  uint initialLoanDebt, uint initialCeiling) public {
@@ -52,92 +54,115 @@ contract PrincipalBorrowTest is BaseSystemTest {
         assertEq(title.ownerOf(loanId), borrower_);
         // assert: borrower nftOwner
         assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
+        
         // assert: totalBalance increase by borrow amount
         assertEq(shelf.balance(), safeAdd(initialTotalBalance, amount));
+        
         // assert: loanBalance increase by borrow amount
         assertEq(shelf.balances(loanId), safeAdd(initialLoanBalance, amount));
-        // assert: loanDebt increase by borrow amount
-        assertEq(pile.debt(loanId), safeAdd(initialLoanDebt, amount));
+        
+        // assert: loanDebt increased by borrow amount +/- 1 roundign tolerance
+        uint newDebtExpected = safeAdd(initialLoanDebt, amount);
+        uint newDebtActual = pile.debt(loanId);
+        assert((safeSub(newDebtActual, 1) <= newDebtExpected) && (newDebtExpected <= safeAdd(newDebtExpected ,1)));
+
         // assert: available borrow amount decreased
-         emit log_named_uint("pile debt", pile.debt(loanId));
-         emit log_named_uint("pile debt", safeAdd(initialLoanDebt, amount));
-        assertEq(ceiling.ceiling(loanId), safeSub(initialCeiling, amount));
+        assertEq(nftFeed.ceiling(loanId), safeSub(initialCeiling, amount));
     }
 
     function testBorrow() public {
-        uint ceiling = 100 ether;
-        uint amount = ceiling;
+        uint nftPrice = 500 ether;
+        uint riskGroup = 0;
+
         (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
+        // price nft 
+        priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
+        uint ceiling = computeCeiling(riskGroup, nftPrice);
         // lock nft for borrower
         lockNFT(loanId, borrower_);
-        // admin sets loan ceiling
-        admin.setCeiling(loanId, ceiling);
-        assertPreCondition(loanId, tokenId, amount);
-        borrow(loanId, tokenId, amount);
+        // set ceiling based tokenPrice & riskgroup
+
+        assertPreCondition(loanId, tokenId, ceiling);
+        borrow(loanId, tokenId, ceiling);
     }
 
     function testPartialBorrow() public {
-        uint ceiling = 200 ether;
-        // borrow amount smaller then ceiling
-        uint amount = safeDiv(ceiling , 2);
+        uint nftPrice = 200 ether;
+        uint riskGroup = 0;
+
         (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
+
+        // price nft 
+        priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
+        uint ceiling = computeCeiling(riskGroup, nftPrice);
+        emit log_named_uint("ceiling", ceiling);
+         // borrow amount smaller then ceiling
+        uint amount = safeDiv(ceiling , 2);
+
         lockNFT(loanId, borrower_);
-        admin.setCeiling(loanId, ceiling);
         assertPreCondition(loanId, tokenId, amount);
         borrow(loanId, tokenId, amount);
     }
 
-    function testlPartialBorrowWithInterest() public {
-        uint ceiling = 66 ether;
-        // 12 % per year compound in seconds
-        uint rate = 1000000003593629043335673583;
-        uint speed = rate;
-        uint amount = 16 ether;
+    function testPartialBorrowWithInterest() public {
+        uint nftPrice = 100 ether; // -> ceiling 50 ether
+        uint borrowAmount = 16 ether; // -> rest 34 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint rate = getRateByRisk(riskGroup);
+        (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_); // interest starts ticking
+        // price nft
+        priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
+        uint ceiling = computeCeiling(riskGroup, nftPrice);
+        uint rest = safeSub(ceiling, borrowAmount);
 
-        (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
         // lock nft for borrower
         lockNFT(loanId, borrower_);
-        // admin sets loan parameters
-        setLoanParameters(loanId, ceiling, rate, speed);
-        assertPreCondition(loanId, tokenId, amount);
-        // borrower borrows 50 ether fist
-        borrow(loanId, tokenId, amount);
+        assertPreCondition(loanId, tokenId, borrowAmount);
+
+        // borrower borrows a chunk of the ceiling
+        borrow(loanId, tokenId, borrowAmount);
 
         hevm.warp(now + 365 days); // expected debt after 1 year 19.2 ether
 
-        // borrower borrows rest of principal (50 ether)
-        // should work even though total debt will result in 69.2 ether. daPrincipal ceiling ignores the accrued interest
-        borrow(loanId, tokenId, safeSub(ceiling, amount));
+        // should work even though total debt will result in 69.2 ether. Principal ceiling ignores the accrued interest
+        borrow(loanId, tokenId, rest);
     }
 
     function testFailBorrowNFTNotLocked() public {
-        uint ceiling = 100 ether;
-        uint amount = ceiling;
+        uint nftPrice = 100 ether; // -> ceiling 50 ether
+        uint borrowAmount = 16 ether; // -> rest 34 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint amount = computeCeiling(riskGroup, nftPrice);
+
         (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
-        // do not lock nft
-        admin.setCeiling(loanId, ceiling);
+        // price nft
+        priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
         borrow(loanId, tokenId, amount);
     }
 
     function testFailBorrowNotLoanOwner() public {
-        uint ceiling = 100 ether;
-        uint amount = ceiling;
-         (uint tokenId, uint loanId) = issueNFTAndCreateLoan(randomUser_);
+        uint nftPrice = 100 ether; // -> ceiling 50 ether
+        uint borrowAmount = 16 ether; // -> rest 34 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint amount = computeCeiling(riskGroup, nftPrice);
+        (uint tokenId, uint loanId) = issueNFTAndCreateLoan(randomUser_);
+        // price nft
+        priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
+
         // lock nft for random user
         randomUser.lock(loanId);
-        // admin sets loan ceiling
-        admin.setCeiling(loanId, ceiling);
         // borrower tries to borrow against loan
         borrow(loanId, tokenId, amount);
     }
 
     function testFailBorrowAmountTooHigh() public {
-        uint ceiling = 100 ether;
-        // borrow amount higher then ceiling
+        uint nftPrice = 100 ether; // -> ceiling 50 ether
+        uint borrowAmount = 16 ether; // -> rest 34 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint ceiling = computeCeiling(riskGroup, nftPrice);
         uint amount = safeMul(ceiling, 2);
         (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
         lockNFT(loanId, borrower_);
-        admin.setCeiling(loanId, ceiling);
         borrow(loanId, tokenId, amount);
     }
 

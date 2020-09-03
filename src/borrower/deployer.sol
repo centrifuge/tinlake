@@ -16,15 +16,12 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 
-import { ShelfFab} from "./fabs/shelf.sol";
-import { CollectorFab} from "./fabs/collector.sol";
-import { PileFab} from "./fabs/pile.sol";
-import { TitleFab} from "./fabs/title.sol";
-import { PrincipalCeilingFab} from "./fabs/principal.sol";
-import { CreditLineCeilingFab} from "./fabs/creditline.sol";
-import { ThresholdFab} from "./fabs/threshold.sol";
-import { PricePoolFab} from "./fabs/pricepool.sol";
-import { NFTFeedFab} from "./fabs/nftfeed.sol";
+import { ShelfFab } from "./fabs/shelf.sol";
+import { CollectorFab } from "./fabs/collector.sol";
+import { PileFab } from "./fabs/pile.sol";
+import { TitleFab } from "./fabs/title.sol";
+import { NFTFeedFab } from "./fabs/nftfeed.sol";
+import { NAVFeedFab } from "./fabs/navfeed.sol";
 
 
 contract DependLike {
@@ -34,10 +31,6 @@ contract DependLike {
 contract AuthLike {
     function rely(address) public;
     function deny(address) public;
-}
-
-contract CeilingFab {
-    function newCeiling(address pile) public returns (address);
 }
 
 contract NFTFeedLike {
@@ -50,24 +43,18 @@ contract BorrowerDeployer {
     TitleFab     public titlefab;
     ShelfFab     public shelffab;
     PileFab      public pilefab;
-    CeilingFab   public ceilingFab;
     CollectorFab public collectorFab;
-    ThresholdFab public thresholdFab;
-    PricePoolFab public pricePoolFab;
     NFTFeedFab   public nftFeedFab;
 
     address public title;
     address public shelf;
     address public pile;
-    address public ceiling;
     address public collector;
-    address public threshold;
-    address public pricePool;
     address public currency;
-    address public nftFeed;
+    address public feed;
 
-    string       public titleName;
-    string       public titleSymbol;
+    string  public titleName;
+    string  public titleSymbol;
 
     address constant ZERO = address(0);
 
@@ -76,10 +63,7 @@ contract BorrowerDeployer {
       TitleFab titlefab_,
       ShelfFab shelffab_,
       PileFab pilefab_,
-      address ceilingFab_,
       CollectorFab collectorFab_,
-      ThresholdFab thresholdFab_,
-      PricePoolFab pricePoolFab_,
       address nftFeedFab_,
       address currency_,
       string memory titleName_,
@@ -91,10 +75,7 @@ contract BorrowerDeployer {
         shelffab = shelffab_;
 
         pilefab = pilefab_;
-        ceilingFab = CeilingFab(ceilingFab_);
         collectorFab = collectorFab_;
-        thresholdFab = thresholdFab_;
-        pricePoolFab = pricePoolFab_;
         nftFeedFab = NFTFeedFab(nftFeedFab_);
 
         currency = currency_;
@@ -103,21 +84,9 @@ contract BorrowerDeployer {
         titleSymbol = titleSymbol_;
     }
 
-    function deployThreshold() public {
-        require(threshold == ZERO);
-        threshold = thresholdFab.newThreshold();
-        AuthLike(threshold).rely(root);
-    }
-
-    function deployPricePool() public {
-        require(pricePool == ZERO);
-        pricePool = pricePoolFab.newPricePool();
-        AuthLike(pricePool).rely(root);
-    }
-
     function deployCollector() public {
         require(collector == ZERO && address(shelf) != ZERO);
-        collector = collectorFab.newCollector(address(shelf), address(pile), address(threshold));
+        collector = collectorFab.newCollector(address(shelf), address(pile), address(feed));
         AuthLike(collector).rely(root);
     }
 
@@ -134,47 +103,33 @@ contract BorrowerDeployer {
     }
 
     function deployShelf() public {
-        require(shelf == ZERO && title != ZERO && pile != ZERO && ceiling != ZERO);
-        shelf = shelffab.newShelf(currency, address(title), address(pile), address(ceiling));
+        require(shelf == ZERO && title != ZERO && pile != ZERO && feed != ZERO);
+        shelf = shelffab.newShelf(currency, address(title), address(pile), address(feed));
         AuthLike(shelf).rely(root);
     }
 
-    function deployCeiling() public {
-        ceiling = ceilingFab.newCeiling(address(pile));
-        AuthLike(ceiling).rely(root);
-    }
-
-    function deployNFTFeed() public {
-        nftFeed = nftFeedFab.newNFTFeed();
-        AuthLike(nftFeed).rely(root);
-        threshold = nftFeed;
-        ceiling = nftFeed;
-        pricePool = nftFeed;
+    function deployFeed() public {
+        feed = nftFeedFab.newNFTFeed();
+        AuthLike(feed).rely(root);
     }
 
     function deploy() public {
         // ensures all required deploy methods were called
-        require(shelf != ZERO && collector != ZERO && pricePool != ZERO);
+        require(shelf != ZERO && collector != ZERO);
 
         // shelf allowed to call
         AuthLike(pile).rely(shelf);
 
-        if(nftFeed != address(0)) {
-            DependLike(nftFeed).depend("shelf", address(shelf));
-            DependLike(nftFeed).depend("pile", address(pile));
-            // nft Feed allowed to call pile
-            AuthLike(pile).rely(nftFeed);
+        DependLike(feed).depend("shelf", address(shelf));
+        DependLike(feed).depend("pile", address(pile));
 
-            NFTFeedLike(nftFeed).init();
-            DependLike(shelf).depend("subscriber", address(nftFeed));
-        } else {
-            // pool needs pile
-            DependLike(pricePool).depend("pile", address(pile));
-        }
+        // allow nftFeed to update rate groups
+        AuthLike(pile).rely(feed);
+        NFTFeedLike(feed).init();
 
-       
-
-        AuthLike(ceiling).rely(shelf);
+        DependLike(shelf).depend("subscriber", address(feed));
+    
+        AuthLike(feed).rely(shelf);
         AuthLike(title).rely(shelf);
 
         // collector allowed to call

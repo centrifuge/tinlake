@@ -20,35 +20,28 @@ import "../interfaces.sol";
 
 contract AdminUser {
     // --- Data ---
-
     ShelfLike shelf;
     PileLike pile;
-    CeilingLike ceiling;
     Title title;
     TDistributorLike distributor;
     CollectorLike collector;
-    ThresholdLike threshold;
+    NFTFeedLike nftFeed;
 
-    constructor (address shelf_, address pile_, address ceiling_, address title_, address distributor_, address collector_, address threshold_) public {
+    constructor (address shelf_, address pile_, address nftFeed_, address title_, address distributor_, address collector_) public {
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
-        ceiling = CeilingLike(ceiling_);
         title = Title(title_);
         distributor = TDistributorLike(distributor_);
         collector = CollectorLike(collector_);
-        threshold = ThresholdLike(threshold_);
+        nftFeed = NFTFeedLike(nftFeed_);
     }
 
-    function setCeiling(uint loan, uint principal) public {
-        ceiling.file("loan", loan, principal);
+    function priceNFT(bytes32 lookupId, uint nftPrice) public {
+        nftFeed.update(lookupId, nftPrice);
     }
 
-    function doInitRate(uint rate, uint speed) public {
-        pile.file("rate", rate, speed);
-    }
-
-    function doAddRate(uint loan, uint rate) public {
-        pile.setRate(loan, rate);
+    function priceNFTAndSetRiskGroup(bytes32 lookupId, uint nftPrice, uint riskGroup) public {
+        nftFeed.update(lookupId, nftPrice, riskGroup);
     }
 
     function setCollectPrice(uint loan, uint price) public {
@@ -61,10 +54,6 @@ contract AdminUser {
 
     function whitelistKeeper(address usr) public {
         collector.relyCollector(usr);
-    }
-
-    function setThreshold(uint loan, uint currencyAmount) public {
-        threshold.set(loan, currencyAmount);
     }
 
     function collect(uint loan, address usr) public {

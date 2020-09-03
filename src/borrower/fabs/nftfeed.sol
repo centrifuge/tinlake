@@ -15,7 +15,7 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import { BaseNFTFeed } from "tinlake-nftfeed/nftfeed.sol";
+import { BaseNFTFeed } from "./../feed/nftfeed.sol";
 
 contract NFTFeedFab {
     function newNFTFeed() public returns (address) {

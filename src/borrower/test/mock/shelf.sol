@@ -5,10 +5,13 @@ import "../../../test/simple/token.sol";
 
 contract ShelfMock is Mock {
 
-    function shelf(uint loan) public returns (address, uint)  {
-        values_uint["shelf_loan"] = loan;
-        calls["shelf"]++;
+    function shelf(uint) public view returns (address, uint)  {
         return (values_address_return["shelf"], values_return["shelf"]);
+    }
+
+    function nftlookup(bytes32 nftID) public returns (uint loan) {
+        values_bytes32[nftID] = nftID;
+        return values_return["nftlookup"];
     }
 
     function token(uint loan) public returns (address, uint) {
