@@ -15,8 +15,9 @@
 pragma solidity >=0.5.15 <0.6.0;
 pragma experimental ABIEncoderV2;
 
-import "./ticker.sol";
 import "./fixed_point.sol";
+import "tinlake-auth/auth.sol";
+import "tinlake-math/math.sol";
 
 interface EpochTrancheLike {
     function epochUpdate(uint supplyFulfillment_,
@@ -40,7 +41,7 @@ contract AssessorLike is FixedPoint {
     function updateSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
 }
 
-contract EpochCoordinator is Ticker, FixedPoint  {
+contract EpochCoordinator is Auth,Math,FixedPoint  {
     struct OrderSummary {
         // all variables are stored in currency
         uint  seniorRedeem;
@@ -49,13 +50,22 @@ contract EpochCoordinator is Ticker, FixedPoint  {
         uint  seniorSupply;
     }
 
+    modifier minimumEpochTimePassed {
+        require(safeSub(block.timestamp, lastEpochClosed) >= minimumEpochTime);
+        _;
+    }
+    // timestamp last epoch closed
+    uint            public lastEpochClosed;
+    uint            public minimumEpochTime = 1 days;
+
     EpochTrancheLike public juniorTranche;
     EpochTrancheLike public seniorTranche;
 
     ReserveLike      public reserve;
     AssessorLike     public assessor;
 
-    uint             public lastEpochExecuted;
+    uint            public lastEpochExecuted;
+    uint            public currentEpoch;
 
     OrderSummary    public bestSubmission;
     uint            public  bestSubScore;
@@ -92,16 +102,15 @@ contract EpochCoordinator is Ticker, FixedPoint  {
         wards[msg.sender] = 1;
         challengeTime = challengeTime_;
 
-        // todo init ticker with super constructor call
-        firstEpochTimestamp = normalizeTimestamp(now);
-        epochTime = 1 days;
+        lastEpochClosed = block.timestamp;
+        currentEpoch = 1;
     }
 
     function file(bytes32 name, uint value) public auth {
         if(name == "challengeTime") {
             challengeTime = value;
-        } else {
-            super.file(name, value);
+        } else if (name == "minimumEpochTime") {
+            minimumEpochTime = value;
         }
     }
 
@@ -114,11 +123,11 @@ contract EpochCoordinator is Ticker, FixedPoint  {
         else revert();
     }
 
-    function closeEpoch() external {
-        require(lastEpochExecuted < currentEpoch());
+    function closeEpoch() external minimumEpochTimePassed {
         require(submissionPeriod == false);
+        lastEpochClosed = block.timestamp;
+        currentEpoch = safeAdd(currentEpoch, 1);
 
-        uint closingEpoch = safeAdd(lastEpochExecuted, 1);
         reserve.file("maxcurrency", 0);
 
         (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.closeEpoch();

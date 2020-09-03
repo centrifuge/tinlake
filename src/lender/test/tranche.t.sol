@@ -21,7 +21,6 @@ import "tinlake-math/math.sol";
 import "./../tranche.sol";
 import "../../test/simple/token.sol";
 import "../test/mock/reserve.sol";
-import "./../ticker.sol";
 
 contract Hevm {
     function warp(uint256) public;
