@@ -70,7 +70,9 @@ contract TrancheTest is DSTest, Math, FixedPoint {
 
     function closeAndUpdate(uint supplyFulfillment, uint redeemFulfillment, uint tokenPrice) public {
         (uint totalSupply, uint totalRedeem) = tranche.closeEpoch();
-        tranche.epochUpdate(supplyFulfillment, redeemFulfillment, tokenPrice, totalSupply, totalRedeem);
+        uint epochID = currentEpoch++;
+        tranche.epochUpdate(epochID, supplyFulfillment, redeemFulfillment, tokenPrice, totalSupply, totalRedeem);
+        lastEpochExecuted++;
     }
 
     function supplyOrder(uint amount) public {
@@ -121,14 +123,13 @@ contract TrancheTest is DSTest, Math, FixedPoint {
     function testSimpleEpochUpdate() public {
         uint amount = 100 ether;
         supplyOrder(amount);
-        tranche.closeEpoch();
 
         // 60 % fulfillment
         uint supplyFulfillment_ = 6 * 10**26;
         uint redeemFulfillment_ = ONE;
         uint tokenPrice_ = ONE;
 
-        tranche.epochUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_, amount, 0);
+        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
 
         assertEq(tranche.totalSupply(), 40 ether);
         assertTrue(tranche.waitingForUpdate() == false);
@@ -178,7 +179,6 @@ contract TrancheTest is DSTest, Math, FixedPoint {
     function testRedeemDisburse() public {
         uint tokenAmount = 100 ether;
         redeemOrder(tokenAmount);
-        tranche.closeEpoch();
 
         uint supplyFulfillment_ = 0;
 
@@ -187,7 +187,8 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         // token price= 1.5
         uint tokenPrice_ = 15 * 10 **26;
 
-        tranche.epochUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_, 0, tokenAmount);
+        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
+
 
         // execute disburse
         (uint payoutCurrencyAmount, uint payoutTokenAmount,
@@ -201,9 +202,12 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         // token price= 1.5
         uint tokenPrice_ = 15 * 10 **26;
         tranche.closeEpoch();
+        currentEpoch++;
         tranche.epochUpdate(0, 0, tokenPrice_, 0, 0);
+        lastEpochExecuted++;
 
         tranche.closeEpoch();
+        currentEpoch++;
         tranche.epochUpdate(0, 0, 0, 0, 0);
     }
 
@@ -246,14 +250,13 @@ contract TrancheTest is DSTest, Math, FixedPoint {
     function testChangeOrderAfterDisburse() public {
         uint amount = 100 ether;
         supplyOrder(amount);
-        tranche.closeEpoch();
 
         // 60 % fulfillment
         uint supplyFulfillment_ = 6 * 10**26;
         uint redeemFulfillment_ = ONE;
         uint tokenPrice_ = ONE;
 
-        tranche.epochUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_, amount, 0);
+        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
 
         // execute disburse
         (uint payoutCurrencyAmount, uint payoutTokenAmount,
