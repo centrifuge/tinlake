@@ -154,10 +154,13 @@ contract LenderDeployer is FixedPoint {
         AuthLike(reserve).rely(coordinator);
         AuthLike(reserve).rely(assessor);
 
-
         // tranches
         DependLike(seniorTranche).depend("reserve",reserve);
         DependLike(juniorTranche).depend("reserve",reserve);
+        // coordinator implements epoch ticker interface
+        DependLike(seniorTranche).depend("epochTicker" ,coordinator);
+        DependLike(juniorTranche).depend("epochTicker" ,coordinator);
+
         AuthLike(seniorTranche).rely(coordinator);
         AuthLike(juniorTranche).rely(coordinator);
         AuthLike(seniorTranche).rely(seniorOperator);

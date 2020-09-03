@@ -118,7 +118,6 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         tranche.closeEpoch();
         currentEpoch++;
         supplyOrder(120 ether);
-
     }
 
     function testSimpleEpochUpdate() public {
