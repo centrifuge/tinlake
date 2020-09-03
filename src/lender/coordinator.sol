@@ -20,7 +20,7 @@ import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 
 interface EpochTrancheLike {
-    function epochUpdate(uint supplyFulfillment_,
+    function epochUpdate(uint epochID, uint supplyFulfillment_,
         uint redeemFulfillment_, uint tokenPrice_, uint epochSupplyCurrency, uint epochRedeemCurrency) external;
     function closeEpoch() external returns(uint totalSupply, uint totalRedeem);
 }
@@ -137,8 +137,8 @@ contract EpochCoordinator is Auth,Math,FixedPoint  {
         if (orderSeniorRedeem == 0 && orderJuniorRedeem == 0 &&
         orderSeniorSupply == 0 && orderJuniorSupply == 0) {
 
-            juniorTranche.epochUpdate(0, 0, 0, orderJuniorSupply, orderJuniorRedeem);
-            seniorTranche.epochUpdate(0, 0, 0, orderSeniorSupply, orderSeniorRedeem);
+            juniorTranche.epochUpdate(currentEpoch, 0, 0, 0, orderJuniorSupply, orderJuniorRedeem);
+            seniorTranche.epochUpdate(currentEpoch, 0, 0, 0, orderSeniorSupply, orderSeniorRedeem);
             lastEpochExecuted = safeAdd(lastEpochExecuted, 1);
             return;
         }
@@ -466,11 +466,11 @@ contract EpochCoordinator is Auth,Math,FixedPoint  {
 
         uint epochID = safeAdd(lastEpochExecuted, 1);
 
-        seniorTranche.epochUpdate(calcFulfillment(seniorSupply, order.seniorSupply).value,
+        seniorTranche.epochUpdate(epochID, calcFulfillment(seniorSupply, order.seniorSupply).value,
             calcFulfillment(seniorRedeem, order.seniorRedeem).value,
             epochSeniorTokenPrice.value,order.seniorSupply, order.seniorRedeem);
 
-        juniorTranche.epochUpdate(calcFulfillment(juniorSupply, order.juniorSupply).value,
+        juniorTranche.epochUpdate(epochID, calcFulfillment(juniorSupply, order.juniorSupply).value,
             calcFulfillment(juniorRedeem, order.juniorRedeem).value,
             epochSeniorTokenPrice.value, order.juniorSupply, order.juniorRedeem);
 

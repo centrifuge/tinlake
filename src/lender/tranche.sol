@@ -36,8 +36,8 @@ interface ReserveLike {
 }
 
 interface EpochTickerLike {
-    function currentEpoch() external returns (uint);
-    function lastEpochExecuted() external returns(uint);
+    function currentEpoch() external view returns (uint);
+    function lastEpochExecuted() external view returns(uint);
 }
 
 contract Tranche is Math, Auth, FixedPoint {

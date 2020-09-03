@@ -113,9 +113,10 @@ contract TrancheTest is DSTest, Math, FixedPoint {
     }
 
     function testFailSupplyAfterCloseEpoch() public {
-        uint amount = 100 ether;
+        uint amount = 1000000000 ether;
         supplyOrder(amount);
         tranche.closeEpoch();
+        currentEpoch++;
         supplyOrder(120 ether);
 
     }
@@ -203,12 +204,12 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         uint tokenPrice_ = 15 * 10 **26;
         tranche.closeEpoch();
         currentEpoch++;
-        tranche.epochUpdate(0, 0, tokenPrice_, 0, 0);
+        tranche.epochUpdate(currentEpoch, 0, 0, tokenPrice_, 0, 0);
         lastEpochExecuted++;
 
         tranche.closeEpoch();
         currentEpoch++;
-        tranche.epochUpdate(0, 0, 0, 0, 0);
+        tranche.epochUpdate(currentEpoch,0, 0, 0, 0, 0);
     }
 
     function testMultipleRedeem() public {
