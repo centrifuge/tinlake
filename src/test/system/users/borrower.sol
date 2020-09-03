@@ -75,8 +75,8 @@ contract Borrower {
 
     function repayAction(uint loan, uint currencyAmount) public {
         shelf.repay(loan, currencyAmount);
-       // shelf.unlock(loan);
-      //  distributor.balance();
+        shelf.unlock(loan);
+        distributor.balance();
     }
 
     function doClose(uint loan) public {

@@ -44,6 +44,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     Investor juniorInvestor;
     address  juniorInvestor_;
 
+    Hevm public hevm;
 
     function baseSetup() public {
         // setup deployment
@@ -188,6 +189,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     function fundTranches() public {
         uint defaultAmount = 1000 ether;
         invest(defaultAmount);
+
     }
 
     function setupCurrencyOnLender(uint amount) public {
@@ -199,5 +201,9 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
     function topUp(address usr) public {
         currency.mint(address(usr), 1000 ether);
+    }
+
+    function assertEq(uint a, uint b, uint tolerance) public {
+        assertEq(a/tolerance, b/tolerance);
     }
 }

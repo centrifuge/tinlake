@@ -188,9 +188,9 @@ contract ScenarioTest is BaseSystemTest {
 
         // close without defined amount
         borrower.doClose(loan);
-//
-//        uint totalT = uint(currency.totalSupply());
-//        checkAfterRepay(loan, tokenId, totalT, distributorShould);
+
+        uint totalT = uint(currency.totalSupply());
+        checkAfterRepay(loan, tokenId, totalT, distributorShould);
     }
 
     function testMultipleBorrowAndRepay() public {

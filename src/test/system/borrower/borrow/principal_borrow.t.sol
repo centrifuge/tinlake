@@ -28,6 +28,14 @@ contract PrincipalBorrowTest is BaseSystemTest {
         hevm.warp(1234567);
     }
 
+    function fundTranches() public {
+        uint defaultAmount = 1000 ether;
+        invest(defaultAmount);
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
+        emit log_named_uint("reserve", reserve.totalBalance());
+    }
+
     function borrow(uint loanId, uint tokenId, uint amount) public {
         uint initialTotalBalance = shelf.balance();
         uint initialLoanBalance = shelf.balances(loanId);
@@ -45,7 +53,7 @@ contract PrincipalBorrowTest is BaseSystemTest {
         assertEq(title.ownerOf(loanId), borrower_);
         // assert: shelf nftOwner
         assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
-        // assert: borrowAmount <= ceiling        
+        // assert: borrowAmount <= ceiling
         assert(amount <= nftFeed.ceiling(loanId));
     }
 
@@ -54,13 +62,13 @@ contract PrincipalBorrowTest is BaseSystemTest {
         assertEq(title.ownerOf(loanId), borrower_);
         // assert: borrower nftOwner
         assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
-        
+
         // assert: totalBalance increase by borrow amount
         assertEq(shelf.balance(), safeAdd(initialTotalBalance, amount));
-        
+
         // assert: loanBalance increase by borrow amount
         assertEq(shelf.balances(loanId), safeAdd(initialLoanBalance, amount));
-        
+
         // assert: loanDebt increased by borrow amount +/- 1 roundign tolerance
         uint newDebtExpected = safeAdd(initialLoanDebt, amount);
         uint newDebtActual = pile.debt(loanId);
@@ -75,7 +83,7 @@ contract PrincipalBorrowTest is BaseSystemTest {
         uint riskGroup = 0;
 
         (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
-        // price nft 
+        // price nft
         priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
         uint ceiling = computeCeiling(riskGroup, nftPrice);
         // lock nft for borrower
@@ -92,7 +100,7 @@ contract PrincipalBorrowTest is BaseSystemTest {
 
         (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
 
-        // price nft 
+        // price nft
         priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
         uint ceiling = computeCeiling(riskGroup, nftPrice);
         emit log_named_uint("ceiling", ceiling);
@@ -165,5 +173,4 @@ contract PrincipalBorrowTest is BaseSystemTest {
         lockNFT(loanId, borrower_);
         borrow(loanId, tokenId, amount);
     }
-
 }

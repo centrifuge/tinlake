@@ -40,7 +40,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
     // default 3% a day
     uint public discountRate = uint(1000000342100000000000000000);
     // 120 days
-    uint public maxDays = 120;
+    uint public maxDays = 1000;
 
     // approximated NAV
     uint public approximatedNAV;
@@ -110,6 +110,8 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
             buckets[maturityDate_].value = safeAdd(buckets[maturityDate_].value, fv);
         }
 
+        borrowed[loan] = safeAdd(borrowed[loan], amount);
+
         // return increase NAV amount
         return calcDiscount(fv, uniqueDayTimestamp(block.timestamp), maturityDate_);
     }
@@ -176,7 +178,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
             futureValue[nftID_] = fv;
         }
 
-        if (buckets[maturityDate_].value == 0) {
+        if (buckets[maturityDate_].value == 0 && firstBucket != 0) {
             removeBucket(maturityDate_);
         }
 
