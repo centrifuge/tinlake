@@ -34,8 +34,6 @@ contract ScenarioTest is BaseSystemTest {
 
     // Checks
     function checkAfterBorrow(uint tokenId, uint tBalance) public {
-        emit log_named_uint("moin borrow", currency.balanceOf(borrower_));
-        emit log_named_uint("moin borrow", tBalance);
         assertEq(currency.balanceOf(borrower_), tBalance);
         assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
     }

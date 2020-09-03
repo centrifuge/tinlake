@@ -52,14 +52,6 @@ contract PileMock is Mock {
         calls["accrue"]++;
     }
 
-    /*
-    function file(uint rate, uint speed) public {
-        values_uint["file_rate"] = rate;
-        values_uint["file_speed"] = speed;
-        calls["file"]++;
-    }
-    */
-
     function file(bytes32, uint rate, uint ratePerSecond) public {
         values_uint["file_rate"] = rate;
         values_uint["file_ratePerSecond"] = ratePerSecond;
