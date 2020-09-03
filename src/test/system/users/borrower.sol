@@ -17,9 +17,8 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import { Title } from "tinlake-title/title.sol";
 import "../interfaces.sol";
-import "ds-test/test.sol";
 
-contract Borrower is DSTest {
+contract Borrower {
     ERC20Like tkn;
     ShelfLike shelf;
     TDistributorLike distributor;
