@@ -64,7 +64,7 @@ contract TinlakeRoot is Auth {
         DependLike(borrowerDeployer.shelf()).depend("distributor", distributor_);
 
         //  Lender depends
-        address poolValue = borrowerDeployer.pricePool();
+        address poolValue = borrowerDeployer.feed();
         DependLike(address(lenderDeployer.distributor())).depend("shelf", shelf_);
     }
 
