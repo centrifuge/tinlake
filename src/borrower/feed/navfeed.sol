@@ -18,8 +18,9 @@ import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
 import "./nftfeed.sol";
 import "./buckets.sol";
+import "ds-test/test.sol";
 
-contract NAVFeed is BaseNFTFeed, Interest, Buckets {
+contract NAVFeed is BaseNFTFeed, Interest, Buckets,DSTest {
     // nftID => maturityDate
     mapping (bytes32 => uint) public maturityDate;
 
@@ -95,10 +96,10 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
     function _borrow(uint loan, uint amount) internal returns(uint navIncrease) {
         // ceiling check uses existing loan debt
         require(ceiling(loan) >= safeAdd(pile.debt(loan), amount), "borrow-amount-too-high");
+
         bytes32 nftID_ = nftID(loan);
         uint maturityDate_ = maturityDate[nftID_];
         require(maturityDate_ > block.timestamp, "maturity-date-is-not-in-the-future");
-
 
         // calculate future value FV
         uint fv = calcFutureValue(loan, amount, maturityDate_, recoveryRatePD[risk[nftID_]]);

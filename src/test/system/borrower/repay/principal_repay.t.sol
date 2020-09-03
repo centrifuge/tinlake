@@ -39,7 +39,7 @@ contract PrincipalRepayTest is BaseSystemTest {
 
     function repay(uint loanId, uint tokenId, uint amount, uint expectedDebt) public {
         uint initialBorrowerBalance = currency.balanceOf(borrower_);
-        uint initialTrancheBalance = currency.balanceOf(address(distributor));
+        uint initialTrancheBalance = currency.balanceOf(address(reserve));
         uint initialCeiling = nftFeed.ceiling(loanId);
         borrower.repay(loanId, amount);
         assertPostCondition(loanId, tokenId, amount, initialBorrowerBalance, initialTrancheBalance, expectedDebt, initialCeiling);
@@ -79,7 +79,7 @@ contract PrincipalRepayTest is BaseSystemTest {
         // assert: shelf/tranche received funds
         // since we are calling balance inside repay, money is directly transferred to the tranche through shelf
         uint newTrancheBalance = safeAdd(initialTrancheBalance, repaidAmount);
-        assert(safeSub(currency.balanceOf(address(distributor)), newTrancheBalance) <= 1); // (tolerance +/- 1)
+        assertEq(currency.balanceOf(address(reserve)), newTrancheBalance, 10); // (tolerance +/- 1)
         // assert: debt amounts reduced by repayAmount (tolerance +/- 1)
         uint newDebt = safeSub(expectedDebt, repaidAmount);
         assert(safeSub(pile.debt(loanId), newDebt) <= 1);
