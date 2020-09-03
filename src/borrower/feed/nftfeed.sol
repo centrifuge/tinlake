@@ -70,7 +70,10 @@ contract BaseNFTFeed is DSNote, Auth, Math {
         // thresholdRatio => 70%
         // ceilingRatio => 50%
         // interestRate => 12 % per year
-        setRiskGroup(1, 7*10**26, 5*10**26,  uint(1000000003593629043335673583));
+        setRiskGroup(1, 7*10**26, 5*10**26, uint(1000000003593629043335673583));
+         // interestRate => 5 % per day
+        setRiskGroup(2, 7*10**26, 5*10**26, uint(1000000564701133626865910626));
+        
 
     }
 

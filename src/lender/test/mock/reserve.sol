@@ -19,14 +19,6 @@ import "ds-test/test.sol";
 import "tinlake-auth/auth.sol";
 import "../../../test/mock/mock.sol";
 
-<<<<<<< HEAD
-contract ReserveMock is Mock, Auth {
-
-    constructor() public {
-        wards[msg.sender] = 1;
-    }
-
-=======
 interface CurrencyLike {
     function transferFrom(address from, address to, uint amount) external;
 }
@@ -38,7 +30,6 @@ contract ReserveMock is Mock, Auth {
         currency = CurrencyLike(currency_);
     }
 
->>>>>>> upstream/develop
     function file(bytes32 what, uint currencyAmount) public auth {
         values_uint["currency_available"] = currencyAmount;
     }
@@ -50,8 +41,6 @@ contract ReserveMock is Mock, Auth {
     function totalBalance() public returns (uint) {
         return call("balance");
     }
-<<<<<<< HEAD
-=======
 
     function deposit(uint amount) public {
         values_uint["deposit_amount"] = amount;
@@ -61,6 +50,5 @@ contract ReserveMock is Mock, Auth {
         values_uint["deposit_amount"] = amount;
         currency.transferFrom(address(this), msg.sender, amount);
     }
->>>>>>> upstream/develop
 }
 
