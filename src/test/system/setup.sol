@@ -206,7 +206,8 @@ contract TestSetup {
 
         lenderDeployer_.init(minSeniorRatio, maxSeniorRatio, maxReserve, challengeTime, seniorInterestRate);
 
-        lenderDeployer_.deployTranches();
+        lenderDeployer_.deployJunior();
+        lenderDeployer_.deploySenior();
         lenderDeployer_.deployReserve();
         lenderDeployer_.deployAssessor();
         lenderDeployer_.deployCoordinator();
