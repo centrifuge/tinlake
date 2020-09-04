@@ -99,7 +99,7 @@ contract TestSetup {
     LenderDeployer public  lenderDeployer_;
 
     // todo will be removed
-    MockLenderDeployer public  lenderDeployer;
+    LenderDeployer public  lenderDeployer;
 
     TestRoot root;
     address  root_;
@@ -121,13 +121,17 @@ contract TestSetup {
         root_ = address(root);
 
         // only admin is main deployer
-        deployBorrower(feed_);
+        deployBorrower("nav");
         // only admin is main deployer
 
-        deployMockLender();
+        prepareDeployLender(root_);
+        deployLender();
+
+        lenderDeployer = lenderDeployer_;
 
         root.prepare(address(lenderDeployer), address(borrowerDeployer), address(this));
         root.deploy();
+
     }
 
     function deployBorrower(bytes32 feed_) private {
@@ -159,16 +163,11 @@ contract TestSetup {
         nftFeed = NFTFeedLike(borrowerDeployer.feed());
     }
 
-    function deployMockLender() public {
-        lenderDeployer = new MockLenderDeployer(root_, currency_);
-        distributor = DistributorLike(lenderDeployer.distributor_());
-
-    }
-
     function deployLenderMockBorrower() public {
         currency = new SimpleToken("C", "Currency", "1", 0);
         currency_ = address(currency);
-        prepareDeployLender();
+
+        prepareDeployLender(address(this));
         deployLender();
 
         // add root mock
@@ -179,7 +178,7 @@ contract TestSetup {
         reserve.depend("shelf", address(shelf));
     }
 
-    function prepareDeployLender() public {
+    function prepareDeployLender(address root) public {
 //        CoordinatorFab  coordinatorFab = new CoordinatorFab();
         ReserveFab reserveFab = new ReserveFab();
         AssessorFab assessorFab = new AssessorFab();
@@ -193,14 +192,14 @@ contract TestSetup {
         string memory juniorTokenSymbol = "TIN";
 
         // root is testcase
-        lenderDeployer_ = new LenderDeployer(address(this), currency_, trancheFab, reserveFab, assessorFab, coordinatorFab, operatorFab,
+        lenderDeployer_ = new LenderDeployer(root, currency_, trancheFab, reserveFab, assessorFab, coordinatorFab, operatorFab,
             seniorTokenName, seniorTokenSymbol, juniorTokenName, juniorTokenSymbol);
     }
 
     function deployLender() public {
         // 12 % per year
         uint seniorInterestRate = uint(1000000003593629043335673583);
-        uint maxReserve = 2000 ether;
+        uint maxReserve = uint(-1);
         uint maxSeniorRatio = 85 * 10 **25;
         uint minSeniorRatio = 75 * 10 **25;
         uint challengeTime = 1 hours;

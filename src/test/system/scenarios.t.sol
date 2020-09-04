@@ -24,11 +24,11 @@ contract ScenarioTest is BaseSystemTest {
     NFTFeedLike nftFeed_;
 
     function setUp() public {
+        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm.warp(1234567);
         baseSetup();
         createTestUsers(false);
         // setup hevm
-        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-        hevm.warp(1234567);
         nftFeed_ = NFTFeedLike(address(nftFeed));
     }
 
@@ -46,7 +46,6 @@ contract ScenarioTest is BaseSystemTest {
     }
 
     function setupLoan(uint tokenId, address collateralNFT_, uint nftPrice, uint riskGroup) public returns (uint) {
-       
         // borrower issue loans
         uint loan = borrower.issue(collateralNFT_, tokenId);
 
@@ -57,9 +56,16 @@ contract ScenarioTest is BaseSystemTest {
         return loan;
     }
 
+    function fundLender(uint amount) public {
+        invest(amount);
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
+        emit log_named_uint("reserve", reserve.totalBalance());
+    }
+
     function borrow(uint loan, uint tokenId, uint borrowAmount) public {
         borrower.approveNFT(collateralNFT, address(shelf));
-        setupCurrencyOnLender(borrowAmount);
+        fundLender(borrowAmount);
         borrower.borrowAction(loan, borrowAmount);
         checkAfterBorrow(tokenId, borrowAmount);
     }
@@ -95,7 +101,7 @@ contract ScenarioTest is BaseSystemTest {
 
     // note: this method will be refactored with the new lender side contracts, as the distributor should not hold any currency
     function currdistributorBal() public view returns(uint) {
-        return currency.balanceOf(address(distributor));
+        return currency.balanceOf(address(reserve));
     }
 
     function borrowRepay(uint nftPrice, uint riskGroup) public {
@@ -134,7 +140,7 @@ contract ScenarioTest is BaseSystemTest {
         uint ceiling = nftFeed_.ceiling(loan);
 
         borrower.approveNFT(collateralNFT, address(shelf));
-        setupCurrencyOnLender(ceiling);
+        fundLender(ceiling);
         borrower.borrowAction(loan, ceiling);
         checkAfterBorrow(tokenId, ceiling);
     }
@@ -195,6 +201,7 @@ contract ScenarioTest is BaseSystemTest {
         uint riskGroup = 2;
         // uint rate = uint(1000000564701133626865910626);
 
+        fundLender(1000 ether);
         uint tBorrower = 0;
         // borrow
         for (uint i = 1; i <= 10; i++) {
@@ -206,10 +213,10 @@ contract ScenarioTest is BaseSystemTest {
             // collateralNFT whitelist
             uint loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup);
             uint ceiling = nftFeed_.ceiling(i);
-    
+
             borrower.approveNFT(collateralNFT, address(shelf));
 
-            setupCurrencyOnLender(ceiling);
+
             borrower.borrowAction(loan, ceiling);
             tBorrower += ceiling;
             checkAfterBorrow(i, tBorrower);
@@ -221,7 +228,7 @@ contract ScenarioTest is BaseSystemTest {
         // allow pile full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
 
-        uint distributorBalance = currency.balanceOf(address(distributor));
+        uint distributorBalance = currency.balanceOf(address(reserve));
         for (uint i = 1; i <= 10; i++) {
             nftPrice = i * 100;
             uint ceiling = computeCeiling(riskGroup, nftPrice);

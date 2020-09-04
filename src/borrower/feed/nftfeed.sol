@@ -73,7 +73,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
         setRiskGroup(1, 7*10**26, 5*10**26, uint(1000000003593629043335673583));
          // interestRate => 5 % per day
         setRiskGroup(2, 7*10**26, 5*10**26, uint(1000000564701133626865910626));
-        
+
 
     }
 
@@ -101,7 +101,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
         thresholdRatio[risk_] = thresholdRatio_;
         ceilingRatio[risk_] = ceilingRatio_;
         // the risk group is used as a rate id in the pile
-            
+
         pile.file("rate", risk_, rate_);
     }
 

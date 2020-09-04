@@ -37,8 +37,10 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
         uint percentage;
     }
 
-    uint public discountRate;
-    uint public maxDays;
+    // default 3% a day
+    uint public discountRate = uint(1000000342100000000000000000);
+    // 120 days
+    uint public maxDays = 1000;
 
     // approximated NAV
     uint public approximatedNAV;
@@ -90,15 +92,13 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
         return navIncrease;
     }
 
-
     function _borrow(uint loan, uint amount) internal returns(uint navIncrease) {
-
         // ceiling check uses existing loan debt
-        require(ceiling(loan) >= safeAdd(pile.debt(loan), amount), "borrow-amount-too-high");
+        require(ceiling(loan) >= safeAdd(borrowed[loan], amount), "borrow-amount-too-high");
+
         bytes32 nftID_ = nftID(loan);
         uint maturityDate_ = maturityDate[nftID_];
         require(maturityDate_ > block.timestamp, "maturity-date-is-not-in-the-future");
-
 
         // calculate future value FV
         uint fv = calcFutureValue(loan, amount, maturityDate_, recoveryRatePD[risk[nftID_]]);
@@ -109,6 +109,8 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
         } else {
             buckets[maturityDate_].value = safeAdd(buckets[maturityDate_].value, fv);
         }
+
+        borrowed[loan] = safeAdd(borrowed[loan], amount);
 
         // return increase NAV amount
         return calcDiscount(fv, uniqueDayTimestamp(block.timestamp), maturityDate_);
@@ -176,7 +178,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
             futureValue[nftID_] = fv;
         }
 
-        if (buckets[maturityDate_].value == 0) {
+        if (buckets[maturityDate_].value == 0 && firstBucket != 0) {
             removeBucket(maturityDate_);
         }
 

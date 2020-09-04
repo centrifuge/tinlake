@@ -45,6 +45,7 @@ contract NFTFeedLike {
     // function file(bytes32 what, uint loan, uint currencyAmount) public;
     function borrow(uint loan, uint currencyAmount) public;
     function repay(uint loan, uint currencyAmount) public;
+    function file(bytes32 what, bytes32 nftID_, uint maturityDate_) public;
 }
 
 contract PileLike {

@@ -44,6 +44,8 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     Investor juniorInvestor;
     address  juniorInvestor_;
 
+    Hevm public hevm;
+
     function baseSetup() public {
         // setup deployment
         bytes32 feed_ = "default";
@@ -55,7 +57,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
 
     function createTestUsers(bool senior_) public {
-        borrower = new Borrower(address(shelf), address(lenderDeployer.distributor()), currency_, address(pile));
+        borrower = new Borrower(address(shelf), address(lenderDeployer.reserve()), currency_, address(pile));
         borrower_ = address(borrower);
 
         randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
@@ -68,6 +70,9 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         admin_ = address(admin);
         root.relyBorrowAdmin(admin_);
 
+        createInvestorUser();
+
+        root.relyInvestorAdmin(admin_);
     }
 
     function createInvestorUser() public {
@@ -154,7 +159,17 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
     // helpers lenders
     function invest(uint currencyAmount) public {
-        currency.mint(address(distributor), currencyAmount);
+        admin.whitelistInvestor(address(seniorOperator), seniorInvestor_);
+        admin.whitelistInvestor(address(juniorOperator), juniorInvestor_);
+
+        uint amountSenior = rmul(currencyAmount, 82 * 10**25);
+        uint amountJunior = rmul(currencyAmount, 18 * 10**25);
+
+        currency.mint(seniorInvestor_, amountSenior);
+        currency.mint(juniorInvestor_, amountJunior);
+
+        seniorInvestor.supplyOrder(amountSenior);
+        juniorInvestor.supplyOrder(amountJunior);
     }
 
     // helpers keeper
@@ -174,6 +189,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     function fundTranches() public {
         uint defaultAmount = 1000 ether;
         invest(defaultAmount);
+
     }
 
     function setupCurrencyOnLender(uint amount) public {
@@ -185,5 +201,9 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
     function topUp(address usr) public {
         currency.mint(address(usr), 1000 ether);
+    }
+
+    function assertEq(uint a, uint b, uint tolerance) public {
+        assertEq(a/tolerance, b/tolerance);
     }
 }

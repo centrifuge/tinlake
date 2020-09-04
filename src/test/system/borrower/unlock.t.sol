@@ -24,11 +24,20 @@ contract UnlockTest is BaseSystemTest {
     function setUp() public {
         baseSetup();
         createTestUsers(false);
-        fundTranches();
 
         // setup hevm
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
+        fundTranches();
+
+    }
+
+    function fundTranches() public {
+        uint defaultAmount = 1000 ether;
+        invest(defaultAmount);
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
+        emit log_named_uint("reserve", reserve.totalBalance());
     }
 
     function unlockNFT(uint loanId, uint tokenId) public {
@@ -62,7 +71,7 @@ contract UnlockTest is BaseSystemTest {
     function testUnlockNFTAfterRepay() public {
         uint nftPrice = 200 ether; // -> ceiling 100 ether
         uint riskGroup = 0; // -> 0% per year
-        uint ceiling = computeCeiling(riskGroup, nftPrice); 
+        uint ceiling = computeCeiling(riskGroup, nftPrice);
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
 
         hevm.warp(now + 365 days);
@@ -85,7 +94,7 @@ contract UnlockTest is BaseSystemTest {
         uint nftPrice = 200 ether; // -> ceiling 100 ether
         uint riskGroup = 1; // -> 12% per year
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
-    
+
         // borrower allows shelf full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
 
@@ -97,9 +106,9 @@ contract UnlockTest is BaseSystemTest {
     function testFailUnlockCollected() public {
         uint nftPrice = 200 ether; // -> ceiling 100 ether
         // thresholdRatio => 80% -> 160 ether
-        uint riskGroup = 1; // -> 12% per year 
+        uint riskGroup = 1; // -> 12% per year
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
-    
+
         // threshold reached after 10 years
         hevm.warp(now + 3650 days);
         seize(loanId);

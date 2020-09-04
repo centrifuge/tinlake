@@ -1,36 +1,36 @@
 // Copyright (C) 2020 Centrifuge
-
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
-
+//
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
+//
 // pragma solidity >=0.5.15 <0.6.0;
-
+//
 // import "../base_system.sol";
-
+//
 // contract CollectTest is BaseSystemTest {
-
+//
 //     Hevm public hevm;
-
+//
 //     function setUp() public {
 //         baseSetup();
 //         createTestUsers(false);
-
+//
 //         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 //         hevm.warp(1234567);
-
+//
 //         fundTranches();
 //     }
-
+//
 //     function collect(uint loanId, uint tokenId, bool whitelisted) public {
 //         ( , uint recoveryAmount ) = collector.options(loanId);
 //         uint initialKeeperBalance = currency.balanceOf(keeper_);
@@ -44,7 +44,7 @@
 //         }
 //         assertPostCondition(loanId, tokenId, recoveryAmount, initialKeeperBalance, initialJuniorBalance, initialTotalBalance, initialLoanBalance);
 //     }
-
+//
 //     function assertPreCondition(uint loanId, uint tokenId) public {
 //         assert: loan can be seized
 //         assertEq(collateralNFT.ownerOf(tokenId), address(collector));
@@ -58,7 +58,7 @@
 //         assert: keeper has enough funds
 //         assert(currency.balanceOf(keeper_) >= price);
 //     }
-
+//
 //     function assertPostCondition(uint loanId, uint tokenId, uint recoveryAmount, uint initialKeeperBalance, uint initialJuniorBalance, uint initialTotalBalance, uint initialLoanBalance) public {
 //         assert: nft got transferred to keeper
 //         assertEq(collateralNFT.ownerOf(tokenId), address(keeper));
@@ -73,7 +73,7 @@
 //         assert: total balance got decreased by initial loanBalance
 //         assertEq(shelf.balance(), safeSub(initialTotalBalance, initialLoanBalance));
 //     }
-
+//
 //     function setupCollect(uint loanId, uint threshold, uint recoveryPrice, address usr, bool isWhitelisted,
 //         bool isAssigned, bool doTopup, bool doApprove) public {
 //         set loan threshold
@@ -93,7 +93,7 @@
 //         keeper approves shelf to take currency
 //         if (doApprove) { keeper.approveCurrency(address(shelf), uint(-1)); }
 //     }
-
+//
 //     function testCollectAssignedKeeper() public {
 //         uint ceiling = 66 ether;
 //         uint rate = 1000000003593629043335673583; // 12 % per year compound in seconds
@@ -106,7 +106,7 @@
 //         bool doApprove = true;
 //         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
 //         setupCollect(loanId, threshold, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
-
+//
 //         after 1 year debt higher than threshold
 //         hevm.warp(now + 365 days);
 //         seize loan
@@ -114,7 +114,7 @@
 //         assertPreCondition(loanId, tokenId);
 //         collect(loanId, tokenId, false);
 //     }
-
+//
 //     function testCollectWhitelistedKeeper() public {
 //         uint ceiling = 66 ether;
 //         uint rate = 1000000003593629043335673583; // 12 % per year compound in seconds
@@ -134,7 +134,7 @@
 //         assertPreCondition(loanId, tokenId);
 //         collect(loanId, tokenId, whitelisted);
 //     }
-
+//
 //     function testCollectPriceSmallerDebt() public {
 //         uint ceiling = 66 ether;
 //         uint rate = 1000000003593629043335673583; // 12 % per year compound in seconds
@@ -147,7 +147,7 @@
 //         bool doApprove = true;
 //         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
 //         setupCollect(loanId, threshold, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
-
+//
 //         after 1 year debt higher than threshold
 //         hevm.warp(now + 365 days);
 //         seize loan
@@ -155,7 +155,7 @@
 //         assertPreCondition(loanId, tokenId);
 //         collect(loanId, tokenId, false);
 //     }
-
+//
 //     function testCollectPriceHigherDebt() public {
 //         uint ceiling = 66 ether;
 //         uint rate = 1000000003593629043335673583; // 12 % per year compound in seconds
@@ -169,7 +169,7 @@
 //         bool doApprove = true;
 //         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
 //         setupCollect(loanId, threshold, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
-
+//
 //         after 1 year debt higher than threshold
 //         hevm.warp(now + 365 days);
 //         seize loan
@@ -177,7 +177,7 @@
 //         assertPreCondition(loanId, tokenId);
 //         collect(loanId, tokenId, false);
 //     }
-
+//
 //     function testCollectAndIssueLoan() public {
 //         uint ceiling = 66 ether;
 //         uint rate = 1000000003593629043335673583; // 12 % per year compound in seconds
@@ -194,7 +194,7 @@
 //         borrower creates new loan
 //         borrower.issue(collateralNFT_, tokenId);
 //     }
-
+//
 //     function testFailCollectAndIssueNotClosed() public {
 //         uint ceiling = 66 ether;
 //         uint rate = 1000000003593629043335673583; // 12 % per year compound in seconds
@@ -206,13 +206,13 @@
 //         hevm.warp(now + 365 days);
 //         borrower is added as keeper and collects loan
 //         addKeeperAndCollect(loanId, threshold, borrower_, recoveryPrice);
-
+//
 //         borrower does not close old loan
-
+//
 //         should fail: borrower creates new loan
 //         borrower.issue(collateralNFT_, tokenId);
 //     }
-
+//
 //     function testFailCollectNotWhitelisted() public {
 //         uint ceiling = 66 ether;
 //         uint rate = 1000000003593629043335673583; // 12 % per year compound in seconds
@@ -225,7 +225,7 @@
 //         bool doApprove = true;
 //         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
 //         setupCollect(loanId, threshold, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
-
+//
 //         after 1 year debt higher than threshold
 //         hevm.warp(now + 365 days);
 //         seize loan
@@ -233,7 +233,7 @@
 //         assertPreCondition(loanId, tokenId);
 //         collect(loanId, tokenId, false);
 //     }
-
+//
 //     function testFailCollectLoanHasAssignedKeeper() public {
 //         uint ceiling = 66 ether;
 //         uint rate = 1000000003593629043335673583; // 12 % per year compound in seconds
@@ -255,7 +255,7 @@
 //         assertPreCondition(loanId, tokenId);
 //         collect(loanId, tokenId, true);
 //     }
-
+//
 //     function testFailCollectNotSeized() public {
 //         uint ceiling = 66 ether;
 //         uint rate = 1000000003593629043335673583; // 12 % per year compound in seconds
@@ -268,7 +268,7 @@
 //         bool doApprove = true;
 //         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, ceiling, rate, speed);
 //         setupCollect(loanId, threshold, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
-
+//
 //         after 1 year debt has not reached threshold
 //         hevm.warp(now + 365 days);
 //         seize loan
@@ -276,7 +276,7 @@
 //         assertPreCondition(loanId, tokenId);
 //         collect(loanId, tokenId, false);
 //     }
-
+//
 //     function testFailCollectKeeperNotEnoughFunds() public {
 //         uint ceiling = 66 ether;
 //         uint rate = 1000000003593629043335673583; // 12 % per year compound in seconds
@@ -297,7 +297,7 @@
 //         assertPreCondition(loanId, tokenId);
 //         collect(loanId, tokenId, false);
 //     }
-
+//
 //     function testFailCollectNoApproval() public {
 //         uint ceiling = 66 ether;
 //         uint rate = 1000000003593629043335673583; // 12 % per year compound in seconds
@@ -318,5 +318,5 @@
 //         assertPreCondition(loanId, tokenId);
 //         collect(loanId, tokenId, false);
 //     }
-
+//
 // }

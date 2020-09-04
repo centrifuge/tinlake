@@ -18,6 +18,10 @@ pragma solidity >=0.5.15 <0.6.0;
 import { Title } from "tinlake-title/title.sol";
 import "../interfaces.sol";
 
+interface AdminOperatorLike {
+    function relyInvestor(address usr) external;
+}
+
 contract AdminUser {
     // --- Data ---
     ShelfLike shelf;
@@ -42,6 +46,8 @@ contract AdminUser {
 
     function priceNFTAndSetRiskGroup(bytes32 lookupId, uint nftPrice, uint riskGroup) public {
         nftFeed.update(lookupId, nftPrice, riskGroup);
+        // add default maturity date
+        nftFeed.file("maturityDate", lookupId , now + 600 days);
     }
 
     function setCollectPrice(uint loan, uint price) public {
@@ -58,6 +64,10 @@ contract AdminUser {
 
     function collect(uint loan, address usr) public {
         collector.collect(loan, usr);
+    }
+
+    function whitelistInvestor(address operator, address usr) public {
+        AdminOperatorLike(operator).relyInvestor(usr);
     }
 
 }
