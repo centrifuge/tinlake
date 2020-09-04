@@ -17,7 +17,6 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
-import "ds-test/test.sol";
 
 contract TrancheLike {
     function supplyOrder(address usr, uint currencyAmount) public;
@@ -30,7 +29,7 @@ interface RestrictedTokenLike {
     function hasMember(address) external view returns (bool);
 }
 
-contract Operator is DSNote, Auth, DSTest {
+contract Operator is DSNote, Auth {
     TrancheLike public tranche;
     RestrictedTokenLike public token;
    
@@ -48,9 +47,7 @@ contract Operator is DSNote, Auth, DSTest {
 
     /// only investors that are on the memberlist can submit supplyOrders
     function supplyOrder(uint amount) public note {
-       
         require(token.hasMember(msg.sender));
-         emit log_named_uint("moin", 1);
         tranche.supplyOrder(msg.sender, amount);
     }
 
@@ -74,5 +71,6 @@ contract Operator is DSNote, Auth, DSTest {
         require(token.hasMember(msg.sender));
         return tranche.disburse(msg.sender, endEpoch);
     }
+
 
 }

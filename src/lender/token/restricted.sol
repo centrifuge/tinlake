@@ -18,13 +18,19 @@ pragma solidity >=0.5.15 <0.6.0;
 import "tinlake-erc20/erc20.sol";
 
 contract MemberlistLike {
-   function isMember(address) public returns (bool);
+    function member(address) public;
 }
 
 contract RestrictedToken is ERC20 {
 
     MemberlistLike public memberlist; 
+    modifier checkMember(address usr) { memberlist.member(usr); _; }
     
+    function hasMember(address usr) public returns (bool) {
+        // will fail if user not member
+        memberlist.member(usr);
+    }
+
     constructor(string memory symbol_, string memory name_) ERC20(symbol, name) public {
         wards[msg.sender] = 1;
     }
@@ -34,9 +40,8 @@ contract RestrictedToken is ERC20 {
         else revert();
     }
 
-    function isMember(address usr) public returns (bool) {
-        return memberlist.isMember(usr);
+    function transferFrom(address from, address to, uint wad) checkMember(to) public returns (bool) {
+        super.transferFrom(from, to, wad);
     }
-
-
 }
+

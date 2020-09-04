@@ -44,6 +44,8 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     Investor juniorInvestor;
     address  juniorInvestor_;
 
+    Hevm public hevm;
+
     function baseSetup() public {
         // setup deployment
         bytes32 feed_ = "default";
@@ -54,19 +56,24 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         deployContracts(feed_);
     }
 
-    function createTestUsers(bool senior_) public {
-        borrower = new Borrower(address(shelf), address(lenderDeployer.distributor()), currency_, address(pile));
+    function createTestUsers() public {
+        emit log_named_uint("hi", 10);
+        borrower = new Borrower(address(shelf), address(lenderDeployer.reserve()), currency_, address(pile));
+        emit log_named_uint("hi", 0);
         borrower_ = address(borrower);
-
+emit log_named_uint("hi", 1);
         randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         randomUser_ = address(randomUser);
-
+emit log_named_uint("hi", 2);
         keeper = new Keeper(address(collector), currency_);
         keeper_ = address(keeper);
-
+emit log_named_uint("hi", 3);
         admin = new AdminUser(address(shelf), address(pile), address(nftFeed), address(title), address(distributor), address(collector), address(juniorMemberlist), address(seniorMemberlist));
         admin_ = address(admin);
-        root.relyBorrowAdmin(admin_);
+        root.relyAdmin(admin_);
+emit log_named_uint("hi", 4);
+        createInvestorUser();
+        root.relyInvestorAdmin(admin_);
     }
 
     function createInvestorUser() public {
@@ -153,7 +160,17 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
     // helpers lenders
     function invest(uint currencyAmount) public {
-        currency.mint(address(distributor), currencyAmount);
+        admin.makeJuniorTokenMember(juniorInvestor_);
+        admin.makeSeniorTokenMember(seniorInvestor_);
+
+        uint amountSenior = rmul(currencyAmount, 82 * 10**25);
+        uint amountJunior = rmul(currencyAmount, 18 * 10**25);
+
+        currency.mint(seniorInvestor_, amountSenior);
+        currency.mint(juniorInvestor_, amountJunior);
+
+        seniorInvestor.supplyOrder(amountSenior);
+        juniorInvestor.supplyOrder(amountJunior);
     }
 
     // helpers keeper
@@ -173,6 +190,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     function fundTranches() public {
         uint defaultAmount = 1000 ether;
         invest(defaultAmount);
+
     }
 
     function setupCurrencyOnLender(uint amount) public {
@@ -184,5 +202,9 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
     function topUp(address usr) public {
         currency.mint(address(usr), 1000 ether);
+    }
+
+    function assertEq(uint a, uint b, uint tolerance) public {
+        assertEq(a/tolerance, b/tolerance);
     }
 }

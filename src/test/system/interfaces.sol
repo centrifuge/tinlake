@@ -45,6 +45,7 @@ contract NFTFeedLike {
     // function file(bytes32 what, uint loan, uint currencyAmount) public;
     function borrow(uint loan, uint currencyAmount) public;
     function repay(uint loan, uint currencyAmount) public;
+    function file(bytes32 what, bytes32 nftID_, uint maturityDate_) public;
 }
 
 contract PileLike {
@@ -92,4 +93,9 @@ contract CollectorLike {
 
 contract ThresholdLike {
     function set(uint, uint) public;
+}
+
+contract MemberlistLike {
+    function addMember(address usr) public;
+    function removeMember(address usr) public;
 }

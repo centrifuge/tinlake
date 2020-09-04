@@ -72,15 +72,14 @@ contract NAVTest is DSTest, Math {
         bytes32 nftID = prepareDefaultNFT(tokenId, nftValue);
         feed.file("maturityDate",nftID, maturityDate);
         pile.setReturn("loanRates", uint(1000000564701133626865910626));
-        emit log_named_uint("navIO", 1);
         uint navIncrease = feed.borrow(loan, amount);
-
         return (nftID, loan, navIncrease);
     }
 
     function borrow(uint tokenId, uint nftValue, uint amount, uint maturityDate) internal returns(bytes32 nftID_, uint loan_, uint navIncrease_) {
-        uint loan = 1;
-        return borrow(tokenId, loan, nftValue, amount, maturityDate);
+        // loan id doesn't matter for nav unit tests
+        uint loan = tokenId;
+        return borrow(tokenId, tokenId, nftValue, amount, maturityDate);
     }
 
     function testSimpleBorrow() public {
@@ -361,18 +360,18 @@ contract NAVTest is DSTest, Math {
         assertEq(feed.dateBucket(normalizedDueDate), FV);
     }
 
-    function testMaxBucketsBuckets() public {
+    function testMaxBuckets() public {
         uint nftValue = 100 ether;
         uint dueDate = now + 1 days;
         uint amount = 50 ether;
 
-        // add amounts to all 120 days buckets
+        // add amounts to max days different buckets
         for (uint i = 0; i < feed.maxDays(); i++) {
             borrow(i, nftValue, amount, dueDate);
             dueDate = dueDate + 1 days;
         }
 
-        assertTrue(amount * feed.maxDays() <  feed.currentNAV());
+       assertTrue(amount * feed.maxDays() <  feed.currentNAV());
     }
 
     function testChangeRiskGroup() public {

@@ -14,7 +14,7 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 import { BorrowerDeployer } from "./borrower/deployer.sol";
-import { MockLenderDeployer } from "./lender/deployer.sol";
+import { LenderDeployer } from "./lender/deployer.sol";
 
 import "tinlake-auth/auth.sol";
 
@@ -29,7 +29,7 @@ contract DependLike {
 
 contract TinlakeRoot is Auth {
     BorrowerDeployer public borrowerDeployer;
-    MockLenderDeployer public   lenderDeployer;
+    LenderDeployer  public  lenderDeployer;
 
     bool public             deployed;
     address public          deployUsr;
@@ -43,7 +43,7 @@ contract TinlakeRoot is Auth {
     function prepare(address lender_, address borrower_, address ward_) public {
         require(deployUsr == msg.sender);
         borrowerDeployer = BorrowerDeployer(borrower_);
-        lenderDeployer = MockLenderDeployer(lender_);
+        lenderDeployer = LenderDeployer(lender_);
         wards[ward_] = 1;
         deployUsr = address(0); // disallow the deploy user to call this more than once.
     }
@@ -55,17 +55,21 @@ contract TinlakeRoot is Auth {
         require(address(borrowerDeployer) != address(0) && address(lenderDeployer) != address(0) && deployed == false);
         deployed = true;
 
-        address distributor_ = lenderDeployer.distributor_();
+        address reserve_ = lenderDeployer.reserve();
         address shelf_ = borrowerDeployer.shelf();
 
         // Borrower depends
-        DependLike(borrowerDeployer.collector()).depend("distributor", distributor_);
-        DependLike(borrowerDeployer.shelf()).depend("lender", distributor_);
-        DependLike(borrowerDeployer.shelf()).depend("distributor", distributor_);
+        DependLike(borrowerDeployer.collector()).depend("distributor", reserve_);
+        DependLike(borrowerDeployer.shelf()).depend("lender", reserve_);
+        DependLike(borrowerDeployer.shelf()).depend("distributor", reserve_);
+
+        //AuthLike(reserve).rely(shelf_);
 
         //  Lender depends
-        address poolValue = borrowerDeployer.feed();
-        DependLike(address(lenderDeployer.distributor())).depend("shelf", shelf_);
+        address navFeed = borrowerDeployer.feed();
+
+        DependLike(reserve_).depend("shelf", shelf_);
+        DependLike(lenderDeployer.assessor()).depend("navFeed", navFeed);
     }
 
     // --- Governance Functions ---

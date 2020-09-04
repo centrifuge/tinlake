@@ -81,8 +81,8 @@ contract Reserve is Math, Auth {
     }
 
     function _payout(address usr, uint currencyAmount)  internal {
-        require(currency.transferFrom(self, usr, currencyAmount), "reserve-payout-failed");
-        balance_ = safeSub(balance_, currencyAmount);
+      require(currency.transferFrom(self, usr, currencyAmount), "reserve-payout-failed");
+      balance_ = safeSub(balance_, currencyAmount);
     }
 
 
@@ -98,7 +98,6 @@ contract Reserve is Math, Auth {
             assessor.borrowUpdate(currencyAmount);
             return;
         }
-
         _deposit(address(shelf), currencyAmount);
         assessor.repaymentUpdate(currencyAmount);
     }

@@ -24,22 +24,26 @@ contract LenderIntegrationTest is BaseSystemTest {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
         deployLenderMockBorrower();
+                emit log_named_uint("hi", 0);
+        createTestUsers();
+                emit log_named_uint("hi", 1);
         createInvestorUser();
-        // whitelist seniorInvestor
-        seniorMemberlist.addMember(seniorInvestor_);
-        juniorMemberlist.addMember(juniorInvestor_);
     }
 
     function testSimpleSeniorOrder() public {
         uint amount = 100 ether;
         currency.mint(address(seniorInvestor), amount);
-
+        // allow senior to hold senior tokens
+    emit log_named_uint("hi", 0);
+        admin.makeSeniorTokenMember(seniorInvestor_);
         // invest
+         emit log_named_uint("hi", 0);
         seniorInvestor.supplyOrder(amount);
-
+        emit log_named_uint("hi", 0);
         (,uint supplyAmount, ) = seniorTranche.users(seniorInvestor_);
+         emit log_named_uint("hi", 0);
         assertEq(supplyAmount, amount);
-
+        emit log_named_uint("hi", 0);
         // change order
         seniorInvestor.supplyOrder(amount/2);
         (, supplyAmount, ) = seniorTranche.users(seniorInvestor_);
@@ -48,6 +52,7 @@ contract LenderIntegrationTest is BaseSystemTest {
 
     function seniorSupply(uint currencyAmount) public {
         currency.mint(address(seniorInvestor), currencyAmount);
+        admin.makeSeniorTokenMember(seniorInvestor_);
         seniorInvestor.supplyOrder(currencyAmount);
         (,uint supplyAmount, ) = seniorTranche.users(seniorInvestor_);
         assertEq(supplyAmount, currencyAmount);
@@ -55,6 +60,7 @@ contract LenderIntegrationTest is BaseSystemTest {
 
     function juniorSupply(uint currencyAmount) public {
         currency.mint(address(juniorInvestor), currencyAmount);
+        admin.makeJuniorTokenMember(juniorInvestor_);
         juniorInvestor.supplyOrder(currencyAmount);
         (,uint supplyAmount, ) = juniorTranche.users(juniorInvestor_);
         assertEq(supplyAmount, currencyAmount);

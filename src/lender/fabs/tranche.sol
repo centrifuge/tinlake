@@ -33,6 +33,8 @@ contract TrancheFab {
         tranche.deny(address(this));
         memberlist.rely(msg.sender);
         memberlist.deny(address(this));
+
+
         return (address(tranche), address(restrictedToken), address(memberlist));
     }
 }

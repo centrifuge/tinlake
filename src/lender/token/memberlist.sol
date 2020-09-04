@@ -16,19 +16,22 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 import "tinlake-auth/auth.sol";
+import "ds-test/test.sol";
 
-contract Memberlist is Auth {
+contract Memberlist is Auth, DSTest {
     // -- Members--
     mapping (address => uint) public members;
-    function addMember(address usr) public auth { members[usr] = 1; }
+    function addMember(address usr) public auth { 
+        emit log_named_uint("moin", 1);
+        members[usr] = 1;
+     }
     function removeMember(address usr) public auth { members[usr] = 0; }
 
     constructor() public {
         wards[msg.sender] = 1;
     }
    
-    /// sets the dependency to another contract
-    function isMember(address user) public returns (bool){
-        return (members[msg.sender] == 1);
+    function member(address user) public {
+        require((members[msg.sender] == 1), "not-allowed-to-hold-token");
     }
 }

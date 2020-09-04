@@ -35,6 +35,11 @@ interface ReserveLike {
     function payout(uint amount) external;
 }
 
+interface EpochTickerLike {
+    function currentEpoch() external view returns (uint);
+    function lastEpochExecuted() external view returns(uint);
+}
+
 contract Tranche is Math, Auth, FixedPoint {
     mapping(uint => Epoch) public epochs;
 
@@ -63,17 +68,14 @@ contract Tranche is Math, Auth, FixedPoint {
     ERC20Like public currency;
     ERC20Like public token;
     ReserveLike public reserve;
+    EpochTickerLike public epochTicker;
 
     address self;
 
-    uint public currentEpoch;
     bool public waitingForUpdate = false;
-    uint public lastEpochExecuted;
 
     constructor(address currency_, address token_) public {
         wards[msg.sender] = 1;
-        currentEpoch = 1;
-        lastEpochExecuted = 0;
         token = ERC20Like(token_);
         currency = ERC20Like(currency_);
         self = address(this);
@@ -91,11 +93,13 @@ contract Tranche is Math, Auth, FixedPoint {
         if (contractName == "token") {token = ERC20Like(addr);}
         else if (contractName == "currency") {currency = ERC20Like(addr);}
         else if (contractName == "reserve") {reserve = ReserveLike(addr);}
+        else if (contractName == "epochTicker") {epochTicker = EpochTickerLike(addr);}
         else revert();
     }
 
     // supplyOrder function can be used to place or revoke an supply
     function supplyOrder(address usr, uint newSupplyAmount) public auth {
+        uint currentEpoch = epochTicker.currentEpoch();
         require(users[usr].orderedInEpoch == 0 || users[usr].orderedInEpoch == currentEpoch, "disburse required");
         users[usr].orderedInEpoch = currentEpoch;
 
@@ -118,6 +122,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
     // redeemOrder function can be used to place or revoke a redeem
     function redeemOrder(address usr, uint newRedeemAmount) public auth {
+        uint currentEpoch = epochTicker.currentEpoch();
         require(users[usr].orderedInEpoch == 0 || users[usr].orderedInEpoch == currentEpoch, "disburse required");
         users[usr].orderedInEpoch = currentEpoch;
 
@@ -138,17 +143,18 @@ contract Tranche is Math, Auth, FixedPoint {
     }
 
     function calcDisburse(address usr) public view returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
-        return calcDisburse(usr, lastEpochExecuted);
+        return calcDisburse(usr, epochTicker.lastEpochExecuted());
     }
 
     function calcDisburse(address usr, uint endEpoch) public view returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         uint epochIdx = users[usr].orderedInEpoch;
+        uint lastEpochExecuted = epochTicker.lastEpochExecuted();
 
         uint payoutCurrencyAmount = 0;
         uint payoutTokenAmount = 0;
 
         // no disburse possible in this epoch
-        if (users[usr].orderedInEpoch == currentEpoch) {
+        if (users[usr].orderedInEpoch == epochTicker.currentEpoch()) {
             return (payoutCurrencyAmount, payoutTokenAmount, users[usr].supplyCurrencyAmount, users[usr].redeemTokenAmount);
         }
 
@@ -188,12 +194,12 @@ contract Tranche is Math, Auth, FixedPoint {
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
     function disburse(address usr) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
-        return disburse(usr, lastEpochExecuted);
+        return disburse(usr, epochTicker.lastEpochExecuted());
     }
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
     function disburse(address usr,  uint endEpoch) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
-        require(users[usr].orderedInEpoch <= lastEpochExecuted);
+        require(users[usr].orderedInEpoch <= epochTicker.lastEpochExecuted());
 
         (payoutCurrencyAmount, payoutTokenAmount,
          remainingSupplyCurrency, remainingRedeemToken) = calcDisburse(usr, endEpoch);
@@ -204,8 +210,8 @@ contract Tranche is Math, Auth, FixedPoint {
         // remaining orders are placed in the current epoch to allow
         // which allows to change the order and therefore receive it back
         // this is only possible if all previous epochs are disbursed (no orders reserved)
-        if (endEpoch == safeSub(currentEpoch, 1)) {
-            users[usr].orderedInEpoch = currentEpoch;
+        if (endEpoch == epochTicker.lastEpochExecuted()) {
+            users[usr].orderedInEpoch = epochTicker.currentEpoch();
         } else {
             users[usr].orderedInEpoch = endEpoch;
         }
@@ -223,11 +229,9 @@ contract Tranche is Math, Auth, FixedPoint {
     }
 
     // called by epoch coordinator in epoch execute method
-    function epochUpdate(uint supplyFulfillment_, uint redeemFulfillment_, uint tokenPrice_, uint epochSupplyCurrency, uint epochRedeemCurrency) public auth {
+    function epochUpdate(uint epochID, uint supplyFulfillment_, uint redeemFulfillment_, uint tokenPrice_, uint epochSupplyCurrency, uint epochRedeemCurrency) public auth {
         require(waitingForUpdate == true);
         waitingForUpdate = false;
-
-        uint epochID = safeSub(currentEpoch, 1);
 
         epochs[epochID].supplyFulfillment.value = supplyFulfillment_;
         epochs[epochID].redeemFulfillment.value = redeemFulfillment_;
@@ -246,11 +250,9 @@ contract Tranche is Math, Auth, FixedPoint {
         totalSupply = safeAdd(safeSub(totalSupply, epochSupplyCurrency), rmul(epochSupplyCurrency, safeSub(ONE, epochs[epochID].supplyFulfillment.value)));
         totalRedeem = safeAdd(safeSub(totalRedeem, redeemInToken), rmul(redeemInToken, safeSub(ONE, epochs[epochID].redeemFulfillment.value)));
 
-        lastEpochExecuted = safeAdd(lastEpochExecuted, 1);
     }
     function closeEpoch() public auth returns (uint totalSupplyCurrency_, uint totalRedeemToken_) {
         require(waitingForUpdate == false);
-        currentEpoch = safeAdd(currentEpoch, 1);
         waitingForUpdate = true;
         return (totalSupply, totalRedeem);
     }

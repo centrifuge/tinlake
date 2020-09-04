@@ -17,8 +17,13 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import { Title } from "tinlake-title/title.sol";
 import "../interfaces.sol";
+import "ds-test/test.sol";
 
-contract AdminUser {
+interface AdminOperatorLike {
+    function relyInvestor(address usr) external;
+}
+
+contract AdminUser is DSTest {
     // --- Data ---
     ShelfLike shelf;
     PileLike pile;
@@ -26,14 +31,18 @@ contract AdminUser {
     TDistributorLike distributor;
     CollectorLike collector;
     NFTFeedLike nftFeed;
+    MemberlistLike juniorMemberlist;
+    MemberlistLike seniorMemberlist;
 
-    constructor (address shelf_, address pile_, address nftFeed_, address title_, address distributor_, address collector_) public {
+    constructor (address shelf_, address pile_, address nftFeed_, address title_, address distributor_, address collector_, address juniorMemberlist_, address seniorMemberlist_) public {
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
         title = Title(title_);
         distributor = TDistributorLike(distributor_);
         collector = CollectorLike(collector_);
         nftFeed = NFTFeedLike(nftFeed_);
+        juniorMemberlist = MemberlistLike(juniorMemberlist_);
+        seniorMemberlist = MemberlistLike(seniorMemberlist_);
     }
 
     function priceNFT(bytes32 lookupId, uint nftPrice) public {
@@ -42,6 +51,8 @@ contract AdminUser {
 
     function priceNFTAndSetRiskGroup(bytes32 lookupId, uint nftPrice, uint riskGroup) public {
         nftFeed.update(lookupId, nftPrice, riskGroup);
+        // add default maturity date
+        nftFeed.file("maturityDate", lookupId , now + 600 days);
     }
 
     function setCollectPrice(uint loan, uint price) public {
@@ -58,6 +69,15 @@ contract AdminUser {
 
     function collect(uint loan, address usr) public {
         collector.collect(loan, usr);
+    }
+
+    function makeJuniorTokenMember(address usr) public {
+        juniorMemberlist.addMember(usr);
+    }
+
+    function makeSeniorTokenMember(address usr) public {
+        emit log_named_uint("admin", 1);
+        seniorMemberlist.addMember(usr);
     }
 
 }

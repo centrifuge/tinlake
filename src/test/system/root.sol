@@ -14,8 +14,8 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 import { TinlakeRoot } from "../../root.sol";
-
-contract TestRoot is TinlakeRoot {
+import "ds-test/test.sol";
+contract TestRoot is TinlakeRoot, DSTest{
     constructor (address deployUsr) public TinlakeRoot(deployUsr) {
     }
 
@@ -23,21 +23,30 @@ contract TestRoot is TinlakeRoot {
     // To simplify testing, we add helpers to authorize contracts on any component.
 
     // Needed for System Tests
-    function relyBorrowAdmin(address usr) public auth {
+    function relyAdmin(address usr) public auth {
         relyContract(borrowerDeployer.title(), usr);
         relyContract(borrowerDeployer.shelf(), usr);
         relyContract(borrowerDeployer.pile(), usr);
         relyContract(borrowerDeployer.feed(), usr);
         relyContract(borrowerDeployer.collector(), usr);
+        emit log_named_address("hi", lenderDeployer.juniorMemberlist());
+        relyContract(lenderDeployer.juniorMemberlist(), usr);
+        emit log_named_address("hi", lenderDeployer.juniorMemberlist());
+        relyContract(lenderDeployer.seniorMemberlist(), usr);
         
     }
 
-    function denyBorrowAdmin(address usr) public auth {
+    function denyAdmin(address usr) public auth {
         denyContract(borrowerDeployer.title(), usr);
         denyContract(borrowerDeployer.feed(), usr);
         denyContract(borrowerDeployer.shelf(), usr);
         denyContract(borrowerDeployer.pile(), usr);
         denyContract(borrowerDeployer.feed(), usr);
         denyContract(borrowerDeployer.collector(), usr);
+    }
+
+    function relyInvestorAdmin(address usr) public auth {
+        relyContract(lenderDeployer.seniorOperator(), usr);
+        relyContract(lenderDeployer.juniorOperator(), usr);
     }
 }
