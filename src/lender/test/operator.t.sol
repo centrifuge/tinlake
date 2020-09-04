@@ -81,7 +81,6 @@ contract OperatorTest is Math, DSTest {
 
     function testRedeemOrder() public {
         uint amount = 10;
-
         // rely operator on tranche
         tranche.rely(operator_);
         // add investor to memberlist of tokenholders
@@ -95,7 +94,6 @@ contract OperatorTest is Math, DSTest {
 
     function testFailRedeemOrderNotMember() public {
         uint amount = 10;
-
         // rely operator on tranche
         tranche.rely(operator_);
         operator.redeemOrder(amount);
