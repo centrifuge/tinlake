@@ -43,12 +43,13 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     address  seniorInvestor_;
     Investor juniorInvestor;
     address  juniorInvestor_;
+    NFTFeedLike nftFeed_;
 
     Hevm public hevm;
 
     function baseSetup() public {
         // setup deployment
-        bytes32 feed_ = "default";
+        bytes32 feed_ = "nav";
         deployContracts(feed_);
     }
 
@@ -56,6 +57,9 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         deployContracts(feed_);
     }
 
+    function createTestUsers() public {
+        createTestUsers(true);
+    }
     function createTestUsers(bool senior_) public {
         borrower = new Borrower(address(shelf), address(lenderDeployer.reserve()), currency_, address(pile));
         borrower_ = address(borrower);
@@ -205,5 +209,100 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
     function assertEq(uint a, uint b, uint tolerance) public {
         assertEq(a/tolerance, b/tolerance);
+    }
+
+    function setupOngoingLoan() public returns (uint loan, uint tokenId, uint ceiling) {
+        (uint nftPrice, uint riskGroup) = defaultCollateral();
+        // create borrower collateral collateralNFT
+        tokenId = collateralNFT.issue(borrower_);
+        loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup);
+        uint ceiling = nftFeed_.ceiling(loan);
+
+        borrow(loan, tokenId, ceiling);
+
+        return (loan, tokenId, ceiling);
+    }
+
+    function setupLoan(uint tokenId, address collateralNFT_, uint nftPrice, uint riskGroup) public returns (uint) {
+        // borrower issue loans
+        uint loan = borrower.issue(collateralNFT_, tokenId);
+
+        // price collateral and add to riskgroup
+        priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
+
+        emit log_named_uint("id", loan);
+        return loan;
+    }
+
+    function fundLender(uint amount) public {
+        invest(amount);
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
+        emit log_named_uint("reserve", reserve.totalBalance());
+    }
+
+    function borrow(uint loan, uint tokenId, uint borrowAmount) public {
+        borrower.approveNFT(collateralNFT, address(shelf));
+        fundLender(borrowAmount);
+        borrower.borrowAction(loan, borrowAmount);
+        checkAfterBorrow(tokenId, borrowAmount);
+    }
+
+    function defaultCollateral() public pure returns(uint nftPrice, uint riskGroup) {
+        uint nftPrice = 100 ether;
+        uint riskGroup = 2;
+        return (nftPrice, riskGroup);
+    }
+
+    function setupRepayReq() public returns(uint) {
+        // borrower needs some currency to pay rate
+        uint extra = 100000000000 ether;
+        currency.mint(borrower_, extra);
+
+        // allow pile full control over borrower tokens
+        borrower.doApproveCurrency(address(shelf), uint(-1));
+
+        return extra;
+    }
+
+    // note: this method will be refactored with the new lender side contracts, as the distributor should not hold any currency
+    function currdistributorBal() public view returns(uint) {
+        return currency.balanceOf(address(reserve));
+    }
+
+    // Checks
+    function checkAfterBorrow(uint tokenId, uint tBalance) public {
+        assertEq(currency.balanceOf(borrower_), tBalance);
+        assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
+    }
+
+    function checkAfterRepay(uint loan, uint tokenId, uint tTotal, uint tLender) public {
+        assertEq(collateralNFT.ownerOf(tokenId), borrower_);
+        assertEq(pile.debt(loan), 0);
+        assertEq(currency.balanceOf(borrower_), safeSub(tTotal, tLender));
+        assertEq(currency.balanceOf(address(pile)), 0);
+    }
+
+
+
+    function borrowRepay(uint nftPrice, uint riskGroup) public {
+        // create borrower collateral collateralNFT
+        uint tokenId = collateralNFT.issue(borrower_);
+        uint loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup);
+        uint ceiling = nftFeed_.ceiling(loan);
+
+        assertEq(nftFeed_.ceiling(loan), ceiling);
+        borrow(loan, tokenId, ceiling);
+        assertEq(nftFeed_.ceiling(loan), 0);
+
+        hevm.warp(now + 10 days);
+
+        // borrower needs some currency to pay rate
+        setupRepayReq();
+        uint distributorShould = pile.debt(loan) + currdistributorBal();
+        // close without defined amount
+        borrower.doClose(loan);
+        uint totalT = uint(currency.totalSupply());
+        checkAfterRepay(loan, tokenId, totalT, distributorShould);
     }
 }
