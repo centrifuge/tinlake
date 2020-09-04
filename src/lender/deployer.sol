@@ -19,7 +19,6 @@ import {AssessorFab}    from "./fabs/assessor.sol";
 import {TrancheFab}     from "./fabs/tranche.sol";
 import {CoordinatorFab} from "./fabs/coordinator.sol";
 import {OperatorFab}    from "./fabs/operator.sol";
-import "ds-test/test.sol";
 import {FixedPoint}      from "./fixed_point.sol";
 
 // todo needs to be removed
@@ -43,7 +42,7 @@ interface FileLike {
     function file(bytes32 name, uint value) external;
 }
 
-contract LenderDeployer is FixedPoint, DSTest {
+contract LenderDeployer is FixedPoint {
     address public root;
     address public currency;
 
