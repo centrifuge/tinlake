@@ -17,6 +17,7 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
+import "ds-test/test.sol";
 
 contract TrancheLike {
     function supplyOrder(address usr, uint currencyAmount) public;
@@ -26,10 +27,10 @@ contract TrancheLike {
 }
 
 interface RestrictedTokenLike {
-    function hasMember(address) external view returns (bool);
+    function hasMember(address) external;
 }
 
-contract Operator is DSNote, Auth {
+contract Operator is DSNote, Auth, DSTest {
     TrancheLike public tranche;
     RestrictedTokenLike public token;
    
@@ -47,13 +48,14 @@ contract Operator is DSNote, Auth {
 
     /// only investors that are on the memberlist can submit supplyOrders
     function supplyOrder(uint amount) public note {
-        require(token.hasMember(msg.sender));
+        emit log_named_address("token", address(token));
+        token.hasMember(msg.sender);
         tranche.supplyOrder(msg.sender, amount);
     }
 
     /// only investors that are on the memberlist can submit redeemOrders
     function redeemOrder(uint amount) public note {
-        require(token.hasMember(msg.sender));
+        token.hasMember(msg.sender);
         tranche.redeemOrder(msg.sender, amount);
     }
 
@@ -61,14 +63,16 @@ contract Operator is DSNote, Auth {
     function disburse() external
         returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken)
     {
-        require(token.hasMember(msg.sender));
+        emit log_named_uint("moin", 1);
+        token.hasMember(msg.sender);
+        emit log_named_uint("moin", 1);
         return tranche.disburse(msg.sender);
     }
 
     function disburse(uint endEpoch) external
         returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken)
     {
-        require(token.hasMember(msg.sender));
+        token.hasMember(msg.sender);
         return tranche.disburse(msg.sender, endEpoch);
     }
 

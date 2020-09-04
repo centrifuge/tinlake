@@ -22,7 +22,6 @@ contract Memberlist is Auth, DSTest {
     // -- Members--
     mapping (address => uint) public members;
     function addMember(address usr) public auth { 
-        emit log_named_uint("moin", 1);
         members[usr] = 1;
      }
     function removeMember(address usr) public auth { members[usr] = 0; }
@@ -31,7 +30,7 @@ contract Memberlist is Auth, DSTest {
         wards[msg.sender] = 1;
     }
    
-    function member(address user) public {
-        require((members[msg.sender] == 1), "not-allowed-to-hold-token");
+    function member(address usr) public {
+        require((members[usr] == 1), "not-allowed-to-hold-token");
     }
 }

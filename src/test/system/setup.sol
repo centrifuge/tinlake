@@ -168,23 +168,23 @@ contract TestSetup {
         nftFeed = NFTFeedLike(borrowerDeployer.feed());
     }
 
-    function deployLenderMockBorrower() public {
+    function deployLenderMockBorrower(address root) public {
         currency = new SimpleToken("C", "Currency", "1", 0);
         currency_ = address(currency);
 
-        prepareDeployLender(address(this));
+        prepareDeployLender(root);
         deployLender();
-
+        
         // add root mock
         ShelfMock shelf = new ShelfMock();
         NAVFeedMock nav = new NAVFeedMock();
-
+    
         assessor.depend("navFeed", address(nav));
         reserve.depend("shelf", address(shelf));
     }
 
     function prepareDeployLender(address root) public {
-//        CoordinatorFab  coordinatorFab = new CoordinatorFab();
+
         ReserveFab reserveFab = new ReserveFab();
         AssessorFab assessorFab = new AssessorFab();
         TrancheFab  trancheFab = new TrancheFab();

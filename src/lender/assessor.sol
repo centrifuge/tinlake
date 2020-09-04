@@ -19,7 +19,6 @@ import "./fixed_point.sol";
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
-
 interface NAVFeedLike {
     function calcUpdateNAV() external returns (uint);
     function approximatedNAV() external view returns (uint);
@@ -29,7 +28,7 @@ interface TrancheLike {
     function tokenSupply() external returns (uint);
 }
 
-contract Assessor is Auth, FixedPoint, Interest  {
+contract Assessor is Auth, FixedPoint, Interest {
     // senior ratio from the last epoch executed
     Fixed27        public seniorRatio;
     uint           public seniorDebt_;
@@ -151,11 +150,9 @@ contract Assessor is Auth, FixedPoint, Interest  {
 
     function borrowUpdate(uint currencyAmount) public auth {
         dripSeniorDebt();
-
         uint incAmount = rmul(currencyAmount, seniorRatio.value);
         // seniorDebt needs to be increased for loan borrows
         seniorDebt_ = safeAdd(seniorDebt_, incAmount);
-
         if(seniorBalance_ < incAmount) {
             seniorBalance_ = 0;
             return;

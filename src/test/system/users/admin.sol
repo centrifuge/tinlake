@@ -34,7 +34,7 @@ contract AdminUser is DSTest {
     MemberlistLike juniorMemberlist;
     MemberlistLike seniorMemberlist;
 
-    constructor (address shelf_, address pile_, address nftFeed_, address title_, address distributor_, address collector_, address juniorMemberlist_, address seniorMemberlist_) public {
+    constructor(address shelf_, address pile_, address nftFeed_, address title_, address distributor_, address collector_, address juniorMemberlist_, address seniorMemberlist_) public {
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
         title = Title(title_);

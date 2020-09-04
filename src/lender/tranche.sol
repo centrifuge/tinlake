@@ -20,7 +20,7 @@ import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 import "./fixed_point.sol";
 
-
+import "ds-test/test.sol";
 interface ERC20Like {
     function balanceOf(address) external view returns (uint);
     function transferFrom(address, address, uint) external returns (bool);
@@ -40,7 +40,7 @@ interface EpochTickerLike {
     function lastEpochExecuted() external view returns(uint);
 }
 
-contract Tranche is Math, Auth, FixedPoint {
+contract Tranche is Math, Auth, FixedPoint, DSTest {
     mapping(uint => Epoch) public epochs;
 
     struct Epoch {
@@ -99,7 +99,9 @@ contract Tranche is Math, Auth, FixedPoint {
 
     // supplyOrder function can be used to place or revoke an supply
     function supplyOrder(address usr, uint newSupplyAmount) public auth {
+        emit log_named_uint("op", 1);
         uint currentEpoch = epochTicker.currentEpoch();
+        emit log_named_uint("op", 1);
         require(users[usr].orderedInEpoch == 0 || users[usr].orderedInEpoch == currentEpoch, "disburse required");
         users[usr].orderedInEpoch = currentEpoch;
 
@@ -111,11 +113,13 @@ contract Tranche is Math, Auth, FixedPoint {
 
         if (newSupplyAmount > currentSupplyAmount) {
             uint delta = safeSub(newSupplyAmount, currentSupplyAmount);
+            emit log_named_uint("op", 1);
             require(currency.transferFrom(usr, self, delta), "currency-transfer-failed");
             return;
         }
         uint delta = safeSub(currentSupplyAmount, newSupplyAmount);
         if (delta > 0) {
+                    emit log_named_uint("op", 1);
             require(currency.transferFrom(self, usr, delta), "currency-transfer-failed");
         }
     }
@@ -200,13 +204,13 @@ contract Tranche is Math, Auth, FixedPoint {
     // the disburse function can be used after an epoch is over to receive currency and tokens
     function disburse(address usr,  uint endEpoch) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         require(users[usr].orderedInEpoch <= epochTicker.lastEpochExecuted());
-
+        emit log_named_uint("tranche", 1);
         (payoutCurrencyAmount, payoutTokenAmount,
          remainingSupplyCurrency, remainingRedeemToken) = calcDisburse(usr, endEpoch);
-
+emit log_named_uint("tranche", 1);
         users[usr].supplyCurrencyAmount = remainingSupplyCurrency;
         users[usr].redeemTokenAmount = remainingRedeemToken;
-
+emit log_named_uint("tranche", 1);
         // remaining orders are placed in the current epoch to allow
         // which allows to change the order and therefore receive it back
         // this is only possible if all previous epochs are disbursed (no orders reserved)
@@ -217,13 +221,17 @@ contract Tranche is Math, Auth, FixedPoint {
         }
 
         if (payoutCurrencyAmount > 0) {
+            emit log_named_uint("p", 1);
             require(currency.transferFrom(self, usr, payoutCurrencyAmount), "currency-transfer-failed");
         }
 
         if (payoutTokenAmount > 0) {
+            emit log_named_uint("s", 1);
+            emit log_named_address("users", usr);
             require(token.transferFrom(self, usr, payoutTokenAmount), "token-transfer-failed");
+             emit log_named_uint("s", 1);
         }
-
+        emit log_named_uint("tranche", 1);
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
 
     }

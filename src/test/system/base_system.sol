@@ -24,7 +24,6 @@ import "./users/borrower.sol";
 import "./users/keeper.sol";
 import "tinlake-math/math.sol";
 
-
 contract BaseSystemTest is TestSetup, Math, DSTest {
     // users
     Borrower borrower;
@@ -57,27 +56,20 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
 
     function createTestUsers() public {
-        emit log_named_uint("hi", 10);
         borrower = new Borrower(address(shelf), address(lenderDeployer.reserve()), currency_, address(pile));
-        emit log_named_uint("hi", 0);
         borrower_ = address(borrower);
-emit log_named_uint("hi", 1);
         randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         randomUser_ = address(randomUser);
-emit log_named_uint("hi", 2);
         keeper = new Keeper(address(collector), currency_);
         keeper_ = address(keeper);
-emit log_named_uint("hi", 3);
         admin = new AdminUser(address(shelf), address(pile), address(nftFeed), address(title), address(distributor), address(collector), address(juniorMemberlist), address(seniorMemberlist));
         admin_ = address(admin);
-        root.relyAdmin(admin_);
-emit log_named_uint("hi", 4);
+        root.relyBorrowerAdmin(admin_);
+        root.relyLenderAdmin(admin_);
         createInvestorUser();
-        root.relyInvestorAdmin(admin_);
     }
 
     function createInvestorUser() public {
-        // investors
         seniorInvestor = new Investor(address(seniorOperator), address(seniorTranche), currency_, address(seniorToken));
         seniorInvestor_ = address(seniorInvestor);
         juniorInvestor = new Investor(address(juniorOperator), address(juniorTranche), currency_, address(juniorToken));
@@ -144,8 +136,11 @@ emit log_named_uint("hi", 4);
 
     function createLoanAndWithdraw(address usr, uint nftPrice, uint riskGroup) public returns (uint, uint) {
         (uint loanId, uint tokenId) = createLoanAndBorrow(usr, nftPrice, riskGroup);
+        emit log_named_uint("gas",12);
         uint ceiling = computeCeiling(riskGroup, nftPrice);
+             emit log_named_uint("gas",12);
         Borrower(usr).withdraw(loanId, ceiling, borrower_);
+             emit log_named_uint("gas",13);
         return (loanId, tokenId);
     }
 
@@ -190,7 +185,6 @@ emit log_named_uint("hi", 4);
     function fundTranches() public {
         uint defaultAmount = 1000 ether;
         invest(defaultAmount);
-
     }
 
     function setupCurrencyOnLender(uint amount) public {
