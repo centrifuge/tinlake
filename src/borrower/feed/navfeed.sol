@@ -18,7 +18,6 @@ import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
 import "./nftfeed.sol";
 import "./buckets.sol";
-import "ds-test/test.sol";
 
 contract NAVFeed is BaseNFTFeed, Interest, Buckets,DSTest {
     // nftID => maturityDate
