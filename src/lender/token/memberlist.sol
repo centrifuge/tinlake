@@ -15,22 +15,26 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
+import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
 import "ds-test/test.sol";
 
-contract Memberlist is Auth, DSTest {
+contract Memberlist is Math, Auth, DSTest {
+
+    uint constant minimumDelay = 7 days; 
+
     // -- Members--
     mapping (address => uint) public members;
-    function addMember(address usr) public auth { 
-        members[usr] = 1;
+    function updateMember(address usr, uint validUntil) public auth { 
+        require((safeAdd(now, minimumDelay)) < validUntil);
+        members[usr] = validUntil;
      }
-    function removeMember(address usr) public auth { members[usr] = 0; }
 
     constructor() public {
         wards[msg.sender] = 1;
     }
    
     function member(address usr) public {
-        require((members[usr] == 1), "not-allowed-to-hold-token");
+        require((members[usr] >= now), "not-allowed-to-hold-token");
     }
 }

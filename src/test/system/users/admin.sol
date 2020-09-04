@@ -71,13 +71,12 @@ contract AdminUser is DSTest {
         collector.collect(loan, usr);
     }
 
-    function makeJuniorTokenMember(address usr) public {
-        juniorMemberlist.addMember(usr);
+    function makeJuniorTokenMember(address usr, uint validitUntil) public {
+        juniorMemberlist.updateMember(usr, validitUntil);
     }
 
-    function makeSeniorTokenMember(address usr) public {
-        emit log_named_uint("admin", 1);
-        seniorMemberlist.addMember(usr);
+    function makeSeniorTokenMember(address usr, uint validitUntil) public {
+        seniorMemberlist.updateMember(usr, validitUntil);
     }
 
 }

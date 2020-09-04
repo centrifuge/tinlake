@@ -96,6 +96,6 @@ contract ThresholdLike {
 }
 
 contract MemberlistLike {
-    function addMember(address usr) public;
-    function removeMember(address usr) public;
+    function updateMember(address usr, uint validUntil) public;
+    function removeMember(address usr, uint validUntil) public;
 }

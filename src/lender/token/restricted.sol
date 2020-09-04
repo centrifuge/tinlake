@@ -17,6 +17,7 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "tinlake-erc20/erc20.sol";
 import "ds-test/test.sol";
+
 contract MemberlistLike {
     function member(address) public;
 }

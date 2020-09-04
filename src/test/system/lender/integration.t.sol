@@ -25,15 +25,13 @@ contract LenderIntegrationTest is BaseSystemTest {
         hevm.warp(1234567);
         deployLenderMockBorrower(address(this));
         createInvestorUser();
-        seniorMemberlist.addMember(address(seniorTranche));
-        juniorMemberlist.addMember(address(juniorTranche));
     }
 
     function testSimpleSeniorOrder() public {
         uint amount = 100 ether;
         currency.mint(address(seniorInvestor), amount);
         // allow senior to hold senior tokens
-        seniorMemberlist.addMember(seniorInvestor_);
+        seniorMemberlist.updateMember(seniorInvestor_, safeAdd(now, 8 days));
         seniorInvestor.supplyOrder(amount);
         (,uint supplyAmount, ) = seniorTranche.users(seniorInvestor_);
         assertEq(supplyAmount, amount);
@@ -44,7 +42,7 @@ contract LenderIntegrationTest is BaseSystemTest {
     }
 
     function seniorSupply(uint currencyAmount) public {
-        seniorMemberlist.addMember(seniorInvestor_);
+        seniorMemberlist.updateMember(seniorInvestor_, safeAdd(now, 8 days));
         currency.mint(address(seniorInvestor), currencyAmount);
         seniorInvestor.supplyOrder(currencyAmount);
         (,uint supplyAmount, ) = seniorTranche.users(seniorInvestor_);
@@ -52,7 +50,7 @@ contract LenderIntegrationTest is BaseSystemTest {
     }
 
     function juniorSupply(uint currencyAmount) public {
-        juniorMemberlist.addMember(juniorInvestor_);
+        juniorMemberlist.updateMember(juniorInvestor_, safeAdd(now, 8 days));
         currency.mint(address(juniorInvestor), currencyAmount);
         juniorInvestor.supplyOrder(currencyAmount);
         (,uint supplyAmount, ) = juniorTranche.users(juniorInvestor_);
@@ -66,26 +64,18 @@ contract LenderIntegrationTest is BaseSystemTest {
         juniorSupply(juniorAmount);
         hevm.warp(now + 1 days);
 
-
         coordinator.closeEpoch();
         // no submission required
         // submission was valid
         assertTrue(coordinator.submissionPeriod() == false);
         // inital token price is ONE
-        // senior
-                    emit log_named_uint("dis", 1);
         (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken) = seniorInvestor.disburse();
-             emit log_named_uint("hi", 1);
         assertEq(payoutCurrencyAmount, 0);
-         emit log_named_uint("hi", 1);
         assertEq(payoutTokenAmount, seniorAmount);
-         emit log_named_uint("hi", 2);
         assertEq(seniorToken.balanceOf(seniorInvestor_), seniorAmount);
-         emit log_named_uint("hi", 3);
         assertEq(remainingSupplyCurrency, 0);
         assertEq(remainingRedeemToken, 0);
 
- emit log_named_uint("hi", 0);
         // junior
         ( payoutCurrencyAmount,  payoutTokenAmount,  remainingSupplyCurrency,   remainingRedeemToken) = juniorInvestor.disburse();
         assertEq(payoutCurrencyAmount, 0);

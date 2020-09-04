@@ -155,8 +155,9 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
     // helpers lenders
     function invest(uint currencyAmount) public {
-        admin.makeJuniorTokenMember(juniorInvestor_);
-        admin.makeSeniorTokenMember(seniorInvestor_);
+        uint validUntil = safeAdd(now, 8 days);
+        admin.makeJuniorTokenMember(juniorInvestor_, validUntil);
+        admin.makeSeniorTokenMember(seniorInvestor_, validUntil);
 
         uint amountSenior = rmul(currencyAmount, 82 * 10**25);
         uint amountJunior = rmul(currencyAmount, 18 * 10**25);

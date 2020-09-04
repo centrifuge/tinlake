@@ -34,7 +34,6 @@ contract PrincipalRepayTest is BaseSystemTest {
         invest(defaultAmount);
         hevm.warp(now + 1 days);
         coordinator.closeEpoch();
-        emit log_named_uint("reserve", reserve.totalBalance());
     }
 
     function repay(uint loanId, uint tokenId, uint amount, uint expectedDebt) public {
@@ -55,8 +54,6 @@ contract PrincipalRepayTest is BaseSystemTest {
         // assert: loan has open debt
         assert(pile.debt(loanId) > 0);
         // assert: debt includes accrued interest (tolerance +/- 1)
-        emit log_named_uint("debt", pile.debt(loanId));
-
         assertEq(pile.debt(loanId), expectedDebt, 10);
         // assert: borrower has enough funds
         assert(currency.balanceOf(borrower_) >= repayAmount);
@@ -137,17 +134,14 @@ contract PrincipalRepayTest is BaseSystemTest {
     }
 
     function testRepayDebtNoRate() public {
-        emit log_named_uint("test", 1);
         uint nftPrice = 100 ether; // -> ceiling 100 ether
         uint riskGroup = 0; // -> no interest rate
         uint rate = getRateByRisk(riskGroup);
         uint ceiling = computeCeiling(riskGroup, nftPrice); // 60 %
-emit log_named_uint("test", 2);
         // expected debt after 1 year of compounding
         uint expectedDebt =  60 ether;
         uint repayAmount = expectedDebt;
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
-emit log_named_uint("test", 1);
         // borrower allows shelf full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
         //repay after 1 year

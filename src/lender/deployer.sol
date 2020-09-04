@@ -36,7 +36,7 @@ interface AuthLike {
 }
 
 interface MemberlistLike {
-    function addMember(address) external;
+    function updateMember(address, uint) external;
 }
 
 interface FileLike {
@@ -178,15 +178,17 @@ contract LenderDeployer is FixedPoint, DSTest {
         AuthLike(juniorTranche).rely(juniorOperator);
         
         // coordinator implements epoch ticker interface
-        DependLike(seniorTranche).depend("epochTicker" ,coordinator);
-        DependLike(juniorTranche).depend("epochTicker" ,coordinator);
+        DependLike(seniorTranche).depend("epochTicker", coordinator);
+        DependLike(juniorTranche).depend("epochTicker", coordinator);
         
         //restricted token
         DependLike(seniorToken).depend("memberlist", seniorMemberlist);
         DependLike(juniorToken).depend("memberlist", juniorMemberlist);
+        
         //allow tinlake contracts to hold drop/tin tokens
-        MemberlistLike(juniorMemberlist).addMember(juniorTranche);
-        MemberlistLike(seniorMemberlist).addMember(seniorTranche);
+        MemberlistLike(juniorMemberlist).updateMember(juniorTranche, uint(-1));
+        MemberlistLike(seniorMemberlist).updateMember(seniorTranche, uint(-1));
+
         // operator
         DependLike(seniorOperator).depend("tranche", seniorTranche);
         DependLike(juniorOperator).depend("tranche", juniorTranche);
@@ -199,7 +201,6 @@ contract LenderDeployer is FixedPoint, DSTest {
         DependLike(coordinator).depend("seniorTranche", seniorTranche);
         DependLike(coordinator).depend("juniorTranche", juniorTranche);
         DependLike(coordinator).depend("assessor", assessor);
-
 
         // assessor
         DependLike(assessor).depend("seniorTranche", seniorTranche);
