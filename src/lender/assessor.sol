@@ -15,7 +15,6 @@
 pragma solidity >=0.5.15 <0.6.0;
 pragma experimental ABIEncoderV2;
 
-import "./ticker.sol";
 import "./fixed_point.sol";
 
 import "tinlake-auth/auth.sol";

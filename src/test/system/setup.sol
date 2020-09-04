@@ -101,7 +101,6 @@ contract TestSetup {
     // todo will be removed
     MockLenderDeployer public  lenderDeployer;
 
-
     TestRoot root;
     address  root_;
 

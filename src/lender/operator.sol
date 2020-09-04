@@ -17,7 +17,6 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
-import "ds-test/test.sol";
 
 contract TrancheLike {
     function supplyOrder(address usr, uint currencyAmount) public;
@@ -26,7 +25,7 @@ contract TrancheLike {
     function disburse(address usr, uint endEpoch) public returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
 }
 
-contract Operator is DSNote, Auth, DSTest {
+contract Operator is DSNote, Auth {
     TrancheLike public tranche;
 
     // -- Investors --
@@ -64,9 +63,10 @@ contract Operator is DSNote, Auth, DSTest {
     }
 
     function disburse(uint endEpoch) external auth_investor note
-        returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken)
+    returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken)
     {
         return tranche.disburse(msg.sender, endEpoch);
     }
+
 
 }

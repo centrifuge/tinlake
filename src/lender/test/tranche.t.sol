@@ -21,7 +21,6 @@ import "tinlake-math/math.sol";
 import "./../tranche.sol";
 import "../../test/simple/token.sol";
 import "../test/mock/reserve.sol";
-import "./../ticker.sol";
 
 contract Hevm {
     function warp(uint256) public;
@@ -41,6 +40,9 @@ contract TrancheTest is DSTest, Math, FixedPoint {
 
     uint256 constant ONE = 10**27;
 
+    uint public currentEpoch;
+    uint public lastEpochExecuted;
+
     function setUp() public {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1595247588);
@@ -54,6 +56,12 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         tranche = new Tranche(address(currency), address(token));
         tranche.depend("reserve", reserve_);
 
+        currentEpoch = 1;
+        lastEpochExecuted = 0;
+
+        // epoch ticker is implemented in test suite
+        tranche.depend("epochTicker", address(this));
+
         tranche_ = address(tranche);
 
         // give reserve a lot of currency
@@ -62,7 +70,9 @@ contract TrancheTest is DSTest, Math, FixedPoint {
 
     function closeAndUpdate(uint supplyFulfillment, uint redeemFulfillment, uint tokenPrice) public {
         (uint totalSupply, uint totalRedeem) = tranche.closeEpoch();
-        tranche.epochUpdate(supplyFulfillment, redeemFulfillment, tokenPrice, totalSupply, totalRedeem);
+        uint epochID = currentEpoch++;
+        tranche.epochUpdate(epochID, supplyFulfillment, redeemFulfillment, tokenPrice, totalSupply, totalRedeem);
+        lastEpochExecuted++;
     }
 
     function supplyOrder(uint amount) public {
@@ -103,24 +113,23 @@ contract TrancheTest is DSTest, Math, FixedPoint {
     }
 
     function testFailSupplyAfterCloseEpoch() public {
-        uint amount = 100 ether;
+        uint amount = 1000000000 ether;
         supplyOrder(amount);
         tranche.closeEpoch();
+        currentEpoch++;
         supplyOrder(120 ether);
-
     }
 
     function testSimpleEpochUpdate() public {
         uint amount = 100 ether;
         supplyOrder(amount);
-        tranche.closeEpoch();
 
         // 60 % fulfillment
         uint supplyFulfillment_ = 6 * 10**26;
         uint redeemFulfillment_ = ONE;
         uint tokenPrice_ = ONE;
 
-        tranche.epochUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_, amount, 0);
+        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
 
         assertEq(tranche.totalSupply(), 40 ether);
         assertTrue(tranche.waitingForUpdate() == false);
@@ -170,7 +179,6 @@ contract TrancheTest is DSTest, Math, FixedPoint {
     function testRedeemDisburse() public {
         uint tokenAmount = 100 ether;
         redeemOrder(tokenAmount);
-        tranche.closeEpoch();
 
         uint supplyFulfillment_ = 0;
 
@@ -179,7 +187,8 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         // token price= 1.5
         uint tokenPrice_ = 15 * 10 **26;
 
-        tranche.epochUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_, 0, tokenAmount);
+        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
+
 
         // execute disburse
         (uint payoutCurrencyAmount, uint payoutTokenAmount,
@@ -193,10 +202,13 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         // token price= 1.5
         uint tokenPrice_ = 15 * 10 **26;
         tranche.closeEpoch();
-        tranche.epochUpdate(0, 0, tokenPrice_, 0, 0);
+        currentEpoch++;
+        tranche.epochUpdate(currentEpoch, 0, 0, tokenPrice_, 0, 0);
+        lastEpochExecuted++;
 
         tranche.closeEpoch();
-        tranche.epochUpdate(0, 0, 0, 0, 0);
+        currentEpoch++;
+        tranche.epochUpdate(currentEpoch,0, 0, 0, 0, 0);
     }
 
     function testMultipleRedeem() public {
@@ -238,14 +250,13 @@ contract TrancheTest is DSTest, Math, FixedPoint {
     function testChangeOrderAfterDisburse() public {
         uint amount = 100 ether;
         supplyOrder(amount);
-        tranche.closeEpoch();
 
         // 60 % fulfillment
         uint supplyFulfillment_ = 6 * 10**26;
         uint redeemFulfillment_ = ONE;
         uint tokenPrice_ = ONE;
 
-        tranche.epochUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_, amount, 0);
+        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
 
         // execute disburse
         (uint payoutCurrencyAmount, uint payoutTokenAmount,
