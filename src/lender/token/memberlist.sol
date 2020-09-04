@@ -17,9 +17,8 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
-import "ds-test/test.sol";
 
-contract Memberlist is Math, Auth, DSTest {
+contract Memberlist is Math, Auth {
 
     uint constant minimumDelay = 7 days; 
 

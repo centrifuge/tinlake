@@ -74,7 +74,7 @@ contract OperatorTest is Math, DSTest {
 
     function testFailSupplyOrderOperatorNotWard() public {
         uint amount = 10;
-        // addinvestor to memberlist of tokenholders
+        // add investor to memberlist of tokenholders
         memberlist.updateMember(self, safeAdd(now, memberlistValidity));
         operator.supplyOrder(amount);
     }
