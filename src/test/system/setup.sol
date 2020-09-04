@@ -54,7 +54,6 @@ import { TestRoot } from "./root.sol";
 
 import "../simple/token.sol";
 import "../simple/distributor.sol";
-import "ds-test/test.sol";
 import "tinlake-erc20/erc20.sol";
 import { PushRegistry } from "tinlake-registry/registry.sol";
 import { TokenLike, NFTFeedLike } from "./interfaces.sol";

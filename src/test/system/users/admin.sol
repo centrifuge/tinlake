@@ -17,13 +17,12 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import { Title } from "tinlake-title/title.sol";
 import "../interfaces.sol";
-import "ds-test/test.sol";
 
 interface AdminOperatorLike {
     function relyInvestor(address usr) external;
 }
 
-contract AdminUser is DSTest {
+contract AdminUser {
     // --- Data ---
     ShelfLike shelf;
     PileLike pile;
