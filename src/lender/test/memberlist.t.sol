@@ -30,7 +30,6 @@ contract MemberlistTest is Math, DSTest {
 
     function setUp() public {
         memberlist = new Memberlist();
-
         self = address(this);
         memberlist_ = address(memberlist);
     }
