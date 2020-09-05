@@ -21,7 +21,7 @@ import "./buckets.sol";
 
 import "ds-test/test.sol";
 
-contract NAVFeed is BaseNFTFeed, Interest, Buckets, DSTest {
+contract NAVFeed is BaseNFTFeed, Interest, Buckets {
     // nftID => maturityDate
     mapping (bytes32 => uint) public maturityDate;
 
@@ -59,6 +59,8 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, DSTest {
         // risk group recoveryRatePD
         recoveryRatePD[0] = ONE;
         recoveryRatePD[1] = 90 * 10**25;
+
+        // todo change to != 0, breaks currently some system tests
         recoveryRatePD[2] = 0;
         recoveryRatePD[3] = ONE;
 
@@ -99,7 +101,6 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, DSTest {
     }
 
     function _borrow(uint loan, uint amount) internal returns(uint navIncrease) {
-        emit log_named_uint("borrow", amount);
 
         // ceiling check uses existing loan debt
         require(ceiling(loan) >= safeAdd(borrowed[loan], amount), "borrow-amount-too-high");
@@ -108,16 +109,9 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, DSTest {
         uint maturityDate_ = maturityDate[nftID_];
         require(maturityDate_ > block.timestamp, "maturity-date-is-not-in-the-future");
 
-        emit log_named_uint("maturity in days", (maturityDate_-now)/1 days);
-
-
-        emit log_named_uint("loan rate", pile.loanRates(loan));
-        emit log_named_uint("risk group", risk[nftID_]);
         // calculate future value FV
         uint fv = calcFutureValue(loan, amount, maturityDate_, recoveryRatePD[risk[nftID_]]);
         futureValue[nftID_] = safeAdd(futureValue[nftID_], fv);
-
-        emit log_named_uint("fv", fv);
 
         if (buckets[maturityDate_].value == 0) {
             addBucket(maturityDate_, fv);
@@ -133,8 +127,6 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, DSTest {
 
     function calcFutureValue(uint loan, uint amount, uint maturityDate_, uint recoveryRatePD_) public returns(uint) {
         (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
-        emit log_named_uint("loan interest rate", loanInterestRate);
-        emit log_named_uint("recovery rate", recoveryRatePD_);
         return rmul(rmul(rpow(loanInterestRate,  safeSub(maturityDate_, uniqueDayTimestamp(now)), ONE), amount), recoveryRatePD_);
     }
 
