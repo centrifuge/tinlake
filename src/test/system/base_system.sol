@@ -136,11 +136,8 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
     function createLoanAndWithdraw(address usr, uint nftPrice, uint riskGroup) public returns (uint, uint) {
         (uint loanId, uint tokenId) = createLoanAndBorrow(usr, nftPrice, riskGroup);
-        emit log_named_uint("gas",12);
         uint ceiling = computeCeiling(riskGroup, nftPrice);
-             emit log_named_uint("gas",12);
         Borrower(usr).withdraw(loanId, ceiling, borrower_);
-             emit log_named_uint("gas",13);
         return (loanId, tokenId);
     }
 
