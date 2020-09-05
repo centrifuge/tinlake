@@ -77,7 +77,7 @@ contract TestSetup {
     Shelf        shelf;
     Pile         pile;
     Title        title;
-    NAVFeed      nftFeed;
+    NAVFeed      navFeed;
     Collector    collector;
 
 
