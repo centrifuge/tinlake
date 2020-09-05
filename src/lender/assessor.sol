@@ -189,7 +189,6 @@ contract Assessor is Auth, FixedPoint, Interest  {
         _rebalance(seniorAsset, newSeniorRatio);
     }
 
-
     function decreaseSeniorAsset(uint currencyAmount, uint newSeniorRatio) public auth {
         dripSeniorDebt();
 

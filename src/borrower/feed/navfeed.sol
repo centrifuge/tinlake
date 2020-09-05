@@ -19,7 +19,9 @@ import "tinlake-math/interest.sol";
 import "./nftfeed.sol";
 import "./buckets.sol";
 
-contract NAVFeed is BaseNFTFeed, Interest, Buckets {
+import "ds-test/test.sol";
+
+contract NAVFeed is BaseNFTFeed, Interest, Buckets, DSTest {
     // nftID => maturityDate
     mapping (bytes32 => uint) public maturityDate;
 
@@ -57,6 +59,9 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
         // risk group recoveryRatePD
         recoveryRatePD[0] = ONE;
         recoveryRatePD[1] = 90 * 10**25;
+        recoveryRatePD[2] = 0;
+        recoveryRatePD[3] = ONE;
+
 
         // 60% -> 40% write off
         // 91 is a random sample for a rateGroup in pile for overdue loans
@@ -64,6 +69,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
         // 80% -> 20% write off
         // 90 is a random sample for a rateGroup in pile for overdue loans
         writeOffs[1] = WriteOff(90, 8 * 10**26);
+
     }
 
     function uniqueDayTimestamp(uint timestamp) public pure returns (uint) {
@@ -93,6 +99,8 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
     }
 
     function _borrow(uint loan, uint amount) internal returns(uint navIncrease) {
+        emit log_named_uint("borrow", amount);
+
         // ceiling check uses existing loan debt
         require(ceiling(loan) >= safeAdd(borrowed[loan], amount), "borrow-amount-too-high");
 
@@ -100,9 +108,16 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
         uint maturityDate_ = maturityDate[nftID_];
         require(maturityDate_ > block.timestamp, "maturity-date-is-not-in-the-future");
 
+        emit log_named_uint("maturity in days", (maturityDate_-now)/1 days);
+
+
+        emit log_named_uint("loan rate", pile.loanRates(loan));
+        emit log_named_uint("risk group", risk[nftID_]);
         // calculate future value FV
         uint fv = calcFutureValue(loan, amount, maturityDate_, recoveryRatePD[risk[nftID_]]);
         futureValue[nftID_] = safeAdd(futureValue[nftID_], fv);
+
+        emit log_named_uint("fv", fv);
 
         if (buckets[maturityDate_].value == 0) {
             addBucket(maturityDate_, fv);
@@ -117,8 +132,10 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
     }
 
     function calcFutureValue(uint loan, uint amount, uint maturityDate_, uint recoveryRatePD_) public returns(uint) {
-        return rmul(rmul(rpow(pile.loanRates(loan),  safeSub(maturityDate_, uniqueDayTimestamp(now)), ONE), amount), recoveryRatePD_);
-
+        (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
+        emit log_named_uint("loan interest rate", loanInterestRate);
+        emit log_named_uint("recovery rate", recoveryRatePD_);
+        return rmul(rmul(rpow(loanInterestRate,  safeSub(maturityDate_, uniqueDayTimestamp(now)), ONE), amount), recoveryRatePD_);
     }
 
     /// update the nft value and change the risk group
@@ -153,7 +170,12 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
         if (navDecrease > approximatedNAV) {
             approximatedNAV = 0;
         }
-        approximatedNAV = safeSub(approximatedNAV, navDecrease);
+
+        if(navDecrease < approximatedNAV) {
+            approximatedNAV = safeSub(approximatedNAV, navDecrease);
+            return navDecrease;
+        }
+        approximatedNAV = 0;
         return navDecrease;
     }
 
@@ -222,7 +244,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
 
         // add write offs to NAV
         for (uint i = 0; i < writeOffs.length; i++) {
-            (uint pie, uint chi, ,) = pile.rates(writeOffs[i].rateGroup);
+            (uint pie, uint chi, , ,) = pile.rates(writeOffs[i].rateGroup);
             nav_ = safeAdd(nav_, rmul(rmul(pie, chi), writeOffs[i].percentage));
         }
         return nav_;

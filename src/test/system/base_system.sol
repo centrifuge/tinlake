@@ -122,8 +122,13 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
 
     function priceNFTandSetRisk(uint tokenId, uint nftPrice, uint riskGroup) public {
+        uint maturityDate = 600 days;
+        priceNFTandSetRisk(tokenId, nftPrice, riskGroup, maturityDate);
+    }
+
+    function priceNFTandSetRisk(uint tokenId, uint nftPrice, uint riskGroup, uint maturityDate) public {
         bytes32 lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
-        admin.priceNFTAndSetRiskGroup(lookupId, nftPrice, riskGroup);
+        admin.priceNFTAndSetRiskGroup(lookupId, nftPrice, riskGroup, maturityDate);
     }
 
     function priceNFT(uint tokenId, uint nftPrice) public {
@@ -211,6 +216,17 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         assertEq(a/tolerance, b/tolerance);
     }
 
+    function setupOngoingLoan(uint nftPrice, uint borrowAmount, bool lenderFundingRequired, uint maturityDate) public returns (uint loan, uint tokenId) {
+        // default risk group for system tests
+        uint riskGroup = 3;
+
+        tokenId = collateralNFT.issue(borrower_);
+        loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup, maturityDate);
+        uint ceiling = nftFeed_.ceiling(loan);
+        borrow(loan, tokenId, borrowAmount, lenderFundingRequired);
+        return (loan, tokenId);
+    }
+
     function setupOngoingLoan() public returns (uint loan, uint tokenId, uint ceiling) {
         (uint nftPrice, uint riskGroup) = defaultCollateral();
         // create borrower collateral collateralNFT
@@ -224,13 +240,15 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
 
     function setupLoan(uint tokenId, address collateralNFT_, uint nftPrice, uint riskGroup) public returns (uint) {
+        uint maturityDate = now + 600 days;
+        return setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup, maturityDate);
+    }
+
+    function setupLoan(uint tokenId, address collateralNFT_, uint nftPrice, uint riskGroup, uint maturityDate) public returns (uint) {
         // borrower issue loans
         uint loan = borrower.issue(collateralNFT_, tokenId);
-
         // price collateral and add to riskgroup
-        priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
-
-        emit log_named_uint("id", loan);
+        priceNFTandSetRisk(tokenId, nftPrice, riskGroup, maturityDate);
         return loan;
     }
 
@@ -242,8 +260,14 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
 
     function borrow(uint loan, uint tokenId, uint borrowAmount) public {
+        borrow(loan, tokenId, borrowAmount, true);
+    }
+
+    function borrow(uint loan, uint tokenId, uint borrowAmount, bool fundLenderRequired) public {
         borrower.approveNFT(collateralNFT, address(shelf));
-        fundLender(borrowAmount);
+        if (fundLenderRequired) {
+            fundLender(borrowAmount);
+        }
         borrower.borrowAction(loan, borrowAmount);
         checkAfterBorrow(tokenId, borrowAmount);
     }
@@ -282,8 +306,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         assertEq(currency.balanceOf(borrower_), safeSub(tTotal, tLender));
         assertEq(currency.balanceOf(address(pile)), 0);
     }
-
-
 
     function borrowRepay(uint nftPrice, uint riskGroup) public {
         // create borrower collateral collateralNFT

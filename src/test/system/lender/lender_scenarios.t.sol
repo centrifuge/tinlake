@@ -25,7 +25,6 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
     function setUp() public {
         // setup hevm
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-        hevm.warp(1234567);
 
         baseSetup();
         createTestUsers(false);
@@ -33,7 +32,8 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
         admin.whitelistInvestor(address(seniorOperator), seniorInvestor_);
         admin.whitelistInvestor(address(juniorOperator), juniorInvestor_);
         nftFeed_ = NFTFeedLike(address(nftFeed));
-    }
+
+}
 
     function seniorSupply(uint currencyAmount) public {
         currency.mint(address(seniorInvestor), currencyAmount);
@@ -98,10 +98,22 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
         coordinator.executeEpoch();
         assertEq(reserve.totalBalance(), 100 ether);
 
-
         // borrow loans
+        uint nftPrice = 200 ether;
+        uint borrowAmount = 100 ether;
+        bool lenderFundingRequired = false;
+        uint maturityDate = nftFeed.uniqueDayTimestamp(now) + 5 days;
+        (uint loan, uint tokenId) = setupOngoingLoan(nftPrice, borrowAmount, lenderFundingRequired, maturityDate);
 
+        assertEq(currency.balanceOf(address(borrower)), borrowAmount);
 
+        uint nav = nftFeed.calcUpdateNAV();
+
+        uint fv = nftFeed.futureValue(nftFeed.nftID(loan));
+        // 100 * 1.05^5
+        assertEq(fv, 127.62815625 ether);
+        emit log_named_uint("nav", nav);
     }
 
 }
+
