@@ -25,7 +25,7 @@ contract Memberlist is Math, Auth {
     // -- Members--
     mapping (address => uint) public members;
     function updateMember(address usr, uint validUntil) public auth { 
-        require((safeAdd(now, minimumDelay)) < validUntil);
+        require((safeAdd(block.timestamp, minimumDelay)) < validUntil);
         members[usr] = validUntil;
      }
 
@@ -34,6 +34,6 @@ contract Memberlist is Math, Auth {
     }
    
     function member(address usr) public {
-        require((members[usr] >= now), "not-allowed-to-hold-token");
+        require((members[usr] >= block.timestamp), "not-allowed-to-hold-token");
     }
 }

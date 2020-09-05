@@ -31,9 +31,7 @@ contract RestrictedToken is ERC20 {
         memberlist.member(usr);
     }
 
-    constructor(string memory symbol_, string memory name_) ERC20(symbol, name) public {
-        wards[msg.sender] = 1;
-    }
+    constructor(string memory symbol_, string memory name_) ERC20(symbol, name) public {}
 
     function depend(bytes32 contractName, address addr) public auth {
         if (contractName == "memberlist") { memberlist = MemberlistLike(addr); }
