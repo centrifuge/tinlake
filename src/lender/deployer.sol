@@ -20,7 +20,7 @@ import {TrancheFab}     from "./fabs/tranche.sol";
 import {CoordinatorFab} from "./fabs/coordinator.sol";
 import {OperatorFab}    from "./fabs/operator.sol";
 
-import {FixedPoint}      from "./fixed_point.sol";
+import {FixedPoint}      from "./../fixed_point.sol";
 
 // todo needs to be removed
 import { Distributor } from "../test/simple/distributor.sol";

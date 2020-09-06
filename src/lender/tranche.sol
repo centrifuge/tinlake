@@ -18,7 +18,7 @@ pragma experimental ABIEncoderV2;
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
-import "./fixed_point.sol";
+import "./../fixed_point.sol";
 
 
 interface ERC20Like {
