@@ -15,9 +15,9 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 import "ds-test/test.sol";
-import "./../feed/nftfeed.sol";
-import "./mock/shelf.sol";
-import "./mock/pile.sol";
+import "./../nftfeed.sol";
+import "./../../test/mock/shelf.sol";
+import "./../../test/mock/pile.sol";
 
 contract NFTFeedTest is DSTest {
     BaseNFTFeed public nftFeed;

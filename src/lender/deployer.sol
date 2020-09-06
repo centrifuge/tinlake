@@ -109,19 +109,24 @@ contract LenderDeployer is FixedPoint {
         deployer = address(1);
     }
 
-    function deployTranches() public {
-        require(seniorTranche == address(0) && deployer == address(1));
-        // todo check for gas maximum otherwise split into two methods
-        (seniorTranche, seniorToken) = trancheFab.newTranche(currency, seniorName, seniorSymbol);
+    function deployJunior() public {
+        require(deployer == address(1));
         (juniorTranche, juniorToken) = trancheFab.newTranche(currency, juniorName, juniorSymbol);
 
-        seniorOperator = operatorFab.newOperator(seniorTranche);
         juniorOperator = operatorFab.newOperator(juniorTranche);
 
-        AuthLike(seniorOperator).rely(root);
         AuthLike(juniorOperator).rely(root);
-        AuthLike(seniorTranche).rely(root);
         AuthLike(juniorTranche).rely(root);
+    }
+
+    function deploySenior() public {
+        require(seniorTranche == address(0) && deployer == address(1));
+        (seniorTranche, seniorToken) = trancheFab.newTranche(currency, seniorName, seniorSymbol);
+
+        seniorOperator = operatorFab.newOperator(seniorTranche);
+
+        AuthLike(seniorOperator).rely(root);
+        AuthLike(seniorTranche).rely(root);
     }
 
     function deployReserve() public {
