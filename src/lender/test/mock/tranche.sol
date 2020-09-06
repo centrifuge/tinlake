@@ -20,20 +20,20 @@ import "../../../test/mock/mock.sol";
 import "tinlake-auth/auth.sol";
 
 contract TrancheMock is Mock, Auth, DSTest {
-    uint totalSupply;
-    uint totalRedeem;
+    uint epochTotalSupply;
+    uint epochTotalRedeem;
 
     constructor() public {
         wards[msg.sender] = 1;
     }
 
     function setEpochReturn(uint totalSupply_, uint totalRedeem_) public {
-        totalSupply = totalSupply_;
-        totalRedeem = totalRedeem_;
+        epochTotalSupply = totalSupply_;
+        epochTotalRedeem = totalRedeem_;
     }
 
     function closeEpoch() public view returns(uint, uint) {
-        return (totalSupply, totalRedeem);
+        return (epochTotalSupply, epochTotalRedeem);
     }
 
     function epochUpdate(uint epochID, uint supplyFulfillment_,
@@ -68,6 +68,10 @@ contract TrancheMock is Mock, Auth, DSTest {
         values_address["disburse_usr"] = usr;
         values_uint["disburse_endEpoch"] = endEpoch;
         return (0,0,0,0);
+    }
+
+    function tokenSupply() external returns(uint) {
+        return call("tokenSupply");
     }
 }
 

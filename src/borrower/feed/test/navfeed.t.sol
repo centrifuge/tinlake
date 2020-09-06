@@ -15,9 +15,9 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "ds-test/test.sol";
 import "tinlake-math/math.sol";
-import "./../feed/navfeed.sol";
-import "./mock/shelf.sol";
-import "./mock/pile.sol";
+import "./../navfeed.sol";
+import "./../../test/mock/shelf.sol";
+import "./../../test/mock/pile.sol";
 
 contract Hevm {
     function warp(uint256) public;
