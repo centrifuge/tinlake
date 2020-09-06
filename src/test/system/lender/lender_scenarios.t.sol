@@ -27,16 +27,14 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
         baseSetup();
-        createTestUsers(false);
-
-        admin.whitelistInvestor(address(seniorOperator), seniorInvestor_);
-        admin.whitelistInvestor(address(juniorOperator), juniorInvestor_);
+        createTestUsers();
         nftFeed_ = NFTFeedLike(address(nftFeed));
 
 }
 
     function seniorSupply(uint currencyAmount) public {
         currency.mint(address(seniorInvestor), currencyAmount);
+        admin.makeSeniorTokenMember(seniorInvestor_, safeAdd(now, 8 days));
         seniorInvestor.supplyOrder(currencyAmount);
         (,uint supplyAmount, ) = seniorTranche.users(seniorInvestor_);
         assertEq(supplyAmount, currencyAmount);
@@ -44,6 +42,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
 
     function juniorSupply(uint currencyAmount) public {
         currency.mint(address(juniorInvestor), currencyAmount);
+        admin.makeJuniorTokenMember(juniorInvestor_, safeAdd(now, 8 days));
         juniorInvestor.supplyOrder(currencyAmount);
         (,uint supplyAmount, ) = juniorTranche.users(juniorInvestor_);
         assertEq(supplyAmount, currencyAmount);

@@ -16,15 +16,25 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 import { Tranche } from "./../tranche.sol";
-import "tinlake-erc20/erc20.sol";
+import { Memberlist } from "./../token/memberlist.sol";
+import { RestrictedToken } from "./../token/restricted.sol";
 
 contract TrancheFab {
-    function newTranche(address currency, string memory name, string memory symbol) public returns (address tranche, address token) {
-        ERC20 token = new ERC20(symbol, name);
-        Tranche tranche = new Tranche(currency, address(token));
+    function newTranche(address currency, string memory name, string memory symbol) public returns (address tranche, address token, address memberlist) {
+        Memberlist memberlist = new Memberlist();
+        RestrictedToken restrictedToken = new RestrictedToken(symbol, name);
+        Tranche tranche = new Tranche(currency, address(restrictedToken));
+        
+        restrictedToken.rely(address(tranche));
+        restrictedToken.rely(msg.sender);
+        restrictedToken.deny(address(this));
+
         tranche.rely(msg.sender);
         tranche.deny(address(this));
-        token.rely(address(tranche));
-        return (address(tranche), address(token));
+        memberlist.rely(msg.sender);
+        memberlist.deny(address(this));
+
+
+        return (address(tranche), address(restrictedToken), address(memberlist));
     }
 }

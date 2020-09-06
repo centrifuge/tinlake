@@ -25,15 +25,14 @@ contract TrancheLike {
     function disburse(address usr, uint endEpoch) public returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
 }
 
+interface RestrictedTokenLike {
+    function hasMember(address) external;
+}
+
 contract Operator is DSNote, Auth {
     TrancheLike public tranche;
-
-    // -- Investors --
-    mapping (address => uint) public investors;
-    function relyInvestor(address usr) public auth note { investors[usr] = 1; }
-    function denyInvestor(address usr) public auth note { investors[usr] = 0; }
-    modifier auth_investor { require(investors[msg.sender] == 1); _; }
-
+    RestrictedTokenLike public token;
+   
     constructor(address tranche_) public {
         wards[msg.sender] = 1;
         tranche = TrancheLike(tranche_);
@@ -42,29 +41,34 @@ contract Operator is DSNote, Auth {
     /// sets the dependency to another contract
     function depend(bytes32 contractName, address addr) public auth {
         if (contractName == "tranche") { tranche = TrancheLike(addr); }
+        else if (contractName == "token") { token = RestrictedTokenLike(addr); }
         else revert();
     }
 
     /// only investors that are on the memberlist can submit supplyOrders
-    function supplyOrder(uint amount) public auth_investor note {
+    function supplyOrder(uint amount) public note {
+        token.hasMember(msg.sender);
         tranche.supplyOrder(msg.sender, amount);
     }
 
     /// only investors that are on the memberlist can submit redeemOrders
-    function redeemOrder(uint amount) public auth_investor note {
+    function redeemOrder(uint amount) public note {
+        token.hasMember(msg.sender);
         tranche.redeemOrder(msg.sender, amount);
     }
 
     /// only investors that are on the memberlist can disburse
-    function disburse() external auth_investor note
+    function disburse() external
         returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken)
     {
+        token.hasMember(msg.sender);
         return tranche.disburse(msg.sender);
     }
 
-    function disburse(uint endEpoch) external auth_investor note
-    returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken)
+    function disburse(uint endEpoch) external
+        returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken)
     {
+        token.hasMember(msg.sender);
         return tranche.disburse(msg.sender, endEpoch);
     }
 

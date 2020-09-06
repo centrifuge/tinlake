@@ -99,7 +99,6 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     function _borrow(uint loan, uint amount) internal returns(uint navIncrease) {
-
         // ceiling check uses existing loan debt
         require(ceiling(loan) >= safeAdd(borrowed[loan], amount), "borrow-amount-too-high");
 

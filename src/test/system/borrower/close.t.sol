@@ -21,7 +21,7 @@ contract CloseTest is BaseSystemTest {
 
     function setUp() public {
         baseSetup();
-        createTestUsers(false);
+        createTestUsers();
     }
 
     function closeLoan(uint loanId, bytes32 lookupId) public {

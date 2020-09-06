@@ -46,6 +46,7 @@ contract Assessor is Auth, FixedPoint, Interest  {
 
     // last time the senior interest has been updated
     uint            public lastUpdateSeniorInterest;
+
     Fixed27         public maxSeniorRatio;
     Fixed27         public minSeniorRatio;
 

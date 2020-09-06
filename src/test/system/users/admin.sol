@@ -30,14 +30,18 @@ contract AdminUser {
     TDistributorLike distributor;
     CollectorLike collector;
     NFTFeedLike nftFeed;
+    MemberlistLike juniorMemberlist;
+    MemberlistLike seniorMemberlist;
 
-    constructor (address shelf_, address pile_, address nftFeed_, address title_, address distributor_, address collector_) public {
+    constructor(address shelf_, address pile_, address nftFeed_, address title_, address distributor_, address collector_, address juniorMemberlist_, address seniorMemberlist_) public {
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
         title = Title(title_);
         distributor = TDistributorLike(distributor_);
         collector = CollectorLike(collector_);
         nftFeed = NFTFeedLike(nftFeed_);
+        juniorMemberlist = MemberlistLike(juniorMemberlist_);
+        seniorMemberlist = MemberlistLike(seniorMemberlist_);
     }
 
     function priceNFT(bytes32 lookupId, uint nftPrice) public {
@@ -66,8 +70,12 @@ contract AdminUser {
         collector.collect(loan, usr);
     }
 
-    function whitelistInvestor(address operator, address usr) public {
-        AdminOperatorLike(operator).relyInvestor(usr);
+    function makeJuniorTokenMember(address usr, uint validitUntil) public {
+        juniorMemberlist.updateMember(usr, validitUntil);
+    }
+
+    function makeSeniorTokenMember(address usr, uint validitUntil) public {
+        seniorMemberlist.updateMember(usr, validitUntil);
     }
 
 }

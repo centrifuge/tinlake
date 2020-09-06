@@ -171,6 +171,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     function withdraw(uint loan, uint currencyAmount, address usr) external owner(loan) note {
         require(nftLocked(loan), "nft-not-locked");
         require(currencyAmount <= balances[loan], "withdraw-amount-too-high");
+
         distributor.balance();
         balances[loan] = safeSub(balances[loan], currencyAmount);
         balance = safeSub(balance, currencyAmount);

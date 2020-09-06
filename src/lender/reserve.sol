@@ -93,6 +93,7 @@ contract Reserve is Math, Auth {
                 currencyAvailable >= currencyAmount,
                 "not-enough-currency-reserve"
             );
+    
             currencyAvailable = safeSub(currencyAvailable, currencyAmount);
             _payout(address(shelf), currencyAmount);
             assessor.borrowUpdate(currencyAmount);

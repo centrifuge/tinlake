@@ -19,28 +19,34 @@ import "ds-test/test.sol";
 
 import "./mock/tranche.sol";
 import "../operator.sol";
+import "../token/restricted.sol";
+import "../token/memberlist.sol";
+import "tinlake-math/math.sol";
 
 
-contract OperatorTest is DSTest {
+contract OperatorTest is Math, DSTest {
 
     uint256 constant ONE = 10 ** 27;
-
+    uint memberlistValidity = safeAdd(now, 8 days);
     TrancheMock tranche;
     Operator operator;
+    Memberlist memberlist;
+    RestrictedToken token;
 
     address self;
     address operator_;
 
     function setUp() public {
         tranche = new TrancheMock();
+        memberlist = new Memberlist();
+        token = new RestrictedToken("TST", "TST");
+        token.depend("memberlist", address(memberlist));
+
         operator = new Operator(address(tranche));
+        operator.depend("token", address(token));
+
         self = address(this);
         operator_ = address(operator);
-    }
-
-    function testAddInvestorToMemberList() public {
-        operator.relyInvestor(self);
-        assertEq(operator.investors(self), 1);
     }
 
     function testSupplyOrder() public {
@@ -49,8 +55,8 @@ contract OperatorTest is DSTest {
 
         // rely operator on tranche
         tranche.rely(operator_);
-        // rely address (investor) on operator
-        operator.relyInvestor(self);
+        // add investor to token memberlist
+        memberlist.updateMember(self, safeAdd(now, memberlistValidity));
         operator.supplyOrder(amount);
 
         assertEq(tranche.calls("supplyOrder"), 1);
@@ -63,24 +69,22 @@ contract OperatorTest is DSTest {
 
         // rely operator on tranche
         tranche.rely(operator_);
-
         operator.supplyOrder(amount);
     }
 
     function testFailSupplyOrderOperatorNotWard() public {
         uint amount = 10;
-        // rely address (investor) on operator
-        operator.relyInvestor(self);
+        // add investor to memberlist of tokenholders
+        memberlist.updateMember(self, safeAdd(now, memberlistValidity));
         operator.supplyOrder(amount);
     }
 
     function testRedeemOrder() public {
         uint amount = 10;
-
         // rely operator on tranche
         tranche.rely(operator_);
-        // rely address (investor) on operator
-        operator.relyInvestor(self);
+        // add investor to memberlist of tokenholders
+        memberlist.updateMember(self, safeAdd(now, memberlistValidity));
         operator.redeemOrder(amount);
 
         assertEq(tranche.calls("redeemOrder"), 1);
@@ -90,25 +94,23 @@ contract OperatorTest is DSTest {
 
     function testFailRedeemOrderNotMember() public {
         uint amount = 10;
-
         // rely operator on tranche
         tranche.rely(operator_);
-
         operator.redeemOrder(amount);
     }
 
     function testFailRedeemOrderOperatorNotWard() public {
         uint amount = 10;
-        // rely address (investor) on operator
-        operator.relyInvestor(self);
+       // add investor to memberlist of tokenholders
+        memberlist.updateMember(self, safeAdd(now, memberlistValidity));
         operator.redeemOrder(amount);
     }
 
     function testDisburse() public {
         // rely operator on tranche
         tranche.rely(operator_);
-        // rely address (investor) on operator
-        operator.relyInvestor(self);
+        // add investor to memberlist of tokenholders
+        memberlist.updateMember(self, safeAdd(now, memberlistValidity));
 
         operator.disburse();
 
@@ -124,8 +126,8 @@ contract OperatorTest is DSTest {
     }
 
     function testFailDisburseOperatorNotWard() public {
-        // rely address (investor) on operator
-        operator.relyInvestor(self);
+       // add investor to memberlist of tokenholders
+        memberlist.updateMember(self, safeAdd(now, memberlistValidity));
 
         operator.disburse();
     }

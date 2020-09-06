@@ -63,20 +63,15 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     function createTestUsers(bool senior_) public {
         borrower = new Borrower(address(shelf), address(lenderDeployer.reserve()), currency_, address(pile));
         borrower_ = address(borrower);
-
         randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
         randomUser_ = address(randomUser);
-
         keeper = new Keeper(address(collector), currency_);
         keeper_ = address(keeper);
-
-        admin = new AdminUser(address(shelf), address(pile), address(nftFeed), address(title), address(distributor), address(collector));
+        admin = new AdminUser(address(shelf), address(pile), address(nftFeed), address(title), address(distributor), address(collector), address(juniorMemberlist), address(seniorMemberlist));
         admin_ = address(admin);
-        root.relyBorrowAdmin(admin_);
-
+        root.relyBorrowerAdmin(admin_);
+        root.relyLenderAdmin(admin_);
         createInvestorUser();
-
-        root.relyInvestorAdmin(admin_);
     }
 
     function createInvestorUser() public {
@@ -168,8 +163,9 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
     // helpers lenders
     function invest(uint currencyAmount) public {
-        admin.whitelistInvestor(address(seniorOperator), seniorInvestor_);
-        admin.whitelistInvestor(address(juniorOperator), juniorInvestor_);
+        uint validUntil = safeAdd(now, 8 days);
+        admin.makeJuniorTokenMember(juniorInvestor_, validUntil);
+        admin.makeSeniorTokenMember(seniorInvestor_, validUntil);
 
         uint amountSenior = rmul(currencyAmount, 82 * 10**25);
         uint amountJunior = rmul(currencyAmount, 18 * 10**25);
@@ -274,17 +270,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         return (nftPrice, riskGroup);
     }
 
-    function setupRepayReq() public returns(uint) {
-        // borrower needs some currency to pay rate
-        uint extra = 100000000000 ether;
-        currency.mint(borrower_, extra);
-
-        // allow pile full control over borrower tokens
-        borrower.doApproveCurrency(address(shelf), uint(-1));
-
-        return extra;
-    }
-
     // note: this method will be refactored with the new lender side contracts, as the distributor should not hold any currency
     function currdistributorBal() public view returns(uint) {
         return currency.balanceOf(address(reserve));
@@ -335,4 +320,16 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         // convert 10^18 to 10^27
         return valPower18 * 10**9;
     }
+
+    function setupRepayReq() public returns(uint) {
+        // borrower needs some currency to pay rate
+        uint extra = 100000000000 ether;
+        currency.mint(borrower_, extra);
+
+        // allow pile full control over borrower tokens
+        borrower.doApproveCurrency(address(shelf), uint(-1));
+
+        return extra;
+    }
+
 }
