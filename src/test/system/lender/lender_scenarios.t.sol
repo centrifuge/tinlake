@@ -110,8 +110,13 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
         uint nav = nftFeed.calcUpdateNAV();
 
         uint fv = nftFeed.futureValue(nftFeed.nftID(loan));
-        // 100 * 1.05^5
+        // FV = 100 * 1.05^5 = 127.62815625
         assertEq(fv, 127.62815625 ether);
+
+
+        // (FV/1.03^5) = 110.093;
+        assertEq(nav, 110.093921369062927876 ether);
+
     }
 
 }
