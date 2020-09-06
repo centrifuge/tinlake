@@ -212,10 +212,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         currency.mint(address(usr), 1000 ether);
     }
 
-    function assertEq(uint a, uint b, uint tolerance) public {
-        assertEq(a/tolerance, b/tolerance);
-    }
-
     function setupOngoingLoan(uint nftPrice, uint borrowAmount, bool lenderFundingRequired, uint maturityDate) public returns (uint loan, uint tokenId) {
         // default risk group for system tests
         uint riskGroup = 3;
@@ -326,5 +322,17 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         borrower.doClose(loan);
         uint totalT = uint(currency.totalSupply());
         checkAfterRepay(loan, tokenId, totalT, distributorShould);
+    }
+
+    uint TWO_DECIMAL_PRECISION = 10**16;
+    uint FIXED27_FOUR_DECIMAL_PRECISION = 10**23;
+
+    function assertEq(uint a, uint b, uint precision)  public {
+        assertEq(a/precision, b/precision);
+    }
+
+    function toFixed27(uint valPower18) public returns(uint) {
+        // convert 10^18 to 10^27
+        return valPower18 * 10**9;
     }
 }

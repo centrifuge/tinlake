@@ -202,8 +202,8 @@ contract TestSetup {
     }
 
     function deployLender() public {
-        // 12 % per year
-        uint seniorInterestRate = uint(1000000003593629043335673583);
+        // 2 % per day
+        uint seniorInterestRate = uint(1000000229200000000000000000);
         uint maxReserve = uint(-1);
         uint maxSeniorRatio = 85 * 10 **25;
         uint minSeniorRatio = 75 * 10 **25;

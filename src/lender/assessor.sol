@@ -116,6 +116,7 @@ contract Assessor is Auth, FixedPoint, Interest  {
          return navFeed.calcUpdateNAV();
     }
 
+
     function calcSeniorTokenPrice(uint epochNAV, uint epochReserve) external returns(uint) {
         if ((epochNAV == 0 && epochReserve == 0) || seniorTranche.tokenSupply() == 0) {
             // initial token price at start 1.00
@@ -123,7 +124,7 @@ contract Assessor is Auth, FixedPoint, Interest  {
         }
 
         uint totalAssets = safeAdd(epochNAV, epochReserve);
-        uint seniorAssetValue = calcSeniorAssetValue(seniorDebt_, seniorBalance_);
+        uint seniorAssetValue = calcSeniorAssetValue(seniorDebt(), seniorBalance_);
         if(totalAssets < seniorAssetValue) {
             seniorAssetValue = totalAssets;
         }
@@ -137,7 +138,7 @@ contract Assessor is Auth, FixedPoint, Interest  {
             return ONE;
         }
         uint totalAssets = safeAdd(epochNAV, epochReserve);
-        uint seniorAssetValue = calcSeniorAssetValue(seniorDebt_, seniorBalance_);
+        uint seniorAssetValue = calcSeniorAssetValue(seniorDebt(), seniorBalance_);
         if(totalAssets < seniorAssetValue) {
             return 0;
         }
@@ -161,6 +162,7 @@ contract Assessor is Auth, FixedPoint, Interest  {
         seniorBalance_ = safeAdd(seniorBalance_, decAmount);
         // seniorDebt needs to be decreased for loan repayments
         seniorDebt_ = safeSub(seniorDebt_, decAmount);
+        lastUpdateSeniorInterest = block.timestamp;
 
     }
     /// borrow update keeps track of the senior bookkeeping for new borrowed loans
@@ -183,6 +185,7 @@ contract Assessor is Auth, FixedPoint, Interest  {
         // seniorDebt needs to be increased for loan borrows
         seniorDebt_ = safeAdd(seniorDebt_, incAmount);
         seniorBalance_ = safeSub(seniorBalance_, incAmount);
+        lastUpdateSeniorInterest = block.timestamp;
     }
 
     function calcSeniorAssetValue(uint _seniorDebt, uint _seniorBalance) public pure returns(uint) {
@@ -196,6 +199,7 @@ contract Assessor is Auth, FixedPoint, Interest  {
             seniorDebt_ = newSeniorDebt;
             lastUpdateSeniorInterest = block.timestamp;
         }
+
         return seniorDebt_;
     }
 

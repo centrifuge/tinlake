@@ -90,13 +90,16 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
             juniorRedeem : 0 ether
             });
 
-       int valid = submitSolution(address(coordinator), solution);
+        int valid = submitSolution(address(coordinator), solution);
         assertEq(valid, coordinator.NEW_BEST());
 
         hevm.warp(now + 2 hours);
 
         coordinator.executeEpoch();
         assertEq(reserve.totalBalance(), 100 ether);
+
+        emit log_named_uint("senior debt", assessor.seniorDebt());
+
 
         // borrow loans
         uint nftPrice = 200 ether;
@@ -107,15 +110,44 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
 
         assertEq(currency.balanceOf(address(borrower)), borrowAmount);
 
+
         uint nav = nftFeed.calcUpdateNAV();
 
         uint fv = nftFeed.futureValue(nftFeed.nftID(loan));
         // FV = 100 * 1.05^5 = 127.62815625
         assertEq(fv, 127.62815625 ether);
 
-
         // (FV/1.03^5) = 110.093;
         assertEq(nav, 110.093921369062927876 ether);
+
+        // current senior ratio is 82%
+        uint seniorSupply = 82 ether;
+        assertEq(assessor.seniorDebt(), seniorSupply);
+
+        uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, 0);
+        assertEq(seniorTokenPrice, ONE);
+        assertEq(assessor.seniorRatio(), fixed18To27(0.82 ether));
+
+        // time impact on token senior token price
+        hevm.warp(now + 1 days);
+
+        // additional senior debt increase for one day
+        // 82 * 1.02 = 83.64
+        assertEq(assessor.seniorDebt(), 83.64 ether, TWO_DECIMAL_PRECISION);
+
+
+        nav = nftFeed.calcUpdateNAV();
+
+        //(FV/1.03^4) = 127.62815625 /(1.03^4) = 113.395963777
+        assertEq(nav, 113.39 ether, TWO_DECIMAL_PRECISION);
+
+        // should be 83.64/82 = 83.64/82= 1.02
+        seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, 0);
+        assertEq(seniorTokenPrice, fixed18To27(1.02 ether), FIXED27_FOUR_DECIMAL_PRECISION);
+
+
+        // seniorRatio should be still the old one
+        assertEq(assessor.seniorRatio(), fixed18To27(0.82 ether));
     }
 }
 
