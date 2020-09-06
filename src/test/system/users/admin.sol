@@ -44,10 +44,10 @@ contract AdminUser {
         nftFeed.update(lookupId, nftPrice);
     }
 
-    function priceNFTAndSetRiskGroup(bytes32 lookupId, uint nftPrice, uint riskGroup) public {
+    function priceNFTAndSetRiskGroup(bytes32 lookupId, uint nftPrice, uint riskGroup, uint maturityDate) public {
         nftFeed.update(lookupId, nftPrice, riskGroup);
         // add default maturity date
-        nftFeed.file("maturityDate", lookupId , now + 600 days);
+        nftFeed.file("maturityDate", lookupId , maturityDate);
     }
 
     function setCollectPrice(uint loan, uint price) public {

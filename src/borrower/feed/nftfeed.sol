@@ -31,7 +31,7 @@ contract PileLike {
     function changeRate(uint loan, uint newRate) public;
     function loanRates(uint loan) public returns (uint);
     function file(bytes32, uint, uint) public;
-    function rates(uint rate) public view returns(uint, uint, uint ,uint48);
+    function rates(uint rate) public view returns(uint, uint, uint ,uint48, uint);
     function total() public view returns(uint);
 }
 
@@ -61,9 +61,12 @@ contract BaseNFTFeed is DSNote, Auth, Math {
         // risk groups are pre-defined and should not change
         // gas optimized initialization of risk groups
 
+        // values are just for testing and not realistic
+
         // default risk => 0
         // thresholdRatio => 80%
         // ceilingRatio => 60%
+        // interestRatio: 0%
         setRiskGroup(0, 8*10**26, 6*10**26, ONE);
 
         // risk group  => 1
@@ -74,7 +77,10 @@ contract BaseNFTFeed is DSNote, Auth, Math {
          // interestRate => 5 % per day
         setRiskGroup(2, 7*10**26, 5*10**26, uint(1000000564701133626865910626));
 
-
+        // ceiling ratio => 100%
+        // thresholdRatio => 70%
+        // interest rate => 5% per day
+        setRiskGroup(3, 7*10**26, ONE, uint(1000000564701133626865910626));
     }
 
     /// sets the dependency to another contract

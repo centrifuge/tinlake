@@ -474,7 +474,6 @@ contract EpochCoordinator is Auth,Math,FixedPoint  {
             calcFulfillment(juniorRedeem, order.juniorRedeem).value,
             epochSeniorTokenPrice.value, order.juniorSupply, order.juniorRedeem);
 
-
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem
         , seniorSupply, juniorSupply);
 

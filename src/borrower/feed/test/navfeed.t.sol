@@ -71,7 +71,7 @@ contract NAVTest is DSTest, Math {
     function borrow(uint tokenId, uint loan, uint nftValue, uint amount, uint maturityDate) internal returns(bytes32 nftID_, uint loan_, uint navIncrease_) {
         bytes32 nftID = prepareDefaultNFT(tokenId, nftValue);
         feed.file("maturityDate",nftID, maturityDate);
-        pile.setReturn("loanRates", uint(1000000564701133626865910626));
+        pile.setReturn("rates_ratePerSecond", uint(1000000564701133626865910626));
         uint navIncrease = feed.borrow(loan, amount);
         return (nftID, loan, navIncrease);
     }
