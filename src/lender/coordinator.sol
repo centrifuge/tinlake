@@ -38,7 +38,7 @@ contract AssessorLike is FixedPoint {
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
     function seniorRatioBounds() external view returns(Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio);
-    function updateSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
+    function changeSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
 }
 
 contract EpochCoordinator is Auth,Math,FixedPoint  {
@@ -480,9 +480,11 @@ contract EpochCoordinator is Auth,Math,FixedPoint  {
         uint seniorAsset = calcSeniorAssetValue(seniorRedeem, seniorSupply,
            epochSeniorAsset, newReserve, epochNAV);
 
+
         uint newSeniorRatio = calcSeniorRatio(seniorAsset, epochNAV, newReserve);
 
-        assessor.updateSeniorAsset(newSeniorRatio, seniorSupply, seniorRedeem);
+
+        assessor.changeSeniorAsset(newSeniorRatio, seniorSupply, seniorRedeem);
         reserve.file("maxcurrency", newReserve);
         // reset state for next epochs
         lastEpochExecuted = epochID;
