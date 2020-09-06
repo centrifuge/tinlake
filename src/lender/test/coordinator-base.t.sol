@@ -29,6 +29,7 @@ contract Hevm {
     function warp(uint256) public;
 }
 
+// abstract
 contract BaseTypes {
     struct Order {
         uint  seniorRedeem;
@@ -36,28 +37,6 @@ contract BaseTypes {
         uint  juniorSupply;
         uint  seniorSupply;
     }
-}
-
-contract CoordinatorLike is BaseTypes {
-    function bestSubmission() public returns (Order memory);
-    function order() public returns (Order memory);
-}
-
-contract CoordinatorTest is DSTest, Math, BaseTypes {
-    Hevm hevm;
-    EpochCoordinator coordinator;
-
-    TrancheMock seniorTranche;
-    TrancheMock juniorTranche;
-
-    AssessorMock assessor;
-
-    ReserveMock reserve;
-
-    address seniorTranche_;
-    address juniorTranche_;
-    address reserve_;
-    address assessor_;
 
     struct LenderModel {
         uint maxReserve;
@@ -79,6 +58,34 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         uint seniorRedeem;
         uint juniorRedeem;
     }
+
+    function submitSolution(address coordinator, ModelInput memory solution) internal returns(int) {
+        return CoordinatorLike(coordinator).submitSolution(solution.seniorRedeem, solution.juniorRedeem,
+            solution.juniorSupply, solution.seniorSupply);
+    }
+}
+
+contract CoordinatorLike is BaseTypes {
+    function bestSubmission() public returns (Order memory);
+    function order() public returns (Order memory);
+    function submitSolution(uint,uint,uint,uint) public returns (int);
+}
+
+contract CoordinatorTest is DSTest, Math, BaseTypes {
+    Hevm hevm;
+    EpochCoordinator coordinator;
+
+    TrancheMock seniorTranche;
+    TrancheMock juniorTranche;
+
+    AssessorMock assessor;
+
+    ReserveMock reserve;
+
+    address seniorTranche_;
+    address juniorTranche_;
+    address reserve_;
+    address assessor_;
 
     struct TestCaseDesc {
         int status;
