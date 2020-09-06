@@ -72,9 +72,8 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
         closeEpoch(true);
     }
 
-    function testLenderScenarioA() public {
-        uint seniorSupplyAmount = 100000 ether;
-        uint juniorSupplyAmount = 20 ether;
+
+    function supplyAndBorrowLoan(uint seniorSupplyAmount, uint juniorSupplyAmount, uint nftPrice, uint borrowAmount, ModelInput memory submission) public {
         seniorSupply(seniorSupplyAmount);
         juniorSupply(juniorSupplyAmount);
 
@@ -83,14 +82,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
         closeEpoch(false);
         assertTrue(coordinator.submissionPeriod() == true);
 
-        ModelInput memory solution = ModelInput({
-            seniorSupply : 82 ether,
-            juniorSupply : 18 ether,
-            seniorRedeem : 0 ether,
-            juniorRedeem : 0 ether
-            });
-
-        int valid = submitSolution(address(coordinator), solution);
+        int valid = submitSolution(address(coordinator), submission);
         assertEq(valid, coordinator.NEW_BEST());
 
         hevm.warp(now + 2 hours);
@@ -100,22 +92,19 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
 
         seniorInvestor.disburse();
         juniorInvestor.disburse();
-        assertEq(seniorToken.balanceOf(seniorInvestor_), 82 ether);
-        assertEq(juniorToken.balanceOf(juniorInvestor_), 18 ether);
+
+        assertEq(seniorToken.balanceOf(seniorInvestor_), submission.seniorSupply);
+        assertEq(juniorToken.balanceOf(juniorInvestor_), submission.juniorSupply);
 
         // borrow loans
-        uint nftPrice = 200 ether;
-        uint borrowAmount = 100 ether;
-        bool lenderFundingRequired = false;
         uint maturityDate = nftFeed.uniqueDayTimestamp(now) + 5 days;
-        (uint loan, uint tokenId) = setupOngoingLoan(nftPrice, borrowAmount, lenderFundingRequired, maturityDate);
+        (uint loan, uint tokenId) = setupOngoingLoan(nftPrice, borrowAmount, false, maturityDate);
 
         assertEq(currency.balanceOf(address(borrower)), borrowAmount);
 
-
         uint nav = nftFeed.calcUpdateNAV();
-
         uint fv = nftFeed.futureValue(nftFeed.nftID(loan));
+
         // FV = 100 * 1.05^5 = 127.62815625
         assertEq(fv, 127.62815625 ether);
 
@@ -124,11 +113,47 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
 
         // current senior ratio is 82%
         uint seniorSupply_ = 82 ether;
+
         assertEq(assessor.seniorDebt(), seniorSupply_);
 
         uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, 0);
         assertEq(seniorTokenPrice, ONE);
         assertEq(assessor.seniorRatio(), fixed18To27(0.82 ether));
+    }
+
+
+    function testSupplyAndBorrow() public {
+        uint seniorSupplyAmount = 100000 ether;
+        uint juniorSupplyAmount = 20 ether;
+        uint nftPrice = 200 ether;
+        uint borrowAmount = 100 ether;
+
+        ModelInput memory submission = ModelInput({
+            seniorSupply : 82 ether,
+            juniorSupply : 18 ether,
+            seniorRedeem : 0 ether,
+            juniorRedeem : 0 ether
+            });
+
+        supplyAndBorrowLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, submission);
+
+    }
+
+
+    function testLenderScenarioA() public {
+        uint seniorSupplyAmount = 100000 ether;
+        uint juniorSupplyAmount = 20 ether;
+        uint nftPrice = 200 ether;
+        uint borrowAmount = 100 ether;
+
+        ModelInput memory submission = ModelInput({
+            seniorSupply : 82 ether,
+            juniorSupply : 18 ether,
+            seniorRedeem : 0 ether,
+            juniorRedeem : 0 ether
+            });
+
+        supplyAndBorrowLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, submission);
 
         // time impact on token senior token price
         hevm.warp(now + 1 days);
@@ -138,13 +163,13 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
         assertEq(assessor.seniorDebt(), 83.64 ether, TWO_DECIMAL_PRECISION);
 
 
-        nav = nftFeed.calcUpdateNAV();
+        uint nav = nftFeed.calcUpdateNAV();
 
         //(FV/1.03^4) = 127.62815625 /(1.03^4) = 113.395963777
         assertEq(nav, 113.39 ether, TWO_DECIMAL_PRECISION);
 
         // should be 83.64/82 = 83.64/82= 1.02
-        seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, 0);
+        uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, 0);
         assertEq(seniorTokenPrice, fixed18To27(1.02 ether), FIXED27_FOUR_DECIMAL_PRECISION);
 
 
@@ -164,7 +189,18 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
         // epoch should be executed
         assertTrue(coordinator.submissionPeriod() == false);
 
-        // todo continue
+
+        // nav should be still the same
+        assertEq(nav, 113.39 ether, TWO_DECIMAL_PRECISION);
+
+        // seniorDebt 83.64 + 80 = 163.64
+        // NAV + reserve = 213.39
+        // seniorRatio: 163.64/213.139 = 0.76
+
+
+        assertEq(coordinator.epochNAV(), nav, TWO_DECIMAL_PRECISION);
+        assertEq(coordinator.epochSeniorAsset(), 83.64 ether, TWO_DECIMAL_PRECISION);
+        assertEq(assessor.seniorRatio(), fixed18To27(0.76 ether), FIXED27_TWO_DECIMAL_PRECISION);
 
         // seniorAsset = 80 + 83.64 = 163.64
         // assertEq(assessor.seniorBalance(), 80 ether);
