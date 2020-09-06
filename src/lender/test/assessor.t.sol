@@ -259,7 +259,54 @@ contract AssessorTest is DSTest, Math {
         seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, reserve);
         // price: 0.5
         assertEq(seniorTokenPrice, 5 * 10 ** 26);
+    }
 
+    function testCalcJuniorTokenPrice() public {
+        assertEq(assessor.calcJuniorTokenPrice(0,0), ONE);
 
+        uint reserve = 50 ether;
+        uint nav = 50 ether;
+
+        juniorTranche.setReturn("tokenSupply", 0);
+        uint juniorTokenPrice = assessor.calcJuniorTokenPrice(nav, reserve);
+        assertEq(juniorTokenPrice, ONE);
+
+        // set up senior asset
+        uint supplyAmount = 200 ether;
+        navFeed.setReturn("approximatedNAV", 200 ether);
+        uint seniorSupply = 200 ether;
+        uint seniorRatio = 5 * 10**26;
+
+        assessor.changeSeniorAsset(seniorRatio, seniorSupply, 0);
+        assertEq(assessor.seniorDebt(), 100 ether);
+        assertEq(assessor.seniorBalance(), 100 ether);
+
+        reserve = 300 ether;
+        nav = 200 ether;
+
+        juniorTranche.setReturn("tokenSupply", 100 ether);
+        juniorTokenPrice = assessor.calcJuniorTokenPrice(nav, reserve);
+        // NAV + Reserve  = 500 ether
+        // seniorAsset = 200 ether
+        // juniorAsset = 300 ether
+
+        // junior price: 3.0
+        assertEq(juniorTokenPrice, 3 * 10 ** 27);
+
+        reserve = 300 ether;
+        nav = 0 ether;
+
+        juniorTranche.setReturn("tokenSupply", 100 ether);
+        juniorTokenPrice = assessor.calcJuniorTokenPrice(nav, reserve);
+        assertEq(juniorTokenPrice, ONE);
+
+        reserve = 150 ether;
+        nav = 0 ether;
+        juniorTokenPrice = assessor.calcJuniorTokenPrice(nav, reserve);
+        assertEq(juniorTokenPrice, 0);
+
+        seniorTranche.setReturn("tokenSupply", 200 ether);
+        uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, reserve);
+        assertEq(seniorTokenPrice, 75 * 10**25);
     }
 }
