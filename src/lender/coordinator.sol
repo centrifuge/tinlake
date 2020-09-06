@@ -466,10 +466,6 @@ contract EpochCoordinator is Auth,Math,FixedPoint  {
 
         uint epochID = safeAdd(lastEpochExecuted, 1);
 
-        emit log_named_uint("c:seniorSupply", seniorSupply);
-        emit log_named_uint("c:fullfill", calcFulfillment(seniorSupply, order.seniorSupply).value);
-
-
         seniorTranche.epochUpdate(epochID, calcFulfillment(seniorSupply, order.seniorSupply).value,
             calcFulfillment(seniorRedeem, order.seniorRedeem).value,
             epochSeniorTokenPrice.value,order.seniorSupply, order.seniorRedeem);
