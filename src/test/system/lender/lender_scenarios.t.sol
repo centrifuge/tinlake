@@ -72,7 +72,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
         closeEpoch(true);
     }
 
-    function testSimpleScenario() public {
+    function testLenderScenarioA() public {
         uint seniorSupplyAmount = 100000 ether;
         uint juniorSupplyAmount = 20 ether;
         seniorSupply(seniorSupplyAmount);
@@ -98,8 +98,10 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
         coordinator.executeEpoch();
         assertEq(reserve.totalBalance(), 100 ether);
 
-        emit log_named_uint("senior debt", assessor.seniorDebt());
-
+        seniorInvestor.disburse();
+        juniorInvestor.disburse();
+        assertEq(seniorToken.balanceOf(seniorInvestor_), 82 ether);
+        assertEq(juniorToken.balanceOf(juniorInvestor_), 18 ether);
 
         // borrow loans
         uint nftPrice = 200 ether;
@@ -121,8 +123,8 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
         assertEq(nav, 110.093921369062927876 ether);
 
         // current senior ratio is 82%
-        uint seniorSupply = 82 ether;
-        assertEq(assessor.seniorDebt(), seniorSupply);
+        uint seniorSupply_ = 82 ether;
+        assertEq(assessor.seniorDebt(), seniorSupply_);
 
         uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, 0);
         assertEq(seniorTokenPrice, ONE);
@@ -148,6 +150,31 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
 
         // seniorRatio should be still the old one
         assertEq(assessor.seniorRatio(), fixed18To27(0.82 ether));
+
+        // new orders
+        // first investors need to disburse
+
+        seniorSupplyAmount = 80 ether;
+        juniorSupplyAmount = 20 ether;
+        seniorSupply(seniorSupplyAmount);
+        juniorSupply(juniorSupplyAmount);
+
+        // minimum epoch should be already reached
+        coordinator.closeEpoch();
+        // epoch should be executed
+        assertTrue(coordinator.submissionPeriod() == false);
+
+        // todo continue
+
+        // seniorAsset = 80 + 83.64 = 163.64
+        // assertEq(assessor.seniorBalance(), 80 ether);
+        // assertEq(assessor.seniorDebt(), 83.64 ether, TWO_DECIMAL_PRECISION);
+
+        // juniorAsset = (nav + reserve) - seniorAsset
+        // juniorAsset = 113.39 + 100 - 163.64 = 49.75
+        // seniorRatio = 163.64/200 = 0.8182
+       //  assertEq(assessor.seniorRatio(), fixed18To27(0.8182 ether));
+
     }
 }
 

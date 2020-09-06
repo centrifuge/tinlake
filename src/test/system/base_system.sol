@@ -331,7 +331,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         assertEq(a/precision, b/precision);
     }
 
-    function toFixed27(uint valPower18) public returns(uint) {
+    function fixed18To27(uint valPower18) public returns(uint) {
         // convert 10^18 to 10^27
         return valPower18 * 10**9;
     }
