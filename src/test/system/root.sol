@@ -15,7 +15,7 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import { TinlakeRoot } from "../../root.sol";
 import "ds-test/test.sol";
-contract TestRoot is TinlakeRoot, DSTest {
+contract TestRoot is TinlakeRoot {
     constructor (address deployUsr) public TinlakeRoot(deployUsr) {
     }
     // Permissions
@@ -32,7 +32,6 @@ contract TestRoot is TinlakeRoot, DSTest {
 
     // Needed for System Tests
     function relyLenderAdmin(address usr) public auth {
-        emit log_named_address("usr", usr);
         relyContract(lenderDeployer.juniorMemberlist(), usr);
         relyContract(lenderDeployer.seniorMemberlist(), usr);
     }

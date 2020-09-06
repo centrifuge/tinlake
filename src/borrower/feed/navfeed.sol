@@ -58,12 +58,18 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
         recoveryRatePD[0] = ONE;
         recoveryRatePD[1] = 90 * 10**25;
 
+        // todo change to != 0, breaks currently some system tests
+        recoveryRatePD[2] = 0;
+        recoveryRatePD[3] = ONE;
+
+
         // 60% -> 40% write off
         // 91 is a random sample for a rateGroup in pile for overdue loans
         writeOffs[0] = WriteOff(91, 6 * 10**26);
         // 80% -> 20% write off
         // 90 is a random sample for a rateGroup in pile for overdue loans
         writeOffs[1] = WriteOff(90, 8 * 10**26);
+
     }
 
     function uniqueDayTimestamp(uint timestamp) public pure returns (uint) {
@@ -93,6 +99,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
     }
 
     function _borrow(uint loan, uint amount) internal returns(uint navIncrease) {
+
         // ceiling check uses existing loan debt
         require(ceiling(loan) >= safeAdd(borrowed[loan], amount), "borrow-amount-too-high");
 
@@ -117,8 +124,8 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
     }
 
     function calcFutureValue(uint loan, uint amount, uint maturityDate_, uint recoveryRatePD_) public returns(uint) {
-        return rmul(rmul(rpow(pile.loanRates(loan),  safeSub(maturityDate_, uniqueDayTimestamp(now)), ONE), amount), recoveryRatePD_);
-
+        (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
+        return rmul(rmul(rpow(loanInterestRate,  safeSub(maturityDate_, uniqueDayTimestamp(now)), ONE), amount), recoveryRatePD_);
     }
 
     /// update the nft value and change the risk group
@@ -153,7 +160,12 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
         if (navDecrease > approximatedNAV) {
             approximatedNAV = 0;
         }
-        approximatedNAV = safeSub(approximatedNAV, navDecrease);
+
+        if(navDecrease < approximatedNAV) {
+            approximatedNAV = safeSub(approximatedNAV, navDecrease);
+            return navDecrease;
+        }
+        approximatedNAV = 0;
         return navDecrease;
     }
 
@@ -222,7 +234,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
 
         // add write offs to NAV
         for (uint i = 0; i < writeOffs.length; i++) {
-            (uint pie, uint chi, ,) = pile.rates(writeOffs[i].rateGroup);
+            (uint pie, uint chi, , ,) = pile.rates(writeOffs[i].rateGroup);
             nav_ = safeAdd(nav_, rmul(rmul(pie, chi), writeOffs[i].percentage));
         }
         return nav_;

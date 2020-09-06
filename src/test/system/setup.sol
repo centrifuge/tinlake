@@ -49,6 +49,7 @@ import { Title } from "tinlake-title/title.sol";
 import { Pile } from "../../borrower/pile.sol";
 import { Shelf } from "../../borrower/shelf.sol";
 import { Collector } from "../../borrower/collect/collector.sol";
+import { NAVFeed } from "../../borrower/feed/navfeed.sol";
 
 import { TestRoot } from "./root.sol";
 
@@ -77,7 +78,7 @@ contract TestSetup {
     Shelf        shelf;
     Pile         pile;
     Title        title;
-    NFTFeedLike  nftFeed;
+    NAVFeed      nftFeed;
     Collector    collector;
 
 
@@ -164,7 +165,7 @@ contract TestSetup {
         pile = Pile(borrowerDeployer.pile());
         title = Title(borrowerDeployer.title());
         collector = Collector(borrowerDeployer.collector());
-        nftFeed = NFTFeedLike(borrowerDeployer.feed());
+        nftFeed = NAVFeed(borrowerDeployer.feed());
     }
 
     function deployLenderMockBorrower(address root) public {
