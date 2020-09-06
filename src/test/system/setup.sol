@@ -31,6 +31,8 @@ import { Reserve } from "../../lender/reserve.sol";
 import { Tranche } from "../../lender/tranche.sol";
 import { Operator } from "../../lender/operator.sol";
 import { Assessor } from "../../lender/assessor.sol";
+import { RestrictedToken } from "../../lender/token/restricted.sol";
+import { Memberlist } from "../../lender/token/memberlist.sol";
 
 
 import {
@@ -53,7 +55,6 @@ import { TestRoot } from "./root.sol";
 
 import "../simple/token.sol";
 import "../simple/distributor.sol";
-
 import "tinlake-erc20/erc20.sol";
 import { PushRegistry } from "tinlake-registry/registry.sol";
 import { TokenLike, NFTFeedLike } from "./interfaces.sol";
@@ -92,8 +93,11 @@ contract TestSetup {
     Operator juniorOperator;
     Operator seniorOperator;
     Assessor assessor;
-    SimpleToken seniorToken;
-    SimpleToken juniorToken;
+    RestrictedToken seniorToken;
+    RestrictedToken juniorToken;
+    Memberlist seniorMemberlist;
+    Memberlist juniorMemberlist;
+
 
     // Deployers
     BorrowerDeployer public borrowerDeployer;
@@ -164,23 +168,23 @@ contract TestSetup {
         nftFeed = NAVFeed(borrowerDeployer.feed());
     }
 
-    function deployLenderMockBorrower() public {
+    function deployLenderMockBorrower(address root) public {
         currency = new SimpleToken("C", "Currency", "1", 0);
         currency_ = address(currency);
 
-        prepareDeployLender(address(this));
+        prepareDeployLender(root);
         deployLender();
-
+        
         // add root mock
         ShelfMock shelf = new ShelfMock();
         NAVFeedMock nav = new NAVFeedMock();
-
+    
         assessor.depend("navFeed", address(nav));
         reserve.depend("shelf", address(shelf));
     }
 
     function prepareDeployLender(address root) public {
-//        CoordinatorFab  coordinatorFab = new CoordinatorFab();
+
         ReserveFab reserveFab = new ReserveFab();
         AssessorFab assessorFab = new AssessorFab();
         TrancheFab  trancheFab = new TrancheFab();
@@ -212,6 +216,7 @@ contract TestSetup {
         lenderDeployer_.deployReserve();
         lenderDeployer_.deployAssessor();
         lenderDeployer_.deployCoordinator();
+    
         lenderDeployer_.deploy();
 
         assessor = Assessor(lenderDeployer_.assessor());
@@ -221,7 +226,9 @@ contract TestSetup {
         juniorTranche = Tranche(lenderDeployer_.juniorTranche());
         juniorOperator = Operator(lenderDeployer_.juniorOperator());
         seniorOperator = Operator(lenderDeployer_.seniorOperator());
-        seniorToken = SimpleToken(address(lenderDeployer_.seniorToken()));
-        juniorToken = SimpleToken(address(lenderDeployer_.juniorToken()));
+        seniorToken = RestrictedToken(lenderDeployer_.seniorToken());
+        juniorToken = RestrictedToken(lenderDeployer_.juniorToken());
+        juniorMemberlist = Memberlist(lenderDeployer_.juniorMemberlist());
+        seniorMemberlist = Memberlist(lenderDeployer_.seniorMemberlist());
     }
 }

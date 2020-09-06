@@ -21,7 +21,7 @@ contract LockTest is BaseSystemTest {
 
     function setUp() public {
         baseSetup();
-        createTestUsers(false);
+        createTestUsers();
     }
 
     function lock(uint loanId, uint tokenId) public {

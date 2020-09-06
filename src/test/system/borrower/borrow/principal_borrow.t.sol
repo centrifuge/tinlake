@@ -23,7 +23,7 @@ contract PrincipalBorrowTest is BaseSystemTest {
 
     function setUp() public {
         baseSetup();
-        createTestUsers(false);
+        createTestUsers();
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
     }
@@ -103,7 +103,6 @@ contract PrincipalBorrowTest is BaseSystemTest {
         // price nft
         priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
         uint ceiling = computeCeiling(riskGroup, nftPrice);
-        emit log_named_uint("ceiling", ceiling);
          // borrow amount smaller then ceiling
         uint amount = safeDiv(ceiling , 2);
 

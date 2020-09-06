@@ -20,7 +20,6 @@ import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 import "./fixed_point.sol";
 
-
 interface ERC20Like {
     function balanceOf(address) external view returns (uint);
     function transferFrom(address, address, uint) external returns (bool);
@@ -200,13 +199,10 @@ contract Tranche is Math, Auth, FixedPoint {
     // the disburse function can be used after an epoch is over to receive currency and tokens
     function disburse(address usr,  uint endEpoch) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         require(users[usr].orderedInEpoch <= epochTicker.lastEpochExecuted());
-
         (payoutCurrencyAmount, payoutTokenAmount,
          remainingSupplyCurrency, remainingRedeemToken) = calcDisburse(usr, endEpoch);
-
         users[usr].supplyCurrencyAmount = remainingSupplyCurrency;
         users[usr].redeemTokenAmount = remainingRedeemToken;
-
         // remaining orders are placed in the current epoch to allow
         // which allows to change the order and therefore receive it back
         // this is only possible if all previous epochs are disbursed (no orders reserved)
@@ -223,7 +219,6 @@ contract Tranche is Math, Auth, FixedPoint {
         if (payoutTokenAmount > 0) {
             require(token.transferFrom(self, usr, payoutTokenAmount), "token-transfer-failed");
         }
-
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
 
     }

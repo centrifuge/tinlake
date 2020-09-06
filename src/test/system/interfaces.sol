@@ -94,3 +94,8 @@ contract CollectorLike {
 contract ThresholdLike {
     function set(uint, uint) public;
 }
+
+contract MemberlistLike {
+    function updateMember(address usr, uint validUntil) public;
+    function removeMember(address usr, uint validUntil) public;
+}

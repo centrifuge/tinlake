@@ -19,7 +19,6 @@ import {AssessorFab}    from "./fabs/assessor.sol";
 import {TrancheFab}     from "./fabs/tranche.sol";
 import {CoordinatorFab} from "./fabs/coordinator.sol";
 import {OperatorFab}    from "./fabs/operator.sol";
-
 import {FixedPoint}      from "./fixed_point.sol";
 
 // todo needs to be removed
@@ -33,6 +32,10 @@ interface DependLike {
 interface AuthLike {
     function rely(address) external;
     function deny(address) external;
+}
+
+interface MemberlistLike {
+    function updateMember(address, uint) external;
 }
 
 interface FileLike {
@@ -75,6 +78,9 @@ contract LenderDeployer is FixedPoint {
     string              public seniorSymbol;
     string              public juniorName;
     string              public juniorSymbol;
+    // restricted token member list
+    address             public seniorMemberlist;
+    address             public juniorMemberlist;
 
     address             public deployer;
 
@@ -110,23 +116,25 @@ contract LenderDeployer is FixedPoint {
     }
 
     function deployJunior() public {
-        require(deployer == address(1));
-        (juniorTranche, juniorToken) = trancheFab.newTranche(currency, juniorName, juniorSymbol);
-
+        require(juniorTranche == address(0) && deployer == address(1));
+        (juniorTranche, juniorToken, juniorMemberlist) = trancheFab.newTranche(currency, juniorName, juniorSymbol);
         juniorOperator = operatorFab.newOperator(juniorTranche);
-
+        AuthLike(juniorMemberlist).rely(root);
+        AuthLike(juniorToken).rely(root);
         AuthLike(juniorOperator).rely(root);
         AuthLike(juniorTranche).rely(root);
     }
 
     function deploySenior() public {
         require(seniorTranche == address(0) && deployer == address(1));
-        (seniorTranche, seniorToken) = trancheFab.newTranche(currency, seniorName, seniorSymbol);
-
-        seniorOperator = operatorFab.newOperator(seniorTranche);
-
+        // todo check for gas maximum otherwise split into two methods
+        (seniorTranche, seniorToken, seniorMemberlist) = trancheFab.newTranche(currency, seniorName, seniorSymbol);
+        seniorOperator = operatorFab.newOperator(seniorTranche); 
+        AuthLike(seniorMemberlist).rely(root);
+        AuthLike(seniorToken).rely(root);
         AuthLike(seniorOperator).rely(root);
         AuthLike(seniorTranche).rely(root);
+
     }
 
     function deployReserve() public {
@@ -159,21 +167,33 @@ contract LenderDeployer is FixedPoint {
         AuthLike(reserve).rely(coordinator);
         AuthLike(reserve).rely(assessor);
 
+
         // tranches
         DependLike(seniorTranche).depend("reserve",reserve);
         DependLike(juniorTranche).depend("reserve",reserve);
-        // coordinator implements epoch ticker interface
-        DependLike(seniorTranche).depend("epochTicker" ,coordinator);
-        DependLike(juniorTranche).depend("epochTicker" ,coordinator);
-
         AuthLike(seniorTranche).rely(coordinator);
         AuthLike(juniorTranche).rely(coordinator);
         AuthLike(seniorTranche).rely(seniorOperator);
         AuthLike(juniorTranche).rely(juniorOperator);
+        
+        // coordinator implements epoch ticker interface
+        DependLike(seniorTranche).depend("epochTicker", coordinator);
+        DependLike(juniorTranche).depend("epochTicker", coordinator);
+        
+        //restricted token
+        DependLike(seniorToken).depend("memberlist", seniorMemberlist);
+        DependLike(juniorToken).depend("memberlist", juniorMemberlist);
+        
+        //allow tinlake contracts to hold drop/tin tokens
+        MemberlistLike(juniorMemberlist).updateMember(juniorTranche, uint(-1));
+        MemberlistLike(seniorMemberlist).updateMember(seniorTranche, uint(-1));
 
         // operator
         DependLike(seniorOperator).depend("tranche", seniorTranche);
         DependLike(juniorOperator).depend("tranche", juniorTranche);
+        DependLike(seniorOperator).depend("token", seniorToken);
+        DependLike(juniorOperator).depend("token", juniorToken);
+
 
         // coordinator
         DependLike(coordinator).depend("reserve", reserve);
@@ -181,10 +201,8 @@ contract LenderDeployer is FixedPoint {
         DependLike(coordinator).depend("juniorTranche", juniorTranche);
         DependLike(coordinator).depend("assessor", assessor);
 
-
         // assessor
         DependLike(assessor).depend("seniorTranche", seniorTranche);
-        DependLike(assessor).depend("juniorTranche", juniorTranche);
         DependLike(assessor).depend("juniorTranche", juniorTranche);
 
         AuthLike(assessor).rely(coordinator);

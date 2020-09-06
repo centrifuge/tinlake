@@ -21,7 +21,7 @@ contract IssueTest is BaseSystemTest {
 
     function setUp() public {
         baseSetup();
-        createTestUsers(false);
+        createTestUsers();
     }
 
     function issueLoan(uint tokenId, bytes32 lookupId) public {
