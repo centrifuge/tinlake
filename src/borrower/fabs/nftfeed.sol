@@ -18,7 +18,7 @@ pragma solidity >=0.5.15 <0.6.0;
 import { BaseNFTFeed } from "./../feed/nftfeed.sol";
 
 contract NFTFeedFab {
-    function newNFTFeed() public returns (address) {
+    function newFeed() public returns (address) {
         BaseNFTFeed feed = new BaseNFTFeed();
         feed.rely(msg.sender);
         feed.deny(address(this));

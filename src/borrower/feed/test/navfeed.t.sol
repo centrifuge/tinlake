@@ -49,8 +49,8 @@ contract NAVTest is DSTest, Math {
         shelf = new ShelfMock();
         feed.depend("shelf", address(shelf));
         feed.depend("pile", address(pile));
-        feed.file("discountrate", discountRate);
-        feed.file("maxdays", maxDays);
+        feed.file("discountRate", discountRate);
+        feed.file("maxDays", maxDays);
         mockNFTRegistry = address(42);
         feed.init();
     }

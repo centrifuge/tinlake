@@ -116,8 +116,6 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes {
 
         // (FV/1.03^5) = 110.093;
         assertEq(nav, 110.093921369062927876 ether);
-
     }
-
 }
 

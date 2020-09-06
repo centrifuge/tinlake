@@ -148,7 +148,11 @@ contract TestSetup {
             nftFeedFab_ = address(new NAVFeedFab());
         }
 
-        borrowerDeployer = new BorrowerDeployer(root_, titlefab, shelffab, pileFab, collectorFab, nftFeedFab_, currency_, "Tinlake Loan Token", "TLNT");
+        uint discountRate = uint(1000000342100000000000000000);
+        uint maxDays = 1000;
+
+
+        borrowerDeployer = new BorrowerDeployer(root_, titlefab, shelffab, pileFab, collectorFab, nftFeedFab_, currency_, "Tinlake Loan Token", "TLNT", discountRate, maxDays);
 
         borrowerDeployer.deployTitle();
         borrowerDeployer.deployPile();

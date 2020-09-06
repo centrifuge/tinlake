@@ -33,14 +33,12 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
 
     struct WriteOff {
         uint rateGroup;
-        // denominated in RAY (10^27)
+        // denominated in (10^27)
         uint percentage;
     }
 
-    // default 3% a day
-    uint public discountRate = uint(1000000342100000000000000000);
-    // 120 days
-    uint public maxDays = 1000;
+    uint public discountRate;
+    uint public maxDays;
 
     // approximated NAV
     uint public approximatedNAV;
@@ -83,10 +81,10 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
         } else { revert("unknown config parameter");}
     }
 
-    function file(bytes32 what, uint value) public auth {
-        if (what == "discountrate") {
+    function file(bytes32 name, uint value) public auth {
+        if (name == "discountRate") {
             discountRate = value;
-        } else if (what == "maxdays") {
+        } else if (name == "maxDays") {
             maxDays = value;
         } else { revert("unknown config parameter");}
     }
