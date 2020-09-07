@@ -32,7 +32,6 @@ contract Assessor is Auth, FixedPoint, Interest {
     // senior ratio from the last epoch executed
     Fixed27        public seniorRatio;
 
-
     // the seniorAsset value is stored in two variables
     // seniorDebt is the interest bearing amount for senior
     uint           public seniorDebt_;
@@ -115,7 +114,6 @@ contract Assessor is Auth, FixedPoint, Interest {
     function calcUpdateNAV() external returns (uint) {
          return navFeed.calcUpdateNAV();
     }
-
 
     function calcSeniorTokenPrice(uint epochNAV, uint epochReserve) external returns(uint) {
         if ((epochNAV == 0 && epochReserve == 0) || seniorTranche.tokenSupply() == 0) {

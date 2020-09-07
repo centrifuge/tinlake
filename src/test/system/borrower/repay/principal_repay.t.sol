@@ -28,7 +28,6 @@ contract PrincipalRepayTest is BaseSystemTest {
         fundTranches();
     }
 
-
     function fundTranches() public {
         uint defaultAmount = 1000 ether;
         invest(defaultAmount);
