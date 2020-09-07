@@ -19,6 +19,7 @@ pragma solidity >=0.5.15 <0.6.0;
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
+import "ds-test/test.sol";
 import { TitleOwned } from "tinlake-title/title.sol";
 
 contract NFTLike {
@@ -189,11 +190,12 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     /// it is not required to recover the entire loan debt
     function recover(uint loan, address usr, uint currencyAmount) external auth note {
         pile.accrue(loan);
+
         uint loanDebt = pile.debt(loan);
 
         require(currency.transferFrom(usr, address(this), currencyAmount), "currency-transfer-failed");
 
-        ceiling.repay(loan, currencyAmount);
+        ceiling.repay(loan, loanDebt);
         // sets loan debt to 0
         pile.decDebt(loan, loanDebt);
         resetLoanBalance(loan);
@@ -203,6 +205,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     function _repay(uint loan, address usr, uint currencyAmount) internal {
         pile.accrue(loan);
         uint loanDebt = pile.debt(loan);
+        
         // only repay max loan debt
         if (currencyAmount > loanDebt) {
             currencyAmount = loanDebt;

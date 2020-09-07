@@ -128,19 +128,14 @@ contract CollectTest is BaseSystemTest {
         bool whitelisted = true;
         bool doTopup  = true;
         bool doApprove = true;
-        emit log_named_uint("moin", 1);
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
-emit log_named_uint("moin", 1);
         // after 10 days debt higher than threshold 168 ether
         hevm.warp(now + 10 days);
-emit log_named_uint("moin", 1);
         uint recoveryPrice = pile.debt(loanId);
-        emit log_named_uint("moin", 1);
         setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
-      emit log_named_uint("moin", 1);
+    
         // seize loan
         collector.seize(loanId);
-        emit log_named_uint("moin", 1);
         assertPreCondition(loanId, tokenId);
         collect(loanId, tokenId, whitelisted);
     }
@@ -175,11 +170,12 @@ emit log_named_uint("moin", 1);
         bool doApprove = true;
 
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
-        uint recoveryPrice = safeMul(pile.debt(loanId), 2);
-        setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
-
         // after 10 days debt higher than threshold 168 ether
         hevm.warp(now + 10 days);
+        // price twice as high as debt
+        uint recoveryPrice = safeMul(pile.debt(loanId), 2);
+
+        setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
         // seize loan
         collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
@@ -298,7 +294,7 @@ emit log_named_uint("moin", 1);
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
         uint recoveryPrice = pile.debt(loanId);
     
-                setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
+        setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
 
         // after 1 year threshold reached
         hevm.warp(now + 10 days);
@@ -319,7 +315,7 @@ emit log_named_uint("moin", 1);
 
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
         uint recoveryPrice = pile.debt(loanId);
-                setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
+        setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
         
         hevm.warp(now + 10 days);
         collector.seize(loanId);
