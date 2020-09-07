@@ -214,6 +214,9 @@ contract Tranche is Math, Auth, FixedPoint {
         }
 
         if (payoutCurrencyAmount > 0) {
+
+            emit log_named_uint("payoutCurrencyAmount", payoutCurrencyAmount);
+            emit log_named_uint("balance", currency.balanceOf(self));
             require(currency.transferFrom(self, usr, payoutCurrencyAmount), "currency-transfer-failed");
         }
 
