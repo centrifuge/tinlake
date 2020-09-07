@@ -214,9 +214,6 @@ contract Tranche is Math, Auth, FixedPoint {
         }
 
         if (payoutCurrencyAmount > 0) {
-
-            emit log_named_uint("payoutCurrencyAmount", payoutCurrencyAmount);
-            emit log_named_uint("balance", currency.balanceOf(self));
             require(currency.transferFrom(self, usr, payoutCurrencyAmount), "currency-transfer-failed");
         }
 
@@ -305,7 +302,7 @@ contract Tranche is Math, Auth, FixedPoint {
         // currency that was supplied in this epoch
         uint currencySupplied = rmul(epochSupply, epochs[epochID].supplyFulfillment.value);
         // currency required for redemption
-        uint currencyRequired = rmul(rmul(epochRedeem, epochs[epochID].redeemFulfillment.value), epochs[epochID].tokenPrice.value);
+        uint currencyRequired = rmul(epochRedeem, epochs[epochID].redeemFulfillment.value);
 
         if (currencySupplied > currencyRequired) {
             // send surplus currency to reserve
