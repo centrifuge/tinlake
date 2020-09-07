@@ -40,7 +40,6 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     Fixed27 public discountRate;
-    uint public maxDays;
 
     // approximated NAV
     uint public approximatedNAV;
@@ -87,8 +86,6 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     function file(bytes32 name, uint value) public auth {
         if (name == "discountRate") {
             discountRate = Fixed27(value);
-        } else if (name == "maxDays") {
-            maxDays = value;
         } else { revert("unknown config parameter");}
     }
 
