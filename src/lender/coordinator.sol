@@ -41,7 +41,8 @@ contract AssessorLike is FixedPoint {
     function changeSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
 }
 
-contract EpochCoordinator is Auth,Math,FixedPoint  {
+
+contract EpochCoordinator is Auth, Math, FixedPoint  {
     struct OrderSummary {
         // all variables are stored in currency
         uint  seniorRedeem;
@@ -54,49 +55,58 @@ contract EpochCoordinator is Auth,Math,FixedPoint  {
         require(safeSub(block.timestamp, lastEpochClosed) >= minimumEpochTime);
         _;
     }
-    // timestamp last epoch closed
-    uint            public lastEpochClosed;
-    uint            public minimumEpochTime = 1 days;
+                        // timestamp last epoch closed
+    uint                public lastEpochClosed;
+    uint                public minimumEpochTime = 1 days;
 
-    EpochTrancheLike public juniorTranche;
-    EpochTrancheLike public seniorTranche;
+    EpochTrancheLike    public juniorTranche;
+    EpochTrancheLike    public seniorTranche;
 
-    ReserveLike      public reserve;
-    AssessorLike     public assessor;
+    ReserveLike         public reserve;
+    AssessorLike        public assessor;
 
-    uint            public lastEpochExecuted;
-    uint            public currentEpoch;
+    uint                public lastEpochExecuted;
+    uint                public currentEpoch;
 
-    OrderSummary    public bestSubmission;
-    uint            public  bestSubScore;
-    bool            public gotValidPoolConSubmission;
-    OrderSummary    public order;
+    OrderSummary        public bestSubmission;
+    uint                public bestSubScore;
+    bool                public gotValidPoolConSubmission;
+    OrderSummary        public order;
 
-    Fixed27         public epochSeniorTokenPrice;
-    Fixed27         public epochJuniorTokenPrice;
+    Fixed27             public epochSeniorTokenPrice;
+    Fixed27             public epochJuniorTokenPrice;
 
-    uint            public epochNAV;
-    uint            public epochSeniorAsset;
-    uint            public epochReserve;
+    uint                public epochNAV;
+    uint                public epochSeniorAsset;
+    uint                public epochReserve;
 
-    bool            public submissionPeriod;
+    bool                public submissionPeriod;
 
-    // challenge period end timestamp
-    uint            public minChallengePeriodEnd;
-    uint            public challengeTime;
+                        // weights of the scoring function
+    uint                public weightSeniorRedeem  = 1000000;
+    uint                public weightJuniorRedeem  =  100000;
+    uint                public weightsJuniorSupply =   10000;
+    uint                public weightsSeniorSupply =    1000;
 
-    uint            public bestRatioImprovement;
-    uint            public bestReserveImprovement;
+                        // challenge period end timestamp
+    uint                public minChallengePeriodEnd;
+    uint                public challengeTime;
 
-    uint            public constant bigNumber = 1000000000000000000000;
-    int             public constant SUCCESS = 0;
-    int             public constant NEW_BEST = 0;
-    int             public constant ERR_CURRENCY_AVAILABLE = -1;
-    int             public constant ERR_MAX_ORDER = -2;
-    int             public constant ERR_MAX_RESERVE = - 3;
-    int             public constant ERR_MIN_SENIOR_RATIO = -4;
-    int             public constant ERR_MAX_SENIOR_RATIO = -5;
-    int             public constant ERR_NOT_NEW_BEST = -6;
+    uint                public bestRatioImprovement;
+    uint                public bestReserveImprovement;
+
+                        // constants
+    int                 public constant SUCCESS = 0;
+    int                 public constant NEW_BEST = 0;
+    int                 public constant ERR_CURRENCY_AVAILABLE = -1;
+    int                 public constant ERR_MAX_ORDER = -2;
+    int                 public constant ERR_MAX_RESERVE = - 3;
+    int                 public constant ERR_MIN_SENIOR_RATIO = -4;
+    int                 public constant ERR_MAX_SENIOR_RATIO = -5;
+    int                 public constant ERR_NOT_NEW_BEST = -6;
+    uint                public constant BIG_NUMBER = ONE * ONE;
+    uint                public constant IMPR_RATIO_WEIGHT =  10000;
+    uint                public constant IMPR_RESERVE_WEIGHT = 1000;
 
     constructor(uint challengeTime_) public {
         wards[msg.sender] = 1;
@@ -111,8 +121,12 @@ contract EpochCoordinator is Auth,Math,FixedPoint  {
             challengeTime = value;
         } else if (name == "minimumEpochTime") {
             minimumEpochTime = value;
-        }
-    }
+        } else if (name == "weightSeniorRedeem") { weightSeniorRedeem = value;}
+          else if (name == "weightJuniorRedeem") { weightJuniorRedeem = value;}
+          else if (name == "weightsJuniorSupply") { weightsJuniorSupply = value;}
+          else if (name == "weightsSeniorSupply") { weightsSeniorSupply = value;}
+          else { revert("unkown-name");}
+     }
 
     /// sets the dependency to another contract
     function depend (bytes32 contractName, address addr) public auth {
@@ -239,12 +253,12 @@ contract EpochCoordinator is Auth,Math,FixedPoint  {
         return ERR_NOT_NEW_BEST;
     }
 
-    function abs(uint x, uint y) public view returns(uint delta) {
-        if(x == y) {
-            // todo add explanation
+    function absDistance(uint x, uint y) public view returns(uint delta) {
+        if (x == y) {
+            // gas optimization: for avoiding an additional edge case of 0 distance
+            // distance is set to the smallest value possible
             return 1;
         }
-
         if(x > y) {
             return safeSub(x, y);
         }
@@ -296,20 +310,24 @@ contract EpochCoordinator is Auth,Math,FixedPoint  {
 
     function scoreReserveImprovement(uint newReserve_) public view returns (uint score) {
         if (newReserve_ <= assessor.maxReserve()) {
-            return bigNumber;
+            // highest possible score
+            return BIG_NUMBER;
         }
         // normalize reserve by defining maxReserve as ONE
         Fixed27 memory normalizedNewReserve = Fixed27(rdiv(newReserve_, assessor.maxReserve()));
-        return rmul(1000, rdiv(ONE, abs(safeDiv(ONE, 2), normalizedNewReserve.value)));
+
+        return rmul(IMPR_RESERVE_WEIGHT, rdiv(ONE,  absDistance(safeDiv(ONE, 2), normalizedNewReserve.value)));
     }
 
     function scoreRatioImprovement(Fixed27 memory newSeniorRatio) public view returns (uint) {
         (Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio) = assessor.seniorRatioBounds();
         if (checkRatioInRange(newSeniorRatio, minSeniorRatio, maxSeniorRatio) == true) {
-            return bigNumber;
+
+            // highest possible score
+            return BIG_NUMBER;
         }
-        // abs of ratio can never be zero
-        return rmul(10000, rdiv(ONE, abs(newSeniorRatio.value,
+        // absDistance of ratio can never be zero
+        return rmul(IMPR_RATIO_WEIGHT, rdiv(ONE, absDistance(newSeniorRatio.value,
                 safeDiv(safeAdd(minSeniorRatio.value, maxSeniorRatio.value), 2))));
     }
 
@@ -339,11 +357,13 @@ contract EpochCoordinator is Auth,Math,FixedPoint  {
         return (ERR_NOT_NEW_BEST, impScoreRatio, impScoreReserve);
     }
 
+
+    // weights of the scoring function
     function scoreSolution(uint seniorRedeem, uint juniorRedeem,
-        uint juniorSupply, uint seniorSupply) public pure returns(uint) {
-        // todo improve scoring func
-        return safeAdd(safeAdd(safeMul(seniorRedeem, 10000), safeMul(juniorRedeem, 1000)),
-            safeAdd(safeMul(juniorSupply, 100), safeMul(seniorSupply, 10)));
+        uint juniorSupply, uint seniorSupply) public view returns(uint) {
+        // weights of the scoring function
+        return safeAdd(safeAdd(safeMul(seniorRedeem, weightSeniorRedeem), safeMul(juniorRedeem, weightJuniorRedeem)),
+            safeAdd(safeMul(juniorSupply, weightsJuniorSupply), safeMul(seniorSupply, weightsSeniorSupply)));
     }
 
     /*
