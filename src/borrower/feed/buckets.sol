@@ -51,8 +51,10 @@ contract Buckets {
             return;
         }
 
-        // find predecessor bucket by going back in one day steps
+        // find predecessor bucket by going back in time
         // instead of iterating the linked list from the first bucket
+        // assuming its more gas efficient to iterate over time instead of iterating the list from the beginning
+        // not true if buckets are only sparsely populated over long periods of time
         uint prev = timestamp;
         while(buckets[prev].next == 0) {prev = prev - 1 days;}
 
@@ -61,21 +63,33 @@ contract Buckets {
         }
         buckets[timestamp].next = buckets[prev].next;
         buckets[prev].next = timestamp;
-
     }
 
     function removeBucket(uint timestamp) internal {
-        // remove from linked list
+        buckets[timestamp].value = 0;
+        _removeBucket(timestamp);
+        buckets[timestamp].next = 0;
+    }
+
+    function _removeBucket(uint timestamp) internal {
+        if(firstBucket == lastBucket) {
+            lastBucket = 0;
+            firstBucket = 0;
+            return;
+        }
+
         if (timestamp != firstBucket) {
             uint prev = timestamp - 1 days;
+            // assuming its more gas efficient to iterate over time instead of iterating the list from the beginning
+            // not true if buckets are only sparsely populated over long periods of time
             while(buckets[prev].next != timestamp) {prev = prev - 1 days;}
-
             buckets[prev].next = buckets[timestamp].next;
-            buckets[timestamp].next = 0;
+            if(timestamp == lastBucket) {
+                lastBucket = prev;
+            }
+            return;
         }
-        else {
-            firstBucket = buckets[timestamp].next;
-            buckets[timestamp].next = 0;
-        }
+
+        firstBucket = buckets[timestamp].next;
     }
 }

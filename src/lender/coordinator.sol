@@ -174,10 +174,9 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         order.seniorSupply = orderSeniorSupply;
 
         /// can orders be to 100% fulfilled
-        if (validate(orderSeniorRedeem, orderJuniorRedeem,
+        if (validate(order.seniorRedeem , order.juniorRedeem,
             orderSeniorSupply, orderJuniorSupply) == SUCCESS) {
-
-            _executeEpoch(orderSeniorRedeem, orderJuniorRedeem,
+            _executeEpoch(order.seniorRedeem, order.juniorRedeem,
                 orderSeniorSupply, orderJuniorSupply);
             return;
         }
@@ -492,7 +491,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
         juniorTranche.epochUpdate(epochID, calcFulfillment(juniorSupply, order.juniorSupply).value,
             calcFulfillment(juniorRedeem, order.juniorRedeem).value,
-            epochSeniorTokenPrice.value, order.juniorSupply, order.juniorRedeem);
+            epochJuniorTokenPrice.value, order.juniorSupply, order.juniorRedeem);
 
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem
         , seniorSupply, juniorSupply);
@@ -500,9 +499,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         uint seniorAsset = calcSeniorAssetValue(seniorRedeem, seniorSupply,
            epochSeniorAsset, newReserve, epochNAV);
 
-
         uint newSeniorRatio = calcSeniorRatio(seniorAsset, epochNAV, newReserve);
-
 
         assessor.changeSeniorAsset(newSeniorRatio, seniorSupply, seniorRedeem);
         reserve.file("maxcurrency", newReserve);

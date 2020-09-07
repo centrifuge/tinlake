@@ -21,6 +21,7 @@ import "../../../test/mock/mock.sol";
 
 interface CurrencyLike {
     function transferFrom(address from, address to, uint amount) external;
+    function balanceOf(address usr) external returns (uint);
 }
 
 contract ReserveMock is Mock, Auth {
