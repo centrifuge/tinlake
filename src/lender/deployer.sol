@@ -19,7 +19,8 @@ import {AssessorFab}    from "./fabs/assessor.sol";
 import {TrancheFab}     from "./fabs/tranche.sol";
 import {CoordinatorFab} from "./fabs/coordinator.sol";
 import {OperatorFab}    from "./fabs/operator.sol";
-import {FixedPoint}      from "./fixed_point.sol";
+
+import {FixedPoint}      from "./../fixed_point.sol";
 
 // todo needs to be removed
 import { Distributor } from "../test/simple/distributor.sol";
@@ -129,7 +130,7 @@ contract LenderDeployer is FixedPoint {
         require(seniorTranche == address(0) && deployer == address(1));
         // todo check for gas maximum otherwise split into two methods
         (seniorTranche, seniorToken, seniorMemberlist) = trancheFab.newTranche(currency, seniorName, seniorSymbol);
-        seniorOperator = operatorFab.newOperator(seniorTranche); 
+        seniorOperator = operatorFab.newOperator(seniorTranche);
         AuthLike(seniorMemberlist).rely(root);
         AuthLike(seniorToken).rely(root);
         AuthLike(seniorOperator).rely(root);
@@ -175,15 +176,15 @@ contract LenderDeployer is FixedPoint {
         AuthLike(juniorTranche).rely(coordinator);
         AuthLike(seniorTranche).rely(seniorOperator);
         AuthLike(juniorTranche).rely(juniorOperator);
-        
+
         // coordinator implements epoch ticker interface
         DependLike(seniorTranche).depend("epochTicker", coordinator);
         DependLike(juniorTranche).depend("epochTicker", coordinator);
-        
+
         //restricted token
         DependLike(seniorToken).depend("memberlist", seniorMemberlist);
         DependLike(juniorToken).depend("memberlist", juniorMemberlist);
-        
+
         //allow tinlake contracts to hold drop/tin tokens
         MemberlistLike(juniorMemberlist).updateMember(juniorTranche, uint(-1));
         MemberlistLike(seniorMemberlist).updateMember(seniorTranche, uint(-1));

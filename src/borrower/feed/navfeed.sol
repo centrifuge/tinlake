@@ -12,19 +12,21 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 pragma solidity >=0.5.15 <0.6.0;
+pragma experimental ABIEncoderV2;
 
 import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
 import "./nftfeed.sol";
 import "./buckets.sol";
+import "../../fixed_point.sol";
 
-contract NAVFeed is BaseNFTFeed, Interest, Buckets {
+contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     // nftID => maturityDate
     mapping (bytes32 => uint) public maturityDate;
 
     // risk => recoveryRatePD
-    mapping (uint => uint) public recoveryRatePD;
+    mapping (uint => Fixed27) public recoveryRatePD;
 
     // nftID => futureValue
     mapping (bytes32 => uint) public futureValue;
@@ -33,14 +35,12 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
 
     struct WriteOff {
         uint rateGroup;
-        // denominated in RAY (10^27)
-        uint percentage;
+        // denominated in (10^27)
+        Fixed27 percentage;
     }
 
-    // default 3% a day
-    uint public discountRate = uint(1000000342100000000000000000);
-    // 120 days
-    uint public maxDays = 1000;
+    Fixed27 public discountRate;
+    uint public maxDays;
 
     // approximated NAV
     uint public approximatedNAV;
@@ -55,20 +55,20 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
         // write off are hardcoded in the contract instead of init function params
 
         // risk group recoveryRatePD
-        recoveryRatePD[0] = ONE;
-        recoveryRatePD[1] = 90 * 10**25;
+        recoveryRatePD[0] = Fixed27(ONE);
+        recoveryRatePD[1] = Fixed27(90 * 10**25);
 
         // todo change to != 0, breaks currently some system tests
-        recoveryRatePD[2] = 0;
-        recoveryRatePD[3] = ONE;
+        recoveryRatePD[2] = Fixed27(0);
+        recoveryRatePD[3] = Fixed27(ONE);
 
 
         // 60% -> 40% write off
         // 91 is a random sample for a rateGroup in pile for overdue loans
-        writeOffs[0] = WriteOff(91, 6 * 10**26);
+        writeOffs[0] = WriteOff(91, Fixed27(6 * 10**26));
         // 80% -> 20% write off
         // 90 is a random sample for a rateGroup in pile for overdue loans
-        writeOffs[1] = WriteOff(90, 8 * 10**26);
+        writeOffs[1] = WriteOff(90, Fixed27(8 * 10**26));
 
     }
 
@@ -83,10 +83,10 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
         } else { revert("unknown config parameter");}
     }
 
-    function file(bytes32 what, uint value) public auth {
-        if (what == "discountrate") {
-            discountRate = value;
-        } else if (what == "maxdays") {
+    function file(bytes32 name, uint value) public auth {
+        if (name == "discountRate") {
+            discountRate = Fixed27(value);
+        } else if (name == "maxDays") {
             maxDays = value;
         } else { revert("unknown config parameter");}
     }
@@ -99,7 +99,6 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
     }
 
     function _borrow(uint loan, uint amount) internal returns(uint navIncrease) {
-
         // ceiling check uses existing loan debt
         require(ceiling(loan) >= safeAdd(borrowed[loan], amount), "borrow-amount-too-high");
 
@@ -108,7 +107,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
         require(maturityDate_ > block.timestamp, "maturity-date-is-not-in-the-future");
 
         // calculate future value FV
-        uint fv = calcFutureValue(loan, amount, maturityDate_, recoveryRatePD[risk[nftID_]]);
+        uint fv = calcFutureValue(loan, amount, maturityDate_, recoveryRatePD[risk[nftID_]].value);
         futureValue[nftID_] = safeAdd(futureValue[nftID_], fv);
 
         if (buckets[maturityDate_].value == 0) {
@@ -151,7 +150,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
         // calculate future value FV
         buckets[maturityDate_].value = safeSub(buckets[maturityDate_].value, futureValue[nftID_]);
 
-        futureValue[nftID_] = calcFutureValue(loan, pile.debt(loan), maturityDate[nftID_], recoveryRatePD[risk[nftID_]]);
+        futureValue[nftID_] = calcFutureValue(loan, pile.debt(loan), maturityDate[nftID_], recoveryRatePD[risk[nftID_]].value);
         buckets[maturityDate_].value = safeAdd(buckets[maturityDate_].value, futureValue[nftID_]);
     }
 
@@ -185,7 +184,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
 
         if (debt != 0) {
             // calculate new future value for loan if debt is still existing
-            fv = calcFutureValue(loan, debt, maturityDate_, recoveryRatePD[risk[nftID_]]);
+            fv = calcFutureValue(loan, debt, maturityDate_, recoveryRatePD[risk[nftID_]].value);
             buckets[maturityDate_].value = safeAdd(buckets[maturityDate_].value, fv);
             futureValue[nftID_] = fv;
         }
@@ -205,7 +204,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
     }
 
     function calcDiscount(uint amount, uint normalizedBlockTimestamp, uint maturityDate) public view returns (uint result) {
-        return rdiv(amount, rpow(discountRate, safeSub(maturityDate, normalizedBlockTimestamp), ONE));
+        return rdiv(amount, rpow(discountRate.value, safeSub(maturityDate, normalizedBlockTimestamp), ONE));
     }
 
     function calcTotalDiscount() public view returns(uint) {
@@ -235,7 +234,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets {
         // add write offs to NAV
         for (uint i = 0; i < writeOffs.length; i++) {
             (uint pie, uint chi, , ,) = pile.rates(writeOffs[i].rateGroup);
-            nav_ = safeAdd(nav_, rmul(rmul(pie, chi), writeOffs[i].percentage));
+            nav_ = safeAdd(nav_, rmul(rmul(pie, chi), writeOffs[i].percentage.value));
         }
         return nav_;
     }

@@ -56,6 +56,9 @@ contract BaseNFTFeed is DSNote, Auth, Math {
         wards[msg.sender] = 1;
     }
 
+    // implements Feed interface
+    function file(bytes32 name, uint value) public auth {}
+
     function init() public {
         require(thresholdRatio[0] == 0);
         // risk groups are pre-defined and should not change

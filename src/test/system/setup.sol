@@ -152,7 +152,11 @@ contract TestSetup {
             nftFeedFab_ = address(new NAVFeedFab());
         }
 
-        borrowerDeployer = new BorrowerDeployer(root_, titlefab, shelffab, pileFab, collectorFab, nftFeedFab_, currency_, "Tinlake Loan Token", "TLNT");
+        uint discountRate = uint(1000000342100000000000000000);
+        uint maxDays = 1000;
+
+
+        borrowerDeployer = new BorrowerDeployer(root_, titlefab, shelffab, pileFab, collectorFab, nftFeedFab_, currency_, "Tinlake Loan Token", "TLNT", discountRate, maxDays);
 
         borrowerDeployer.deployTitle();
         borrowerDeployer.deployPile();
@@ -202,8 +206,8 @@ contract TestSetup {
     }
 
     function deployLender() public {
-        // 12 % per year
-        uint seniorInterestRate = uint(1000000003593629043335673583);
+        // 2 % per day
+        uint seniorInterestRate = uint(1000000229200000000000000000);
         uint maxReserve = uint(-1);
         uint maxSeniorRatio = 85 * 10 **25;
         uint minSeniorRatio = 75 * 10 **25;

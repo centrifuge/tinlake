@@ -24,6 +24,7 @@ import "./users/borrower.sol";
 import "./users/keeper.sol";
 import "tinlake-math/math.sol";
 
+
 contract BaseSystemTest is TestSetup, Math, DSTest {
     // users
     Borrower borrower;
@@ -57,6 +58,9 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
 
     function createTestUsers() public {
+        createTestUsers(true);
+    }
+    function createTestUsers(bool senior_) public {
         borrower = new Borrower(address(shelf), address(lenderDeployer.reserve()), currency_, address(pile));
         borrower_ = address(borrower);
         randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
@@ -71,6 +75,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
 
     function createInvestorUser() public {
+        // investors
         seniorInvestor = new Investor(address(seniorOperator), address(seniorTranche), currency_, address(seniorToken));
         seniorInvestor_ = address(seniorInvestor);
         juniorInvestor = new Investor(address(juniorOperator), address(juniorTranche), currency_, address(juniorToken));
@@ -189,6 +194,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     function fundTranches() public {
         uint defaultAmount = 1000 ether;
         invest(defaultAmount);
+
     }
 
     function setupCurrencyOnLender(uint amount) public {
@@ -200,10 +206,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
     function topUp(address usr) public {
         currency.mint(address(usr), 1000 ether);
-    }
-
-    function assertEq(uint a, uint b, uint tolerance) public {
-        assertEq(a/tolerance, b/tolerance);
     }
 
     function setupOngoingLoan(uint nftPrice, uint borrowAmount, bool lenderFundingRequired, uint maturityDate) public returns (uint loan, uint tokenId) {
@@ -268,17 +270,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         return (nftPrice, riskGroup);
     }
 
-    function setupRepayReq() public returns(uint) {
-        // borrower needs some currency to pay rate
-        uint extra = 100000000000 ether;
-        currency.mint(borrower_, extra);
-
-        // allow pile full control over borrower tokens
-        borrower.doApproveCurrency(address(shelf), uint(-1));
-
-        return extra;
-    }
-
     // note: this method will be refactored with the new lender side contracts, as the distributor should not hold any currency
     function currdistributorBal() public view returns(uint) {
         return currency.balanceOf(address(reserve));
@@ -317,4 +308,28 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         uint totalT = uint(currency.totalSupply());
         checkAfterRepay(loan, tokenId, totalT, distributorShould);
     }
+
+    uint TWO_DECIMAL_PRECISION = 10**16;
+    uint FIXED27_TWO_DECIMAL_PRECISION = 10**25;
+
+    function assertEq(uint a, uint b, uint precision)  public {
+        assertEq(a/precision, b/precision);
+    }
+
+    function fixed18To27(uint valPower18) public returns(uint) {
+        // convert 10^18 to 10^27
+        return valPower18 * 10**9;
+    }
+
+    function setupRepayReq() public returns(uint) {
+        // borrower needs some currency to pay rate
+        uint extra = 100000000000 ether;
+        currency.mint(borrower_, extra);
+
+        // allow pile full control over borrower tokens
+        borrower.doApproveCurrency(address(shelf), uint(-1));
+
+        return extra;
+    }
+
 }
