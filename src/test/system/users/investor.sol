@@ -45,4 +45,9 @@ contract Investor is DSTest {
        return operator.disburse();
     }
 
+    function redeemOrder(uint tokenAmount) public {
+        token.approve(tranche, tokenAmount);
+        operator.redeemOrder(tokenAmount);
+    }
+
 }
