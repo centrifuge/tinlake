@@ -32,6 +32,7 @@ interface ERC20Like {
 interface ReserveLike {
     function deposit(uint amount) external;
     function payout(uint amount) external;
+    function totalBalance() external returns (uint);
 }
 
 interface EpochTickerLike {
@@ -243,7 +244,6 @@ contract Tranche is Math, Auth, FixedPoint {
 
         totalSupply = safeAdd(safeSub(totalSupply, epochSupplyOrderCurrency), rmul(epochSupplyOrderCurrency, safeSub(ONE, epochs[epochID].supplyFulfillment.value)));
         totalRedeem = safeAdd(safeSub(totalRedeem, redeemInToken), rmul(redeemInToken, safeSub(ONE, epochs[epochID].redeemFulfillment.value)));
-
     }
     function closeEpoch() public auth returns (uint totalSupplyCurrency_, uint totalRedeemToken_) {
         require(waitingForUpdate == false);
@@ -251,6 +251,21 @@ contract Tranche is Math, Auth, FixedPoint {
         return (totalSupply, totalRedeem);
     }
 
+    function safeBurn(uint tokenAmount) internal {
+        uint max = token.balanceOf(self);
+        if(tokenAmount > max) {
+            tokenAmount = max;
+        }
+        token.burn(self, tokenAmount);
+    }
+
+    function safePayout(uint currencyAmount) internal {
+        uint max = reserve.totalBalance();
+        if(currencyAmount > max) {
+            currencyAmount = max;
+        }
+        reserve.payout(currencyAmount);
+    }
 
     // adjust token balance after epoch execution -> min/burn tokens
     function adjustTokenBalance(uint epochID, uint epochSupplyToken, uint epochRedeemToken) internal {
@@ -266,7 +281,7 @@ contract Tranche is Math, Auth, FixedPoint {
        // burn tokens that are not needed for disbursement
         if (burnAmount > mintAmount) {
             uint diff = safeSub(burnAmount, mintAmount);
-            token.burn(self, diff);
+            safeBurn(diff);
             return;
         }
         // mint tokens that are required for disbursement
@@ -287,7 +302,7 @@ contract Tranche is Math, Auth, FixedPoint {
         // currency that was supplied in this epoch
         uint currencySupplied = rmul(epochSupply, epochs[epochID].supplyFulfillment.value);
         // currency required for redemption
-        uint currencyRequired = rmul(rmul(epochRedeem, epochs[epochID].redeemFulfillment.value), epochs[epochID].tokenPrice.value);
+        uint currencyRequired = rmul(epochRedeem, epochs[epochID].redeemFulfillment.value);
 
         if (currencySupplied > currencyRequired) {
             // send surplus currency to reserve
@@ -299,7 +314,7 @@ contract Tranche is Math, Auth, FixedPoint {
         uint diff = safeSub(currencyRequired, currencySupplied);
         if (diff > 0) {
             // get missing currency from reserve
-            reserve.payout(diff);
+            safePayout(diff);
         }
     }
 }

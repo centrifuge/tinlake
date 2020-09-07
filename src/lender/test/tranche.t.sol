@@ -71,7 +71,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
     function closeAndUpdate(uint supplyFulfillment, uint redeemFulfillment, uint tokenPrice) public {
         (uint totalSupply, uint totalRedeem) = tranche.closeEpoch();
         uint epochID = currentEpoch++;
-        tranche.epochUpdate(epochID, supplyFulfillment, redeemFulfillment, tokenPrice, totalSupply, totalRedeem);
+        tranche.epochUpdate(epochID, supplyFulfillment, redeemFulfillment, tokenPrice, totalSupply, rmul(totalRedeem, tokenPrice));
         lastEpochExecuted++;
     }
 
@@ -180,6 +180,8 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         uint tokenAmount = 100 ether;
         redeemOrder(tokenAmount);
 
+        reserve.setReturn("balance", uint(-1));
+
         uint supplyFulfillment_ = 0;
 
         // 50 % redeem fulfillment
@@ -194,7 +196,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         (uint payoutCurrencyAmount, uint payoutTokenAmount,
         uint remainingSupplyCurrency, uint remainingRedeemToken) =  tranche.disburse(self);
 
-//        // 50 * 1.5 = 150 ether
+//        // 50 * 1.5 = 75 ether
         assertEq(payoutCurrencyAmount, 75 ether);
     }
 
@@ -215,6 +217,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         // increase to 100 ether
         uint tokenAmount = 100 ether;
         redeemOrder(tokenAmount);
+        reserve.setReturn("balance", uint(-1));
 
         uint supplyRate = 0;
 

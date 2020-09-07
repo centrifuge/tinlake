@@ -102,8 +102,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         assertEq(payoutTokenAmount, submission.juniorSupply);
         assertEq(remainingSupplyCurrency, juniorSupplyAmount- submission.juniorSupply);
 
-
-    assertEq(seniorToken.balanceOf(seniorInvestor_), submission.seniorSupply);
+        assertEq(seniorToken.balanceOf(seniorInvestor_), submission.seniorSupply);
         assertEq(juniorToken.balanceOf(juniorInvestor_), submission.juniorSupply);
 
         // borrow loans maturity date 5 days from now
@@ -308,12 +307,19 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         assertEq(nftFeed.approximatedNAV(), 0);
 
         // max redeem from both
-
         seniorInvestor.redeemOrder(seniorToken.balanceOf(seniorInvestor_));
-        juniorInvestor.redeemOrder(seniorToken.balanceOf(juniorInvestor_));
+        juniorInvestor.redeemOrder(juniorToken.balanceOf(juniorInvestor_));
 
         coordinator.closeEpoch();
-        assertTrue(coordinator.submissionPeriod() == true);
+        assertTrue(coordinator.submissionPeriod() == false);
+
+        // senior full payout
+        (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) = seniorInvestor.disburse();
+        assertEq(payoutCurrencyAmount ,rmul(80 ether, coordinator.epochSeniorTokenPrice()));
+
+        // junior full payout
+        (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken) = juniorInvestor.disburse();
+        assertEq(payoutCurrencyAmount, rmul(20 ether, coordinator.epochJuniorTokenPrice()));
     }
 }
 
