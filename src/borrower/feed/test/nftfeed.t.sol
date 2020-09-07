@@ -86,7 +86,7 @@ contract NFTFeedTest is DSTest, Math {
         bytes32 nftID = nftFeed.nftID(address(1), 1);
         uint loan = 1;
         uint value = 100 ether;
-
+        shelf.setReturn("shelf", address(1), 1);
         // set value and risk group of nft
         nftFeed.update(nftID, value, risk);
         // assert all values were set correctly
@@ -109,6 +109,7 @@ contract NFTFeedTest is DSTest, Math {
         uint loan = 1;
         uint value = 100 ether;
 
+        shelf.setReturn("shelf", address(1), 1);
         // set value and risk group of nft
         nftFeed.update(nftID, value, risk);
         // assert all values were set correctly
