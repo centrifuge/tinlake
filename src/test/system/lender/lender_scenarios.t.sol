@@ -102,8 +102,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         assertEq(payoutTokenAmount, submission.juniorSupply);
         assertEq(remainingSupplyCurrency, juniorSupplyAmount- submission.juniorSupply);
 
-
-    assertEq(seniorToken.balanceOf(seniorInvestor_), submission.seniorSupply);
+        assertEq(seniorToken.balanceOf(seniorInvestor_), submission.seniorSupply);
         assertEq(juniorToken.balanceOf(juniorInvestor_), submission.juniorSupply);
 
         // borrow loans maturity date 5 days from now
@@ -309,11 +308,49 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
 
         // max redeem from both
 
-        seniorInvestor.redeemOrder(seniorToken.balanceOf(seniorInvestor_));
-        juniorInvestor.redeemOrder(seniorToken.balanceOf(juniorInvestor_));
+        uint seniorTokenAmount = seniorToken.balanceOf(seniorInvestor_);
+        uint juniorTokenAmount = juniorToken.balanceOf(juniorInvestor_);
 
+
+        seniorInvestor.redeemOrder(seniorToken.balanceOf(seniorInvestor_));
+        juniorInvestor.redeemOrder(juniorToken.balanceOf(juniorInvestor_));
+
+        emit log_named_uint("starts here", 1);
         coordinator.closeEpoch();
-        assertTrue(coordinator.submissionPeriod() == true);
+      //  assertTrue(coordinator.submissionPeriod() == true);
+//
+//        emit log_named_uint("seniorTokenPrice" ,coordinator.epochSeniorTokenPrice());
+//        emit log_named_uint("juniorTokenPrice" , coordinator.epochJuniorTokenPrice());
+//        emit log_named_uint("SeniorTokenAmount", seniorTokenAmount);
+//        emit log_named_uint("juniorTokenAmount", juniorTokenAmount);
+//
+//        uint seniorRedeem = rmul(seniorTokenAmount, coordinator.epochSeniorTokenPrice());
+//        uint juniorRedeem = rmul(juniorTokenAmount, coordinator.epochJuniorTokenPrice());
+//
+//
+////        // submit solution but not best
+////        int valid = coordinator.submitSolution(10 ether, 10 ether, 0, 0);
+////        assertEq(valid, coordinator.NEW_BEST());
+//
+//        emit log_named_uint("token balance", seniorToken.balanceOf(seniorInvestor_));
+//
+//        emit log_named_uint("seniorRedeem" ,seniorRedeem);
+//        emit log_named_uint("juniorRedeem", juniorRedeem);
+//
+//        emit log_named_uint("reserve", reserve.totalBalance());
+//
+//        int valid = coordinator.submitSolution(seniorRedeem, juniorRedeem, 0, 0);
+//        assertEq(valid, coordinator.NEW_BEST());
+//
+//        (uint seniorRedeem1, uint juniorRedeem1, uint juniorSupply1, uint seniorSupply1) = coordinator.order();
+//
+//        emit log_named_uint("supp r", seniorRedeem1);
+//
+//        emit log_named_uint("supp r j", juniorRedeem1);
+//
+//    emit log_named_uint("supp", seniorSupply1);
+//        emit log_named_uint("supp jun", juniorSupply1);
+
     }
 }
 
