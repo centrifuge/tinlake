@@ -60,6 +60,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         // todo change to != 0, breaks currently some system tests
         recoveryRatePD[2] = Fixed27(0);
         recoveryRatePD[3] = Fixed27(ONE);
+        recoveryRatePD[4] = Fixed27(ONE);
 
 
         // 60% -> 40% write off

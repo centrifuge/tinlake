@@ -24,7 +24,6 @@ import "./users/borrower.sol";
 import "./users/keeper.sol";
 import "tinlake-math/math.sol";
 
-
 contract BaseSystemTest is TestSetup, Math, DSTest {
     // users
     Borrower borrower;
@@ -58,9 +57,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
 
     function createTestUsers() public {
-        createTestUsers(true);
-    }
-    function createTestUsers(bool senior_) public {
         borrower = new Borrower(address(shelf), address(lenderDeployer.reserve()), currency_, address(pile));
         borrower_ = address(borrower);
         randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
@@ -75,7 +71,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
 
     function createInvestorUser() public {
-        // investors
         seniorInvestor = new Investor(address(seniorOperator), address(seniorTranche), currency_, address(seniorToken));
         seniorInvestor_ = address(seniorInvestor);
         juniorInvestor = new Investor(address(juniorOperator), address(juniorTranche), currency_, address(juniorToken));
@@ -183,18 +178,12 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         collector.seize(loanId);
     }
 
-    function addKeeperAndCollect(uint loanId, uint threshold, address usr, uint recoveryPrice) public {
+    function addKeeperAndCollect(uint loanId, address usr, uint recoveryPrice) public {
         seize(loanId);
         admin.addKeeper(loanId, usr, recoveryPrice);
         topUp(usr);
         Borrower(usr).doApproveCurrency(address(shelf), uint(-1));
         admin.collect(loanId, usr);
-    }
-
-    function fundTranches() public {
-        uint defaultAmount = 1000 ether;
-        invest(defaultAmount);
-
     }
 
     function setupCurrencyOnLender(uint amount) public {

@@ -61,12 +61,12 @@ contract BaseNFTFeed is DSNote, Auth, Math {
 
     function init() public {
         require(thresholdRatio[0] == 0);
-        // risk groups are pre-defined and should not change
-        // gas optimized initialization of risk groups
+        // The risk groups (scorecard) are custom values for each tinlake deployment
+        // They are pre-defined on contract creation and should not change
+        
+        // The following risk groups are just examples that are mostly optimized for the system test cases
 
-        // values are just for testing and not realistic
-
-        // default risk => 0
+        // risk group  => 0
         // thresholdRatio => 80%
         // ceilingRatio => 60%
         // interestRatio: 0%
@@ -77,13 +77,24 @@ contract BaseNFTFeed is DSNote, Auth, Math {
         // ceilingRatio => 50%
         // interestRate => 12 % per year
         setRiskGroup(1, 7*10**26, 5*10**26, uint(1000000003593629043335673583));
-         // interestRate => 5 % per day
+         
+        // risk group  => 2
+        // thresholdRatio => 70%
+        // ceilingRatio => 50%
+        // interestRate => 5 % per day
         setRiskGroup(2, 7*10**26, 5*10**26, uint(1000000564701133626865910626));
 
+        // risk group  => 3
         // ceiling ratio => 100%
         // thresholdRatio => 70%
         // interest rate => 5% per day
         setRiskGroup(3, 7*10**26, ONE, uint(1000000564701133626865910626));
+
+        // risk group => 4 (used by collector tests)
+        // ceiling ratio => 50%
+        // thresholdRatio => 60%
+        // interest rate => 5% per day
+        setRiskGroup(4, 6*10**26, 5*10**26, uint(1000000564701133626865910626));
     }
 
     /// sets the dependency to another contract

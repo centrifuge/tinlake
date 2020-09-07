@@ -19,7 +19,6 @@ import "./../fixed_point.sol";
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
-
 interface NAVFeedLike {
     function calcUpdateNAV() external returns (uint);
     function approximatedNAV() external view returns (uint);
@@ -29,7 +28,7 @@ interface TrancheLike {
     function tokenSupply() external returns (uint);
 }
 
-contract Assessor is Auth, FixedPoint, Interest  {
+contract Assessor is Auth, FixedPoint, Interest {
     // senior ratio from the last epoch executed
     Fixed27        public seniorRatio;
 

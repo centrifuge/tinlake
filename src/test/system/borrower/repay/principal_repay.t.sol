@@ -23,16 +23,16 @@ contract PrincipalRepayTest is BaseSystemTest {
     function setUp() public {
         baseSetup();
         createTestUsers();
-
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
         fundTranches();
     }
 
+
     function fundTranches() public {
         uint defaultAmount = 1000 ether;
         invest(defaultAmount);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
     }
 
@@ -57,7 +57,6 @@ contract PrincipalRepayTest is BaseSystemTest {
         assertEq(pile.debt(loanId), expectedDebt, 10);
         // assert: borrower has enough funds
         assert(currency.balanceOf(borrower_) >= repayAmount);
-
     }
 
     function assertPostCondition(uint loanId, uint tokenId, uint repaidAmount, uint initialBorrowerBalance, uint initialTrancheBalance, uint expectedDebt, uint initialCeiling) public {
