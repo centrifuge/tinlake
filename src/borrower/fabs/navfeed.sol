@@ -18,7 +18,7 @@ pragma solidity >=0.5.15 <0.6.0;
 import { NAVFeed } from "./../feed/navfeed.sol";
 
 contract NAVFeedFab {
-    function newNFTFeed() public returns (address) {
+    function newFeed() public returns (address) {
         NAVFeed feed = new NAVFeed();
         feed.rely(msg.sender);
         feed.deny(address(this));

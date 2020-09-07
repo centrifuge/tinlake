@@ -47,6 +47,8 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     Hevm public hevm;
 
     function baseSetup() public {
+        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm.warp(block.timestamp);
         // setup deployment
         bytes32 feed_ = "nav";
         deployContracts(feed_);
@@ -178,17 +180,12 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         collector.seize(loanId);
     }
 
-    function addKeeperAndCollect(uint loanId, uint threshold, address usr, uint recoveryPrice) public {
+    function addKeeperAndCollect(uint loanId, address usr, uint recoveryPrice) public {
         seize(loanId);
         admin.addKeeper(loanId, usr, recoveryPrice);
         topUp(usr);
         Borrower(usr).doApproveCurrency(address(shelf), uint(-1));
         admin.collect(loanId, usr);
-    }
-
-    function fundTranches() public {
-        uint defaultAmount = 1000 ether;
-        invest(defaultAmount);
     }
 
     function setupCurrencyOnLender(uint amount) public {
@@ -200,10 +197,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
     function topUp(address usr) public {
         currency.mint(address(usr), 1000 ether);
-    }
-
-    function assertEq(uint a, uint b, uint tolerance) public {
-        assertEq(a/tolerance, b/tolerance);
     }
 
     function setupOngoingLoan(uint nftPrice, uint borrowAmount, bool lenderFundingRequired, uint maturityDate) public returns (uint loan, uint tokenId) {
@@ -268,17 +261,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         return (nftPrice, riskGroup);
     }
 
-    function setupRepayReq() public returns(uint) {
-        // borrower needs some currency to pay rate
-        uint extra = 100000000000 ether;
-        currency.mint(borrower_, extra);
-
-        // allow pile full control over borrower tokens
-        borrower.doApproveCurrency(address(shelf), uint(-1));
-
-        return extra;
-    }
-
     // note: this method will be refactored with the new lender side contracts, as the distributor should not hold any currency
     function currdistributorBal() public view returns(uint) {
         return currency.balanceOf(address(reserve));
@@ -317,4 +299,28 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         uint totalT = uint(currency.totalSupply());
         checkAfterRepay(loan, tokenId, totalT, distributorShould);
     }
+
+    uint TWO_DECIMAL_PRECISION = 10**16;
+    uint FIXED27_TWO_DECIMAL_PRECISION = 10**25;
+
+    function assertEq(uint a, uint b, uint precision)  public {
+        assertEq(a/precision, b/precision);
+    }
+
+    function fixed18To27(uint valPower18) public returns(uint) {
+        // convert 10^18 to 10^27
+        return valPower18 * 10**9;
+    }
+
+    function setupRepayReq() public returns(uint) {
+        // borrower needs some currency to pay rate
+        uint extra = 100000000000 ether;
+        currency.mint(borrower_, extra);
+
+        // allow pile full control over borrower tokens
+        borrower.doApproveCurrency(address(shelf), uint(-1));
+
+        return extra;
+    }
+
 }

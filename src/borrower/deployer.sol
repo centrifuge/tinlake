@@ -20,8 +20,9 @@ import { ShelfFab } from "./fabs/shelf.sol";
 import { CollectorFab } from "./fabs/collector.sol";
 import { PileFab } from "./fabs/pile.sol";
 import { TitleFab } from "./fabs/title.sol";
-import { NFTFeedFab } from "./fabs/nftfeed.sol";
 import { NAVFeedFab } from "./fabs/navfeed.sol";
+import { NFTFeedFab } from "./fabs/nftfeed.sol";
+import {FixedPoint}      from "./../fixed_point.sol";
 
 
 contract DependLike {
@@ -37,14 +38,23 @@ contract NFTFeedLike {
     function init() public;
 }
 
-contract BorrowerDeployer {
+contract FeedFabLike {
+    function newFeed() public returns(address);
+}
+
+
+contract FileLike {
+    function file(bytes32 name, uint value) public;
+}
+
+contract BorrowerDeployer is FixedPoint {
     address      public root;
 
     TitleFab     public titlefab;
     ShelfFab     public shelffab;
     PileFab      public pilefab;
     CollectorFab public collectorFab;
-    NFTFeedFab   public nftFeedFab;
+    FeedFabLike   public feedFab;
 
     address public title;
     address public shelf;
@@ -55,6 +65,8 @@ contract BorrowerDeployer {
 
     string  public titleName;
     string  public titleSymbol;
+    Fixed27 public discountRate;
+    uint    public feedMaxDays;
 
     address constant ZERO = address(0);
 
@@ -64,10 +76,12 @@ contract BorrowerDeployer {
       ShelfFab shelffab_,
       PileFab pilefab_,
       CollectorFab collectorFab_,
-      address nftFeedFab_,
+      address feedFab_,
       address currency_,
       string memory titleName_,
-      string memory titleSymbol_
+      string memory titleSymbol_,
+      uint discountRate_,
+      uint feedMaxDays_
     ) public {
         root = root_;
 
@@ -76,12 +90,14 @@ contract BorrowerDeployer {
 
         pilefab = pilefab_;
         collectorFab = collectorFab_;
-        nftFeedFab = NFTFeedFab(nftFeedFab_);
+        feedFab = FeedFabLike(feedFab_);
 
         currency = currency_;
 
         titleName = titleName_;
         titleSymbol = titleSymbol_;
+        discountRate = Fixed27(discountRate_);
+        feedMaxDays = feedMaxDays_;
     }
 
     function deployCollector() public {
@@ -109,7 +125,7 @@ contract BorrowerDeployer {
     }
 
     function deployFeed() public {
-        feed = nftFeedFab.newNFTFeed();
+        feed = feedFab.newFeed();
         AuthLike(feed).rely(root);
     }
 
@@ -128,13 +144,15 @@ contract BorrowerDeployer {
         NFTFeedLike(feed).init();
 
         DependLike(shelf).depend("subscriber", address(feed));
-    
+
         AuthLike(feed).rely(shelf);
         AuthLike(title).rely(shelf);
 
         // collector allowed to call
-        AuthLike(shelf).rely(collector);   
-    }
+        AuthLike(shelf).rely(collector);
 
+        FileLike(feed).file("discountRate", discountRate.value);
+        FileLike(feed).file("maxDays", feedMaxDays);
+    }
 }
 

@@ -42,7 +42,9 @@ contract DeployerTest is DSTest {
    }
 
     function testBorrowerDeploy() public logs_gas {
-        BorrowerDeployer deployer = new BorrowerDeployer(address(0), titlefab, shelffab, pilefab, collectorFab, address(nftFeedFab), address(dai), "Test", "TEST");
+        uint discountRate = uint(1000000342100000000000000000);
+        uint maxDays = 1000;
+        BorrowerDeployer deployer = new BorrowerDeployer(address(0), titlefab, shelffab, pilefab, collectorFab, address(nftFeedFab), address(dai), "Test", "TEST", discountRate, maxDays);
 
         deployer.deployTitle();
         deployer.deployPile();
