@@ -42,7 +42,6 @@ contract NAVTest is DSTest, Math {
         defaultCeilingRatio = 6*10**26;                       // 60% ceiling
         defaultRate = uint(1000000564701133626865910626);     // 5 % day
         discountRate = uint(1000000342100000000000000000);    // 3 % day
-        uint maxDays = 120;
 
         feed = new NAVFeed();
         pile = new PileMock();
@@ -50,7 +49,6 @@ contract NAVTest is DSTest, Math {
         feed.depend("shelf", address(shelf));
         feed.depend("pile", address(pile));
         feed.file("discountRate", discountRate);
-        feed.file("maxDays", maxDays);
         mockNFTRegistry = address(42);
         feed.init();
     }
@@ -358,20 +356,6 @@ contract NAVTest is DSTest, Math {
 
         uint FV = 49.6125 ether; // 50 * 1.05 ^ 2  * 0.9
         assertEq(feed.dateBucket(normalizedDueDate), FV);
-    }
-
-    function testMaxBuckets() public {
-        uint nftValue = 100 ether;
-        uint dueDate = now + 1 days;
-        uint amount = 50 ether;
-
-        // add amounts to max days different buckets
-        for (uint i = 0; i < feed.maxDays(); i++) {
-            borrow(i, nftValue, amount, dueDate);
-            dueDate = dueDate + 1 days;
-        }
-
-       assertTrue(amount * feed.maxDays() <  feed.currentNAV());
     }
 
     function testChangeRiskGroup() public {

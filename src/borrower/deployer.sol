@@ -66,7 +66,6 @@ contract BorrowerDeployer is FixedPoint {
     string  public titleName;
     string  public titleSymbol;
     Fixed27 public discountRate;
-    uint    public feedMaxDays;
 
     address constant ZERO = address(0);
 
@@ -80,8 +79,7 @@ contract BorrowerDeployer is FixedPoint {
       address currency_,
       string memory titleName_,
       string memory titleSymbol_,
-      uint discountRate_,
-      uint feedMaxDays_
+      uint discountRate_
     ) public {
         root = root_;
 
@@ -97,7 +95,6 @@ contract BorrowerDeployer is FixedPoint {
         titleName = titleName_;
         titleSymbol = titleSymbol_;
         discountRate = Fixed27(discountRate_);
-        feedMaxDays = feedMaxDays_;
     }
 
     function deployCollector() public {
@@ -152,7 +149,6 @@ contract BorrowerDeployer is FixedPoint {
         AuthLike(shelf).rely(collector);
 
         FileLike(feed).file("discountRate", discountRate.value);
-        FileLike(feed).file("maxDays", feedMaxDays);
     }
 }
 
