@@ -47,8 +47,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     Hevm public hevm;
 
     function baseSetup() public {
-        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-        hevm.warp(block.timestamp);
         // setup deployment
         bytes32 feed_ = "nav";
         deployContracts(feed_);
