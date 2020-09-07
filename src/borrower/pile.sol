@@ -77,9 +77,6 @@ contract Pile is DSNote, Auth, Interest {
         uint rate = loanRates[loan];
         require(now == rates[rate].lastUpdated, "rate-group-not-updated");
         uint pieAmount = toPie(rates[rate].chi, currencyAmount);
-        if (pie[loan] < pieAmount) {
-           pieAmount = pie[loan];
-        }
 
         pie[loan] = safeSub(pie[loan], pieAmount);
         rates[rate].pie = safeSub(rates[rate].pie, pieAmount);
