@@ -19,6 +19,7 @@ import {AssessorFab}    from "./fabs/assessor.sol";
 import {TrancheFab}     from "./fabs/tranche.sol";
 import {CoordinatorFab} from "./fabs/coordinator.sol";
 import {OperatorFab}    from "./fabs/operator.sol";
+import {MemberlistFab}    from  "./fabs/memberlist.sol";
 
 import {FixedPoint}      from "./../fixed_point.sol";
 
@@ -53,6 +54,7 @@ contract LenderDeployer is FixedPoint {
     AssessorFab         public assessorFab;
     CoordinatorFab      public coordinatorFab;
     OperatorFab         public operatorFab;
+    MemberlistFab       public memberlistFab;
 
     // lender state variables
     Fixed27             public minSeniorRatio;
@@ -105,7 +107,7 @@ contract LenderDeployer is FixedPoint {
         juniorSymbol =juniorSymbol_;
     }
 
-    function init(uint minSeniorRatio_, uint maxSeniorRatio_, uint maxReserve_, uint challengeTime_, uint seniorInterestRate_) public {
+    function init(uint minSeniorRatio_, uint maxSeniorRatio_, uint maxReserve_, uint challengeTime_, uint seniorInterestRate_, MemberlistFab memberlistFab_) public {
         require(msg.sender == deployer);
         challengeTime = challengeTime_;
         minSeniorRatio = Fixed27(minSeniorRatio_);
@@ -113,12 +115,15 @@ contract LenderDeployer is FixedPoint {
         maxReserve = maxReserve_;
         seniorInterestRate = Fixed27(seniorInterestRate_);
 
+        memberlistFab = memberlistFab_;
+
         deployer = address(1);
     }
 
     function deployJunior() public {
         require(juniorTranche == address(0) && deployer == address(1));
-        (juniorTranche, juniorToken, juniorMemberlist) = trancheFab.newTranche(currency, juniorName, juniorSymbol);
+        (juniorTranche, juniorToken) = trancheFab.newTranche(currency, juniorName, juniorSymbol);
+        juniorMemberlist = memberlistFab.newMemberlist();
         juniorOperator = operatorFab.newOperator(juniorTranche);
         AuthLike(juniorMemberlist).rely(root);
         AuthLike(juniorToken).rely(root);
@@ -128,8 +133,8 @@ contract LenderDeployer is FixedPoint {
 
     function deploySenior() public {
         require(seniorTranche == address(0) && deployer == address(1));
-        // todo check for gas maximum otherwise split into two methods
-        (seniorTranche, seniorToken, seniorMemberlist) = trancheFab.newTranche(currency, seniorName, seniorSymbol);
+        (seniorTranche, seniorToken) = trancheFab.newTranche(currency, seniorName, seniorSymbol);
+        seniorMemberlist = memberlistFab.newMemberlist();
         seniorOperator = operatorFab.newOperator(seniorTranche);
         AuthLike(seniorMemberlist).rely(root);
         AuthLike(seniorToken).rely(root);

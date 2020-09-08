@@ -37,6 +37,7 @@ import { Memberlist } from "../../lender/token/memberlist.sol";
 
 import {
   TrancheFab,
+  MemberlistFab,
   AssessorFab,
   ReserveFab,
   CoordinatorFab,
@@ -204,6 +205,7 @@ contract TestSetup {
     }
 
     function deployLender() public {
+        MemberlistFab memberlistFab = new MemberlistFab();
         // 2 % per day
         uint seniorInterestRate = uint(1000000229200000000000000000);
         uint maxReserve = uint(-1);
@@ -211,7 +213,7 @@ contract TestSetup {
         uint minSeniorRatio = 75 * 10 **25;
         uint challengeTime = 1 hours;
 
-        lenderDeployer_.init(minSeniorRatio, maxSeniorRatio, maxReserve, challengeTime, seniorInterestRate);
+        lenderDeployer_.init(minSeniorRatio, maxSeniorRatio, maxReserve, challengeTime, seniorInterestRate, memberlistFab);
 
         lenderDeployer_.deployJunior();
         lenderDeployer_.deploySenior();

@@ -15,21 +15,15 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import { Tranche } from "./../tranche.sol";
-import { RestrictedToken } from "./../token/restricted.sol";
+import { Memberlist } from "./../token/memberlist.sol";
 
-contract TrancheFab {
-    function newTranche(address currency, string memory name, string memory symbol) public returns (address tranche, address token) {
-        RestrictedToken restrictedToken = new RestrictedToken(symbol, name);
-        Tranche tranche = new Tranche(currency, address(restrictedToken));
-        
-        restrictedToken.rely(address(tranche));
-        restrictedToken.rely(msg.sender);
-        restrictedToken.deny(address(this));
+contract MemberlistFab {
+    function newMemberlist() public returns (address memberlist) {
+        Memberlist memberlist = new Memberlist();
 
-        tranche.rely(msg.sender);
-        tranche.deny(address(this));
+        memberlist.rely(msg.sender);
+        memberlist.deny(address(this));
 
-        return (address(tranche), address(restrictedToken));
+        return (address(memberlist));
     }
 }
