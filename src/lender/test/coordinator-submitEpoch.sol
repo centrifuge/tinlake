@@ -30,9 +30,9 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
         // should not produce integer overflow
         assertTrue(score <= uint(-1));
 
-        uint maxDistancePoints = rmul(coordinator.IMPR_RATIO_WEIGHT(), rdiv(ONE, 1));
+        uint maxDistancePoints = rmul(coordinator.IMPROVEMENT_WEIGHT(), rdiv(ONE, 1));
         assertTrue(coordinator.BIG_NUMBER() > maxDistancePoints);
-        maxDistancePoints = rmul(coordinator.IMPR_RESERVE_WEIGHT(), rdiv(ONE, 1));
+        maxDistancePoints = rmul(coordinator.IMPROVEMENT_WEIGHT(), rdiv(ONE, 1));
         assertTrue(coordinator.BIG_NUMBER() > maxDistancePoints);
     }
 
