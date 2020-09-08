@@ -113,7 +113,7 @@ contract LenderDeployer is FixedPoint {
         seniorName = seniorName_;
         seniorSymbol = seniorSymbol_;
         juniorName = juniorName_;
-        juniorSymbol =juniorSymbol_;
+        juniorSymbol = juniorSymbol_;
 
         deployer = address(1);
     }
