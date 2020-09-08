@@ -70,7 +70,7 @@ contract Reserve is Math, Auth {
         return balance_;
     }
 
-    // deposit currency in the the reserve
+    // deposits currency in the the reserve
     function deposit(uint currencyAmount) public auth {
         _deposit(msg.sender, currencyAmount);
     }
