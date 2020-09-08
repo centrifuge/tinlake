@@ -44,6 +44,9 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     // approximated NAV
     uint public approximatedNAV;
 
+    uint constant public  WRITE_OFF_PHASE_A = 91;
+    uint constant public  WRITE_OFF_PHASE_B = 90;
+
     constructor () public {
         wards[msg.sender] = 1;
     }
@@ -62,13 +65,11 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         recoveryRatePD[3] = Fixed27(ONE);
         recoveryRatePD[4] = Fixed27(ONE);
 
-
+        // sample write off phases
         // 60% -> 40% write off
-        // 91 is a random sample for a rateGroup in pile for overdue loans
-        writeOffs[0] = WriteOff(91, Fixed27(6 * 10**26));
+        writeOffs[0] = WriteOff(WRITE_OFF_PHASE_A, Fixed27(6 * 10**26));
         // 80% -> 20% write off
-        // 90 is a random sample for a rateGroup in pile for overdue loans
-        writeOffs[1] = WriteOff(90, Fixed27(8 * 10**26));
+        writeOffs[1] = WriteOff(WRITE_OFF_PHASE_B, Fixed27(8 * 10**26));
 
     }
 

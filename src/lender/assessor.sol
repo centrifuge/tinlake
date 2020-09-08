@@ -19,13 +19,20 @@ import "./../fixed_point.sol";
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
+
+
 interface NAVFeedLike {
     function calcUpdateNAV() external returns (uint);
     function approximatedNAV() external view returns (uint);
+    function currentNAV() external view returns(uint);
 }
 
 interface TrancheLike {
-    function tokenSupply() external returns (uint);
+    function tokenSupply() external view returns (uint);
+}
+
+interface ReserveLike {
+    function totalBalance() external view returns(uint);
 }
 
 contract Assessor is Auth, FixedPoint, Interest {
@@ -54,6 +61,7 @@ contract Assessor is Auth, FixedPoint, Interest {
     TrancheLike     public seniorTranche;
     TrancheLike     public juniorTranche;
     NAVFeedLike     public navFeed;
+    ReserveLike     public reserve;
 
     constructor() public {
         wards[msg.sender] = 1;
@@ -69,6 +77,8 @@ contract Assessor is Auth, FixedPoint, Interest {
             seniorTranche = TrancheLike(addr);
         } else if (contractName == "juniorTranche") {
             juniorTranche = TrancheLike(addr);
+        } else if (contractName == "reserve") {
+            reserve = ReserveLike(addr);
         } else revert();
     }
 
@@ -116,8 +126,15 @@ contract Assessor is Auth, FixedPoint, Interest {
          return navFeed.calcUpdateNAV();
     }
 
+    function calcSeniorTokenPrice() external view returns(uint) {
+        return calcSeniorTokenPrice(navFeed.currentNAV(), reserve.totalBalance());
+    }
 
-    function calcSeniorTokenPrice(uint epochNAV, uint epochReserve) external returns(uint) {
+    function calcJuniorTokenPrice() external view returns(uint) {
+        return calcJuniorTokenPrice(navFeed.currentNAV(), reserve.totalBalance());
+    }
+
+    function calcSeniorTokenPrice(uint epochNAV, uint epochReserve) public view returns(uint) {
         if ((epochNAV == 0 && epochReserve == 0) || seniorTranche.tokenSupply() == 0) {
             // initial token price at start 1.00
             return ONE;
@@ -132,13 +149,14 @@ contract Assessor is Auth, FixedPoint, Interest {
         return rdiv(seniorAssetValue, seniorTranche.tokenSupply());
     }
 
-    function calcJuniorTokenPrice(uint epochNAV, uint epochReserve) external returns(uint) {
+    function calcJuniorTokenPrice(uint epochNAV, uint epochReserve) public view returns(uint) {
         if ((epochNAV == 0 && epochReserve == 0) || juniorTranche.tokenSupply() == 0) {
             // initial token price at start 1.00
             return ONE;
         }
         uint totalAssets = safeAdd(epochNAV, epochReserve);
         uint seniorAssetValue = calcSeniorAssetValue(seniorDebt(), seniorBalance_);
+
         if(totalAssets < seniorAssetValue) {
             return 0;
         }
