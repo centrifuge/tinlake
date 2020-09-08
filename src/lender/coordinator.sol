@@ -79,7 +79,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
     OrderSummary        public bestSubmission;
                         // current best score of the best solution
     uint                public bestSubScore;
-                        // flag which tracks if a submission period if a full valid solution has been received
+                        // flag which tracks if an submission period received a valid solution
     bool                public gotFullValidSolution;
                         // snapshot from the the orders in the tranches at epoch close
     OrderSummary        public order;
