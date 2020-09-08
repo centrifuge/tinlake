@@ -21,6 +21,7 @@ contract MemberlistLike {
     function member(address) public;
 }
 
+// Only mebmber with a valid (not expired) membership should be allowed to receive tokens
 contract RestrictedToken is ERC20 {
 
     MemberlistLike public memberlist; 
