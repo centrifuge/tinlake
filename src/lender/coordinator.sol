@@ -229,7 +229,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
     /// method to submit a solution for submission period
     /// anybody can submit a solution for the current execution epoch
     /// if solution satisfies all constraints (or at least improves an unhealthy state)
-    /// and has highest score
+    /// and has the highest score
     function submitSolution(uint seniorRedeem, uint juniorRedeem,
         uint juniorSupply, uint seniorSupply) public returns(int) {
         require(submissionPeriod == true, "submission-period-not-active");
