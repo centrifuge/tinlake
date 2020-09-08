@@ -29,7 +29,7 @@ contract AssessorLike {
 }
 
 // The reserve keeps track of the currency and the bookkeeping
-// of th total balance
+// of the total balance
 contract Reserve is Math, Auth {
     ERC20Like public currency;
     ShelfLike public shelf;
