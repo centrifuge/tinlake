@@ -94,7 +94,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
     uint                public epochSeniorAsset;
                         // snapshot from reserve balance at epoch close
     uint                public epochReserve;
-                        // flag which indicates if coordinators is currently in a submission period
+                        // flag which indicates if the coordinator is currently in a submission period
     bool                public submissionPeriod;
 
                         // weights of the scoring function
