@@ -71,8 +71,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         // rist groups are extended by the recoveryRatePD parameter
         recoveryRatePD[0] = Fixed27(ONE);
         recoveryRatePD[1] = Fixed27(90 * 10**25);
-        // todo change to != 0, breaks currently some system tests
-        recoveryRatePD[2] = Fixed27(0);
+        recoveryRatePD[2] = Fixed27(90 * 10**25);
         recoveryRatePD[3] = Fixed27(ONE);
         recoveryRatePD[4] = Fixed27(ONE);
 
