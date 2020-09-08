@@ -400,6 +400,9 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         // test setup junior lost everything
         (uint loan, uint tokenId) = juniorWithLosses();
 
+        // junior lost everything
+        assertEq(assessor.calcJuniorTokenPrice(), 0);
+
         uint loanDebt = pile.debt(loan);
         repayLoan(address(borrower), loan, loanDebt);
 
@@ -410,9 +413,29 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         seniorInvestor.redeemOrder(seniorToken.balanceOf(seniorInvestor_));
         juniorInvestor.redeemOrder(juniorToken.balanceOf(juniorInvestor_));
 
+        // tokens should be locked
+        assertEq(seniorToken.balanceOf(seniorInvestor_), 0);
+        assertEq(juniorToken.balanceOf(juniorInvestor_), 0);
+
         coordinator.closeEpoch();
         assertTrue(coordinator.submissionPeriod() == false);
 
+        // senior full payout
+        (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) = seniorInvestor.disburse();
+        assertEq(payoutCurrencyAmount ,rmul(80 ether, coordinator.epochSeniorTokenPrice()));
+        assertEq(remainingRedeemToken, 0);
+        assertEq(remainingSupplyCurrency, 0);
+
+        // junior payout
+        (payoutCurrencyAmount,  payoutTokenAmount,  remainingSupplyCurrency,  remainingRedeemToken) = juniorInvestor.disburse();
+        assertEq(payoutCurrencyAmount, 0);
+        assertEq(remainingSupplyCurrency, 0);
+        // junior tokens can't be removed and are still locked
+        assertEq(remainingRedeemToken, 20 ether);
+
+        // get worthless tokens back via order change
+        juniorInvestor.redeemOrder(0);
+        assertEq(juniorToken.balanceOf(juniorInvestor_), 20 ether);
     }
 }
 
