@@ -36,7 +36,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     // risk => recoveryRatePD
     mapping (uint => Fixed27) public recoveryRatePD;
 
-    // futureValue of an asset based on the loan debt, interst rate, maturity date and recoveryRatePD
+    // futureValue of an asset based on the loan debt, interest rate, maturity date and recoveryRatePD
     // nftID => futureValue
     mapping (bytes32 => uint) public futureValue;
 
@@ -165,7 +165,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         uint maturityDate_ = maturityDate[nftID_];
 
         // Changing the risk group of an nft, might lead to a new interest rate for the dependant loan.
-        // New interst rate leads to a future value.
+        // New interest rate leads to a future value.
         // recalculation required
         buckets[maturityDate_].value = safeSub(buckets[maturityDate_].value, futureValue[nftID_]);
 
