@@ -87,27 +87,21 @@ contract LenderDeployer is FixedPoint {
 
     address             public deployer;
 
-    constructor(address root_, address currency_, TrancheFab trancheFab_, ReserveFab reserveFab_, AssessorFab assessorFab_, CoordinatorFab coordinatorFab_, OperatorFab operatorFab_,
-                string memory seniorName_, string memory seniorSymbol_, string memory juniorName_, string memory juniorSymbol_) public {
+    constructor(address root_, address currency_, TrancheFab trancheFab_, MemberlistFab memberlistFab_, ReserveFab reserveFab_, AssessorFab assessorFab_, CoordinatorFab coordinatorFab_, OperatorFab operatorFab_) public {
 
         deployer = msg.sender;
         root = root_;
         currency = currency_;
 
         trancheFab = trancheFab_;
+        memberlistFab = memberlistFab_;
         reserveFab = reserveFab_;
         assessorFab = assessorFab_;
         coordinatorFab = coordinatorFab_;
         operatorFab = operatorFab_;
-
-        // token names
-        seniorName = seniorName_;
-        seniorSymbol = seniorSymbol_;
-        juniorName = juniorName_;
-        juniorSymbol =juniorSymbol_;
     }
 
-    function init(uint minSeniorRatio_, uint maxSeniorRatio_, uint maxReserve_, uint challengeTime_, uint seniorInterestRate_, MemberlistFab memberlistFab_) public {
+    function init(uint minSeniorRatio_, uint maxSeniorRatio_, uint maxReserve_, uint challengeTime_, uint seniorInterestRate_, string memory seniorName_, string memory seniorSymbol_, string memory juniorName_, string memory juniorSymbol_) public {
         require(msg.sender == deployer);
         challengeTime = challengeTime_;
         minSeniorRatio = Fixed27(minSeniorRatio_);
@@ -115,7 +109,11 @@ contract LenderDeployer is FixedPoint {
         maxReserve = maxReserve_;
         seniorInterestRate = Fixed27(seniorInterestRate_);
 
-        memberlistFab = memberlistFab_;
+        // token names
+        seniorName = seniorName_;
+        seniorSymbol = seniorSymbol_;
+        juniorName = juniorName_;
+        juniorSymbol =juniorSymbol_;
 
         deployer = address(1);
     }
