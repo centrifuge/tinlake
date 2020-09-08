@@ -341,7 +341,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         saveNewImprovement(impScoreRatio, impScoreReserve);
 
         // solution doesn't satisfy all pool constraints but improves the current violation
-        // improvement only gets 0 points for alternative solutions in the feasible region
+        // improvement only gets 0 points only solutions in the feasible region receive more
         _saveNewOptimum(seniorRedeem, juniorRedeem, juniorSupply, seniorSupply, 0);
         return NEW_BEST;
     }
