@@ -104,7 +104,7 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         // benchmark status is better there for no best solution
         assertEq(submitSolution(solution), coordinator.ERR_NOT_NEW_BEST());
         // no solution in feasible region
-        assertTrue(coordinator.gotValidPoolConSubmission() == false);
+        assertTrue(coordinator.gotFullValidSolution() == false);
 
         // senior redeem improves the ratio
          solution = ModelInput({
@@ -121,7 +121,7 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         // benchmark status is better there for no best solution
         assertEq(submitSolution(solution), coordinator.NEW_BEST());
         // no solution in feasible region
-        assertTrue(coordinator.gotValidPoolConSubmission() == false);
+        assertTrue(coordinator.gotFullValidSolution() == false);
         assertEq(coordinator.bestSubScore(), 0);
 
 
@@ -141,7 +141,7 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
 
         assertEq(submitSolution(solution), coordinator.NEW_BEST());
         // no solution in feasible region
-        assertTrue(coordinator.gotValidPoolConSubmission() == false);
+        assertTrue(coordinator.gotFullValidSolution() == false);
         assertEq(coordinator.bestSubScore(), 0);
 
 
@@ -162,7 +162,7 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
 
         assertEq(submitSolution(solution), coordinator.NEW_BEST());
         // no solution in feasible region
-        assertTrue(coordinator.gotValidPoolConSubmission() == true);
+        assertTrue(coordinator.gotFullValidSolution() == true);
         // should have a score bigger than 0
         assertTrue(coordinator.bestSubScore() != 0);
     }
@@ -196,7 +196,7 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
 
         // benchmark status is better there for no best solution
         assertEq(submitSolution(solution), coordinator.ERR_NOT_NEW_BEST());
-        assertTrue(coordinator.gotValidPoolConSubmission() == false);
+        assertTrue(coordinator.gotFullValidSolution() == false);
 
 
         solution = ModelInput({
@@ -208,7 +208,7 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
 
         // benchmark status is better there for no best solution
         assertEq(submitSolution(solution), coordinator.NEW_BEST());
-        assertTrue(coordinator.gotValidPoolConSubmission() == false);
+        assertTrue(coordinator.gotFullValidSolution() == false);
 
 
         // destroy ratio but fix reserve
@@ -227,7 +227,7 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
 
         // benchmark status is better there for no best solution
         assertEq(submitSolution(solution), coordinator.ERR_NOT_NEW_BEST());
-        assertTrue(coordinator.gotValidPoolConSubmission() == false);
+        assertTrue(coordinator.gotFullValidSolution() == false);
 
 
         // fix reserve constraint
@@ -241,7 +241,7 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
 
         // benchmark status is better there for no best solution
         assertEq(submitSolution(solution), coordinator.NEW_BEST());
-        assertTrue(coordinator.gotValidPoolConSubmission() == true);
+        assertTrue(coordinator.gotFullValidSolution() == true);
     }
 }
 

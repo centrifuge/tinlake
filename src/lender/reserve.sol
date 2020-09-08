@@ -28,11 +28,14 @@ contract AssessorLike {
     function borrowUpdate(uint amount) public;
 }
 
+// The reserve keeps track of the currency and the bookkeeping
+// of the total balance
 contract Reserve is Math, Auth {
     ERC20Like public currency;
     ShelfLike public shelf;
     AssessorLike public assessor;
 
+    // currency available for borrowing new loans
     // currency available for borrowing new loans
     uint256 public currencyAvailable;
 
@@ -48,7 +51,7 @@ contract Reserve is Math, Auth {
     }
 
     function file(bytes32 what, uint amount) public auth {
-        if (what == "maxcurrency") {
+        if (what == "currencyAvailable") {
             currencyAvailable = amount;
         } else revert();
     }
@@ -67,6 +70,7 @@ contract Reserve is Math, Auth {
         return balance_;
     }
 
+    // deposits currency in the the reserve
     function deposit(uint currencyAmount) public auth {
         _deposit(msg.sender, currencyAmount);
     }
@@ -76,6 +80,7 @@ contract Reserve is Math, Auth {
         balance_ = safeAdd(balance_, currencyAmount);
     }
 
+    // remove currency from the reserve
     function payout(uint currencyAmount) public auth {
         _payout(msg.sender, currencyAmount);
     }
@@ -85,7 +90,8 @@ contract Reserve is Math, Auth {
       balance_ = safeSub(balance_, currencyAmount);
     }
 
-
+    // balance handles currency requests from the borrower side
+    // currency is moved between shelf and reserve if needed
     function balance() public {
         (bool requestWant, uint256 currencyAmount) = shelf.balanceRequest();
         if (requestWant) {
@@ -93,7 +99,7 @@ contract Reserve is Math, Auth {
                 currencyAvailable >= currencyAmount,
                 "not-enough-currency-reserve"
             );
-    
+
             currencyAvailable = safeSub(currencyAvailable, currencyAmount);
             _payout(address(shelf), currencyAmount);
             assessor.borrowUpdate(currencyAmount);
