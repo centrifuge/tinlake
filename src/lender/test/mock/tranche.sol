@@ -70,8 +70,8 @@ contract TrancheMock is Mock, Auth, DSTest {
         return (0,0,0,0);
     }
 
-    function tokenSupply() external returns(uint) {
-        return call("tokenSupply");
+    function tokenSupply() external view returns(uint) {
+        return values_return["tokenSupply"];
     }
 }
 

@@ -132,6 +132,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         uint seniorSupplyAmount = 500 ether;
         uint juniorSupplyAmount = 20 ether;
         uint nftPrice = 200 ether;
+        // interest rate default => 5% per day
         uint borrowAmount = 100 ether;
         uint maturityDate = 5 days;
 
@@ -146,7 +147,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
 
     }
 
-    function calcInterest(uint amount, uint time, uint ratePerSecond) public returns(uint) {
+    function calcInterest(uint amount, uint time, uint ratePerSecond) public pure returns(uint) {
         return rmul(rpow(ratePerSecond, time, ONE), amount);
     }
 
@@ -154,6 +155,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         uint seniorSupplyAmount = 500 ether;
         uint juniorSupplyAmount = 20 ether;
         uint nftPrice = 200 ether;
+        // interest rate default => 5% per day
         uint borrowAmount = 100 ether;
         uint maturityDate = 5 days;
 
@@ -229,6 +231,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         uint seniorSupplyAmount = 1000 ether;
         uint juniorSupplyAmount = 20 ether;
         uint nftPrice = 200 ether;
+        // interest rate default => 5% per day
         uint borrowAmount = 100 ether;
         uint maturityDate =  5 days;
 
@@ -276,6 +279,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         uint seniorSupplyAmount = 1000 ether;
         uint juniorSupplyAmount = 20 ether;
         uint nftPrice = 200 ether;
+        // interest rate default => 5% per day
         uint borrowAmount = 100 ether;
         uint maturityDate = 5 days;
 
@@ -320,6 +324,118 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         // junior full payout
         (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken) = juniorInvestor.disburse();
         assertEq(payoutCurrencyAmount, rmul(20 ether, coordinator.epochJuniorTokenPrice()));
+    }
+
+    function juniorWithLosses() public returns (uint loan, uint tokenId) {
+        uint seniorSupplyAmount = 1000 ether;
+        uint juniorSupplyAmount = 20 ether;
+        uint nftPrice = 200 ether;
+        // interest rate default => 5% per day
+        uint borrowAmount = 100 ether;
+        uint maturityDate = 5 days;
+
+        ModelInput memory submission = ModelInput({
+            seniorSupply : 80 ether,
+            juniorSupply : 20 ether,
+            seniorRedeem : 0 ether,
+            juniorRedeem : 0 ether
+            });
+
+        (uint loan, uint tokenId) = supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate, submission);
+        //        // change senior interest rate
+        root.relyContract(address(assessor), address(this));
+        // change interest rate to 10% a day
+        uint highRate = uint(1000001103100000000000000000);
+        assessor.file("seniorInterestRate", uint(1000001103100000000000000000));
+
+
+        // remove existing order
+        seniorSupply(0);
+
+        hevm.warp(now + 3 days);
+
+        uint seniorTokenPrice = assessor.calcSeniorTokenPrice();
+
+        // senior interest is to high, the ongoing loans have too low returns
+        // therefore junior is paying it
+        uint juniorTokenPrice = assessor.calcJuniorTokenPrice();
+
+        // token price should be below ONE
+        assertTrue(juniorTokenPrice < ONE);
+
+        hevm.warp(now + 3 days);
+
+        uint nav = nftFeed.currentNAV();
+
+        // now ongoing loan is not repaid before maturity date: moved to write-off by admin
+        assertEq(nav, 0);
+        root.relyContract(address(pile), address(this));
+
+        //       // 40% write off because one day too late
+
+        // increase loan rate from 5% to 6%
+        uint penaltyRate = uint(1000000674400000000000000000);
+        pile.file("rate", nftFeed.WRITE_OFF_PHASE_A(), penaltyRate);
+        pile.changeRate(loan, nftFeed.WRITE_OFF_PHASE_A());
+        emit log_named_uint("loan debt",pile.debt(loan));
+        assertEq(nftFeed.currentNAV(), rmul(pile.debt(loan), 6 * 10**26));
+
+        juniorTokenPrice = assessor.calcJuniorTokenPrice();
+
+        // senior debt ~141 ether and nav ~134 ether
+        assertTrue(assessor.seniorDebt() > nftFeed.currentNAV());
+
+        // junior lost everything
+        assertEq(juniorTokenPrice, 0);
+
+        return (loan, tokenId);
+    }
+
+    function testJuniorLosses() public {
+        // test junior losses
+        juniorWithLosses();
+    }
+
+    function testDisburseAfterJuniorLost() public {
+        // test setup junior lost everything
+        (uint loan, uint tokenId) = juniorWithLosses();
+
+        // junior lost everything
+        assertEq(assessor.calcJuniorTokenPrice(), 0);
+
+        uint loanDebt = pile.debt(loan);
+        repayLoan(address(borrower), loan, loanDebt);
+
+        assertEq(reserve.totalBalance(), loanDebt);
+        assertEq(nftFeed.approximatedNAV(), 0);
+
+        // max redeem from both
+        seniorInvestor.redeemOrder(seniorToken.balanceOf(seniorInvestor_));
+        juniorInvestor.redeemOrder(juniorToken.balanceOf(juniorInvestor_));
+
+        // tokens should be locked
+        assertEq(seniorToken.balanceOf(seniorInvestor_), 0);
+        assertEq(juniorToken.balanceOf(juniorInvestor_), 0);
+
+        coordinator.closeEpoch();
+        assertTrue(coordinator.submissionPeriod() == false);
+
+        // senior full payout
+        (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) = seniorInvestor.disburse();
+        assertEq(payoutCurrencyAmount ,rmul(80 ether, coordinator.epochSeniorTokenPrice()));
+        assertEq(remainingRedeemToken, 0);
+        assertEq(remainingSupplyCurrency, 0);
+
+        // junior payout
+        (payoutCurrencyAmount,  payoutTokenAmount,  remainingSupplyCurrency,  remainingRedeemToken) = juniorInvestor.disburse();
+        assertEq(payoutCurrencyAmount, 0);
+        assertEq(remainingSupplyCurrency, 0);
+        // junior tokens can't be removed and are still locked
+        assertEq(remainingRedeemToken, 20 ether);
+
+        // get worthless tokens back via order change
+        juniorInvestor.redeemOrder(0);
+        assertEq(juniorToken.balanceOf(juniorInvestor_), 20 ether);
     }
 }
 

@@ -224,7 +224,6 @@ contract AssessorTest is DSTest, Math {
         uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, reserve);
         assertEq(seniorTokenPrice, ONE);
 
-
         uint supplyAmount = 200 ether;
         navFeed.setReturn("approximatedNAV", 200 ether);
 
