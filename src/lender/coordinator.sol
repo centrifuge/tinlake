@@ -158,10 +158,10 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         else revert();
     }
 
-    /// an epoch can be closed after minimum epoch time has passed
+    /// an epoch can be closed after a minimum epoch time has passed
     /// closeEpoch creates a snapshot of the current lender state
     /// if all orders can be fulfilled epoch is executed otherwise
-    /// submission period is started
+    /// submission period starts
     function closeEpoch() external minimumEpochTimePassed {
         require(submissionPeriod == false);
         lastEpochClosed = block.timestamp;
