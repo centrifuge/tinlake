@@ -76,7 +76,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         recoveryRatePD[3] = Fixed27(ONE);
         recoveryRatePD[4] = Fixed27(ONE);
 
-        // Overdue loans (= loans that were not repaid by the maturityDate) are moved to write Offs
+        /// Overdue loans (= loans that were not repaid by the maturityDate) are moved to write Offs
         // 60% -> 40% write off
         writeOffs[0] = WriteOff(WRITE_OFF_PHASE_A, Fixed27(6 * 10**26));
         // 80% -> 20% write off
