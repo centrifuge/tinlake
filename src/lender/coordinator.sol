@@ -41,13 +41,14 @@ contract AssessorLike is FixedPoint {
     function changeSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
 }
 
-// The EpochCoordinator keeps track of the epochs and execute epochs
-// with the maximum amount of redeem and supply orders which still fulfill
+// The EpochCoordinator keeps track of the epochs and execute epochs them.
+// An epoch execution happens with the maximum amount of redeem and supply which still satisfies
 // all constraints or at least improve certain pool constraints.
-// In most cases all orders can be fulfilled without violating any constraints.
-// If it is not possible to fulfill all orders at maximum the coordinators opens a submission period.
+// In most cases all orders can be fulfilled with order maximum without violating any constraints.
+// If it is not possible to satisfy all orders at maximum the coordinators opens a submission period.
 // The problem of finding the maximum amount of supply and redeem orders which still satisfies all constraints
 // can be seen as a linear programming (linear optimization problem).
+// The optimal solution can be calculated off-chain 
 contract EpochCoordinator is Auth, Math, FixedPoint  {
     struct OrderSummary {
         // all variables are stored in currency
