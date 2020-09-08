@@ -19,6 +19,7 @@ import {AssessorFab}    from "./fabs/assessor.sol";
 import {TrancheFab}     from "./fabs/tranche.sol";
 import {CoordinatorFab} from "./fabs/coordinator.sol";
 import {OperatorFab}    from "./fabs/operator.sol";
+import {MemberlistFab}    from  "./fabs/memberlist.sol";
 
 import {FixedPoint}      from "./../fixed_point.sol";
 
@@ -53,6 +54,7 @@ contract LenderDeployer is FixedPoint {
     AssessorFab         public assessorFab;
     CoordinatorFab      public coordinatorFab;
     OperatorFab         public operatorFab;
+    MemberlistFab       public memberlistFab;
 
     // lender state variables
     Fixed27             public minSeniorRatio;
@@ -85,27 +87,21 @@ contract LenderDeployer is FixedPoint {
 
     address             public deployer;
 
-    constructor(address root_, address currency_, TrancheFab trancheFab_, ReserveFab reserveFab_, AssessorFab assessorFab_, CoordinatorFab coordinatorFab_, OperatorFab operatorFab_,
-                string memory seniorName_, string memory seniorSymbol_, string memory juniorName_, string memory juniorSymbol_) public {
+    constructor(address root_, address currency_, TrancheFab trancheFab_, MemberlistFab memberlistFab_, ReserveFab reserveFab_, AssessorFab assessorFab_, CoordinatorFab coordinatorFab_, OperatorFab operatorFab_) public {
 
         deployer = msg.sender;
         root = root_;
         currency = currency_;
 
         trancheFab = trancheFab_;
+        memberlistFab = memberlistFab_;
         reserveFab = reserveFab_;
         assessorFab = assessorFab_;
         coordinatorFab = coordinatorFab_;
         operatorFab = operatorFab_;
-
-        // token names
-        seniorName = seniorName_;
-        seniorSymbol = seniorSymbol_;
-        juniorName = juniorName_;
-        juniorSymbol =juniorSymbol_;
     }
 
-    function init(uint minSeniorRatio_, uint maxSeniorRatio_, uint maxReserve_, uint challengeTime_, uint seniorInterestRate_) public {
+    function init(uint minSeniorRatio_, uint maxSeniorRatio_, uint maxReserve_, uint challengeTime_, uint seniorInterestRate_, string memory seniorName_, string memory seniorSymbol_, string memory juniorName_, string memory juniorSymbol_) public {
         require(msg.sender == deployer);
         challengeTime = challengeTime_;
         minSeniorRatio = Fixed27(minSeniorRatio_);
@@ -113,12 +109,19 @@ contract LenderDeployer is FixedPoint {
         maxReserve = maxReserve_;
         seniorInterestRate = Fixed27(seniorInterestRate_);
 
+        // token names
+        seniorName = seniorName_;
+        seniorSymbol = seniorSymbol_;
+        juniorName = juniorName_;
+        juniorSymbol = juniorSymbol_;
+
         deployer = address(1);
     }
 
     function deployJunior() public {
         require(juniorTranche == address(0) && deployer == address(1));
-        (juniorTranche, juniorToken, juniorMemberlist) = trancheFab.newTranche(currency, juniorName, juniorSymbol);
+        (juniorTranche, juniorToken) = trancheFab.newTranche(currency, juniorName, juniorSymbol);
+        juniorMemberlist = memberlistFab.newMemberlist();
         juniorOperator = operatorFab.newOperator(juniorTranche);
         AuthLike(juniorMemberlist).rely(root);
         AuthLike(juniorToken).rely(root);
@@ -128,8 +131,8 @@ contract LenderDeployer is FixedPoint {
 
     function deploySenior() public {
         require(seniorTranche == address(0) && deployer == address(1));
-        // todo check for gas maximum otherwise split into two methods
-        (seniorTranche, seniorToken, seniorMemberlist) = trancheFab.newTranche(currency, seniorName, seniorSymbol);
+        (seniorTranche, seniorToken) = trancheFab.newTranche(currency, seniorName, seniorSymbol);
+        seniorMemberlist = memberlistFab.newMemberlist();
         seniorOperator = operatorFab.newOperator(seniorTranche);
         AuthLike(seniorMemberlist).rely(root);
         AuthLike(seniorToken).rely(root);
