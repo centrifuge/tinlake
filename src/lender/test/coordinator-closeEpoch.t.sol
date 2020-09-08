@@ -22,7 +22,7 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
     function setUp() public {
         super.setUp();
         // set max available currency to 1 to check if it was set to 0 on close
-        reserve.file("maxcurrency", 1);
+        reserve.file("currencyAvailable", 1);
     }
 
     function testMinimumEpochTime() public {

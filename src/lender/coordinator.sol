@@ -142,7 +142,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         lastEpochClosed = block.timestamp;
         currentEpoch = safeAdd(currentEpoch, 1);
 
-        reserve.file("maxcurrency", 0);
+        reserve.file("currencyAvailable", 0);
 
         (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.closeEpoch();
         (uint orderSeniorSupply, uint orderSeniorRedeem) = seniorTranche.closeEpoch();
@@ -502,7 +502,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         uint newSeniorRatio = calcSeniorRatio(seniorAsset, epochNAV, newReserve);
 
         assessor.changeSeniorAsset(newSeniorRatio, seniorSupply, seniorRedeem);
-        reserve.file("maxcurrency", newReserve);
+        reserve.file("currencyAvailable", newReserve);
         // reset state for next epochs
         lastEpochExecuted = epochID;
         submissionPeriod = false;
