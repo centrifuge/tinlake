@@ -36,7 +36,7 @@ contract Reserve is Math, Auth {
     AssessorLike public assessor;
 
     // currency available for borrowing new loans
-    // the reserve can have more currency than available for borrowing new loans
+    // currency available for borrowing new loans
     uint256 public currencyAvailable;
 
     address self;
