@@ -37,6 +37,7 @@ import { Memberlist } from "../../lender/token/memberlist.sol";
 
 import {
   TrancheFab,
+  MemberlistFab,
   AssessorFab,
   ReserveFab,
   CoordinatorFab,
@@ -190,6 +191,7 @@ contract TestSetup {
         ReserveFab reserveFab = new ReserveFab();
         AssessorFab assessorFab = new AssessorFab();
         TrancheFab  trancheFab = new TrancheFab();
+        MemberlistFab memberlistFab = new MemberlistFab();
         OperatorFab operatorFab = new OperatorFab();
         CoordinatorFab coordinatorFab = new CoordinatorFab();
 
@@ -199,8 +201,7 @@ contract TestSetup {
         string memory juniorTokenSymbol = "TIN";
 
         // root is testcase
-        lenderDeployer_ = new LenderDeployer(root, currency_, trancheFab, reserveFab, assessorFab, coordinatorFab, operatorFab,
-            seniorTokenName, seniorTokenSymbol, juniorTokenName, juniorTokenSymbol);
+        lenderDeployer_ = new LenderDeployer(root, currency_, trancheFab, memberlistFab, reserveFab, assessorFab, coordinatorFab, operatorFab);
     }
 
     function deployLender() public {
@@ -211,7 +212,12 @@ contract TestSetup {
         uint minSeniorRatio = 75 * 10 **25;
         uint challengeTime = 1 hours;
 
-        lenderDeployer_.init(minSeniorRatio, maxSeniorRatio, maxReserve, challengeTime, seniorInterestRate);
+        string memory seniorTokenName = "DROP Token";
+        string memory seniorTokenSymbol = "DROP";
+        string memory juniorTokenName = "TIN Token";
+        string memory juniorTokenSymbol = "TIN";
+
+        lenderDeployer_.init(minSeniorRatio, maxSeniorRatio, maxReserve, challengeTime, seniorInterestRate, seniorTokenName, seniorTokenSymbol, juniorTokenName, juniorTokenSymbol);
 
         lenderDeployer_.deployJunior();
         lenderDeployer_.deploySenior();
