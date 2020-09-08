@@ -179,19 +179,19 @@ contract LenderDeployer is FixedPoint {
         AuthLike(juniorTranche).rely(coordinator);
         AuthLike(seniorTranche).rely(seniorOperator);
         AuthLike(juniorTranche).rely(juniorOperator);
-        
+
         // coordinator implements epoch ticker interface
         DependLike(seniorTranche).depend("epochTicker", coordinator);
         DependLike(juniorTranche).depend("epochTicker", coordinator);
-        
+
         //restricted token
         DependLike(seniorToken).depend("memberlist", seniorMemberlist);
         DependLike(juniorToken).depend("memberlist", juniorMemberlist);
-        
+
         //allow tinlake contracts to hold drop/tin tokens
         MemberlistLike(juniorMemberlist).updateMember(juniorTranche, uint(-1));
         MemberlistLike(seniorMemberlist).updateMember(seniorTranche, uint(-1));
-        
+
         // operator
         DependLike(seniorOperator).depend("tranche", seniorTranche);
         DependLike(juniorOperator).depend("tranche", juniorTranche);
@@ -208,6 +208,7 @@ contract LenderDeployer is FixedPoint {
         // assessor
         DependLike(assessor).depend("seniorTranche", seniorTranche);
         DependLike(assessor).depend("juniorTranche", juniorTranche);
+        DependLike(assessor).depend("reserve", reserve);
 
         AuthLike(assessor).rely(coordinator);
         AuthLike(assessor).rely(reserve);
