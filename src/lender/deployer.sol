@@ -20,6 +20,7 @@ import {TrancheFab}     from "./fabs/tranche.sol";
 import {CoordinatorFab} from "./fabs/coordinator.sol";
 import {OperatorFab}    from "./fabs/operator.sol";
 import {MemberlistFab}    from  "./fabs/memberlist.sol";
+import {RestrictedTokenFab} from "./fabs/restrictedtoken.sol";
 
 import {FixedPoint}      from "./../fixed_point.sol";
 
@@ -55,6 +56,7 @@ contract LenderDeployer is FixedPoint {
     CoordinatorFab      public coordinatorFab;
     OperatorFab         public operatorFab;
     MemberlistFab       public memberlistFab;
+    RestrictedTokenFab  public restrictedTokenFab;
 
     // lender state variables
     Fixed27             public minSeniorRatio;
@@ -87,7 +89,7 @@ contract LenderDeployer is FixedPoint {
 
     address             public deployer;
 
-    constructor(address root_, address currency_, TrancheFab trancheFab_, MemberlistFab memberlistFab_, ReserveFab reserveFab_, AssessorFab assessorFab_, CoordinatorFab coordinatorFab_, OperatorFab operatorFab_) public {
+    constructor(address root_, address currency_, TrancheFab trancheFab_, MemberlistFab memberlistFab_, RestrictedTokenFab restrictedtokenFab_, ReserveFab reserveFab_, AssessorFab assessorFab_, CoordinatorFab coordinatorFab_, OperatorFab operatorFab_) public {
 
         deployer = msg.sender;
         root = root_;
@@ -95,6 +97,7 @@ contract LenderDeployer is FixedPoint {
 
         trancheFab = trancheFab_;
         memberlistFab = memberlistFab_;
+        restrictedTokenFab = restrictedtokenFab_;
         reserveFab = reserveFab_;
         assessorFab = assessorFab_;
         coordinatorFab = coordinatorFab_;
@@ -120,22 +123,26 @@ contract LenderDeployer is FixedPoint {
 
     function deployJunior() public {
         require(juniorTranche == address(0) && deployer == address(1));
-        (juniorTranche, juniorToken) = trancheFab.newTranche(currency, juniorName, juniorSymbol);
+        juniorToken = restrictedTokenFab.newRestrictedToken(juniorName, juniorSymbol);
+        juniorTranche = trancheFab.newTranche(currency, juniorToken);
         juniorMemberlist = memberlistFab.newMemberlist();
         juniorOperator = operatorFab.newOperator(juniorTranche);
         AuthLike(juniorMemberlist).rely(root);
         AuthLike(juniorToken).rely(root);
+        AuthLike(juniorToken).rely(juniorTranche);
         AuthLike(juniorOperator).rely(root);
         AuthLike(juniorTranche).rely(root);
     }
 
     function deploySenior() public {
         require(seniorTranche == address(0) && deployer == address(1));
-        (seniorTranche, seniorToken) = trancheFab.newTranche(currency, seniorName, seniorSymbol);
+        seniorToken = restrictedTokenFab.newRestrictedToken(seniorName, seniorSymbol);
+        seniorTranche = trancheFab.newTranche(currency, seniorToken);
         seniorMemberlist = memberlistFab.newMemberlist();
         seniorOperator = operatorFab.newOperator(seniorTranche);
         AuthLike(seniorMemberlist).rely(root);
         AuthLike(seniorToken).rely(root);
+        AuthLike(seniorToken).rely(seniorTranche);
         AuthLike(seniorOperator).rely(root);
         AuthLike(seniorTranche).rely(root);
 
