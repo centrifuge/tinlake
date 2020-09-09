@@ -3,9 +3,6 @@ Open Source implementation of the Tinlake in Solidity.  This repository contains
 
 Tinlake is a set of smart contracts that allows companies and individuals to use tokenized non-fungible real-world assets as collateral to obtain liquidity. 
 
-![](assets/overview_contracts.png) 
-
-
 ## Documentation
 For learning more about Tinlake visit [Tinlake Documentation](https://developer.centrifuge.io/tinlake/overview/introduction/)
 

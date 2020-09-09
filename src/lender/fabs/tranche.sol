@@ -16,12 +16,11 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 import { Tranche } from "./../tranche.sol";
-import { RestrictedToken } from "./../token/restricted.sol";
 
 contract TrancheFab {
     function newTranche(address currency, address restrictedToken) public returns (address token) {
         Tranche tranche = new Tranche(currency, restrictedToken);
-        
+
         tranche.rely(msg.sender);
         tranche.deny(address(this));
 

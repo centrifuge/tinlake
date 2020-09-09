@@ -30,9 +30,9 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
         // should not produce integer overflow
         assertTrue(score <= uint(-1));
 
-        uint maxDistancePoints = rmul(coordinator.IMPR_RATIO_WEIGHT(), rdiv(ONE, 1));
+        uint maxDistancePoints = rmul(coordinator.IMPROVEMENT_WEIGHT(), rdiv(ONE, 1));
         assertTrue(coordinator.BIG_NUMBER() > maxDistancePoints);
-        maxDistancePoints = rmul(coordinator.IMPR_RESERVE_WEIGHT(), rdiv(ONE, 1));
+        maxDistancePoints = rmul(coordinator.IMPROVEMENT_WEIGHT(), rdiv(ONE, 1));
         assertTrue(coordinator.BIG_NUMBER() > maxDistancePoints);
     }
 
@@ -152,7 +152,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
             });
 
         assertEq(submitSolution(solution), coordinator.SUCCESS());
-        assertTrue(coordinator.gotValidPoolConSubmission() == true);
+        assertTrue(coordinator.gotFullValidSolution() == true);
     }
 
     function testSubmitImprovement() public {
@@ -178,7 +178,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
             });
 
         assertEq(submitSolution(solution), coordinator.SUCCESS());
-        assertTrue(coordinator.gotValidPoolConSubmission() == false);
+        assertTrue(coordinator.gotFullValidSolution() == false);
 
         solution = ModelInput({
             seniorRedeem : 0 ether,
@@ -188,7 +188,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
             });
 
         assertEq(submitSolution(solution), coordinator.SUCCESS());
-        assertTrue(coordinator.gotValidPoolConSubmission() == false);
+        assertTrue(coordinator.gotFullValidSolution() == false);
 
 
         solution = ModelInput({
@@ -199,7 +199,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
             });
 
         assertEq(submitSolution(solution), coordinator.SUCCESS());
-        assertTrue(coordinator.gotValidPoolConSubmission() == false);
+        assertTrue(coordinator.gotFullValidSolution() == false);
 
 
         // solution would satisfy all constraints
@@ -211,7 +211,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
             });
 
         assertEq(submitSolution(solution), coordinator.SUCCESS());
-        assertTrue(coordinator.gotValidPoolConSubmission() == true);
+        assertTrue(coordinator.gotFullValidSolution() == true);
 
 
         // should be not possible to submit unhealthy solutions again
@@ -223,7 +223,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
             });
 
         assertEq(submitSolution(solution), coordinator.ERR_NOT_NEW_BEST());
-        assertTrue(coordinator.gotValidPoolConSubmission() == true);
+        assertTrue(coordinator.gotFullValidSolution() == true);
 
         // submit better healthy solution
         // solution would satisfy all constraints
@@ -235,7 +235,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
             });
 
         assertEq(submitSolution(solution), coordinator.SUCCESS());
-        assertTrue(coordinator.gotValidPoolConSubmission() == true);
+        assertTrue(coordinator.gotFullValidSolution() == true);
     }
 
     function submitSolutionWorseThanBenchmark() public {
