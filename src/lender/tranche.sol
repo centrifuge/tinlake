@@ -200,18 +200,23 @@ contract Tranche is Math, Auth, FixedPoint {
     // the disburse function can be used after an epoch is over to receive currency and tokens
     function disburse(address usr,  uint endEpoch) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         require(users[usr].orderedInEpoch <= epochTicker.lastEpochExecuted());
+
+        uint lastEpochExecuted = epochTicker.lastEpochExecuted();
+
+        if (endEpoch > lastEpochExecuted) {
+            // it is only possible to disburse epochs which are already over
+            endEpoch = lastEpochExecuted;
+        }
+
         (payoutCurrencyAmount, payoutTokenAmount,
          remainingSupplyCurrency, remainingRedeemToken) = calcDisburse(usr, endEpoch);
         users[usr].supplyCurrencyAmount = remainingSupplyCurrency;
         users[usr].redeemTokenAmount = remainingRedeemToken;
-        // remaining orders are placed in the current epoch to allow
-        // which allows to change the order and therefore receive it back
+        // if lastEpochExecuted is disbursed orderInEpoch is at current epoch again
+        // which allows to change the order and therefore the possibility to remove it
         // this is only possible if all previous epochs are disbursed (no orders reserved)
-        if (endEpoch == epochTicker.lastEpochExecuted()) {
-            users[usr].orderedInEpoch = epochTicker.currentEpoch();
-        } else {
-            users[usr].orderedInEpoch = endEpoch;
-        }
+        users[usr].orderedInEpoch = safeAdd(endEpoch, 1);
+
 
         if (payoutCurrencyAmount > 0) {
             require(currency.transferFrom(self, usr, payoutCurrencyAmount), "currency-transfer-failed");
@@ -239,9 +244,13 @@ contract Tranche is Math, Auth, FixedPoint {
             supplyInToken = rdiv(epochSupplyOrderCurrency, tokenPrice_);
             redeemInToken = rdiv(epochRedeemOrderCurrency, tokenPrice_);
         }
+
+        // calculates the delta between supply and redeem for tokens and burn or mint them
         adjustTokenBalance(epochID, supplyInToken, redeemInToken);
+        // calculates the delta between supply and redeem for currency and deposit or get them from the reserve
         adjustCurrencyBalance(epochID, epochSupplyOrderCurrency, epochRedeemOrderCurrency);
 
+        // the unfulfilled orders (1-fulfillment) is automatically ordered
         totalSupply = safeAdd(safeSub(totalSupply, epochSupplyOrderCurrency), rmul(epochSupplyOrderCurrency, safeSub(ONE, epochs[epochID].supplyFulfillment.value)));
         totalRedeem = safeAdd(safeSub(totalRedeem, redeemInToken), rmul(redeemInToken, safeSub(ONE, epochs[epochID].redeemFulfillment.value)));
     }
