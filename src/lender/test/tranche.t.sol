@@ -21,6 +21,7 @@ import "tinlake-math/math.sol";
 import "./../tranche.sol";
 import "../../test/simple/token.sol";
 import "../test/mock/reserve.sol";
+import "../../../lib/tinlake-erc20/src/erc20.sol";
 
 contract Hevm {
     function warp(uint256) public;
@@ -278,7 +279,126 @@ contract TrancheTest is DSTest, Math, FixedPoint {
     }
 
     function testDisburseEndEpoch() public {
-        // todo pass different end epochs
+        uint amount = 100 ether;
+        supplyOrder(amount);
+
+        // 60 % fulfillment
+        uint supplyFulfillment_ = 1 * 10**26;
+        uint redeemFulfillment_ = ONE;
+        uint tokenPrice_ = ONE;
+
+        // execute 3 times with 10% supply fulfillment
+        for (uint i = 0; i < 3; i++) {
+            closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
+        }
+
+        // execute disburse
+        (uint payoutCurrencyAmount, uint payoutTokenAmount,
+        uint remainingSupplyCurrency, uint remainingRedeemToken) =  tranche.disburse(self, lastEpochExecuted);
+
+        // total fulfillment
+        // 100 * 0.1 = 10
+        //  90 * 0.1 =  9
+        // 81  * 0.1 =  8.1
+        // total: 27.1
+
+        assertEq(payoutTokenAmount, 27.1 ether);
+    }
+
+    function testDisburseEndEpochMultiple() public {
+        uint amount = 100 ether;
+        supplyOrder(amount);
+
+        // 10 % fulfillment
+        uint supplyFulfillment_ = 1 * 10**26;
+        uint redeemFulfillment_ = ONE;
+        uint tokenPrice_ = ONE;
+
+        // execute 3 times with 10% supply fulfillment
+
+        // first one has a cheaper price
+        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, 5 * 10**26);
+        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
+        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
+
+
+        (uint orderedInEpoch, ,) = tranche.users(self);
+
+        uint endEpoch = orderedInEpoch;
+
+        // execute disburse first epoch
+        (uint payoutCurrencyAmount, uint payoutTokenAmount,
+        uint remainingSupplyCurrency, uint remainingRedeemToken) =  tranche.disburse(self, endEpoch);
+
+
+        // 10 currency for 20 tokens
+        assertEq(payoutTokenAmount, 20 ether);
+        assertEq(remainingSupplyCurrency, 90 ether);
+
+        (uint updatedOrderedInEpoch, ,) = tranche.users(self);
+        // updated order should increase
+        assertEq(orderedInEpoch+1, updatedOrderedInEpoch);
+
+        // try again with same endEpoch
+        ( payoutCurrencyAmount,  payoutTokenAmount,
+         remainingSupplyCurrency,  remainingRedeemToken) =  tranche.disburse(self, endEpoch);
+
+        assertEq(payoutTokenAmount, 0);
+
+        ( payoutCurrencyAmount,  payoutTokenAmount,
+        remainingSupplyCurrency,  remainingRedeemToken) =  tranche.disburse(self, endEpoch+1);
+        // 90 ether * 0.1
+        assertEq(payoutTokenAmount, 9 ether);
+
+    }
+
+    function testEndEpochTooHigh() public {
+        uint amount = 100 ether;
+        supplyOrder(amount);
+
+        // 10 % fulfillment
+        uint supplyFulfillment_ = 1 * 10**26;
+        uint redeemFulfillment_ = ONE;
+        uint tokenPrice_ = ONE;
+
+        // execute two times with 10 %
+        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
+        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
+
+        // execute disburse with too high endEpoch
+        uint endEpoch = 1000;
+        (uint payoutCurrencyAmount, uint payoutTokenAmount,
+        uint remainingSupplyCurrency, uint remainingRedeemToken) =  tranche.disburse(self, endEpoch);
+
+        assertEq(payoutTokenAmount, 19 ether);
+    }
+
+    function testFailNotDisburseAllEpochsAndSupply() public {
+        uint amount = 100 ether;
+        supplyOrder(amount);
+
+        // 10 % fulfillment
+        uint supplyFulfillment_ = 1 * 10**26;
+        uint redeemFulfillment_ = ONE;
+        uint tokenPrice_ = ONE;
+
+        // execute two times with 10 %
+        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
+        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
+
+        // disburse only one epoch
+
+        (uint orderedInEpoch, ,) = tranche.users(self);
+
+        uint endEpoch = orderedInEpoch;
+
+        // execute disburse first epoch
+        (uint payoutCurrencyAmount, uint payoutTokenAmount,
+        uint remainingSupplyCurrency, uint remainingRedeemToken) =  tranche.disburse(self, endEpoch);
+
+        // no try to change supply
+        tranche.supplyOrder(address(this), 0);
+
     }
 
     function testDisburseSupplyAndRedeem() public {

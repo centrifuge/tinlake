@@ -37,6 +37,7 @@ import { Memberlist } from "../../lender/token/memberlist.sol";
 
 import {
   TrancheFab,
+  RestrictedTokenFab,
   MemberlistFab,
   AssessorFab,
   ReserveFab,
@@ -192,6 +193,7 @@ contract TestSetup {
         AssessorFab assessorFab = new AssessorFab();
         TrancheFab  trancheFab = new TrancheFab();
         MemberlistFab memberlistFab = new MemberlistFab();
+        RestrictedTokenFab restrictedTokenFab = new RestrictedTokenFab();
         OperatorFab operatorFab = new OperatorFab();
         CoordinatorFab coordinatorFab = new CoordinatorFab();
 
@@ -201,7 +203,7 @@ contract TestSetup {
         string memory juniorTokenSymbol = "TIN";
 
         // root is testcase
-        lenderDeployer_ = new LenderDeployer(root, currency_, trancheFab, memberlistFab, reserveFab, assessorFab, coordinatorFab, operatorFab);
+        lenderDeployer_ = new LenderDeployer(root, currency_, trancheFab, memberlistFab, restrictedTokenFab, reserveFab, assessorFab, coordinatorFab, operatorFab);
     }
 
     function deployLender() public {
