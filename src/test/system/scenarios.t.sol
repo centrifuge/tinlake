@@ -182,7 +182,7 @@ contract ScenarioTest is BaseSystemTest {
     }
 
     function testFailBorrowcollateralNFTNotApproved() public {
-        (uint nftPrice, uint riskGroup) = defaultCollateral();
+        defaultCollateral();
         uint tokenId = collateralNFT.issue(borrower_);
         // borrower issue loans
         uint loan =  borrower.issue(collateralNFT_, tokenId);

@@ -37,7 +37,7 @@ contract BucketList is Buckets, Math {
         removeBucket(uniqueDayTimestamp(timestamp));
     }
 
-    function calcSum() public returns (uint) {
+    function calcSum() public view returns (uint) {
         uint currDate = firstBucket;
         uint sum = 0;
 

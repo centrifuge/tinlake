@@ -56,7 +56,7 @@ contract MemberlistTest is Math, DSTest {
         memberlist.member(self);
     }
 
-    function testFailIsMemberNotAdded() public {
+    function testFailIsMemberNotAdded() public view {
         memberlist.member(self);
     }
 }

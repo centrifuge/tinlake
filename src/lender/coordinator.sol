@@ -289,7 +289,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         return ERR_NOT_NEW_BEST;
     }
 
-    function absDistance(uint x, uint y) public view returns(uint delta) {
+    function absDistance(uint x, uint y) public pure returns(uint delta) {
         if (x == y) {
             // gas optimization: for avoiding an additional edge case of 0 distance
             // distance is set to the smallest value possible
@@ -302,7 +302,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
     }
 
     function checkRatioInRange(Fixed27 memory ratio, Fixed27 memory minRatio,
-        Fixed27 memory maxRatio) public view returns (bool) {
+        Fixed27 memory maxRatio) public pure returns (bool) {
         if (ratio.value >= minRatio.value && ratio.value <= maxRatio.value ) {
             return true;
         }
@@ -498,7 +498,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
     /// calculates a new senior asset value based on senior redeem and senior supply
     function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply,
-        uint currSeniorAsset, uint reserve_, uint nav_) public view returns (uint seniorAsset) {
+        uint currSeniorAsset, uint reserve_, uint nav_) public pure returns (uint seniorAsset) {
 
         seniorAsset =  safeSub(safeAdd(currSeniorAsset, seniorSupply), seniorRedeem);
         uint assets = calcAssets(nav_, reserve_);
@@ -517,7 +517,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
 
     /// calculates the senior ratio
-    function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) public view returns(uint) {
+    function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) public pure returns(uint) {
         // note: NAV + reserve == seniorAsset + juniorAsset (loop invariant: always true)
         uint assets = calcAssets(NAV, reserve_);
         if(assets == 0) {
@@ -527,7 +527,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
     }
 
     /// calculates the percentage of an order type which can be fulfilled for an epoch
-    function calcFulfillment(uint amount, uint totalOrder) public view returns(Fixed27 memory percent) {
+    function calcFulfillment(uint amount, uint totalOrder) public pure returns(Fixed27 memory percent) {
         if(amount == 0 || totalOrder == 0) {
             return Fixed27(0);
         }

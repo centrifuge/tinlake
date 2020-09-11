@@ -354,7 +354,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
 
         hevm.warp(now + 3 days);
 
-        uint seniorTokenPrice = assessor.calcSeniorTokenPrice();
+        assessor.calcSeniorTokenPrice();
 
         // senior interest is to high, the ongoing loans have too low returns
         // therefore junior is paying it
@@ -397,7 +397,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
 
     function testDisburseAfterJuniorLost() public {
         // test setup junior lost everything
-        (uint loan, uint tokenId) = juniorWithLosses();
+        (uint loan, ) = juniorWithLosses();
 
         // junior lost everything
         assertEq(assessor.calcJuniorTokenPrice(), 0);

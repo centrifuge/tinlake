@@ -116,7 +116,7 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         initTestConfig(getNoOrderModel());
     }
 
-    function getNoOrderModel() internal returns (LenderModel memory) {
+    function getNoOrderModel() internal pure returns (LenderModel memory) {
         return LenderModel({maxReserve: 10000 ether,
         reserve: 200 ether,
         maxSeniorRatio: 80 * 10 **25,
@@ -130,7 +130,7 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         juniorRedeemOrder: 0});
     }
 
-    function getDefaultModel()  internal returns (LenderModel memory)  {
+    function getDefaultModel()  internal pure returns (LenderModel memory)  {
         return LenderModel({
             maxReserve: 10000 ether,
             reserve: 200 ether,
@@ -184,7 +184,7 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
             solution.juniorSupply, solution.seniorSupply);
     }
 
-    function calcNewSeniorRatio(LenderModel memory model, ModelInput memory input) public returns (uint) {
+    function calcNewSeniorRatio(LenderModel memory model, ModelInput memory input) public pure returns (uint) {
         uint currencyAvailable = model.reserve + input.seniorSupply + input.juniorSupply;
         uint currencyOut = input.seniorRedeem + input.juniorRedeem;
 
