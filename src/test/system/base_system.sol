@@ -242,7 +242,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         borrow(loan, tokenId, borrowAmount, true);
     }
 
-    function borrow(uint loan, uint tokenId, uint borrowAmount, bool fundLenderRequired) public 
+    function borrow(uint loan, uint tokenId, uint borrowAmount, bool fundLenderRequired) public {
         borrower.approveNFT(collateralNFT, address(shelf));
         if (fundLenderRequired) {
             fundLender(borrowAmount);
