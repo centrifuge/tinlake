@@ -117,7 +117,7 @@ contract TestSetup {
         return (tokenId, lookupId);
     }
 
-    function deployContracts(bytes32 feed_) public {
+    function deployContracts() public {
         collateralNFT = new Title("Collateral NFT", "collateralNFT");
         collateralNFT_ = address(collateralNFT);
 
@@ -196,11 +196,6 @@ contract TestSetup {
         RestrictedTokenFab restrictedTokenFab = new RestrictedTokenFab();
         OperatorFab operatorFab = new OperatorFab();
         CoordinatorFab coordinatorFab = new CoordinatorFab();
-
-        string memory seniorTokenName = "DROP Token";
-        string memory seniorTokenSymbol = "DROP";
-        string memory juniorTokenName = "TIN Token";
-        string memory juniorTokenSymbol = "TIN";
 
         // root is testcase
         lenderDeployer_ = new LenderDeployer(rootAddr, currency_, trancheFab, memberlistFab, restrictedTokenFab, reserveFab, assessorFab, coordinatorFab, operatorFab);
