@@ -258,11 +258,8 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     /// returns the NAV (net asset value) of the pool
     function currentNAV() public view returns(uint) {
         uint nav_ = calcTotalDiscount();
-
         // include ovedue assets to the current NAV calculation
-        for (uint i = 0; i < writeOffs.length; i++) {
-            // drip debt of the rte group
-            pile.drip(writeOffs[i].rateGroup);
+        for (uint i = 0; i < writeOffs.length; i++) {        
             uint writeOffGroupDebt = pile.rateDebt(writeOffs[i].rateGroup);
             // multiply writeOffGroupDebt with the writeOff ratio
             nav_ = safeAdd(nav_, rmul(writeOffGroupDebt, writeOffs[i].percentage.value));

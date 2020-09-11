@@ -33,7 +33,6 @@ contract PileLike {
     function file(bytes32, uint, uint) public;
     function rates(uint rate) public view returns (uint, uint, uint ,uint48, uint);
     function total() public view returns (uint);
-    function drip(uint rate) public view;
     function rateDebt(uint rate) public view returns (uint);
 }
 

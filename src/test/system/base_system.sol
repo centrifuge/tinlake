@@ -234,7 +234,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     function fundLender(uint amount) public {
         invest(amount);
         hevm.warp(now + 1 days);
-        emit log_named_uint("amount", amount);
         coordinator.closeEpoch();
     }
 
