@@ -98,8 +98,6 @@ contract PrincipalRepayTest is BaseSystemTest {
     function testRepayFullDebt() public {
         uint nftPrice = 200 ether; // -> ceiling 100 ether
         uint riskGroup = 1; // -> 12% per year
-        uint rate = getRateByRisk(riskGroup);
-        uint ceiling = computeCeiling(riskGroup, nftPrice);
 
         // expected debt after 1 year of compounding
         uint expectedDebt = 112 ether;
@@ -110,8 +108,7 @@ contract PrincipalRepayTest is BaseSystemTest {
     function testRepayMaxLoanDebt() public {
         uint nftPrice = 200 ether; // -> ceiling 100 ether
         uint riskGroup = 1; // -> 12% per year
-        uint rate = getRateByRisk(riskGroup);
-        uint ceiling = computeCeiling(riskGroup, nftPrice);
+
 
         // expected debt after 1 year of compounding
         uint expectedDebt = 112 ether;
@@ -123,8 +120,6 @@ contract PrincipalRepayTest is BaseSystemTest {
     function testPartialRepay() public {
         uint nftPrice = 200 ether; // -> ceiling 100 ether
         uint riskGroup = 1; // -> 12% per year
-        uint rate = getRateByRisk(riskGroup);
-        uint ceiling = computeCeiling(riskGroup, nftPrice);
 
         // expected debt after 1 year of compounding
         uint expectedDebt = 112 ether;
@@ -135,8 +130,7 @@ contract PrincipalRepayTest is BaseSystemTest {
     function testRepayDebtNoRate() public {
         uint nftPrice = 100 ether; // -> ceiling 100 ether
         uint riskGroup = 0; // -> no interest rate
-        uint rate = getRateByRisk(riskGroup);
-        uint ceiling = computeCeiling(riskGroup, nftPrice); // 60 %
+
         // expected debt after 1 year of compounding
         uint expectedDebt =  60 ether;
         uint repayAmount = expectedDebt;
@@ -152,8 +146,6 @@ contract PrincipalRepayTest is BaseSystemTest {
     function testFailRepayNotLoanOwner() public {
         uint nftPrice = 200 ether; // -> ceiling 100 ether
         uint riskGroup = 1; // -> 12% per year
-        uint rate = getRateByRisk(riskGroup);
-        uint ceiling = computeCeiling(riskGroup, nftPrice);
 
         // expected debt after 1 year of compounding
         uint expectedDebt = 112 ether;
@@ -167,8 +159,6 @@ contract PrincipalRepayTest is BaseSystemTest {
     function testFailRepayNotEnoughFunds() public {
         uint nftPrice = 200 ether; // -> ceiling 100 ether
         uint riskGroup = 1; // -> 12% per year
-        uint rate = getRateByRisk(riskGroup);
-        uint ceiling = computeCeiling(riskGroup, nftPrice);
 
         // expected debt after 1 year of compounding
         uint expectedDebt = 112 ether;
@@ -187,7 +177,7 @@ contract PrincipalRepayTest is BaseSystemTest {
     function testFailRepayLoanNotFullyWithdrawn() public {
        uint nftPrice = 200 ether; // -> ceiling 100 ether
        uint riskGroup = 1; // -> 12% per year
-       uint rate = getRateByRisk(riskGroup);
+
        uint ceiling = computeCeiling(riskGroup, nftPrice); // 50% 100 ether
        uint borrowAmount = ceiling;
        uint withdrawAmount = safeSub(ceiling, 2); // half the borrowAmount
@@ -215,8 +205,6 @@ contract PrincipalRepayTest is BaseSystemTest {
     function testFailRepayZeroDebt() public {
         uint nftPrice = 200 ether; // -> ceiling 100 ether
         uint riskGroup = 1; // -> 12% per year
-        uint rate = getRateByRisk(riskGroup);
-        uint ceiling = computeCeiling(riskGroup, nftPrice);
 
         // expected debt after 1 year of compounding
         uint expectedDebt = 112 ether;
@@ -239,8 +227,6 @@ contract PrincipalRepayTest is BaseSystemTest {
     function testFailRepayCurrencyNotApproved() public {
         uint nftPrice = 200 ether; // -> ceiling 100 ether
         uint riskGroup = 1; // -> 12% per year
-        uint rate = getRateByRisk(riskGroup);
-        uint ceiling = computeCeiling(riskGroup, nftPrice);
 
         // expected debt after 1 year of compounding
         uint expectedDebt = 112 ether;
@@ -258,7 +244,7 @@ contract PrincipalRepayTest is BaseSystemTest {
     function testFailBorowFullAmountTwice() public {
         uint nftPrice = 200 ether; // -> ceiling 100 ether
         uint riskGroup = 1; // -> 12% per year
-        uint rate = getRateByRisk(riskGroup);
+
         uint ceiling = computeCeiling(riskGroup, nftPrice);
 
         // expected debt after 1 year of compounding

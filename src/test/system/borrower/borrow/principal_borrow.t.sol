@@ -115,7 +115,6 @@ contract PrincipalBorrowTest is BaseSystemTest {
         uint nftPrice = 100 ether; // -> ceiling 50 ether
         uint borrowAmount = 16 ether; // -> rest 34 ether
         uint riskGroup = 1; // -> 12% per year
-        uint rate = getRateByRisk(riskGroup);
         (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_); // interest starts ticking
         // price nft
         priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
@@ -137,7 +136,6 @@ contract PrincipalBorrowTest is BaseSystemTest {
 
     function testFailBorrowNFTNotLocked() public {
         uint nftPrice = 100 ether; // -> ceiling 50 ether
-        uint borrowAmount = 16 ether; // -> rest 34 ether
         uint riskGroup = 1; // -> 12% per year
         uint amount = computeCeiling(riskGroup, nftPrice);
 
@@ -149,7 +147,7 @@ contract PrincipalBorrowTest is BaseSystemTest {
 
     function testFailBorrowNotLoanOwner() public {
         uint nftPrice = 100 ether; // -> ceiling 50 ether
-        uint borrowAmount = 16 ether; // -> rest 34 ether
+
         uint riskGroup = 1; // -> 12% per year
         uint amount = computeCeiling(riskGroup, nftPrice);
         (uint tokenId, uint loanId) = issueNFTAndCreateLoan(randomUser_);
@@ -164,7 +162,6 @@ contract PrincipalBorrowTest is BaseSystemTest {
 
     function testFailBorrowAmountTooHigh() public {
         uint nftPrice = 100 ether; // -> ceiling 50 ether
-        uint borrowAmount = 16 ether; // -> rest 34 ether
         uint riskGroup = 1; // -> 12% per year
         uint ceiling = computeCeiling(riskGroup, nftPrice);
         uint amount = safeMul(ceiling, 2);

@@ -291,7 +291,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         }
 
         // execute disburse
-        (, uint payoutTokenAmount, uint remainingSupplyCurrency, ) =  tranche.disburse(self, lastEpochExecuted);
+        (, uint payoutTokenAmount, , ) =  tranche.disburse(self, lastEpochExecuted);
 
         // total fulfillment
         // 100 * 0.1 = 10

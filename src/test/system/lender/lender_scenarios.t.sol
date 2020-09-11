@@ -290,7 +290,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
             juniorRedeem : 0 ether
             });
 
-        (uint loan, uint tokenId) = supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate, submission);
+        (uint loan,  ) = supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate, submission);
 
         // remove existing order
         seniorSupply(0);
@@ -346,7 +346,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         root.relyContract(address(assessor), address(this));
         // change interest rate to 10% a day
         uint highRate = uint(1000001103100000000000000000);
-        assessor.file("seniorInterestRate", uint(1000001103100000000000000000));
+        assessor.file("seniorInterestRate", highRate);
 
 
         // remove existing order
