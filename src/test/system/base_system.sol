@@ -215,9 +215,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup);
         uint ceiling = nftFeed_.ceiling(loan);
         borrow(loan, tokenId, ceiling);
-     emit log_named_uint("moin", 1);
         return (loan, tokenId, ceiling);
-             emit log_named_uint("moin", 1);
     }
 
     function setupLoan(uint tokenId, address collateralNFT_, uint nftPrice, uint riskGroup) public returns (uint) {
@@ -236,6 +234,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     function fundLender(uint amount) public {
         invest(amount);
         hevm.warp(now + 1 days);
+        emit log_named_uint("amount", amount);
         coordinator.closeEpoch();
     }
 
@@ -243,15 +242,11 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         borrow(loan, tokenId, borrowAmount, true);
     }
 
-    function borrow(uint loan, uint tokenId, uint borrowAmount, bool fundLenderRequired) public {
-        emit log_named_uint("moin", 100);
-        borrower.approveNFT(collateralNFT, address(shelf));
-        emit log_named_uint("moin", 100);
+    function borrow(uint loan, uint tokenId, uint borrowAmount, bool fundLenderRequired) public 
+        borrower.approveNFT(collateralNFT, address(shelf))
         if (fundLenderRequired) {
-            emit log_named_uint("moin", 100);
             fundLender(borrowAmount);
         }
-        emit log_named_uint("moin", 1);
         borrower.borrowAction(loan, borrowAmount);
         checkAfterBorrow(tokenId, borrowAmount);
     }
