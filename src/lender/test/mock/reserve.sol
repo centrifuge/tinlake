@@ -31,7 +31,7 @@ contract ReserveMock is Mock, Auth {
         currency = CurrencyLike(currency_);
     }
 
-    function file(bytes32 what, uint currencyAmount) public auth {
+    function file(bytes32 , uint currencyAmount) public auth {
         values_uint["currency_available"] = currencyAmount;
     }
 

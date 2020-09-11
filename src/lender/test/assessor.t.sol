@@ -193,8 +193,6 @@ contract AssessorTest is DSTest, Math {
         uint interestRate = uint(1000000564701133626865910626);
         assessor.file("seniorInterestRate", interestRate);
 
-
-        uint supplyAmount = 200 ether;
         navFeed.setReturn("approximatedNAV", 200 ether);
 
         uint seniorSupply = 200 ether;
@@ -224,7 +222,6 @@ contract AssessorTest is DSTest, Math {
         uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, reserve);
         assertEq(seniorTokenPrice, ONE);
 
-        uint supplyAmount = 200 ether;
         navFeed.setReturn("approximatedNAV", 200 ether);
 
         uint seniorSupply = 200 ether;
@@ -271,7 +268,6 @@ contract AssessorTest is DSTest, Math {
         assertEq(juniorTokenPrice, ONE);
 
         // set up senior asset
-        uint supplyAmount = 200 ether;
         navFeed.setReturn("approximatedNAV", 200 ether);
         uint seniorSupply = 200 ether;
         uint seniorRatio = 5 * 10**26;

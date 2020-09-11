@@ -172,11 +172,11 @@ contract TestSetup {
         nftFeed = NAVFeed(borrowerDeployer.feed());
     }
 
-    function deployLenderMockBorrower(address root_) public {
+    function deployLenderMockBorrower(address rootAddr) public {
         currency = new SimpleToken("C", "Currency", "1", 0);
         currency_ = address(currency);
 
-        prepareDeployLender(root_);
+        prepareDeployLender(rootAddr);
         deployLender();
 
         // add root mock
@@ -187,7 +187,7 @@ contract TestSetup {
         reserve.depend("shelf", address(shelf_));
     }
 
-    function prepareDeployLender(address root_) public {
+    function prepareDeployLender(address rootAddr) public {
 
         ReserveFab reserveFab = new ReserveFab();
         AssessorFab assessorFab = new AssessorFab();
@@ -203,7 +203,7 @@ contract TestSetup {
         string memory juniorTokenSymbol = "TIN";
 
         // root is testcase
-        lenderDeployer_ = new LenderDeployer(root_, currency_, trancheFab, memberlistFab, restrictedTokenFab, reserveFab, assessorFab, coordinatorFab, operatorFab);
+        lenderDeployer_ = new LenderDeployer(rootAddr, currency_, trancheFab, memberlistFab, restrictedTokenFab, reserveFab, assessorFab, coordinatorFab, operatorFab);
     }
 
     function deployLender() public {

@@ -76,7 +76,6 @@ contract NAVTest is DSTest, Math {
 
     function borrow(uint tokenId, uint nftValue, uint amount, uint maturityDate) internal returns(bytes32 nftID_, uint loan_, uint navIncrease_) {
         // loan id doesn't matter for nav unit tests
-        uint loan = tokenId;
         return borrow(tokenId, tokenId, nftValue, amount, maturityDate);
     }
 

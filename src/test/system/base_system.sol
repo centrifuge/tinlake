@@ -93,12 +93,12 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         return (tokenId, lookupId);
     }
 
-    function computeCeiling(uint riskGroup, uint nftPrice) public returns (uint) {
+    function computeCeiling(uint riskGroup, uint nftPrice) public view returns (uint) {
         uint ceilingRatio = nftFeed.ceilingRatio(riskGroup);
         return rmul(ceilingRatio, nftPrice);
     }
 
-    function getRateByRisk(uint riskGroup) public returns (uint) {
+    function getRateByRisk(uint riskGroup) public view returns (uint) {
         (,,uint ratePerSecond,,) = pile.rates(riskGroup);
         return ratePerSecond;
     }
@@ -305,7 +305,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         assertEq(a/precision, b/precision);
     }
 
-    function fixed18To27(uint valPower18) public returns(uint) {
+    function fixed18To27(uint valPower18) public pure returns(uint) {
         // convert 10^18 to 10^27
         return valPower18 * 10**9;
     }
