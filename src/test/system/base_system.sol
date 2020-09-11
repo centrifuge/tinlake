@@ -214,10 +214,10 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         tokenId = collateralNFT.issue(borrower_);
         loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup);
         uint ceiling = nftFeed_.ceiling(loan);
-
         borrow(loan, tokenId, ceiling);
-
+     emit log_named_uint("moin", 1);
         return (loan, tokenId, ceiling);
+             emit log_named_uint("moin", 1);
     }
 
     function setupLoan(uint tokenId, address collateralNFT_, uint nftPrice, uint riskGroup) public returns (uint) {
@@ -237,7 +237,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         invest(amount);
         hevm.warp(now + 1 days);
         coordinator.closeEpoch();
-        emit log_named_uint("reserve", reserve.totalBalance());
     }
 
     function borrow(uint loan, uint tokenId, uint borrowAmount) public {
@@ -245,10 +244,14 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
 
     function borrow(uint loan, uint tokenId, uint borrowAmount, bool fundLenderRequired) public {
+        emit log_named_uint("moin", 100);
         borrower.approveNFT(collateralNFT, address(shelf));
+        emit log_named_uint("moin", 100);
         if (fundLenderRequired) {
+            emit log_named_uint("moin", 100);
             fundLender(borrowAmount);
         }
+        emit log_named_uint("moin", 1);
         borrower.borrowAction(loan, borrowAmount);
         checkAfterBorrow(tokenId, borrowAmount);
     }
@@ -317,7 +320,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
         // allow pile full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
-
         return extra;
     }
 

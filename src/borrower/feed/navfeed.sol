@@ -77,9 +77,16 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
         /// Overdue loans (= loans that were not repaid by the maturityDate) are moved to write Offs
         // 60% -> 40% write off
-        writeOffs[0] = WriteOff(WRITE_OFF_PHASE_A, Fixed27(6 * 10**26));
+        setWriteOff(0, WRITE_OFF_PHASE_A, 6 * 10**26);
+        // writeOffs[0] = WriteOff(WRITE_OFF_PHASE_A, Fixed27(6 * 10**26));
         // 80% -> 20% write off
-        writeOffs[1] = WriteOff(WRITE_OFF_PHASE_B, Fixed27(8 * 10**26));
+        setWriteOff(1, WRITE_OFF_PHASE_B, 8 * 10**26);
+        // writeOffs[1] = WriteOff(WRITE_OFF_PHASE_B, Fixed27(8 * 10**26));
+    }
+
+    function setWriteOff(uint group_, uint phase_, uint rate_) internal {
+        writeOffs[group_] = WriteOff(phase_,  Fixed27(rate_));
+        pile.file("rate", phase_, rate_);
     }
 
     function uniqueDayTimestamp(uint timestamp) public pure returns (uint) {
@@ -254,8 +261,11 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
         // include ovedue assets to the current NAV calculation
         for (uint i = 0; i < writeOffs.length; i++) {
-            (uint pie, uint chi, , ,) = pile.rates(writeOffs[i].rateGroup);
-            nav_ = safeAdd(nav_, rmul(rmul(pie, chi), writeOffs[i].percentage.value));
+            // drip debt of the rte group
+            pile.drip(writeOffs[i].rateGroup);
+            uint writeOffGroupDebt = pile.rateDebt(writeOffs[i].rateGroup);
+            // multiply writeOffGroupDebt with the writeOff ratio
+            nav_ = safeAdd(nav_, rmul(writeOffGroupDebt, writeOffs[i].percentage.value));
         }
         return nav_;
     }
