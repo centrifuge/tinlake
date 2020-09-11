@@ -106,7 +106,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         assertEq(juniorToken.balanceOf(juniorInvestor_), submission.juniorSupply);
 
         // borrow loans maturity date 5 days from now
-        (uint loan, uint tokenId) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(now) +maturityDate);
+        (loan, tokenId) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(now) +maturityDate);
 
         assertEq(currency.balanceOf(address(borrower)), borrowAmount);
 

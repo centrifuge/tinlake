@@ -18,7 +18,7 @@ pragma solidity >=0.5.15 <0.6.0;
 import { Memberlist } from "./../token/memberlist.sol";
 
 contract MemberlistFab {
-    function newMemberlist() public returns (address memberlist) {
+    function newMemberlist() public returns (address memberList) {
         Memberlist memberlist = new Memberlist();
 
         memberlist.rely(msg.sender);

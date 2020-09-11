@@ -101,7 +101,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
     // In case of successful borrow the approximatedNAV is increased by the borrowed amount
     function borrow(uint loan, uint amount) external auth returns(uint navIncrease) {
-        uint navIncrease = _borrow(loan, amount);
+        navIncrease = _borrow(loan, amount);
         approximatedNAV = safeAdd(approximatedNAV, navIncrease);
         return navIncrease;
     }
@@ -174,7 +174,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
     // In case of successful repayment the approximatedNAV is decreased by the repaid amount
     function repay(uint loan, uint amount) external auth returns (uint navDecrease) {
-        uint navDecrease = _repay(loan, amount);
+        navDecrease = _repay(loan, amount);
         if (navDecrease > approximatedNAV) {
             approximatedNAV = 0;
         }
@@ -223,8 +223,8 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         return amount;
     }
 
-    function calcDiscount(uint amount, uint normalizedBlockTimestamp, uint maturityDate) public view returns (uint result) {
-        return rdiv(amount, rpow(discountRate.value, safeSub(maturityDate, normalizedBlockTimestamp), ONE));
+    function calcDiscount(uint amount, uint normalizedBlockTimestamp, uint maturityDate_) public view returns (uint result) {
+        return rdiv(amount, rpow(discountRate.value, safeSub(maturityDate_, normalizedBlockTimestamp), ONE));
     }
 
 

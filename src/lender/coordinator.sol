@@ -48,7 +48,7 @@ contract AssessorLike is FixedPoint {
 // If it is not possible to satisfy all orders at maximum the coordinators opens a submission period.
 // The problem of finding the maximum amount of supply and redeem orders which still satisfies all constraints
 // can be seen as a linear programming (linear optimization problem).
-// The optimal solution can be calculated off-chain 
+// The optimal solution can be calculated off-chain
 contract EpochCoordinator is Auth, Math, FixedPoint  {
     struct OrderSummary {
         // all variables are stored in currency
@@ -442,14 +442,14 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
     /// validates if a solution satisfies the pool constraints
     /// returns: first constraint which is not satisfied or success
-    function validatePoolConstraints(uint reserve, uint seniorAsset) public view returns (int err) {
+    function validatePoolConstraints(uint reserve_, uint seniorAsset, uint nav_) public view returns (int err) {
         // constraint 3: max reserve
-        if (reserve > assessor.maxReserve()) {
+        if (reserve_ > assessor.maxReserve()) {
             // maxReserveConstraint => -3
             return ERR_MAX_RESERVE;
         }
 
-        uint assets = safeAdd(epochNAV, reserve);
+        uint assets = safeAdd(nav_, reserve_);
 
         (Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio) = assessor.seniorRatioBounds();
 
@@ -485,7 +485,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         uint newReserve = safeSub(currencyAvailable, currencyOut);
 
         return validatePoolConstraints(newReserve, calcSeniorAssetValue(seniorRedeem, seniorSupply,
-            epochSeniorAsset, newReserve, epochNAV));
+            epochSeniorAsset, newReserve, epochNAV), epochNAV);
     }
 
     /// public method to execute an epoch which required a submission period and the challenge period is over
@@ -498,10 +498,10 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
     /// calculates a new senior asset value based on senior redeem and senior supply
     function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply,
-        uint currSeniorAsset, uint reserve, uint NAV) public view returns (uint seniorAsset) {
+        uint currSeniorAsset, uint reserve_, uint nav_) public view returns (uint seniorAsset) {
 
-        uint seniorAsset =  safeSub(safeAdd(currSeniorAsset, seniorSupply), seniorRedeem);
-        uint assets = calcAssets(NAV, reserve);
+        seniorAsset =  safeSub(safeAdd(currSeniorAsset, seniorSupply), seniorRedeem);
+        uint assets = calcAssets(nav_, reserve_);
         if(seniorAsset > assets) {
             seniorAsset = assets;
         }

@@ -213,11 +213,11 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         // create borrower collateral collateralNFT
         tokenId = collateralNFT.issue(borrower_);
         loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup);
-        uint ceiling = nftFeed_.ceiling(loan);
+        uint ceiling_ = nftFeed_.ceiling(loan);
 
-        borrow(loan, tokenId, ceiling);
+        borrow(loan, tokenId, ceiling_);
 
-        return (loan, tokenId, ceiling);
+        return (loan, tokenId, ceiling_);
     }
 
     function setupLoan(uint tokenId, address collateralNFT_, uint nftPrice, uint riskGroup) public returns (uint) {
@@ -253,10 +253,10 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         checkAfterBorrow(tokenId, borrowAmount);
     }
 
-    function defaultCollateral() public pure returns(uint nftPrice, uint riskGroup) {
-        uint nftPrice = 100 ether;
-        uint riskGroup = 2;
-        return (nftPrice, riskGroup);
+    function defaultCollateral() public pure returns(uint nftPrice_, uint riskGroup_) {
+        nftPrice_ = 100 ether;
+        riskGroup_ = 2;
+        return (nftPrice_, riskGroup_);
     }
 
     // note: this method will be refactored with the new lender side contracts, as the distributor should not hold any currency
