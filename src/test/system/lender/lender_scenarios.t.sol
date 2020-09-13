@@ -481,17 +481,18 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         seniorInvestor.disburse();
         seniorInvestorB.disburse();
 
-        // and redeem afterwards
+        // only one investor wants to redeem
         seniorInvestor.redeemOrder(seniorAmount);
-       // seniorInvestorB.redeemOrder(seniorAmount);
 
         coordinator.closeEpoch();
+        assertTrue(coordinator.poolClosing() == true);
 
         assertTrue(coordinator.submissionPeriod() == false);
 
         (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken)  = seniorInvestor.disburse();
         assertTrue(payoutCurrencyAmount >  0);
         assertEq(remainingRedeemToken, 0);
+
     }
 
  }

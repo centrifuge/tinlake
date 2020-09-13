@@ -115,7 +115,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
     uint                public bestRatioImprovement;
     uint                public bestReserveImprovement;
 
-                        // if juniorAsset value == 0
+                        // flag for closing the pool (no new supplies allowed only redeem)
     bool                public poolClosing = false;
 
                         // constants
@@ -195,6 +195,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         epochJuniorTokenPrice = assessor.calcJuniorTokenPrice(epochNAV, epochReserve);
 
         // start closing the pool if juniorTranche lost everything
+        // the flag will change the behaviour of the validate function for not allowing new supplies
         if(epochJuniorTokenPrice.value == 0) {
             poolClosing = true;
         }
