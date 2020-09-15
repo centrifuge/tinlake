@@ -16,7 +16,6 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 import "ds-note/note.sol";
-import "ds-test/test.sol";
 import "tinlake-math/interest.sol";
 import "tinlake-auth/auth.sol";
 
@@ -24,7 +23,7 @@ import "tinlake-auth/auth.sol";
 // The following is one implementation of a debt module. It keeps track of different buckets of interest rates and is optimized for many loans per interest bucket. It keeps track of interest
 // rate accumulators (chi values) for all interest rate categories. It calculates debt each
 // loan according to its interest rate category and pie value.
-contract Pile is DSNote, Auth, Interest, DSTest {
+contract Pile is DSNote, Auth, Interest {
     // --- Data ---
 
     /// stores all needed information of an interest rate group
@@ -91,7 +90,7 @@ contract Pile is DSNote, Auth, Interest, DSTest {
     }
 
     /// returns the current debt based on actual block.timestamp (now)
-    function debt(uint loan) external returns (uint) {
+    function debt(uint loan) external view returns (uint) {
         uint rate_ = loanRates[loan];
         uint chi_ = rates[rate_].chi;
         if (now >= rates[rate_].lastUpdated) {
@@ -101,7 +100,7 @@ contract Pile is DSNote, Auth, Interest, DSTest {
     }
 
     /// returns the total debt of a interest rate group
-    function rateDebt(uint rate) external returns (uint) {
+    function rateDebt(uint rate) external view returns (uint) {
         uint chi_ = rates[rate].chi;
         uint pie_ = rates[rate].pie;
 

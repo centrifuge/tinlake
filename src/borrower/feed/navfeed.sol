@@ -141,7 +141,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     // calculate the future value based on the amount, maturityDate interestRate and recoveryRate 
-    function calcFutureValue(uint loan, uint amount, uint maturityDate_, uint recoveryRatePD_) public view returns(uint) {
+    function calcFutureValue(uint loan, uint amount, uint maturityDate_, uint recoveryRatePD_) public returns(uint) {
         // retrieve interest rate from the pile
         (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
         return rmul(rmul(rpow(loanInterestRate,  safeSub(maturityDate_, uniqueDayTimestamp(now)), ONE), amount), recoveryRatePD_);
@@ -258,9 +258,8 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         uint nav_ = calcTotalDiscount();
         // include ovedue assets to the current NAV calculation
         for (uint i = 0; i < writeOffs.length; i++) {       
-            uint writeOffGroupDebt = pile.rateDebt(writeOffs[i].rateGroup);
             // multiply writeOffGroupDebt with the writeOff ratio
-            nav_ = safeAdd(nav_, rmul(writeOffGroupDebt, writeOffs[i].percentage.value));
+            nav_ = safeAdd(nav_, rmul(pile.rateDebt(writeOffs[i].rateGroup), writeOffs[i].percentage.value));
         }
         return nav_;
     }
