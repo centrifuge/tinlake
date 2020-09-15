@@ -34,10 +34,14 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
     }
 
     function seniorSupply(uint currencyAmount) public {
-        currency.mint(address(seniorInvestor), currencyAmount);
-        admin.makeSeniorTokenMember(seniorInvestor_, safeAdd(now, 8 days));
-        seniorInvestor.supplyOrder(currencyAmount);
-        (,uint supplyAmount, ) = seniorTranche.users(seniorInvestor_);
+        seniorSupply(currencyAmount, seniorInvestor);
+    }
+
+    function seniorSupply(uint currencyAmount, Investor investor) public {
+        admin.makeSeniorTokenMember(address(investor), safeAdd(now, 8 days));
+        currency.mint(address(investor), currencyAmount);
+        investor.supplyOrder(currencyAmount);
+        (,uint supplyAmount, ) = seniorTranche.users(address(investor));
         assertEq(supplyAmount, currencyAmount);
     }
 
@@ -436,5 +440,59 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         juniorInvestor.redeemOrder(0);
         assertEq(juniorToken.balanceOf(juniorInvestor_), 20 ether);
     }
-}
+
+    function testPoolClosingScenarioB() public {
+        Investor seniorInvestorB = new Investor(address(seniorOperator), address(seniorTranche), currency_, address(seniorToken));
+        uint seniorAmount = 40 ether;
+
+        // two senior investors
+        seniorSupply(seniorAmount, seniorInvestor);
+        seniorSupply(seniorAmount, seniorInvestorB);
+
+        // one junior investor
+        juniorSupply(20 ether);
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
+        assertTrue(coordinator.submissionPeriod() == false);
+
+        // borrow loans maturity date 5 days from now
+        uint borrowAmount = 100 ether;
+        uint nftPrice = 200 ether;
+        uint maturityDate = 5 days;
+        (uint loan, uint tokenId) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(now) +maturityDate);
+        uint highRate = uint(1000001103100000000000000000);
+        root.relyContract(address(assessor), address(this));
+        assessor.file("seniorInterestRate", highRate);
+
+
+        // loan not repaid and not moved to penalty rate
+        hevm.warp(now + 6 days);
+
+        // junior should lost everything
+        assertTrue(assessor.seniorDebt() > nftFeed.currentNAV());
+
+        // repay loan to get some currency in reserve
+        uint loanDebt = pile.debt(loan);
+        repayLoan(address(borrower), loan, loanDebt);
+
+
+        // get tokens
+        seniorInvestor.disburse();
+        seniorInvestorB.disburse();
+
+        // only one investor wants to redeem
+        seniorInvestor.redeemOrder(seniorAmount);
+
+        coordinator.closeEpoch();
+        assertTrue(coordinator.poolClosing() == true);
+
+        assertTrue(coordinator.submissionPeriod() == false);
+
+        (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken)  = seniorInvestor.disburse();
+        assertTrue(payoutCurrencyAmount >  0);
+        assertEq(remainingRedeemToken, 0);
+
+    }
+
+ }
 

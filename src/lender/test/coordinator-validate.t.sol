@@ -59,7 +59,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
         int result = coordinator.validate(input.seniorRedeem, input.juniorRedeem, input.seniorSupply, input.juniorSupply);
 
         if (tCase.status != result) {
-            emit log_named_int(tCase.name, -1);
+            emit log_named_int(tCase.name, result);
         }
 
         assertTrue(tCase.status == result);
@@ -279,6 +279,46 @@ contract CoordinatorValidateTest is CoordinatorTest {
             juniorRedeem : 0 ether
 
             }), TestCaseDesc({name: "junior ratio edge case too high", status: validateErr.MIN_SENIOR_RATIO}));
+    }
+
+    function testPoolClosing() public {
+        LenderModel memory model = getDefaultModel();
+        ModelInput memory input =  ModelInput({
+            seniorSupply : 10 ether,
+            juniorSupply : 10 ether,
+            seniorRedeem : 10 ether,
+            juniorRedeem : 0 ether
+
+            });
+        model.seniorDebt = 10000 ether;
+
+        initTestConfig(model);
+        assessor.setReturn("calcJuniorTokenPrice", 0);
+
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
+        assertTrue(coordinator.submissionPeriod() == true);
+
+        int result = coordinator.validate(input.seniorRedeem, input.juniorRedeem, input.seniorSupply, input.juniorSupply);
+        assertEq(result, coordinator.ERR_POOL_CLOSING());
+        assertTrue(coordinator.poolClosing() == true);
+
+        input = ModelInput({
+            seniorSupply : 0 ether,
+            juniorSupply : 0 ether,
+            seniorRedeem : 100 ether,
+            juniorRedeem : 0 ether
+
+            });
+
+        // senior redeem should be allowed
+        result = coordinator.validate(input.seniorRedeem, input.juniorRedeem, input.seniorSupply, input.juniorSupply);
+        assertEq(result, coordinator.SUCCESS());
+
+        // junior redeem will fail because the max Order for juniorRedeem is 0 because of a tokenPrice of 0
+        input.juniorRedeem = 10 ether;
+        result = coordinator.validate(input.seniorRedeem, input.juniorRedeem, input.seniorSupply, input.juniorSupply);
+        assertEq(result, coordinator.ERR_MAX_ORDER());
     }
 }
 

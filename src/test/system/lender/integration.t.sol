@@ -42,10 +42,14 @@ contract LenderIntegrationTest is BaseSystemTest {
     }
 
     function seniorSupply(uint currencyAmount) public {
+        seniorSupply(currencyAmount, seniorInvestor);
+    }
+
+    function seniorSupply(uint currencyAmount, Investor investor) public {
         seniorMemberlist.updateMember(seniorInvestor_, safeAdd(now, 8 days));
         currency.mint(address(seniorInvestor), currencyAmount);
-        seniorInvestor.supplyOrder(currencyAmount);
-        (,uint supplyAmount, ) = seniorTranche.users(seniorInvestor_);
+        investor.supplyOrder(currencyAmount);
+        (,uint supplyAmount, ) = seniorTranche.users(address(investor));
         assertEq(supplyAmount, currencyAmount);
     }
 

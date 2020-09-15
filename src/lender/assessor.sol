@@ -140,6 +140,7 @@ contract Assessor is Auth, FixedPoint, Interest {
 
         uint totalAssets = safeAdd(epochNAV, epochReserve);
         uint seniorAssetValue = calcSeniorAssetValue(seniorDebt(), seniorBalance_);
+
         if(totalAssets < seniorAssetValue) {
             seniorAssetValue = totalAssets;
         }
