@@ -115,6 +115,9 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
     uint                public bestRatioImprovement;
     uint                public bestReserveImprovement;
 
+                        // flag for closing the pool (no new supplies allowed only redeem)
+    bool                public poolClosing = false;
+
                         // constants
     int                 public constant SUCCESS = 0;
     int                 public constant NEW_BEST = 0;
@@ -124,6 +127,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
     int                 public constant ERR_MIN_SENIOR_RATIO = -4;
     int                 public constant ERR_MAX_SENIOR_RATIO = -5;
     int                 public constant ERR_NOT_NEW_BEST = -6;
+    int                 public constant ERR_POOL_CLOSING = -7;
     uint                public constant BIG_NUMBER = ONE * ONE;
 
     uint                public constant IMPROVEMENT_WEIGHT =  10000;
@@ -189,6 +193,12 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         // calculate current token prices which are used for the execute
         epochSeniorTokenPrice = assessor.calcSeniorTokenPrice(epochNAV, epochReserve);
         epochJuniorTokenPrice = assessor.calcJuniorTokenPrice(epochNAV, epochReserve);
+
+        // start closing the pool if juniorTranche lost everything
+        // the flag will change the behaviour of the validate function for not allowing new supplies
+        if(epochJuniorTokenPrice.value == 0) {
+            poolClosing = true;
+        }
 
         epochSeniorAsset = safeAdd(assessor.seniorDebt(), assessor.seniorBalance());
 
@@ -440,6 +450,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         return SUCCESS;
     }
 
+
     /// validates if a solution satisfies the pool constraints
     /// returns: first constraint which is not satisfied or success
     function validatePoolConstraints(uint reserve_, uint seniorAsset, uint nav_) public view returns (int err) {
@@ -483,7 +494,13 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         }
 
         uint newReserve = safeSub(currencyAvailable, currencyOut);
+        if(poolClosing == true) {
+            if(seniorSupply == 0 && juniorSupply == 0) {
+                return SUCCESS;
+            }
+            return ERR_POOL_CLOSING;
 
+        }
         return validatePoolConstraints(newReserve, calcSeniorAssetValue(seniorRedeem, seniorSupply,
             epochSeniorAsset, newReserve, epochNAV), epochNAV);
     }
