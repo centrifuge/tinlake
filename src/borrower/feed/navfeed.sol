@@ -20,7 +20,6 @@ import "tinlake-math/interest.sol";
 import "./nftfeed.sol";
 import "./buckets.sol";
 import "../../fixed_point.sol";
-import "ds-test/test.sol";
 
 // The Nav Feed contract extends the functionality of the NFT Feed by the Net Asset Value (NAV) computation of a Tinlake pool.
 // NAV is computed as the sum of all discounted future values (fv) of ongoing loans (debt > 0) in the pool.
@@ -142,7 +141,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     // calculate the future value based on the amount, maturityDate interestRate and recoveryRate 
-    function calcFutureValue(uint loan, uint amount, uint maturityDate_, uint recoveryRatePD_) public returns(uint) {
+    function calcFutureValue(uint loan, uint amount, uint maturityDate_, uint recoveryRatePD_) public view returns(uint) {
         // retrieve interest rate from the pile
         (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
         return rmul(rmul(rpow(loanInterestRate,  safeSub(maturityDate_, uniqueDayTimestamp(now)), ONE), amount), recoveryRatePD_);
@@ -229,12 +228,12 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         return amount;
     }
 
-    function calcDiscount(uint amount, uint normalizedBlockTimestamp, uint maturityDate) public returns (uint result) {
+    function calcDiscount(uint amount, uint normalizedBlockTimestamp, uint maturityDate) public view returns (uint result) {
         return rdiv(amount, rpow(discountRate.value, safeSub(maturityDate, normalizedBlockTimestamp), ONE));
     }
 
 
-    function calcTotalDiscount() public returns(uint) {
+    function calcTotalDiscount() public view returns(uint) {
         uint normalizedBlockTimestamp = uniqueDayTimestamp(block.timestamp);
         uint sum = 0;
 
@@ -255,7 +254,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     /// returns the NAV (net asset value) of the pool
-    function currentNAV() public returns(uint) {
+    function currentNAV() public view returns(uint) {
         uint nav_ = calcTotalDiscount();
         // include ovedue assets to the current NAV calculation
         for (uint i = 0; i < writeOffs.length; i++) {       
@@ -273,7 +272,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     /// workaround for transition phase between V2 & V3
-    function totalValue() public returns(uint) {
+    function totalValue() public view returns(uint) {
         return currentNAV();
     }
 
