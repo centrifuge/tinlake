@@ -8,8 +8,8 @@ contract PileMock is Mock {
     }
 
     /// returns the total debt of a interest rate group
-    function rateDebt(uint rate) public returns (uint) {
-        return call("rate_debt");
+    function rateDebt(uint rate) public view returns (uint) {
+        return values_return["rate_debt"];
     }
 
     function setRate(uint loan, uint rate) public {

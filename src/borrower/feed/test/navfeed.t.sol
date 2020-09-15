@@ -86,10 +86,8 @@ contract NAVTest is DSTest, Math {
         uint dueDate = now + 2 days;
         uint amount = 50 ether;
         (,,uint NAVIncrease) = borrow(tokenId, nftValue, amount, dueDate);
-     emit log_named_uint("nav", 1);
         // check FV
         uint normalizedDueDate = feed.uniqueDayTimestamp(dueDate);
-             emit log_named_uint("nav", 1);
         uint FV = 55.125 ether; // 50 * 1.05 ^ 2 = 55.125
         assertEq(feed.dateBucket(normalizedDueDate), FV);
         // FV/(1.03^2)
@@ -97,7 +95,6 @@ contract NAVTest is DSTest, Math {
         // only on loan so current NAV should be equal to borrow increase
         assertEq(feed.currentNAV(), NAVIncrease);
         assertEq(feed.totalValue(), 51.960741582371777180 ether);
-             emit log_named_uint("nav", 1);
         hevm.warp(now + 1 days);
         // FV/(1.03^1)
         assertEq(feed.currentNAV(), 53.519490652735515520 ether);
@@ -105,9 +102,7 @@ contract NAVTest is DSTest, Math {
         hevm.warp(now + 1 days);
         // FV/(1.03^0)
         assertEq(feed.currentNAV(), 55.125 ether);
-             emit log_named_uint("nav", 1);
         assertEq(feed.totalValue(), 55.125 ether);
-             emit log_named_uint("nav", 1);
     }
 
 
