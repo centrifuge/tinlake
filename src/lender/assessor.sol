@@ -16,7 +16,6 @@ pragma solidity >=0.5.15 <0.6.0;
 pragma experimental ABIEncoderV2;
 
 import "./../fixed_point.sol";
-
 import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
 
@@ -137,14 +136,12 @@ contract Assessor is Auth, FixedPoint, Interest {
             // initial token price at start 1.00
             return ONE;
         }
-
         uint totalAssets = safeAdd(epochNAV, epochReserve);
         uint seniorAssetValue = calcSeniorAssetValue(seniorDebt(), seniorBalance_);
 
         if(totalAssets < seniorAssetValue) {
             seniorAssetValue = totalAssets;
         }
-
         return rdiv(seniorAssetValue, seniorTranche.tokenSupply());
     }
 

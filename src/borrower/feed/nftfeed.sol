@@ -31,8 +31,9 @@ contract PileLike {
     function changeRate(uint loan, uint newRate) public;
     function loanRates(uint loan) public returns (uint);
     function file(bytes32, uint, uint) public;
-    function rates(uint rate) public view returns(uint, uint, uint ,uint48, uint);
-    function total() public view returns(uint);
+    function rates(uint rate) public view returns (uint, uint, uint ,uint48, uint);
+    function total() public view returns (uint);
+    function rateDebt(uint rate) public view returns (uint);
 }
 
 // The NFTFeed stores values and risk group of nfts that are used as collateral in tinlake. A risk group contains: thresholdRatio, ceilingRatio & interstRate.

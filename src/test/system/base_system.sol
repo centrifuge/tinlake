@@ -206,11 +206,9 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         // create borrower collateral collateralNFT
         tokenId = collateralNFT.issue(borrower_);
         loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup);
-        uint ceiling_ = nftFeed_.ceiling(loan);
-
-        borrow(loan, tokenId, ceiling_);
-
-        return (loan, tokenId, ceiling_);
+        uint ceiling = nftFeed_.ceiling(loan);
+        borrow(loan, tokenId, ceiling);
+        return (loan, tokenId, ceiling);
     }
 
     function setupLoan(uint tokenId, address collateralNFT_, uint nftPrice, uint riskGroup) public returns (uint) {
@@ -230,7 +228,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         invest(amount);
         hevm.warp(now + 1 days);
         coordinator.closeEpoch();
-        emit log_named_uint("reserve", reserve.totalBalance());
     }
 
     function borrow(uint loan, uint tokenId, uint borrowAmount) public {
@@ -310,7 +307,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
         // allow pile full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
-
         return extra;
     }
 

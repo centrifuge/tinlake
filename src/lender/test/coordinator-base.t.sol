@@ -147,7 +147,6 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
 
     function consoleLog(LenderModel memory model_) internal {
         emit log_named_uint("maxReserve", model_.maxReserve);
-        emit log_named_uint("NAV", model_.NAV);
         emit log_named_uint("reserve", model_.reserve);
         emit log_named_uint("seniorDebt", model_.seniorDebt);
     }

@@ -1,11 +1,15 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 import "../../../test/mock/mock.sol";
-import "ds-test/test.sol";
 
 contract PileMock is Mock {
     function total() public view returns(uint) {
         return values_return["total"];
+    }
+
+    /// returns the total debt of a interest rate group
+    function rateDebt(uint rate) public view returns (uint) {
+        return values_return["rate_debt"];
     }
 
     function setRate(uint loan, uint rate) public {

@@ -375,10 +375,8 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         assertEq(nav, 0);
         root.relyContract(address(pile), address(this));
 
-        //       // 40% write off because one day too late
-
-        // increase loan rate from 5% to 6% (penalty rate)
-        pile.file("rate", nftFeed.WRITE_OFF_PHASE_A(), uint(1000000674400000000000000000));
+        // 40% write off because one day too late
+        // increase loan rate from 5% to 6%
         pile.changeRate(loan, nftFeed.WRITE_OFF_PHASE_A());
         emit log_named_uint("loan debt",pile.debt(loan));
         assertEq(nftFeed.currentNAV(), rmul(pile.debt(loan), 6 * 10**26));
@@ -440,7 +438,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         juniorInvestor.redeemOrder(0);
         assertEq(juniorToken.balanceOf(juniorInvestor_), 20 ether);
     }
-
+    
     function testPoolClosingScenarioB() public {
         Investor seniorInvestorB = new Investor(address(seniorOperator), address(seniorTranche), currency_, address(seniorToken));
         uint seniorAmount = 40 ether;
@@ -495,4 +493,3 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
     }
 
  }
-

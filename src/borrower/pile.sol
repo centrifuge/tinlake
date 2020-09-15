@@ -157,7 +157,7 @@ contract Pile is DSNote, Auth, Interest {
 
     // drip updates the chi of the rate category by compounding the interest and
     // updates the total debt
-    function drip(uint rate) public {
+    function drip(uint rate) public {        
         if (now >= rates[rate].lastUpdated) {
             (uint chi, uint deltaInterest) = compounding(rates[rate].chi, rates[rate].ratePerSecond, rates[rate].lastUpdated, rates[rate].pie);
             rates[rate].chi = chi;

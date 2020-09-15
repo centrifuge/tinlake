@@ -75,7 +75,6 @@ contract ScenarioTest is BaseSystemTest {
         uint distributorShould = pile.debt(loan) + currdistributorBal();
         // close without defined amount
         borrower.doClose(loan);
-
         uint totalT = uint(currency.totalSupply());
         checkAfterRepay(loan, tokenId, totalT, distributorShould);
     }
