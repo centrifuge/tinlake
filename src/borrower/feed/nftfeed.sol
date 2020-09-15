@@ -49,7 +49,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
     // thresholdRatio is used to determine the liquidation threshold of the loan. thresholdRatio * nftValue = liquidation threshold
     // When loan debt reaches the liquidation threshold, it can be seized and collected by a whitelisted keeper.
     mapping (uint => uint) public thresholdRatio;
-    
+
     // risk => ceilingRatio
     // ceilingRatio is used to determine the ax borrow amount (ceiling) of a loan. ceilingRatio * nftValue = max borrow amount
     // When loan debt reaches the liquidation threshold, it can be seized and collected by a whitelisted keeper.
@@ -74,7 +74,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
         require(thresholdRatio[0] == 0);
         // The risk groups (scorecard) are custom values for each tinlake deployment
         // They are pre-defined on contract creation and should not change
-        
+
         // The following risk groups are just examples that are mostly optimized for the system test cases
 
         // risk group  => 0
@@ -88,7 +88,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
         // ceilingRatio => 50%
         // interestRate => 12 % per year
         setRiskGroup(1, 7*10**26, 5*10**26, uint(1000000003593629043335673583));
-         
+
         // risk group  => 2
         // thresholdRatio => 70%
         // ceilingRatio => 50%
@@ -130,7 +130,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
     function setRiskGroup(uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) internal {
         thresholdRatio[risk_] = thresholdRatio_;
         ceilingRatio[risk_] = ceilingRatio_;
-        // set interestRate for risk group 
+        // set interestRate for risk group
         pile.file("rate", risk_, rate_);
     }
 
@@ -144,7 +144,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
 
      // The nft value & risk group is to be updated by authenticated oracles
     function update(bytes32 nftID_, uint value, uint risk_) public auth {
-        // the risk group has to exist 
+        // the risk group has to exist
         require(thresholdRatio[risk_] != 0, "threshold for risk group not defined");
 
         // switch of collateral risk group results in new: ceiling, threshold and interest rate for existing loan
@@ -167,7 +167,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
     }
 
     // part of Feed interface
-    function repay(uint loan, uint amount) external auth returns (uint) {
+    function repay(uint, uint amount) external auth returns (uint) {
         // note: borrowed amount is not decreased as the feed implements the principal and not credit line method
         return amount;
     }

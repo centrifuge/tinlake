@@ -48,7 +48,7 @@ contract AssessorLike is FixedPoint {
 // If it is not possible to satisfy all orders at maximum the coordinators opens a submission period.
 // The problem of finding the maximum amount of supply and redeem orders which still satisfies all constraints
 // can be seen as a linear programming (linear optimization problem).
-// The optimal solution can be calculated off-chain 
+// The optimal solution can be calculated off-chain
 contract EpochCoordinator is Auth, Math, FixedPoint  {
     struct OrderSummary {
         // all variables are stored in currency
@@ -289,7 +289,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         return ERR_NOT_NEW_BEST;
     }
 
-    function absDistance(uint x, uint y) public view returns(uint delta) {
+    function absDistance(uint x, uint y) public pure returns(uint delta) {
         if (x == y) {
             // gas optimization: for avoiding an additional edge case of 0 distance
             // distance is set to the smallest value possible
@@ -302,7 +302,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
     }
 
     function checkRatioInRange(Fixed27 memory ratio, Fixed27 memory minRatio,
-        Fixed27 memory maxRatio) public view returns (bool) {
+        Fixed27 memory maxRatio) public pure returns (bool) {
         if (ratio.value >= minRatio.value && ratio.value <= maxRatio.value ) {
             return true;
         }
@@ -442,14 +442,14 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
     /// validates if a solution satisfies the pool constraints
     /// returns: first constraint which is not satisfied or success
-    function validatePoolConstraints(uint reserve, uint seniorAsset) public view returns (int err) {
+    function validatePoolConstraints(uint reserve_, uint seniorAsset, uint nav_) public view returns (int err) {
         // constraint 3: max reserve
-        if (reserve > assessor.maxReserve()) {
+        if (reserve_ > assessor.maxReserve()) {
             // maxReserveConstraint => -3
             return ERR_MAX_RESERVE;
         }
 
-        uint assets = safeAdd(epochNAV, reserve);
+        uint assets = safeAdd(nav_, reserve_);
 
         (Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio) = assessor.seniorRatioBounds();
 
@@ -485,7 +485,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         uint newReserve = safeSub(currencyAvailable, currencyOut);
 
         return validatePoolConstraints(newReserve, calcSeniorAssetValue(seniorRedeem, seniorSupply,
-            epochSeniorAsset, newReserve, epochNAV));
+            epochSeniorAsset, newReserve, epochNAV), epochNAV);
     }
 
     /// public method to execute an epoch which required a submission period and the challenge period is over
@@ -498,10 +498,10 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
     /// calculates a new senior asset value based on senior redeem and senior supply
     function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply,
-        uint currSeniorAsset, uint reserve, uint NAV) public view returns (uint seniorAsset) {
+        uint currSeniorAsset, uint reserve_, uint nav_) public pure returns (uint seniorAsset) {
 
-        uint seniorAsset =  safeSub(safeAdd(currSeniorAsset, seniorSupply), seniorRedeem);
-        uint assets = calcAssets(NAV, reserve);
+        seniorAsset =  safeSub(safeAdd(currSeniorAsset, seniorSupply), seniorRedeem);
+        uint assets = calcAssets(nav_, reserve_);
         if(seniorAsset > assets) {
             seniorAsset = assets;
         }
@@ -517,7 +517,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
 
     /// calculates the senior ratio
-    function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) public view returns(uint) {
+    function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) public pure returns(uint) {
         // note: NAV + reserve == seniorAsset + juniorAsset (loop invariant: always true)
         uint assets = calcAssets(NAV, reserve_);
         if(assets == 0) {
@@ -527,7 +527,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
     }
 
     /// calculates the percentage of an order type which can be fulfilled for an epoch
-    function calcFulfillment(uint amount, uint totalOrder) public view returns(Fixed27 memory percent) {
+    function calcFulfillment(uint amount, uint totalOrder) public pure returns(Fixed27 memory percent) {
         if(amount == 0 || totalOrder == 0) {
             return Fixed27(0);
         }

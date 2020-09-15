@@ -47,13 +47,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     Hevm public hevm;
 
     function baseSetup() public {
-        // setup deployment
-        bytes32 feed_ = "nav";
-        deployContracts(feed_);
-    }
-
-    function baseSetup(bytes32 feed_) public {
-        deployContracts(feed_);
+        deployContracts();
     }
 
     function createTestUsers() public {
@@ -93,12 +87,12 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         return (tokenId, lookupId);
     }
 
-    function computeCeiling(uint riskGroup, uint nftPrice) public returns (uint) {
+    function computeCeiling(uint riskGroup, uint nftPrice) public view returns (uint) {
         uint ceilingRatio = nftFeed.ceilingRatio(riskGroup);
         return rmul(ceilingRatio, nftPrice);
     }
 
-    function getRateByRisk(uint riskGroup) public returns (uint) {
+    function getRateByRisk(uint riskGroup) public view returns (uint) {
         (,,uint ratePerSecond,,) = pile.rates(riskGroup);
         return ratePerSecond;
     }
@@ -203,7 +197,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
         tokenId = collateralNFT.issue(borrower_);
         loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup, maturityDate);
-        uint ceiling = nftFeed_.ceiling(loan);
         borrow(loan, tokenId, borrowAmount, lenderFundingRequired);
         return (loan, tokenId);
     }
@@ -213,11 +206,11 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         // create borrower collateral collateralNFT
         tokenId = collateralNFT.issue(borrower_);
         loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup);
-        uint ceiling = nftFeed_.ceiling(loan);
+        uint ceiling_ = nftFeed_.ceiling(loan);
 
-        borrow(loan, tokenId, ceiling);
+        borrow(loan, tokenId, ceiling_);
 
-        return (loan, tokenId, ceiling);
+        return (loan, tokenId, ceiling_);
     }
 
     function setupLoan(uint tokenId, address collateralNFT_, uint nftPrice, uint riskGroup) public returns (uint) {
@@ -253,10 +246,10 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         checkAfterBorrow(tokenId, borrowAmount);
     }
 
-    function defaultCollateral() public pure returns(uint nftPrice, uint riskGroup) {
-        uint nftPrice = 100 ether;
-        uint riskGroup = 2;
-        return (nftPrice, riskGroup);
+    function defaultCollateral() public pure returns(uint nftPrice_, uint riskGroup_) {
+        nftPrice_ = 100 ether;
+        riskGroup_ = 2;
+        return (nftPrice_, riskGroup_);
     }
 
     // note: this method will be refactored with the new lender side contracts, as the distributor should not hold any currency
@@ -305,7 +298,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         assertEq(a/precision, b/precision);
     }
 
-    function fixed18To27(uint valPower18) public returns(uint) {
+    function fixed18To27(uint valPower18) public pure returns(uint) {
         // convert 10^18 to 10^27
         return valPower18 * 10**9;
     }

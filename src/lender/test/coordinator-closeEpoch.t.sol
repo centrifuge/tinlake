@@ -58,7 +58,6 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
     }
 
     function testCloseEpochAfterLongerTime() public {
-        uint secsForNextDay = calcNextEpochIn();
         assertEq(coordinator.currentEpoch(), 1);
         // exact 00:00 time
         hevm.warp(now + 300 days);

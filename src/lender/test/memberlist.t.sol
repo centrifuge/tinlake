@@ -40,15 +40,15 @@ contract MemberlistTest is Math, DSTest {
     }
 
     function testFailAddMemberPeriodTooShort() public {
-        uint memberlistValidity = safeAdd(now, 7 days);
-        memberlist.updateMember(self, memberlistValidity);
+        uint memberlistValidity_ = safeAdd(now, 7 days);
+        memberlist.updateMember(self, memberlistValidity_);
     }
 
     function testUpdateMember() public {
         memberlist.updateMember(self, memberlistValidity);
-        uint newMemberlistValidity = safeAdd(now, 9 days);
-        memberlist.updateMember(self, newMemberlistValidity);
-        assertEq(memberlist.members(self), newMemberlistValidity);
+        uint newMemberlistValidity_ = safeAdd(now, 9 days);
+        memberlist.updateMember(self, newMemberlistValidity_);
+        assertEq(memberlist.members(self), newMemberlistValidity_);
     }
 
     function testIsMember() public {
@@ -56,7 +56,7 @@ contract MemberlistTest is Math, DSTest {
         memberlist.member(self);
     }
 
-    function testFailIsMemberNotAdded() public {
+    function testFailIsMemberNotAdded() public view {
         memberlist.member(self);
     }
 }

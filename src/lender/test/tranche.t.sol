@@ -109,7 +109,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         uint amount = 100 ether;
         supplyOrder(amount);
         assertEq(tranche.totalSupply(), amount);
-        (uint totalSupply, uint totalRedeem) = tranche.closeEpoch();
+        (uint totalSupply, ) = tranche.closeEpoch();
         assertEq(totalSupply, amount);
     }
 
@@ -194,8 +194,8 @@ contract TrancheTest is DSTest, Math, FixedPoint {
 
 
         // execute disburse
-        (uint payoutCurrencyAmount, uint payoutTokenAmount,
-        uint remainingSupplyCurrency, uint remainingRedeemToken) =  tranche.disburse(self);
+        (uint payoutCurrencyAmount,  ,
+        , ) =  tranche.disburse(self);
 
 //        // 50 * 1.5 = 75 ether
         assertEq(payoutCurrencyAmount, 75 ether);
@@ -220,7 +220,6 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         redeemOrder(tokenAmount);
         reserve.setReturn("balance", uint(-1));
 
-        uint supplyRate = 0;
 
         // 75 % for redeem Fulfillment
         closeAndUpdate(0,7 * 10**26, ONE);
@@ -263,8 +262,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
 
         // execute disburse
-        (uint payoutCurrencyAmount, uint payoutTokenAmount,
-        uint remainingSupplyCurrency, uint remainingRedeemToken) =  tranche.disburse(self);
+        tranche.disburse(self);
 
         // by changing the supply order to 0 currency is received back
         tranche.supplyOrder(self, 0);
@@ -293,8 +291,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         }
 
         // execute disburse
-        (uint payoutCurrencyAmount, uint payoutTokenAmount,
-        uint remainingSupplyCurrency, uint remainingRedeemToken) =  tranche.disburse(self, lastEpochExecuted);
+        (, uint payoutTokenAmount, , ) =  tranche.disburse(self, lastEpochExecuted);
 
         // total fulfillment
         // 100 * 0.1 = 10
@@ -367,8 +364,8 @@ contract TrancheTest is DSTest, Math, FixedPoint {
 
         // execute disburse with too high endEpoch
         uint endEpoch = 1000;
-        (uint payoutCurrencyAmount, uint payoutTokenAmount,
-        uint remainingSupplyCurrency, uint remainingRedeemToken) =  tranche.disburse(self, endEpoch);
+
+        (,uint payoutTokenAmount, , ) =  tranche.disburse(self, endEpoch);
 
         assertEq(payoutTokenAmount, 19 ether);
     }
@@ -393,12 +390,10 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         uint endEpoch = orderedInEpoch;
 
         // execute disburse first epoch
-        (uint payoutCurrencyAmount, uint payoutTokenAmount,
-        uint remainingSupplyCurrency, uint remainingRedeemToken) =  tranche.disburse(self, endEpoch);
+        tranche.disburse(self, endEpoch);
 
         // no try to change supply
-        tranche.supplyOrder(address(this), 0);
-
+        supplyOrder(0);
     }
 
     function testDisburseSupplyAndRedeem() public {
