@@ -74,6 +74,12 @@ contract Tranche is Math, Auth, FixedPoint {
 
     bool public waitingForUpdate = false;
 
+    modifier orderAllowed(address usr) {
+        require((users[usr].supplyCurrencyAmount == 0 && users[usr].redeemTokenAmount == 0)
+        || users[usr].orderedInEpoch == epochTicker.currentEpoch(), "disburse required");
+        _;
+    }
+
     constructor(address currency_, address token_) public {
         wards[msg.sender] = 1;
         token = ERC20Like(token_);
@@ -98,10 +104,8 @@ contract Tranche is Math, Auth, FixedPoint {
     }
 
     // supplyOrder function can be used to place or revoke an supply
-    function supplyOrder(address usr, uint newSupplyAmount) public auth {
-        uint currentEpoch = epochTicker.currentEpoch();
-        require(users[usr].orderedInEpoch == 0 || users[usr].orderedInEpoch == currentEpoch, "disburse required");
-        users[usr].orderedInEpoch = currentEpoch;
+    function supplyOrder(address usr, uint newSupplyAmount) public auth orderAllowed(usr) {
+        users[usr].orderedInEpoch = epochTicker.currentEpoch();
 
         uint currentSupplyAmount = users[usr].supplyCurrencyAmount;
 
@@ -121,10 +125,8 @@ contract Tranche is Math, Auth, FixedPoint {
     }
 
     // redeemOrder function can be used to place or revoke a redeem
-    function redeemOrder(address usr, uint newRedeemAmount) public auth {
-        uint currentEpoch = epochTicker.currentEpoch();
-        require(users[usr].orderedInEpoch == 0 || users[usr].orderedInEpoch == currentEpoch, "disburse required");
-        users[usr].orderedInEpoch = currentEpoch;
+    function redeemOrder(address usr, uint newRedeemAmount) public auth orderAllowed(usr) {
+        users[usr].orderedInEpoch = epochTicker.currentEpoch();
 
         uint currentRedeemAmount = users[usr].redeemTokenAmount;
         users[usr].redeemTokenAmount = newRedeemAmount;
@@ -146,6 +148,7 @@ contract Tranche is Math, Auth, FixedPoint {
         return calcDisburse(usr, epochTicker.lastEpochExecuted());
     }
 
+    ///  calculates the current disburse of a user starting from the ordered epoch until endEpoch
     function calcDisburse(address usr, uint endEpoch) public view returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         uint epochIdx = users[usr].orderedInEpoch;
         uint lastEpochExecuted = epochTicker.lastEpochExecuted();
@@ -167,6 +170,7 @@ contract Tranche is Math, Auth, FixedPoint {
         uint remainingRedeemToken = users[usr].redeemTokenAmount;
         uint amount = 0;
 
+        // calculates disburse amounts as long as remaining tokens or currency is left or the end epoch is reached
         while(epochIdx <= endEpoch && (remainingSupplyCurrency != 0 || remainingRedeemToken != 0 )){
             if(remainingSupplyCurrency != 0) {
                 amount = rmul(remainingSupplyCurrency, epochs[epochIdx].supplyFulfillment.value);
@@ -189,7 +193,6 @@ contract Tranche is Math, Auth, FixedPoint {
         }
 
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
-
     }
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
@@ -212,9 +215,8 @@ contract Tranche is Math, Auth, FixedPoint {
          remainingSupplyCurrency, remainingRedeemToken) = calcDisburse(usr, endEpoch);
         users[usr].supplyCurrencyAmount = remainingSupplyCurrency;
         users[usr].redeemTokenAmount = remainingRedeemToken;
-        // if lastEpochExecuted is disbursed orderInEpoch is at current epoch again
-        // which allows to change the order and therefore the possibility to remove it
-        // this is only possible if all previous epochs are disbursed (no orders reserved)
+        // if lastEpochExecuted is disbursed, orderInEpoch is at the current epoch again
+        // which allows to change the order. This is only possible if all previous epochs are disbursed
         users[usr].orderedInEpoch = safeAdd(endEpoch, 1);
 
 
