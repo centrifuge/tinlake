@@ -16,10 +16,8 @@ pragma solidity >=0.5.15 <0.6.0;
 pragma experimental ABIEncoderV2;
 
 import "./../fixed_point.sol";
-
 import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
-import "ds-test/test.sol";
 
 interface NAVFeedLike {
     function calcUpdateNAV() external returns (uint);
@@ -35,7 +33,7 @@ interface ReserveLike {
     function totalBalance() external view returns(uint);
 }
 
-contract Assessor is Auth, FixedPoint, Interest, DSTest {
+contract Assessor is Auth, FixedPoint, Interest {
     // senior ratio from the last epoch executed
     Fixed27        public seniorRatio;
 
@@ -130,11 +128,11 @@ contract Assessor is Auth, FixedPoint, Interest, DSTest {
         return moin;
     }
 
-    function calcJuniorTokenPrice() external returns(uint) {
+    function calcJuniorTokenPrice() external view returns(uint) {
         return calcJuniorTokenPrice(navFeed.currentNAV(), reserve.totalBalance());
     }
 
-    function calcSeniorTokenPrice(uint epochNAV, uint epochReserve) public returns(uint) {
+    function calcSeniorTokenPrice(uint epochNAV, uint epochReserve) public view returns(uint) {
         if ((epochNAV == 0 && epochReserve == 0) || seniorTranche.tokenSupply() == 0) {
             // initial token price at start 1.00
             return ONE;
@@ -149,7 +147,7 @@ contract Assessor is Auth, FixedPoint, Interest, DSTest {
         return rdiv(seniorAssetValue, seniorTranche.tokenSupply());
     }
 
-    function calcJuniorTokenPrice(uint epochNAV, uint epochReserve) public returns(uint) {
+    function calcJuniorTokenPrice(uint epochNAV, uint epochReserve) public view returns(uint) {
         if ((epochNAV == 0 && epochReserve == 0) || juniorTranche.tokenSupply() == 0) {
             // initial token price at start 1.00
             return ONE;
@@ -221,7 +219,7 @@ contract Assessor is Auth, FixedPoint, Interest, DSTest {
         return seniorDebt_;
     }
 
-    function seniorDebt() public returns (uint) {
+    function seniorDebt() public view returns (uint) {
         if (now >= lastUpdateSeniorInterest) {
             return chargeInterest(seniorDebt_, seniorInterestRate.value, lastUpdateSeniorInterest);
         }
