@@ -123,7 +123,7 @@ contract Assessor is Auth, FixedPoint, Interest {
          return navFeed.calcUpdateNAV();
     }
 
-    function calcSeniorTokenPrice() external returns(uint) {
+    function calcSeniorTokenPrice() external view returns(uint) {
         return calcSeniorTokenPrice(navFeed.currentNAV(), reserve.totalBalance());
     }
 
