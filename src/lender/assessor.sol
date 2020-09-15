@@ -19,11 +19,12 @@ import "./../fixed_point.sol";
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
+import "ds-test/test.sol";
 
 interface NAVFeedLike {
     function calcUpdateNAV() external returns (uint);
     function approximatedNAV() external view returns (uint);
-    function currentNAV() external view returns(uint);
+    function currentNAV() external returns(uint);
 }
 
 interface TrancheLike {
@@ -34,7 +35,7 @@ interface ReserveLike {
     function totalBalance() external view returns(uint);
 }
 
-contract Assessor is Auth, FixedPoint, Interest {
+contract Assessor is Auth, FixedPoint, Interest, DSTest {
     // senior ratio from the last epoch executed
     Fixed27        public seniorRatio;
 
@@ -124,30 +125,31 @@ contract Assessor is Auth, FixedPoint, Interest {
          return navFeed.calcUpdateNAV();
     }
 
-    function calcSeniorTokenPrice() external view returns(uint) {
-        return calcSeniorTokenPrice(navFeed.currentNAV(), reserve.totalBalance());
+    function calcSeniorTokenPrice() external returns(uint) {
+        uint moin = calcSeniorTokenPrice(navFeed.currentNAV(), reserve.totalBalance());
+        return moin;
     }
 
-    function calcJuniorTokenPrice() external view returns(uint) {
+    function calcJuniorTokenPrice() external returns(uint) {
         return calcJuniorTokenPrice(navFeed.currentNAV(), reserve.totalBalance());
     }
 
-    function calcSeniorTokenPrice(uint epochNAV, uint epochReserve) public view returns(uint) {
+    function calcSeniorTokenPrice(uint epochNAV, uint epochReserve) public returns(uint) {
         if ((epochNAV == 0 && epochReserve == 0) || seniorTranche.tokenSupply() == 0) {
             // initial token price at start 1.00
             return ONE;
         }
-
         uint totalAssets = safeAdd(epochNAV, epochReserve);
+
         uint seniorAssetValue = calcSeniorAssetValue(seniorDebt(), seniorBalance_);
+
         if(totalAssets < seniorAssetValue) {
             seniorAssetValue = totalAssets;
         }
-
         return rdiv(seniorAssetValue, seniorTranche.tokenSupply());
     }
 
-    function calcJuniorTokenPrice(uint epochNAV, uint epochReserve) public view returns(uint) {
+    function calcJuniorTokenPrice(uint epochNAV, uint epochReserve) public returns(uint) {
         if ((epochNAV == 0 && epochReserve == 0) || juniorTranche.tokenSupply() == 0) {
             // initial token price at start 1.00
             return ONE;
@@ -219,7 +221,7 @@ contract Assessor is Auth, FixedPoint, Interest {
         return seniorDebt_;
     }
 
-    function seniorDebt() public view returns (uint) {
+    function seniorDebt() public returns (uint) {
         if (now >= lastUpdateSeniorInterest) {
             return chargeInterest(seniorDebt_, seniorInterestRate.value, lastUpdateSeniorInterest);
         }

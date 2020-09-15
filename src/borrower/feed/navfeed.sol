@@ -20,6 +20,7 @@ import "tinlake-math/interest.sol";
 import "./nftfeed.sol";
 import "./buckets.sol";
 import "../../fixed_point.sol";
+import "ds-test/test.sol";
 
 // The Nav Feed contract extends the functionality of the NFT Feed by the Net Asset Value (NAV) computation of a Tinlake pool.
 // NAV is computed as the sum of all discounted future values (fv) of ongoing loans (debt > 0) in the pool.
@@ -76,17 +77,15 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         recoveryRatePD[4] = Fixed27(ONE);
 
         /// Overdue loans (= loans that were not repaid by the maturityDate) are moved to write Offs
-        // 60% -> 40% write off
-        setWriteOff(0, WRITE_OFF_PHASE_A, 6 * 10**26);
-        // writeOffs[0] = WriteOff(WRITE_OFF_PHASE_A, Fixed27(6 * 10**26));
-        // 80% -> 20% write off
-        setWriteOff(1, WRITE_OFF_PHASE_B, 8 * 10**26);
-        // writeOffs[1] = WriteOff(WRITE_OFF_PHASE_B, Fixed27(8 * 10**26));
+        // 6% rate -> 60% write off
+        setWriteOff(0, WRITE_OFF_PHASE_A, uint(1000000674400000000000000000), 6 * 10**26);
+        // 6% rate -> 80% write off
+        setWriteOff(1, WRITE_OFF_PHASE_B, uint(1000000674400000000000000000), 8 * 10**26);
     }
 
-    function setWriteOff(uint group_, uint phase_, uint rate_) internal {
-        writeOffs[group_] = WriteOff(phase_,  Fixed27(rate_));
-        pile.file("rate", phase_, rate_);
+    function setWriteOff(uint phase_, uint group_, uint rate_, uint writeOffPercentage_) internal {
+        writeOffs[phase_] = WriteOff(group_, Fixed27(writeOffPercentage_));
+        pile.file("rate", group_, rate_);
     }
 
     function uniqueDayTimestamp(uint timestamp) public pure returns (uint) {
@@ -230,12 +229,12 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         return amount;
     }
 
-    function calcDiscount(uint amount, uint normalizedBlockTimestamp, uint maturityDate) public view returns (uint result) {
+    function calcDiscount(uint amount, uint normalizedBlockTimestamp, uint maturityDate) public returns (uint result) {
         return rdiv(amount, rpow(discountRate.value, safeSub(maturityDate, normalizedBlockTimestamp), ONE));
     }
 
 
-    function calcTotalDiscount() public view returns(uint) {
+    function calcTotalDiscount() public returns(uint) {
         uint normalizedBlockTimestamp = uniqueDayTimestamp(block.timestamp);
         uint sum = 0;
 
@@ -256,10 +255,10 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     /// returns the NAV (net asset value) of the pool
-    function currentNAV() public view returns(uint) {
+    function currentNAV() public returns(uint) {
         uint nav_ = calcTotalDiscount();
         // include ovedue assets to the current NAV calculation
-        for (uint i = 0; i < writeOffs.length; i++) {        
+        for (uint i = 0; i < writeOffs.length; i++) {       
             uint writeOffGroupDebt = pile.rateDebt(writeOffs[i].rateGroup);
             // multiply writeOffGroupDebt with the writeOff ratio
             nav_ = safeAdd(nav_, rmul(writeOffGroupDebt, writeOffs[i].percentage.value));
@@ -274,7 +273,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     /// workaround for transition phase between V2 & V3
-    function totalValue() public view returns(uint) {
+    function totalValue() public returns(uint) {
         return currentNAV();
     }
 

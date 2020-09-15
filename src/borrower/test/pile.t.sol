@@ -65,7 +65,7 @@ contract PileTest is Interest, DSTest {
         assertEq(pile.debt(loan), safeSub(loanDebt, amount));
     }
 
-    function _calculateDebt(uint rate, uint principal, uint time) internal pure returns(uint z) {
+    function _calculateDebt(uint rate, uint principal, uint time) internal returns(uint z) {
         return rmul(principal, rpow(rate, time, ONE));
     }
 

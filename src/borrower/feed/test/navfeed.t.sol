@@ -327,8 +327,8 @@ contract NAVTest is DSTest, Math {
     }
 
     function testWriteOffs() public {
-        pile.setReturn("rates_pie", 100 ether);
-        pile.setReturn("rates_chi", ONE);
+        pile.setReturn("rate_debt", 100 ether);
+    
         // default is two different write off groups both with 100 ether in debt
         // 60% -> 40% write off
         // 80% -> 20% write off
