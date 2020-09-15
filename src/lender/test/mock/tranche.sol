@@ -38,9 +38,10 @@ contract TrancheMock is Mock, Auth, DSTest {
 
     function epochUpdate(uint epochID, uint supplyFulfillment_,
         uint redeemFulfillment_, uint tokenPrice_, uint epochSupplyCurrency, uint epochRedeemCurrency) external {
-        values_uint["epochUpdate_epochID"] = supplyFulfillment_;
+        values_uint["epochUpdate_epochID"] = epochID;
         values_uint["epochUpdate_supplyFulfillment"] = supplyFulfillment_;
         values_uint["epochUpdate_redeemFulfillment"] = redeemFulfillment_;
+        values_uint["epochUpdate_tokenPrice"] = tokenPrice_;
         values_uint["epochUpdate_epochSupply"] = epochSupplyCurrency;
         values_uint["epochUpdate_epochRedeem"] = epochRedeemCurrency;
     }

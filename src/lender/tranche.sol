@@ -153,9 +153,6 @@ contract Tranche is Math, Auth, FixedPoint {
         uint epochIdx = users[usr].orderedInEpoch;
         uint lastEpochExecuted = epochTicker.lastEpochExecuted();
 
-        uint payoutCurrencyAmount = 0;
-        uint payoutTokenAmount = 0;
-
         // no disburse possible in this epoch
         if (users[usr].orderedInEpoch == epochTicker.currentEpoch()) {
             return (payoutCurrencyAmount, payoutTokenAmount, users[usr].supplyCurrencyAmount, users[usr].redeemTokenAmount);
@@ -166,8 +163,8 @@ contract Tranche is Math, Auth, FixedPoint {
             endEpoch = lastEpochExecuted;
         }
 
-        uint remainingSupplyCurrency = users[usr].supplyCurrencyAmount;
-        uint remainingRedeemToken = users[usr].redeemTokenAmount;
+        remainingSupplyCurrency = users[usr].supplyCurrencyAmount;
+        remainingRedeemToken = users[usr].redeemTokenAmount;
         uint amount = 0;
 
         // calculates disburse amounts as long as remaining tokens or currency is left or the end epoch is reached

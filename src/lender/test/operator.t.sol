@@ -50,7 +50,6 @@ contract OperatorTest is Math, DSTest {
     }
 
     function testSupplyOrder() public {
-        uint epochID = 3;
         uint amount = 10;
 
         // rely operator on tranche

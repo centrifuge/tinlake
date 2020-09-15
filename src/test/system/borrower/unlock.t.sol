@@ -72,7 +72,7 @@ contract UnlockTest is BaseSystemTest {
         uint nftPrice = 200 ether; // -> ceiling 100 ether
         uint riskGroup = 0; // -> 0% per year
         uint ceiling = computeCeiling(riskGroup, nftPrice);
-        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
+        (uint loanId, ) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
 
         hevm.warp(now + 365 days);
 

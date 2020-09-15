@@ -20,11 +20,11 @@ import "tinlake-auth/auth.sol";
 
 contract Memberlist is Math, Auth {
 
-    uint constant minimumDelay = 7 days; 
+    uint constant minimumDelay = 7 days;
 
     // -- Members--
     mapping (address => uint) public members;
-    function updateMember(address usr, uint validUntil) public auth { 
+    function updateMember(address usr, uint validUntil) public auth {
         require((safeAdd(block.timestamp, minimumDelay)) < validUntil);
         members[usr] = validUntil;
      }
@@ -32,8 +32,8 @@ contract Memberlist is Math, Auth {
     constructor() public {
         wards[msg.sender] = 1;
     }
-   
-    function member(address usr) public {
+
+    function member(address usr) public view {
         require((members[usr] >= block.timestamp), "not-allowed-to-hold-token");
     }
 }
