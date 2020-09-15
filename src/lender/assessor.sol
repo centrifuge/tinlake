@@ -22,7 +22,7 @@ import "tinlake-math/interest.sol";
 interface NAVFeedLike {
     function calcUpdateNAV() external returns (uint);
     function approximatedNAV() external view returns (uint);
-    function currentNAV() external returns(uint);
+    function currentNAV() external view returns(uint);
 }
 
 interface TrancheLike {
@@ -124,8 +124,7 @@ contract Assessor is Auth, FixedPoint, Interest {
     }
 
     function calcSeniorTokenPrice() external returns(uint) {
-        uint moin = calcSeniorTokenPrice(navFeed.currentNAV(), reserve.totalBalance());
-        return moin;
+        return calcSeniorTokenPrice(navFeed.currentNAV(), reserve.totalBalance());
     }
 
     function calcJuniorTokenPrice() external view returns(uint) {
@@ -138,7 +137,6 @@ contract Assessor is Auth, FixedPoint, Interest {
             return ONE;
         }
         uint totalAssets = safeAdd(epochNAV, epochReserve);
-
         uint seniorAssetValue = calcSeniorAssetValue(seniorDebt(), seniorBalance_);
 
         if(totalAssets < seniorAssetValue) {
