@@ -26,7 +26,7 @@ contract TrancheLike {
 }
 
 interface RestrictedTokenLike {
-    function hasMember(address) external returns (bool);
+    function hasMember(address) external view returns (bool);
 }
 
 contract Operator is DSNote, Auth {
