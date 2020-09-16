@@ -163,8 +163,6 @@ contract NAVTest is DSTest, Math {
 
         while(currDate != feed.NullDate())
         {
-            emit log_named_uint("date_offset", (currDate-normalizedDay)/1 days);
-            emit log_named_uint("bucket_value", feed.dateBucket(currDate));
             (,currDate) = feed.buckets(currDate);
             len++;
 

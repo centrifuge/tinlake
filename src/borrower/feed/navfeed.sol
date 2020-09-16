@@ -182,7 +182,6 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         uint amountIncludingFixed =  safeAdd(amount, rmul(amount, fixedRate));
         // calculate future value FV
         uint fv = calcFutureValue(loan, amountIncludingFixed, maturityDate_, recoveryRatePD[risk[nftID_]].value);
-        // todo check for fixed fee
         futureValue[nftID_] = safeAdd(futureValue[nftID_], fv);
 
         // add future value to the bucket of assets with the same maturity date
@@ -291,7 +290,6 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         }
 
         // if a loan is overdue the portfolio value is equal to the existing debt multiplied with a write off factor
-        // todo multiply amount with write-off factor
         return amount;
     }
 
@@ -343,7 +341,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     /// workaround for transition phase between V2 & V3
-    function totalValue() public view returns(uint) {
+    t affunction totalValue() public view returns(uint) {
         return currentNAV();
     }
 
