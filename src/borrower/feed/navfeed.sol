@@ -64,22 +64,57 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     function init() public {
-        super.init();
+
         // gas optimized initialization of writeOffs
         // write off are hardcoded in the contract instead of init function params
 
-        // rist groups are extended by the recoveryRatePD parameter
-        recoveryRatePD[0] = Fixed27(ONE);
-        recoveryRatePD[1] = Fixed27(90 * 10**25);
-        recoveryRatePD[2] = Fixed27(90 * 10**25);
-        recoveryRatePD[3] = Fixed27(ONE);
-        recoveryRatePD[4] = Fixed27(ONE);
+        // ristk groups are extended by the recoveryRatePD parameter
+
+        // The following recovery rates are just examples that are mostly optimized for the system test cases
+
+        //                      | risk group | thresholdRatio | ceilingRatio | interestRate                      |            recoveryRatePD  |
+        file("riskGroup",     0      ,   8*10**26     ,  6*10**26,           ONE                         ,        ONE);
+
+        // risk group  => 1
+        // thresholdRatio => 70%
+        // ceilingRatio => 50%
+        // interestRate => 12 % per year
+        //                      | risk group | thresholdRatio | ceilingRatio |        interestRate               |            recoveryRatePD   |
+        file("riskGroup",     1      ,   7*10**26     ,  5*10**26,     uint(1000000003593629043335673583),        90 * 10**25);
+
+
+        // risk group  => 2
+        // thresholdRatio => 70%
+        // ceilingRatio => 50%
+        // interestRate => 5 % per day
+        file("riskGroup", 2, 7*10**26, 5*10**26, uint(1000000564701133626865910626), 90 * 10**25);
+
+        // risk group  => 3
+        // ceiling ratio => 100%
+        // thresholdRatio => 70%
+        // interest rate => 5% per day
+        file("riskGroup", 3, 7*10**26, ONE, uint(1000000564701133626865910626), ONE);
+
+        // risk group => 4 (used by collector tests)
+        // ceiling ratio => 50%
+        // thresholdRatio => 60%
+        // interest rate => 5% per day
+        file("riskGroup", 4, 6*10**26, 5*10**26, uint(1000000564701133626865910626), ONE);
+
 
         /// Overdue loans (= loans that were not repaid by the maturityDate) are moved to write Offs
         // 6% interest rate & 60% write off
         setWriteOff(0, WRITE_OFF_PHASE_A, uint(1000000674400000000000000000), 6 * 10**26);
         // 6% interest rate & 80% write off
         setWriteOff(1, WRITE_OFF_PHASE_B, uint(1000000674400000000000000000), 8 * 10**26);
+    }
+
+    function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_) public auth  {
+        if(name == "riskGroup") {
+            file(name, risk_, thresholdRatio_, ceilingRatio_, rate_);
+            recoveryRatePD[risk_] = Fixed27(recoveryRatePD_);
+
+        } else {revert ("unkown name");}
     }
 
     function setWriteOff(uint phase_, uint group_, uint rate_, uint writeOffPercentage_) internal {
@@ -262,7 +297,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         // calculates the NAV for ongoing loans with a maturityDate date in the future
         uint nav_ = calcTotalDiscount();
         // include ovedue assets to the current NAV calculation
-        for (uint i = 0; i < writeOffs.length; i++) {       
+        for (uint i = 0; i < writeOffs.length; i++) {
             // multiply writeOffGroupDebt with the writeOff rate
             nav_ = safeAdd(nav_, rmul(pile.rateDebt(writeOffs[i].rateGroup), writeOffs[i].percentage.value));
         }
