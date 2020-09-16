@@ -3,6 +3,9 @@ pragma solidity >=0.5.15 <0.6.0;
 import "../../../test/mock/mock.sol";
 
 contract NFTMock is Mock {
+
+    uint threshold_;
+
     function ownerOf(uint) public view returns (address) {
         return values_address_return["ownerOf"];
     }
@@ -20,5 +23,13 @@ contract NFTMock is Mock {
         calls["mint"]++;
         values_address["mint_owner"] = owner;
         values_uint["mint_tokenId"] = tokenId;
+    }
+
+    function setThreshold(uint , uint amount) public {
+        threshold_ = amount;
+    }
+
+    function threshold(uint) public view returns (uint) {
+        return threshold_;
     }
 }

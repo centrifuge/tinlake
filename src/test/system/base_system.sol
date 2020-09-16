@@ -51,13 +51,13 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
     }
 
     function createTestUsers() public {
-        borrower = new Borrower(address(shelf), address(lenderDeployer.reserve()), currency_, address(pile));
+        borrower = new Borrower(address(shelf), address(reserve), currency_, address(pile));
         borrower_ = address(borrower);
-        randomUser = new Borrower(address(shelf), address(distributor), currency_, address(pile));
+        randomUser = new Borrower(address(shelf), address(reserve), currency_, address(pile));
         randomUser_ = address(randomUser);
         keeper = new Keeper(address(collector), currency_);
         keeper_ = address(keeper);
-        admin = new AdminUser(address(shelf), address(pile), address(nftFeed), address(title), address(distributor), address(collector), address(juniorMemberlist), address(seniorMemberlist));
+        admin = new AdminUser(address(shelf), address(pile), address(nftFeed), address(title), address(reserve), address(collector), address(juniorMemberlist), address(seniorMemberlist));
         admin_ = address(admin);
         root.relyBorrowerAdmin(admin_);
         root.relyLenderAdmin(admin_);
@@ -206,9 +206,9 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         // create borrower collateral collateralNFT
         tokenId = collateralNFT.issue(borrower_);
         loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup);
-        uint ceiling = nftFeed_.ceiling(loan);
-        borrow(loan, tokenId, ceiling);
-        return (loan, tokenId, ceiling);
+        uint ceiling_ = nftFeed_.ceiling(loan);
+        borrow(loan, tokenId, ceiling_);
+        return (loan, tokenId, ceiling_);
     }
 
     function setupLoan(uint tokenId, address collateralNFT_, uint nftPrice, uint riskGroup) public returns (uint) {

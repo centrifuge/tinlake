@@ -24,9 +24,6 @@ import {RestrictedTokenFab} from "./fabs/restrictedtoken.sol";
 
 import {FixedPoint}      from "./../fixed_point.sol";
 
-// todo needs to be removed
-import { Distributor } from "../test/simple/distributor.sol";
-
 
 interface DependLike {
     function depend(bytes32, address) external;
@@ -224,17 +221,5 @@ contract LenderDeployer is FixedPoint {
         FileLike(assessor).file("maxReserve", maxReserve);
         FileLike(assessor).file("maxSeniorRatio", maxSeniorRatio.value);
         FileLike(assessor).file("minSeniorRatio", minSeniorRatio.value);
-    }
-
-}
-
-contract MockLenderDeployer {
-    address public distributor_;
-    Distributor public distributor;
-
-    constructor(address root, address currency) public {
-        distributor = new Distributor(currency);
-        distributor_ = address(distributor);
-        distributor.rely(root);
     }
 }
