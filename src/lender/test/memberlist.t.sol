@@ -62,6 +62,6 @@ contract MemberlistTest is Math, DSTest {
     }   
 
     function testFailHasMemberNotAdded() public view {
-        memberlist.hasMember(self);
+         assert(memberlist.hasMember(self));
     }   
 }
