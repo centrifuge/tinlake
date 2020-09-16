@@ -341,7 +341,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     /// workaround for transition phase between V2 & V3
-    t affunction totalValue() public view returns(uint) {
+    function totalValue() public view returns(uint) {
         return currentNAV();
     }
 
