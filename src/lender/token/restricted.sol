@@ -18,6 +18,7 @@ pragma solidity >=0.5.15 <0.6.0;
 import "tinlake-erc20/erc20.sol";
 
 contract MemberlistLike {
+    function hasMember(address) public view returns (bool);
     function member(address) public;
 }
 
@@ -27,9 +28,8 @@ contract RestrictedToken is ERC20 {
     MemberlistLike public memberlist; 
     modifier checkMember(address usr) { memberlist.member(usr); _; }
     
-    function hasMember(address usr) public returns (bool) {
-        // will fail if user not member
-        memberlist.member(usr);
+    function hasMember(address usr) public view returns (bool) {
+        return memberlist.hasMember(usr);
     }
 
     constructor(string memory symbol_, string memory name_) ERC20(symbol, name) public {}

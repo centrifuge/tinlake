@@ -54,9 +54,14 @@ contract MemberlistTest is Math, DSTest {
     function testIsMember() public {
         memberlist.updateMember(self, memberlistValidity);
         memberlist.member(self);
+        assert(memberlist.hasMember(self));
     }
 
     function testFailIsMemberNotAdded() public view {
         memberlist.member(self);
-    }
+    }   
+
+    function testFailHasMemberNotAdded() public view {
+         assert(memberlist.hasMember(self));
+    }   
 }
