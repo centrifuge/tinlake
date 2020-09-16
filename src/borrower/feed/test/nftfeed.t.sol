@@ -41,12 +41,40 @@ contract NFTFeedTest is DSTest, Math {
         shelf = new ShelfMock();
         nftFeed.depend("shelf", address(shelf));
         nftFeed.depend("pile", address(pile));
-        nftFeed.init();
+        // init scorecard only for NFT Feed
+        init();
     }
 
-    function testFailInit() public {
-        // call init twice
-        nftFeed.init();
+    function init() public {
+        // risk group  => 0
+        // thresholdRatio => 80%
+        // ceilingRatio => 60%
+        // interestRatio: 0%
+        nftFeed.file("riskGroupNFT",0, 8*10**26, 6*10**26, ONE);
+
+        // risk group  => 1
+        // thresholdRatio => 70%
+        // ceilingRatio => 50%
+        // interestRate => 12 % per year
+        nftFeed.file("riskGroupNFT", 1, 7*10**26, 5*10**26, uint(1000000003593629043335673583));
+
+        // risk group  => 2
+        // thresholdRatio => 70%
+        // ceilingRatio => 50%
+        // interestRate => 5 % per day
+        nftFeed.file("riskGroupNFT", 2, 7*10**26, 5*10**26, uint(1000000564701133626865910626));
+
+        // risk group  => 3
+        // ceiling ratio => 100%
+        // thresholdRatio => 70%
+        // interest rate => 5% per day
+        nftFeed.file("riskGroupNFT", 3, 7*10**26, ONE, uint(1000000564701133626865910626));
+
+        // risk group => 4 (used by collector tests)
+        // ceiling ratio => 50%
+        // thresholdRatio => 60%
+        // interest rate => 5% per day
+        nftFeed.file("riskGroupNFT", 4, 6*10**26, 5*10**26, uint(1000000564701133626865910626));
     }
 
     function testBasicNFT() public {
@@ -65,7 +93,7 @@ contract NFTFeedTest is DSTest, Math {
     function assertLoanValuesSetCorrectly(bytes32 nftID, uint nftValue, uint loan, uint riskGroup, bool loanHasDebt) public {
         // check nft value set correctly
         assertEq(nftFeed.nftValues(nftID), nftValue);
-        // check threshold computed correctly 
+        // check threshold computed correctly
         assertEq(nftFeed.threshold(loan), rmul(nftValue, nftFeed.thresholdRatio(riskGroup)));
         // check ceiling computed correctly
         assertEq(nftFeed.currentCeiling(loan),  rmul(nftValue, nftFeed.ceilingRatio(riskGroup)));
@@ -82,7 +110,7 @@ contract NFTFeedTest is DSTest, Math {
         // thresholdRatio => 70%
         // ceilingRatio => 50%
         // interestRate => 12 % per year
-        uint risk = 1; 
+        uint risk = 1;
         bytes32 nftID = nftFeed.nftID(address(1), 1);
         uint loan = 1;
         uint value = 100 ether;
@@ -104,7 +132,7 @@ contract NFTFeedTest is DSTest, Math {
         // thresholdRatio => 70%
         // ceilingRatio => 50%
         // interestRate => 12 % per year
-        uint risk = 1; 
+        uint risk = 1;
         bytes32 nftID = nftFeed.nftID(address(1), 1);
         uint loan = 1;
         uint value = 100 ether;
@@ -127,7 +155,7 @@ contract NFTFeedTest is DSTest, Math {
         // thresholdRatio => 70%
         // ceilingRatio => 50%
         // interestRate => 12 % per year
-        uint risk = 1; 
+        uint risk = 1;
         bytes32 nftID = nftFeed.nftID(address(1), 1);
         uint loan = 1;
         uint value = 100 ether;
@@ -146,11 +174,11 @@ contract NFTFeedTest is DSTest, Math {
         nftFeed.update(nftID, value, risk);
         // // assert all values were set correctly
         assertLoanValuesSetCorrectly(nftID, value, loan, risk, true);
-     }    
-    
+     }
+
     function testFailUpdateRiskGroupDoesNotExist() public {
         // risk group does not exist
-        uint risk = 1000; 
+        uint risk = 1000;
         bytes32 nftID = nftFeed.nftID(address(1), 1);
         uint loan = 1;
         uint value = 100 ether;
@@ -226,21 +254,21 @@ contract NFTFeedTest is DSTest, Math {
 
         // assert values
         assertLoanValuesSetCorrectly(nftID, value, loan, risk, false);
-        
-        
+
+
         uint maxCeiling = nftFeed.ceiling(loan);
         assertEq(nftFeed.ceiling(loan), maxCeiling);
         nftFeed.borrow(loan, maxCeiling);
 
         // decrease nft value, which leads to ceiling decrease
         value = safeDiv(value, 2);
-        // set new nft value 
+        // set new nft value
         nftFeed.update(nftID, value);
 
         // assert new value was set correctly
         assertLoanValuesSetCorrectly(nftID, value, loan, risk, false);
         // new ceiling is smaller then already borrowed amount -> shoul return 0
-        
+
         assertEq(nftFeed.ceiling(loan), 0);
     }
 

@@ -71,44 +71,6 @@ contract BaseNFTFeed is DSNote, Auth, Math {
      // part of Feed interface
     function file(bytes32 name, uint value) public auth {}
 
-    function init() public {
-        require(thresholdRatio[0] == 0);
-        // The risk groups (scorecard) are custom values for each tinlake deployment
-        // They are pre-defined on contract creation and should not change
-
-        // The following risk groups are just examples that are mostly optimized for the system test cases
-
-        // risk group  => 0
-        // thresholdRatio => 80%
-        // ceilingRatio => 60%
-        // interestRatio: 0%
-        setRiskGroup(0, 8*10**26, 6*10**26, ONE);
-
-        // risk group  => 1
-        // thresholdRatio => 70%
-        // ceilingRatio => 50%
-        // interestRate => 12 % per year
-        setRiskGroup(1, 7*10**26, 5*10**26, uint(1000000003593629043335673583));
-
-        // risk group  => 2
-        // thresholdRatio => 70%
-        // ceilingRatio => 50%
-        // interestRate => 5 % per day
-        setRiskGroup(2, 7*10**26, 5*10**26, uint(1000000564701133626865910626));
-
-        // risk group  => 3
-        // ceiling ratio => 100%
-        // thresholdRatio => 70%
-        // interest rate => 5% per day
-        setRiskGroup(3, 7*10**26, ONE, uint(1000000564701133626865910626));
-
-        // risk group => 4 (used by collector tests)
-        // ceiling ratio => 50%
-        // thresholdRatio => 60%
-        // interest rate => 5% per day
-        setRiskGroup(4, 6*10**26, 5*10**26, uint(1000000564701133626865910626));
-    }
-
     /// sets the dependency to another contract
     function depend(bytes32 contractName, address addr) external auth {
         if (contractName == "pile") {pile = PileLike(addr);}
@@ -128,11 +90,14 @@ contract BaseNFTFeed is DSNote, Auth, Math {
         return nftID(registry, tokenId);
     }
 
-    function setRiskGroup(uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) internal {
-        thresholdRatio[risk_] = thresholdRatio_;
-        ceilingRatio[risk_] = ceilingRatio_;
-        // set interestRate for risk group
-        pile.file("rate", risk_, rate_);
+    function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) public auth {
+        if(name == "riskGroupNFT") {
+            require(ceilingRatio[risk_] == 0, "risk-group-in-usage");
+            thresholdRatio[risk_] = thresholdRatio_;
+            ceilingRatio[risk_] = ceilingRatio_;
+            // set interestRate for risk group
+            pile.file("rate", risk_, rate_);
+        } else {revert ("unkown name");}
     }
 
     ///  -- Oracle Updates --
