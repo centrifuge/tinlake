@@ -56,51 +56,68 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     // This is required for more accurate Senior & JuniorAssetValue estimations between epochs
     uint public approximatedNAV;
 
-    uint constant public  WRITE_OFF_PHASE_A = 91;
-    uint constant public  WRITE_OFF_PHASE_B = 90;
+    // rate group for write-offs in pile contract
+    uint constant public  WRITE_OFF_PHASE_A = 1001;
+    uint constant public  WRITE_OFF_PHASE_B = 1002;
 
     constructor () public {
         wards[msg.sender] = 1;
     }
 
     function init() public {
+        require(ceilingRatio[0] == 0, "already-initialized");
 
-        // gas optimized initialization of writeOffs
+        // gas optimized initialization of writeOffs and risk groups
         // write off are hardcoded in the contract instead of init function params
 
-        // ristk groups are extended by the recoveryRatePD parameter
+        // risk groups are extended by the recoveryRatePD parameter compared with NFTFeed
 
-        // The following recovery rates are just examples that are mostly optimized for the system test cases
+        // The following score cards just examples that are mostly optimized for the system test cases
 
-        //                      | risk group | thresholdRatio | ceilingRatio | interestRate                      |            recoveryRatePD  |
-        file("riskGroup",     0      ,   8*10**26     ,  6*10**26,           ONE                         ,        ONE);
+        // risk group: 0
+        file("riskGroup",
+            0,                                      // riskGroup:       0
+            8*10**26,                               // thresholdRatio   80%
+            6*10**26,                               // ceilingRatio     60%
+            ONE,                                    // interestRate     1.0
+            ONE                                     // recoveryRatePD:  1.0
+        );
 
-        // risk group  => 1
-        // thresholdRatio => 70%
-        // ceilingRatio => 50%
-        // interestRate => 12 % per year
-        //                      | risk group | thresholdRatio | ceilingRatio |        interestRate               |            recoveryRatePD   |
-        file("riskGroup",     1      ,   7*10**26     ,  5*10**26,     uint(1000000003593629043335673583),        90 * 10**25);
+        // risk group: 1
+        file("riskGroup",
+            1,                                      // riskGroup:       1
+            7*10**26,                               // thresholdRatio   70%
+            5*10**26,                               // ceilingRatio     50%
+            uint(1000000003593629043335673583),     // interestRate     12% per year
+            90 * 10**25                             // recoveryRatePD:  0.9
+        );
 
+        // risk group: 2
+        file("riskGroup",
+            2,                                      // riskGroup:       2
+            7*10**26,                               // thresholdRatio   70%
+            5*10**26,                               // ceilingRatio     50%
+            uint(1000000564701133626865910626),     // interestRate     5% per day
+            90 * 10**25                             // recoveryRatePD:  0.9
+        );
 
-        // risk group  => 2
-        // thresholdRatio => 70%
-        // ceilingRatio => 50%
-        // interestRate => 5 % per day
-        file("riskGroup", 2, 7*10**26, 5*10**26, uint(1000000564701133626865910626), 90 * 10**25);
+        // risk group: 3
+        file("riskGroup",
+            3,                                      // riskGroup:       3
+            7*10**26,                               // thresholdRatio   70%
+            ONE,                                    // ceilingRatio     100%
+            uint(1000000564701133626865910626),     // interestRate     5% per day
+            ONE                                     // recoveryRatePD:  1.0
+        );
 
-        // risk group  => 3
-        // ceiling ratio => 100%
-        // thresholdRatio => 70%
-        // interest rate => 5% per day
-        file("riskGroup", 3, 7*10**26, ONE, uint(1000000564701133626865910626), ONE);
-
-        // risk group => 4 (used by collector tests)
-        // ceiling ratio => 50%
-        // thresholdRatio => 60%
-        // interest rate => 5% per day
-        file("riskGroup", 4, 6*10**26, 5*10**26, uint(1000000564701133626865910626), ONE);
-
+        // risk group: 4 (used by collector tests)
+        file("riskGroup",
+            4,                                      // riskGroup:       4
+            5*10**26,                               // thresholdRatio   50%
+            6*10**26,                               // ceilingRatio     60%
+            uint(1000000564701133626865910626),     // interestRate     5% per day
+            ONE                                     // recoveryRatePD:  1.0
+        );
 
         /// Overdue loans (= loans that were not repaid by the maturityDate) are moved to write Offs
         // 6% interest rate & 60% write off
@@ -111,7 +128,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
     function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_) public auth  {
         if(name == "riskGroup") {
-            file(name, risk_, thresholdRatio_, ceilingRatio_, rate_);
+            file("riskGroupNFT", risk_, thresholdRatio_, ceilingRatio_, rate_);
             recoveryRatePD[risk_] = Fixed27(recoveryRatePD_);
 
         } else {revert ("unkown name");}

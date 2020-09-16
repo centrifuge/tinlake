@@ -91,7 +91,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
     }
 
     function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) public auth {
-        if(name == "riskGroup") {
+        if(name == "riskGroupNFT") {
             require(ceilingRatio[risk_] == 0, "risk-group-in-usage");
             thresholdRatio[risk_] = thresholdRatio_;
             ceilingRatio[risk_] = ceilingRatio_;

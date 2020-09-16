@@ -50,31 +50,31 @@ contract NFTFeedTest is DSTest, Math {
         // thresholdRatio => 80%
         // ceilingRatio => 60%
         // interestRatio: 0%
-        nftFeed.file("riskGroup",0, 8*10**26, 6*10**26, ONE);
+        nftFeed.file("riskGroupNFT",0, 8*10**26, 6*10**26, ONE);
 
         // risk group  => 1
         // thresholdRatio => 70%
         // ceilingRatio => 50%
         // interestRate => 12 % per year
-        nftFeed.file("riskGroup", 1, 7*10**26, 5*10**26, uint(1000000003593629043335673583));
+        nftFeed.file("riskGroupNFT", 1, 7*10**26, 5*10**26, uint(1000000003593629043335673583));
 
         // risk group  => 2
         // thresholdRatio => 70%
         // ceilingRatio => 50%
         // interestRate => 5 % per day
-        nftFeed.file("riskGroup", 2, 7*10**26, 5*10**26, uint(1000000564701133626865910626));
+        nftFeed.file("riskGroupNFT", 2, 7*10**26, 5*10**26, uint(1000000564701133626865910626));
 
         // risk group  => 3
         // ceiling ratio => 100%
         // thresholdRatio => 70%
         // interest rate => 5% per day
-        nftFeed.file("riskGroup", 3, 7*10**26, ONE, uint(1000000564701133626865910626));
+        nftFeed.file("riskGroupNFT", 3, 7*10**26, ONE, uint(1000000564701133626865910626));
 
         // risk group => 4 (used by collector tests)
         // ceiling ratio => 50%
         // thresholdRatio => 60%
         // interest rate => 5% per day
-        nftFeed.file("riskGroup", 4, 6*10**26, 5*10**26, uint(1000000564701133626865910626));
+        nftFeed.file("riskGroupNFT", 4, 6*10**26, 5*10**26, uint(1000000564701133626865910626));
     }
 
     function testBasicNFT() public {
