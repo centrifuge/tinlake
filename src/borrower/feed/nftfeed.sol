@@ -211,7 +211,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
     }
 
     /// implements feed interface and returns poolValue as the total debt of all loans
-    function totalValue() public view returns (uint) {
+    function totalValue() public returns (uint) {
         return pile.total();
     }
 }
