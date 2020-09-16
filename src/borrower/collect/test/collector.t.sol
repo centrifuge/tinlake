@@ -22,7 +22,6 @@ import "../../test/mock/distributor.sol";
 import "../../test/mock/nft.sol";
 import "../../test/mock/pile.sol";
 
-import "./../registry/threshold.sol";
 import "../collector.sol";
 
 
@@ -33,7 +32,6 @@ contract CollectorTest is DSTest {
     NFTMock         nft;
 
     Collector    collector;
-    ThresholdRegistry threshold;
 
     function setUp() public {
         nft = new NFTMock();
@@ -41,8 +39,7 @@ contract CollectorTest is DSTest {
         pile = new PileMock();
         distributor = new DistributorMock();
 
-        threshold = new ThresholdRegistry();
-        collector = new Collector(address(shelf), address(pile), address(threshold));
+        collector = new Collector(address(shelf), address(pile), address(nft));
         collector.depend("distributor", address(distributor));
     }
 
@@ -76,7 +73,7 @@ contract CollectorTest is DSTest {
         uint price = debt-1;
         setUpLoan(tokenId, debt);
 
-        threshold.set(loan, debt-1);
+        nft.setThreshold(loan, debt-1);
         collector.file("loan", loan, address(this), price);
         seize(loan);
         collect(loan, tokenId, price);
@@ -90,7 +87,7 @@ contract CollectorTest is DSTest {
         setUpLoan(tokenId, debt);
 
         collector.file("loan", loan, address(0), price);
-        threshold.set(loan, debt-1);
+        nft.setThreshold(loan, debt-1);
         seize(loan);
         collect(loan, tokenId, price);
     }
@@ -102,7 +99,7 @@ contract CollectorTest is DSTest {
         uint price = debt-1;
         setUpLoan(tokenId, debt);
 
-        threshold.set(loan, debt+1);
+        nft.setThreshold(loan, debt+1);
         collector.file("loan", loan, address(this), price);
         seize(loan);
     }
@@ -114,7 +111,7 @@ contract CollectorTest is DSTest {
         uint price = debt-1;
         setUpLoan(tokenId, debt);
 
-        threshold.set(loan, debt+1);
+        nft.setThreshold(loan, debt+1);
         collector.file("loan", loan, address(1), price);
         seize(loan);
         collect(loan, tokenId, price);
@@ -126,7 +123,7 @@ contract CollectorTest is DSTest {
         uint debt = 100;
         setUpLoan(tokenId, debt);
 
-        threshold.set(loan, debt-1);
+        nft.setThreshold(loan, debt-1);
 
         seize(loan);
         collect(loan, tokenId, 0);
