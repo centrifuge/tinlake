@@ -131,7 +131,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
             file("riskGroupNFT", risk_, thresholdRatio_, ceilingRatio_, rate_);
             recoveryRatePD[risk_] = Fixed27(recoveryRatePD_);
 
-        } else {revert ("unkown name");}
+        } else {revert ("unknown name");}
     }
 
     function setWriteOff(uint phase_, uint group_, uint rate_, uint writeOffPercentage_) internal {
