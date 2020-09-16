@@ -438,7 +438,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         juniorInvestor.redeemOrder(0);
         assertEq(juniorToken.balanceOf(juniorInvestor_), 20 ether);
     }
-    
+
     function testPoolClosingScenarioB() public {
         Investor seniorInvestorB = new Investor(address(seniorOperator), address(seniorTranche), currency_, address(seniorToken));
         uint seniorAmount = 40 ether;
@@ -457,7 +457,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         uint borrowAmount = 100 ether;
         uint nftPrice = 200 ether;
         uint maturityDate = 5 days;
-        (uint loan, uint tokenId) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(now) +maturityDate);
+        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(now) +maturityDate);
         uint highRate = uint(1000001103100000000000000000);
         root.relyContract(address(assessor), address(this));
         assessor.file("seniorInterestRate", highRate);
@@ -486,7 +486,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
 
         assertTrue(coordinator.submissionPeriod() == false);
 
-        (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken)  = seniorInvestor.disburse();
+        (uint payoutCurrencyAmount, , ,uint remainingRedeemToken)  = seniorInvestor.disburse();
         assertTrue(payoutCurrencyAmount >  0);
         assertEq(remainingRedeemToken, 0);
 

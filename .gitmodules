@@ -7,9 +7,6 @@
 [submodule "lib/tinlake-erc20"]
 	path = lib/tinlake-erc20
 	url = https://github.com/centrifuge/tinlake-erc20
-[submodule "lib/tinlake-registry"]
-	path = lib/tinlake-registry
-	url = https://github.com/centrifuge/tinlake-registry
 [submodule "lib/tinlake-math"]
 	path = lib/tinlake-math
 	url = https://github.com/centrifuge/tinlake-math

@@ -43,8 +43,7 @@ import {
   ReserveFab,
   CoordinatorFab,
   OperatorFab,
-  LenderDeployer,
-  MockLenderDeployer
+  LenderDeployer
 } from "../../lender/deployer.sol";
 
 import { Title } from "tinlake-title/title.sol";
@@ -58,13 +57,9 @@ import { TestRoot } from "./root.sol";
 import "../simple/token.sol";
 import "../simple/distributor.sol";
 import "tinlake-erc20/erc20.sol";
-import { PushRegistry } from "tinlake-registry/registry.sol";
+
 import { TokenLike, NFTFeedLike } from "./interfaces.sol";
 
-// todo legacy code
-contract DistributorLike {
-    function balance() public;
-}
 
 import "../../borrower/test/mock/shelf.sol";
 import "../../lender/test/mock/navFeed.sol";
@@ -85,9 +80,6 @@ contract TestSetup {
 
 
     // Lender contracts
-    // mock
-    DistributorLike  distributor;
-
     Reserve reserve;
     EpochCoordinator coordinator;
     Tranche seniorTranche;
@@ -103,9 +95,6 @@ contract TestSetup {
 
     // Deployers
     BorrowerDeployer public borrowerDeployer;
-    LenderDeployer public  lenderDeployer_;
-
-    // todo will be removed
     LenderDeployer public  lenderDeployer;
 
     TestRoot root;
@@ -133,8 +122,6 @@ contract TestSetup {
 
         prepareDeployLender(root_);
         deployLender();
-
-        lenderDeployer = lenderDeployer_;
 
         root.prepare(address(lenderDeployer), address(borrowerDeployer), address(this));
         root.deploy();
@@ -198,7 +185,7 @@ contract TestSetup {
         CoordinatorFab coordinatorFab = new CoordinatorFab();
 
         // root is testcase
-        lenderDeployer_ = new LenderDeployer(rootAddr, currency_, trancheFab, memberlistFab, restrictedTokenFab, reserveFab, assessorFab, coordinatorFab, operatorFab);
+        lenderDeployer = new LenderDeployer(rootAddr, currency_, trancheFab, memberlistFab, restrictedTokenFab, reserveFab, assessorFab, coordinatorFab, operatorFab);
     }
 
     function deployLender() public {
@@ -214,26 +201,26 @@ contract TestSetup {
         string memory juniorTokenName = "TIN Token";
         string memory juniorTokenSymbol = "TIN";
 
-        lenderDeployer_.init(minSeniorRatio, maxSeniorRatio, maxReserve, challengeTime, seniorInterestRate, seniorTokenName, seniorTokenSymbol, juniorTokenName, juniorTokenSymbol);
+        lenderDeployer.init(minSeniorRatio, maxSeniorRatio, maxReserve, challengeTime, seniorInterestRate, seniorTokenName, seniorTokenSymbol, juniorTokenName, juniorTokenSymbol);
 
-        lenderDeployer_.deployJunior();
-        lenderDeployer_.deploySenior();
-        lenderDeployer_.deployReserve();
-        lenderDeployer_.deployAssessor();
-        lenderDeployer_.deployCoordinator();
+        lenderDeployer.deployJunior();
+        lenderDeployer.deploySenior();
+        lenderDeployer.deployReserve();
+        lenderDeployer.deployAssessor();
+        lenderDeployer.deployCoordinator();
 
-        lenderDeployer_.deploy();
+        lenderDeployer.deploy();
 
-        assessor = Assessor(lenderDeployer_.assessor());
-        reserve = Reserve(lenderDeployer_.reserve());
-        coordinator = EpochCoordinator(lenderDeployer_.coordinator());
-        seniorTranche = Tranche(lenderDeployer_.seniorTranche());
-        juniorTranche = Tranche(lenderDeployer_.juniorTranche());
-        juniorOperator = Operator(lenderDeployer_.juniorOperator());
-        seniorOperator = Operator(lenderDeployer_.seniorOperator());
-        seniorToken = RestrictedToken(lenderDeployer_.seniorToken());
-        juniorToken = RestrictedToken(lenderDeployer_.juniorToken());
-        juniorMemberlist = Memberlist(lenderDeployer_.juniorMemberlist());
-        seniorMemberlist = Memberlist(lenderDeployer_.seniorMemberlist());
+        assessor = Assessor(lenderDeployer.assessor());
+        reserve = Reserve(lenderDeployer.reserve());
+        coordinator = EpochCoordinator(lenderDeployer.coordinator());
+        seniorTranche = Tranche(lenderDeployer.seniorTranche());
+        juniorTranche = Tranche(lenderDeployer.juniorTranche());
+        juniorOperator = Operator(lenderDeployer.juniorOperator());
+        seniorOperator = Operator(lenderDeployer.seniorOperator());
+        seniorToken = RestrictedToken(lenderDeployer.seniorToken());
+        juniorToken = RestrictedToken(lenderDeployer.juniorToken());
+        juniorMemberlist = Memberlist(lenderDeployer.juniorMemberlist());
+        seniorMemberlist = Memberlist(lenderDeployer.seniorMemberlist());
     }
 }

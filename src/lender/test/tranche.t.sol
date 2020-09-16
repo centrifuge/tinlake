@@ -397,6 +397,22 @@ contract TrancheTest is DSTest, Math, FixedPoint {
     }
 
     function testDisburseSupplyAndRedeem() public {
-       // todo test supply and redeem simultaneously
+        uint supplyAmount = 100 ether;
+        uint redeemAmount =  50 ether;
+        supplyOrder(supplyAmount);
+        redeemOrder(redeemAmount);
+
+        // 60 % fulfillment
+        uint supplyFulfillment_ = 6 * 10**26;
+        uint redeemFulfillment_ = 8 * 10**26;
+        uint tokenPrice_ = ONE;
+
+        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
+
+        // execute disburse
+        (uint payoutCurrencyAmount, uint payoutTokenAmount, ,)  = tranche.disburse(self);
+
+        assertEq(payoutTokenAmount, rmul(supplyAmount, supplyFulfillment_));
+        assertEq(payoutCurrencyAmount, rmul(redeemAmount, redeemFulfillment_));
     }
 }
