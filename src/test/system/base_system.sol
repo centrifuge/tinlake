@@ -206,9 +206,9 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         // create borrower collateral collateralNFT
         tokenId = collateralNFT.issue(borrower_);
         loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup);
-        uint ceiling = nftFeed_.ceiling(loan);
-        borrow(loan, tokenId, ceiling);
-        return (loan, tokenId, ceiling);
+        uint ceiling_ = nftFeed_.ceiling(loan);
+        borrow(loan, tokenId, ceiling_);
+        return (loan, tokenId, ceiling_);
     }
 
     function setupLoan(uint tokenId, address collateralNFT_, uint nftPrice, uint riskGroup) public returns (uint) {
