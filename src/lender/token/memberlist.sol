@@ -36,4 +36,11 @@ contract Memberlist is Math, Auth {
     function member(address usr) public view {
         require((members[usr] >= block.timestamp), "not-allowed-to-hold-token");
     }
+
+    function hasMember(address usr) public view returns (bool) {
+        if (members[usr] >= block.timestamp) {
+            return true;
+        } 
+        return false;
+    }
 }
