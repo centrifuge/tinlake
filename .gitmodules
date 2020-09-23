@@ -19,3 +19,6 @@
 [submodule "lib/tinlake-nftfeed"]
 	path = lib/tinlake-nftfeed
 	url = https://github.com/centrifuge/tinlake-nftfeed
+[submodule "lib/ds-stop"]
+	path = lib/ds-stop
+	url = https://github.com/dapphub/ds-stop
