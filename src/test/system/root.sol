@@ -47,7 +47,6 @@ contract TestRoot is TinlakeRoot {
         denyContract(bD.feed(), usr);
         denyContract(bD.shelf(), usr);
         denyContract(bD.pile(), usr);
-        denyContract(bD.feed(), usr);
         denyContract(bD.collector(), usr);
     }
 }
