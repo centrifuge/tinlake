@@ -15,15 +15,13 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import {
-  TitleFab,
-  ShelfFab,
-  PileFab,
-  NFTFeedFab,
-  NAVFeedFab,
-  CollectorFab,
-  BorrowerDeployer
-} from "../../borrower/deployer.sol";
+import { TitleFab } from "../../borrower/fabs/title.sol";
+import { ShelfFab } from "../../borrower/fabs/shelf.sol";
+import { PileFab } from "../../borrower/fabs/pile.sol";
+import { NFTFeedFab } from "../../borrower/fabs/nftfeed.sol";
+import { NAVFeedFab } from "../../borrower/fabs/navfeed.sol";
+import { CollectorFab } from "../../borrower/fabs/collector.sol";
+import { BorrowerDeployer } from "../../borrower/deployer.sol";
 
 
 import { EpochCoordinator } from "../../lender/coordinator.sol";
@@ -143,7 +141,7 @@ contract TestSetup {
 
         uint discountRate = uint(1000000342100000000000000000);
 
-        borrowerDeployer = new BorrowerDeployer(root_, titlefab, shelffab, pileFab, collectorFab, nftFeedFab_, currency_, "Tinlake Loan Token", "TLNT", discountRate);
+        borrowerDeployer = new BorrowerDeployer(root_, address(titlefab), address(shelffab), address(pileFab), address(collectorFab), nftFeedFab_, currency_, "Tinlake Loan Token", "TLNT", discountRate);
 
         borrowerDeployer.deployTitle();
         borrowerDeployer.deployPile();

@@ -17,6 +17,10 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import { Shelf } from "./../shelf.sol";
 
+interface ShelfFabLike {
+    function newShelf(address, address, address, address) external returns (address);
+}
+
 contract ShelfFab {
     function newShelf(address tkn_, address title_, address debt_, address ceiling_) public returns (address) {
         Shelf shelf = new Shelf(tkn_, title_, debt_, ceiling_);

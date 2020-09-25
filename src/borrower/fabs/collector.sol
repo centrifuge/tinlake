@@ -17,6 +17,10 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import { Collector } from "./../collect/collector.sol";
 
+interface CollectorFabLike {
+    function newCollector(address, address, address) external returns (address);
+}
+
 contract CollectorFab {
     function newCollector(address shelf, address pile, address threshold) public returns (address) {
         Collector collector = new Collector(shelf, pile, threshold);
