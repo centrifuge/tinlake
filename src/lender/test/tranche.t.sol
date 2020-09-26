@@ -429,7 +429,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         // the disburse method should always round off
         ( , uint payoutTokenAmount,, ) =  tranche.calcDisburse(self);
 
-        // rdiv would round up but calc disburse should round off
+        // rdiv would round up in the 20/3 case but calc disburse should always round off
         // 20/3 = 6.666666666666666666 instead of (6.666666666666666667)
         assertEq(rdiv(amount, tokenPrice_)-payoutTokenAmount, 1);
     }
