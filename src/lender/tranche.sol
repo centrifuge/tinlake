@@ -173,7 +173,7 @@ contract Tranche is Math, Auth, FixedPoint {
                 amount = rmul(remainingSupplyCurrency, epochs[epochIdx].supplyFulfillment.value);
                 // supply currency payout in token
                 if (amount != 0) {
-                    payoutTokenAmount = safeAdd(payoutTokenAmount, rdiv(amount, epochs[epochIdx].tokenPrice.value));
+                    payoutTokenAmount = safeAdd(payoutTokenAmount, safeDiv(safeMul(amount, ONE), epochs[epochIdx].tokenPrice.value));
                     remainingSupplyCurrency = safeSub(remainingSupplyCurrency, amount);
                 }
             }
