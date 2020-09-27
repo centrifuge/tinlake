@@ -144,9 +144,9 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     /// maturityDate is a unix timestamp
-    function file(bytes32 what, bytes32 nftID_, uint maturityDate_) public auth {
+    function file(bytes32 name, bytes32 nftID_, uint maturityDate_) public auth {
         // maturity date only can be changed when there is no debt on the collateral -> futureValue == 0
-        if (what == "maturityDate") {
+        if (name == "maturityDate") {
             require((futureValue[nftID_] == 0), "can-not-change-maturityDate-outstanding-debt");
             maturityDate[nftID_] = uniqueDayTimestamp(maturityDate_);
             // update loan values
