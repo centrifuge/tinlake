@@ -17,6 +17,10 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import { BaseNFTFeed } from "./../feed/nftfeed.sol";
 
+interface NFTFeedFabLike {
+    function newFeed() external returns (address);
+}
+
 contract NFTFeedFab {
     function newFeed() public returns (address) {
         BaseNFTFeed feed = new BaseNFTFeed();
