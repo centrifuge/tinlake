@@ -18,7 +18,7 @@ pragma solidity >=0.5.15 <0.6.0;
 import { RestrictedToken } from "./../token/restricted.sol";
 
 interface RestrictedTokenFabLike {
-    function newRestrictedToken(string memory, string memory) external returns (address);
+    function newRestrictedToken(string calldata, string calldata) external returns (address);
 }
 
 contract RestrictedTokenFab {
