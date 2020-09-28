@@ -35,16 +35,14 @@ import { RestrictedToken } from "../../lender/token/restricted.sol";
 import { Memberlist } from "../../lender/token/memberlist.sol";
 
 
-import {
-  TrancheFab,
-  RestrictedTokenFab,
-  MemberlistFab,
-  AssessorFab,
-  ReserveFab,
-  CoordinatorFab,
-  OperatorFab,
-  LenderDeployer
-} from "../../lender/deployer.sol";
+import { TrancheFab } from "../../lender/fabs/tranche.sol";
+import { RestrictedTokenFab } from "../../lender/fabs/restrictedtoken.sol";
+import { MemberlistFab } from "../../lender/fabs/memberlist.sol";
+import { AssessorFab } from "../../lender/fabs/assessor.sol";
+import { ReserveFab } from "../../lender/fabs/reserve.sol";
+import { CoordinatorFab } from "../../lender/fabs/coordinator.sol";
+import { OperatorFab } from "../../lender/fabs/operator.sol";
+import { LenderDeployer } from "../../lender/deployer.sol";
 
 import { Title } from "tinlake-title/title.sol";
 import { Pile } from "../../borrower/pile.sol";
@@ -185,7 +183,7 @@ contract TestSetup {
         CoordinatorFab coordinatorFab = new CoordinatorFab();
 
         // root is testcase
-        lenderDeployer = new LenderDeployer(rootAddr, currency_, trancheFab, memberlistFab, restrictedTokenFab, reserveFab, assessorFab, coordinatorFab, operatorFab);
+        lenderDeployer = new LenderDeployer(rootAddr, currency_, address(trancheFab), address(memberlistFab), address(restrictedTokenFab), address(reserveFab), address(assessorFab), address(coordinatorFab), address(operatorFab));
     }
 
     function deployLender() public {

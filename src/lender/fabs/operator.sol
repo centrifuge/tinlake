@@ -16,6 +16,10 @@
 pragma solidity >=0.5.15 <0.6.0;
 import { Operator } from "./../operator.sol";
 
+interface OperatorFabLike {
+    function newOperator(address) external returns (address);
+}
+
 contract OperatorFab {
     function newOperator(address tranche) public returns (address) {
         Operator operator = new Operator(tranche);
