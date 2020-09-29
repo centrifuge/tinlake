@@ -35,13 +35,10 @@ contract MemberlistTest is Math, DSTest {
         memberlist = new Memberlist();
         self = address(this);
         memberlist_ = address(memberlist);
-        testMemberlist = new Memberlist();
-        testMemberlist1 = new Memberlist();
-
         members = new address[](3);
-        members[0] = address(self);
-        members[1] = address(testMemberlist);
-        members[2] = address(testMemberlist1);
+        members[0] = address(1);
+        members[1] = address(2);
+        members[2] = address(3);
     }
 
     function testAddMember() public {
@@ -51,9 +48,9 @@ contract MemberlistTest is Math, DSTest {
 
     function testAddMembers() public {
         memberlist.updateMembers(members, memberlistValidity);
-        assertEq(memberlist.members(self), memberlistValidity);
-        assertEq(memberlist.members(address(testMemberlist)), memberlistValidity);
-        assertEq(memberlist.members(address(testMemberlist1)), memberlistValidity);
+        assertEq(memberlist.members(address(1)), memberlistValidity);
+        assertEq(memberlist.members(address(2)), memberlistValidity);
+        assertEq(memberlist.members(address(3)), memberlistValidity);
     }
 
     function testFailAddMemberPeriodTooShort() public {
