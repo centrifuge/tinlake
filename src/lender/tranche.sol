@@ -173,7 +173,7 @@ contract Tranche is Math, Auth, FixedPoint {
                 amount = rmul(remainingSupplyCurrency, epochs[epochIdx].supplyFulfillment.value);
                 // supply currency payout in token
                 if (amount != 0) {
-                    payoutTokenAmount = safeAdd(payoutTokenAmount, rdiv(amount, epochs[epochIdx].tokenPrice.value));
+                    payoutTokenAmount = safeAdd(payoutTokenAmount, safeDiv(safeMul(amount, ONE), epochs[epochIdx].tokenPrice.value));
                     remainingSupplyCurrency = safeSub(remainingSupplyCurrency, amount);
                 }
             }
@@ -197,6 +197,14 @@ contract Tranche is Math, Auth, FixedPoint {
        return disburse(usr, epochTicker.lastEpochExecuted());
     }
 
+    function _safeTransfer(ERC20Like erc20, address usr, uint amount) internal {
+        uint max = erc20.balanceOf(self);
+        if(amount > max) {
+            amount = max;
+        }
+        require(erc20.transferFrom(self, usr, amount), "token-transfer-failed");
+    }
+
     // the disburse function can be used after an epoch is over to receive currency and tokens
     function disburse(address usr,  uint endEpoch) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         require(users[usr].orderedInEpoch <= epochTicker.lastEpochExecuted());
@@ -218,11 +226,11 @@ contract Tranche is Math, Auth, FixedPoint {
 
 
         if (payoutCurrencyAmount > 0) {
-            require(currency.transferFrom(self, usr, payoutCurrencyAmount), "currency-transfer-failed");
+            _safeTransfer(currency, usr, payoutCurrencyAmount);
         }
 
         if (payoutTokenAmount > 0) {
-            require(token.transferFrom(self, usr, payoutTokenAmount), "token-transfer-failed");
+            _safeTransfer(token, usr, payoutTokenAmount);
         }
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
     }

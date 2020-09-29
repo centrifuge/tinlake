@@ -17,6 +17,10 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import { Memberlist } from "./../token/memberlist.sol";
 
+interface MemberlistFabLike {
+    function newMemberlist() external returns (address);
+}
+
 contract MemberlistFab {
     function newMemberlist() public returns (address memberList) {
         Memberlist memberlist = new Memberlist();
