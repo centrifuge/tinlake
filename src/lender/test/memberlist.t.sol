@@ -24,19 +24,36 @@ contract MemberlistTest is Math, DSTest {
 
     uint memberlistValidity = safeAdd(now, 8 days);
     Memberlist memberlist;
+    Memberlist testMemberlist;
+    Memberlist testMemberlist1;
 
     address self;
     address memberlist_;
+    address[] members;
 
     function setUp() public {
         memberlist = new Memberlist();
         self = address(this);
         memberlist_ = address(memberlist);
+        testMemberlist = new Memberlist();
+        testMemberlist1 = new Memberlist();
+
+        members = new address[](3);
+        members[0] = address(self);
+        members[1] = address(testMemberlist);
+        members[2] = address(testMemberlist1);
     }
 
     function testAddMember() public {
         memberlist.updateMember(self, memberlistValidity);
         assertEq(memberlist.members(self), memberlistValidity);
+    }
+
+    function testAddMembers() public {
+        memberlist.updateMembers(members, memberlistValidity);
+        assertEq(memberlist.members(self), memberlistValidity);
+        assertEq(memberlist.members(address(testMemberlist)), memberlistValidity);
+        assertEq(memberlist.members(address(testMemberlist1)), memberlistValidity);
     }
 
     function testFailAddMemberPeriodTooShort() public {
