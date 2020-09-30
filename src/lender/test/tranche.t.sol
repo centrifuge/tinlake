@@ -27,7 +27,7 @@ contract Hevm {
 }
 
 contract User {
-    function recoveryTransfer(Tranche tranche, address erc20, address usr, uint amount) public {
+    function authTransfer(Tranche tranche, address erc20, address usr, uint amount) public {
         tranche.recoveryTransfer(erc20, usr, amount);
     }
 }
