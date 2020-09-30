@@ -415,4 +415,15 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         assertEq(payoutTokenAmount, rmul(supplyAmount, supplyFulfillment_));
         assertEq(payoutCurrencyAmount, rmul(redeemAmount, redeemFulfillment_));
     }
+
+    function testRecoveryTransfer() public {
+        uint amount = 100 ether;
+        address recoveryAddr = address(123);
+        supplyOrder(amount);
+
+        assertEq(currency.balanceOf(address(tranche)), amount);
+        tranche.recoveryTransfer(address(currency), recoveryAddr, amount);
+        assertEq(currency.balanceOf(recoveryAddr), amount);
+        assertEq(currency.balanceOf(address(tranche)), 0);
+    }
 }
