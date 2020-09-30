@@ -16,10 +16,7 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 
-import { ShelfFabLike } from "./fabs/shelf.sol";
-import { CollectorFabLike } from "./fabs/collector.sol";
-import { PileFabLike } from "./fabs/pile.sol";
-import { TitleFabLike } from "./fabs/title.sol";
+import { ShelfFabLike, CollectorFabLike, PileFabLike, TitleFabLike } from "./fabs/interfaces.sol";
 import { FixedPoint } from "./../fixed_point.sol";
 
 

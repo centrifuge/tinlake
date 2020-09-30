@@ -14,13 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 pragma solidity >=0.5.15 <0.6.0;
 
-import {ReserveFabLike}     from "./fabs/reserve.sol";
-import {AssessorFabLike}    from "./fabs/assessor.sol";
-import {TrancheFabLike}     from "./fabs/tranche.sol";
-import {CoordinatorFabLike} from "./fabs/coordinator.sol";
-import {OperatorFabLike}    from "./fabs/operator.sol";
-import {MemberlistFabLike}    from  "./fabs/memberlist.sol";
-import {RestrictedTokenFabLike} from "./fabs/restrictedtoken.sol";
+import { ReserveFabLike, AssessorFabLike, TrancheFabLike, CoordinatorFabLike, OperatorFabLike, MemberlistFabLike, RestrictedTokenFabLike } from "./fabs/interfaces.sol";
 
 import {FixedPoint}      from "./../fixed_point.sol";
 

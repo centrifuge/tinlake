@@ -15,13 +15,24 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import { Shelf } from "./../shelf.sol";
-
-contract ShelfFab {
-    function newShelf(address tkn_, address title_, address debt_, address ceiling_) public returns (address) {
-        Shelf shelf = new Shelf(tkn_, title_, debt_, ceiling_);
-        shelf.rely(msg.sender);
-        shelf.deny(address(this));
-        return address(shelf);
-    }
+interface NAVFeedFabLike {
+    function newFeed() external returns (address);
 }
+
+interface TitleFabLike {
+    function newTitle(string calldata, string calldata) external returns (address);
+}
+
+interface CollectorFabLike {
+    function newCollector(address, address, address) external returns (address);
+}
+
+interface PileFabLike {
+    function newPile() external returns (address);
+}
+
+interface ShelfFabLike {
+    function newShelf(address, address, address, address) external returns (address);
+}
+
+
