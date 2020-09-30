@@ -26,6 +26,12 @@ contract Hevm {
     function warp(uint256) public;
 }
 
+contract User {
+    function recoveryTransfer(Tranche tranche, address erc20, address usr, uint amount) public {
+        tranche.recoveryTransfer(erc20, usr, amount);
+    }
+}
+
 contract TrancheTest is DSTest, Math, FixedPoint {
     Tranche tranche;
     SimpleToken token;
@@ -424,6 +430,17 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         tranche.recoveryTransfer(address(currency), recoveryAddr, amount);
         assertEq(currency.balanceOf(recoveryAddr), amount);
         assertEq(currency.balanceOf(address(tranche)), 0);
+    }
+
+    function testFailRecoveryTransferNotAdmin() public {
+        uint amount = 100 ether;
+        address recoveryAddr = address(123);
+        supplyOrder(amount);
+
+        assertEq(currency.balanceOf(address(tranche)), amount);
+
+        User nonAdminUser = new User();
+        nonAdminUser.recoveryTransfer(tranche, address(currency), recoveryAddr, amount);
     }
 
     function testCalcDisburseRoundingOff() public {
