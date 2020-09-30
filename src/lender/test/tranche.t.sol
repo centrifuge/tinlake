@@ -28,7 +28,7 @@ contract Hevm {
 
 contract User {
     function authTransfer(Tranche tranche, address erc20, address usr, uint amount) public {
-        tranche.recoveryTransfer(erc20, usr, amount);
+        tranche.authTransfer(erc20, usr, amount);
     }
 }
 
@@ -427,7 +427,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         supplyOrder(amount);
 
         assertEq(currency.balanceOf(address(tranche)), amount);
-        tranche.recoveryTransfer(address(currency), recoveryAddr, amount);
+        tranche.authTransfer(address(currency), recoveryAddr, amount);
         assertEq(currency.balanceOf(recoveryAddr), amount);
         assertEq(currency.balanceOf(address(tranche)), 0);
     }
@@ -440,7 +440,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         assertEq(currency.balanceOf(address(tranche)), amount);
 
         User nonAdminUser = new User();
-        nonAdminUser.recoveryTransfer(tranche, address(currency), recoveryAddr, amount);
+        nonAdminUser.authTransfer(tranche, address(currency), recoveryAddr, amount);
     }
 
     function testCalcDisburseRoundingOff() public {
