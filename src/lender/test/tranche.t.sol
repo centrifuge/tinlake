@@ -21,10 +21,15 @@ import "tinlake-math/math.sol";
 import "./../tranche.sol";
 import "../../test/simple/token.sol";
 import "../test/mock/reserve.sol";
-import "../../../lib/tinlake-erc20/src/erc20.sol";
 
 contract Hevm {
     function warp(uint256) public;
+}
+
+contract User {
+    function authTransfer(Tranche tranche, address erc20, address usr, uint amount) public {
+        tranche.authTransfer(erc20, usr, amount);
+    }
 }
 
 contract TrancheTest is DSTest, Math, FixedPoint {
@@ -414,6 +419,28 @@ contract TrancheTest is DSTest, Math, FixedPoint {
 
         assertEq(payoutTokenAmount, rmul(supplyAmount, supplyFulfillment_));
         assertEq(payoutCurrencyAmount, rmul(redeemAmount, redeemFulfillment_));
+    }
+
+    function testRecoveryTransfer() public {
+        uint amount = 100 ether;
+        address recoveryAddr = address(123);
+        supplyOrder(amount);
+
+        assertEq(currency.balanceOf(address(tranche)), amount);
+        tranche.authTransfer(address(currency), recoveryAddr, amount);
+        assertEq(currency.balanceOf(recoveryAddr), amount);
+        assertEq(currency.balanceOf(address(tranche)), 0);
+    }
+
+    function testFailRecoveryTransferNotAdmin() public {
+        uint amount = 100 ether;
+        address recoveryAddr = address(123);
+        supplyOrder(amount);
+
+        assertEq(currency.balanceOf(address(tranche)), amount);
+
+        User nonAdminUser = new User();
+        nonAdminUser.authTransfer(tranche, address(currency), recoveryAddr, amount);
     }
 
     function testCalcDisburseRoundingOff() public {
