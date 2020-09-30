@@ -24,7 +24,6 @@ contract TrancheLike {
     function disburse(address usr) public returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
     function disburse(address usr, uint endEpoch) public returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
     function currency() public view returns (address);
-    function token() public view returns (address);
 }
 
 interface RestrictedTokenLike {
@@ -93,7 +92,7 @@ contract Operator is DSNote, Auth {
         supplyOrder(amount);
     }
     function redeemOrderWithPermit(uint amount, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) {
-        EIP2612PermitLike(tranche.token()).permit(msg.sender, address(tranche), value, deadline, v, r, s);
+        EIP2612PermitLike(token).permit(msg.sender, address(tranche), value, deadline, v, r, s);
         redeemOrder(amount);
     }
 }
