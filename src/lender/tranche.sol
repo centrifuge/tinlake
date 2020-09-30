@@ -19,7 +19,6 @@ pragma experimental ABIEncoderV2;
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 import "./../fixed_point.sol";
-import "../../lib/tinlake-erc20/src/erc20.sol";
 
 interface ERC20Like {
     function balanceOf(address) external view returns (uint);
