@@ -17,6 +17,10 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import { Pile } from "./../pile.sol";
 
+interface PileFabLike {
+    function newPile() external returns (address);
+}
+
 contract PileFab {
     function newPile() public returns (address) {
         Pile pile = new Pile();

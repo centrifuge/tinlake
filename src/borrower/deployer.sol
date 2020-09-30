@@ -16,45 +16,43 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 
-import { ShelfFab } from "./fabs/shelf.sol";
-import { CollectorFab } from "./fabs/collector.sol";
-import { PileFab } from "./fabs/pile.sol";
-import { TitleFab } from "./fabs/title.sol";
-import { NAVFeedFab } from "./fabs/navfeed.sol";
-import { NFTFeedFab } from "./fabs/nftfeed.sol";
-import {FixedPoint}      from "./../fixed_point.sol";
+import { ShelfFabLike } from "./fabs/shelf.sol";
+import { CollectorFabLike } from "./fabs/collector.sol";
+import { PileFabLike } from "./fabs/pile.sol";
+import { TitleFabLike } from "./fabs/title.sol";
+import { FixedPoint } from "./../fixed_point.sol";
 
 
-contract DependLike {
-    function depend(bytes32, address) public;
+interface DependLike {
+    function depend(bytes32, address) external;
 }
 
-contract AuthLike {
-    function rely(address) public;
-    function deny(address) public;
+interface AuthLike {
+    function rely(address) external;
+    function deny(address) external;
 }
 
-contract NFTFeedLike {
-    function init() public;
+interface NFTFeedLike {
+    function init() external;
 }
 
-contract FeedFabLike {
-    function newFeed() public returns(address);
+interface FeedFabLike {
+    function newFeed() external returns(address);
 }
 
 
-contract FileLike {
-    function file(bytes32 name, uint value) public;
+interface FileLike {
+    function file(bytes32 name, uint value) external;
 }
 
 contract BorrowerDeployer is FixedPoint {
     address      public root;
 
-    TitleFab     public titlefab;
-    ShelfFab     public shelffab;
-    PileFab      public pilefab;
-    CollectorFab public collectorFab;
-    FeedFabLike   public feedFab;
+    TitleFabLike     public titlefab;
+    ShelfFabLike     public shelffab;
+    PileFabLike      public pilefab;
+    CollectorFabLike public collectorFab;
+    FeedFabLike      public feedFab;
 
     address public title;
     address public shelf;
@@ -71,10 +69,10 @@ contract BorrowerDeployer is FixedPoint {
 
     constructor (
       address root_,
-      TitleFab titlefab_,
-      ShelfFab shelffab_,
-      PileFab pilefab_,
-      CollectorFab collectorFab_,
+      address titlefab_,
+      address shelffab_,
+      address pilefab_,
+      address collectorFab_,
       address feedFab_,
       address currency_,
       string memory titleName_,
@@ -83,11 +81,11 @@ contract BorrowerDeployer is FixedPoint {
     ) public {
         root = root_;
 
-        titlefab = titlefab_;
-        shelffab = shelffab_;
+        titlefab = TitleFabLike(titlefab_);
+        shelffab = ShelfFabLike(shelffab_);
 
-        pilefab = pilefab_;
-        collectorFab = collectorFab_;
+        pilefab = PileFabLike(pilefab_);
+        collectorFab = CollectorFabLike(collectorFab_);
         feedFab = FeedFabLike(feedFab_);
 
         currency = currency_;

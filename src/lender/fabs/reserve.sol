@@ -17,6 +17,10 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import { Reserve } from "./../reserve.sol";
 
+interface ReserveFabLike {
+    function newReserve(address) external returns (address);
+}
+
 contract ReserveFab {
     function newReserve(address currency) public returns (address) {
         Reserve reserve = new Reserve(currency);

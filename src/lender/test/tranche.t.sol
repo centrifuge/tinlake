@@ -426,4 +426,22 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         assertEq(currency.balanceOf(recoveryAddr), amount);
         assertEq(currency.balanceOf(address(tranche)), 0);
     }
+
+    function testCalcDisburseRoundingOff() public {
+        uint amount = 20 ether;
+        supplyOrder(amount);
+
+        uint supplyFulfillment_ = ONE;
+        uint redeemFulfillment_ = ONE;
+        uint tokenPrice_ = 3 * 10 ** 27;
+
+        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
+
+        // the disburse method should always round off
+        ( , uint payoutTokenAmount,, ) =  tranche.calcDisburse(self);
+
+        // rdiv would round up in the 20/3 case but calc disburse should always round off
+        // 20/3 = 6.666666666666666666 instead of (6.666666666666666667)
+        assertEq(rdiv(amount, tokenPrice_)-payoutTokenAmount, 1);
+    }
 }
