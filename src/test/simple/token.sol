@@ -59,12 +59,4 @@ contract SimpleToken is Auth, Math, ERC20{
         totalSupply    = safeAdd(totalSupply, wad);
         emit Transfer(address(0), usr, wad);
     }
-    function burn(address usr, uint wad) public {
-        if (usr != msg.sender && allowance[usr][msg.sender] != uint(-1)) {
-            allowance[usr][msg.sender] = safeSub(allowance[usr][msg.sender], wad);
-        }
-        balanceOf[usr] = safeSub(balanceOf[usr], wad);
-        totalSupply    = safeSub(totalSupply, wad);
-        emit Transfer(usr, address(0), wad);
-    }
 }
