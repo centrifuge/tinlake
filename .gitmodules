@@ -10,6 +10,3 @@
 [submodule "lib/tinlake-auth"]
 	path = lib/tinlake-auth
 	url = https://github.com/centrifuge/tinlake-auth
-[submodule "lib/tinlake-erc20"]
-	path = lib/tinlake-erc20
-	url = https://github.com/centrifuge/tinlake-erc20
