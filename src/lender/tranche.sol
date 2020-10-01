@@ -333,4 +333,9 @@ contract Tranche is Math, Auth, FixedPoint {
             safePayout(diff);
         }
     }
+
+    // recovery transfer can be used by governance to recover funds if tokens are stuck
+    function authTransfer(address erc20, address usr, uint amount) public auth {
+        ERC20Like(erc20).transferFrom(self, usr, amount);
+    }
 }

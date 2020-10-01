@@ -17,10 +17,6 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import { Title } from "tinlake-title/title.sol";
 
-interface TitleFabLike {
-    function newTitle(string calldata, string calldata) external returns (address);
-}
-
 contract TitleFab {
     function newTitle(string memory name, string memory symbol) public returns (address) {
         Title title = new Title(name, symbol);

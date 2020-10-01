@@ -17,10 +17,6 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import { NAVFeed } from "./../feed/navfeed.sol";
 
-interface NAVFeedFabLike {
-    function newFeed() external returns (address);
-}
-
 contract NAVFeedFab {
     function newFeed() public returns (address) {
         NAVFeed feed = new NAVFeed();

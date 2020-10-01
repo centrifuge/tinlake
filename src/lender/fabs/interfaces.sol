@@ -12,16 +12,34 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 pragma solidity >=0.5.15 <0.6.0;
 
-import { Shelf } from "./../shelf.sol";
-
-contract ShelfFab {
-    function newShelf(address tkn_, address title_, address debt_, address ceiling_) public returns (address) {
-        Shelf shelf = new Shelf(tkn_, title_, debt_, ceiling_);
-        shelf.rely(msg.sender);
-        shelf.deny(address(this));
-        return address(shelf);
-    }
+interface ReserveFabLike {
+    function newReserve(address) external returns (address);
 }
+
+interface AssessorFabLike {
+    function newAssessor() external returns (address);
+}
+
+interface TrancheFabLike {
+    function newTranche(address, address) external returns (address);
+}
+
+interface CoordinatorFabLike {
+    function newCoordinator(uint) external returns (address);
+}
+
+interface OperatorFabLike {
+    function newOperator(address) external returns (address);
+}
+
+interface MemberlistFabLike {
+    function newMemberlist() external returns (address);
+}
+
+interface RestrictedTokenFabLike {
+    function newRestrictedToken(string calldata, string calldata) external returns (address);
+}
+
+

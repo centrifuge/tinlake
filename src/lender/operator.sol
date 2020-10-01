@@ -23,16 +23,25 @@ contract TrancheLike {
     function redeemOrder(address usr, uint tokenAmount) public;
     function disburse(address usr) public returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
     function disburse(address usr, uint endEpoch) public returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
+    function currency() public view returns (address);
 }
 
 interface RestrictedTokenLike {
     function hasMember(address) external view returns (bool);
 }
 
+interface EIP2612PermitLike {
+    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
+}
+
+interface DaiPermitLike {
+    function permit(address holder, address spender, uint256 nonce, uint256 expiry, bool allowed, uint8 v, bytes32 r, bytes32 s) external;
+}
+
 contract Operator is DSNote, Auth {
     TrancheLike public tranche;
     RestrictedTokenLike public token;
-   
+
     constructor(address tranche_) public {
         wards[msg.sender] = 1;
         tranche = TrancheLike(tranche_);
@@ -73,5 +82,17 @@ contract Operator is DSNote, Auth {
         return tranche.disburse(msg.sender, endEpoch);
     }
 
-
+    // --- Permit Support ---
+    function supplyOrderWithDaiPermit(uint amount, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) public {
+        DaiPermitLike(tranche.currency()).permit(msg.sender, address(tranche), nonce, expiry, true, v, r, s);
+        supplyOrder(amount);
+    }
+    function supplyOrderWithPermit(uint amount, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) public {
+        EIP2612PermitLike(tranche.currency()).permit(msg.sender, address(tranche), value, deadline, v, r, s);
+        supplyOrder(amount);
+    }
+    function redeemOrderWithPermit(uint amount, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) public {
+        EIP2612PermitLike(address(token)).permit(msg.sender, address(tranche), value, deadline, v, r, s);
+        redeemOrder(amount);
+    }
 }
