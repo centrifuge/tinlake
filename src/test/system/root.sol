@@ -14,6 +14,9 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 import { TinlakeRoot } from "../../root.sol";
+import { BorrowerDeployer } from "../../borrower/deployer.sol";
+import { LenderDeployer } from "../../lender/deployer.sol";
+
 import "ds-test/test.sol";
 contract TestRoot is TinlakeRoot {
     constructor (address deployUsr) public TinlakeRoot(deployUsr) {
@@ -23,25 +26,27 @@ contract TestRoot is TinlakeRoot {
 
     // Needed for System Tests
     function relyBorrowerAdmin(address usr) public auth {
-        relyContract(borrowerDeployer.title(), usr);
-        relyContract(borrowerDeployer.shelf(), usr);
-        relyContract(borrowerDeployer.pile(), usr);
-        relyContract(borrowerDeployer.feed(), usr);
-        relyContract(borrowerDeployer.collector(), usr); 
+        BorrowerDeployer bD = BorrowerDeployer(address(borrowerDeployer));
+        relyContract(bD.title(), usr);
+        relyContract(bD.shelf(), usr);
+        relyContract(bD.pile(), usr);
+        relyContract(bD.feed(), usr);
+        relyContract(bD.collector(), usr);
     }
 
     // Needed for System Tests
     function relyLenderAdmin(address usr) public auth {
-        relyContract(lenderDeployer.juniorMemberlist(), usr);
-        relyContract(lenderDeployer.seniorMemberlist(), usr);
+        LenderDeployer lD = LenderDeployer(address(lenderDeployer));
+        relyContract(lD.juniorMemberlist(), usr);
+        relyContract(lD.seniorMemberlist(), usr);
     }
 
     function denyBorrowerAdmin(address usr) public auth {
-        denyContract(borrowerDeployer.title(), usr);
-        denyContract(borrowerDeployer.feed(), usr);
-        denyContract(borrowerDeployer.shelf(), usr);
-        denyContract(borrowerDeployer.pile(), usr);
-        denyContract(borrowerDeployer.feed(), usr);
-        denyContract(borrowerDeployer.collector(), usr);
+        BorrowerDeployer bD = BorrowerDeployer(address(borrowerDeployer));
+        denyContract(bD.title(), usr);
+        denyContract(bD.feed(), usr);
+        denyContract(bD.shelf(), usr);
+        denyContract(bD.pile(), usr);
+        denyContract(bD.collector(), usr);
     }
 }

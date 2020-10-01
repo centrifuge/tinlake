@@ -14,13 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 pragma solidity >=0.5.15 <0.6.0;
 
-import {ReserveFab}     from "./fabs/reserve.sol";
-import {AssessorFab}    from "./fabs/assessor.sol";
-import {TrancheFab}     from "./fabs/tranche.sol";
-import {CoordinatorFab} from "./fabs/coordinator.sol";
-import {OperatorFab}    from "./fabs/operator.sol";
-import {MemberlistFab}    from  "./fabs/memberlist.sol";
-import {RestrictedTokenFab} from "./fabs/restrictedtoken.sol";
+import { ReserveFabLike, AssessorFabLike, TrancheFabLike, CoordinatorFabLike, OperatorFabLike, MemberlistFabLike, RestrictedTokenFabLike } from "./fabs/interfaces.sol";
 
 import {FixedPoint}      from "./../fixed_point.sol";
 
@@ -47,13 +41,13 @@ contract LenderDeployer is FixedPoint {
     address public currency;
 
     // factory contracts
-    TrancheFab          public trancheFab;
-    ReserveFab          public reserveFab;
-    AssessorFab         public assessorFab;
-    CoordinatorFab      public coordinatorFab;
-    OperatorFab         public operatorFab;
-    MemberlistFab       public memberlistFab;
-    RestrictedTokenFab  public restrictedTokenFab;
+    TrancheFabLike          public trancheFab;
+    ReserveFabLike          public reserveFab;
+    AssessorFabLike         public assessorFab;
+    CoordinatorFabLike      public coordinatorFab;
+    OperatorFabLike         public operatorFab;
+    MemberlistFabLike       public memberlistFab;
+    RestrictedTokenFabLike  public restrictedTokenFab;
 
     // lender state variables
     Fixed27             public minSeniorRatio;
@@ -86,19 +80,19 @@ contract LenderDeployer is FixedPoint {
 
     address             public deployer;
 
-    constructor(address root_, address currency_, TrancheFab trancheFab_, MemberlistFab memberlistFab_, RestrictedTokenFab restrictedtokenFab_, ReserveFab reserveFab_, AssessorFab assessorFab_, CoordinatorFab coordinatorFab_, OperatorFab operatorFab_) public {
+    constructor(address root_, address currency_, address trancheFab_, address memberlistFab_, address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_, address operatorFab_) public {
 
         deployer = msg.sender;
         root = root_;
         currency = currency_;
 
-        trancheFab = trancheFab_;
-        memberlistFab = memberlistFab_;
-        restrictedTokenFab = restrictedtokenFab_;
-        reserveFab = reserveFab_;
-        assessorFab = assessorFab_;
-        coordinatorFab = coordinatorFab_;
-        operatorFab = operatorFab_;
+        trancheFab = TrancheFabLike(trancheFab_);
+        memberlistFab = MemberlistFabLike(memberlistFab_);
+        restrictedTokenFab = RestrictedTokenFabLike(restrictedtokenFab_);
+        reserveFab = ReserveFabLike(reserveFab_);
+        assessorFab = AssessorFabLike(assessorFab_);
+        coordinatorFab = CoordinatorFabLike(coordinatorFab_);
+        operatorFab = OperatorFabLike(operatorFab_);
     }
 
     function init(uint minSeniorRatio_, uint maxSeniorRatio_, uint maxReserve_, uint challengeTime_, uint seniorInterestRate_, string memory seniorName_, string memory seniorSymbol_, string memory juniorName_, string memory juniorSymbol_) public {

@@ -12,22 +12,34 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 pragma solidity >=0.5.15 <0.6.0;
 
-import { Memberlist } from "./../token/memberlist.sol";
+interface ReserveFabLike {
+    function newReserve(address) external returns (address);
+}
+
+interface AssessorFabLike {
+    function newAssessor() external returns (address);
+}
+
+interface TrancheFabLike {
+    function newTranche(address, address) external returns (address);
+}
+
+interface CoordinatorFabLike {
+    function newCoordinator(uint) external returns (address);
+}
+
+interface OperatorFabLike {
+    function newOperator(address) external returns (address);
+}
 
 interface MemberlistFabLike {
     function newMemberlist() external returns (address);
 }
 
-contract MemberlistFab {
-    function newMemberlist() public returns (address memberList) {
-        Memberlist memberlist = new Memberlist();
-
-        memberlist.rely(msg.sender);
-        memberlist.deny(address(this));
-
-        return (address(memberlist));
-    }
+interface RestrictedTokenFabLike {
+    function newRestrictedToken(string calldata, string calldata) external returns (address);
 }
+
+

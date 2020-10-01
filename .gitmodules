@@ -4,12 +4,12 @@
 [submodule "lib/tinlake-title"]
 	path = lib/tinlake-title
 	url = https://github.com/centrifuge/tinlake-title
-[submodule "lib/tinlake-erc20"]
-	path = lib/tinlake-erc20
-	url = https://github.com/centrifuge/tinlake-erc20
 [submodule "lib/tinlake-math"]
 	path = lib/tinlake-math
 	url = https://github.com/centrifuge/tinlake-math
 [submodule "lib/tinlake-auth"]
 	path = lib/tinlake-auth
 	url = https://github.com/centrifuge/tinlake-auth
+[submodule "lib/tinlake-erc20"]
+	path = lib/tinlake-erc20
+	url = https://github.com/centrifuge/tinlake-erc20
