@@ -195,6 +195,34 @@ contract NAVTest is DSTest, Math {
         assertEq(feed.totalValue(), 55.125 ether);
     }
 
+    function testBorrowWithFixedFee() public {
+        uint nftValue = 100 ether;
+        uint tokenId = 1;
+        uint dueDate = now + 2 days;
+        uint amount = 40 ether;
+        uint fixedFeeRate = 25*10**25; // 25 % -> 10 ether 
+        pile.setReturn("rates_fixedRate", fixedFeeRate);
+        (,,uint NAVIncrease) = borrow(tokenId, nftValue, amount, dueDate);
+        // // check FV
+        uint normalizedDueDate = feed.uniqueDayTimestamp(dueDate);
+        uint FV = 55.125 ether; // 55 * 1.05 ^ 2 = 55.125
+
+        assertEq(feed.dateBucket(normalizedDueDate), FV);
+        // FV/(1.03^2)
+        assertEq(feed.currentNAV(), 51.960741582371777180 ether);
+        // only on loan so current NAV should be equal to borrow increase
+        assertEq(feed.currentNAV(), NAVIncrease);
+        assertEq(feed.totalValue(), 51.960741582371777180 ether);
+        hevm.warp(now + 1 days);
+        // FV/(1.03^1)
+        assertEq(feed.currentNAV(), 53.519490652735515520 ether);
+        assertEq(feed.totalValue(), 53.519490652735515520 ether);
+        hevm.warp(now + 1 days);
+        // FV/(1.03^0)
+        assertEq(feed.currentNAV(), 55.125 ether);
+        assertEq(feed.totalValue(), 55.125 ether);
+    }
+
     function testLinkedListBucket() public {
         setupLinkedListBuckets();
 

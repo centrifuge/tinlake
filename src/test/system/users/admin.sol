@@ -78,4 +78,7 @@ contract AdminUser {
         seniorMemberlist.updateMember(usr, validitUntil);
     }
 
+    function fileFixedRate(uint rateGroup, uint rate) public {
+        pile.file("fixedRate", rateGroup, rate);
+    }
 }
