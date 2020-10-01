@@ -17,8 +17,9 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
+import "tinlake-erc20/erc20.sol";
 
-contract SimpleToken is Auth, Math {
+contract SimpleToken is Auth, Math, ERC20{
 
     // --- ERC20 Data ---
     uint8   public decimals = 18;
