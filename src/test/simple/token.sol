@@ -54,20 +54,6 @@ contract SimpleToken is Auth, Math, ERC20{
     }
 
     // --- Token ---
-    function transfer(address dst, uint wad) public returns (bool) {
-        return transferFrom(msg.sender, dst, wad);
-    }
-    function transferFrom(address src, address dst, uint wad)
-        public returns (bool)
-    {
-        if (src != msg.sender && allowance[src][msg.sender] != uint(-1)) {
-            allowance[src][msg.sender] = safeSub(allowance[src][msg.sender], wad);
-        }
-        balanceOf[src] = safeSub(balanceOf[src], wad);
-        balanceOf[dst] = safeAdd(balanceOf[dst], wad);
-        emit Transfer(src, dst, wad);
-        return true;
-    }
     function mint(address usr, uint wad) public {
         balanceOf[usr] = safeAdd(balanceOf[usr], wad);
         totalSupply    = safeAdd(totalSupply, wad);
@@ -80,21 +66,5 @@ contract SimpleToken is Auth, Math, ERC20{
         balanceOf[usr] = safeSub(balanceOf[usr], wad);
         totalSupply    = safeSub(totalSupply, wad);
         emit Transfer(usr, address(0), wad);
-    }
-    function approve(address usr, uint wad) public returns (bool) {
-        allowance[msg.sender][usr] = wad;
-        emit Approval(msg.sender, usr, wad);
-        return true;
-    }
-
-    // --- Alias ---
-    function push(address usr, uint wad) public {
-        transferFrom(msg.sender, usr, wad);
-    }
-    function pull(address usr, uint wad) public {
-        transferFrom(usr, msg.sender, wad);
-    }
-    function move(address src, address dst, uint wad) public {
-        transferFrom(src, dst, wad);
     }
 }
