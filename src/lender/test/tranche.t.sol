@@ -54,8 +54,8 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         hevm.warp(1595247588);
         self = address(this);
 
-        token = new SimpleToken("TIN", "Tranche", "1", 0);
-        currency = new SimpleToken("CUR", "Currency", "1", 0);
+        token = new SimpleToken("TIN", "Tranche");
+        currency = new SimpleToken("CUR", "Currency");
         reserve = new ReserveMock(address(currency));
         reserve_ = address(reserve);
 

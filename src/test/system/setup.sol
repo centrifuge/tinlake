@@ -106,7 +106,7 @@ contract TestSetup {
         collateralNFT = new Title("Collateral NFT", "collateralNFT");
         collateralNFT_ = address(collateralNFT);
 
-        currency = new SimpleToken("C", "Currency", "1", 0);
+        currency = new SimpleToken("C", "Currency");
         currency_ = address(currency);
 
         root = new TestRoot(address(this));
@@ -156,7 +156,7 @@ contract TestSetup {
     }
 
     function deployLenderMockBorrower(address rootAddr) public {
-        currency = new SimpleToken("C", "Currency", "1", 0);
+        currency = new SimpleToken("C", "Currency");
         currency_ = address(currency);
 
         prepareDeployLender(rootAddr);

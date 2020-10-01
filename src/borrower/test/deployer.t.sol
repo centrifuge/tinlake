@@ -40,7 +40,7 @@ contract DeployerTest is DSTest {
 
     function setUp() public {
         nft = new Title("SimpleNFT", "NFT");
-        dai = new SimpleToken("DDAI", "Dummy Dai", "1", 0);
+        dai = new SimpleToken("DDAI", "Dummy Dai");
         titlefab = new TitleFab();
         shelffab = new ShelfFab();
         pilefab = new PileFab();
