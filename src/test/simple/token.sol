@@ -21,37 +21,7 @@ import "tinlake-erc20/erc20.sol";
 
 contract SimpleToken is Auth, Math, ERC20{
 
-    // --- ERC20 Data ---
-    uint8   public decimals = 18;
-    string  public name;
-    string  public symbol;
-    string  public version;
-    uint256 public totalSupply;
-
-    mapping (address => uint)                      public balanceOf;
-    mapping (address => mapping (address => uint)) public allowance;
-    mapping (address => uint)                      public nonces;
-
-    event Approval(address indexed src, address indexed usr, uint wad);
-    event Transfer(address indexed src, address indexed dst, uint wad);
-
-    // --- EIP712 niceties ---
-    bytes32 public DOMAIN_SEPARATOR;
-    bytes32 public constant PERMIT_TYPEHASH = keccak256(
-        "Permit(address holder,address spender,uint256 nonce,uint256 expiry,bool allowed)"
-    );
-
-    constructor(string memory symbol_, string memory name_, string memory version_, uint256 chainId_) public {
-        symbol = symbol_;
-        name = name_;
-        DOMAIN_SEPARATOR = keccak256(abi.encode(
-            keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-            keccak256("Dai Semi-Automated Permit Office"),
-            keccak256(bytes(version_)),
-            chainId_,
-            address(this)
-        ));
-    }
+    constructor(string memory symbol_, string memory name_) ERC20(symbol, name) public {}
 
     // --- Token ---
     function mint(address usr, uint wad) public {
