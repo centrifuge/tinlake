@@ -265,5 +265,84 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
         assertEq(submitSolution(solution), coordinator.ERR_MAX_ORDER());
     }
 
+    function testNoImprovementPossibleReserveViolated() public {
+        LenderModel memory model = getDefaultModel();
+        model.maxReserve = 200 ether;
+        model.reserve = 210 ether;
+        // we only have supplies
+        model.juniorRedeemOrder = 0;
+        model.seniorRedeemOrder = 0;
+
+        initTestConfig(model);
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
+
+        // no improvement possible only zero submission
+        ModelInput memory solution = ModelInput({
+            seniorRedeem : 0 ether,
+            juniorSupply : 0 ether,
+            seniorSupply : 0 ether,
+            juniorRedeem : 0 ether
+            });
+
+        bool currSeniorRatioInRange = true;
+        bool reserveHealthy = false;
+
+        // reserve violated
+        checkPoolPrecondition(model, currSeniorRatioInRange, reserveHealthy);
+
+        assertTrue(coordinator.minChallengePeriodEnd() == 0);
+        assertEq(submitSolution(solution), coordinator.NEW_BEST());
+        assertTrue(coordinator.minChallengePeriodEnd() != 0);
+
+        solution = ModelInput({
+            seniorRedeem : 0 ether,
+            juniorSupply : 0 ether,
+            seniorSupply : 1 ether,
+            juniorRedeem : 0 ether
+            });
+
+        assertEq(submitSolution(solution), coordinator.ERR_NOT_NEW_BEST());
+    }
+
+    function testNoImprovementPossibleRatioViolated() public {
+        LenderModel memory model = getDefaultModel();
+        model.maxReserve = 10000 ether;
+        model.reserve = 1000 ether;
+        // we only have supplies
+        model.juniorRedeemOrder = 0;
+        model.seniorRedeemOrder = 0;
+        model.seniorSupplyOrder = 0;
+
+
+
+        initTestConfig(model);
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
+
+        // no improvement possible only zero submission
+        ModelInput memory solution = ModelInput({
+            seniorRedeem : 0 ether,
+            juniorSupply : 0 ether,
+            seniorSupply : 0 ether,
+            juniorRedeem : 0 ether
+            });
+
+        bool currSeniorRatioInRange = false;
+        bool reserveHealthy = true;
+        //  senior ratio too low
+        checkPoolPrecondition(model, currSeniorRatioInRange, reserveHealthy);
+
+        assertEq(submitSolution(solution), coordinator.NEW_BEST());
+
+        solution = ModelInput({
+            seniorRedeem : 0 ether,
+            juniorSupply : 1 ether,
+            seniorSupply : 0 ether,
+            juniorRedeem : 0 ether
+            });
+
+        assertEq(submitSolution(solution), coordinator.ERR_NOT_NEW_BEST());
+    }
 }
 

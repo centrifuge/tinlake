@@ -406,7 +406,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         // only if the submitted solution ratio score equals the current best ratio
         // we determine if the submitted solution improves the reserve
         if (impScoreRatio == bestRatioImprovement) {
-              if (impScoreReserve > bestReserveImprovement) {
+              if (impScoreReserve >= bestReserveImprovement) {
                   return (NEW_BEST, impScoreRatio, impScoreReserve);
               }
         }
