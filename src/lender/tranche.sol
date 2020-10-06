@@ -339,6 +339,8 @@ contract Tranche is Math, Auth, FixedPoint {
         ERC20Like(erc20).transferFrom(self, usr, amount);
     }
 
+    // due to rounding in token & currency conversions currency & token balances might be off by 1 wei with the totalSupply/totalRedeem amounts.
+    // in order to prevent reverts 0 is returned when amountto be substracted is bigger then the total value.
     function safeTotalSub(uint total, uint amount) internal returns (uint) {
         if (total < amount) {
             return 0;
