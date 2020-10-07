@@ -149,8 +149,6 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         if (name == "maturityDate") {
             require((futureValue[nftID_] == 0), "can-not-change-maturityDate-outstanding-debt");
             maturityDate[nftID_] = uniqueDayTimestamp(maturityDate_);
-            // update loan values
-
         } else { revert("unknown config parameter");}
     }
 

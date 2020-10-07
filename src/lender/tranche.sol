@@ -111,7 +111,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
         users[usr].supplyCurrencyAmount = newSupplyAmount;
 
-        totalSupply = safeAdd(safeSub(totalSupply, currentSupplyAmount), newSupplyAmount);
+        totalSupply = safeAdd(safeTotalSub(totalSupply, currentSupplyAmount), newSupplyAmount);
 
         if (newSupplyAmount > currentSupplyAmount) {
             uint delta = safeSub(newSupplyAmount, currentSupplyAmount);
@@ -130,7 +130,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
         uint currentRedeemAmount = users[usr].redeemTokenAmount;
         users[usr].redeemTokenAmount = newRedeemAmount;
-        totalRedeem = safeAdd(safeSub(totalRedeem, currentRedeemAmount), newRedeemAmount);
+        totalRedeem = safeAdd(safeTotalSub(totalRedeem, currentRedeemAmount), newRedeemAmount);
 
         if (newRedeemAmount > currentRedeemAmount) {
             uint delta = safeSub(newRedeemAmount, currentRedeemAmount);
@@ -258,8 +258,8 @@ contract Tranche is Math, Auth, FixedPoint {
         adjustCurrencyBalance(epochID, epochSupplyOrderCurrency, epochRedeemOrderCurrency);
 
         // the unfulfilled orders (1-fulfillment) is automatically ordered
-        totalSupply = safeAdd(safeSub(totalSupply, epochSupplyOrderCurrency), rmul(epochSupplyOrderCurrency, safeSub(ONE, epochs[epochID].supplyFulfillment.value)));
-        totalRedeem = safeAdd(safeSub(totalRedeem, redeemInToken), rmul(redeemInToken, safeSub(ONE, epochs[epochID].redeemFulfillment.value)));
+        totalSupply = safeAdd(safeTotalSub(totalSupply, epochSupplyOrderCurrency), rmul(epochSupplyOrderCurrency, safeSub(ONE, epochs[epochID].supplyFulfillment.value)));
+        totalRedeem = safeAdd(safeTotalSub(totalRedeem, redeemInToken), rmul(redeemInToken, safeSub(ONE, epochs[epochID].redeemFulfillment.value)));
     }
     function closeEpoch() public auth returns (uint totalSupplyCurrency_, uint totalRedeemToken_) {
         require(waitingForUpdate == false);
@@ -338,4 +338,13 @@ contract Tranche is Math, Auth, FixedPoint {
     function authTransfer(address erc20, address usr, uint amount) public auth {
         ERC20Like(erc20).transferFrom(self, usr, amount);
     }
+
+    // due to rounding in token & currency conversions currency & token balances might be off by 1 wei with the totalSupply/totalRedeem amounts.
+    // in order to prevent an underflow error, 0 is returned when amount to be subtracted is bigger then the total value.
+    function safeTotalSub(uint total, uint amount) internal returns (uint) {
+        if (total < amount) {
+            return 0;
+        }
+        return safeSub(total, amount);
+    } 
 }

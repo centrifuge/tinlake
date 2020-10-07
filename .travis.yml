@@ -1,4 +1,6 @@
 language: nix
+env:
+  - DAPP_TEST_TIMESTAMP=1234567
 script: |
   cachix use dapp
   git clone --recursive https://github.com/dapphub/dapptools $HOME/.dapp/dapptools
