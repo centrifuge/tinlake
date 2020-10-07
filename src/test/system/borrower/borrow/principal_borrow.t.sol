@@ -112,6 +112,7 @@ contract PrincipalBorrowTest is BaseSystemTest {
     }
 
     function testInterestAccruedOnFixedFee() public {
+        hevm.warp(1233212);
         uint nftPrice = 200 ether;
         uint riskGroup = 1;
         uint fixedFeeRate = 10**26; // 10 %
@@ -132,7 +133,7 @@ contract PrincipalBorrowTest is BaseSystemTest {
 
         hevm.warp(now + 365 days); // expected debt after 1 year ~ 123.2 ether
         // assert interest also accrued on fixed fees 110 
-        assertEq(pile.debt(loanId), 123200000000000000002);
+        assertEq(pile.debt(loanId), 123200000000000000001);
     }
 
     function testPartialBorrow() public {
