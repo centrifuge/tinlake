@@ -101,8 +101,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
                         // highest priority senior redeem and junior redeem before junior and senior supply
     uint                public weightSeniorRedeem  = 1000000;
     uint                public weightJuniorRedeem  =  100000;
-    uint                public weightsJuniorSupply =   10000;
-    uint                public weightsSeniorSupply =    1000;
+    uint                public weightJuniorSupply =   10000;
+    uint                public weightSeniorSupply =    1000;
 
                         // challenge period end timestamp
     uint                public minChallengePeriodEnd;
@@ -148,8 +148,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
             minimumEpochTime = value;
         } else if (name == "weightSeniorRedeem") { weightSeniorRedeem = value;}
           else if (name == "weightJuniorRedeem") { weightJuniorRedeem = value;}
-          else if (name == "weightsJuniorSupply") { weightsJuniorSupply = value;}
-          else if (name == "weightsSeniorSupply") { weightsSeniorSupply = value;}
+          else if (name == "weightJuniorSupply") { weightJuniorSupply = value;}
+          else if (name == "weightSeniorSupply") { weightSeniorSupply = value;}
           else { revert("unkown-name");}
      }
 
@@ -406,7 +406,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         // only if the submitted solution ratio score equals the current best ratio
         // we determine if the submitted solution improves the reserve
         if (impScoreRatio == bestRatioImprovement) {
-              if (impScoreReserve > bestReserveImprovement) {
+              if (impScoreReserve >= bestReserveImprovement) {
                   return (NEW_BEST, impScoreRatio, impScoreReserve);
               }
         }
@@ -424,7 +424,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         // 3. junior supply
         // 4. senior supply
         return safeAdd(safeAdd(safeMul(seniorRedeem, weightSeniorRedeem), safeMul(juniorRedeem, weightJuniorRedeem)),
-            safeAdd(safeMul(juniorSupply, weightsJuniorSupply), safeMul(seniorSupply, weightsSeniorSupply)));
+            safeAdd(safeMul(juniorSupply, weightJuniorSupply), safeMul(seniorSupply, weightSeniorSupply)));
     }
 
     /// validates if a solution satisfy the core constraints
