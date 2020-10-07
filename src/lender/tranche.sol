@@ -120,7 +120,7 @@ contract Tranche is Math, Auth, FixedPoint {
         }
         uint delta = safeSub(currentSupplyAmount, newSupplyAmount);
         if (delta > 0) {
-            require(currency.transferFrom(self, usr, delta), "currency-transfer-failed");
+            _safeTransfer(currency, usr, delta);
         }
     }
 
@@ -140,7 +140,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
         uint delta = safeSub(currentRedeemAmount, newRedeemAmount);
         if (delta > 0) {
-            require(token.transferFrom(self, usr, delta), "token-transfer-failed");
+            _safeTransfer(token, usr, delta);
         }
     }
 
@@ -249,7 +249,7 @@ contract Tranche is Math, Auth, FixedPoint {
         uint supplyInToken = 0;
         if(tokenPrice_ > 0) {
             supplyInToken = rdiv(epochSupplyOrderCurrency, tokenPrice_);
-            redeemInToken = rdiv(epochRedeemOrderCurrency, tokenPrice_);
+            redeemInToken = safeDiv(safeMul(epochRedeemOrderCurrency, ONE), tokenPrice_);
         }
 
         // calculates the delta between supply and redeem for tokens and burn or mint them
