@@ -40,7 +40,7 @@ contract ReserveTest is DSTest, Math {
     uint256 constant ONE = 10**27;
 
     function setUp() public {
-        currency = new SimpleToken("CUR", "Currency", "1", 0);
+        currency = new SimpleToken("CUR", "Currency");
         shelf = new ShelfMock();
         assessor = new AssessorMock();
 

@@ -15,15 +15,13 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import {
-  TitleFab,
-  ShelfFab,
-  PileFab,
-  NFTFeedFab,
-  NAVFeedFab,
-  CollectorFab,
-  BorrowerDeployer
-} from "../../borrower/deployer.sol";
+import { TitleFab } from "../../borrower/fabs/title.sol";
+import { ShelfFab } from "../../borrower/fabs/shelf.sol";
+import { PileFab } from "../../borrower/fabs/pile.sol";
+import { NFTFeedFab } from "../../borrower/fabs/nftfeed.sol";
+import { NAVFeedFab } from "../../borrower/fabs/navfeed.sol";
+import { CollectorFab } from "../../borrower/fabs/collector.sol";
+import { BorrowerDeployer } from "../../borrower/deployer.sol";
 
 
 import { EpochCoordinator } from "../../lender/coordinator.sol";
@@ -35,16 +33,14 @@ import { RestrictedToken } from "../../lender/token/restricted.sol";
 import { Memberlist } from "../../lender/token/memberlist.sol";
 
 
-import {
-  TrancheFab,
-  RestrictedTokenFab,
-  MemberlistFab,
-  AssessorFab,
-  ReserveFab,
-  CoordinatorFab,
-  OperatorFab,
-  LenderDeployer
-} from "../../lender/deployer.sol";
+import { TrancheFab } from "../../lender/fabs/tranche.sol";
+import { RestrictedTokenFab } from "../../lender/fabs/restrictedtoken.sol";
+import { MemberlistFab } from "../../lender/fabs/memberlist.sol";
+import { AssessorFab } from "../../lender/fabs/assessor.sol";
+import { ReserveFab } from "../../lender/fabs/reserve.sol";
+import { CoordinatorFab } from "../../lender/fabs/coordinator.sol";
+import { OperatorFab } from "../../lender/fabs/operator.sol";
+import { LenderDeployer } from "../../lender/deployer.sol";
 
 import { Title } from "tinlake-title/title.sol";
 import { Pile } from "../../borrower/pile.sol";
@@ -110,7 +106,7 @@ contract TestSetup {
         collateralNFT = new Title("Collateral NFT", "collateralNFT");
         collateralNFT_ = address(collateralNFT);
 
-        currency = new SimpleToken("C", "Currency", "1", 0);
+        currency = new SimpleToken("C", "Currency");
         currency_ = address(currency);
 
         root = new TestRoot(address(this));
@@ -143,7 +139,7 @@ contract TestSetup {
 
         uint discountRate = uint(1000000342100000000000000000);
 
-        borrowerDeployer = new BorrowerDeployer(root_, titlefab, shelffab, pileFab, collectorFab, nftFeedFab_, currency_, "Tinlake Loan Token", "TLNT", discountRate);
+        borrowerDeployer = new BorrowerDeployer(root_, address(titlefab), address(shelffab), address(pileFab), address(collectorFab), nftFeedFab_, currency_, "Tinlake Loan Token", "TLNT", discountRate);
 
         borrowerDeployer.deployTitle();
         borrowerDeployer.deployPile();
@@ -160,7 +156,7 @@ contract TestSetup {
     }
 
     function deployLenderMockBorrower(address rootAddr) public {
-        currency = new SimpleToken("C", "Currency", "1", 0);
+        currency = new SimpleToken("C", "Currency");
         currency_ = address(currency);
 
         prepareDeployLender(rootAddr);
@@ -185,7 +181,7 @@ contract TestSetup {
         CoordinatorFab coordinatorFab = new CoordinatorFab();
 
         // root is testcase
-        lenderDeployer = new LenderDeployer(rootAddr, currency_, trancheFab, memberlistFab, restrictedTokenFab, reserveFab, assessorFab, coordinatorFab, operatorFab);
+        lenderDeployer = new LenderDeployer(rootAddr, currency_, address(trancheFab), address(memberlistFab), address(restrictedTokenFab), address(reserveFab), address(assessorFab), address(coordinatorFab), address(operatorFab));
     }
 
     function deployLender() public {

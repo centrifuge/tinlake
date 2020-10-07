@@ -144,8 +144,10 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     /// maturityDate is a unix timestamp
-    function file(bytes32 what, bytes32 nftID_, uint maturityDate_) public auth {
-        if (what == "maturityDate") {
+    function file(bytes32 name, bytes32 nftID_, uint maturityDate_) public auth {
+        // maturity date only can be changed when there is no debt on the collateral -> futureValue == 0
+        if (name == "maturityDate") {
+            require((futureValue[nftID_] == 0), "can-not-change-maturityDate-outstanding-debt");
             maturityDate[nftID_] = uniqueDayTimestamp(maturityDate_);
         } else { revert("unknown config parameter");}
     }
@@ -163,7 +165,6 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         return navIncrease;
     }
 
-
     // On borrow: the discounted future value of the asset is computed based on the loan amount and addeed to the bucket with the according maturity Date
     function _borrow(uint loan, uint amount) internal returns(uint navIncrease) {
         // ceiling check uses existing loan debt
@@ -174,8 +175,11 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         // maturity date has to be a value in the future
         require(maturityDate_ > block.timestamp, "maturity-date-is-not-in-the-future");
 
+        // calculate amount including fixed fee if applicatable
+        (, , , , uint fixedRate) = pile.rates(pile.loanRates(loan));
+        uint amountIncludingFixed =  safeAdd(amount, rmul(amount, fixedRate));
         // calculate future value FV
-        uint fv = calcFutureValue(loan, amount, maturityDate_, recoveryRatePD[risk[nftID_]].value);
+        uint fv = calcFutureValue(loan, amountIncludingFixed, maturityDate_, recoveryRatePD[risk[nftID_]].value);
         futureValue[nftID_] = safeAdd(futureValue[nftID_], fv);
 
         // add future value to the bucket of assets with the same maturity date
@@ -196,7 +200,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     function calcFutureValue(uint loan, uint amount, uint maturityDate_, uint recoveryRatePD_) public returns(uint) {
         // retrieve interest rate from the pile
         (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
-        return rmul(rmul(rpow(loanInterestRate,  safeSub(maturityDate_, uniqueDayTimestamp(now)), ONE), amount), recoveryRatePD_);
+        return rmul(rmul(rpow(loanInterestRate, safeSub(maturityDate_, uniqueDayTimestamp(now)), ONE), amount), recoveryRatePD_);
     }
 
     /// update the nft value and change the risk group
@@ -240,6 +244,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
             approximatedNAV = safeSub(approximatedNAV, navDecrease);
             return navDecrease;
         }
+
         approximatedNAV = 0;
         return navDecrease;
     }
@@ -248,6 +253,12 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     function _repay(uint loan, uint amount) internal returns (uint navDecrease) {
         bytes32 nftID_ = nftID(loan);
         uint maturityDate_ = maturityDate[nftID_];
+
+
+        // no fv decrease calculation needed if maturaity date is in the past 
+        if (maturityDate_ < block.timestamp) {
+            return amount;
+        }
 
         // remove future value for loan from bucket
         buckets[maturityDate_].value = safeSub(buckets[maturityDate_].value, futureValue[nftID_]);
@@ -262,8 +273,9 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         if (debt != 0) {
             fv = calcFutureValue(loan, debt, maturityDate_, recoveryRatePD[risk[nftID_]].value);
             buckets[maturityDate_].value = safeAdd(buckets[maturityDate_].value, fv);
-            futureValue[nftID_] = fv;
         }
+
+        futureValue[nftID_] = fv;
 
         // remove buckets if no remaining assets
         if (buckets[maturityDate_].value == 0 && firstBucket != 0) {
@@ -276,7 +288,6 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         }
 
         // if a loan is overdue the portfolio value is equal to the existing debt multiplied with a write off factor
-        // todo multiply amount with write-off factor
         return amount;
     }
 

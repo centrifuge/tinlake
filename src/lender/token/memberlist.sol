@@ -29,6 +29,12 @@ contract Memberlist is Math, Auth {
         members[usr] = validUntil;
      }
 
+    function updateMembers(address[] memory users, uint validUntil) public auth {
+        for (uint i = 0; i < users.length; i++) {
+            updateMember(users[i], validUntil);
+        }
+    }
+
     constructor() public {
         wards[msg.sender] = 1;
     }

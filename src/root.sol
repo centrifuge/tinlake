@@ -13,23 +13,32 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 pragma solidity >=0.5.15 <0.6.0;
 
-import { BorrowerDeployer } from "./borrower/deployer.sol";
-import { LenderDeployer } from "./lender/deployer.sol";
-
 import "tinlake-auth/auth.sol";
 
-contract AuthLike {
-    function rely(address) public;
-    function deny(address) public;
+interface AuthLike {
+    function rely(address) external;
+    function deny(address) external;
 }
 
-contract DependLike {
-    function depend(bytes32, address) public;
+interface DependLike {
+    function depend(bytes32, address) external;
 }
+
+interface BorrowerDeployerLike {
+    function collector() external returns (address);
+    function feed() external returns (address);
+    function shelf() external returns (address);
+    function title() external returns (address);
+}
+interface LenderDeployerLike {
+    function assessor() external returns (address);
+    function reserve() external returns (address);
+}
+
 
 contract TinlakeRoot is Auth {
-    BorrowerDeployer public borrowerDeployer;
-    LenderDeployer  public  lenderDeployer;
+    BorrowerDeployerLike public borrowerDeployer;
+    LenderDeployerLike public  lenderDeployer;
 
     bool public             deployed;
     address public          deployUsr;
@@ -42,8 +51,8 @@ contract TinlakeRoot is Auth {
     // Sets the two deployer dependencies. This needs to be called by the deployUsr
     function prepare(address lender_, address borrower_, address ward_) public {
         require(deployUsr == msg.sender);
-        borrowerDeployer = BorrowerDeployer(borrower_);
-        lenderDeployer = LenderDeployer(lender_);
+        borrowerDeployer = BorrowerDeployerLike(borrower_);
+        lenderDeployer = LenderDeployerLike(lender_);
         wards[ward_] = 1;
         deployUsr = address(0); // disallow the deploy user to call this more than once.
     }

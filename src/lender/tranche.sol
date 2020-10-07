@@ -111,7 +111,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
         users[usr].supplyCurrencyAmount = newSupplyAmount;
 
-        totalSupply = safeAdd(safeSub(totalSupply, currentSupplyAmount), newSupplyAmount);
+        totalSupply = safeAdd(safeTotalSub(totalSupply, currentSupplyAmount), newSupplyAmount);
 
         if (newSupplyAmount > currentSupplyAmount) {
             uint delta = safeSub(newSupplyAmount, currentSupplyAmount);
@@ -120,7 +120,7 @@ contract Tranche is Math, Auth, FixedPoint {
         }
         uint delta = safeSub(currentSupplyAmount, newSupplyAmount);
         if (delta > 0) {
-            require(currency.transferFrom(self, usr, delta), "currency-transfer-failed");
+            _safeTransfer(currency, usr, delta);
         }
     }
 
@@ -130,7 +130,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
         uint currentRedeemAmount = users[usr].redeemTokenAmount;
         users[usr].redeemTokenAmount = newRedeemAmount;
-        totalRedeem = safeAdd(safeSub(totalRedeem, currentRedeemAmount), newRedeemAmount);
+        totalRedeem = safeAdd(safeTotalSub(totalRedeem, currentRedeemAmount), newRedeemAmount);
 
         if (newRedeemAmount > currentRedeemAmount) {
             uint delta = safeSub(newRedeemAmount, currentRedeemAmount);
@@ -140,7 +140,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
         uint delta = safeSub(currentRedeemAmount, newRedeemAmount);
         if (delta > 0) {
-            require(token.transferFrom(self, usr, delta), "token-transfer-failed");
+            _safeTransfer(token, usr, delta);
         }
     }
 
@@ -173,7 +173,7 @@ contract Tranche is Math, Auth, FixedPoint {
                 amount = rmul(remainingSupplyCurrency, epochs[epochIdx].supplyFulfillment.value);
                 // supply currency payout in token
                 if (amount != 0) {
-                    payoutTokenAmount = safeAdd(payoutTokenAmount, rdiv(amount, epochs[epochIdx].tokenPrice.value));
+                    payoutTokenAmount = safeAdd(payoutTokenAmount, safeDiv(safeMul(amount, ONE), epochs[epochIdx].tokenPrice.value));
                     remainingSupplyCurrency = safeSub(remainingSupplyCurrency, amount);
                 }
             }
@@ -197,6 +197,14 @@ contract Tranche is Math, Auth, FixedPoint {
        return disburse(usr, epochTicker.lastEpochExecuted());
     }
 
+    function _safeTransfer(ERC20Like erc20, address usr, uint amount) internal {
+        uint max = erc20.balanceOf(self);
+        if(amount > max) {
+            amount = max;
+        }
+        require(erc20.transferFrom(self, usr, amount), "token-transfer-failed");
+    }
+
     // the disburse function can be used after an epoch is over to receive currency and tokens
     function disburse(address usr,  uint endEpoch) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         require(users[usr].orderedInEpoch <= epochTicker.lastEpochExecuted());
@@ -218,11 +226,11 @@ contract Tranche is Math, Auth, FixedPoint {
 
 
         if (payoutCurrencyAmount > 0) {
-            require(currency.transferFrom(self, usr, payoutCurrencyAmount), "currency-transfer-failed");
+            _safeTransfer(currency, usr, payoutCurrencyAmount);
         }
 
         if (payoutTokenAmount > 0) {
-            require(token.transferFrom(self, usr, payoutTokenAmount), "token-transfer-failed");
+            _safeTransfer(token, usr, payoutTokenAmount);
         }
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
     }
@@ -241,7 +249,7 @@ contract Tranche is Math, Auth, FixedPoint {
         uint supplyInToken = 0;
         if(tokenPrice_ > 0) {
             supplyInToken = rdiv(epochSupplyOrderCurrency, tokenPrice_);
-            redeemInToken = rdiv(epochRedeemOrderCurrency, tokenPrice_);
+            redeemInToken = safeDiv(safeMul(epochRedeemOrderCurrency, ONE), tokenPrice_);
         }
 
         // calculates the delta between supply and redeem for tokens and burn or mint them
@@ -250,8 +258,8 @@ contract Tranche is Math, Auth, FixedPoint {
         adjustCurrencyBalance(epochID, epochSupplyOrderCurrency, epochRedeemOrderCurrency);
 
         // the unfulfilled orders (1-fulfillment) is automatically ordered
-        totalSupply = safeAdd(safeSub(totalSupply, epochSupplyOrderCurrency), rmul(epochSupplyOrderCurrency, safeSub(ONE, epochs[epochID].supplyFulfillment.value)));
-        totalRedeem = safeAdd(safeSub(totalRedeem, redeemInToken), rmul(redeemInToken, safeSub(ONE, epochs[epochID].redeemFulfillment.value)));
+        totalSupply = safeAdd(safeTotalSub(totalSupply, epochSupplyOrderCurrency), rmul(epochSupplyOrderCurrency, safeSub(ONE, epochs[epochID].supplyFulfillment.value)));
+        totalRedeem = safeAdd(safeTotalSub(totalRedeem, redeemInToken), rmul(redeemInToken, safeSub(ONE, epochs[epochID].redeemFulfillment.value)));
     }
     function closeEpoch() public auth returns (uint totalSupplyCurrency_, uint totalRedeemToken_) {
         require(waitingForUpdate == false);
@@ -325,4 +333,18 @@ contract Tranche is Math, Auth, FixedPoint {
             safePayout(diff);
         }
     }
+
+    // recovery transfer can be used by governance to recover funds if tokens are stuck
+    function authTransfer(address erc20, address usr, uint amount) public auth {
+        ERC20Like(erc20).transferFrom(self, usr, amount);
+    }
+
+    // due to rounding in token & currency conversions currency & token balances might be off by 1 wei with the totalSupply/totalRedeem amounts.
+    // in order to prevent an underflow error, 0 is returned when amount to be subtracted is bigger then the total value.
+    function safeTotalSub(uint total, uint amount) internal returns (uint) {
+        if (total < amount) {
+            return 0;
+        }
+        return safeSub(total, amount);
+    } 
 }

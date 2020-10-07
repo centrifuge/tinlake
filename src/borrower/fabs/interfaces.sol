@@ -15,19 +15,24 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import { Memberlist } from "./../token/memberlist.sol";
-
-interface MemberlistFabLike {
-    function newMemberlist() external returns (address);
+interface NAVFeedFabLike {
+    function newFeed() external returns (address);
 }
 
-contract MemberlistFab {
-    function newMemberlist() public returns (address memberList) {
-        Memberlist memberlist = new Memberlist();
-
-        memberlist.rely(msg.sender);
-        memberlist.deny(address(this));
-
-        return (address(memberlist));
-    }
+interface TitleFabLike {
+    function newTitle(string calldata, string calldata) external returns (address);
 }
+
+interface CollectorFabLike {
+    function newCollector(address, address, address) external returns (address);
+}
+
+interface PileFabLike {
+    function newPile() external returns (address);
+}
+
+interface ShelfFabLike {
+    function newShelf(address, address, address, address) external returns (address);
+}
+
+
