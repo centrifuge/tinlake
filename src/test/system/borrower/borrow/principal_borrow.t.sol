@@ -112,7 +112,6 @@ contract PrincipalBorrowTest is BaseSystemTest {
     }
 
     function testInterestAccruedOnFixedFee() public {
-        hevm.warp(1233212);
         uint nftPrice = 200 ether;
         uint riskGroup = 1;
         uint fixedFeeRate = 10**26; // 10 %
