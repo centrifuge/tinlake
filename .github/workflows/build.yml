@@ -1,0 +1,32 @@
+name: "Build"
+on:
+  pull_request:
+  push:
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+        # we need this to map platform names as used by github to
+        # the attribute names defined in release.nix
+        include:
+          - os: ubuntu-latest
+            os_attr: linux
+          - os: macos-latest
+            os_attr: darwin
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
+      - uses: cachix/install-nix-action@63cf434de4e4292c6960639d56c5dd550e789d77
+        with:
+          skip_adding_nixpkgs_channel: false
+      - uses: cachix/cachix-action@49b785b55a80c6a82e616bd3a69317f05dca5137
+        with:
+          name: dapp
+          skipPush: true
+          signingKey: ''
+      - name: test
+        run: nix-shell --pure --command "make test"
