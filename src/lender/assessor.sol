@@ -130,6 +130,16 @@ contract Assessor is Auth, FixedPoint, Interest {
         return calcJuniorTokenPrice(navFeed.currentNAV(), reserve.totalBalance());
     }
 
+    function calcTokenPrices() external view returns (uint, uint) {
+        uint epochNAV = navFeed.currentNAV();
+        uint epochReserve = reserve.totalBalance();
+        return calcTokenPrices(epochNAV, epochReserve);
+    }
+
+    function calcTokenPrices(uint epochNAV, uint epochReserve) public view returns (uint, uint) {
+        return (calcJuniorTokenPrice(epochNAV, epochReserve), calcSeniorTokenPrice(epochNAV, epochReserve));
+    }
+
     function calcSeniorTokenPrice(uint epochNAV, uint epochReserve) public view returns(uint) {
         if ((epochNAV == 0 && epochReserve == 0) || seniorTranche.tokenSupply() == 0) {
             // initial token price at start 1.00
