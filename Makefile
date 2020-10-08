@@ -7,4 +7,4 @@ test: update
 deploy :; dapp create TinlakeMakerLib
 
 export DAPP_TEST_TIMESTAMP=1234567
-export DAPP_SOLC_VERSION=0.5.12
+export DAPP_SOLC_VERSION=0.5.15
