@@ -304,4 +304,36 @@ contract AssessorTest is DSTest, Math {
         uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, reserve);
         assertEq(seniorTokenPrice, 75 * 10**25);
     }
+
+    function testCalcTokenPrices() public {
+        (uint juniorPrice, uint seniorPrice) = assessor.calcTokenPrices(0,0);
+        assertEq(juniorPrice, ONE);
+        assertEq(seniorPrice, ONE);
+
+        uint reserve = 300 ether;
+        uint nav = 200 ether;
+
+
+        navFeed.setReturn("approximatedNAV", 200 ether);
+        uint seniorSupply = 200 ether;
+        uint seniorRatio = 5 * 10**26;
+
+        assessor.changeSeniorAsset(seniorRatio, seniorSupply, 0);
+        assertEq(assessor.seniorDebt(), 100 ether);
+        assertEq(assessor.seniorBalance(), 100 ether);
+
+        reserve = 300 ether;
+        nav = 200 ether;
+
+        juniorTranche.setReturn("tokenSupply", 100 ether);
+        // NAV + Reserve  = 500 ether
+        // seniorAsset = 200 ether
+        // juniorAsset = 300 ether
+
+        // junior price: 3.0
+        (juniorPrice, seniorPrice) = assessor.calcTokenPrices(nav, reserve);
+        assertEq(juniorPrice, 3 * 10 ** 27);
+        assertEq(seniorPrice, 1 * 10 ** 27);
+    }
+
 }
