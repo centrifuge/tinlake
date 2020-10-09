@@ -32,7 +32,7 @@ contract RestrictedToken is ERC20 {
         return memberlist.hasMember(usr);
     }
 
-    constructor(string memory symbol_, string memory name_) ERC20(symbol, name) public {}
+    constructor(string memory symbol_, string memory name_) ERC20(symbol_, name_) public {}
 
     function depend(bytes32 contractName, address addr) public auth {
         if (contractName == "memberlist") { memberlist = MemberlistLike(addr); }

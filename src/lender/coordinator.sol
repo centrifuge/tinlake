@@ -169,7 +169,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
     function closeEpoch() external minimumEpochTimePassed {
         require(submissionPeriod == false);
         lastEpochClosed = block.timestamp;
-        currentEpoch = safeAdd(currentEpoch, 1);
+        currentEpoch = currentEpoch + 1;
 
         reserve.file("currencyAvailable", 0);
 
