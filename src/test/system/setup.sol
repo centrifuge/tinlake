@@ -103,39 +103,40 @@ contract TestSetup {
     }
 
     function deployContracts() public {
-        collateralNFT = new Title("Collateral NFT", "collateralNFT");
-        collateralNFT_ = address(collateralNFT);
-
-        currency = new SimpleToken("C", "Currency");
-        currency_ = address(currency);
-
-        root = new TestRoot(address(this));
-        root_ = address(root);
-
-        // only admin is main deployer
-        deployBorrower("nav");
-        // only admin is main deployer
+        deployTestRoot();
+        deployCollateralNFT();
+        deployCurrency();
+        deployBorrower();
 
         prepareDeployLender(root_);
         deployLender();
 
         root.prepare(address(lenderDeployer), address(borrowerDeployer), address(this));
         root.deploy();
-
     }
 
-    function deployBorrower(bytes32 feed_) private {
+    function deployTestRoot() public {
+        root = new TestRoot(address(this));
+        root_ = address(root);
+    }
+
+    function deployCurrency() public {
+        currency = new SimpleToken("C", "Currency");
+        currency_ = address(currency);
+    }
+
+    function deployCollateralNFT() public {
+        collateralNFT = new Title("Collateral NFT", "collateralNFT");
+        collateralNFT_ = address(collateralNFT);
+    }
+
+    function deployBorrower() private {
         TitleFab titlefab = new TitleFab();
         ShelfFab shelffab = new ShelfFab();
         PileFab pileFab = new PileFab();
         CollectorFab collectorFab = new CollectorFab();
         address nftFeedFab_;
-
-        if (feed_ == "default") {
-            nftFeedFab_ = address(new NFTFeedFab());
-        } else if (feed_ == "nav") {
-            nftFeedFab_ = address(new NAVFeedFab());
-        }
+        nftFeedFab_ = address(new NAVFeedFab());
 
         uint discountRate = uint(1000000342100000000000000000);
 
