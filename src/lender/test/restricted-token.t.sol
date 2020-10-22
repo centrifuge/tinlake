@@ -66,7 +66,7 @@ contract RestrictedTokenTest is Math, DSTest {
         assertEq(token.balanceOf(randomUser_), 50 ether);
     }
 
-    function testFailReceiveTokensNotMember() public {
+    function testFailReceiveTokensNotMember() public logs_gas {
         // random user not member
         token.transferFrom(self, randomUser_, 50 ether);
     }
