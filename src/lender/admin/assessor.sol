@@ -20,8 +20,8 @@ interface AssessorLike {
      function file(bytes32 name, uint value) external;
 }
 
-// Wrapper contract for permission restriction on the assessor
-// with this contract only the maxReserve size of the pool can be set
+// Wrapper contract for permission restriction on the assessor.
+// This contract ensures that only the maxReserve size of the pool can be set
 contract AssessorAdmin is Auth {
     AssessorLike  public assessor;
     constructor() public {
