@@ -38,7 +38,6 @@ contract AssessorAdminTest is DSTest {
         assessorAdmin.depend("assessor", assessor_);
     }
 
-
     function callMaxReserve() public {
         uint maxReserve = 150 ether;
         
