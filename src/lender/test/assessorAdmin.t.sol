@@ -21,7 +21,7 @@ import "./../assessor.sol";
 import "./../admin/assessor.sol";
 
 
-contract CoordinatorTest is DSTest {
+contract AssessorAdminTest is DSTest {
 
     Assessor assessor;
     AssessorAdmin assessorAdmin;
