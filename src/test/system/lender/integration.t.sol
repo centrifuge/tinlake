@@ -27,6 +27,14 @@ contract LenderIntegrationTest is BaseSystemTest {
         createInvestorUser();
     }
 
+    function testAdminPermissions() public {
+        assertEq(assessor.wards(address(assessorAdmin)), 1);
+        uint newReserve = 200 ether;
+        assertEq(assessorAdmin.wards(address(this)), 1);
+        assessorAdmin.setMaxReserve(newReserve);
+        assertEq(assessor.maxReserve(), newReserve);
+    }
+
     function testSimpleSeniorOrder() public {
         uint amount = 100 ether;
         currency.mint(address(seniorInvestor), amount);

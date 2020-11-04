@@ -42,4 +42,8 @@ interface RestrictedTokenFabLike {
     function newRestrictedToken(string calldata, string calldata) external returns (address);
 }
 
+interface AssessorAdminFabLike {
+    function newAssessorAdmin() external returns (address);
+}
+
 
