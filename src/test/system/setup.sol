@@ -29,6 +29,7 @@ import { Reserve } from "../../lender/reserve.sol";
 import { Tranche } from "../../lender/tranche.sol";
 import { Operator } from "../../lender/operator.sol";
 import { Assessor } from "../../lender/assessor.sol";
+import { AssessorAdmin } from "../../lender/admin/assessor.sol";
 import { RestrictedToken } from "../../lender/token/restricted.sol";
 import { Memberlist } from "../../lender/token/memberlist.sol";
 
@@ -37,6 +38,7 @@ import { TrancheFab } from "../../lender/fabs/tranche.sol";
 import { RestrictedTokenFab } from "../../lender/fabs/restrictedtoken.sol";
 import { MemberlistFab } from "../../lender/fabs/memberlist.sol";
 import { AssessorFab } from "../../lender/fabs/assessor.sol";
+import { AssessorAdminFab } from "../../lender/fabs/assessoradmin.sol";
 import { ReserveFab } from "../../lender/fabs/reserve.sol";
 import { CoordinatorFab } from "../../lender/fabs/coordinator.sol";
 import { OperatorFab } from "../../lender/fabs/operator.sol";
@@ -83,6 +85,7 @@ contract TestSetup {
     Operator juniorOperator;
     Operator seniorOperator;
     Assessor assessor;
+    AssessorAdmin assessorAdmin;
     RestrictedToken seniorToken;
     RestrictedToken juniorToken;
     Memberlist seniorMemberlist;
@@ -175,14 +178,15 @@ contract TestSetup {
 
         ReserveFab reserveFab = new ReserveFab();
         AssessorFab assessorFab = new AssessorFab();
+        AssessorAdminFab assessorAdminFab = new AssessorAdminFab();
         TrancheFab  trancheFab = new TrancheFab();
         MemberlistFab memberlistFab = new MemberlistFab();
         RestrictedTokenFab restrictedTokenFab = new RestrictedTokenFab();
         OperatorFab operatorFab = new OperatorFab();
-        CoordinatorFab coordinatorFab = new CoordinatorFab();
+        CoordinatorFab coordinatorFab = new CoordinatorFab(); 
 
         // root is testcase
-        lenderDeployer = new LenderDeployer(rootAddr, currency_, address(trancheFab), address(memberlistFab), address(restrictedTokenFab), address(reserveFab), address(assessorFab), address(coordinatorFab), address(operatorFab));
+        lenderDeployer = new LenderDeployer(rootAddr, currency_, address(trancheFab), address(memberlistFab), address(restrictedTokenFab), address(reserveFab), address(assessorFab), address(coordinatorFab), address(operatorFab), address(assessorAdminFab));
     }
 
     function deployLender() public {
@@ -204,11 +208,13 @@ contract TestSetup {
         lenderDeployer.deploySenior();
         lenderDeployer.deployReserve();
         lenderDeployer.deployAssessor();
+        lenderDeployer.deployAssessorAdmin();
         lenderDeployer.deployCoordinator();
 
         lenderDeployer.deploy();
 
         assessor = Assessor(lenderDeployer.assessor());
+        assessorAdmin = AssessorAdmin(lenderDeployer.assessorAdmin());
         reserve = Reserve(lenderDeployer.reserve());
         coordinator = EpochCoordinator(lenderDeployer.coordinator());
         seniorTranche = Tranche(lenderDeployer.seniorTranche());
