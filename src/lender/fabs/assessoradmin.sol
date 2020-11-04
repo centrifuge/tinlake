@@ -24,6 +24,6 @@ contract AssessorAdminFab {
         assessorAdmin.rely(msg.sender);
         assessorAdmin.deny(address(this));
 
-        return (address(assessorAdmin));
+        return address(assessorAdmin);
     }
 }
