@@ -221,6 +221,11 @@ contract LenderDeployer is FixedPoint {
         AuthLike(assessor).rely(reserve);
         AuthLike(assessor).rely(assessorAdmin);
 
+        // assessorAdmin
+        DependLike(assessorAdmin).depend("assessor", assessor);
+
+        
+
         FileLike(assessor).file("seniorInterestRate", seniorInterestRate.value);
         FileLike(assessor).file("maxReserve", maxReserve);
         FileLike(assessor).file("maxSeniorRatio", maxSeniorRatio.value);
