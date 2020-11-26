@@ -189,7 +189,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
             juniorTranche.epochUpdate(currentEpoch, 0, 0, 0, 0, 0);
             seniorTranche.epochUpdate(currentEpoch, 0, 0, 0, 0, 0);
 
-            // assessor performs re-balancing according to new NAV
+            // assessor performs re-balancing
             assessor.changeSeniorAsset(calcSeniorRatio(epochSeniorAsset, epochNAV, epochReserve), 0, 0);
             lastEpochExecuted = safeAdd(lastEpochExecuted, 1);
             return;
