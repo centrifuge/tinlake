@@ -176,19 +176,24 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.closeEpoch();
         (uint orderSeniorSupply, uint orderSeniorRedeem) = seniorTranche.closeEpoch();
 
-        //  if no orders exist epoch can be executed without validation
-        if (orderSeniorRedeem == 0 && orderJuniorRedeem == 0 &&
-        orderSeniorSupply == 0 && orderJuniorSupply == 0) {
-
-            juniorTranche.epochUpdate(currentEpoch, 0, 0, 0, orderJuniorSupply, orderJuniorRedeem);
-            seniorTranche.epochUpdate(currentEpoch, 0, 0, 0, orderSeniorSupply, orderSeniorRedeem);
-            lastEpochExecuted = safeAdd(lastEpochExecuted, 1);
-            return;
-        }
+        epochSeniorAsset = safeAdd(assessor.seniorDebt(), assessor.seniorBalance());
 
         // create a snapshot of the current lender state
         epochNAV = assessor.calcUpdateNAV();
         epochReserve = reserve.totalBalance();
+
+        //  if no orders exist epoch can be executed without validation
+        if (orderSeniorRedeem == 0 && orderJuniorRedeem == 0 &&
+        orderSeniorSupply == 0 && orderJuniorSupply == 0) {
+
+            juniorTranche.epochUpdate(currentEpoch, 0, 0, 0, 0, 0);
+            seniorTranche.epochUpdate(currentEpoch, 0, 0, 0, 0, 0);
+
+            // assessor performs re-balancing according to new NAV
+            assessor.changeSeniorAsset(calcSeniorRatio(epochSeniorAsset, epochNAV, epochReserve), 0, 0);
+            lastEpochExecuted = safeAdd(lastEpochExecuted, 1);
+            return;
+        }
 
         // calculate current token prices which are used for the execute
         epochSeniorTokenPrice = assessor.calcSeniorTokenPrice(epochNAV, epochReserve);
@@ -199,8 +204,6 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         if(epochJuniorTokenPrice.value == 0) {
             poolClosing = true;
         }
-
-        epochSeniorAsset = safeAdd(assessor.seniorDebt(), assessor.seniorBalance());
 
         // convert redeem orders in token into currency
         order.seniorRedeem = rmul(orderSeniorRedeem, epochSeniorTokenPrice.value);
