@@ -133,7 +133,7 @@ contract TestSetup {
         collateralNFT_ = address(collateralNFT);
     }
 
-    function deployBorrower() private {
+    function deployBorrower() public {
         TitleFab titlefab = new TitleFab();
         ShelfFab shelffab = new ShelfFab();
         PileFab pileFab = new PileFab();
