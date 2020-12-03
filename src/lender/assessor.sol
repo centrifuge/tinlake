@@ -236,4 +236,8 @@ contract Assessor is Auth, FixedPoint, Interest {
     function seniorBalance() public view returns (uint) {
         return seniorBalance_;
     }
+
+    function totalBalance() public view returns (uint) {
+        return reserve.totalBalance();
+    }
 }
