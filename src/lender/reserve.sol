@@ -39,7 +39,7 @@ contract Reserve is Math, Auth {
     // currency available for borrowing new loans
     uint256 public currencyAvailable;
 
-    address self;
+    address pot;
 
     // total currency in the reserve
     uint public balance_;
@@ -47,7 +47,7 @@ contract Reserve is Math, Auth {
     constructor(address currency_) public {
         wards[msg.sender] = 1;
         currency = ERC20Like(currency_);
-        self = address(this);
+        pot = address(this);
     }
 
     function file(bytes32 what, uint amount) public auth {
@@ -63,6 +63,8 @@ contract Reserve is Math, Auth {
             currency = ERC20Like(addr);
         } else if (contractName == "assessor") {
             assessor = AssessorLike(addr);
+        } else if (contractName == "pot") {
+            pot = addr;
         } else revert();
     }
 
@@ -76,7 +78,7 @@ contract Reserve is Math, Auth {
     }
 
     function _deposit(address usr, uint currencyAmount) internal {
-        require(currency.transferFrom(usr, self, currencyAmount), "reserve-deposit-failed");
+        require(currency.transferFrom(usr, pot, currencyAmount), "reserve-deposit-failed");
         balance_ = safeAdd(balance_, currencyAmount);
     }
 
@@ -86,7 +88,7 @@ contract Reserve is Math, Auth {
     }
 
     function _payout(address usr, uint currencyAmount)  internal {
-      require(currency.transferFrom(self, usr, currencyAmount), "reserve-payout-failed");
+      require(currency.transferFrom(pot, usr, currencyAmount), "reserve-payout-failed");
       balance_ = safeSub(balance_, currencyAmount);
     }
 
