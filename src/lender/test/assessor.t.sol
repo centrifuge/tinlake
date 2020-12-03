@@ -352,4 +352,11 @@ contract AssessorTest is DSTest, Math {
         reserveMock.setReturn("balance", totalBalance);
         assertEq(assessor.totalBalance(), totalBalance);
     }
+
+    function testChangeReserveAvailable() public {
+        uint amount = 100 ether;
+        assertEq(reserveMock.values_uint("currency_available"), 0);
+        assessor.changeReserveAvailable(amount);
+        assertEq(reserveMock.values_uint("currency_available"), amount);
+    }
 }
