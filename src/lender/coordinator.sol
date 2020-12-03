@@ -27,6 +27,7 @@ interface EpochTrancheLike {
 
 interface ReserveLike {
     function file(bytes32 what, uint currencyAmount) external;
+    function totalBalance() external returns(uint);
 }
 
 contract AssessorLike is FixedPoint {
@@ -188,7 +189,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
         // create a snapshot of the current lender state
         epochNAV = assessor.calcUpdateNAV();
-        epochReserve = assessor.totalBalance();
+        epochReserve = reserve.totalBalance();
 
         // calculate current token prices which are used for the execute
         epochSeniorTokenPrice = assessor.calcSeniorTokenPrice(epochNAV, epochReserve);

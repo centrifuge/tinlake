@@ -22,6 +22,7 @@ import "./../assessor.sol";
 import "./mock/tranche.sol";
 import "./mock/navFeed.sol";
 import "./mock/reserve.sol";
+import "../../test/simple/token.sol";
 
 contract Hevm {
     function warp(uint256) public;
@@ -34,6 +35,7 @@ contract AssessorTest is DSTest, Math {
     TrancheMock juniorTranche;
     NAVFeedMock navFeed;
     ReserveMock reserveMock;
+    SimpleToken currency;
 
     address seniorTranche_;
     address juniorTranche_;
@@ -43,6 +45,7 @@ contract AssessorTest is DSTest, Math {
     function setUp() public {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
+        currency = new SimpleToken("CUR", "Currency");
 
         seniorTranche = new TrancheMock();
         juniorTranche = new TrancheMock();
@@ -52,14 +55,16 @@ contract AssessorTest is DSTest, Math {
 
         navFeed = new NAVFeedMock();
         navFeed_ = address(navFeed);
-        reserveMock = new ReserveMock(address(0));
+
+
+        reserveMock = new ReserveMock(address(currency));
         reserveMock_ = address(reserveMock);
 
         assessor = new Assessor();
         assessor.depend("juniorTranche", juniorTranche_);
         assessor.depend("seniorTranche", seniorTranche_);
         assessor.depend("navFeed", navFeed_);
-        assessor.depend("reserveMock", reserveMock_);
+        assessor.depend("reserve", reserveMock_);
     }
 
     function testCurrentNAV() public {
@@ -344,8 +349,7 @@ contract AssessorTest is DSTest, Math {
 
     function testTotalBalance() public {
         uint totalBalance = 100 ether;
-        reserveMock.setReturn("totalBalance", totalBalance);
+        reserveMock.setReturn("balance", totalBalance);
         assertEq(assessor.totalBalance(), totalBalance);
     }
-
 }
