@@ -36,9 +36,10 @@ contract Reserve is Math, Auth {
     AssessorLike public assessor;
 
     // currency available for borrowing new loans
-    // currency available for borrowing new loans
     uint256 public currencyAvailable;
 
+    // address or contract which holds the currency
+    // by default it is address(this)
     address pot;
 
     // total currency in the reserve
