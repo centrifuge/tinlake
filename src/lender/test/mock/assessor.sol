@@ -117,4 +117,8 @@ contract AssessorMock is Mock {
     function borrowUpdate(uint currencyAmount) public  {
         values_uint["borrowUpdate_currencyAmount"] = currencyAmount;
     }
+
+    function totalBalance() public returns (uint) {
+        return call("totalBalance");
+    }
 }
