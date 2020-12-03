@@ -121,4 +121,8 @@ contract AssessorMock is Mock {
     function totalBalance() public returns (uint) {
         return call("balance");
     }
+
+    function changeReserveAvailable(uint currencyAmount) public {
+        values_uint["currency_available"] = currencyAmount;
+    }
 }
