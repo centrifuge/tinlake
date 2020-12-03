@@ -119,6 +119,6 @@ contract AssessorMock is Mock {
     }
 
     function totalBalance() public returns (uint) {
-        return call("totalBalance");
+        return call("balance");
     }
 }
