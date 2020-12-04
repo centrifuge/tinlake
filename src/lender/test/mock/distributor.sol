@@ -15,17 +15,41 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import "tinlake-math/math.sol";
+import "ds-test/test.sol";
 import "tinlake-auth/auth.sol";
-
 import "../../../test/mock/mock.sol";
 
-contract DistributorMock is Mock {
+interface CurrencyLike {
+    function transferFrom(address from, address to, uint amount) external;
+    function balanceOf(address usr) external returns (uint);
+}
+
+contract DistributorMock is Mock, Auth {
+    CurrencyLike public currency;
+    constructor(address currency_) public {
+        wards[msg.sender] = 1;
+        currency = CurrencyLike(currency_);
+    }
+
+    function file(bytes32 , uint currencyAmount) public auth {
+        values_uint["currency_available"] = currencyAmount;
+    }
+
     function balance() public returns (uint) {
         return call("balance");
     }
-    function repayTranches(uint amount) public {
-        calls["repay_tranches"]++;
-        values_uint["repay_tranches_amount"] = amount;
+
+    function totalBalance() public returns (uint) {
+        return call("balance");
+    }
+
+    function deposit(uint amount) public {
+        values_uint["deposit_amount"] = amount;
+        currency.transferFrom(msg.sender, address(this), amount);
+    }
+    function payout(uint amount) public {
+        values_uint["deposit_amount"] = amount;
+        currency.transferFrom(address(this), msg.sender, amount);
     }
 }
+
