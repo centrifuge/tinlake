@@ -14,19 +14,10 @@
 pragma solidity >=0.5.15 <0.6.0;
 import "ds-test/test.sol";
 
-import "../../../test/mock/mock.sol";
+import "../../../../test/mock/mock.sol";
 
 contract ManagerMock is Mock {
     function cdptab() public view returns (uint) {
         return values_return["tab"];
-    }
-
-    function ink() public view returns (uint) {
-        return values_return["ink"];
-    }
-
-
-    function mat() public view returns (uint) {
-        return values_return["mat"];
     }
 }

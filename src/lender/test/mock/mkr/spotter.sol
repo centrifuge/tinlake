@@ -12,11 +12,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 pragma solidity >=0.5.15 <0.6.0;
+import "ds-test/test.sol";
 
-import "../../../test/mock/mock.sol";
+import "../../../../test/mock/mock.sol";
 
-contract CoordinatorMock is Mock {
-    function submissionPeriod() public view returns (uint) {
-        return values_return["submissionPeriod"];
+contract SpotterMock is Mock {
+    function ilks(bytes32 id) external returns(address, uint256) {
+        return (values_address_return["pip"], values_return["mat"]);
     }
 }
