@@ -89,6 +89,7 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
     }
 
     function testCloseEpochNoSubmission() public {
+        assertEq(assessor.values_uint("changeSeniorAsset_seniorRatio"), 0);
         assertEq(coordinator.currentEpoch(), 1);
         assertEq(coordinator.lastEpochExecuted(), 0);
         hevm.warp(now + 1 days);
@@ -96,6 +97,7 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
         coordinator.closeEpoch();
         assertEq(coordinator.lastEpochExecuted(), 1);
         assertTrue(coordinator.submissionPeriod() == false);
+        assertEq(assessor.values_uint("changeSeniorAsset_seniorRatio"), 0.80 * 10**27);
     }
 
     function testCloseEpochSubmissionPeriod() public {

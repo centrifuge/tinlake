@@ -492,4 +492,26 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
 
     }
 
+    function testCloseEpochNoOrders() public {
+        seniorSupply(80 ether, seniorInvestor);
+        // one junior investor
+        juniorSupply(20 ether);
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
+        assertTrue(coordinator.submissionPeriod() == false);
+
+        // borrow loans maturity date 5 days from now
+        uint borrowAmount = 100 ether;
+        uint nftPrice = 200 ether;
+        uint maturityDate = 5 days;
+        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(now) +maturityDate);
+
+        hevm.warp(now + 1 days);
+
+        // no orders - close epoch
+        coordinator.closeEpoch();
+
+        // 100% of currency borrowed => seniorRatio = curr. SeniorDebt/curr NAV
+        assertEq(assessor.seniorRatio(), rdiv(assessor.seniorDebt(), assessor.calcUpdateNAV()), FIXED27_TEN_DECIMAL_PRECISION);
+    }
  }
