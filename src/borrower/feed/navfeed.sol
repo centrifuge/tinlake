@@ -43,9 +43,11 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     // total discount of the NAV
     uint public totalDiscount;
     // timestamp of the last discount calculated time
+    // timestamp is not normalized
     uint public lastTotalDiscountUpdate;
 
     // timestamp about the last time the NAV changed because of borrowed or repaid loans
+    // timestamp is not normalized
     uint public lastNAVUpdate;
 
     WriteOff [2] public writeOffs;
@@ -261,8 +263,10 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         uint maturityDate_ = maturityDate[nftID_];
 
 
-        // no fv decrease calculation needed if maturaity date is in the past
-        if (maturityDate_ < block.timestamp) {
+        // no fv decrease calculation needed if maturity date is in the past
+        // repayment on maturity date is fine
+        // unique day timestamp is always 00:00 am
+        if (maturityDate_ < uniqueDayTimestamp(block.timestamp)) {
             return amount;
         }
 
@@ -289,18 +293,13 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         }
 
         // return decrease NAV amount
-        if (block.timestamp < maturityDate_) {
-            return calcDiscount(safeSub(preFutureValue, fv), uniqueDayTimestamp(block.timestamp), maturityDate_);
-        }
+        return calcDiscount(safeSub(preFutureValue, fv), uniqueDayTimestamp(block.timestamp), maturityDate_);
 
-        // if a loan is overdue the portfolio value is equal to the existing debt multiplied with a write off factor
-        return amount;
     }
 
     function calcDiscount(uint amount, uint normalizedBlockTimestamp, uint maturityDate_) public view returns (uint result) {
         return rdiv(amount, rpow(discountRate.value, safeSub(maturityDate_, normalizedBlockTimestamp), ONE));
     }
-
 
     /// calculates the total discount of all buckets with a timestamp > block.timestamp
     function calcTotalDiscount() public view returns(uint) {
@@ -309,13 +308,13 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         // total discount is always the same if the normalized timestamp is the same
         // it is not required to recalculate it
         if(normalizedBlockTimestamp == uniqueDayTimestamp(lastTotalDiscountUpdate)
-            && lastTotalDiscountUpdate >= lastNAVUpdate)
-        {
+            && lastTotalDiscountUpdate >= lastNAVUpdate) {
+            // it is not required to re-calculate the expensive discount calculation because
+            // it was already calculated on that specific day and no new borrow or repayments happened
             return totalDiscount;
         }
 
         uint sum = 0;
-
         uint currDate = normalizedBlockTimestamp;
 
 
@@ -351,7 +350,8 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     function calcUpdateNAV() public returns(uint) {
         uint totalDiscount = calcTotalDiscount();
 
-        if (uniqueDayTimestamp(block.timestamp) > lastTotalDiscountUpdate
+        // the NAV could be different because of a new day or new borrows or repays
+        if (uniqueDayTimestamp(block.timestamp) > uniqueDayTimestamp(lastTotalDiscountUpdate)
          || lastNAVUpdate > lastTotalDiscountUpdate) {
             lastTotalDiscountUpdate = block.timestamp;
             lastTotalDiscountUpdate = totalDiscount;
