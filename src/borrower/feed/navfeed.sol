@@ -267,6 +267,9 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         // repayment on maturity date is fine
         // unique day timestamp is always 00:00 am
         if (maturityDate_ < uniqueDayTimestamp(block.timestamp)) {
+
+            // if the loan is overdue it the loan value is equal to the debt multiplied with a write off factor
+            // the nav change is equal to the repayment amount
             return amount;
         }
 
@@ -308,7 +311,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         // total discount is always the same if the normalized timestamp is the same
         // it is not required to recalculate it
         if(normalizedBlockTimestamp == uniqueDayTimestamp(lastTotalDiscountUpdate)
-            && lastTotalDiscountUpdate >= lastNAVUpdate) {
+            && lastTotalDiscountUpdate > lastNAVUpdate) {
             // it is not required to re-calculate the expensive discount calculation because
             // it was already calculated on that specific day and no new borrow or repayments happened
             return totalDiscount;
@@ -338,27 +341,33 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     /// returns the NAV (net asset value) of the pool
     function currentNAV() public view returns(uint) {
         // calculates the NAV for ongoing loans with a maturityDate date in the future
-        uint nav_ = calcTotalDiscount();
+        // and adds the write-offs
+        return safeAdd(calcTotalDiscount(), currentWriteOffs());
+    }
+
+    function currentWriteOffs() public view returns(uint) {
         // include ovedue assets to the current NAV calculation
+        uint sum = 0;
         for (uint i = 0; i < writeOffs.length; i++) {
             // multiply writeOffGroupDebt with the writeOff rate
-            nav_ = safeAdd(nav_, rmul(pile.rateDebt(writeOffs[i].rateGroup), writeOffs[i].percentage.value));
+            sum = safeAdd(sum, rmul(pile.rateDebt(writeOffs[i].rateGroup), writeOffs[i].percentage.value));
         }
-        return nav_;
+        return sum;
     }
 
     function calcUpdateNAV() public returns(uint) {
-        uint totalDiscount = calcTotalDiscount();
+        uint totalDiscount_ = calcTotalDiscount();
 
-        // the NAV could be different because of a new day or new borrows or repays
+        // cache total discount if it is different
+        // the total discount could be different because of a new day or new borrows or repays
         if (uniqueDayTimestamp(block.timestamp) > uniqueDayTimestamp(lastTotalDiscountUpdate)
-         || lastNAVUpdate > lastTotalDiscountUpdate) {
+            || lastNAVUpdate > lastTotalDiscountUpdate) {
             lastTotalDiscountUpdate = block.timestamp;
-            lastTotalDiscountUpdate = totalDiscount;
+            totalDiscount = totalDiscount_;
         }
 
         // approximated NAV is updated and at this point in time 100% correct
-        approximatedNAV = currentNAV();
+        approximatedNAV = safeAdd(totalDiscount_, currentWriteOffs());
         return approximatedNAV;
     }
 

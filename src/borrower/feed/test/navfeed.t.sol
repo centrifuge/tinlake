@@ -485,4 +485,30 @@ contract NAVTest is DSTest, Math {
         feed.calcDiscount(amountB, feed.uniqueDayTimestamp(now), maturityDate),
         feed.calcDiscount(amountA - amountB, feed.uniqueDayTimestamp(now), maturityDate));
     }
+
+    function testNAVCaching() public {
+        setupLinkedListBuckets();
+
+        uint nav =  feed.currentNAV();
+        uint lastNAVUpdate = feed.lastNAVUpdate();
+        uint lastTotalDiscountUpdate = feed.lastTotalDiscountUpdate();
+
+        hevm.warp(now + 1 days);
+
+        uint newNAV = feed.currentNAV();
+        // new nav should be different because 1 day in the future
+        assertTrue(nav != newNAV);
+
+        // timestamps should be the same
+        assertEq(feed.lastNAVUpdate(), lastNAVUpdate);
+        assertEq(feed.lastTotalDiscountUpdate(), lastTotalDiscountUpdate);
+
+        // call nav and update cached total discount
+        assertEq(feed.calcUpdateNAV(), newNAV);
+
+        // current nav should be the same but calc is now more efficient
+        assertEq(feed.currentNAV(), newNAV);
+        // different total discount
+        assertTrue(feed.lastTotalDiscountUpdate() != lastTotalDiscountUpdate);
+    }
 }
