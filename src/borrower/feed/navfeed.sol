@@ -40,6 +40,14 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     // nftID => futureValue
     mapping (bytes32 => uint) public futureValue;
 
+    // total discount of the NAV
+    uint public totalDiscount;
+    // timestamp of the last discount calculated time
+    uint public lastTotalDiscountUpdate;
+
+    // timestamp about the last time the NAV changed because of borrowed or repaid loans
+    uint public lastNAVUpdate;
+
     WriteOff [2] public writeOffs;
 
     struct WriteOff {
@@ -162,6 +170,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     function borrow(uint loan, uint amount) external auth returns(uint navIncrease) {
         navIncrease = _borrow(loan, amount);
         approximatedNAV = safeAdd(approximatedNAV, navIncrease);
+        lastNAVUpdate = block.timestamp;
         return navIncrease;
     }
 
@@ -236,16 +245,13 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     // In case of successful repayment the approximatedNAV is decreased by the repaid amount
     function repay(uint loan, uint amount) external auth returns (uint navDecrease) {
         navDecrease = _repay(loan, amount);
-        if (navDecrease > approximatedNAV) {
-            approximatedNAV = 0;
-        }
 
         if(navDecrease < approximatedNAV) {
             approximatedNAV = safeSub(approximatedNAV, navDecrease);
             return navDecrease;
         }
-
         approximatedNAV = 0;
+        lastNAVUpdate = block.timestamp;
         return navDecrease;
     }
 
@@ -255,7 +261,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         uint maturityDate_ = maturityDate[nftID_];
 
 
-        // no fv decrease calculation needed if maturaity date is in the past 
+        // no fv decrease calculation needed if maturaity date is in the past
         if (maturityDate_ < block.timestamp) {
             return amount;
         }
@@ -299,9 +305,19 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     /// calculates the total discount of all buckets with a timestamp > block.timestamp
     function calcTotalDiscount() public view returns(uint) {
         uint normalizedBlockTimestamp = uniqueDayTimestamp(block.timestamp);
+
+        // total discount is always the same if the normalized timestamp is the same
+        // it is not required to recalculate it
+        if(normalizedBlockTimestamp == uniqueDayTimestamp(lastTotalDiscountUpdate)
+            && lastTotalDiscountUpdate >= lastNAVUpdate)
+        {
+            return totalDiscount;
+        }
+
         uint sum = 0;
 
         uint currDate = normalizedBlockTimestamp;
+
 
         if (currDate > lastBucket) {
             return 0;
@@ -333,6 +349,14 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     function calcUpdateNAV() public returns(uint) {
+        uint totalDiscount = calcTotalDiscount();
+
+        if (uniqueDayTimestamp(block.timestamp) > lastTotalDiscountUpdate
+         || lastNAVUpdate > lastTotalDiscountUpdate) {
+            lastTotalDiscountUpdate = block.timestamp;
+            lastTotalDiscountUpdate = totalDiscount;
+        }
+
         // approximated NAV is updated and at this point in time 100% correct
         approximatedNAV = currentNAV();
         return approximatedNAV;
