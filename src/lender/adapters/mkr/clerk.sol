@@ -151,6 +151,7 @@ contract Clerk is Auth, Math {
         // mint required DROP
         tranche.mint(address(this), collateralDROP);
         // join collateral into the cdp
+        collateral.approve(address(mgr), collateralDROP);
         mgr.join(collateralDROP);
         // draw dai from cdp
         mgr.draw(amountDAI, address(this));
@@ -171,6 +172,7 @@ contract Clerk is Auth, Math {
         // get DAI from reserve
         reserve.payout(repayDAI);
         // repay cdp debt
+        dai.approve(address(mgr), repayDAI);
         mgr.wipe(repayDAI); 
         // exit DROP worth repaid DAI
         uint collateralDROP = rdiv(repayDAI, assessor.calcSeniorTokenPrice());
