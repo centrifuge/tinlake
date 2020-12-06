@@ -344,6 +344,33 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         return safeAdd(calcTotalDiscount(), currentWriteOffs());
     }
 
+    function currentNAV_v2() public  returns(uint) {
+
+        uint nnow = uniqueDayTimestamp(block.timestamp);
+        uint timePast = safeSub(nnow, uniqueDayTimestamp(lastTotalDiscountUpdate));
+
+        uint nav = rmul(approximatedNAV, rpow(discountRate.value, timePast, ONE));
+
+        uint lastUpdate = uniqueDayTimestamp(lastTotalDiscountUpdate);
+
+        uint iDate = lastUpdate;
+
+        // only buckets after the block.timestamp are relevant for the discount
+        // assuming its more gas efficient to iterate over time to find the first one instead of iterating the list from the beginning
+        // not true if buckets are only sparsely populated over long periods of time
+        while(buckets[iDate].next == 0) { iDate = iDate + 1 days; }
+
+        uint diff = 0;
+
+        while(iDate < nnow) {
+            diff = safeAdd(diff, rmul(buckets[iDate].value, rpow(discountRate.value, safeSub(nnow, iDate), ONE)));
+            iDate = buckets[iDate].next;
+        }
+
+        nav = safeSub(nav, diff);
+        return safeAdd(nav, currentWriteOffs());
+    }
+
     function currentWriteOffs() public view returns(uint) {
         // include ovedue assets to the current NAV calculation
         uint sum = 0;

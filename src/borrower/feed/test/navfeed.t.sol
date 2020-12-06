@@ -555,4 +555,33 @@ contract NAVTest is DSTest, Math {
         feed.repay(loan, 30 ether);
         assertTrue(nav != feed.currentNAV());
     }
+
+    function compareNAVImpl() public {
+        setupLinkedListBuckets();
+        uint n = feed.approximatedNAV();
+        emit log_named_uint("n", n);
+
+        // init to set totalDiscountLastUpdate
+        uint nav = feed.calcUpdateNAV();
+
+        emit log_named_uint("lastUpdate", feed.lastTotalDiscountUpdate());
+
+        emit log_named_uint("nav_v1", feed.currentNAV());
+        emit log_named_uint("nav_v2", feed.currentNAV_v2());
+
+        hevm.warp(now + 1 days);
+        emit log_named_uint("nav_v1", feed.currentNAV());
+        emit log_named_uint("nav_v2", feed.currentNAV_v2());
+
+
+        hevm.warp(now + 1 days);
+        emit log_named_uint("nav_v1", feed.currentNAV());
+        emit log_named_uint("nav_v2", feed.currentNAV_v2());
+
+        hevm.warp(now + 1 days);
+        emit log_named_uint("nav_v1", feed.currentNAV());
+        emit log_named_uint("nav_v2", feed.currentNAV_v2());
+
+        assertTrue(false);
+    }
 }
