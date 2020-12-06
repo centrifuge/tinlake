@@ -174,12 +174,8 @@ contract Clerk is Auth, Math {
         // repay cdp debt
         dai.approve(address(mgr), repayDAI);
         mgr.wipe(repayDAI); 
-        // exit DROP worth repaid DAI
-        uint collateralDROP = rdiv(repayDAI, assessor.calcSeniorTokenPrice());
-        mgr.exit(address(this), collateralDROP);
-        // burn DROP
-        collateral.burn(address(this), collateralDROP);
-        // harvest junior interest 
+
+        // harvest junior interest & burn surplus drop
         harvest();        
     }
 
