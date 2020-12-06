@@ -353,18 +353,9 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
         uint lastUpdate = uniqueDayTimestamp(lastTotalDiscountUpdate);
 
-        uint iDate = lastUpdate;
-
-        // only buckets after the block.timestamp are relevant for the discount
-        // assuming its more gas efficient to iterate over time to find the first one instead of iterating the list from the beginning
-        // not true if buckets are only sparsely populated over long periods of time
-        while(buckets[iDate].next == 0) { iDate = iDate + 1 days; }
-
         uint diff = 0;
-
-        while(iDate < nnow) {
-            diff = safeAdd(diff, rmul(buckets[iDate].value, rpow(discountRate.value, safeSub(nnow, iDate), ONE)));
-            iDate = buckets[iDate].next;
+        for(uint i = lastUpdate; i < nnow; i = i + 1 days) {
+            diff = safeAdd(diff, rmul(buckets[i].value, rpow(discountRate.value, safeSub(nnow, i), ONE)));
         }
 
         nav = safeSub(nav, diff);
