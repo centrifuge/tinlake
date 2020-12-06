@@ -510,5 +510,49 @@ contract NAVTest is DSTest, Math {
         assertEq(feed.currentNAV(), newNAV);
         // different total discount
         assertTrue(feed.lastTotalDiscountUpdate() != lastTotalDiscountUpdate);
+
+        assertEq(feed.calcUpdateNAV(), feed.currentNAV());
+
+        nav = feed.currentNAV();
+
+        assertEq(nav, feed.currentNAV());
+    }
+
+    function testNAVCachingBorrow() public {
+        setupLinkedListBuckets();
+
+        uint nav = feed.calcUpdateNAV();
+
+        //hevm.warp(now + 100 minutes);
+        assertEq(nav, feed.currentNAV());
+
+        // change nav with borrow
+        // add amount to existing bucket
+        uint dueDate = now + 10 days;
+        uint tokenId = 6;
+        uint loan = 6;
+        uint nftValue = 200 ether;
+        uint amount = 100 ether;
+        borrow(tokenId, loan, nftValue, amount, dueDate);
+
+        assertTrue(nav != feed.currentNAV());
+
+        hevm.warp(now + 100 minutes);
+        assertTrue(nav != feed.currentNAV());
+    }
+
+    function testNAVCachingRepay() public {
+        setupLinkedListBuckets();
+
+        uint nav = feed.calcUpdateNAV();
+
+        // due date + 5 days for loan 2
+        uint tokenId = 2;
+        uint loan = 2;
+        uint amount = 50 ether;
+        pile.setReturn("debt_loan", amount);
+        shelf.setReturn("shelf", mockNFTRegistry, tokenId);
+        feed.repay(loan, 30 ether);
+        assertTrue(nav != feed.currentNAV());
     }
 }

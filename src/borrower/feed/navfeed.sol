@@ -300,8 +300,8 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
     }
 
-    function calcDiscount(uint amount, uint normalizedBlockTimestamp, uint maturityDate_) public view returns (uint result) {
-        return rdiv(amount, rpow(discountRate.value, safeSub(maturityDate_, normalizedBlockTimestamp), ONE));
+    function calcDiscount(uint fv, uint normalizedBlockTimestamp, uint maturityDate_) public view returns (uint result) {
+        return rdiv(fv, rpow(discountRate.value, safeSub(maturityDate_, normalizedBlockTimestamp), ONE));
     }
 
     /// calculates the total discount of all buckets with a timestamp > block.timestamp
@@ -319,7 +319,6 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
         uint sum = 0;
         uint currDate = normalizedBlockTimestamp;
-
 
         if (currDate > lastBucket) {
             return 0;
