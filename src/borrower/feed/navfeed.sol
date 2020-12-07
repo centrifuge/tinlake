@@ -260,7 +260,6 @@ contract NAVFeed is BaseNFTFeed, Interest, FixedPoint {
         // repayment on maturity date is fine
         // unique day timestamp is always 00:00 am
         if (maturityDate_ < nnow) {
-            emit log_named_uint("ff", 1);
             return 0;
         }
 
