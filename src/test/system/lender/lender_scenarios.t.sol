@@ -269,14 +269,14 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         // 80 ether token from previous supply/redeem
         assertEq(seniorToken.balanceOf(seniorInvestor_), safeAdd(payoutTokenAmount, 80 ether));
 
-        uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nftFeed.approximatedNAV(), reserve.totalBalance());
-        uint juniorTokenPrice = assessor.calcJuniorTokenPrice(nftFeed.approximatedNAV(), reserve.totalBalance());
+        uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nftFeed.latestNAV(), reserve.totalBalance());
+        uint juniorTokenPrice = assessor.calcJuniorTokenPrice(nftFeed.latestNAV(), reserve.totalBalance());
 
         // ongoing loan has 5 % interest, senior wants 2% interest therefore 3%  left for junior
         // juniorAssetValue increased more than seniorAssetValue therefore higher juniorTokenPrice
         assertTrue(juniorTokenPrice > seniorTokenPrice);
 
-        assertEq(nftFeed.approximatedNAV() + reserve.totalBalance(), rmul(seniorTranche.tokenSupply(),seniorTokenPrice) + rmul(juniorTranche.tokenSupply(),juniorTokenPrice), 10);
+        assertEq(nftFeed.latestNAV() + reserve.totalBalance(), rmul(seniorTranche.tokenSupply(),seniorTokenPrice) + rmul(juniorTranche.tokenSupply(),juniorTokenPrice), 10);
     }
 
     function testLoanRepayments() public {
@@ -312,7 +312,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         repayLoan(address(borrower), loan, loanDebt);
 
         assertEq(reserve.totalBalance(), loanDebt);
-        assertEq(nftFeed.approximatedNAV(), 0);
+        assertEq(nftFeed.latestNAV(), 0);
 
         // max redeem from both
         seniorInvestor.redeemOrder(seniorToken.balanceOf(seniorInvestor_));
@@ -408,7 +408,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         repayLoan(address(borrower), loan, loanDebt);
 
         assertEq(reserve.totalBalance(), loanDebt);
-        assertEq(nftFeed.approximatedNAV(), 0);
+        assertEq(nftFeed.latestNAV(), 0);
 
         // max redeem from both
         seniorInvestor.redeemOrder(seniorToken.balanceOf(seniorInvestor_));
