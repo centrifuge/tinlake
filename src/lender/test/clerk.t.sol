@@ -185,6 +185,10 @@ contract ClerkTest is Math, DSTest {
     function testFullDraw() public {
         uint creditline = 100 ether;
         uint dropPrice = ONE;
+        // set submission period in coordinator to false
+        coordinator.setReturn("submissionPeriod", false);
+        // set validation result in coordinator to 0 -> success
+        coordinator.setIntReturn("validate", 0);
         // increase creditline
         raise(creditline);
         // draw full amount
@@ -194,6 +198,10 @@ contract ClerkTest is Math, DSTest {
     function testMultipleDraw() public {
         uint creditline = 100 ether;
         uint dropPrice = ONE;
+        // set submission period in coordinator to false
+        coordinator.setReturn("submissionPeriod", false);
+        // set validation result in coordinator to 0 -> success
+        coordinator.setIntReturn("validate", 0);
         // increase creditline
         raise(creditline);
         // draw half creditline
@@ -205,6 +213,10 @@ contract ClerkTest is Math, DSTest {
     function testFailDrawAmountTooHigh() public {
         uint creditline = 100 ether;
         uint dropPrice = ONE;
+        // set submission period in coordinator to false
+        coordinator.setReturn("submissionPeriod", false);
+        // set validation result in coordinator to 0 -> success
+        coordinator.setIntReturn("validate", 0);
         // increase creditline
         raise(creditline);
         // fail condition: draw amount 1 above credit line
@@ -214,6 +226,10 @@ contract ClerkTest is Math, DSTest {
     function testFailDrawEpochClosing() public {
         uint creditline = 100 ether;
         uint dropPrice = ONE;
+        // set submission period in coordinator to false
+        coordinator.setReturn("submissionPeriod", false);
+        // set validation result in coordinator to 0 -> success
+        coordinator.setIntReturn("validate", 0);
         // increase creditline
         raise(creditline);
         // fail condition: set submission period in coordinator to true
