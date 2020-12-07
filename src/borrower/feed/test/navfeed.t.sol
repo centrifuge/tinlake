@@ -61,7 +61,7 @@ contract NAVTest is DSTest, Math {
         bytes32 nftID = feed.nftID(mockNFTRegistry, tokenId);
         feed.update(nftID, nftValue, risk);
         shelf.setReturn("shelf",mockNFTRegistry, tokenId);
-        pile.setReturn("debt_loan", 0);
+        pile.setReturn("debt_loan", uint(0));
         pile.setReturn("rates_ratePerSecond", defaultRate);
         return nftID;
     }
@@ -412,7 +412,7 @@ contract NAVTest is DSTest, Math {
     }
 
     function testWriteOffs() public {
-        pile.setReturn("rate_debt", 100 ether);
+        pile.setReturn("rate_debt", uint(100 ether));
         // default is two different write off groups both with 100 ether in debt
         // 60% -> 40% write off
         // 80% -> 20% write off

@@ -192,7 +192,7 @@ contract ShelfTest is DSTest {
     }
 
     function testSetupPrecondition() public {
-        currency.setReturn("balanceOf", 0);
+        currency.setReturn("balanceOf", uint(0));
     }
 
     function testIssue() public {

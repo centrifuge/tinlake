@@ -57,6 +57,7 @@ contract ClerkTest is Math, DSTest {
     function setUp() public {
         currency = new SimpleToken("DAI", "DAI");
         collateral = new SimpleToken("DROP", "DROP");
+        
         reserve = new ReserveMock(address(currency));
         assessor = new AssessorMock();
         coordinator = new CoordinatorMock();
@@ -65,13 +66,14 @@ contract ClerkTest is Math, DSTest {
         mgr = new ManagerMock();
         vat = new VatMock();
         spotter = new SpotterMock();
+
         clerk = new Clerk(address(currency), address(collateral), address(mgr), address(spotter), address(vat));
         clerk.depend("coordinator", address(coordinator));
         clerk.depend("assessor", address(assessor));
         clerk.depend("nav", address(nav));
         clerk.depend("reserve", address(reserve));
         clerk.depend("tranche", address(tranche));
-        
+
         self = address(this);
       
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
@@ -79,7 +81,89 @@ contract ClerkTest is Math, DSTest {
     }
 
     function testRaise() public {
+        bytes32 ilkId = "DROP";
+        uint creditIncrease = 100 ether;
+        // extra mkr protection ratio = 110 %
+        uint mat = rdiv(rmul(110, ONE), 100);
+
+        // set mkr debt to 0
+        mgr.setReturn("tab", 0);
+        // set submission period in coordinator to false
+        coordinator.setReturn("submissionPeriod", false);
+        // set validation result in coordinator to 0 -> success
+        coordinator.setIntReturn("validate", 0);
+        // set mat value in spotter 
+        spotter.setReturn("pip", address(0));
+        spotter.setReturn("mat", mat);
+        // set ilkId in mgr
+        mgr.setBytes32Return("ilk", ilkId);
+
+        // raise creditLine
+        clerk.raise(creditIncrease);
+
+        // assert creditLine was increased
+        assertEq(clerk.creditline(), creditIncrease);
+        // assert remainingCreditLine was also increased
+        assertEq(clerk.remainingCredit(), creditIncrease);
+        uint overcollAmount = clerk.calcOvercollAmount(creditIncrease);
+        // assert that the overcollateralized amountDAI is correct
+        assertEq(overcollAmount, 110 ether);
+         // assert that creditProtection amount is correct
+        uint creditProtection = safeSub(overcollAmount, creditIncrease);
+        assertEq(creditProtection, 10 ether);
+
+        // check call count coordinator & function arguments
+        assertEq(coordinator.calls("validate"), 1);
+        assertEq(coordinator.values_uint("seniorSupply"), overcollAmount);
+        assertEq(coordinator.values_uint("juniorRedeem"), creditProtection);
+         // check validation was called with correct values 
+        assertEq(coordinator.calls("submissionPeriod"), 1);    
     }
+
+    function testFailRaiseEpochClosing() public {
+        bytes32 ilkId = "DROP";
+        uint creditIncrease = 100 ether;
+        // extra mkr protection ratio = 110 %
+        uint mat = rdiv(rmul(110, ONE), 100);
+
+        // set mkr debt to 0
+        mgr.setReturn("tab", 0);
+        // fail condition: set submission period in coordinator to true
+        coordinator.setReturn("submissionPeriod", true);
+        // set validation result in coordinator to 0 -> success
+        coordinator.setIntReturn("validate", 0);
+        // set mat value in spotter 
+        spotter.setReturn("pip", address(0));
+        spotter.setReturn("mat", mat);
+        // set ilkId in mgr
+        mgr.setBytes32Return("ilk", ilkId);
+
+        // raise creditLine
+        clerk.raise(creditIncrease);
+    }
+
+    function testFailPoolConstraintsBroken() public {  
+                bytes32 ilkId = "DROP";
+        uint creditIncrease = 100 ether;
+        // extra mkr protection ratio = 110 %
+        uint mat = rdiv(rmul(110, ONE), 100);
+
+        // set mkr debt to 0
+        mgr.setReturn("tab", 0);
+        // fail condition: set submission period in coordinator to true
+        coordinator.setReturn("submissionPeriod", true);
+        // set validation result in coordinator to 0 -> success
+        coordinator.setIntReturn("validate", -1);
+        // set mat value in spotter 
+        spotter.setReturn("pip", address(0));
+        spotter.setReturn("mat", mat);
+        // set ilkId in mgr
+        mgr.setBytes32Return("ilk", ilkId);
+
+        // raise creditLine
+        clerk.raise(creditIncrease);  
+    }
+
     function testDraw() public {
     }
     function testWipe() public {

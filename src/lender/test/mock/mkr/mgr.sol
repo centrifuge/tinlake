@@ -20,4 +20,8 @@ contract ManagerMock is Mock {
     function cdptab() public view returns (uint) {
         return values_return["tab"];
     }
+
+    function ilk() public view returns (bytes32) {
+        return values_bytes32_return["ilk"];
+    }
 }

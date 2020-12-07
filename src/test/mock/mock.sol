@@ -14,8 +14,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pragma solidity >=0.5.15 <0.6.0;
+import "ds-test/test.sol";
 
-contract Mock {
+contract Mock is DSTest {
     // counting calls
     mapping (bytes32 => uint) public calls;
 
@@ -23,6 +24,8 @@ contract Mock {
     mapping (bytes32 => uint) public values_return;
     mapping (bytes32 => address) public values_address_return;
     mapping (bytes32 => bool) public values_bool_return;
+    mapping (bytes32 => int) public values_int_return;
+    mapping (bytes32 => bytes32) public values_bytes32_return;
 
     // passed parameter
     mapping (bytes32 => uint) public values_uint;
@@ -45,6 +48,14 @@ contract Mock {
 
     function setReturn(bytes32 name, bool returnValue) public {
         values_bool_return[name] = returnValue;
+    }
+
+    function setBytes32Return(bytes32 name, bytes32 returnValue) public {
+        values_bytes32_return[name] = returnValue;
+    }
+
+    function setIntReturn(bytes32 name, int returnValue) public {
+        values_int_return[name] = returnValue;
     }
 
     function setReturn(bytes32 name, bool flag, uint value) public {

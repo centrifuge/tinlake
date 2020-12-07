@@ -161,7 +161,7 @@ contract NFTFeedTest is DSTest, Math {
         uint value = 100 ether;
         shelf.setReturn("shelf", address(1), 1);
         shelf.setReturn("nftlookup", loan);
-        pile.setReturn("pie", 100);
+        pile.setReturn("pie", uint(100));
 
         // set value and risk group of nft
         nftFeed.update(nftID, value, risk);
@@ -202,7 +202,7 @@ contract NFTFeedTest is DSTest, Math {
 
         uint loan = 1;
         shelf.setReturn("shelf",address(1), 1);
-        pile.setReturn("loanRates", 1);
+        pile.setReturn("loanRates", uint(1));
 
         nftFeed.update(nftID, value, risk);
         nftFeed.borrowEvent(loan);

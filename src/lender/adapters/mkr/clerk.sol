@@ -2,6 +2,7 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
+import "ds-test/test.sol";
 
 interface ManagerLike {
     // collateral debt 
@@ -39,7 +40,7 @@ interface NAVFeedLike {
 }
 
 interface CoordinatorLike {
-    function validate(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) external view returns(int);
+    function validate(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) external returns(int);
     function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply, uint currSeniorAsset, uint reserve_, uint nav_) external pure returns(uint);
     function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) external pure returns(uint);
     function submissionPeriod() external returns(bool);
@@ -63,7 +64,7 @@ interface ERC20Like {
     function approve(address usr, uint amount) external;
 }
   
-contract Clerk is Auth, Math {
+contract Clerk is Auth, Math, DSTest{
    
     // max amount of DAI that can be brawn from MKR
     uint public creditline;
@@ -84,7 +85,7 @@ contract Clerk is Auth, Math {
     ERC20Like collateral;
 
     // adapter functions can only be active if the tinlake pool is currently not in epoch closing/submissions/execution state
-    modifier active() { (coordinator.submissionPeriod() == false); _; }
+    modifier active() { require((coordinator.submissionPeriod() == false), "epoch-closing"); _; }
 
     constructor(address dai_, address collateral_, address mgr_, address spotter_, address vat_) public {
         dai =  ERC20Like(dai_);
@@ -129,13 +130,11 @@ contract Clerk is Auth, Math {
     // increase MKR credit line 
     function raise(uint amountDAI) public auth active {
         // creditline amount including required overcollateralization => amount by that the seniorAssetValue should be increased
-        uint overcollAmountDAI = rmul(amountDAI, mat());
+        uint overcollAmountDAI =  calcOvercollAmount(amountDAI);
         // protection value for the creditline increase coming from the junior tranche => amount by that the juniorAssetValue should be decreased
         uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);
-        
         // check if the new creditline would break the pool constraints
         validate(0, protectionDAI, overcollAmountDAI, 0);
-    
         // increase MKR crediline by amount
         creditline = safeAdd(creditline, amountDAI);
     }
@@ -145,7 +144,7 @@ contract Clerk is Auth, Math {
         require(amountDAI <= remainingCredit(), "not enough credit left");
 
         // collateral value that needs to be locked in vault to draw amountDAI
-        uint collateralDAI = rmul(amountDAI, mat());
+        uint collateralDAI = calcOvercollAmount(amountDAI);
         uint collateralDROP = rdiv(collateralDAI, assessor.calcSeniorTokenPrice());
         
         // mint required DROP
@@ -185,7 +184,7 @@ contract Clerk is Auth, Math {
         uint dropPrice = assessor.calcSeniorTokenPrice();
         uint lockedCollateralDAI = rmul(cdpink(), dropPrice);
         // profit => diff between the DAI value of the locked collateral in the cdp & the actual cdp debt including protection buffer
-        uint profitDAI = safeSub(lockedCollateralDAI, rmul(mgr.cdptab(), mat()));
+        uint profitDAI = safeSub(lockedCollateralDAI, calcOvercollAmount(mgr.cdptab()));
         uint profitDROP = rdiv(profitDAI, dropPrice);
         // remove profitDROP from the vault & brun them
         mgr.exit(address(this), profitDROP);
@@ -199,7 +198,7 @@ contract Clerk is Auth, Math {
         require(remainingCredit() >= amountDAI, "decrease amount too high");
 
         // creditline amount including required overcollateralization => amount by that the seniorAssetValue should be decreased
-        uint overcollAmountDAI = rmul(amountDAI, mat());
+        uint overcollAmountDAI = calcOvercollAmount(amountDAI);
         // protection value for the creditline decrease going to the junior tranche => amount by that the juniorAssetValue should be increased
         uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);    
         // check if the new creditline would break the pool constraints
@@ -209,8 +208,8 @@ contract Clerk is Auth, Math {
     }
 
     // checks if the Maker credit line increase could violate the pool constraints // -> make function pure and call with current pool values approxNav
-    function validate(uint juniorSupply, uint juniorRedeemDAI, uint seniorSupplyDAI, uint seniorRedeem) internal {
-        require((coordinator.validate(juniorSupply, juniorRedeemDAI, seniorSupplyDAI, seniorRedeem) == 0), "supply not possible, pool constraints violated");
+    function validate(uint juniorSupplyDAI, uint juniorRedeemDAI, uint seniorSupplyDAI, uint seniorRedeemDAI) internal {
+        require((coordinator.validate(juniorSupplyDAI, juniorRedeemDAI, seniorSupplyDAI, seniorRedeemDAI) == 0), "supply not possible, pool constraints violated");
     }
     
     function decreaseSeniorAsset(uint amountDAI) internal  {
@@ -231,5 +230,10 @@ contract Clerk is Auth, Math {
     function mat() public returns (uint) {
         (, uint256 mat) = spotter.ilks(mgr.ilk());
         return mat; //  e.g 150% denominated in RAY
+    }
+
+    // helper function that returns the overcollateralized DAI amount considering the current mat value
+    function calcOvercollAmount(uint amountDAI) public returns (uint) {
+        return rmul(amountDAI, mat());
     }
 }
