@@ -22,8 +22,15 @@ contract TrancheMock is Mock, Auth  {
     uint epochTotalSupply;
     uint epochTotalRedeem;
 
+    SimpleTokenLike public token;
+
     constructor() public {
         wards[msg.sender] = 1;
+    }
+
+    function depend(bytes32 contractName, address addr) public auth {
+        if (contractName == "token") {token = SimpleTokenLike(addr);}
+        else revert();
     }
 
     function setEpochReturn(uint totalSupply_, uint totalRedeem_) public {
@@ -72,6 +79,12 @@ contract TrancheMock is Mock, Auth  {
 
     function tokenSupply() external view returns(uint) {
         return values_return["tokenSupply"];
+    }
+
+    // additional minting of tokens produces a dilution of all token holders
+    // interface is required for adapters
+    function mint(address usr, uint amount) public auth {
+        token.mint(usr, amount);
     }
 }
 

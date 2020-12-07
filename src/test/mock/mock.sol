@@ -15,8 +15,18 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 import "ds-test/test.sol";
+import "tinlake-math/math.sol";
 
-contract Mock is DSTest {
+interface SimpleTokenLike {
+    function balanceOf(address) external view returns (uint);
+    function transferFrom(address, address, uint) external returns (bool);
+    function mint(address, uint) external;
+    function burn(address, uint) external;
+    function totalSupply() external view returns (uint);
+    function approve(address usr, uint amount) external;
+}
+
+contract Mock is DSTest, Math {
     // counting calls
     mapping (bytes32 => uint) public calls;
 

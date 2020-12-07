@@ -28,7 +28,7 @@ interface SpotterLike {
 }
 
 interface AssessorLike {
-    function calcSeniorTokenPrice() external view returns(uint);
+    function calcSeniorTokenPrice() external returns(uint);
     function calcSeniorAssetValue(uint seniorDebt, uint seniorBalance) external pure returns(uint);
     function changeSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
     function seniorDebt() external returns(uint);
@@ -142,11 +142,9 @@ contract Clerk is Auth, Math, DSTest{
     // mint DROP, join DROP into cdp, draw DAI and send to reserve
     function draw(uint amountDAI) public auth active {
         require(amountDAI <= remainingCredit(), "not enough credit left");
-
         // collateral value that needs to be locked in vault to draw amountDAI
         uint collateralDAI = calcOvercollAmount(amountDAI);
         uint collateralDROP = rdiv(collateralDAI, assessor.calcSeniorTokenPrice());
-        
         // mint required DROP
         tranche.mint(address(this), collateralDROP);
         // join collateral into the cdp
@@ -157,6 +155,7 @@ contract Clerk is Auth, Math, DSTest{
         // move dai to reserve
         dai.approve(address(reserve), amountDAI);
         reserve.deposit(amountDAI);
+        emit log_named_uint("deposit",collateralDROP);
     }
 
     // transfer DAI from reserve, wipe cdp debt, exit DROP from cdp, burn DROP, harvest junior profit
