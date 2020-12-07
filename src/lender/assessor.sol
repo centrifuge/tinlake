@@ -20,7 +20,7 @@ import "tinlake-math/interest.sol";
 
 interface NAVFeedLike {
     function calcUpdateNAV() external returns (uint);
-    function approximatedNAV() external view returns (uint);
+    function latestNAV() external view returns (uint);
     function currentNAV() external view returns(uint);
 }
 
@@ -98,7 +98,7 @@ contract Assessor is Auth, FixedPoint, Interest {
         // re-balancing according to new ratio
         // we use the approximated NAV here because during the submission period
         // new loans might have been repaid in the meanwhile which are not considered in the epochNAV
-        seniorDebt_ = rmul(navFeed.approximatedNAV(), seniorRatio_);
+        seniorDebt_ = rmul(navFeed.latestNAV(), seniorRatio_);
         if(seniorDebt_ > seniorAsset_) {
             seniorDebt_ = seniorAsset_;
             seniorBalance_ = 0;
