@@ -28,6 +28,7 @@ interface EpochTrancheLike {
 interface ReserveLike {
     function file(bytes32 what, uint currencyAmount) external;
     function totalBalance() external returns (uint);
+    function balance() external;
 }
 
 contract AssessorLike is FixedPoint {
@@ -170,6 +171,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         require(submissionPeriod == false);
         lastEpochClosed = block.timestamp;
         currentEpoch = currentEpoch + 1;
+        reserve.balance();
 
         reserve.file("currencyAvailable", 0);
 
