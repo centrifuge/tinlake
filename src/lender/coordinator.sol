@@ -486,12 +486,19 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
     /// returns: first constraint which is not satisfied or success
     function validate(uint seniorRedeem, uint juniorRedeem,
         uint seniorSupply, uint juniorSupply) public view returns (int) {
+        return validate(epochReserve, epochNAV, epochSeniorAsset,
+            OrderSummary({seniorRedeem: seniorRedeem,
+                juniorRedeem:juniorRedeem,
+                seniorSupply: seniorSupply,
+                juniorSupply: juniorSupply}));
+    }
 
-        uint currencyAvailable = safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply);
-        uint currencyOut = safeAdd(seniorRedeem, juniorRedeem);
+    function validate(uint reserve, uint nav, uint seniorAsset, OrderSummary memory trans) view public returns (int) {
+        uint currencyAvailable = safeAdd(safeAdd(reserve, trans.seniorSupply), trans.juniorSupply);
+        uint currencyOut = safeAdd(trans.seniorRedeem, trans.juniorRedeem);
 
-        int err = validateCoreConstraints(currencyAvailable, currencyOut, seniorRedeem,
-            juniorRedeem, seniorSupply, juniorSupply);
+        int err = validateCoreConstraints(currencyAvailable, currencyOut, trans.seniorRedeem,
+            trans.juniorRedeem, trans.seniorSupply, trans.juniorSupply);
 
         if(err != SUCCESS) {
             return err;
@@ -499,14 +506,14 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
         uint newReserve = safeSub(currencyAvailable, currencyOut);
         if(poolClosing == true) {
-            if(seniorSupply == 0 && juniorSupply == 0) {
+            if(trans.seniorSupply == 0 && trans.juniorSupply == 0) {
                 return SUCCESS;
             }
             return ERR_POOL_CLOSING;
 
         }
-        return validatePoolConstraints(newReserve, calcSeniorAssetValue(seniorRedeem, seniorSupply,
-            epochSeniorAsset, newReserve, epochNAV), epochNAV);
+        return validatePoolConstraints(newReserve, calcSeniorAssetValue(trans.seniorRedeem, trans.seniorSupply,
+            seniorAsset, newReserve, nav), nav);
     }
 
     /// public method to execute an epoch which required a submission period and the challenge period is over
