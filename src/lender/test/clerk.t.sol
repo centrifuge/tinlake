@@ -196,8 +196,6 @@ contract ClerkTest is Math, DSTest {
         clerk.harvest();
         // assert collateral amount in cdp correct
         uint collLockedExpected = rdiv(rmul(mgr.cdptab(), mat), dropPrice);
-        emit log_named_uint("drop balance", collateral.balanceOf(address(mgr)));
-        emit log_named_uint("drop balance expected ", collLockedExpected);
         assertEq(collateral.balanceOf(address(mgr)), collLockedExpected);
         // assert correct amount of collateral burned
         uint collBurnedExpected = safeSub(collLockedInit, collLockedExpected);
@@ -245,7 +243,7 @@ contract ClerkTest is Math, DSTest {
         raise(amountDAI);   
     }
 
-    function testFailPoolConstraintsBroken() public {  
+    function testFailRaisePoolConstraintsBroken() public {  
        // set submission period in coordinator to false
         coordinator.setReturn("submissionPeriod", false);
         // set validation result in coordinator to -1 -> failure
@@ -255,73 +253,38 @@ contract ClerkTest is Math, DSTest {
     }
 
     function testFullDraw() public {
-        uint creditline = 100 ether;
+        testRaise();
         uint dropPrice = ONE;
-        // set submission period in coordinator to false
-        coordinator.setReturn("submissionPeriod", false);
-        // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validate", 0);
-        // increase creditline
-        raise(creditline);
-        // draw full amount
-        draw(creditline, dropPrice);
+        draw(clerk.creditline(), dropPrice);
     }
 
     function testPartialDraw() public {
-        uint creditline = 100 ether;
+        testRaise();
         uint dropPrice = ONE;
-        // set submission period in coordinator to false
-        coordinator.setReturn("submissionPeriod", false);
-        // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validate", 0);
-        // increase creditline
-        raise(creditline);
         // draw half creditline
-        draw(safeDiv(creditline, 2), dropPrice);
-        // draw another half creditline
-        draw(safeDiv(creditline, 2), dropPrice);
+        draw(safeDiv(clerk.creditline(), 2), dropPrice);
+        // draw another half clerk.creditline()
+        draw(safeDiv(clerk.creditline(), 2), dropPrice);
     }
 
     function testFailDrawAmountTooHigh() public {
-        uint creditline = 100 ether;
+        testRaise();
         uint dropPrice = ONE;
-        // set submission period in coordinator to false
-        coordinator.setReturn("submissionPeriod", false);
-        // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validate", 0);
-        // increase creditline
-        raise(creditline);
         // fail condition: draw amount 1 above credit line
-        draw(safeAdd(creditline, 1), dropPrice);
+        draw(safeAdd(clerk.creditline(), 1), dropPrice);
     }
 
     function testFailDrawEpochClosing() public {
-        uint creditline = 100 ether;
+        testRaise();
         uint dropPrice = ONE;
-        // set submission period in coordinator to false
-        coordinator.setReturn("submissionPeriod", false);
-        // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validate", 0);
-        // increase creditline
-        raise(creditline);
         // fail condition: set submission period in coordinator to true
         coordinator.setReturn("submissionPeriod", true);
         // draw full amount
-        draw(creditline, dropPrice);
+        draw(clerk.creditline(), dropPrice);
     }
 
     function testFullWipe() public {
-        uint creditline = 100 ether;
-        uint dropPrice = ONE;
-        // set submission period in coordinator to false
-        coordinator.setReturn("submissionPeriod", false);
-        // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validate", 0);
-        // increase creditline
-        raise(creditline);
-        // draw full amount
-        draw(creditline, dropPrice);
-        
+        testFullDraw()
         // increase dropPrice
         dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
@@ -336,17 +299,7 @@ contract ClerkTest is Math, DSTest {
     }
 
     function testPartialWipe() public {
-        uint creditline = 100 ether;
-        uint dropPrice = ONE;
-        // set submission period in coordinator to false
-        coordinator.setReturn("submissionPeriod", false);
-        // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validate", 0);
-        // increase creditline
-        raise(creditline);
-        // draw full amount
-        draw(creditline, dropPrice);
-        
+        testFullDraw()
         // increase dropPrice
         dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
@@ -364,17 +317,7 @@ contract ClerkTest is Math, DSTest {
 
     // can not wipe more then total mkr debt
     function testWipeMaxDebt() public {
-        uint creditline = 100 ether;
-        uint dropPrice = ONE;
-        // set submission period in coordinator to false
-        coordinator.setReturn("submissionPeriod", false);
-        // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validate", 0);
-        // increase creditline
-        raise(creditline);
-        // draw full amount
-        draw(creditline, dropPrice);
-        
+        testFullDraw()
         // increase dropPrice
         dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
@@ -396,17 +339,9 @@ contract ClerkTest is Math, DSTest {
     }
 
     function testFailWipeEpochClosing() public {
-        uint creditline = 100 ether;
-        uint dropPrice = ONE;
+        testFullDraw()
         // fail condiion: tset submission period in coordinator to true
         coordinator.setReturn("submissionPeriod", true);
-        // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validate", 0);
-        // increase creditline
-        raise(creditline);
-        // draw full amount
-        draw(creditline, dropPrice);
-        
         // increase dropPrice
         dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
@@ -421,17 +356,7 @@ contract ClerkTest is Math, DSTest {
     }
 
     function testFailWipeNoFundsInReserve() public {
-        uint creditline = 100 ether;
-        uint dropPrice = ONE;
-        // set submission period in coordinator to false
-        coordinator.setReturn("submissionPeriod", false);
-        // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validate", 0);
-        // increase creditline
-        raise(creditline);
-        // draw full amount
-        draw(creditline, dropPrice);
-
+        testFullDraw()
         // increase dropPrice
         dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
@@ -446,22 +371,11 @@ contract ClerkTest is Math, DSTest {
     }
 
     function testHarvest() public {
-        uint creditline = 100 ether;
-        uint dropPrice = ONE;
-        // set submission period in coordinator to false
-        coordinator.setReturn("submissionPeriod", false);
-        // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validate", 0);
-        // increase creditline
-        raise(creditline);
-        // draw full amount
-        draw(creditline, dropPrice);
-        
+        testFullDraw()
         // increase dropPrice
         dropPrice = safeMul(2, ONE);
         // assessor: set DROP token price
         assessor.setReturn("calcSeniorTokenPrice", dropPrice);
-
         // increase maker debt by 10 DAI
         mgr.increaseTab(10 ether);
         // make sure maker debt is set correclty
@@ -469,8 +383,29 @@ contract ClerkTest is Math, DSTest {
         assertEq(tab, 110 ether);
         // harvest junior profit
         // 110 DROP locked -> 220 DAI 
-        // 220 DAI - 110 DAI (tab) => 110 DAI junior profit
+        // 220 DAI - 110 DAI (tab) - 11 (tab protectiom) => 99 DAI junior profit
         harvest(dropPrice);
+
+    }
+
+    function testFailHarvestEpochActive() public {
+        testFullDraw()
+        // fail condition: set submission period in coordinator to true
+        coordinator.setReturn("submissionPeriod", true);
+        // increase dropPrice
+        dropPrice = safeMul(2, ONE);
+        // assessor: set DROP token price
+        assessor.setReturn("calcSeniorTokenPrice", dropPrice);
+        // increase maker debt by 10 DAI
+        mgr.increaseTab(10 ether);
+        // make sure maker debt is set correclty
+        uint tab = mgr.cdptab();
+        assertEq(tab, 110 ether);
+        // harvest junior profit
+        // 110 DROP locked -> 220 DAI 
+        // 220 DAI - 110 DAI (tab) - 11 (tab protectiom) => 99 DAI junior profit
+        harvest(dropPrice);
+        
     }
 
     function testFullSink() public {}
