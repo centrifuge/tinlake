@@ -153,8 +153,8 @@ contract ClerkTest is Math, DSTest {
         clerk.wipe(amountDAI);
 
         // assert that the amount repaid is never higher than the actual debt
-        if (amountDAI > mgr.cdptab()) {
-            amountDAI = mgr.cdptab();
+        if (amountDAI > tabInit) {
+            amountDAI = tabInit;
         }
         // assert DAI were transferred from reserve to mgr
         assertEq(currency.balanceOf(address(mgr)), safeAdd(mgrDAIBalanceInit, amountDAI));
@@ -165,7 +165,7 @@ contract ClerkTest is Math, DSTest {
         // remainingCredit can be maximum increased up to creditline value. 
         // Mkr debt can grow bigger then creditline with accrued interest. When repaying mkr debt, make sure that remaining credit never exceeds creditline.
         uint remainingCreditExpected;
-        if (mgr.cdptab() >= clerk.creditline()) {
+        if (mgr.cdptab() > clerk.creditline()) {
             remainingCreditExpected = 0;
         } else {
             remainingCreditExpected = safeSub(clerk.creditline(), mgr.cdptab());
@@ -284,9 +284,9 @@ contract ClerkTest is Math, DSTest {
     }
 
     function testFullWipe() public {
-        testFullDraw()
+        testFullDraw();
         // increase dropPrice
-        dropPrice = safeMul(2, ONE);
+        uint dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
         mgr.increaseTab(10 ether);
         // make sure maker debt is set correclty
@@ -294,14 +294,14 @@ contract ClerkTest is Math, DSTest {
         assertEq(tab, 110 ether);
         // make sure reserve has enough DAI
         currency.mint(address(reserve), tab);
-        // reoay full debt
+        // repay full debt
         wipe(tab, dropPrice);
     }
 
     function testPartialWipe() public {
-        testFullDraw()
+        testFullDraw();
         // increase dropPrice
-        dropPrice = safeMul(2, ONE);
+        uint dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
         mgr.increaseTab(10 ether);
         // make sure maker debt is set correclty
@@ -317,9 +317,9 @@ contract ClerkTest is Math, DSTest {
 
     // can not wipe more then total mkr debt
     function testWipeMaxDebt() public {
-        testFullDraw()
+        testFullDraw();
         // increase dropPrice
-        dropPrice = safeMul(2, ONE);
+        uint dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
         mgr.increaseTab(10 ether);
         // make sure maker debt is set correclty
@@ -327,7 +327,7 @@ contract ClerkTest is Math, DSTest {
         assertEq(tab, 110 ether);
         // make sure reserve has enough DAI
         currency.mint(address(reserve), tab);
-        // reoay full debt
+        // repay full debt
         wipe(rmul(tab, 2), dropPrice);
     }
 
@@ -339,11 +339,11 @@ contract ClerkTest is Math, DSTest {
     }
 
     function testFailWipeEpochClosing() public {
-        testFullDraw()
+        testFullDraw();
         // fail condiion: tset submission period in coordinator to true
         coordinator.setReturn("submissionPeriod", true);
         // increase dropPrice
-        dropPrice = safeMul(2, ONE);
+        uint dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
         mgr.increaseTab(10 ether);
         // make sure maker debt is set correclty
@@ -351,29 +351,28 @@ contract ClerkTest is Math, DSTest {
         assertEq(tab, 110 ether);
         // make sure reserve has enough DAI
         currency.mint(address(reserve), tab);
-        // reoay full debt
+        // repay full debt
         wipe(tab, dropPrice);  
     }
 
     function testFailWipeNoFundsInReserve() public {
-        testFullDraw()
+        testFullDraw();
         // increase dropPrice
-        dropPrice = safeMul(2, ONE);
+        uint dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
         mgr.increaseTab(10 ether);
         // make sure maker debt is set correclty
         uint tab = mgr.cdptab();
         assertEq(tab, 110 ether);
-        // fail conditon: not enough DAI in reserve
-        currency.mint(address(reserve), tab);
-        // reoay full debt
+        // fail conditon: not enough DAI in reserve (only 100 DAI that were drawn before) 
+        // repay full debt
         wipe(tab, dropPrice);
     }
 
     function testHarvest() public {
-        testFullDraw()
+        testFullDraw();
         // increase dropPrice
-        dropPrice = safeMul(2, ONE);
+        uint dropPrice = safeMul(2, ONE);
         // assessor: set DROP token price
         assessor.setReturn("calcSeniorTokenPrice", dropPrice);
         // increase maker debt by 10 DAI
@@ -389,11 +388,11 @@ contract ClerkTest is Math, DSTest {
     }
 
     function testFailHarvestEpochActive() public {
-        testFullDraw()
+        testFullDraw();
         // fail condition: set submission period in coordinator to true
         coordinator.setReturn("submissionPeriod", true);
         // increase dropPrice
-        dropPrice = safeMul(2, ONE);
+        uint dropPrice = safeMul(2, ONE);
         // assessor: set DROP token price
         assessor.setReturn("calcSeniorTokenPrice", dropPrice);
         // increase maker debt by 10 DAI
@@ -401,6 +400,19 @@ contract ClerkTest is Math, DSTest {
         // make sure maker debt is set correclty
         uint tab = mgr.cdptab();
         assertEq(tab, 110 ether);
+        // harvest junior profit
+        // 110 DROP locked -> 220 DAI 
+        // 220 DAI - 110 DAI (tab) - 11 (tab protectiom) => 99 DAI junior profit
+        harvest(dropPrice);
+        
+    }
+
+    function testFailHarvestNoCollateralLocked() public {
+        testRaise();
+        // increase dropPrice
+        uint dropPrice = safeMul(2, ONE);
+        // assessor: set DROP token price
+        assessor.setReturn("calcSeniorTokenPrice", dropPrice);
         // harvest junior profit
         // 110 DROP locked -> 220 DAI 
         // 220 DAI - 110 DAI (tab) - 11 (tab protectiom) => 99 DAI junior profit
