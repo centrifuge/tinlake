@@ -81,8 +81,6 @@ contract TrancheMock is Mock, Auth  {
         return values_return["tokenSupply"];
     }
 
-    // additional minting of tokens produces a dilution of all token holders
-    // interface is required for adapters
     function mint(address usr, uint amount) public auth {
         token.mint(usr, amount);
     }
