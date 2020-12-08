@@ -18,6 +18,10 @@ import "../../../../test/mock/mock.sol";
 
 contract VatMock is Mock {
     function urns(bytes32, address) external returns (uint, uint) {
-        return (values_return["ink"], values_return["art"]);
+        return (values_return["ink"], 0);
+    }
+
+    function setInk(uint amountDROP) external {
+        values_return["ink"] = amountDROP;
     }
 }

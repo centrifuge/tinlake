@@ -24,4 +24,8 @@ contract NAVFeedMock is Mock {
     function calcUpdateNAV() public returns (uint) {
         return call("calcUpdateNAV");
     }
+
+    function currentNAV() public returns (uint) {
+        return values_return["currentNAV"];
+    }
 }

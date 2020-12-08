@@ -16,17 +16,25 @@ pragma solidity >=0.5.15 <0.6.0;
 import "../../../test/mock/mock.sol";
 
 contract CoordinatorMock is Mock {
-    function submissionPeriod() public returns (bool) {
+    function submissionPeriod() public returns(bool) {
         calls["submissionPeriod"]++;
         return values_bool_return["submissionPeriod"];
     }
 
-    function validate(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) public returns (int) {
+    function validate(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) public returns(int) {
         values_uint["seniorRedeem"] = seniorRedeem;
         values_uint["juniorRedeem"] = juniorRedeem;
         values_uint["seniorSupply"] = seniorSupply;
         values_uint["juniorSupply"] = juniorSupply;
         calls["validate"]++;
         return values_int_return["validate"];
+    }
+
+    function calcSeniorAssetValue(uint, uint, uint, uint, uint) public returns(uint) {
+        return values_return["calcSeniorAssetValue"];
+    }
+
+    function calcSeniorRatio(uint, uint, uint) public returns(uint) {
+        return values_return["calcSeniorRatio"];
     }
 }

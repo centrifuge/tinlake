@@ -37,29 +37,26 @@ contract ManagerMock is Mock {
     function join(uint amountDROP) external {
         // mimic cdp behav and transfer DROP from clerk to mgr
         collateral.transferFrom(msg.sender, address(this), amountDROP);
-        values_uint["join"] = amountDROP;
-        calls["join"]++;
     }
 
     function draw(uint amountDAI, address usr) external  {
-        values_uint["tab"] = safeAdd(values_uint["tab"], amountDAI);
         // mimic cdp behav and mint DAI to clerk
-        currency.mint(msg.sender, amountDAI);
-        values_uint["draw"] = amountDAI;
-        values_uint["draw"] = amountDAI;
-        values_address["draw"] = usr;
-        calls["draw"]++;
+        currency.mint(usr, amountDAI);
+        values_uint["tab"] = safeAdd(values_uint["tab"], amountDAI);
     }
    
     function wipe(uint amountDAI) external {
-        values_uint["wipe"] = amountDAI;
-        calls["wipe"]++;
+        // mimic cdp behav: move DAI from clerk to mgr
+        currency.transferFrom(msg.sender, address(this), amountDAI);
+        values_uint["tab"] = safeSub(values_uint["tab"], amountDAI);
     }
 
     function exit(address usr, uint amountDROP) external {
-       values_uint["exit"] = amountDROP;
-       values_address["exit"] = usr;
-       calls["exit"]++;
+       collateral.transferFrom(address(this), usr, amountDROP);
+    }
+
+    function increaseTab(uint amountDAI) external {
+        values_uint["tab"] = safeAdd(values_uint["tab"], amountDAI);
     }
 
 }

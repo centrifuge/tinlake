@@ -29,7 +29,7 @@ interface SpotterLike {
 
 interface AssessorLike {
     function calcSeniorTokenPrice() external returns(uint);
-    function calcSeniorAssetValue(uint seniorDebt, uint seniorBalance) external pure returns(uint);
+    function calcSeniorAssetValue(uint seniorDebt, uint seniorBalance) external returns(uint);
     function changeSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
@@ -41,13 +41,13 @@ interface NAVFeedLike {
 
 interface CoordinatorLike {
     function validate(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) external returns(int);
-    function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply, uint currSeniorAsset, uint reserve_, uint nav_) external pure returns(uint);
-    function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) external pure returns(uint);
+    function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply, uint currSeniorAsset, uint reserve_, uint nav_) external returns(uint);
+    function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) external returns(uint);
     function submissionPeriod() external returns(bool);
 }
 
 interface ReserveLike {
-    function totalBalance() external view returns(uint);
+    function totalBalance() external returns(uint);
     function deposit(uint daiAmount) external;
     function payout(uint currencyAmount) external;
 }
@@ -155,7 +155,6 @@ contract Clerk is Auth, Math, DSTest{
         // move dai to reserve
         dai.approve(address(reserve), amountDAI);
         reserve.deposit(amountDAI);
-        emit log_named_uint("deposit",collateralDROP);
     }
 
     // transfer DAI from reserve, wipe cdp debt, exit DROP from cdp, burn DROP, harvest junior profit

@@ -105,7 +105,7 @@ contract ClerkTest is Math, DSTest {
         assertEq(clerk.creditline(), safeAdd(creditlineInit, amountDAI));
         // assert remainingCreditLine was also increased
         assertEq(clerk.remainingCredit(), safeAdd(remainingCreditInit, amountDAI));
-        // check call count coordinator & function arguments
+        // assert call count coordinator & function arguments
         assertEq(coordinator.calls("validate"), safeAdd(validateCallsInit, 1));
         assertEq(coordinator.calls("submissionPeriod"), safeAdd(submissionPeriodCallsInit, 1));    
         assertEq(coordinator.values_uint("seniorSupply"), overcollAmount);
@@ -121,7 +121,7 @@ contract ClerkTest is Math, DSTest {
         uint protectionAmount = safeSub(overcollAmountDAI, amountDAI);
          // collateral that is required to draw the DAI from the vault -> including mkr extra protection margin
         uint requiredCollateral = rdiv(overcollAmountDAI, dropPrice);
-        // assessor: set DROP token price to
+        // assessor: set DROP token price
         assessor.setReturn("calcSeniorTokenPrice", dropPrice);
        
         clerk.draw(amountDAI);
@@ -130,10 +130,61 @@ contract ClerkTest is Math, DSTest {
         assertEq(clerk.remainingCredit(), safeSub(remainingCreditInit, amountDAI));
         // make sure reserve DAI balance increased by drawAmount
         assertEq(currency.balanceOf(address(reserve)), safeAdd(reserveDAIBalanceInit, amountDAI));
-        // check DROP collateral amount computed correctly and transferred to cdp
+        // assert DROP collateral amount computed correctly and transferred to cdp
         assertEq(collateral.balanceOf(address(mgr)), safeAdd(collatralBalanceInit, requiredCollateral));
-        // check if juniorStake is correct 
+        // assert juniorStake is correct 
         assertEq(clerk.juniorStake(), safeAdd(juniorStakeInit, protectionAmount));
+
+        // for testing increase ink value in vat mock
+        vat.setInk(safeAdd(vat.values_uint("ink"), requiredCollateral));
+    }
+
+    function wipe(uint amountDAI, uint dropPrice) public {
+        uint tabInit = mgr.cdptab();
+        uint reserveDAIBalanceInit = currency.balanceOf(address(reserve));
+        uint mgrDAIBalanceInit = currency.balanceOf(address(mgr));   
+        uint collLockedInit = collateral.balanceOf(address(mgr));
+        uint juniorStakeInit = clerk.juniorStake();
+        uint collateralTotalBalanceInit = collateral.totalSupply();
+        // assessor: set DROP token price
+        assessor.setReturn("calcSeniorTokenPrice", dropPrice);
+
+        // repay maker debt
+        clerk.wipe(amountDAI);
+
+        // assert that the amount repaid is never higher than the actual debt
+        if (amountDAI > mgr.cdptab()) {
+            amountDAI = mgr.cdptab();
+        }
+        // assert DAI were transferred from reserve to mgr
+        assertEq(currency.balanceOf(address(mgr)), safeAdd(mgrDAIBalanceInit, amountDAI));
+        assertEq(currency.balanceOf(address(reserve)), safeSub(reserveDAIBalanceInit, amountDAI));
+        // assert mkr debt reduced 
+        assertEq(mgr.cdptab(), safeSub(tabInit, amountDAI));
+        // assert remainingCredit is correct
+        // remainingCredit can be maximum increased up to creditline value. 
+        // Mkr debt can grow bigger then creditline with accrued interest. When repaying mkr debt, make sure that remaining credit never exceeds creditline.
+        uint remainingCreditExpected;
+        if (mgr.cdptab() >= clerk.creditline()) {
+            remainingCreditExpected = 0;
+        } else {
+            remainingCreditExpected = safeSub(clerk.creditline(), mgr.cdptab());
+        }
+        assertEq(clerk.remainingCredit(), remainingCreditExpected);
+        // // assert juniorStake was reduced correctly
+        (, uint256 mat) = spotter.ilks(mgr.ilk());
+        uint juniorStakeReduction = safeSub(rmul(amountDAI, mat), amountDAI);
+        assertEq(clerk.juniorStake(), safeSub(juniorStakeInit, juniorStakeReduction));
+        // // assert collateral amount in cdp correct
+        uint collLockedExpected = rdiv(rmul(mgr.cdptab(), mat), dropPrice);
+        assertEq(collateral.balanceOf(address(mgr)), collLockedExpected);
+        // assert correct amount of collateral burned
+        uint collBurnedExpected = safeSub(collLockedInit, collLockedExpected);
+        assertEq(collateral.totalSupply(), safeSub(collateralTotalBalanceInit, collBurnedExpected));
+        // assert senior asset value decreased by correct amount
+        assertEq(assessor.values_uint("changeSeniorAsset_seniorRedeem"), rmul(collBurnedExpected, dropPrice));
+        // for testing increase ink value in vat mock
+        vat.setInk(collLockedExpected);
     }
 
     function testRaise() public {
@@ -142,10 +193,10 @@ contract ClerkTest is Math, DSTest {
         // set validation result in coordinator to 0 -> success
         coordinator.setIntReturn("validate", 0);
         uint amountDAI = 100 ether;
-        // check if calcOvercollAmount computes the correct value
+        // assert calcOvercollAmount computes the correct value
         uint overcollAmountDAI = clerk.calcOvercollAmount(amountDAI);
         assertEq(overcollAmountDAI, 110 ether);
-        // check if the security margin is computed correclty 
+        // assert the security margin is computed correctly 
         uint creditProtection = safeSub(overcollAmountDAI, amountDAI);
         assertEq(creditProtection, 10 ether);
 
@@ -195,7 +246,7 @@ contract ClerkTest is Math, DSTest {
         draw(creditline, dropPrice);
     }
 
-    function testMultipleDraw() public {
+    function testPartialDraw() public {
         uint creditline = 100 ether;
         uint dropPrice = ONE;
         // set submission period in coordinator to false
@@ -238,9 +289,143 @@ contract ClerkTest is Math, DSTest {
         draw(creditline, dropPrice);
     }
 
-    function testFullWipe() public {}
-    function testPartialWipe() public {}
+    function testFullWipe() public {
+        uint creditline = 100 ether;
+        uint dropPrice = ONE;
+        // set submission period in coordinator to false
+        coordinator.setReturn("submissionPeriod", false);
+        // set validation result in coordinator to 0 -> success
+        coordinator.setIntReturn("validate", 0);
+        // increase creditline
+        raise(creditline);
+        // draw full amount
+        draw(creditline, dropPrice);
+        
+        // increase dropPrice
+        dropPrice = safeMul(2, ONE);
+        // increase maker debt by 10 DAI
+        mgr.increaseTab(10 ether);
+        // make sure maker debt is set correclty
+        uint tab = mgr.cdptab();
+        assertEq(tab, 110 ether);
+        // make sure reserve has enough DAI
+        currency.mint(address(reserve), tab);
+        // reoay full debt
+        wipe(tab, dropPrice);
+    }
+
+    function testPartialWipe() public {
+        uint creditline = 100 ether;
+        uint dropPrice = ONE;
+        // set submission period in coordinator to false
+        coordinator.setReturn("submissionPeriod", false);
+        // set validation result in coordinator to 0 -> success
+        coordinator.setIntReturn("validate", 0);
+        // increase creditline
+        raise(creditline);
+        // draw full amount
+        draw(creditline, dropPrice);
+        
+        // increase dropPrice
+        dropPrice = safeMul(2, ONE);
+        // increase maker debt by 10 DAI
+        mgr.increaseTab(10 ether);
+        // make sure maker debt is set correclty
+        uint tab = mgr.cdptab();
+        assertEq(tab, 110 ether);
+        // make sure reserve has enough DAI
+        currency.mint(address(reserve), tab);
+        // repay 1/3 of the debt
+        wipe(safeDiv(tab, 2), dropPrice);
+        // repay another 1/3 of the debt
+        wipe(safeDiv(tab, 4), dropPrice);
+    }
+
+    // can not wipe more then total mkr debt
+    function testWipeMaxDebt() public {
+        uint creditline = 100 ether;
+        uint dropPrice = ONE;
+        // set submission period in coordinator to false
+        coordinator.setReturn("submissionPeriod", false);
+        // set validation result in coordinator to 0 -> success
+        coordinator.setIntReturn("validate", 0);
+        // increase creditline
+        raise(creditline);
+        // draw full amount
+        draw(creditline, dropPrice);
+        
+        // increase dropPrice
+        dropPrice = safeMul(2, ONE);
+        // increase maker debt by 10 DAI
+        mgr.increaseTab(10 ether);
+        // make sure maker debt is set correclty
+        uint tab = mgr.cdptab();
+        assertEq(tab, 110 ether);
+        // make sure reserve has enough DAI
+        currency.mint(address(reserve), tab);
+        // reoay full debt
+        wipe(rmul(tab, 2), dropPrice);
+    }
+
+    function testFailWipeNoDebt() public {
+        testFullWipe();
+        // try to repay again after full debt already repaid
+        wipe(1 ether, ONE);
+
+    }
+
+    function testFailWipeEpochClosing() public {
+        uint creditline = 100 ether;
+        uint dropPrice = ONE;
+        // fail condiion: tset submission period in coordinator to true
+        coordinator.setReturn("submissionPeriod", true);
+        // set validation result in coordinator to 0 -> success
+        coordinator.setIntReturn("validate", 0);
+        // increase creditline
+        raise(creditline);
+        // draw full amount
+        draw(creditline, dropPrice);
+        
+        // increase dropPrice
+        dropPrice = safeMul(2, ONE);
+        // increase maker debt by 10 DAI
+        mgr.increaseTab(10 ether);
+        // make sure maker debt is set correclty
+        uint tab = mgr.cdptab();
+        assertEq(tab, 110 ether);
+        // make sure reserve has enough DAI
+        currency.mint(address(reserve), tab);
+        // reoay full debt
+        wipe(tab, dropPrice);  
+    }
+
+    function testFailWipeNoFundsInReserve() public {
+        uint creditline = 100 ether;
+        uint dropPrice = ONE;
+        // set submission period in coordinator to false
+        coordinator.setReturn("submissionPeriod", false);
+        // set validation result in coordinator to 0 -> success
+        coordinator.setIntReturn("validate", 0);
+        // increase creditline
+        raise(creditline);
+        // draw full amount
+        draw(creditline, dropPrice);
+
+        // increase dropPrice
+        dropPrice = safeMul(2, ONE);
+        // increase maker debt by 10 DAI
+        mgr.increaseTab(10 ether);
+        // make sure maker debt is set correclty
+        uint tab = mgr.cdptab();
+        assertEq(tab, 110 ether);
+        // fail conditon: not enough DAI in reserve
+        currency.mint(address(reserve), tab);
+        // reoay full debt
+        wipe(tab, dropPrice);
+    }
+    
+    function testHarvest() public {}
+
     function testFullSink() public {}
     function testPartialSink() public {}
-    function testHarvest() public {}
 }
