@@ -319,6 +319,10 @@ contract NAVFeed is BaseNFTFeed, Interest, FixedPoint {
         }
 
         totalDiscount = secureSub(totalDiscount, diff);
+        // todo fix rounding errors that this if statement is not required anymore
+        if(totalDiscount == 1) {
+            return 0;
+        }
         return totalDiscount;
     }
 
