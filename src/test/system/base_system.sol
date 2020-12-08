@@ -290,6 +290,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
     uint TWO_DECIMAL_PRECISION = 10**16;
     uint FIXED27_TWO_DECIMAL_PRECISION = 10**25;
+    uint FIXED27_TEN_DECIMAL_PRECISION = 10**17;
 
     function assertEq(uint a, uint b, uint precision)  public {
         assertEq(a/precision, b/precision);
