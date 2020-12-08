@@ -136,7 +136,7 @@ contract ClerkTest is Math, DSTest {
         assertEq(clerk.juniorStake(), safeAdd(juniorStakeInit, protectionAmount));
 
         // for testing increase ink value in vat mock
-        vat.setInk(safeAdd(vat.values_uint("ink"), requiredCollateral));
+        vat.setInk(safeAdd(clerk.cdpink(), requiredCollateral));
     }
 
     function wipe(uint amountDAI, uint dropPrice) public {
@@ -171,12 +171,33 @@ contract ClerkTest is Math, DSTest {
             remainingCreditExpected = safeSub(clerk.creditline(), mgr.cdptab());
         }
         assertEq(clerk.remainingCredit(), remainingCreditExpected);
-        // // assert juniorStake was reduced correctly
+        // assert juniorStake was reduced correctly
         (, uint256 mat) = spotter.ilks(mgr.ilk());
         uint juniorStakeReduction = safeSub(rmul(amountDAI, mat), amountDAI);
         assertEq(clerk.juniorStake(), safeSub(juniorStakeInit, juniorStakeReduction));
-        // // assert collateral amount in cdp correct
+        // assert collateral amount in cdp correct
         uint collLockedExpected = rdiv(rmul(mgr.cdptab(), mat), dropPrice);
+        assertEq(collateral.balanceOf(address(mgr)), collLockedExpected);
+        // assert correct amount of collateral burned
+        uint collBurnedExpected = safeSub(collLockedInit, collLockedExpected);
+        assertEq(collateral.totalSupply(), safeSub(collateralTotalBalanceInit, collBurnedExpected));
+        // assert senior asset value decreased by correct amount
+        assertEq(assessor.values_uint("changeSeniorAsset_seniorRedeem"), rmul(collBurnedExpected, dropPrice));
+        // for testing increase ink value in vat mock
+        vat.setInk(collLockedExpected);
+    }
+
+    function harvest(uint dropPrice) public {
+        uint mgrDAIBalanceInit = currency.balanceOf(address(mgr));   
+        uint collLockedInit = collateral.balanceOf(address(mgr));
+        uint collateralTotalBalanceInit = collateral.totalSupply();
+        (, uint256 mat) = spotter.ilks(mgr.ilk());
+
+        clerk.harvest();
+        // assert collateral amount in cdp correct
+        uint collLockedExpected = rdiv(rmul(mgr.cdptab(), mat), dropPrice);
+        emit log_named_uint("drop balance", collateral.balanceOf(address(mgr)));
+        emit log_named_uint("drop balance expected ", collLockedExpected);
         assertEq(collateral.balanceOf(address(mgr)), collLockedExpected);
         // assert correct amount of collateral burned
         uint collBurnedExpected = safeSub(collLockedInit, collLockedExpected);
@@ -423,8 +444,34 @@ contract ClerkTest is Math, DSTest {
         // reoay full debt
         wipe(tab, dropPrice);
     }
-    
-    function testHarvest() public {}
+
+    function testHarvest() public {
+        uint creditline = 100 ether;
+        uint dropPrice = ONE;
+        // set submission period in coordinator to false
+        coordinator.setReturn("submissionPeriod", false);
+        // set validation result in coordinator to 0 -> success
+        coordinator.setIntReturn("validate", 0);
+        // increase creditline
+        raise(creditline);
+        // draw full amount
+        draw(creditline, dropPrice);
+        
+        // increase dropPrice
+        dropPrice = safeMul(2, ONE);
+        // assessor: set DROP token price
+        assessor.setReturn("calcSeniorTokenPrice", dropPrice);
+
+        // increase maker debt by 10 DAI
+        mgr.increaseTab(10 ether);
+        // make sure maker debt is set correclty
+        uint tab = mgr.cdptab();
+        assertEq(tab, 110 ether);
+        // harvest junior profit
+        // 110 DROP locked -> 220 DAI 
+        // 220 DAI - 110 DAI (tab) => 110 DAI junior profit
+        harvest(dropPrice);
+    }
 
     function testFullSink() public {}
     function testPartialSink() public {}
