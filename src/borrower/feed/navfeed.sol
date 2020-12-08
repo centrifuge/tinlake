@@ -47,6 +47,8 @@ contract NAVFeed is BaseNFTFeed, Interest, FixedPoint {
 
     WriteOff [2] public writeOffs;
 
+    uint lastWriteOffs;
+
     struct WriteOff {
         uint rateGroup;
         // denominated in (10^27)
@@ -60,6 +62,7 @@ contract NAVFeed is BaseNFTFeed, Interest, FixedPoint {
     // It decreases/increases the NAV by the repaid/borrowed amount without running the NAV calculation routine.
     // This is required for more accurate Senior & JuniorAssetValue estimations between epochs
     uint public latestNAV;
+    uint public latestDiscount;
 
     // rate group for write-offs in pile contract
     uint constant public  WRITE_OFF_PHASE_A = 1001;
@@ -167,6 +170,7 @@ contract NAVFeed is BaseNFTFeed, Interest, FixedPoint {
     function borrow(uint loan, uint amount) external auth returns(uint navIncrease) {
         calcUpdateNAV();
         navIncrease = _borrow(loan, amount);
+        latestDiscount = safeAdd(latestDiscount, navIncrease);
         latestNAV = safeAdd(latestNAV, navIncrease);
         return navIncrease;
     }
@@ -243,10 +247,13 @@ contract NAVFeed is BaseNFTFeed, Interest, FixedPoint {
         navDecrease = _repay(loan, amount);
 
         if(navDecrease < latestNAV) {
+            latestDiscount = safeSub(latestDiscount, navDecrease);
             latestNAV = safeSub(latestNAV, navDecrease);
+
             return navDecrease;
         }
         latestNAV = 0;
+        latestDiscount = 0;
         return navDecrease;
     }
 
@@ -296,23 +303,27 @@ contract NAVFeed is BaseNFTFeed, Interest, FixedPoint {
         return safeSub(x, y);
     }
 
-    function currentNAV() public view returns(uint) {
-        if (latestNAV == 0) {
-            return currentWriteOffs();
+    function currentDiscount() public view returns(uint) {
+        if (latestDiscount == 0) {
+            return 0;
         }
 
         uint nnow = uniqueDayTimestamp(block.timestamp);
         uint nLastUpdate = uniqueDayTimestamp(lastNAVUpdate);
 
-        uint nav_ = rmul(latestNAV, rpow(discountRate.value, safeSub(nnow, nLastUpdate), ONE));
+        uint totalDiscount = rmul(latestDiscount, rpow(discountRate.value, safeSub(nnow, nLastUpdate), ONE));
 
         uint diff = 0;
         for(uint i = nLastUpdate; i < nnow; i = i + 1 days) {
             diff = safeAdd(diff, rmul(buckets[i], rpow(discountRate.value, safeSub(nnow, i), ONE)));
         }
 
-        nav_ = secureSub(nav_, diff);
-        return safeAdd(nav_, currentWriteOffs());
+        totalDiscount = secureSub(totalDiscount, diff);
+        return totalDiscount;
+    }
+
+    function currentNAV() public view returns(uint) {
+        return safeAdd(currentDiscount(), currentWriteOffs());
     }
 
     function currentWriteOffs() public view returns(uint) {
@@ -326,7 +337,8 @@ contract NAVFeed is BaseNFTFeed, Interest, FixedPoint {
     }
 
     function calcUpdateNAV() public returns(uint) {
-        latestNAV = currentNAV();
+        latestDiscount = currentDiscount();
+        latestNAV = safeAdd(latestDiscount, currentWriteOffs());
         lastNAVUpdate = block.timestamp;
         return latestNAV;
     }

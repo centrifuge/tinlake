@@ -403,10 +403,11 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         assertEq(assessor.calcJuniorTokenPrice(), 0);
 
         uint loanDebt = pile.debt(loan);
-        repayLoan(address(borrower), loan, loanDebt);
 
+        repayLoan(address(borrower), loan, loanDebt);
+        
         assertEq(reserve.totalBalance(), loanDebt);
-        assertEq(nftFeed.latestNAV(), 0, 10);
+        assertEq(nftFeed.latestNAV(), nftFeed.currentNAV(), 10);
 
         // max redeem from both
         seniorInvestor.redeemOrder(seniorToken.balanceOf(seniorInvestor_));
