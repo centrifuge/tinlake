@@ -31,7 +31,7 @@ contract ReserveMock is Mock, Auth {
         currency = CurrencyLike(currency_);
     }
 
-    function file(bytes32 , uint currencyAmount) public auth {
+    function file(bytes32 , uint currencyAmount) public {
         values_uint["currency_available"] = currencyAmount;
     }
 
@@ -39,8 +39,8 @@ contract ReserveMock is Mock, Auth {
         return call("balance");
     }
 
-    function totalBalance() public returns (uint) {
-        return call("balance");
+    function totalBalance() public view returns (uint) {
+        return values_return["balance"];
     }
 
     function deposit(uint amount) public {

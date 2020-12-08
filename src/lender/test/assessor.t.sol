@@ -21,6 +21,8 @@ import "tinlake-math/math.sol";
 import "./../assessor.sol";
 import "./mock/tranche.sol";
 import "./mock/navFeed.sol";
+import "./mock/reserve.sol";
+import "../../test/simple/token.sol";
 
 contract Hevm {
     function warp(uint256) public;
@@ -32,14 +34,18 @@ contract AssessorTest is DSTest, Math {
     TrancheMock seniorTranche;
     TrancheMock juniorTranche;
     NAVFeedMock navFeed;
+    ReserveMock reserveMock;
+    SimpleToken currency;
 
     address seniorTranche_;
     address juniorTranche_;
     address navFeed_;
+    address reserveMock_;
 
     function setUp() public {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(1234567);
+        currency = new SimpleToken("CUR", "Currency");
 
         seniorTranche = new TrancheMock();
         juniorTranche = new TrancheMock();
@@ -49,11 +55,16 @@ contract AssessorTest is DSTest, Math {
 
         navFeed = new NAVFeedMock();
         navFeed_ = address(navFeed);
-        assessor = new Assessor();
 
+
+        reserveMock = new ReserveMock(address(currency));
+        reserveMock_ = address(reserveMock);
+
+        assessor = new Assessor();
         assessor.depend("juniorTranche", juniorTranche_);
         assessor.depend("seniorTranche", seniorTranche_);
         assessor.depend("navFeed", navFeed_);
+        assessor.depend("reserve", reserveMock_);
     }
 
     function testCurrentNAV() public {
@@ -336,4 +347,16 @@ contract AssessorTest is DSTest, Math {
         assertEq(seniorPrice, 1 * 10 ** 27);
     }
 
+    function testTotalBalance() public {
+        uint totalBalance = 100 ether;
+        reserveMock.setReturn("balance", totalBalance);
+        assertEq(assessor.totalBalance(), totalBalance);
+    }
+
+    function testChangeReserveAvailable() public {
+        uint amount = 100 ether;
+        assertEq(reserveMock.values_uint("currency_available"), 0);
+        assessor.changeReserveAvailable(amount);
+        assertEq(reserveMock.values_uint("currency_available"), amount);
+    }
 }

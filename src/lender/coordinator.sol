@@ -26,8 +26,6 @@ interface EpochTrancheLike {
 }
 
 interface ReserveLike {
-    function file(bytes32 what, uint currencyAmount) external;
-    function totalBalance() external returns (uint);
     function balance() external;
 }
 
@@ -40,6 +38,8 @@ contract AssessorLike is FixedPoint {
     function seniorBalance() external returns(uint);
     function seniorRatioBounds() external view returns(Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio);
     function changeSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
+    function totalBalance() external returns(uint);
+    function changeReserveAvailable(uint currencyAmount) public;
 }
 
 // The EpochCoordinator keeps track of the epochs and execute epochs them.
@@ -172,8 +172,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         lastEpochClosed = block.timestamp;
         currentEpoch = currentEpoch + 1;
         reserve.balance();
-
-        reserve.file("currencyAvailable", 0);
+        assessor.changeReserveAvailable(0);
 
         (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.closeEpoch();
         (uint orderSeniorSupply, uint orderSeniorRedeem) = seniorTranche.closeEpoch();
@@ -182,7 +181,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
         // create a snapshot of the current lender state
         epochNAV = assessor.calcUpdateNAV();
-        epochReserve = reserve.totalBalance();
+        epochReserve = assessor.totalBalance();
 
         //  if no orders exist epoch can be executed without validation
         if (orderSeniorRedeem == 0 && orderJuniorRedeem == 0 &&
@@ -589,7 +588,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         // assessor performs senior debt reBalancing according to new ratio
         assessor.changeSeniorAsset(newSeniorRatio, seniorSupply, seniorRedeem);
         // the new reserve after this epoch can be used for new loans
-        reserve.file("currencyAvailable", newReserve);
+        assessor.changeReserveAvailable(newReserve);
         // reset state for next epochs
         lastEpochExecuted = epochID;
         submissionPeriod = false;
