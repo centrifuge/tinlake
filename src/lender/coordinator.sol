@@ -171,7 +171,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         require(submissionPeriod == false);
         lastEpochClosed = block.timestamp;
         currentEpoch = currentEpoch + 1;
-
+        reserve.balance();
         assessor.changeReserveAvailable(0);
 
         (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.closeEpoch();
@@ -195,7 +195,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
             lastEpochExecuted = safeAdd(lastEpochExecuted, 1);
             return;
         }
-        
+
         // calculate current token prices which are used for the execute
         epochSeniorTokenPrice = assessor.calcSeniorTokenPrice(epochNAV, epochReserve);
         epochJuniorTokenPrice = assessor.calcJuniorTokenPrice(epochNAV, epochReserve);
