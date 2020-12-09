@@ -16,7 +16,6 @@
 pragma solidity >=0.5.15 <0.6.0;
 pragma experimental ABIEncoderV2;
 
-
 import "./coordinator-base.t.sol";
 
 contract CoordinatorExecuteEpochTest is CoordinatorTest {
@@ -87,7 +86,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
         uint shouldNewReserve = safeSub(safeAdd(safeAdd(model_.reserve, input.seniorSupply), input.juniorSupply),
             safeAdd(input.seniorRedeem, input.juniorRedeem));
 
-        uint seniorAsset = coordinator.calcSeniorAssetValue(input.seniorRedeem, input.seniorSupply, safeAdd(model_.seniorDebt, model_.seniorBalance), shouldNewReserve, model_.NAV);
+        uint seniorAsset = assessor.calcSeniorAssetValue(input.seniorRedeem, input.seniorSupply, safeAdd(model_.seniorDebt, model_.seniorBalance), shouldNewReserve, model_.NAV);
 
         // change or orders delta = -2 ether
         uint shouldSeniorAsset = safeSub(safeAdd(model_.seniorDebt, model_.seniorBalance), 2 ether);
@@ -96,7 +95,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
 
         uint shouldRatio = rdiv(seniorAsset, safeAdd(shouldNewReserve, model_.NAV));
 
-        uint currSeniorRatio = coordinator.calcSeniorRatio(shouldSeniorAsset, model_.NAV, shouldNewReserve);
+        uint currSeniorRatio = assessor.calcSeniorRatio(shouldSeniorAsset, model_.NAV, shouldNewReserve);
 
         assertEq(currSeniorRatio, shouldRatio);
         assertEq(assessor.values_uint("currency_available"), shouldNewReserve);
@@ -110,10 +109,10 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
         uint NAV = 1000 ether;
         uint reserve = 1000 ether;
 
-        assertEq(coordinator.calcAssets(NAV, reserve), 2000 ether);
+        assertEq(assessor.calcAssets(NAV, reserve), 2000 ether);
         // ratio 25%
-        assertEq(coordinator.calcSeniorRatio(safeAdd(seniorDebt,seniorBalance), NAV, reserve), 25 * 10**25);
-        assertEq(coordinator.calcSeniorRatio(0, 0, 0), 0);
+        assertEq(assessor.calcSeniorRatio(safeAdd(seniorDebt,seniorBalance), NAV, reserve), 25 * 10**25);
+        assertEq(assessor.calcSeniorRatio(0, 0, 0), 0);
     }
 
     function testCalcSeniorState() public {
@@ -126,7 +125,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
         uint seniorRedeem = 0;
         uint seniorSupply = 0;
 
-        uint seniorAsset = coordinator.calcSeniorAssetValue(seniorRedeem, seniorSupply, currSeniorAsset, model.reserve, model.NAV);
+        uint seniorAsset = assessor.calcSeniorAssetValue(seniorRedeem, seniorSupply, currSeniorAsset, model.reserve, model.NAV);
 
         assertEq(seniorAsset, 0);
 
@@ -139,7 +138,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
 
         uint newReserve = coordinator.calcNewReserve(seniorRedeem, 0, seniorSupply, 0);
 
-        seniorAsset = coordinator.calcSeniorAssetValue(seniorRedeem, seniorSupply, currSeniorAsset, newReserve, model.NAV);
+        seniorAsset = assessor.calcSeniorAssetValue(seniorRedeem, seniorSupply, currSeniorAsset, newReserve, model.NAV);
         assertEq(seniorAsset, 210 ether);
 
         // seniorSupply < seniorRedeem
@@ -151,7 +150,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
 
 
          newReserve = coordinator.calcNewReserve(seniorRedeem, 0, seniorSupply, 0);
-        seniorAsset = coordinator.calcSeniorAssetValue(seniorRedeem, seniorSupply, currSeniorAsset, newReserve, model.NAV);
+        seniorAsset = assessor.calcSeniorAssetValue(seniorRedeem, seniorSupply, currSeniorAsset, newReserve, model.NAV);
         assertEq(seniorAsset, 190 ether);
 
         // seniorSupply < seniorRedeem
@@ -161,7 +160,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
         seniorSupply = 10 ether;
 
         newReserve = coordinator.calcNewReserve(seniorRedeem, 0, seniorSupply, 0);
-        seniorAsset = coordinator.calcSeniorAssetValue(seniorRedeem, seniorSupply, currSeniorAsset, newReserve, model.NAV);
+        seniorAsset = assessor.calcSeniorAssetValue(seniorRedeem, seniorSupply, currSeniorAsset, newReserve, model.NAV);
         assertEq(seniorAsset, 90 ether);
     }
 }
