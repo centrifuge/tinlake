@@ -21,11 +21,11 @@ contract CoordinatorMock is Mock {
         return values_bool_return["submissionPeriod"];
     }
 
-    function validate(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) public returns(int) {
-        values_uint["seniorRedeem"] = seniorRedeem;
-        values_uint["juniorRedeem"] = juniorRedeem;
-        values_uint["seniorSupply"] = seniorSupply;
-        values_uint["juniorSupply"] = juniorSupply;
+    function validate(uint juniorSupplyDAI, uint juniorRedeemDAI, uint seniorSupplyDAI, uint seniorRedeemDAI) public returns(int) {
+        values_uint["seniorRedeem"] = seniorRedeemDAI;
+        values_uint["juniorRedeem"] = juniorRedeemDAI;
+        values_uint["seniorSupply"] = seniorSupplyDAI;
+        values_uint["juniorSupply"] = juniorSupplyDAI;
         calls["validate"]++;
         return values_int_return["validate"];
     }

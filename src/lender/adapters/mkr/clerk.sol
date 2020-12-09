@@ -122,6 +122,10 @@ contract Clerk is Auth, Math, DSTest{
         return safeSub(creditline, mgr.cdptab());
     }
 
+    function remainingOvercollCredit() public returns (uint) {
+        return calcOvercollAmount(remainingCredit());
+    }
+
     // junior stake in the cdpink -> value of drop used for cdptab protection
     function juniorStake() public returns (uint) {
         return safeSub(rmul(mgr.cdptab(), mat()), mgr.cdptab());
@@ -197,8 +201,10 @@ contract Clerk is Auth, Math, DSTest{
 
         // creditline amount including required overcollateralization => amount by that the seniorAssetValue should be decreased
         uint overcollAmountDAI = calcOvercollAmount(amountDAI);
+        emit log_named_uint("clerk", overcollAmountDAI);
         // protection value for the creditline decrease going to the junior tranche => amount by that the juniorAssetValue should be increased
         uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);    
+        emit log_named_uint("clerk", protectionDAI);
         // check if the new creditline would break the pool constraints
         validate(protectionDAI, 0, 0, overcollAmountDAI);  
         // increase MKR crediline by amount

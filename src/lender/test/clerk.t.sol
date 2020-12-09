@@ -205,6 +205,27 @@ contract ClerkTest is Math, DSTest {
         // for testing increase ink value in vat mock
         vat.setInk(collLockedExpected);
     }
+    
+    function sink(uint amountDAI) public {
+        uint creditlineInit = clerk.creditline();
+        uint remainingCreditInit = clerk.remainingCredit();
+        uint validateCallsInit = coordinator.calls("validate");
+        uint submissionPeriodCallsInit = coordinator.calls("submissionPeriod");
+        uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
+        uint creditProtection = safeSub(overcollAmount, amountDAI);
+
+        // raise creditLine
+        clerk.sink(amountDAI);
+        // assert creditLine was decreased
+        assertEq(clerk.creditline(), safeSub(creditlineInit, amountDAI));
+        // assert remainingCreditLine was also decreased
+        assertEq(clerk.remainingCredit(), safeSub(remainingCreditInit, amountDAI));
+        // assert call count coordinator & function arguments
+        assertEq(coordinator.calls("validate"), safeAdd(validateCallsInit, 1));
+        assertEq(coordinator.calls("submissionPeriod"), safeAdd(submissionPeriodCallsInit, 1));  
+        assertEq(coordinator.values_uint("seniorRedeem"), overcollAmount);
+        assertEq(coordinator.values_uint("juniorSupply"), creditProtection);  
+    }
 
     function testRaise() public {
         // set submission period in coordinator to false
@@ -364,10 +385,11 @@ contract ClerkTest is Math, DSTest {
         // make sure maker debt is set correclty
         uint tab = mgr.cdptab();
         assertEq(tab, 110 ether);
-        // fail conditon: not enough DAI in reserve (only 100 DAI that were drawn before) 
+        // fail conditon: not enough DAI in reserve (only 100 DAI that were drawn before) -> 110 required
         // repay full debt
         wipe(tab, dropPrice);
     }
+
 
     function testHarvest() public {
         testFullDraw();
@@ -420,6 +442,30 @@ contract ClerkTest is Math, DSTest {
         
     }
 
-    function testFullSink() public {}
-    function testPartialSink() public {}
+    function testFullSink() public {
+        testFullWipe();
+        uint creditline = clerk.creditline();
+        sink(creditline);
+    }
+
+    function testPartialSink() public {
+        testFullWipe();
+        uint creditline = clerk.creditline();
+        sink(safeDiv(creditline, 2));
+    }
+
+    function testFailSinkAmountTooHigh() public {
+        testPartialWipe();
+        uint creditline = clerk.creditline();
+        sink(creditline);
+    }
+
+    function testFailSinkEpochClosing() public {
+        testFullWipe();
+        uint creditline = clerk.creditline();
+        // fail condition: set submission period in coordinator to true
+        coordinator.setReturn("submissionPeriod", true);
+        sink(creditline);
+
+    }
 }
