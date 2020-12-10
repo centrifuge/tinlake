@@ -272,11 +272,10 @@ contract AssessorTest is DSTest, Math {
         reserveMock.setReturn("balance", 200 ether);
 
         uint seniorSupply = 200 ether;
-        uint seniorRatio = 5 * 10**26;
 
         // seniorRatio 50%
         assessor.changeSeniorAsset(seniorSupply, 0);
-        
+
         assertEq(assessor.seniorDebt(), 100 ether);
         assertEq(assessor.seniorBalance(), 100 ether);
 

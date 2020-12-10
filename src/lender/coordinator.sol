@@ -508,8 +508,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
                 juniorSupply: juniorSupply}));
     }
 
-    function validate(uint reserve, uint nav, uint seniorAsset, OrderSummary memory trans) view public returns (int) {
-        uint currencyAvailable = safeAdd(safeAdd(reserve, trans.seniorSupply), trans.juniorSupply);
+    function validate(uint reserve_, uint nav_, uint seniorAsset_, OrderSummary memory trans) view public returns (int) {
+        uint currencyAvailable = safeAdd(safeAdd(reserve_, trans.seniorSupply), trans.juniorSupply);
         uint currencyOut = safeAdd(trans.seniorRedeem, trans.juniorRedeem);
 
         int err = validateCoreConstraints(currencyAvailable, currencyOut, trans.seniorRedeem,
@@ -528,7 +528,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
         }
         return validatePoolConstraints(newReserve, assessor.calcSeniorAssetValue(trans.seniorRedeem, trans.seniorSupply,
-            seniorAsset, newReserve, nav), nav);
+            seniorAsset_, newReserve, nav_), nav_);
     }
 
     /// public method to execute an epoch which required a submission period and the challenge period is over

@@ -18,7 +18,7 @@ pragma solidity >=0.5.15 <0.6.0;
 import { AssessorAdmin } from "./../admin/assessor.sol";
 
 contract AssessorAdminFab {
-    function newAssessorAdmin() public returns (address assessorAdmin) {
+    function newAssessorAdmin() public returns (address) {
         AssessorAdmin assessorAdmin = new AssessorAdmin();
 
         assessorAdmin.rely(msg.sender);

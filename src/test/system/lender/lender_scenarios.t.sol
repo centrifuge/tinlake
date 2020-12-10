@@ -504,7 +504,7 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         uint borrowAmount = 100 ether;
         uint nftPrice = 200 ether;
         uint maturityDate = 5 days;
-        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(now) +maturityDate);
+        setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(now) +maturityDate);
 
         hevm.warp(now + 1 days);
 
