@@ -103,18 +103,6 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
       //  assertEq(assessor.values_uint("updateSenior_seniorDebt"), rmul(model_.NAV, currSeniorRatio));
     }
 
-    function testCalcSeniorRatio() public {
-        uint seniorDebt = 300 ether;
-        uint seniorBalance = 200 ether;
-        uint NAV = 1000 ether;
-        uint reserve = 1000 ether;
-
-        assertEq(assessor.calcAssets(NAV, reserve), 2000 ether);
-        // ratio 25%
-        assertEq(assessor.calcSeniorRatio(safeAdd(seniorDebt,seniorBalance), NAV, reserve), 25 * 10**25);
-        assertEq(assessor.calcSeniorRatio(0, 0, 0), 0);
-    }
-
     function testCalcSeniorState() public {
         LenderModel memory model = getDefaultModel();
         initTestConfig(model);

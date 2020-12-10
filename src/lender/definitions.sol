@@ -24,12 +24,14 @@ contract Definitions is FixedPoint, Math {
     }
 
     /// calculates the senior ratio
-    function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) public pure returns(uint) {
+    function calcSeniorRatio(uint seniorAsset, uint nav, uint reserve_) public pure returns(uint) {
         // note: NAV + reserve == seniorAsset + juniorAsset (loop invariant: always true)
-        uint assets = calcAssets(NAV, reserve_);
+        // if expectedSeniorAsset is passed ratio can be greater than ONE
+        uint assets = calcAssets(nav, reserve_);
         if(assets == 0) {
             return 0;
         }
+
         return rdiv(seniorAsset, assets);
     }
 
@@ -56,5 +58,10 @@ contract Definitions is FixedPoint, Math {
         }
 
         return seniorAsset;
+    }
+
+    // expected senior return if no losses occur
+    function calcExpectedSeniorAsset(uint seniorRedeem, uint seniorSupply, uint seniorBalance_, uint seniorDebt_) public returns(uint) {
+        return safeSub(safeAdd(safeAdd(seniorDebt_, seniorBalance_),seniorSupply), seniorRedeem);
     }
 }

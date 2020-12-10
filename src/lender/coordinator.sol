@@ -53,6 +53,7 @@ contract AssessorLike is FixedPoint {
 
     // change state
     function changeReserveAvailable(uint currencyAmount) public;
+    function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) external;
     function changeSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
 }
 
@@ -205,7 +206,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
             seniorTranche.epochUpdate(currentEpoch, 0, 0, 0, 0, 0);
 
             // assessor performs re-balancing
-            assessor.changeSeniorAsset(assessor.calcSeniorRatio(epochSeniorAsset, epochNAV, epochReserve), 0, 0);
+            assessor.changeSeniorAsset(0, 0);
             lastEpochExecuted = safeAdd(lastEpochExecuted, 1);
             return;
         }
@@ -560,6 +561,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
         uint epochID = safeAdd(lastEpochExecuted, 1);
 
+        // tranche epochUpdates triggers currency transfers from/to reserve
+        // an mint/burn tokens
         seniorTranche.epochUpdate(epochID, calcFulfillment(seniorSupply, order.seniorSupply).value,
             calcFulfillment(seniorRedeem, order.seniorRedeem).value,
             epochSeniorTokenPrice.value,order.seniorSupply, order.seniorRedeem);
@@ -571,13 +574,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem
         , seniorSupply, juniorSupply);
 
-        uint newSeniorAsset = assessor.calcSeniorAssetValue(seniorRedeem, seniorSupply,
-           epochSeniorAsset, newReserve, epochNAV);
-
-        uint newSeniorRatio = assessor.calcSeniorRatio(newSeniorAsset, epochNAV, newReserve);
-
         // assessor performs senior debt reBalancing according to new ratio
-        assessor.changeSeniorAsset(newSeniorRatio, seniorSupply, seniorRedeem);
+        assessor.changeSeniorAsset(seniorSupply, seniorRedeem);
         // the new reserve after this epoch can be used for new loans
         assessor.changeReserveAvailable(newReserve);
         // reset state for next epochs

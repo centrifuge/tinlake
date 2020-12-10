@@ -95,24 +95,14 @@ contract Assessor is Definitions, Auth, Interest {
         else {revert("unknown-variable");}
     }
 
-    // todo maybe not required
-    function reBalance() public {
-        uint seniorAsset_ = safeAdd(dripSeniorDebt(), seniorBalance_);
-        uint nav_ = navFeed.approximatedNAV();
-        uint reserve_ = reserve.totalBalance();
-
-        uint assets = safeAdd(nav_, reserve_);
-        if(assets == 0) {
-            return;
-        }
-
-        reBalance(seniorAsset_, rdiv(seniorAsset_, assets));
-    }
-
     function reBalance(uint seniorAsset_, uint seniorRatio_) internal {
         // re-balancing according to new ratio
         // we use the approximated NAV here because during the submission period
         // new loans might have been repaid in the meanwhile which are not considered in the epochNAV
+        if(seniorRatio_ > ONE) {
+            seniorRatio_ = ONE;
+        }
+
         seniorDebt_ = rmul(navFeed.approximatedNAV(), seniorRatio_);
         if(seniorDebt_ > seniorAsset_) {
             seniorDebt_ = seniorAsset_;
@@ -122,26 +112,14 @@ contract Assessor is Definitions, Auth, Interest {
         seniorBalance_ = safeSub(seniorAsset_, seniorDebt_);
     }
 
-    // todo method WIP
-    function changeSeniorBalance(uint seniorSupply, uint seniorRedeem) external auth {
-        uint seniorAsset_ = safeSub(safeAdd(safeAdd(dripSeniorDebt(), seniorBalance_),seniorSupply), seniorRedeem);
-
+    function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) external auth {
         uint nav_ = navFeed.approximatedNAV();
         uint reserve_ = reserve.totalBalance();
 
-        uint assets = safeAdd(nav_, reserve_);
-        if(assets == 0) {
-            return;
-        }
+        uint seniorAsset_ = calcExpectedSeniorAsset(seniorRedeem, seniorSupply, seniorBalance_, dripSeniorDebt());
 
-        reBalance(seniorAsset_, rdiv(seniorAsset_, assets));
-    }
-
-    // todo legacy method
-    function changeSeniorAsset(uint seniorRatio_, uint seniorSupply, uint seniorRedeem) external auth {
-        dripSeniorDebt();
-        uint seniorAsset = safeSub(safeAdd(safeAdd(seniorDebt_, seniorBalance_),seniorSupply), seniorRedeem);
-        reBalance(seniorAsset, seniorRatio_);
+        uint seniorRatio_ = calcSeniorRatio(seniorAsset_, nav_, reserve_);
+        reBalance(seniorAsset_, seniorRatio_);
         seniorRatio = Fixed27(seniorRatio_);
     }
 

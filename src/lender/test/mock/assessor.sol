@@ -105,9 +105,15 @@ contract AssessorMock is Mock {
 
     function changeSeniorAsset(uint seniorRatio_, uint seniorSupply, uint seniorRedeem) public {
         values_uint["changeSeniorAsset_seniorRatio"] = seniorRatio_;
+        changeSeniorAsset(seniorSupply, seniorRedeem);
+
+    }
+
+    function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) public {
         values_uint["changeSeniorAsset_seniorSupply"] = seniorSupply;
         values_uint["changeSeniorAsset_seniorRedeem"] = seniorRedeem;
     }
+
 
     function repaymentUpdate(uint currencyAmount) public  {
         values_uint["repaymentUpdate_currencyAmount"] = currencyAmount;
