@@ -81,13 +81,25 @@ contract AssessorMock is Mock {
         return values_return["maxReserve"];
     }
 
-    function calcSeniorTokenPrice(uint , uint ) external returns(uint) {
+    function calcSeniorTokenPrice(uint nav, uint reserve) external returns(uint) {
         return call("calcSeniorTokenPrice");
     }
 
-    function calcJuniorTokenPrice(uint , uint ) external returns(uint) {
+    function calcJuniorTokenPrice(uint nav, uint reserve) external returns(uint) {
         return call("calcJuniorTokenPrice");
     }
+
+    function calcSeniorTokenPrice() external returns(uint) {
+        return call("calcSeniorTokenPrice");
+    }
+
+    function calcJuniorTokenPrice() external returns(uint) {
+        return call("calcJuniorTokenPrice");
+    }
+
+     function calcSeniorAssetValue(uint, uint) external returns(uint) {
+          return call("calcSeniorAssetValue");
+     }
 
     function seniorRatioBounds() public view returns (uint minSeniorRatio_, uint maxSeniorRatio_) {
         uint minSeniorRatio = values_return["minSeniorRatio"];
@@ -102,7 +114,7 @@ contract AssessorMock is Mock {
     function seniorBalance() external returns (uint) {
         return call("seniorBalance");
     }
-
+    
     function changeSeniorAsset(uint seniorRatio_, uint seniorSupply, uint seniorRedeem) public {
         values_uint["changeSeniorAsset_seniorRatio"] = seniorRatio_;
         values_uint["changeSeniorAsset_seniorSupply"] = seniorSupply;

@@ -1,5 +1,4 @@
 // Copyright (C) 2020 Centrifuge
-
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -12,20 +11,13 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 pragma solidity >=0.5.15 <0.6.0;
+import "ds-test/test.sol";
 
-import "tinlake-math/math.sol";
-import "tinlake-auth/auth.sol";
+import "../../../../test/mock/mock.sol";
 
-import "../../../test/mock/mock.sol";
-
-contract DistributorMock is Mock {
-    function balance() public returns (uint) {
-        return call("balance");
-    }
-    function repayTranches(uint amount) public {
-        calls["repay_tranches"]++;
-        values_uint["repay_tranches_amount"] = amount;
+contract SpotterMock is Mock {
+    function ilks(bytes32 id) external returns(address, uint256) {
+        return (values_address_return["pip"], values_return["mat"]);
     }
 }
