@@ -14,18 +14,14 @@
 pragma solidity >=0.5.15 <0.6.0;
 import "ds-test/test.sol";
 
-import "../../../test/mock/mock.sol";
+import "../../../../test/mock/mock.sol";
 
-contract NAVFeedMock is Mock {
-    function approximatedNAV() public view returns (uint) {
-        return values_return["approximatedNAV"];
+contract VatMock is Mock {
+    function urns(bytes32, address) external returns (uint, uint) {
+        return (values_return["ink"], 0);
     }
 
-    function calcUpdateNAV() public returns (uint) {
-        return call("calcUpdateNAV");
-    }
-
-    function currentNAV() public returns (uint) {
-        return values_return["currentNAV"];
+    function setInk(uint amountDROP) external {
+        values_return["ink"] = amountDROP;
     }
 }

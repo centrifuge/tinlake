@@ -15,16 +15,22 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import "ds-test/test.sol";
 import "../../../test/mock/mock.sol";
 import "tinlake-auth/auth.sol";
 
-contract TrancheMock is Mock, Auth, DSTest {
+contract TrancheMock is Mock, Auth  {
     uint epochTotalSupply;
     uint epochTotalRedeem;
 
+    SimpleTokenLike public token;
+
     constructor() public {
         wards[msg.sender] = 1;
+    }
+
+    function depend(bytes32 contractName, address addr) public auth {
+        if (contractName == "token") {token = SimpleTokenLike(addr);}
+        else revert();
     }
 
     function setEpochReturn(uint totalSupply_, uint totalRedeem_) public {
@@ -73,6 +79,10 @@ contract TrancheMock is Mock, Auth, DSTest {
 
     function tokenSupply() external view returns(uint) {
         return values_return["tokenSupply"];
+    }
+
+    function mint(address usr, uint amount) public auth {
+        token.mint(usr, amount);
     }
 }
 
