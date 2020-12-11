@@ -88,6 +88,8 @@ contract ClerkTest is Math, DSTest {
         spotter.setReturn("mat", mat);
         spotter.setReturn("pip", address(0));
         mgr.setBytes32Return("ilk", "DROP");
+        // cdp not in soft liquidation
+        mgr.setReturn("safe", true);
     }
 
     function raise(uint amountDAI) public{

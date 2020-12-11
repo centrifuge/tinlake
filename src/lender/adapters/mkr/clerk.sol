@@ -17,6 +17,8 @@ interface ManagerLike {
     function exit(address usr, uint amountDROP) external;
     // collateral ID
     function ilk() external returns(bytes32);
+    // indicates if soft-liquidation was activated
+    function safe() external returns(bool);
 }
 
 interface VatLike {
@@ -128,6 +130,10 @@ contract Clerk is Auth, Math, DSTest{
 
     // junior stake in the cdpink -> value of drop used for cdptab protection
     function juniorStake() public returns (uint) {
+        // junior looses stake in case cdp is in soft liquidation mode
+        if (mgr.safe() == false) {
+            return 0;
+        }
         return safeSub(rmul(mgr.cdptab(), mat()), mgr.cdptab());
     }
 
@@ -159,22 +165,23 @@ contract Clerk is Auth, Math, DSTest{
         // move dai to reserve
         dai.approve(address(reserve), amountDAI);
         reserve.deposit(amountDAI);
+        // increase seniorAsset by amountDAI
+        updateSeniorAsset(0, collateralDAI);
     }
 
     // transfer DAI from reserve, wipe cdp debt, exit DROP from cdp, burn DROP, harvest junior profit
     function wipe(uint amountDAI) public auth active {
         require((mgr.cdptab() > 0), "cdp debt already repaid");
 
-        uint repayDAI = amountDAI;
         // repayment amount should not exceed cdp debt
         if (amountDAI > mgr.cdptab()) {
-            repayDAI = mgr.cdptab();
+            amountDAI = mgr.cdptab();
         }
         // get DAI from reserve
-        reserve.payout(repayDAI);
+        reserve.payout(amountDAI);
         // repay cdp debt
-        dai.approve(address(mgr), repayDAI);
-        mgr.wipe(repayDAI); 
+        dai.approve(address(mgr), amountDAI);
+        mgr.wipe(amountDAI); 
 
         // harvest junior interest & burn surplus drop
         harvest();        
@@ -192,7 +199,7 @@ contract Clerk is Auth, Math, DSTest{
         mgr.exit(address(this), profitDROP);
         collateral.burn(address(this), profitDROP);
         // decrease the seniorAssetValue by profitDAI -> DROP price stays constant
-        decreaseSeniorAsset(profitDAI);
+        updateSeniorAsset(profitDAI, 0);
     }
 
     // decrease MKR creditline
@@ -201,10 +208,8 @@ contract Clerk is Auth, Math, DSTest{
 
         // creditline amount including required overcollateralization => amount by that the seniorAssetValue should be decreased
         uint overcollAmountDAI = calcOvercollAmount(amountDAI);
-        emit log_named_uint("clerk", overcollAmountDAI);
         // protection value for the creditline decrease going to the junior tranche => amount by that the juniorAssetValue should be increased
         uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);    
-        emit log_named_uint("clerk", protectionDAI);
         // check if the new creditline would break the pool constraints
         validate(protectionDAI, 0, 0, overcollAmountDAI);  
         // increase MKR crediline by amount
@@ -216,12 +221,12 @@ contract Clerk is Auth, Math, DSTest{
         require((coordinator.validate(juniorSupplyDAI, juniorRedeemDAI, seniorSupplyDAI, seniorRedeemDAI) == 0), "supply not possible, pool constraints violated");
     }
     
-    function decreaseSeniorAsset(uint amountDAI) internal  {
+    function updateSeniorAsset(uint decreaseDAI, uint increaseDAI) internal  {
         uint currenNav = nav.currentNAV();
-        uint newSeniorAsset = coordinator.calcSeniorAssetValue(amountDAI, 0,
+        uint newSeniorAsset = coordinator.calcSeniorAssetValue(decreaseDAI, increaseDAI,
             assessor.calcSeniorAssetValue(assessor.seniorDebt(), assessor.seniorBalance()), reserve.totalBalance(), currenNav);
         uint newSeniorRatio = coordinator.calcSeniorRatio(newSeniorAsset, currenNav, reserve.totalBalance());
-        assessor.changeSeniorAsset(newSeniorRatio, 0, amountDAI);
+        assessor.changeSeniorAsset(newSeniorRatio, increaseDAI, decreaseDAI);
     }
 
     // returns the collateral amount in the cdp

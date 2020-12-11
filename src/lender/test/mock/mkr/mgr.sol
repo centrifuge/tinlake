@@ -51,6 +51,10 @@ contract ManagerMock is Mock {
         values_uint["tab"] = safeSub(values_uint["tab"], amountDAI);
     }
 
+    function safe() external returns(bool) {
+        return values_bool_return["safe"];
+    }
+
     function exit(address usr, uint amountDROP) external {
        collateral.transferFrom(address(this), usr, amountDROP);
     }
