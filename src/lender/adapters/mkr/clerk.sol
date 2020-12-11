@@ -2,7 +2,6 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
-import "ds-test/test.sol";
 
 interface ManagerLike {
     // collateral debt 
@@ -66,7 +65,7 @@ interface ERC20Like {
     function approve(address usr, uint amount) external;
 }
   
-contract Clerk is Auth, Math, DSTest{
+contract Clerk is Auth, Math {
    
     // max amount of DAI that can be brawn from MKR
     uint public creditline;
