@@ -200,7 +200,7 @@ contract NAVTest is DSTest, Math {
         uint tokenId = 1;
         uint dueDate = now + 2 days;
         uint amount = 40 ether;
-        uint fixedFeeRate = 25*10**25; // 25 % -> 10 ether 
+        uint fixedFeeRate = 25*10**25; // 25 % -> 10 ether
         pile.setReturn("rates_fixedRate", fixedFeeRate);
         (,,uint NAVIncrease) = borrow(tokenId, nftValue, amount, dueDate);
         // // check FV
@@ -269,7 +269,7 @@ contract NAVTest is DSTest, Math {
 
     function testRepay() public {
         uint amount = 50 ether;
-        
+
         setupLinkedListBuckets();
 
         // due date + 5 days for loan 2
@@ -328,7 +328,7 @@ contract NAVTest is DSTest, Math {
         uint amount = 50 ether;
         bytes32 nftID = prepareDefaultNFT(tokenId, nftValue);
         // should fail switching to new date after borrowing
-        
+
         feed.file("maturityDate", nftID, dueDate);
         // no loan debt exists -> maturity date change possible
         uint newDate = dueDate + 2 days;
@@ -473,5 +473,58 @@ contract NAVTest is DSTest, Math {
 
         //  55.125 * 0.9
         assertEq(feed.dateBucket(normalizedDueDate), 49.6125 ether);
+    }
+
+    function _repayOnMaturityDate(uint repayTimestamp, uint maturityDateOffset) internal {
+        // loan 4 has maturity date in + 1 days
+        uint tokenId = 4;
+        uint loan = 4;
+        uint maturityDateOffset = 1 days;
+        uint amount = 50 ether;
+        setupLinkedListBuckets();
+
+        pile.setReturn("debt_loan", amount);
+        shelf.setReturn("nftlookup" ,loan);
+        shelf.setReturn("shelf", mockNFTRegistry, tokenId);
+
+        uint nav = feed.currentNAV();
+
+        feed.maturityDate(feed.nftID(tokenId));
+
+        uint fvBucket = feed.dateBucket(feed.uniqueDayTimestamp(now) + feed.uniqueDayTimestamp(maturityDateOffset));
+
+        // repay on maturity date but not at 00.00 am
+        hevm.warp(repayTimestamp);
+
+        nav = feed.currentNAV();
+
+        feed.repay(tokenId, amount);
+        uint postNAV = feed.currentNAV();
+
+        assertEq(nav, postNAV + fvBucket);
+    }
+
+    function testRepayOnMaturityDate() public {
+        uint maturityDateOffset = 1 days;
+        // repay on maturity date random time at the day
+        _repayOnMaturityDate(now + maturityDateOffset + 2 hours + 12 seconds, maturityDateOffset);
+    }
+
+    function testRepayOnMaturityDateLastSecond() public {
+        uint maturityDateOffset = 1 days;
+        // last second before overdue
+        _repayOnMaturityDate(now + maturityDateOffset + 1 days - 1 seconds, maturityDateOffset);
+    }
+
+    function testRepayOnMaturityDateMidnight() public {
+        uint maturityDateOffset = 1 days;
+        // repay on maturity date random time at the day
+        _repayOnMaturityDate(now + maturityDateOffset, maturityDateOffset);
+    }
+
+    function testFailRepayOnMaturityDateOneSecondTooLate() public {
+        uint maturityDateOffset = 1 days;
+        // repay one second too late should fail
+        _repayOnMaturityDate(now + maturityDateOffset + 1 days , maturityDateOffset);
     }
 }
