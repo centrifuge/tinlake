@@ -491,7 +491,7 @@ contract NAVTest is DSTest, Math {
 
         feed.maturityDate(feed.nftID(tokenId));
 
-        uint fvBucket = feed.dateBucket(feed.uniqueDayTimestamp(now) + feed.uniqueDayTimestamp(maturityDateOffset));
+        uint fvBucket = feed.dateBucket(feed.uniqueDayTimestamp(repayTimestamp));
 
         // repay on maturity date but not at 00.00 am
         hevm.warp(repayTimestamp);
@@ -507,24 +507,24 @@ contract NAVTest is DSTest, Math {
     function testRepayOnMaturityDate() public {
         uint maturityDateOffset = 1 days;
         // repay on maturity date random time at the day
-        _repayOnMaturityDate(now + maturityDateOffset + 2 hours + 12 seconds, maturityDateOffset);
+        _repayOnMaturityDate(feed.uniqueDayTimestamp(now) + maturityDateOffset + 2 hours + 12 seconds, maturityDateOffset);
     }
 
     function testRepayOnMaturityDateLastSecond() public {
         uint maturityDateOffset = 1 days;
         // last second before overdue
-        _repayOnMaturityDate(now + maturityDateOffset + 1 days - 1 seconds, maturityDateOffset);
+        _repayOnMaturityDate(feed.uniqueDayTimestamp(now) + maturityDateOffset + 1 days - 1 seconds, maturityDateOffset);
     }
 
     function testRepayOnMaturityDateMidnight() public {
         uint maturityDateOffset = 1 days;
         // repay on maturity date random time at the day
-        _repayOnMaturityDate(now + maturityDateOffset, maturityDateOffset);
+        _repayOnMaturityDate(feed.uniqueDayTimestamp(now) + maturityDateOffset, maturityDateOffset);
     }
 
     function testFailRepayOnMaturityDateOneSecondTooLate() public {
         uint maturityDateOffset = 1 days;
         // repay one second too late should fail
-        _repayOnMaturityDate(now + maturityDateOffset + 1 days , maturityDateOffset);
+        _repayOnMaturityDate(feed.uniqueDayTimestamp(now) + maturityDateOffset + 1 days , maturityDateOffset);
     }
 }
