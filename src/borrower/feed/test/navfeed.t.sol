@@ -34,6 +34,17 @@ contract NAVTest is DSTest, Math {
     address mockNFTRegistry;
     Hevm hevm;
 
+    uint constant ONE_WEI_TOLERANCE = 1;
+    function assertEq(uint x, uint y, uint weiTolerance) public {
+        uint diff = 0;
+        if(x > y) {
+            diff = safeSub(x, y);
+        }
+        diff = safeSub(y, x);
+        assertTrue(diff <= weiTolerance);
+    }
+
+
     function setUp() public {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
         hevm.warp(123456789);
@@ -52,6 +63,7 @@ contract NAVTest is DSTest, Math {
         mockNFTRegistry = address(42);
         feed.init();
     }
+
 
     function prepareDefaultNFT(uint tokenId, uint nftValue) public returns(bytes32) {
         return prepareDefaultNFT(tokenId, nftValue, 0);
@@ -141,33 +153,8 @@ contract NAVTest is DSTest, Math {
         (nft_, ,) = borrow(tokenId, loan, nftValue, amount, dueDate);
         // list : [1 days] -> [2 days] -> [4 days] -> [5 days]
         //(50*1.05^1)/(1.03^1) + 50*1.05^2/(1.03^2) + 100*1.05^4/(1.03^4) + 50*1.05^5/(1.03^5)  ~= 265.97
-        assertEq(feed.currentNAV(), 265.975392377299750133 ether);
+        assertEq(feed.currentNAV(), 265.975392377299750133 ether, ONE_WEI_TOLERANCE);
 
-    }
-
-    function listLen() public returns (uint) {
-        uint normalizedDay = feed.uniqueDayTimestamp(now);
-        uint len = 0;
-
-        uint currDate = normalizedDay;
-
-        if (currDate > feed.lastBucket()) {
-            return 0;
-        }
-
-        (,uint next) = feed.buckets(currDate);
-        while(next == 0) {
-            currDate = currDate + 1 days;
-            (,next) = feed.buckets(currDate);
-        }
-
-        while(currDate != feed.NullDate())
-        {
-            (,currDate) = feed.buckets(currDate);
-            len++;
-
-        }
-        return len;
     }
 
     function testSimpleBorrow() public {
@@ -181,18 +168,18 @@ contract NAVTest is DSTest, Math {
         uint FV = 55.125 ether; // 50 * 1.05 ^ 2 = 55.125
         assertEq(feed.dateBucket(normalizedDueDate), FV);
         // FV/(1.03^2)
-        assertEq(feed.currentNAV(), 51.960741582371777180 ether);
+        assertEq(feed.currentNAV(), 51.960741582371777180 ether, ONE_WEI_TOLERANCE);
         // only on loan so current NAV should be equal to borrow increase
         assertEq(feed.currentNAV(), NAVIncrease);
-        assertEq(feed.totalValue(), 51.960741582371777180 ether);
+        assertEq(feed.totalValue(), 51.960741582371777180 ether, ONE_WEI_TOLERANCE);
         hevm.warp(now + 1 days);
         // FV/(1.03^1)
-        assertEq(feed.currentNAV(), 53.519490652735515520 ether);
-        assertEq(feed.totalValue(), 53.519490652735515520 ether);
+        assertEq(feed.currentNAV(), 53.519490652735515520 ether, ONE_WEI_TOLERANCE);
+        assertEq(feed.totalValue(), 53.519490652735515520 ether, ONE_WEI_TOLERANCE);
         hevm.warp(now + 1 days);
         // FV/(1.03^0)
-        assertEq(feed.currentNAV(), 55.125 ether);
-        assertEq(feed.totalValue(), 55.125 ether);
+        assertEq(feed.currentNAV(), 55.125 ether, ONE_WEI_TOLERANCE);
+        assertEq(feed.totalValue(), 55.125 ether, ONE_WEI_TOLERANCE);
     }
 
     function testBorrowWithFixedFee() public {
@@ -200,7 +187,7 @@ contract NAVTest is DSTest, Math {
         uint tokenId = 1;
         uint dueDate = now + 2 days;
         uint amount = 40 ether;
-        uint fixedFeeRate = 25*10**25; // 25 % -> 10 ether 
+        uint fixedFeeRate = 25*10**25; // 25 % -> 10 ether
         pile.setReturn("rates_fixedRate", fixedFeeRate);
         (,,uint NAVIncrease) = borrow(tokenId, nftValue, amount, dueDate);
         // // check FV
@@ -209,34 +196,18 @@ contract NAVTest is DSTest, Math {
 
         assertEq(feed.dateBucket(normalizedDueDate), FV);
         // FV/(1.03^2)
-        assertEq(feed.currentNAV(), 51.960741582371777180 ether);
+        assertEq(feed.currentNAV(), 51.960741582371777180 ether, ONE_WEI_TOLERANCE);
         // only on loan so current NAV should be equal to borrow increase
         assertEq(feed.currentNAV(), NAVIncrease);
-        assertEq(feed.totalValue(), 51.960741582371777180 ether);
+        assertEq(feed.totalValue(), 51.960741582371777180 ether, ONE_WEI_TOLERANCE);
         hevm.warp(now + 1 days);
         // FV/(1.03^1)
-        assertEq(feed.currentNAV(), 53.519490652735515520 ether);
-        assertEq(feed.totalValue(), 53.519490652735515520 ether);
+        assertEq(feed.currentNAV(), 53.519490652735515520 ether, ONE_WEI_TOLERANCE);
+        assertEq(feed.totalValue(), 53.519490652735515520 ether, ONE_WEI_TOLERANCE);
         hevm.warp(now + 1 days);
         // FV/(1.03^0)
-        assertEq(feed.currentNAV(), 55.125 ether);
-        assertEq(feed.totalValue(), 55.125 ether);
-    }
-
-    function testLinkedListBucket() public {
-        setupLinkedListBuckets();
-
-        hevm.warp(now + 1 days);
-
-        // list : [0 days] -> [1 days] -> [3 days] -> [4 days]
-        //(50*1.05^1)/(1.03^0) + 50*1.05^2/(1.03^1) + 100*1.05^4/(1.03^3) + 50*1.05^5/(1.03^4)  ~= 273.95
-        assertEq(feed.currentNAV(), 273.954279571404002939 ether);
-
-        hevm.warp(now + 1 days);
-
-        // list : [0 days] -> [2 days] -> [3 days]
-        // 50*1.05^2/(1.03^0) + 100*1.05^4/(1.03^2) + 50*1.05^5/(1.03^3) ~= 228.09
-        assertEq(feed.currentNAV(), 228.097596081095759604 ether);
+        assertEq(feed.currentNAV(), 55.125 ether, ONE_WEI_TOLERANCE);
+        assertEq(feed.totalValue(), 55.125 ether, ONE_WEI_TOLERANCE);
     }
 
     function testTimeOverBuckets() public {
@@ -255,6 +226,22 @@ contract NAVTest is DSTest, Math {
         assertEq(feed.currentNAV(), 0);
     }
 
+    function testLinkedListBucket() public {
+        setupLinkedListBuckets();
+
+        hevm.warp(now + 1 days);
+
+        // list : [0 days] -> [1 days] -> [3 days] -> [4 days]
+        //(50*1.05^1)/(1.03^0) + 50*1.05^2/(1.03^1) + 100*1.05^4/(1.03^3) + 50*1.05^5/(1.03^4)  ~= 273.95
+        assertEq(feed.currentNAV(), 273.954279571404002939 ether, 2);
+
+        hevm.warp(now + 1 days);
+
+        // list : [0 days] -> [2 days] -> [3 days]
+        // 50*1.05^2/(1.03^0) + 100*1.05^4/(1.03^2) + 50*1.05^5/(1.03^3) ~= 228.09
+        assertEq(feed.currentNAV(), 228.097596081095759604 ether, ONE_WEI_TOLERANCE);
+    }
+
     function testNormalizeDate() public {
         uint randomUnixTimestamp = 1586977096; // 04/15/2020 @ 6:58pm (UTC)
         uint dayTimestamp = feed.uniqueDayTimestamp(randomUnixTimestamp);
@@ -269,7 +256,7 @@ contract NAVTest is DSTest, Math {
 
     function testRepay() public {
         uint amount = 50 ether;
-        
+
         setupLinkedListBuckets();
 
         // due date + 5 days for loan 2
@@ -284,11 +271,10 @@ contract NAVTest is DSTest, Math {
         // repay not full amount
         uint navDecrease = feed.repay(loan, 30 ether);
 
-        listLen();
 
         // list : [1 days] -> [2 days] -> [4 days] -> [5 days]
         //(50*1.05^1)/(1.03^1) + (50*1.05^2) /(1.03^2)  + 100*1.05^4/(1.03^4) + (50-30)*1.05^5/(1.03^5)  ~= 232.94 eth
-        assertEq(feed.currentNAV(), 232.947215966580871770 ether);
+        assertEq(feed.currentNAV(), 232.947215966580871770 ether, ONE_WEI_TOLERANCE);
         assertEq(feed.currentNAV(), safeSub(navBefore, navDecrease));
 
         // newFV = (loan.debt - repayment)*interest^timeLeft
@@ -302,7 +288,7 @@ contract NAVTest is DSTest, Math {
         assertEq(feed.dateBucket(maturityDate), 0);
 
         //(50*1.05^1)/(1.03^1) + 100*1.05^4/(1.03^4) + 50*1.05^5/(1.03^5)  ~= 214.014
-        assertEq(feed.currentNAV(), 210.928431692768286195 ether);
+        assertEq(feed.currentNAV(), 210.928431692768286195 ether, ONE_WEI_TOLERANCE);
         // loan fully repaid -> future value = 0
         assertEq(feed.futureValue(feed.nftID(loan)), 0);
     }
@@ -328,7 +314,7 @@ contract NAVTest is DSTest, Math {
         uint amount = 50 ether;
         bytes32 nftID = prepareDefaultNFT(tokenId, nftValue);
         // should fail switching to new date after borrowing
-        
+
         feed.file("maturityDate", nftID, dueDate);
         // no loan debt exists -> maturity date change possible
         uint newDate = dueDate + 2 days;
@@ -336,15 +322,20 @@ contract NAVTest is DSTest, Math {
         assertEq(feed.maturityDate(nftID), feed.uniqueDayTimestamp(newDate));
     }
 
-    function testChangeMaturityDebtRepaid() public {
-        // test uses loan 2
-        testRepay();
-        bytes32 nftID = feed.nftID(2);
-        // no loan debt exists anymore -> maturity date change possible
-        uint newDate = feed.maturityDate(nftID) + 2 days;
-        // no loan debt exists -> maturity date change possible
-        feed.file("maturityDate", nftID, newDate);
-        assertEq(feed.maturityDate(nftID), feed.uniqueDayTimestamp(newDate));
+
+    function testOverdueLoan() public {
+        uint nftValue = 100 ether;
+        uint tokenId = 1;
+        uint dueDate = now + 2 days;
+        uint amount = 50 ether;
+        uint loan = 1;
+
+        borrow(tokenId,loan,  nftValue, amount, dueDate);
+
+        hevm.warp(now + 3 days);
+
+        // loan should be not included in nav anymore
+        assertEq(feed.currentNAV(), 0);
     }
 
     function testRepayAfterMaturityDate() public {
@@ -357,7 +348,7 @@ contract NAVTest is DSTest, Math {
         bytes32 nftID = feed.nftID(loan);
         uint maturityDate = feed.maturityDate(nftID);
         uint nav = feed.currentNAV();
-        uint approximatedNav = feed.approximatedNAV();
+        uint latestNAV = feed.latestNAV();
         uint futureValue = feed.futureValue(nftID);
         // assert future value of loan is bigger then 0
         assert(futureValue > 0);
@@ -366,49 +357,12 @@ contract NAVTest is DSTest, Math {
         hevm.warp(safeAdd(maturityDate, 1 days));
 
         // make repayment for overdue loan
+        uint preNAV = feed.currentNAV();
+
         uint navDecrease = feed.repay(loan, repaymentAmount);
-        // assert approx nav decreased by repayment amount
-        assertEq(feed.approximatedNAV(), safeSub(approximatedNav, repaymentAmount));
-        // assert nav decrease  equals repaymenta amount
-        assertEq(navDecrease, repaymentAmount);
-    }
-
-    function testRemoveBuckets() public {
-        // buckets are removed by completely repaying it
-        uint[4] memory buckets = [uint(52500000000000000000), uint(55125000000000000000), uint(121550625000000000000), uint(63814078125000000000)];
-        // token and loan id are the same in tests
-        uint[4] memory tokenIdForBuckets = [uint(4), uint(1), uint(3), uint(2)];
-        // list : [1 days] -> [2 days] -> [4 days] -> [5 days]
-
-        setupLinkedListBuckets();
-       // assertEq(listLen(), 4);
-
-        // remove bucket in between buckets
-        // remove bucket [2 days]
-        uint idx = 1;
-        shelf.setReturn("shelf", mockNFTRegistry, tokenIdForBuckets[idx]);
-
-        // loan id doesn't matter because shelf is mocked
-        pile.setReturn("debt_loan", buckets[idx]);
-        feed.repay(tokenIdForBuckets[idx], buckets[idx]);
-
-        assertEq(listLen(), 3);
-
-        // remove first bucket
-        // remove [1 days]
-        idx = 0;
-        shelf.setReturn("shelf", mockNFTRegistry, tokenIdForBuckets[idx]);
-        pile.setReturn("debt_loan", buckets[idx]);
-        feed.repay(tokenIdForBuckets[idx], buckets[idx]);
-        assertEq(listLen(), 2);
-
-        // remove last bucket
-        // remove [5 days]
-        idx = 3;
-        shelf.setReturn("shelf", mockNFTRegistry, tokenIdForBuckets[idx]);
-        pile.setReturn("debt_loan", buckets[idx]);
-        feed.repay(tokenIdForBuckets[idx], buckets[idx]);
-        assertEq(listLen(), 1);
+        // nav should be already decreased
+        assertEq(navDecrease, 0);
+        assertEq(preNAV, feed.currentNAV());
     }
 
     function testWriteOffs() public {
@@ -474,4 +428,17 @@ contract NAVTest is DSTest, Math {
         //  55.125 * 0.9
         assertEq(feed.dateBucket(normalizedDueDate), 49.6125 ether);
     }
+
+    function testCalcDiscount() public {
+        // discount(a) - discount(b) == discount(a-b); given a > b, maturityA == maturityB
+        uint amountA = 120 ether;
+        uint amountB = 100 ether;
+        uint maturityDate = now + 3 days;
+        assertEq(feed.calcDiscount(amountA, feed.uniqueDayTimestamp(now), maturityDate)
+            -
+            feed.calcDiscount(amountB, feed.uniqueDayTimestamp(now), maturityDate),
+            feed.calcDiscount(amountA - amountB, feed.uniqueDayTimestamp(now), maturityDate));
+    }
 }
+
+
