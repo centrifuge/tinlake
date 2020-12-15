@@ -257,7 +257,8 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
         // no fv decrease calculation needed if maturity date is in the past
         if (maturityDate_ < uniqueDayTimestamp(block.timestamp)) {
-            // if a loan is overdue the portfolio value is equal to the existing debt multiplied with a write off factor
+            // if a loan is overdue, the portfolio value is initially equal to the existing debt
+            // it will be reduced by a write off factor once it is moved to a write off group
             return amount;
         }
 
