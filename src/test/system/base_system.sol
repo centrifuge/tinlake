@@ -197,7 +197,9 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
         tokenId = collateralNFT.issue(borrower_);
         loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup, maturityDate);
+        emit log_named_uint("seniorDebtXXX", assessor.seniorDebt());
         borrow(loan, tokenId, borrowAmount, lenderFundingRequired);
+        emit log_named_uint("seniorDebtXX", assessor.seniorDebt());
         return (loan, tokenId);
     }
 
@@ -238,9 +240,13 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         borrower.approveNFT(collateralNFT, address(shelf));
         if (fundLenderRequired) {
             fundLender(borrowAmount);
+            emit log_named_uint("xxxx", assessor.seniorDebt());
         }
+        emit log_named_uint("xxx", assessor.seniorDebt());
         borrower.borrowAction(loan, borrowAmount);
+        emit log_named_uint("fdf", assessor.seniorDebt());
         checkAfterBorrow(tokenId, borrowAmount);
+        emit log_named_uint("aaa", assessor.seniorDebt());
     }
 
     function defaultCollateral() public pure returns(uint nftPrice_, uint riskGroup_) {

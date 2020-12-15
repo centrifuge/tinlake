@@ -82,7 +82,7 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         emit log_named_uint("maxSeniorRatio", model.maxSeniorRatio);
         emit log_named_uint("maxSeniorRatio", model.minSeniorRatio);
 
-        uint currentRatio = coordinator.calcSeniorRatio(coordinator.calcSeniorAssetValue(0,0,safeAdd(model.seniorDebt, model.seniorBalance), model.reserve, model.NAV),
+        uint currentRatio = assessor.calcSeniorRatio(assessor.calcSeniorAssetValue(0,0,safeAdd(model.seniorDebt, model.seniorBalance), model.reserve, model.NAV),
             model.NAV, model.reserve);
 
         // check if ratio is broken
@@ -178,7 +178,7 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         hevm.warp(now + 1 days);
         coordinator.closeEpoch();
 
-        uint currentRatio = coordinator.calcSeniorRatio(coordinator.calcSeniorAssetValue(0,0,safeAdd(model.seniorDebt, model.seniorBalance), model.reserve, model.NAV),
+        uint currentRatio = assessor.calcSeniorRatio(assessor.calcSeniorAssetValue(0,0,safeAdd(model.seniorDebt, model.seniorBalance), model.reserve, model.NAV),
             model.NAV, model.reserve);
 
         // check ratio okay

@@ -1,5 +1,4 @@
 // Copyright (C) 2020 Centrifuge
-
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -12,18 +11,19 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 pragma solidity >=0.5.15 <0.6.0;
+import "ds-test/test.sol";
 
-import { AssessorAdmin } from "./../admin/assessor.sol";
+import "../../../test/mock/mock.sol";
 
-contract AssessorAdminFab {
-    function newAssessorAdmin() public returns (address) {
-        AssessorAdmin assessorAdmin = new AssessorAdmin();
-
-        assessorAdmin.rely(msg.sender);
-        assessorAdmin.deny(address(this));
-
-        return address(assessorAdmin);
+contract ClerkMock is Mock {
+    function remainingCredit() external view returns (uint) {
+        return values_return["remainingCredit"];
+    }
+    function juniorStake() external view returns (uint) {
+        return values_return["juniorStake"];
+    }
+    function remainingCreditCollateral() external view returns (uint) {
+        return values_return["remainingCreditCollateral"];
     }
 }
