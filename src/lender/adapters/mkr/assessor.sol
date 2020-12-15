@@ -83,4 +83,8 @@ contract MKRAssessor is Assessor {
     function totalBalance() public view returns(uint) {
         return safeAdd(reserve.totalBalance(), clerk.remainingCredit());
     }
+
+    function currentNAV() public view returns(uint) {
+        return navFeed.currentNAV();
+    }
 }

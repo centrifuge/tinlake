@@ -114,7 +114,7 @@ contract AssessorMock is Mock {
     function seniorBalance() external returns (uint) {
         return call("seniorBalance");
     }
-    
+
     function changeSeniorAsset(uint seniorRatio_, uint seniorSupply, uint seniorRedeem) public {
         values_uint["changeSeniorAsset_seniorRatio"] = seniorRatio_;
         changeSeniorAsset(seniorSupply, seniorRedeem);
@@ -142,5 +142,9 @@ contract AssessorMock is Mock {
 
     function changeReserveAvailable(uint currencyAmount) public {
         values_uint["currency_available"] = currencyAmount;
+    }
+
+    function currentNAV() public view returns(uint) {
+        return values_uint["currentNAV"];
     }
 }
