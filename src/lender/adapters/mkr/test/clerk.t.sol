@@ -25,9 +25,9 @@ import "../../../test/mock/coordinator.sol";
 import "../../../test/mock/navFeed.sol";
 import "../../../test/mock/assessor.sol";
 import "../../../test/mock/tranche.sol";
-import "../../../test/mock/mkr/mgr.sol";
-import "../../../test/mock/mkr/spotter.sol";
-import "../../../test/mock/mkr/vat.sol";
+import "./mock/mgr.sol";
+import "./mock/spotter.sol";
+import "./mock/vat.sol";
 
 contract Hevm {
     function warp(uint256) public;
