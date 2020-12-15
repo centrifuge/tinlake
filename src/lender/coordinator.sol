@@ -30,16 +30,31 @@ interface ReserveLike {
 }
 
 contract AssessorLike is FixedPoint {
+    // definitions
+    function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) public pure returns(uint);
+    function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply,
+        uint currSeniorAsset, uint reserve_, uint nav_) public pure returns (uint seniorAsset);
+    function calcSeniorRatio(uint seniorRedeem, uint seniorSupply,
+        uint currSeniorAsset, uint newReserve, uint nav) public pure returns (uint seniorRatio);
+
+    // definitions based on assessor state
     function calcSeniorTokenPrice(uint NAV, uint reserve) external returns(Fixed27 memory tokenPrice);
     function calcJuniorTokenPrice(uint NAV, uint reserve) external returns(Fixed27 memory tokenPrice);
+
+    // get state
     function maxReserve() external view returns(uint);
     function calcUpdateNAV() external returns (uint);
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
     function seniorRatioBounds() external view returns(Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio);
-    function changeSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
+
     function totalBalance() external returns(uint);
+
+
+    // change state
     function changeReserveAvailable(uint currencyAmount) public;
+    function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) external;
+    function changeSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
 }
 
 // The EpochCoordinator keeps track of the epochs and execute epochs them.
@@ -191,7 +206,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
             seniorTranche.epochUpdate(currentEpoch, 0, 0, 0, 0, 0);
 
             // assessor performs re-balancing
-            assessor.changeSeniorAsset(calcSeniorRatio(epochSeniorAsset, epochNAV, epochReserve), 0, 0);
+            assessor.changeSeniorAsset(0, 0);
             lastEpochExecuted = safeAdd(lastEpochExecuted, 1);
             return;
         }
@@ -326,7 +341,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
     /// calculates the improvement score of a solution
     function _improveScore(uint seniorRedeem, uint juniorRedeem,
         uint juniorSupply, uint seniorSupply) internal returns(int) {
-        Fixed27 memory currSeniorRatio = Fixed27(calcSeniorRatio(epochSeniorAsset,
+        Fixed27 memory currSeniorRatio = Fixed27(assessor.calcSeniorRatio(epochSeniorAsset,
             epochNAV, epochReserve));
 
         int err = 0;
@@ -342,8 +357,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
 
-        Fixed27 memory newSeniorRatio = Fixed27(calcSeniorRatio(calcSeniorAssetValue(seniorRedeem, seniorSupply,
-            epochSeniorAsset, newReserve, epochNAV), epochNAV, newReserve));
+        Fixed27 memory newSeniorRatio = Fixed27(assessor.calcSeniorRatio(seniorRedeem, seniorSupply,
+            epochSeniorAsset, newReserve, epochNAV));
 
         (err, impScoreRatio, impScoreReserve) = scoreImprovement(newSeniorRatio, newReserve);
 
@@ -486,12 +501,19 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
     /// returns: first constraint which is not satisfied or success
     function validate(uint seniorRedeem, uint juniorRedeem,
         uint seniorSupply, uint juniorSupply) public view returns (int) {
+        return validate(epochReserve, epochNAV, epochSeniorAsset,
+            OrderSummary({seniorRedeem: seniorRedeem,
+                juniorRedeem:juniorRedeem,
+                seniorSupply: seniorSupply,
+                juniorSupply: juniorSupply}));
+    }
 
-        uint currencyAvailable = safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply);
-        uint currencyOut = safeAdd(seniorRedeem, juniorRedeem);
+    function validate(uint reserve_, uint nav_, uint seniorAsset_, OrderSummary memory trans) view public returns (int) {
+        uint currencyAvailable = safeAdd(safeAdd(reserve_, trans.seniorSupply), trans.juniorSupply);
+        uint currencyOut = safeAdd(trans.seniorRedeem, trans.juniorRedeem);
 
-        int err = validateCoreConstraints(currencyAvailable, currencyOut, seniorRedeem,
-            juniorRedeem, seniorSupply, juniorSupply);
+        int err = validateCoreConstraints(currencyAvailable, currencyOut, trans.seniorRedeem,
+            trans.juniorRedeem, trans.seniorSupply, trans.juniorSupply);
 
         if(err != SUCCESS) {
             return err;
@@ -499,14 +521,14 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
         uint newReserve = safeSub(currencyAvailable, currencyOut);
         if(poolClosing == true) {
-            if(seniorSupply == 0 && juniorSupply == 0) {
+            if(trans.seniorSupply == 0 && trans.juniorSupply == 0) {
                 return SUCCESS;
             }
             return ERR_POOL_CLOSING;
 
         }
-        return validatePoolConstraints(newReserve, calcSeniorAssetValue(seniorRedeem, seniorSupply,
-            epochSeniorAsset, newReserve, epochNAV), epochNAV);
+        return validatePoolConstraints(newReserve, assessor.calcSeniorAssetValue(trans.seniorRedeem, trans.seniorSupply,
+            seniorAsset_, newReserve, nav_), nav_);
     }
 
     /// public method to execute an epoch which required a submission period and the challenge period is over
@@ -515,36 +537,6 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
         _executeEpoch(bestSubmission.seniorRedeem ,bestSubmission.juniorRedeem,
             bestSubmission.seniorSupply, bestSubmission.juniorSupply);
-    }
-
-    /// calculates a new senior asset value based on senior redeem and senior supply
-    function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply,
-        uint currSeniorAsset, uint reserve_, uint nav_) public pure returns (uint seniorAsset) {
-
-        seniorAsset =  safeSub(safeAdd(currSeniorAsset, seniorSupply), seniorRedeem);
-        uint assets = calcAssets(nav_, reserve_);
-        if(seniorAsset > assets) {
-            seniorAsset = assets;
-        }
-
-        return seniorAsset;
-    }
-
-    /// calculates the net wealth in the system
-    /// NAV for ongoing loans and currency in reserve
-    function calcAssets(uint NAV, uint reserve_) public pure returns(uint) {
-        return safeAdd(NAV, reserve_);
-    }
-
-
-    /// calculates the senior ratio
-    function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) public pure returns(uint) {
-        // note: NAV + reserve == seniorAsset + juniorAsset (loop invariant: always true)
-        uint assets = calcAssets(NAV, reserve_);
-        if(assets == 0) {
-            return 0;
-        }
-        return rdiv(seniorAsset, assets);
     }
 
     /// calculates the percentage of an order type which can be fulfilled for an epoch
@@ -569,6 +561,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
         uint epochID = safeAdd(lastEpochExecuted, 1);
 
+        // tranche epochUpdates triggers currency transfers from/to reserve
+        // an mint/burn tokens
         seniorTranche.epochUpdate(epochID, calcFulfillment(seniorSupply, order.seniorSupply).value,
             calcFulfillment(seniorRedeem, order.seniorRedeem).value,
             epochSeniorTokenPrice.value,order.seniorSupply, order.seniorRedeem);
@@ -580,13 +574,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem
         , seniorSupply, juniorSupply);
 
-        uint seniorAsset = calcSeniorAssetValue(seniorRedeem, seniorSupply,
-           epochSeniorAsset, newReserve, epochNAV);
-
-        uint newSeniorRatio = calcSeniorRatio(seniorAsset, epochNAV, newReserve);
-
         // assessor performs senior debt reBalancing according to new ratio
-        assessor.changeSeniorAsset(newSeniorRatio, seniorSupply, seniorRedeem);
+        assessor.changeSeniorAsset(seniorSupply, seniorRedeem);
         // the new reserve after this epoch can be used for new loans
         assessor.changeReserveAvailable(newReserve);
         // reset state for next epochs

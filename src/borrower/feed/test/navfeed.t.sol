@@ -323,9 +323,7 @@ contract NAVTest is DSTest, Math {
     function testChangeMaturityDateNoDebt() public {
         uint nftValue = 100 ether;
         uint tokenId = 1;
-        uint loan = 1;
         uint dueDate = now + 2 days;
-        uint amount = 50 ether;
         bytes32 nftID = prepareDefaultNFT(tokenId, nftValue);
         // should fail switching to new date after borrowing
 
@@ -348,15 +346,12 @@ contract NAVTest is DSTest, Math {
     }
 
     function testRepayAfterMaturityDate() public {
-        uint amount = 50 ether;
         setupLinkedListBuckets();
         // due date + 5 days for loan 2
-        uint tokenId = 2;
         uint loan = 2;
         uint repaymentAmount = 30 ether;
         bytes32 nftID = feed.nftID(loan);
         uint maturityDate = feed.maturityDate(nftID);
-        uint nav = feed.currentNAV();
         uint approximatedNav = feed.approximatedNAV();
         uint futureValue = feed.futureValue(nftID);
         // assert future value of loan is bigger then 0

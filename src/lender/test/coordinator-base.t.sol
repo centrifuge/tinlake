@@ -20,6 +20,7 @@ import "ds-test/test.sol";
 import "tinlake-math/math.sol";
 
 import "./../coordinator.sol";
+import "./../definitions.sol";
 import "./mock/tranche.sol";
 import "./mock/reserve.sol";
 import "./mock/assessor.sol";
@@ -71,6 +72,8 @@ contract CoordinatorLike is BaseTypes {
     function submitSolution(uint,uint,uint,uint) public returns (int);
 }
 
+contract AssessorMockWithDef is AssessorMock, Definitions { }
+
 contract CoordinatorTest is DSTest, Math, BaseTypes {
     Hevm hevm;
     EpochCoordinator coordinator;
@@ -78,7 +81,7 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
     TrancheMock seniorTranche;
     TrancheMock juniorTranche;
 
-    AssessorMock assessor;
+    AssessorMockWithDef assessor;
 
     ReserveMock reserve;
 
@@ -96,7 +99,7 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         seniorTranche = new TrancheMock();
         juniorTranche = new TrancheMock();
         reserve = new ReserveMock(address(0));
-        assessor = new AssessorMock();
+        assessor = new AssessorMockWithDef();
 
         seniorTranche_ = address(seniorTranche);
         juniorTranche_ = address(juniorTranche);

@@ -117,7 +117,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
 
     function checkPoolPrecondition(LenderModel memory model, bool currSeniorRatioInRange, bool reserveHealthy) public {
         // check if current ratio is healthy
-        Fixed27 memory currSeniorRatio = Fixed27(coordinator.calcSeniorRatio(coordinator.epochSeniorAsset(),
+        Fixed27 memory currSeniorRatio = Fixed27(assessor.calcSeniorRatio(coordinator.epochSeniorAsset(),
             coordinator.epochNAV(), coordinator.epochReserve()));
 
         assertTrue(coordinator.checkRatioInRange(currSeniorRatio, Fixed27(model.minSeniorRatio), Fixed27(model.maxSeniorRatio)) == currSeniorRatioInRange);
