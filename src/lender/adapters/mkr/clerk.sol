@@ -2,7 +2,6 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
-import "ds-test/test.sol";
 
 interface ManagerLike {
     // collateral debt 
@@ -73,7 +72,7 @@ interface ERC20Like {
     function approve(address usr, uint amount) external;
 }
   
-contract Clerk is Auth, Math, DSTest {
+contract Clerk is Auth, Math {
    
     // max amount of DAI that can be brawn from MKR
     uint public creditline;
@@ -251,6 +250,13 @@ contract Clerk is Auth, Math, DSTest {
     // helper function that returns the overcollateralized DAI amount considering the current mat value
     function calcOvercollAmount(uint amountDAI) public returns (uint) {
         return rmul(amountDAI, mat());
+    }
+
+    // In case contract received DAI as a leftover from the cdp liquidation return back to reserve
+    function returnDAI() public auth {
+        uint amountDAI = dai.balanceOf(address(this));
+        dai.approve(address(reserve), amountDAI);
+        reserve.deposit(amountDAI);
     }
 
     function changeOwnerMgr(address usr) public auth {
