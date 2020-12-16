@@ -2,6 +2,7 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
+import "ds-test/test.sol";
 
 interface ManagerLike {
     // collateral debt 
@@ -18,6 +19,13 @@ interface ManagerLike {
     function ilk() external returns(bytes32);
     // indicates if soft-liquidation was activated
     function safe() external returns(bool);
+    // indicates if hard-liquidation was activated
+    function glad() external returns(bool);
+    // indicates if global settlement was triggered
+    function live() external returns(bool);
+    // auth functions
+    function rely(address usr) external;
+    function deny(address usr) external;
 }
 
 interface VatLike {
@@ -65,7 +73,7 @@ interface ERC20Like {
     function approve(address usr, uint amount) external;
 }
   
-contract Clerk is Auth, Math {
+contract Clerk is Auth, Math, DSTest {
    
     // max amount of DAI that can be brawn from MKR
     uint public creditline;
@@ -130,10 +138,10 @@ contract Clerk is Auth, Math {
     // junior stake in the cdpink -> value of drop used for cdptab protection
     function juniorStake() public returns (uint) {
         // junior looses stake in case cdp is in soft liquidation mode
-        if (mgr.safe() == false) {
+        if (mgr.safe() == false || mgr.glad() == false || mgr.live() == false) {
             return 0;
         }
-        return safeSub(rmul(mgr.cdptab(), mat()), mgr.cdptab());
+        return safeSub(rmul(cdpink(), assessor.calcSeniorTokenPrice()), mgr.cdptab());
     }
 
     // increase MKR credit line 
@@ -243,5 +251,10 @@ contract Clerk is Auth, Math {
     // helper function that returns the overcollateralized DAI amount considering the current mat value
     function calcOvercollAmount(uint amountDAI) public returns (uint) {
         return rmul(amountDAI, mat());
+    }
+
+    function changeOwnerMgr(address usr) public auth {
+        mgr.rely(usr);
+        mgr.deny(address(this));
     }
 }
