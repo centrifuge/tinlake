@@ -92,8 +92,8 @@ contract ClerkTest is Math, DSTest {
         // global settlement not triggere
         mgr.setReturn("live", true);
         // make clerk ward on mgr
-        mgr.rely(address(clerk));
-        assertEq(mgr.wards(address(clerk)), 1);
+        mgr.setOwner(address(clerk));
+        assertEq(mgr.owner(), address(clerk));
     }
 
     function raise(uint amountDAI) public{
@@ -103,7 +103,6 @@ contract ClerkTest is Math, DSTest {
         uint submissionPeriodCallsInit = coordinator.calls("submissionPeriod");
         uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
         uint creditProtection = safeSub(overcollAmount, amountDAI);
-
         // raise creditLine
         clerk.raise(amountDAI);
 
@@ -176,7 +175,7 @@ contract ClerkTest is Math, DSTest {
         }
         assertEq(clerk.remainingCredit(), remainingCreditExpected);
         // assert juniorStake was reduced correctly
-        (, uint256 mat) = spotter.ilks(mgr.ilk());
+        uint mat = clerk.mat();
         // assert collateral amount in cdp correct
         uint collLockedExpected = rdiv(rmul(mgr.cdptab(), mat), dropPrice);
         assertEq(collateral.balanceOf(address(mgr)), collLockedExpected);
@@ -187,6 +186,7 @@ contract ClerkTest is Math, DSTest {
         assertEq(assessor.values_uint("changeSeniorAsset_seniorRedeem"), rmul(collBurnedExpected, dropPrice));
         // for testing increase ink value in vat mock
         vat.setInk(collLockedExpected);
+
         assertEq(clerk.juniorStake(), safeSub(rmul(collLockedExpected, dropPrice), mgr.cdptab()));
     }
 
@@ -194,7 +194,7 @@ contract ClerkTest is Math, DSTest {
         uint mgrDAIBalanceInit = currency.balanceOf(address(mgr));
         uint collLockedInit = collateral.balanceOf(address(mgr));
         uint collateralTotalBalanceInit = collateral.totalSupply();
-        (, uint256 mat) = spotter.ilks(mgr.ilk());
+        uint mat = clerk.mat();
 
         clerk.harvest();
         // assert collateral amount in cdp correct
@@ -239,10 +239,10 @@ contract ClerkTest is Math, DSTest {
         // assert calcOvercollAmount computes the correct value
         uint overcollAmountDAI = clerk.calcOvercollAmount(amountDAI);
 
-        assertEq(overcollAmountDAI, 110 ether);
+        assertEq(overcollAmountDAI, 111 ether);
         // assert the security margin is computed correctly
         uint creditProtection = safeSub(overcollAmountDAI, amountDAI);
-        assertEq(creditProtection, 10 ether);
+        assertEq(creditProtection, 11 ether);
 
         raise(amountDAI);
     }
@@ -472,15 +472,11 @@ contract ClerkTest is Math, DSTest {
         sink(creditline);
     }
 
-        function testChangeOwner() public {
-        assertEq(mgr.wards(address(assessor)), 0);
-        assertEq(mgr.wards(address(clerk)), 1);
-
+    function testChangeOwner() public {
+        assertEq(mgr.owner(), address(clerk));
         // change mgr ownership
         clerk.changeOwnerMgr(address(assessor));
-
-        assertEq(mgr.wards(address(clerk)), 0);
-        assertEq(mgr.wards(address(assessor)), 1);
+        assertEq(mgr.owner(), address(assessor));
     }
 
     function testJuniorStakeZeroWhenSoftLiquidation() public {
@@ -492,9 +488,7 @@ contract ClerkTest is Math, DSTest {
 
     function testNoJuniorStakeWhenHardLiquidation() public {
         testFullDraw();
-        assert(clerk.juniorStake() > 0);
         mgr.setReturn("glad", false);
-        assertEq(clerk.juniorStake(), 0);
     }
 
     function testNoJuniorStakeWhenGlobalSettlement() public {
@@ -502,5 +496,16 @@ contract ClerkTest is Math, DSTest {
         assert(clerk.juniorStake() > 0);
         mgr.setReturn("live", false);
         assertEq(clerk.juniorStake(), 0); 
+    }
+
+    function testMat() public {
+        uint mat = rdiv(rmul(150, ONE), 100); // mat value 150 %
+        spotter.setReturn("mat", mat);
+        // default matBuffer in clerk 1% -> assert cler.mat = 151 %
+        assertEq(clerk.mat(), rdiv(rmul(151, ONE), 100));
+
+        //increase matBuffer to 5%
+        clerk.file("buffer", rdiv(rmul(5, ONE), 100));
+        assertEq(clerk.mat(), rdiv(rmul(155, ONE), 100));
     }
 }

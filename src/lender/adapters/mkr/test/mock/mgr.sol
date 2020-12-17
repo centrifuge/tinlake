@@ -15,15 +15,20 @@ pragma solidity >=0.5.15 <0.6.0;
 import "ds-test/test.sol";
 
 import "../../../../../test/mock/mock.sol";
-import "tinlake-auth/auth.sol";
 
-contract ManagerMock is Mock, Auth {
+contract ManagerMock is Mock  {
 
     SimpleTokenLike currency; 
     SimpleTokenLike collateral; 
+    address public owner;
+
+    modifier ownerOnly {
+        require(msg.sender == owner, "TinlakeMgr/owner-only");
+        _;
+    }
 
     constructor(address currency_, address collateral_) public {
-        wards[msg.sender] = 1;
+        owner = msg.sender;
         currency = SimpleTokenLike(currency_);
         collateral = SimpleTokenLike(collateral_);
     }
@@ -71,6 +76,11 @@ contract ManagerMock is Mock, Auth {
 
     function increaseTab(uint amountDAI) external {
         values_uint["tab"] = safeAdd(values_uint["tab"], amountDAI);
+    }
+
+    // --- Administration ---
+    function setOwner(address newOwner) external ownerOnly {
+        owner = newOwner;
     }
 
 }
