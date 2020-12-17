@@ -137,9 +137,9 @@ contract Clerk is Auth, Math {
         // protection value for the creditline increase coming from the junior tranche => amount by that the juniorAssetValue should be decreased
         uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);
         // check if the new creditline would break the pool constraints
-        validate(0, protectionDAI, overcollAmountDAI, 0);
+        //validate(0, protectionDAI, overcollAmountDAI, 0);
         // increase MKR crediline by amount
-        creditline = safeAdd(creditline, amountDAI);
+        //creditline = safeAdd(creditline, amountDAI);
     }
 
     // mint DROP, join DROP into cdp, draw DAI and send to reserve

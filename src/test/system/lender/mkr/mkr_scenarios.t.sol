@@ -30,6 +30,8 @@ contract LenderSystemTest is TestSuite, Interest {
         deployContracts(mkrAdapter);
         createTestUsers();
 
+        root.relyContract(address(clerk), address(this));
+
     }
 
     function _setupRunningPool() internal {
@@ -51,14 +53,16 @@ contract LenderSystemTest is TestSuite, Interest {
 
     }
 
-    function testCheckMKRDeployment() public {
+    function testSimpleRaise() public {
         _setupRunningPool();
         uint preReserve = reserve.totalBalance();
         uint nav = nftFeed.calcUpdateNAV();
+        uint preSeniorBalance = assessor.seniorBalance();
 
-        emit log_named_uint("reserve", reserve.totalBalance());
-        emit log_named_uint("nav", nav);
-        emit log_named_address("clerk", address(clerk));
+        uint amountDAI = 1 ether;
+        clerk.raise(amountDAI);
+        // todo continue on  testcase
 
+       assertEq(assessor.seniorBalance(), preSeniorBalance + amountDAI);
     }
 }

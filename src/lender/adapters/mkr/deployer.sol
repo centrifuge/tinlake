@@ -41,6 +41,7 @@ contract MKRLenderDeployer is LenderDeployer {
     function deployClerk() public {
         require(seniorToken != address(0));
         clerk = clerkFab.newClerk(currency, seniorToken);
+        AuthLike(clerk).rely(root);
     }
 
     function init(uint minSeniorRatio_, uint maxSeniorRatio_, uint maxReserve_, uint challengeTime_, uint seniorInterestRate_,

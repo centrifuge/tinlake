@@ -110,7 +110,7 @@ contract LenderDeployerLike {
     function deploy() external;
 }
 
-contract TestSetup {
+contract TestSetup  {
     Title public collateralNFT;
     address      public collateralNFT_;
     SimpleToken  public currency;
@@ -241,6 +241,7 @@ contract TestSetup {
         address reserveFab, address coordinatorFab, address operatorFab, address assessorAdminFab) public {
         MKRAssessorFab assessorFab = new MKRAssessorFab();
         ClerkFab clerkFab = new ClerkFab();
+
         mkrLenderDeployer = new MKRLenderDeployer(rootAddr, currency_, address(trancheFab), address(memberlistFab),
             address(restrictedTokenFab), address(reserveFab), address(assessorFab), address(coordinatorFab),
             address(operatorFab), address(assessorAdminFab), address(clerkFab));
