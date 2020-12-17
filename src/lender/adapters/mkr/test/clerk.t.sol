@@ -186,7 +186,6 @@ contract ClerkTest is Math, DSTest {
         assertEq(assessor.values_uint("changeSeniorAsset_seniorRedeem"), rmul(collBurnedExpected, dropPrice));
         // for testing increase ink value in vat mock
         vat.setInk(collLockedExpected);
-
         assertEq(clerk.juniorStake(), safeSub(rmul(collLockedExpected, dropPrice), mgr.cdptab()));
     }
 
