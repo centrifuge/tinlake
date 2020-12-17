@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pragma solidity >=0.5.15 <0.6.0;
+pragma experimental ABIEncoderV2;
 
 import "ds-test/test.sol";
 import "./setup.sol";
@@ -23,8 +24,9 @@ import "./users/investor.sol";
 import "./users/borrower.sol";
 import "./users/keeper.sol";
 import "tinlake-math/math.sol";
+import {BaseTypes} from "../../lender/test/coordinator-base.t.sol";
 
-contract BaseSystemTest is TestSetup, Math, DSTest {
+contract BaseSystemTest is TestSetup, BaseTypes, Math, DSTest {
     // users
     Borrower borrower;
     address borrower_;
@@ -316,5 +318,4 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         borrower.doApproveCurrency(address(shelf), uint(-1));
         return extra;
     }
-
 }

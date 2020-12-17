@@ -119,7 +119,7 @@ contract PrincipalBorrowTest is BaseSystemTest {
         (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
         uint borrowAmount = computeCeiling(riskGroup, nftPrice); // ceiling => 50 % => 100 ether
         uint fixedFee = rmul(borrowAmount, fixedFeeRate); // fixed fee = 10 % => 10 ether
-        
+
         // price nft
         priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
         // set fixed fee for rateGroup
@@ -131,7 +131,7 @@ contract PrincipalBorrowTest is BaseSystemTest {
         borrow(loanId, tokenId, borrowAmount, fixedFee);
 
         hevm.warp(now + 365 days); // expected debt after 1 year ~ 123.2 ether
-        // assert interest also accrued on fixed fees 110 
+        // assert interest also accrued on fixed fees 110
         assertEq(pile.debt(loanId), 123200000000000000001);
     }
 
@@ -157,7 +157,7 @@ contract PrincipalBorrowTest is BaseSystemTest {
         uint borrowAmount = 16 ether; // -> rest 34 ether
         uint riskGroup = 1; // -> 12% per year
         (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_); // interest starts ticking
-        
+
         // price nft
         priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
         uint ceiling = computeCeiling(riskGroup, nftPrice);
