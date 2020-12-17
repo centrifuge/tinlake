@@ -87,6 +87,13 @@ contract ClerkTest is Math, DSTest {
         mgr.setBytes32Return("ilk", "DROP");
         // cdp not in soft liquidation
         mgr.setReturn("safe", true);
+        // cdp not in hard liquidation
+        mgr.setReturn("glad", true);
+        // global settlement not triggere
+        mgr.setReturn("live", true);
+        // make clerk ward on mgr
+        mgr.rely(address(clerk));
+        assertEq(mgr.wards(address(clerk)), 1);
     }
 
     function raise(uint amountDAI) public{
@@ -131,11 +138,10 @@ contract ClerkTest is Math, DSTest {
         assertEq(currency.balanceOf(address(reserve)), safeAdd(reserveDAIBalanceInit, amountDAI));
         // assert DROP collateral amount computed correctly and transferred to cdp
         assertEq(collateral.balanceOf(address(mgr)), safeAdd(collatralBalanceInit, requiredCollateral));
-        // assert juniorStake is correct
-        assertEq(clerk.juniorStake(), safeAdd(juniorStakeInit, protectionAmount));
-
         // for testing increase ink value in vat mock
         vat.setInk(safeAdd(clerk.cdpink(), requiredCollateral));
+        // assert juniorStake is correct
+        assertEq(clerk.juniorStake(), safeAdd(juniorStakeInit, protectionAmount));
     }
 
     function wipe(uint amountDAI, uint dropPrice) public {
@@ -143,7 +149,6 @@ contract ClerkTest is Math, DSTest {
         uint reserveDAIBalanceInit = currency.balanceOf(address(reserve));
         uint mgrDAIBalanceInit = currency.balanceOf(address(mgr));
         uint collLockedInit = collateral.balanceOf(address(mgr));
-        uint juniorStakeInit = clerk.juniorStake();
         uint collateralTotalBalanceInit = collateral.totalSupply();
         // assessor: set DROP token price
         assessor.setReturn("calcSeniorTokenPrice", dropPrice);
@@ -172,8 +177,6 @@ contract ClerkTest is Math, DSTest {
         assertEq(clerk.remainingCredit(), remainingCreditExpected);
         // assert juniorStake was reduced correctly
         (, uint256 mat) = spotter.ilks(mgr.ilk());
-        uint juniorStakeReduction = safeSub(rmul(amountDAI, mat), amountDAI);
-        assertEq(clerk.juniorStake(), safeSub(juniorStakeInit, juniorStakeReduction));
         // assert collateral amount in cdp correct
         uint collLockedExpected = rdiv(rmul(mgr.cdptab(), mat), dropPrice);
         assertEq(collateral.balanceOf(address(mgr)), collLockedExpected);
@@ -184,6 +187,7 @@ contract ClerkTest is Math, DSTest {
         assertEq(assessor.values_uint("changeSeniorAsset_seniorRedeem"), rmul(collBurnedExpected, dropPrice));
         // for testing increase ink value in vat mock
         vat.setInk(collLockedExpected);
+        assertEq(clerk.juniorStake(), safeSub(rmul(collLockedExpected, dropPrice), mgr.cdptab()));
     }
 
     function harvest(uint dropPrice) public {
@@ -466,6 +470,37 @@ contract ClerkTest is Math, DSTest {
         // fail condition: set submission period in coordinator to true
         coordinator.setReturn("submissionPeriod", true);
         sink(creditline);
+    }
 
+        function testChangeOwner() public {
+        assertEq(mgr.wards(address(assessor)), 0);
+        assertEq(mgr.wards(address(clerk)), 1);
+
+        // change mgr ownership
+        clerk.changeOwnerMgr(address(assessor));
+
+        assertEq(mgr.wards(address(clerk)), 0);
+        assertEq(mgr.wards(address(assessor)), 1);
+    }
+
+    function testJuniorStakeZeroWhenSoftLiquidation() public {
+        testFullDraw();
+        assert(clerk.juniorStake() > 0);
+        mgr.setReturn("safe", false);
+        assertEq(clerk.juniorStake(), 0);
+    }
+
+    function testNoJuniorStakeWhenHardLiquidation() public {
+        testFullDraw();
+        assert(clerk.juniorStake() > 0);
+        mgr.setReturn("glad", false);
+        assertEq(clerk.juniorStake(), 0);
+    }
+
+    function testNoJuniorStakeWhenGlobalSettlement() public {
+        testFullDraw();
+        assert(clerk.juniorStake() > 0);
+        mgr.setReturn("live", false);
+        assertEq(clerk.juniorStake(), 0); 
     }
 }

@@ -18,6 +18,13 @@ interface ManagerLike {
     function ilk() external returns(bytes32);
     // indicates if soft-liquidation was activated
     function safe() external returns(bool);
+    // indicates if hard-liquidation was activated
+    function glad() external returns(bool);
+    // indicates if global settlement was triggered
+    function live() external returns(bool);
+    // auth functions
+    function rely(address usr) external;
+    function deny(address usr) external;
 }
 
 interface VatLike {
@@ -121,13 +128,13 @@ contract Clerk is Auth, Math {
         return calcOvercollAmount(remainingCredit());
     }
 
-    // junior stake in the cdpink -> value of drop used for cdptab protection
+   // junior stake in the cdpink -> value of drop used for cdptab protection
     function juniorStake() public returns (uint) {
         // junior looses stake in case cdp is in soft liquidation mode
-        if (mgr.safe() == false) {
+        if (mgr.safe() == false || mgr.glad() == false || mgr.live() == false) {
             return 0;
         }
-        return safeSub(rmul(mgr.cdptab(), mat()), mgr.cdptab());
+        return safeSub(rmul(cdpink(), assessor.calcSeniorTokenPrice()), mgr.cdptab());
     }
 
     // increase MKR credit line
@@ -237,5 +244,17 @@ contract Clerk is Auth, Math {
     // helper function that returns the overcollateralized DAI amount considering the current mat value
     function calcOvercollAmount(uint amountDAI) public returns (uint) {
         return rmul(amountDAI, mat());
+    }
+
+        // In case contract received DAI as a leftover from the cdp liquidation return back to reserve
+    function returnDAI() public auth {
+        uint amountDAI = dai.balanceOf(address(this));
+        dai.approve(address(reserve), amountDAI);
+        reserve.deposit(amountDAI);
+    }
+
+    function changeOwnerMgr(address usr) public auth {
+        mgr.rely(usr);
+        mgr.deny(address(this));
     }
 }

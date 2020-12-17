@@ -15,13 +15,15 @@ pragma solidity >=0.5.15 <0.6.0;
 import "ds-test/test.sol";
 
 import "../../../../../test/mock/mock.sol";
+import "tinlake-auth/auth.sol";
 
-contract ManagerMock is Mock {
+contract ManagerMock is Mock, Auth {
 
-    SimpleTokenLike currency;
-    SimpleTokenLike collateral;
+    SimpleTokenLike currency; 
+    SimpleTokenLike collateral; 
 
     constructor(address currency_, address collateral_) public {
+        wards[msg.sender] = 1;
         currency = SimpleTokenLike(currency_);
         collateral = SimpleTokenLike(collateral_);
     }
@@ -44,7 +46,7 @@ contract ManagerMock is Mock {
         currency.mint(usr, amountDAI);
         values_uint["tab"] = safeAdd(values_uint["tab"], amountDAI);
     }
-
+   
     function wipe(uint amountDAI) external {
         // mimic cdp behav: move DAI from clerk to mgr
         currency.transferFrom(msg.sender, address(this), amountDAI);
@@ -53,6 +55,14 @@ contract ManagerMock is Mock {
 
     function safe() external returns(bool) {
         return values_bool_return["safe"];
+    }
+
+    function glad() external returns(bool) {
+        return values_bool_return["glad"];
+    }
+
+    function live() external returns(bool) {
+        return values_bool_return["live"];
     }
 
     function exit(address usr, uint amountDROP) external {
