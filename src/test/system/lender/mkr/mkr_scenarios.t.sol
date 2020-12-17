@@ -53,12 +53,12 @@ contract LenderSystemTest is TestSuite, Interest {
 
     function testCheckMKRDeployment() public {
         _setupRunningPool();
-//        uint preReserve = reserve.totalBalance();
-//        uint nav = nftFeed.calcUpdateNAV();
-//
-//        emit log_named_uint("reserve", reserve.totalBalance());
-//        emit log_named_uint("nav", nav);
-//        emit log_named_address("clerk", address(clerk));
+        uint preReserve = reserve.totalBalance();
+        uint nav = nftFeed.calcUpdateNAV();
+
+        emit log_named_uint("reserve", reserve.totalBalance());
+        emit log_named_uint("nav", nav);
+        emit log_named_address("clerk", address(clerk));
 
     }
 }

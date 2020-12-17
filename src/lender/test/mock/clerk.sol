@@ -23,7 +23,7 @@ contract ClerkMock is Mock {
     function juniorStake() external view returns (uint) {
         return values_return["juniorStake"];
     }
-    function remainingCreditCollateral() external view returns (uint) {
-        return values_return["remainingCreditCollateral"];
+    function remainingOvercollCredit() external view returns (uint) {
+        return values_return["remainingOvercollCredit"];
     }
 }

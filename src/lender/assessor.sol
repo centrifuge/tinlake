@@ -128,7 +128,7 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     function calcUpdateNAV() external returns (uint) {
-         return navFeed.calcUpdateNAV();
+        return navFeed.calcUpdateNAV();
     }
 
     function calcSeniorTokenPrice() external view returns(uint) {

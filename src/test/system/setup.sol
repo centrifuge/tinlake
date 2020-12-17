@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pragma solidity >=0.5.15 <0.6.0;
+pragma experimental ABIEncoderV2;
 
 import { TitleFab } from "../../borrower/fabs/title.sol";
 import { ShelfFab } from "../../borrower/fabs/shelf.sol";
@@ -279,6 +280,27 @@ contract TestSetup {
         deployLender(mkrAdapter);
     }
 
+
+    struct LenderInit {
+        uint seniorInterestRate;
+        uint maxReserve;
+        uint maxSeniorRatio;
+        uint minSeniorRatio;
+        uint challengeTime;
+        string  seniorTokenName;
+        string  seniorTokenSymbol;
+        string  juniorTokenName;
+        string  juniorTokenSymbol;
+    }
+
+    function _initMKR(LenderInit memory l) public {
+        mkr = new SimpleMkr(0, "drop", 1.10 * 10**27);
+        address mkr_ = address(mkr);
+
+        mkrLenderDeployer.init(l.minSeniorRatio, l.maxSeniorRatio, l.maxReserve, l.challengeTime, l.seniorInterestRate, l.seniorTokenName,
+            l.seniorTokenSymbol, l.juniorTokenName, l.juniorTokenSymbol, address(mkr), address(mkr), address(mkr));
+    }
+
     function deployLender(bool mkrAdapter) public {
         // 2 % per day
         uint seniorInterestRate = uint(1000000229200000000000000000);
@@ -295,10 +317,15 @@ contract TestSetup {
         LenderDeployerLike ld = LenderDeployerLike(lenderDeployerAddr);
 
         if (mkrAdapter) {
-
-            mkr = new SimpleMkr(0, "drop", 1.10 * 10**27);
-            mkrLenderDeployer.init(minSeniorRatio, maxSeniorRatio, maxReserve, challengeTime, seniorInterestRate, seniorTokenName, seniorTokenSymbol, juniorTokenName, juniorTokenSymbol);
-
+            _initMKR(LenderInit({seniorInterestRate:seniorInterestRate,
+            maxReserve:maxReserve,
+            maxSeniorRatio: maxSeniorRatio,
+            minSeniorRatio: minSeniorRatio,
+            challengeTime: challengeTime,
+            seniorTokenName: seniorTokenName,
+            seniorTokenSymbol: seniorTokenSymbol,
+            juniorTokenName: juniorTokenName,
+            juniorTokenSymbol: juniorTokenSymbol}));
         } else {
             lenderDeployer.init(minSeniorRatio, maxSeniorRatio, maxReserve, challengeTime, seniorInterestRate, seniorTokenName, seniorTokenSymbol, juniorTokenName, juniorTokenSymbol);
         }

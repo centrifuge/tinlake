@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //
 pragma solidity >=0.5.15 <0.6.0;
+pragma experimental ABIEncoderV2;
 
 import "../base_system.sol";
 
@@ -82,7 +83,7 @@ contract CollectTest is BaseSystemTest {
 
     function setupCollect(uint loanId, uint recoveryPrice, address usr, bool isWhitelisted,
         bool isAssigned, bool doTopup, bool doApprove) public {
-       
+
         // keeper assigned to a certain loan. Loan can just be collected by this keeper
         if (isAssigned) { admin.addKeeper(loanId, keeper_, recoveryPrice); }
         // keeper whitelisted to call collect and collect all loans that are not assigned
@@ -101,20 +102,20 @@ contract CollectTest is BaseSystemTest {
     function testCollectAssignedKeeper() public {
         // threshold has to be reached after 1 year
         uint riskGroup = 4; // interest: 5 % per day, ceiling: 50 %, threshold 60 %
-        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether  
+        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether
 
         bool assigned = true;
         bool whitelisted = false;
         bool doTopup  = true;
         bool doApprove = true;
-       
+
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
         // after 10 days debt higher than threshold 168 ether
         hevm.warp(now + 10 days); // -> 100 * ((1.05)^10) ~ loanSize 162.88 ether
-       
+
         uint recoveryPrice = pile.debt(loanId);
         setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
-    
+
         // seize loan
         collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
@@ -123,7 +124,7 @@ contract CollectTest is BaseSystemTest {
 
     function testCollectWhitelistedKeeper() public {
         uint riskGroup = 4; // interest: 5 % per day, ceiling: 50 %, threshold 60 %
-        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether  
+        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether
         bool assigned = false;
         bool whitelisted = true;
         bool doTopup  = true;
@@ -133,7 +134,7 @@ contract CollectTest is BaseSystemTest {
         hevm.warp(now + 10 days);
         uint recoveryPrice = pile.debt(loanId);
         setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
-    
+
         // seize loan
         collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
@@ -142,7 +143,7 @@ contract CollectTest is BaseSystemTest {
 
     function testCollectPriceSmallerDebt() public {
         uint riskGroup = 4; // interest: 5 % per day, ceiling: 50 %, threshold 60 %
-        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether  
+        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether
         bool assigned = true;
         bool whitelisted = true;
         bool doTopup  = true;
@@ -151,7 +152,7 @@ contract CollectTest is BaseSystemTest {
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
         uint recoveryPrice = safeDiv(pile.debt(loanId), 2);
         setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
-       
+
         // after 10 days debt higher than threshold 168 ether
         hevm.warp(now + 10 days);
         // seize loan
@@ -162,7 +163,7 @@ contract CollectTest is BaseSystemTest {
 
     function testCollectPriceHigherDebt() public {
         uint riskGroup = 4; // interest: 5 % per day, ceiling: 50 %, threshold 60 %
-        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether  
+        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether
 
         bool assigned = true;
         bool whitelisted = true;
@@ -184,13 +185,13 @@ contract CollectTest is BaseSystemTest {
 
     function testCollectAndIssueLoan() public {
         uint riskGroup = 4; // interest: 5 % per day, ceiling: 50 %, threshold 60 %
-        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether  
-        
+        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether
+
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
         uint recoveryPrice = pile.debt(loanId);
-    
+
         hevm.warp(now + 10 days);
-  
+
         // borrower is added as keeper and collects loan
         addKeeperAndCollect(loanId, borrower_, recoveryPrice);
         // borrower closes old loan, to create a new one (randomUser is still loanOwner)
@@ -201,7 +202,7 @@ contract CollectTest is BaseSystemTest {
 
     function testFailCollectAndIssueNotClosed() public {
         uint riskGroup = 4; // interest: 5 % per day, ceiling: 50 %, threshold 60 %
-        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether  
+        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
         uint recoveryPrice = pile.debt(loanId);
 
@@ -217,15 +218,15 @@ contract CollectTest is BaseSystemTest {
 
     function testFailCollectNotWhitelisted() public {
         uint riskGroup = 4; // interest: 5 % per day, ceiling: 50 %, threshold 60 %
-        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether  
+        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether
         bool assigned = false;
         bool whitelisted = false;
         bool doTopup  = true;
         bool doApprove = true;
-        
+
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
         uint recoveryPrice = pile.debt(loanId);
-        
+
         setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
 
         // after 10 days debt higher than threshold 168 ether
@@ -238,15 +239,15 @@ contract CollectTest is BaseSystemTest {
 
     function testFailCollectLoanHasAssignedKeeper() public {
         uint riskGroup = 4; // interest: 5 % per day, ceiling: 50 %, threshold 60 %
-        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether  
+        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether
         bool assigned = false;
         bool whitelisted = true;
         bool doTopup  = true;
         bool doApprove = true;
-       
+
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
         uint recoveryPrice = pile.debt(loanId);
-        
+
         setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
 
         // assign random keeper to loan
@@ -261,8 +262,8 @@ contract CollectTest is BaseSystemTest {
 
     function testFailCollectNotSeized() public {
         uint riskGroup = 4; // interest: 5 % per day, ceiling: 50 %, threshold 60 %
-        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether  
-        
+        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether
+
         bool assigned = true;
         bool whitelisted = false;
         bool doTopup  = true;
@@ -270,7 +271,7 @@ contract CollectTest is BaseSystemTest {
 
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
         uint recoveryPrice = pile.debt(loanId);
-    
+
         setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
 
         // after 1 year debt has not reached threshold
@@ -283,7 +284,7 @@ contract CollectTest is BaseSystemTest {
 
     function testFailCollectKeeperNotEnoughFunds() public {
         uint riskGroup = 4; // interest: 5 % per day, ceiling: 50 %, threshold 60 %
-        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether 
+        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether
 
         bool assigned = true;
         bool whitelisted = false;
@@ -293,7 +294,7 @@ contract CollectTest is BaseSystemTest {
 
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
         uint recoveryPrice = pile.debt(loanId);
-    
+
         setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
 
         // after 1 year threshold reached
@@ -306,7 +307,7 @@ contract CollectTest is BaseSystemTest {
 
     function testFailCollectNoApproval() public {
         uint riskGroup = 4; // interest: 5 % per day, ceiling: 50 %, threshold 60 %
-        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether 
+        uint nftPrice = 200 ether; // ceiling 100 ether, threshold: 120 ether
         bool assigned = true;
         bool whitelisted = false;
         bool doTopup  = true;
@@ -316,7 +317,7 @@ contract CollectTest is BaseSystemTest {
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
         uint recoveryPrice = pile.debt(loanId);
         setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
-        
+
         hevm.warp(now + 10 days);
         collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
