@@ -88,7 +88,7 @@ contract Clerk is Auth, Math {
     ERC20Like collateral;
 
     // buffer to add on top of mat to avoid cdp liquidation => default 1%
-    uint matBuffer = 10000000000000000000000000;
+    uint matBuffer = 0.01 * 10**27;
 
     // adapter functions can only be active if the tinlake pool is currently not in epoch closing/submissions/execution state
     modifier active() { require((coordinator.submissionPeriod() == false), "epoch-closing"); _; }
