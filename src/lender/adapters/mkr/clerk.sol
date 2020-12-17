@@ -4,7 +4,7 @@ import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 
 interface ManagerLike {
-    // collateral debt 
+    // collateral debt
     function cdptab() external returns(uint);
     // put collateral into cdp
     function join(uint amountDROP) external;
@@ -34,9 +34,6 @@ interface AssessorLike {
     function changeSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
-}
-
-interface NAVFeedLike {
     function currentNAV() external view returns(uint);
 }
 
@@ -64,9 +61,9 @@ interface ERC20Like {
     function transferFrom(address, address, uint) external returns (bool);
     function approve(address usr, uint amount) external;
 }
-  
+
 contract Clerk is Auth, Math {
-   
+
     // max amount of DAI that can be brawn from MKR
     uint public creditline;
 
@@ -75,7 +72,6 @@ contract Clerk is Auth, Math {
     AssessorLike assessor;
     ReserveLike reserve;
     TrancheLike tranche;
-    NAVFeedLike nav;
 
     // MKR contracts
     ManagerLike mgr;
@@ -88,31 +84,29 @@ contract Clerk is Auth, Math {
     // adapter functions can only be active if the tinlake pool is currently not in epoch closing/submissions/execution state
     modifier active() { require((coordinator.submissionPeriod() == false), "epoch-closing"); _; }
 
-    constructor(address dai_, address collateral_, address mgr_, address spotter_, address vat_) public {
+    constructor(address dai_, address collateral_) public {
+        wards[msg.sender] = 1;
         dai =  ERC20Like(dai_);
         collateral =  ERC20Like(collateral_);
-        mgr = ManagerLike(mgr_);
-        vat = VatLike(vat_);
-        spotter = SpotterLike(spotter_);
-
-        wards[msg.sender] = 1;
     }
 
     function depend(bytes32 contractName, address addr) public auth {
         if (contractName == "mgr") {
-            mgr =  ManagerLike(mgr);
+            mgr =  ManagerLike(addr);
         } else if (contractName == "coordinator") {
             coordinator = CoordinatorLike(addr);
         } else if (contractName == "assessor") {
             assessor = AssessorLike(addr);
-        } else if (contractName == "nav") {
-            nav = NAVFeedLike(addr);
         } else if (contractName == "reserve") {
             reserve = ReserveLike(addr);
         } else if (contractName == "tranche") {
             tranche = TrancheLike(addr);
         } else if (contractName == "collateral") {
             collateral = ERC20Like(addr);
+        } else if (contractName == "spotter") {
+            spotter = SpotterLike(addr);
+        } else if (contractName == "vat") {
+            vat = VatLike(addr);
         } else revert();
     }
 
@@ -136,7 +130,7 @@ contract Clerk is Auth, Math {
         return safeSub(rmul(mgr.cdptab(), mat()), mgr.cdptab());
     }
 
-    // increase MKR credit line 
+    // increase MKR credit line
     function raise(uint amountDAI) public auth active {
         // creditline amount including required overcollateralization => amount by that the seniorAssetValue should be increased
         uint overcollAmountDAI =  calcOvercollAmount(amountDAI);
@@ -180,10 +174,10 @@ contract Clerk is Auth, Math {
         reserve.payout(amountDAI);
         // repay cdp debt
         dai.approve(address(mgr), amountDAI);
-        mgr.wipe(amountDAI); 
+        mgr.wipe(amountDAI);
 
         // harvest junior interest & burn surplus drop
-        harvest();        
+        harvest();
     }
 
     // harvest junior profit
@@ -208,9 +202,9 @@ contract Clerk is Auth, Math {
         // creditline amount including required overcollateralization => amount by that the seniorAssetValue should be decreased
         uint overcollAmountDAI = calcOvercollAmount(amountDAI);
         // protection value for the creditline decrease going to the junior tranche => amount by that the juniorAssetValue should be increased
-        uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);    
+        uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);
         // check if the new creditline would break the pool constraints
-        validate(protectionDAI, 0, 0, overcollAmountDAI);  
+        validate(protectionDAI, 0, 0, overcollAmountDAI);
         // increase MKR crediline by amount
         creditline = safeSub(creditline, amountDAI);
     }
@@ -219,9 +213,9 @@ contract Clerk is Auth, Math {
     function validate(uint juniorSupplyDAI, uint juniorRedeemDAI, uint seniorSupplyDAI, uint seniorRedeemDAI) internal {
         require((coordinator.validate(juniorSupplyDAI, juniorRedeemDAI, seniorSupplyDAI, seniorRedeemDAI) == 0), "supply not possible, pool constraints violated");
     }
-    
+
     function updateSeniorAsset(uint decreaseDAI, uint increaseDAI) internal  {
-        uint currenNav = nav.currentNAV();
+        uint currenNav = assessor.currentNAV();
         uint newSeniorAsset = coordinator.calcSeniorAssetValue(decreaseDAI, increaseDAI,
             assessor.calcSeniorAssetValue(assessor.seniorDebt(), assessor.seniorBalance()), reserve.totalBalance(), currenNav);
         uint newSeniorRatio = coordinator.calcSeniorRatio(newSeniorAsset, currenNav, reserve.totalBalance());

@@ -14,7 +14,7 @@
 pragma solidity >=0.5.15 <0.6.0;
 import "ds-test/test.sol";
 
-import "../../../../test/mock/mock.sol";
+import "../../../../../test/mock/mock.sol";
 
 contract VatMock is Mock {
     function urns(bytes32, address) external returns (uint, uint) {
