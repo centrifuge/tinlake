@@ -23,8 +23,7 @@ interface ManagerLike {
     // indicates if global settlement was triggered
     function live() external returns(bool);
     // auth functions
-    function rely(address usr) external;
-    function deny(address usr) external;
+    function setOwner(address newOwner) external;
 }
 
 interface VatLike {
@@ -88,6 +87,9 @@ contract Clerk is Auth, Math {
     ERC20Like dai;
     ERC20Like collateral;
 
+    // buffer to add on top of mat to avoid cdp liquidation => default 1%
+    uint matBuffer = 0.01 * 10**27;
+
     // adapter functions can only be active if the tinlake pool is currently not in epoch closing/submissions/execution state
     modifier active() { require((coordinator.submissionPeriod() == false), "epoch-closing"); _; }
 
@@ -117,6 +119,12 @@ contract Clerk is Auth, Math {
         } else revert();
     }
 
+    function file(bytes32 what, uint value) public auth {
+        if (what == "buffer") {
+            matBuffer = value;
+        }
+    } 
+
     function remainingCredit() public returns (uint) {
         if (creditline < mgr.cdptab()) {
             return 0;
@@ -131,7 +139,7 @@ contract Clerk is Auth, Math {
    // junior stake in the cdpink -> value of drop used for cdptab protection
     function juniorStake() public returns (uint) {
         // junior looses stake in case cdp is in soft liquidation mode
-        if (mgr.safe() == false || mgr.glad() == false || mgr.live() == false) {
+        if (!(mgr.safe() && mgr.glad() && mgr.live())) {
             return 0;
         }
         return safeSub(rmul(cdpink(), assessor.calcSeniorTokenPrice()), mgr.cdptab());
@@ -238,7 +246,7 @@ contract Clerk is Auth, Math {
     // returns the required security margin for the DROP tokens
     function mat() public returns (uint) {
         (, uint256 mat) = spotter.ilks(mgr.ilk());
-        return mat; //  e.g 150% denominated in RAY
+        return safeAdd(mat, matBuffer); //  e.g 150% denominated in RAY
     }
 
     // helper function that returns the overcollateralized DAI amount considering the current mat value
@@ -254,7 +262,6 @@ contract Clerk is Auth, Math {
     }
 
     function changeOwnerMgr(address usr) public auth {
-        mgr.rely(usr);
-        mgr.deny(address(this));
+        mgr.setOwner(usr);
     }
 }
