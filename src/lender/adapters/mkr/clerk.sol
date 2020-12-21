@@ -126,15 +126,25 @@ contract Clerk is Auth, Math {
     } 
 
     function remainingCredit() public returns (uint) {
-        if (creditline < mgr.cdptab()) {
+        if (creditline <= (mgr.cdptab())) {
             return 0;
         }
         return safeSub(creditline, mgr.cdptab());
     }
 
+    function collatDeficit() public returns (uint) {
+        uint lockedCollateralDAI = rmul(cdpink(), assessor.calcSeniorTokenPrice());
+        uint requiredCollateralDAI = calcOvercollAmount(mgr.cdptab());
+        if (requiredCollateralDAI > lockedCollateralDAI) {
+            return safeSub(requiredCollateralDAI, lockedCollateralDAI);
+        }  
+        return 0;
+    }
+
     function remainingOvercollCredit() public returns (uint) {
         return calcOvercollAmount(remainingCredit());
     }
+
 
    // junior stake in the cdpink -> value of drop used for cdptab protection
     function juniorStake() public returns (uint) {
@@ -159,6 +169,8 @@ contract Clerk is Auth, Math {
 
     // mint DROP, join DROP into cdp, draw DAI and send to reserve
     function draw(uint amountDAI) public auth active {
+        // make sure ther eis no collateral deficit before drawing out new DAI
+        require(collatDeficit() == 0, "please heal cdp first");
         require(amountDAI <= remainingCredit(), "not enough credit left");
         // collateral value that needs to be locked in vault to draw amountDAI
         uint collateralDAI = calcOvercollAmount(amountDAI);
@@ -224,24 +236,21 @@ contract Clerk is Auth, Math {
         creditline = safeSub(creditline, amountDAI);
     }
 
-    function heal(uint amountDAI) public auth {
-        uint priceDROP = assessor.calcSeniorTokenPrice();
-        uint lockedCollateralDAI = rmul(cdpink(), priceDROP);
-        uint requiredCollateralDAI = calcOvercollAmount(mgr.cdptab());
-
-        require((requiredCollateralDAI > lockedCollateralDAI), "no healing required");
-        uint missingCollateralDAI = safeSub(requiredCollateralDAI, lockedCollateralDAI);
-
+    function heal(uint amountDAI) public auth {    
+        uint collatDeficitDAI = collatDeficit();
+        require(collatDeficitDAI > 0, "no healing required");
+    
         // heal max up to the required missing collateral amount
-        if (missingCollateralDAI < amountDAI) {
-            amountDAI = missingCollateralDAI;
+        if (collatDeficitDAI < amountDAI) {
+            amountDAI = collatDeficitDAI;
         }
         // check if creditline needs to be increased    
         if (remainingCredit() < amountDAI) {
             // raise creditline to ensure protection
-            raise(safeSub(amountDAI, remainingCredit()));
+            require((validate(0, amountDAI, 0, 0) == 0), "supply not possible, pool constraints violated");
         }
         // mint drop and move into cdp
+        uint priceDROP = assessor.calcSeniorTokenPrice();
         uint collateralDROP = rdiv(amountDAI, priceDROP);
         tranche.mint(address(this), collateralDROP);
         collateral.approve(address(mgr), collateralDROP);
@@ -252,10 +261,9 @@ contract Clerk is Auth, Math {
 
     // heal the cdp and put in more drop in case the collateral value has fallen below the bufferedmat ratio
     function heal() public auth {
-        uint lockedCollateralDAI = rmul(cdpink(), assessor.calcSeniorTokenPrice());
-        uint requiredCollateralDAI = calcOvercollAmount(mgr.cdptab());
-        if (requiredCollateralDAI > lockedCollateralDAI) {
-            heal(safeSub(requiredCollateralDAI, lockedCollateralDAI));
+        uint collatDeficitDAI = collatDeficit();
+        if (collatDeficitDAI > 0) {
+            heal(collatDeficitDAI);
         }
     }
 
