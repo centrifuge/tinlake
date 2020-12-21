@@ -71,7 +71,7 @@ contract LenderSystemTest is TestSuite, Interest {
         clerk.raise(amountDAI);
 
         //raise reserves a spot for drop and locks the tin
-        assertEq(assessor.seniorBalance(), safeAdd(preSeniorBalance, rmul(amountDAI, mkrMAT)));
+        assertEq(assessor.seniorBalance(), safeAdd(preSeniorBalance, rmul(amountDAI, clerk.mat())));
         assertEq(assessor.totalBalance(), safeAdd(preReserve, amountDAI));
 
         assertEq(mkrAssessor.effectiveTotalBalance(), preReserve);
@@ -90,7 +90,7 @@ contract LenderSystemTest is TestSuite, Interest {
         clerk.raise(creditLineAmount);
 
         //raise reserves a spot for drop and locks the tin
-        assertEq(assessor.seniorBalance(), safeAdd(preSeniorBalance, rmul(creditLineAmount, mkrMAT)));
+        assertEq(assessor.seniorBalance(), safeAdd(preSeniorBalance, rmul(creditLineAmount, clerk.mat())));
         assertEq(assessor.totalBalance(), safeAdd(preReserve, creditLineAmount));
 
         uint preSeniorDebt = assessor.seniorDebt();
@@ -98,13 +98,13 @@ contract LenderSystemTest is TestSuite, Interest {
 
         // seniorBalance and reserve should have changed
         assertEq(mkrAssessor.effectiveTotalBalance(), safeAdd(preReserve, drawAmount));
-        emit log_named_uint("c2", rmul(drawAmount, mkrMAT));
+
         assertEq(safeAdd(mkrAssessor.effectiveSeniorBalance(),assessor.seniorDebt()),
-            safeAdd(safeAdd(preSeniorBalance, rmul(drawAmount, mkrMAT)), preSeniorDebt));
+            safeAdd(safeAdd(preSeniorBalance, rmul(drawAmount, clerk.mat())), preSeniorDebt));
 
         //raise reserves a spot for drop and locks the tin. no impact from the draw function
         assertEq(safeAdd(assessor.seniorBalance(),assessor.seniorDebt()),
-            safeAdd(safeAdd(preSeniorBalance, rmul(creditLineAmount, mkrMAT)), preSeniorDebt));
+            safeAdd(safeAdd(preSeniorBalance, rmul(creditLineAmount, clerk.mat())), preSeniorDebt));
 
         assertEq(assessor.totalBalance(), safeAdd(preReserve, creditLineAmount));
     }

@@ -1,3 +1,17 @@
+// Copyright (C) 2020 Centrifuge
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 pragma solidity >=0.5.15 <0.6.0;
 
 import "tinlake-auth/auth.sol";
@@ -18,6 +32,12 @@ interface ManagerLike {
     function ilk() external returns(bytes32);
     // indicates if soft-liquidation was activated
     function safe() external returns(bool);
+    // indicates if hard-liquidation was activated
+    function glad() external returns(bool);
+    // indicates if global settlement was triggered
+    function live() external returns(bool);
+    // auth functions
+    function setOwner(address newOwner) external;
 }
 
 interface VatLike {
@@ -85,6 +105,9 @@ contract Clerk is Auth, Math {
     ERC20Like dai;
     ERC20Like collateral;
 
+    // buffer to add on top of mat to avoid cdp liquidation => default 1%
+    uint matBuffer = 0.01 * 10**27;
+
     // adapter functions can only be active if the tinlake pool is currently not in epoch closing/submissions/execution state
     modifier active() { require((coordinator.submissionPeriod() == false), "epoch-closing"); _; }
 
@@ -114,6 +137,12 @@ contract Clerk is Auth, Math {
         } else revert();
     }
 
+    function file(bytes32 what, uint value) public auth {
+        if (what == "buffer") {
+            matBuffer = value;
+        }
+    }
+
     function remainingCredit() public returns (uint) {
         if (creditline < mgr.cdptab()) {
             return 0;
@@ -125,13 +154,13 @@ contract Clerk is Auth, Math {
         return calcOvercollAmount(remainingCredit());
     }
 
-    // junior stake in the cdpink -> value of drop used for cdptab protection
+   // junior stake in the cdpink -> value of drop used for cdptab protection
     function juniorStake() public returns (uint) {
         // junior looses stake in case cdp is in soft liquidation mode
-        if (mgr.safe() == false) {
+        if (!(mgr.safe() && mgr.glad() && mgr.live())) {
             return 0;
         }
-        return safeSub(rmul(mgr.cdptab(), mat()), mgr.cdptab());
+        return safeSub(rmul(cdpink(), assessor.calcSeniorTokenPrice()), mgr.cdptab());
     }
 
     // increase MKR credit line
@@ -141,7 +170,7 @@ contract Clerk is Auth, Math {
         // protection value for the creditline increase coming from the junior tranche => amount by that the juniorAssetValue should be decreased
         uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);
         // check if the new creditline would break the pool constraints
-        // todo optimize current nav
+
         validate(0, protectionDAI, overcollAmountDAI, 0);
         // increase MKR crediline by amount
         creditline = safeAdd(creditline, amountDAI);
@@ -239,11 +268,21 @@ contract Clerk is Auth, Math {
     // returns the required security margin for the DROP tokens
     function mat() public returns (uint) {
         (, uint256 mat) = spotter.ilks(mgr.ilk());
-        return mat; //  e.g 150% denominated in RAY
+        return safeAdd(mat, matBuffer); //  e.g 150% denominated in RAY
     }
-
     // helper function that returns the overcollateralized DAI amount considering the current mat value
     function calcOvercollAmount(uint amountDAI) public returns (uint) {
         return rmul(amountDAI, mat());
+    }
+
+        // In case contract received DAI as a leftover from the cdp liquidation return back to reserve
+    function returnDAI() public auth {
+        uint amountDAI = dai.balanceOf(address(this));
+        dai.approve(address(reserve), amountDAI);
+        reserve.deposit(amountDAI);
+    }
+
+    function changeOwnerMgr(address usr) public auth {
+        mgr.setOwner(usr);
     }
 }

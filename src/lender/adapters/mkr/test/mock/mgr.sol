@@ -21,7 +21,15 @@ contract ManagerMock is Mock {
     SimpleTokenLike currency;
     SimpleTokenLike collateral;
 
+    address public owner;
+
+    modifier ownerOnly {
+        require(msg.sender == owner, "TinlakeMgr/owner-only");
+        _;
+    }
+
     constructor(address currency_, address collateral_) public {
+        owner = msg.sender;
         currency = SimpleTokenLike(currency_);
         collateral = SimpleTokenLike(collateral_);
     }
@@ -55,12 +63,25 @@ contract ManagerMock is Mock {
         return values_bool_return["safe"];
     }
 
+    function glad() external returns(bool) {
+        return values_bool_return["glad"];
+    }
+
+    function live() external returns(bool) {
+        return values_bool_return["live"];
+    }
+
     function exit(address usr, uint amountDROP) external {
        collateral.transferFrom(address(this), usr, amountDROP);
     }
 
     function increaseTab(uint amountDAI) external {
         values_uint["tab"] = safeAdd(values_uint["tab"], amountDAI);
+    }
+
+    // --- Administration ---
+    function setOwner(address newOwner) external ownerOnly {
+        owner = newOwner;
     }
 
 }
