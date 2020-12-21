@@ -31,7 +31,7 @@ interface SpotterLike {
 interface AssessorLike {
     function calcSeniorTokenPrice() external returns(uint);
     function calcSeniorAssetValue(uint seniorDebt, uint seniorBalance) external returns(uint);
-    function changeSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
+    function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) external;
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
     function currentNAV() external view returns(uint);
@@ -142,10 +142,6 @@ contract Clerk is Auth, Math {
         uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);
         // check if the new creditline would break the pool constraints
         // todo optimize current nav
-
-        emit log_named_uint("amountDAI", overcollAmountDAI);
-        emit log_named_uint("protectionDAI", protectionDAI);
-
         validate(0, protectionDAI, overcollAmountDAI, 0);
         // increase MKR crediline by amount
         creditline = safeAdd(creditline, amountDAI);
@@ -231,11 +227,7 @@ contract Clerk is Auth, Math {
     }
 
     function updateSeniorAsset(uint decreaseDAI, uint increaseDAI) internal  {
-        uint currenNav = assessor.currentNAV();
-        uint newSeniorAsset = coordinator.calcSeniorAssetValue(decreaseDAI, increaseDAI,
-            assessor.calcSeniorAssetValue(assessor.seniorDebt(), assessor.seniorBalance()), reserve.totalBalance(), currenNav);
-        uint newSeniorRatio = coordinator.calcSeniorRatio(newSeniorAsset, currenNav, reserve.totalBalance());
-        assessor.changeSeniorAsset(newSeniorRatio, increaseDAI, decreaseDAI);
+        assessor.changeSeniorAsset(increaseDAI, decreaseDAI);
     }
 
     // returns the collateral amount in the cdp

@@ -156,6 +156,8 @@ contract TestSetup  {
     TestRoot root;
     address  root_;
 
+    uint mkrMAT = 1.10 * 10**27;
+
     function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
         tokenId = collateralNFT.issue(usr);
         lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
@@ -295,7 +297,7 @@ contract TestSetup  {
     }
 
     function _initMKR(LenderInit memory l) public {
-        mkr = new SimpleMkr(0, "drop", 1.10 * 10**27);
+        mkr = new SimpleMkr(0, "drop", mkrMAT);
         address mkr_ = address(mkr);
 
         mkrLenderDeployer.init(l.minSeniorRatio, l.maxSeniorRatio, l.maxReserve, l.challengeTime, l.seniorInterestRate, l.seniorTokenName,

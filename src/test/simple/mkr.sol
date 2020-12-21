@@ -9,11 +9,10 @@ interface ERC20Like {
     function balanceOf(address usr) external returns (uint);
 }
 
-
 // simple mock implementation of relevant MKR contracts
 // contract will mint currency tokens to simulate the mkr behaviour
 // implements mgr, spotter, vat interfaces
-contract SimpleMkr is Math{
+contract SimpleMkr is Math {
 
     ERC20Like public currency;
     ERC20Like public drop;

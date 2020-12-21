@@ -19,9 +19,13 @@ pragma experimental ABIEncoderV2;
 import "../../test_suite.sol";
 import "tinlake-math/interest.sol";
 import {BaseTypes} from "../../../../lender/test/coordinator-base.t.sol";
+import { MKRAssessor }from "../../../../lender/adapters/mkr/assessor.sol";
 
 
 contract LenderSystemTest is TestSuite, Interest {
+
+    MKRAssessor mkrAssessor;
+
     function setUp() public {
         // setup hevm
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
@@ -33,7 +37,9 @@ contract LenderSystemTest is TestSuite, Interest {
         nftFeed_ = NFTFeedLike(address(nftFeed));
 
         root.relyContract(address(clerk), address(this));
-
+        mkrAssessor = MKRAssessor(address(assessor));
+        mkr.depend("currency" ,currency_);
+        mkr.depend("drop", mkrLenderDeployer.seniorToken());
     }
 
     function _setupRunningPool() internal {
@@ -54,19 +60,52 @@ contract LenderSystemTest is TestSuite, Interest {
         supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate, submission);
     }
 
-    function testSimpleRaise() public {
+    function testMKRRaise() public {
         _setupRunningPool();
-        uint preReserve = reserve.totalBalance();
+        uint preReserve = assessor.totalBalance();
         uint nav = nftFeed.calcUpdateNAV();
         uint preSeniorBalance = assessor.seniorBalance();
 
-        uint amountDAI = 1 ether;
+        uint amountDAI = 10 ether;
 
-        emit log_named_uint("pre-seniorAsset", (assessor.seniorDebt()+assessor.seniorBalance_())/ 1 ether );
-        emit log_named_uint("pre-nav", nftFeed_.currentNAV()/ 1 ether );
-        emit log_named_uint("pre-reserve", assessor.totalBalance()/ 1 ether );
+        clerk.raise(amountDAI);
 
-        //clerk.raise(amountDAI);
+        //raise reserves a spot for drop and locks the tin
+        assertEq(assessor.seniorBalance(), safeAdd(preSeniorBalance, rmul(amountDAI, mkrMAT)));
+        assertEq(assessor.totalBalance(), safeAdd(preReserve, amountDAI));
 
+        assertEq(mkrAssessor.effectiveTotalBalance(), preReserve);
+        assertEq(mkrAssessor.effectiveSeniorBalance(), preSeniorBalance);
+        assertEq(clerk.remainingCredit(), amountDAI);
+    }
+
+    function testMKRDraw() public {
+        _setupRunningPool();
+        uint preReserve = assessor.totalBalance();
+        uint nav = nftFeed.calcUpdateNAV();
+        uint preSeniorBalance = assessor.seniorBalance();
+
+        uint creditLineAmount = 10 ether;
+        uint drawAmount = 5 ether;
+        clerk.raise(creditLineAmount);
+
+        //raise reserves a spot for drop and locks the tin
+        assertEq(assessor.seniorBalance(), safeAdd(preSeniorBalance, rmul(creditLineAmount, mkrMAT)));
+        assertEq(assessor.totalBalance(), safeAdd(preReserve, creditLineAmount));
+
+        uint preSeniorDebt = assessor.seniorDebt();
+        clerk.draw(drawAmount);
+
+        // seniorBalance and reserve should have changed
+        assertEq(mkrAssessor.effectiveTotalBalance(), safeAdd(preReserve, drawAmount));
+        emit log_named_uint("c2", rmul(drawAmount, mkrMAT));
+        assertEq(safeAdd(mkrAssessor.effectiveSeniorBalance(),assessor.seniorDebt()),
+            safeAdd(safeAdd(preSeniorBalance, rmul(drawAmount, mkrMAT)), preSeniorDebt));
+
+        //raise reserves a spot for drop and locks the tin. no impact from the draw function
+        assertEq(safeAdd(assessor.seniorBalance(),assessor.seniorDebt()),
+            safeAdd(safeAdd(preSeniorBalance, rmul(creditLineAmount, mkrMAT)), preSeniorDebt));
+
+        assertEq(assessor.totalBalance(), safeAdd(preReserve, creditLineAmount));
     }
 }
