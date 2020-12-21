@@ -244,11 +244,8 @@ contract Clerk is Auth, Math {
         if (collatDeficitDAI < amountDAI) {
             amountDAI = collatDeficitDAI;
         }
-        // check if creditline needs to be increased    
-        if (remainingCredit() < amountDAI) {
-            // raise creditline to ensure protection
-            require((validate(0, amountDAI, 0, 0) == 0), "supply not possible, pool constraints violated");
-        }
+  
+        require((validate(0, amountDAI, 0, 0) == 0), "supply not possible, pool constraints violated");
         // mint drop and move into cdp
         uint priceDROP = assessor.calcSeniorTokenPrice();
         uint collateralDROP = rdiv(amountDAI, priceDROP);
