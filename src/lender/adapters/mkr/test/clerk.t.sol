@@ -208,6 +208,19 @@ contract ClerkTest is Math, DSTest {
         vat.setInk(collLockedExpected);
     }
 
+    function heal(uint amount, uint expectedHealingAmount, bool full) public {
+        uint totalBalanceDropInit = collateral.totalSupply();
+        if ( !full ) {
+            clerk.heal(amount);
+        } else {
+            clerk.heal();
+        }
+        // for testing increase ink value in vat mock
+        vat.setInk(safeAdd(clerk.cdpink(), amount));
+        assertEq(coordinator.values_uint("juniorRedeem"), amount);
+        assertEq(collateral.totalSupply(), safeAdd(totalBalanceDropInit, amount));
+    }
+
     function sink(uint amountDAI) public {
         uint creditlineInit = clerk.creditline();
         uint remainingCreditInit = clerk.remainingCredit();
@@ -520,20 +533,6 @@ contract ClerkTest is Math, DSTest {
 
     function testCollatDeficit() public {
 
-    }
-
-    function heal(uint amount, uint expectedHealingAmount, bool full) public {
-        uint totalBalanceDropInit = collateral.totalSupply();
-        if ( !full ) {
-            clerk.heal(amount);
-        } else {
-            clerk.heal();
-        }
-
-        // for testing increase ink value in vat mock
-        vat.setInk(safeAdd(clerk.cdpink(), amount));
-        assertEq(coordinator.values_uint("juniorRedeem"), amount);
-        assertEq(collateral.totalSupply(), safeAdd(totalBalanceDropInit, amount));
     }
 
     function testHealPartial() public {
