@@ -28,10 +28,13 @@ import "../../../test/mock/tranche.sol";
 import "./mock/mgr.sol";
 import "./mock/spotter.sol";
 import "./mock/vat.sol";
+import "../../../definitions.sol";
 
 contract Hevm {
     function warp(uint256) public;
 }
+
+contract AssessorMockWithDef is AssessorMock, Definitions { }
 
 contract ClerkTest is Math, DSTest {
     Hevm hevm;
@@ -39,7 +42,7 @@ contract ClerkTest is Math, DSTest {
     SimpleToken currency;
     SimpleToken collateral;
     ReserveMock reserve;
-    AssessorMock assessor;
+    AssessorMockWithDef assessor;
     CoordinatorMock coordinator;
     TrancheMock tranche;
 
@@ -55,7 +58,7 @@ contract ClerkTest is Math, DSTest {
         collateral = new SimpleToken("DROP", "DROP");
 
         reserve = new ReserveMock(address(currency));
-        assessor = new AssessorMock();
+        assessor = new AssessorMockWithDef();
         coordinator = new CoordinatorMock();
         tranche = new TrancheMock();
         mgr = new ManagerMock(address(currency), address(collateral));
@@ -105,10 +108,9 @@ contract ClerkTest is Math, DSTest {
         // assert remainingCreditLine was also increased
         assertEq(clerk.remainingCredit(), safeAdd(remainingCreditInit, amountDAI));
         // assert call count coordinator & function arguments
-        assertEq(coordinator.calls("validate"), safeAdd(validateCallsInit, 1));
         assertEq(coordinator.calls("submissionPeriod"), safeAdd(submissionPeriodCallsInit, 1));
-        assertEq(coordinator.values_uint("seniorSupply"), overcollAmount);
-        assertEq(coordinator.values_uint("juniorRedeem"), creditProtection);
+        assertEq(coordinator.values_uint("reserve"), overcollAmount-creditProtection);
+        assertEq(coordinator.values_uint("seniorAsset"), overcollAmount);
     }
 
     function draw(uint amountDAI, uint dropPrice) public {
@@ -213,6 +215,10 @@ contract ClerkTest is Math, DSTest {
         uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
         uint creditProtection = safeSub(overcollAmount, amountDAI);
 
+        uint reserve = 1000 ether;
+        uint seniorBalance = 800 ether;
+        assessor.setReturn("totalBalance", reserve);
+        assessor.setReturn("seniorBalance", seniorBalance);
         // raise creditLine
         clerk.sink(amountDAI);
         // assert creditLine was decreased
@@ -220,10 +226,9 @@ contract ClerkTest is Math, DSTest {
         // assert remainingCreditLine was also decreased
         assertEq(clerk.remainingCredit(), safeSub(remainingCreditInit, amountDAI));
         // assert call count coordinator & function arguments
-        assertEq(coordinator.calls("validate"), safeAdd(validateCallsInit, 1));
         assertEq(coordinator.calls("submissionPeriod"), safeAdd(submissionPeriodCallsInit, 1));
-        assertEq(coordinator.values_uint("seniorRedeem"), overcollAmount);
-        assertEq(coordinator.values_uint("juniorSupply"), creditProtection);
+        assertEq(coordinator.values_uint("reserve"), reserve - overcollAmount + creditProtection);
+        assertEq(coordinator.values_uint("seniorAsset"), seniorBalance -overcollAmount);
     }
 
     function testRaise() public {
@@ -281,6 +286,7 @@ contract ClerkTest is Math, DSTest {
 
     function testPartialDraw() public {
         testRaise();
+
         uint dropPrice = ONE;
         // draw half creditline
         draw(safeDiv(clerk.creditline(), 2), dropPrice);
@@ -437,7 +443,7 @@ contract ClerkTest is Math, DSTest {
         assessor.setReturn("calcSeniorTokenPrice", dropPrice);
         // harvest junior profit
         // 110 DROP locked -> 220 DAI
-        // 220 DAI - 110 DAI (tab) - 11 (tab protectiom) => 99 DAI junior profit
+        // 220 DAI - 110 DAI (tab) - 11 (tab protection) => 99 DAI junior profit
         harvest(dropPrice);
 
     }
@@ -466,6 +472,5 @@ contract ClerkTest is Math, DSTest {
         // fail condition: set submission period in coordinator to true
         coordinator.setReturn("submissionPeriod", true);
         sink(creditline);
-
     }
 }

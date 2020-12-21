@@ -35,10 +35,14 @@ interface AssessorLike {
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
     function currentNAV() external view returns(uint);
-}
+    function effectiveSeniorBalance() external view returns(uint);
+    function effectiveTotalBalance() external view returns(uint);
+    function calcExpectedSeniorAsset(uint seniorRedeem, uint seniorSupply, uint seniorBalance_, uint seniorDebt_) external view returns(uint);
+    }
 
 interface CoordinatorLike {
-    function validate(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) external returns(int);
+    function validate(uint reserve, uint nav, uint seniorAsset, uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) external returns(int);
+    function validatePoolConstraints(uint reserve_, uint seniorAsset, uint nav_) external returns(int);
     function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply, uint currSeniorAsset, uint reserve_, uint nav_) external returns(uint);
     function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) external returns(uint);
     function submissionPeriod() external returns(bool);
@@ -137,9 +141,14 @@ contract Clerk is Auth, Math {
         // protection value for the creditline increase coming from the junior tranche => amount by that the juniorAssetValue should be decreased
         uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);
         // check if the new creditline would break the pool constraints
-        //validate(0, protectionDAI, overcollAmountDAI, 0);
+        // todo optimize current nav
+
+        emit log_named_uint("amountDAI", overcollAmountDAI);
+        emit log_named_uint("protectionDAI", protectionDAI);
+
+        validate(0, protectionDAI, overcollAmountDAI, 0);
         // increase MKR crediline by amount
-        //creditline = safeAdd(creditline, amountDAI);
+        creditline = safeAdd(creditline, amountDAI);
     }
 
     // mint DROP, join DROP into cdp, draw DAI and send to reserve
@@ -205,13 +214,20 @@ contract Clerk is Auth, Math {
         uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);
         // check if the new creditline would break the pool constraints
         validate(protectionDAI, 0, 0, overcollAmountDAI);
+
         // increase MKR crediline by amount
         creditline = safeSub(creditline, amountDAI);
     }
 
     // checks if the Maker credit line increase could violate the pool constraints // -> make function pure and call with current pool values approxNav
     function validate(uint juniorSupplyDAI, uint juniorRedeemDAI, uint seniorSupplyDAI, uint seniorRedeemDAI) internal {
-        require((coordinator.validate(juniorSupplyDAI, juniorRedeemDAI, seniorSupplyDAI, seniorRedeemDAI) == 0), "supply not possible, pool constraints violated");
+        uint newReserve = safeSub(safeSub(safeAdd(safeAdd(assessor.effectiveTotalBalance(), seniorSupplyDAI),
+            juniorSupplyDAI), juniorRedeemDAI), seniorRedeemDAI);
+        uint expectedSeniorAsset = assessor.calcExpectedSeniorAsset(seniorRedeemDAI, seniorSupplyDAI,
+            assessor.effectiveSeniorBalance(), assessor.seniorDebt());
+
+        require(coordinator.validatePoolConstraints(newReserve, expectedSeniorAsset,
+            assessor.currentNAV()) == 0, "supply not possible, pool constraints violated");
     }
 
     function updateSeniorAsset(uint decreaseDAI, uint increaseDAI) internal  {

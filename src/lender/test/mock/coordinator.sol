@@ -29,6 +29,12 @@ contract CoordinatorMock is Mock {
         calls["validate"]++;
         return values_int_return["validate"];
     }
+    function validatePoolConstraints(uint reserve_, uint seniorAsset_, uint nav_) external returns(int) {
+        values_uint["reserve"] = reserve_;
+        values_uint["seniorAsset"] = seniorAsset_;
+        values_uint["nav"] = nav_;
+        return values_int_return["validate"];
+    }
 
     function calcSeniorAssetValue(uint, uint, uint, uint, uint) public returns(uint) {
         return values_return["calcSeniorAssetValue"];

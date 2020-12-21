@@ -70,43 +70,35 @@ contract TestSuite is BaseSystemTest {
         hevm.warp(now + 2 hours);
 
         coordinator.executeEpoch();
-        assertEq(reserve.totalBalance(), submission.seniorSupply + submission.juniorSupply);
+        assertEqTol(reserve.totalBalance(), submission.seniorSupply + submission.juniorSupply, " firstLoan#1");
 
         // senior
         (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) = seniorInvestor.disburse();
         // equal because of token price 1
-        assertEq(payoutTokenAmount, submission.seniorSupply);
-        assertEq(remainingSupplyCurrency, seniorSupplyAmount- submission.seniorSupply);
+        assertEqTol(payoutTokenAmount, submission.seniorSupply, " firstLoan#2");
+        assertEqTol(remainingSupplyCurrency, seniorSupplyAmount- submission.seniorSupply, " firstLoan#3");
 
         // junior
         (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken) = juniorInvestor.disburse();
-        assertEq(payoutTokenAmount, submission.juniorSupply);
-        assertEq(remainingSupplyCurrency, juniorSupplyAmount- submission.juniorSupply);
+        assertEqTol(payoutTokenAmount, submission.juniorSupply," firstLoan#4");
+        assertEqTol(remainingSupplyCurrency, juniorSupplyAmount- submission.juniorSupply, " firstLoan#5");
 
-        assertEq(seniorToken.balanceOf(seniorInvestor_), submission.seniorSupply);
-        assertEq(juniorToken.balanceOf(juniorInvestor_), submission.juniorSupply);
+        assertEqTol(seniorToken.balanceOf(seniorInvestor_), submission.seniorSupply, " firstLoan#6");
+        assertEqTol(juniorToken.balanceOf(juniorInvestor_), submission.juniorSupply, " firstLoan#7");
+
 
         // borrow loans maturity date 5 days from now
         (loan, tokenId) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(now) +maturityDate);
 
-        assertEq(currency.balanceOf(address(borrower)), borrowAmount);
-
+        assertEqTol(currency.balanceOf(address(borrower)), borrowAmount, " firstLoan#8");
         uint nav = nftFeed.calcUpdateNAV();
-        uint fv = nftFeed.futureValue(nftFeed.nftID(loan));
 
-        // FV = 100 * 1.05^5 = 127.62815625
-        assertEq(fv, 127.62815625 ether);
+        // seniorDebt doesn't reflect the NAV increase from the first loan
+        assertEqTol(assessor.seniorDebt(), rmul(borrowAmount, assessor.seniorRatio()), " firstLoan#9");
 
-        // (FV/1.03^5) = 110.093;
-        assertEq(nav, 110.093921369062927876 ether);
-
-        assertEq(assessor.seniorDebt(), rmul(submission.seniorSupply+submission.juniorSupply, assessor.seniorRatio()));
-
-        uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, 0);
-        assertEq(seniorTokenPrice, ONE);
+        uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, reserve.totalBalance());
+        assertEqTol(seniorTokenPrice, rdiv(safeAdd(assessor.seniorDebt(), assessor.seniorBalance_()),  seniorToken.totalSupply()), " firstLoan#10");
 
         return (loan, tokenId);
     }
-
-
 }

@@ -25,8 +25,9 @@ import "./users/borrower.sol";
 import "./users/keeper.sol";
 import "tinlake-math/math.sol";
 import {BaseTypes} from "../../lender/test/coordinator-base.t.sol";
+import "./assertions.sol";
 
-contract BaseSystemTest is TestSetup, BaseTypes, Math, DSTest {
+contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
     // users
     Borrower borrower;
     address borrower_;
@@ -240,13 +241,10 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, DSTest {
         borrower.approveNFT(collateralNFT, address(shelf));
         if (fundLenderRequired) {
             fundLender(borrowAmount);
-            emit log_named_uint("xxxx", assessor.seniorDebt());
+
         }
-        emit log_named_uint("xxx", assessor.seniorDebt());
         borrower.borrowAction(loan, borrowAmount);
-        emit log_named_uint("fdf", assessor.seniorDebt());
         checkAfterBorrow(tokenId, borrowAmount);
-        emit log_named_uint("aaa", assessor.seniorDebt());
     }
 
     function defaultCollateral() public pure returns(uint nftPrice_, uint riskGroup_) {
@@ -294,13 +292,6 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, DSTest {
         checkAfterRepay(loan, tokenId, totalT, distributorShould);
     }
 
-    uint TWO_DECIMAL_PRECISION = 10**16;
-    uint FIXED27_TWO_DECIMAL_PRECISION = 10**25;
-    uint FIXED27_TEN_DECIMAL_PRECISION = 10**17;
-
-    function assertEq(uint a, uint b, uint precision)  public {
-        assertEq(a/precision, b/precision);
-    }
 
     function fixed18To27(uint valPower18) public pure returns(uint) {
         // convert 10^18 to 10^27

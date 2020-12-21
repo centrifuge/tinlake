@@ -30,27 +30,28 @@ contract LenderSystemTest is TestSuite, Interest {
         deployContracts(mkrAdapter);
         createTestUsers();
 
+        nftFeed_ = NFTFeedLike(address(nftFeed));
+
         root.relyContract(address(clerk), address(this));
 
     }
 
     function _setupRunningPool() internal {
-        uint seniorSupplyAmount = 500 ether;
-        uint juniorSupplyAmount = 20 ether;
+        uint seniorSupplyAmount = 1500 ether;
+        uint juniorSupplyAmount = 200 ether;
         uint nftPrice = 200 ether;
         // interest rate default => 5% per day
         uint borrowAmount = 100 ether;
         uint maturityDate = 5 days;
 
         ModelInput memory submission = ModelInput({
-            seniorSupply : 82 ether,
-            juniorSupply : 18 ether,
+            seniorSupply : 800 ether,
+            juniorSupply : 200 ether,
             seniorRedeem : 0 ether,
             juniorRedeem : 0 ether
             });
 
         supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate, submission);
-
     }
 
     function testSimpleRaise() public {
@@ -60,9 +61,12 @@ contract LenderSystemTest is TestSuite, Interest {
         uint preSeniorBalance = assessor.seniorBalance();
 
         uint amountDAI = 1 ether;
-        clerk.raise(amountDAI);
-        // todo continue on  testcase
 
-       assertEq(assessor.seniorBalance(), preSeniorBalance + amountDAI);
+        emit log_named_uint("pre-seniorAsset", (assessor.seniorDebt()+assessor.seniorBalance_())/ 1 ether );
+        emit log_named_uint("pre-nav", nftFeed_.currentNAV()/ 1 ether );
+        emit log_named_uint("pre-reserve", assessor.totalBalance()/ 1 ether );
+
+        //clerk.raise(amountDAI);
+
     }
 }

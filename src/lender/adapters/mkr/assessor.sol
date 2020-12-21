@@ -80,6 +80,14 @@ contract MKRAssessor is Assessor {
         return safeAdd(seniorBalance_, clerk.remainingOvercollCredit());
     }
 
+    function effectiveSeniorBalance() public view returns(uint) {
+        return seniorBalance_;
+    }
+
+    function effectiveTotalBalance() public view returns(uint) {
+        return reserve.totalBalance();
+    }
+
     function totalBalance() public view returns(uint) {
         return safeAdd(reserve.totalBalance(), clerk.remainingCredit());
     }

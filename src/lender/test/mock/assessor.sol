@@ -115,6 +115,17 @@ contract AssessorMock is Mock {
         return call("seniorBalance");
     }
 
+    function effectiveSeniorBalance() external view returns(uint) {
+        return values_return["seniorBalance"];
+    }
+    function effectiveTotalBalance() external view returns(uint) {
+        return values_return["totalBalance"];
+    }
+
+    function calcExpectedSeniorAsset() external view returns(uint) {
+        return values_return["calcSeniorAssetValue"];
+    }
+
     function changeSeniorAsset(uint seniorRatio_, uint seniorSupply, uint seniorRedeem) public {
         values_uint["changeSeniorAsset_seniorRatio"] = seniorRatio_;
         changeSeniorAsset(seniorSupply, seniorRedeem);

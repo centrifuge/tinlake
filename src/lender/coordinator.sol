@@ -508,7 +508,16 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
                 juniorSupply: juniorSupply}));
     }
 
-    function validate(uint reserve_, uint nav_, uint seniorAsset_, OrderSummary memory trans) view public returns (int) {
+    function validate(uint reserve_, uint nav_, uint seniorAsset_, uint seniorRedeem, uint juniorRedeem,
+        uint seniorSupply, uint juniorSupply) public returns (int) {
+        return validate(reserve_, nav_, seniorAsset_,
+            OrderSummary({seniorRedeem: seniorRedeem,
+            juniorRedeem:juniorRedeem,
+            seniorSupply: seniorSupply,
+            juniorSupply: juniorSupply}));
+    }
+
+    function validate(uint reserve_, uint nav_, uint seniorAsset_, OrderSummary memory trans) view internal returns (int) {
         uint currencyAvailable = safeAdd(safeAdd(reserve_, trans.seniorSupply), trans.juniorSupply);
         uint currencyOut = safeAdd(trans.seniorRedeem, trans.juniorRedeem);
 

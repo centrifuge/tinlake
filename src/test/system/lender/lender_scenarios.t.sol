@@ -60,7 +60,15 @@ contract LenderSystemTest is TestSuite, Interest {
             juniorRedeem : 0 ether
             });
 
-        supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate, submission);
+        (uint loan, ) = supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate, submission);
+        uint nav = nftFeed.calcUpdateNAV();
+        uint fv = nftFeed.futureValue(nftFeed.nftID(loan));
+
+        // FV = 100 * 1.05^5 = 127.62815625
+        assertEq(fv, 127.62815625 ether);
+
+        // (FV/1.03^5) = 110.093;
+        assertEq(nav, 110.093921369062927876 ether);
 
     }
 
