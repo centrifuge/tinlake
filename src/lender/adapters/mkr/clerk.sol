@@ -225,15 +225,16 @@ contract Clerk is Auth, Math {
     }
 
     function heal(uint amountDAI) public auth {
-        uint lockedCollateralDAI = rmul(cdpink(), dropPrice);
+        uint priceDROP = assessor.calcSeniorTokenPrice();
+        uint lockedCollateralDAI = rmul(cdpink(), priceDROP);
         uint requiredCollateralDAI = calcOvercollAmount(mgr.cdptab());
 
-        require (requiredCollateralDAI > lockedCollateralDAI), "no healing required");
+        require((requiredCollateralDAI > lockedCollateralDAI), "no healing required");
         uint missingCollateralDAI = safeSub(requiredCollateralDAI, lockedCollateralDAI);
 
         // heal max up to the required missing collateral amount
         if (missingCollateralDAI < amountDAI) {
-            amountDAI = missingCollateralDAI
+            amountDAI = missingCollateralDAI;
         }
         // check if creditline needs to be increased    
         if (remainingCredit() < amountDAI) {
@@ -241,7 +242,7 @@ contract Clerk is Auth, Math {
             raise(safeSub(amountDAI, remainingCredit()));
         }
         // mint drop and move into cdp
-        uint collateralDROP = rdiv(amountDAI, assessor.calcSeniorTokenPrice());
+        uint collateralDROP = rdiv(amountDAI, priceDROP);
         tranche.mint(address(this), collateralDROP);
         collateral.approve(address(mgr), collateralDROP);
         mgr.join(collateralDROP);
@@ -251,7 +252,7 @@ contract Clerk is Auth, Math {
 
     // heal the cdp and put in more drop in case the collateral value has fallen below the bufferedmat ratio
     function heal() public auth {
-        uint lockedCollateralDAI = rmul(cdpink(), dropPrice);
+        uint lockedCollateralDAI = rmul(cdpink(), assessor.calcSeniorTokenPrice());
         uint requiredCollateralDAI = calcOvercollAmount(mgr.cdptab());
         if (requiredCollateralDAI > lockedCollateralDAI) {
             heal(safeSub(requiredCollateralDAI, lockedCollateralDAI));
@@ -259,7 +260,7 @@ contract Clerk is Auth, Math {
     }
 
     // checks if the Maker credit line increase could violate the pool constraints // -> make function pure and call with current pool values approxNav
-    function validate(uint juniorSupplyDAI, uint juniorRedeemDAI, uint seniorSupplyDAI, uint seniorRedeemDAI) internal {
+    function validate(uint juniorSupplyDAI, uint juniorRedeemDAI, uint seniorSupplyDAI, uint seniorRedeemDAI) internal returns (int) {
         return coordinator.validate(juniorSupplyDAI, juniorRedeemDAI, seniorSupplyDAI, seniorRedeemDAI);
     }
 
