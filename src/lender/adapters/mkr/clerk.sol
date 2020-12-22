@@ -231,7 +231,8 @@ contract Clerk is Auth, Math {
         // protection value for the creditline decrease going to the junior tranche => amount by that the juniorAssetValue should be increased
         uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);
         // check if the new creditline would break the pool constraints
-        validate(protectionDAI, 0, 0, overcollAmountDAI);
+        require((validate(protectionDAI, 0, 0, overcollAmountDAI) == 0), "pool constraints violated"),
+       
         // increase MKR crediline by amount
         creditline = safeSub(creditline, amountDAI);
     }
