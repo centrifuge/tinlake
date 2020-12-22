@@ -52,8 +52,8 @@ interface CoordinatorLike {
 
 interface ReserveLike {
     function totalBalance() external returns(uint);
-    function deposit(uint daiAmount) external;
-    function payout(uint currencyAmount) external;
+    function hardDeposit(uint daiAmount) external;
+    function hardPayout(uint currencyAmount) external;
 }
 
 interface TrancheLike {
@@ -137,7 +137,7 @@ contract Clerk is Auth, Math {
         uint requiredCollateralDAI = calcOvercollAmount(mgr.cdptab());
         if (requiredCollateralDAI > lockedCollateralDAI) {
             return safeSub(requiredCollateralDAI, lockedCollateralDAI);
-        }  
+        }
         return 0;
     }
 
@@ -184,7 +184,7 @@ contract Clerk is Auth, Math {
         mgr.draw(amountDAI, address(this));
         // move dai to reserve
         dai.approve(address(reserve), amountDAI);
-        reserve.deposit(amountDAI);
+        reserve.hardDeposit(amountDAI);
         // increase seniorAsset by amountDAI
         updateSeniorAsset(0, collateralDAI);
     }
@@ -198,7 +198,7 @@ contract Clerk is Auth, Math {
             amountDAI = mgr.cdptab();
         }
         // get DAI from reserve
-        reserve.payout(amountDAI);
+        reserve.hardPayout(amountDAI);
         // repay cdp debt
         dai.approve(address(mgr), amountDAI);
         mgr.wipe(amountDAI);
@@ -232,20 +232,20 @@ contract Clerk is Auth, Math {
         uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);
         // check if the new creditline would break the pool constraints
         require((validate(protectionDAI, 0, 0, overcollAmountDAI) == 0), "pool constraints violated");
-       
+
         // increase MKR crediline by amount
         creditline = safeSub(creditline, amountDAI);
     }
 
-    function heal(uint amountDAI) public auth active {    
+    function heal(uint amountDAI) public auth active {
         uint collatDeficitDAI = collatDeficit();
         require(collatDeficitDAI > 0, "no healing required");
-    
+
         // heal max up to the required missing collateral amount
         if (collatDeficitDAI < amountDAI) {
             amountDAI = collatDeficitDAI;
         }
-  
+
         require((validate(0, amountDAI, 0, 0) == 0), "supply not possible, pool constraints violated");
         // mint drop and move into cdp
         uint priceDROP = assessor.calcSeniorTokenPrice();
@@ -299,7 +299,7 @@ contract Clerk is Auth, Math {
     function returnDAI() public auth {
         uint amountDAI = dai.balanceOf(address(this));
         dai.approve(address(reserve), amountDAI);
-        reserve.deposit(amountDAI);
+        reserve.hardDeposit(amountDAI);
     }
 
     function changeOwnerMgr(address usr) public auth {
