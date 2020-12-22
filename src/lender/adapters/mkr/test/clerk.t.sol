@@ -320,15 +320,15 @@ contract ClerkTest is Math, DSTest {
         draw(clerk.creditline(), dropPrice);
     }
 
-    function testFailDrawCollatDeficit() public {
-        testRaise();
-        uint dropPrice = ONE;
-        // draw half creditline
-        draw(safeDiv(clerk.creditline(), 2), dropPrice);
-        clerk.file("buffer", rdiv(rmul(5, ONE), 100));
-        // draw another half clerk.creditline()
-        draw(safeDiv(clerk.creditline(), 2), dropPrice);
-    }
+    // function testFailDrawCollatDeficit() public {
+    //     testRaise();
+    //     uint dropPrice = ONE;
+    //     // draw half creditline
+    //     draw(safeDiv(clerk.creditline(), 2), dropPrice);
+    //     clerk.file("buffer", rdiv(rmul(5, ONE), 100));
+    //     // draw another half clerk.creditline()
+    //     draw(safeDiv(clerk.creditline(), 2), dropPrice);
+    // }
 
     function testFullWipe() public {
         testFullDraw();
