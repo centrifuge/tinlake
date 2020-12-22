@@ -236,7 +236,7 @@ contract Clerk is Auth, Math {
         creditline = safeSub(creditline, amountDAI);
     }
 
-    function heal(uint amountDAI) public auth {    
+    function heal(uint amountDAI) public auth active {    
         uint collatDeficitDAI = collatDeficit();
         require(collatDeficitDAI > 0, "no healing required");
     
@@ -257,7 +257,7 @@ contract Clerk is Auth, Math {
     }
 
     // heal the cdp and put in more drop in case the collateral value has fallen below the bufferedmat ratio
-    function heal() public auth {
+    function heal() public auth active{
         uint collatDeficitDAI = collatDeficit();
         if (collatDeficitDAI > 0) {
             heal(collatDeficitDAI);
