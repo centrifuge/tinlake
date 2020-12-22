@@ -208,6 +208,19 @@ contract ClerkTest is Math, DSTest {
         vat.setInk(collLockedExpected);
     }
 
+    function heal(uint amount, uint expectedHealingAmount, bool full) public {
+        uint totalBalanceDropInit = collateral.totalSupply();
+        if ( !full ) {
+            clerk.heal(amount);
+        } else {
+            clerk.heal();
+        }
+        // for testing increase ink value in vat mock
+        vat.setInk(safeAdd(clerk.cdpink(), amount));
+        assertEq(coordinator.values_uint("juniorRedeem"), amount);
+        assertEq(collateral.totalSupply(), safeAdd(totalBalanceDropInit, amount));
+    }
+
     function sink(uint amountDAI) public {
         uint creditlineInit = clerk.creditline();
         uint remainingCreditInit = clerk.remainingCredit();
@@ -306,6 +319,16 @@ contract ClerkTest is Math, DSTest {
         // draw full amount
         draw(clerk.creditline(), dropPrice);
     }
+
+    // function testFailDrawCollatDeficit() public {
+    //     testRaise();
+    //     uint dropPrice = ONE;
+    //     // draw half creditline
+    //     draw(safeDiv(clerk.creditline(), 2), dropPrice);
+    //     clerk.file("buffer", rdiv(rmul(5, ONE), 100));
+    //     // draw another half clerk.creditline()
+    //     draw(safeDiv(clerk.creditline(), 2), dropPrice);
+    // }
 
     function testFullWipe() public {
         testFullDraw();
@@ -506,5 +529,83 @@ contract ClerkTest is Math, DSTest {
         //increase matBuffer to 5%
         clerk.file("buffer", rdiv(rmul(5, ONE), 100));
         assertEq(clerk.mat(), rdiv(rmul(155, ONE), 100));
+    }
+
+    function testCollatDeficit() public {
+
+    }
+
+    function testHealPartial() public {
+        uint dropPrice = ONE;
+        testFullDraw();
+        // increase Mat value from deafault 1% to 5%
+        clerk.file("buffer", rdiv(rmul(5, ONE), 100));
+        // additional buffer can be minted
+        coordinator.setIntReturn("validate", 0);
+        
+        uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
+        uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
+
+        assertEq(lockedCollateralDAI, 111 ether);
+        assertEq(requiredCollateralDAI, 115 ether);
+        // partial healing
+        uint healingAmount = safeDiv(safeSub(requiredCollateralDAI, lockedCollateralDAI), 2); // healing amount = 2
+        heal(healingAmount, healingAmount, false);
+    } 
+
+    function testHealFull() public {
+        uint dropPrice = ONE;
+        testFullDraw();
+        // increase Mat value from deafault 1% to 5%
+        clerk.file("buffer", rdiv(rmul(5, ONE), 100));
+        // additional buffer can be minted
+        coordinator.setIntReturn("validate", 0);
+        
+        uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
+        uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
+
+        assertEq(lockedCollateralDAI, 111 ether);
+        assertEq(requiredCollateralDAI, 115 ether);
+        // full healing
+        uint healingAmount = safeSub(requiredCollateralDAI, lockedCollateralDAI); // healing amount = 4
+        heal(healingAmount, healingAmount, true);
+
+    }
+
+    function testHealMaxTab() public {
+        uint dropPrice = ONE;
+        testFullDraw();
+        // increase Mat value from deafault 1% to 5%
+        clerk.file("buffer", rdiv(rmul(5, ONE), 100));
+        // additional buffer can be minted
+        coordinator.setIntReturn("validate", 0);
+        
+        uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
+        uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
+
+        assertEq(lockedCollateralDAI, 111 ether);
+        assertEq(requiredCollateralDAI, 115 ether);
+        // partial healing
+        uint healingAmount = safeDiv(safeSub(requiredCollateralDAI, lockedCollateralDAI), 2); // healing amount = 2
+        heal(10, 4, false);
+
+    }
+
+    function testFailHealPoolConstraintsViolated() public {
+         uint dropPrice = ONE;
+        testFullDraw();
+        // increase Mat value from deafault 1% to 5%
+        clerk.file("buffer", rdiv(rmul(5, ONE), 100));
+        // additional buffer can be minted
+        coordinator.setIntReturn("validate", -1);
+        
+        uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
+        uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
+
+        assertEq(lockedCollateralDAI, 111 ether);
+        assertEq(requiredCollateralDAI, 115 ether);
+        // partial healing
+        uint healingAmount = safeDiv(safeSub(requiredCollateralDAI, lockedCollateralDAI), 2); // healing amount = 2
+         heal(healingAmount, healingAmount, false);
     }
 }

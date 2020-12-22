@@ -126,15 +126,25 @@ contract Clerk is Auth, Math {
     }
 
     function remainingCredit() public returns (uint) {
-        if (creditline < mgr.cdptab()) {
+        if (creditline <= (mgr.cdptab())) {
             return 0;
         }
         return safeSub(creditline, mgr.cdptab());
     }
 
+    function collatDeficit() public returns (uint) {
+        uint lockedCollateralDAI = rmul(cdpink(), assessor.calcSeniorTokenPrice());
+        uint requiredCollateralDAI = calcOvercollAmount(mgr.cdptab());
+        if (requiredCollateralDAI > lockedCollateralDAI) {
+            return safeSub(requiredCollateralDAI, lockedCollateralDAI);
+        }  
+        return 0;
+    }
+
     function remainingOvercollCredit() public returns (uint) {
         return calcOvercollAmount(remainingCredit());
     }
+
 
    // junior stake in the cdpink -> value of drop used for cdptab protection
     function juniorStake() public returns (uint) {
@@ -152,13 +162,15 @@ contract Clerk is Auth, Math {
         // protection value for the creditline increase coming from the junior tranche => amount by that the juniorAssetValue should be decreased
         uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);
         // check if the new creditline would break the pool constraints
-        validate(0, protectionDAI, overcollAmountDAI, 0);
+        require((validate(0, protectionDAI, overcollAmountDAI, 0) == 0), "supply not possible, pool constraints violated");
         // increase MKR crediline by amount
         creditline = safeAdd(creditline, amountDAI);
     }
 
     // mint DROP, join DROP into cdp, draw DAI and send to reserve
     function draw(uint amountDAI) public auth active {
+        // make sure ther eis no collateral deficit before drawing out new DAI
+        // require(collatDeficit() == 0, "please heal cdp first"); // tbd
         require(amountDAI <= remainingCredit(), "not enough credit left");
         // collateral value that needs to be locked in vault to draw amountDAI
         uint collateralDAI = calcOvercollAmount(amountDAI);
@@ -219,14 +231,43 @@ contract Clerk is Auth, Math {
         // protection value for the creditline decrease going to the junior tranche => amount by that the juniorAssetValue should be increased
         uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);
         // check if the new creditline would break the pool constraints
-        validate(protectionDAI, 0, 0, overcollAmountDAI);
+        require((validate(protectionDAI, 0, 0, overcollAmountDAI) == 0), "pool constraints violated");
+       
         // increase MKR crediline by amount
         creditline = safeSub(creditline, amountDAI);
     }
 
+    function heal(uint amountDAI) public auth active {    
+        uint collatDeficitDAI = collatDeficit();
+        require(collatDeficitDAI > 0, "no healing required");
+    
+        // heal max up to the required missing collateral amount
+        if (collatDeficitDAI < amountDAI) {
+            amountDAI = collatDeficitDAI;
+        }
+  
+        require((validate(0, amountDAI, 0, 0) == 0), "supply not possible, pool constraints violated");
+        // mint drop and move into cdp
+        uint priceDROP = assessor.calcSeniorTokenPrice();
+        uint collateralDROP = rdiv(amountDAI, priceDROP);
+        tranche.mint(address(this), collateralDROP);
+        collateral.approve(address(mgr), collateralDROP);
+        mgr.join(collateralDROP);
+        // increase seniorAsset by amountDAI
+        updateSeniorAsset(0, amountDAI);
+    }
+
+    // heal the cdp and put in more drop in case the collateral value has fallen below the bufferedmat ratio
+    function heal() public auth active{
+        uint collatDeficitDAI = collatDeficit();
+        if (collatDeficitDAI > 0) {
+            heal(collatDeficitDAI);
+        }
+    }
+
     // checks if the Maker credit line increase could violate the pool constraints // -> make function pure and call with current pool values approxNav
-    function validate(uint juniorSupplyDAI, uint juniorRedeemDAI, uint seniorSupplyDAI, uint seniorRedeemDAI) internal {
-        require((coordinator.validate(juniorSupplyDAI, juniorRedeemDAI, seniorSupplyDAI, seniorRedeemDAI) == 0), "supply not possible, pool constraints violated");
+    function validate(uint juniorSupplyDAI, uint juniorRedeemDAI, uint seniorSupplyDAI, uint seniorRedeemDAI) internal returns (int) {
+        return coordinator.validate(juniorSupplyDAI, juniorRedeemDAI, seniorSupplyDAI, seniorRedeemDAI);
     }
 
     function updateSeniorAsset(uint decreaseDAI, uint increaseDAI) internal  {
