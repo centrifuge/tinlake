@@ -26,4 +26,9 @@ contract ClerkMock is Mock {
     function remainingCreditCollateral() external view returns (uint) {
         return values_return["remainingCreditCollateral"];
     }
+
+    function debt() external view returns(uint) {
+        return values_return["debt"];
+    }
 }
+

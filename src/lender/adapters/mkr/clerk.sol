@@ -5,7 +5,7 @@ import "tinlake-math/math.sol";
 
 interface ManagerLike {
     // collateral debt
-    function cdptab() external returns(uint);
+    function cdptab() external view returns(uint);
     // put collateral into cdp
     function join(uint amountDROP) external;
     // draw DAi from cdp
@@ -123,7 +123,7 @@ contract Clerk is Auth, Math {
         if (what == "buffer") {
             matBuffer = value;
         }
-    } 
+    }
 
     function remainingCredit() public returns (uint) {
         if (creditline < mgr.cdptab()) {
@@ -263,5 +263,9 @@ contract Clerk is Auth, Math {
 
     function changeOwnerMgr(address usr) public auth {
         mgr.setOwner(usr);
+    }
+
+    function debt() public view returns(uint) {
+        return mgr.cdptab();
     }
 }
