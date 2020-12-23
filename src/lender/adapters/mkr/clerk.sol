@@ -55,8 +55,7 @@ interface AssessorLike {
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
     function currentNAV() external view returns(uint);
-    function effectiveSeniorBalance() external view returns(uint);
-    function effectiveTotalBalance() external view returns(uint);
+    function totalBalance() external returns(uint);
     function calcExpectedSeniorAsset(uint seniorRedeem, uint seniorSupply, uint seniorBalance_, uint seniorDebt_) external view returns(uint);
     }
 
@@ -246,14 +245,13 @@ contract Clerk is Auth, Math {
 
     // checks if the Maker credit line increase could violate the pool constraints // -> make function pure and call with current pool values approxNav
     function validate(uint juniorSupplyDAI, uint juniorRedeemDAI, uint seniorSupplyDAI, uint seniorRedeemDAI) internal {
-        uint newReserve = safeSub(safeSub(safeAdd(safeAdd(assessor.effectiveTotalBalance(), seniorSupplyDAI),
+        uint newReserve = safeSub(safeSub(safeAdd(safeAdd(assessor.totalBalance(), seniorSupplyDAI),
             juniorSupplyDAI), juniorRedeemDAI), seniorRedeemDAI);
         uint expectedSeniorAsset = assessor.calcExpectedSeniorAsset(seniorRedeemDAI, seniorSupplyDAI,
-            assessor.effectiveSeniorBalance(), assessor.seniorDebt());
-
+            assessor.seniorBalance(), assessor.seniorDebt());
         require(coordinator.validatePoolConstraints(newReserve, expectedSeniorAsset,
             assessor.currentNAV()) == 0, "supply not possible, pool constraints violated");
-    }
+   }
 
     function updateSeniorAsset(uint decreaseDAI, uint increaseDAI) internal  {
         assessor.changeSeniorAsset(increaseDAI, decreaseDAI);

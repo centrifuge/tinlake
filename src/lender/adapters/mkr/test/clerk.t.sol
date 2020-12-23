@@ -222,7 +222,7 @@ contract ClerkTest is Math, DSTest {
 
         uint reserve = 1000 ether;
         uint seniorBalance = 800 ether;
-        assessor.setReturn("totalBalance", reserve);
+        assessor.setReturn("balance", reserve);
         assessor.setReturn("seniorBalance", seniorBalance);
         // raise creditLine
         clerk.sink(amountDAI);
