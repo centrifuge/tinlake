@@ -1,3 +1,17 @@
+// Copyright (C) 2020 Centrifuge
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 pragma solidity >=0.5.15 <0.6.0;
 
 import "tinlake-auth/auth.sol";
@@ -37,14 +51,17 @@ interface SpotterLike {
 interface AssessorLike {
     function calcSeniorTokenPrice() external returns(uint);
     function calcSeniorAssetValue(uint seniorDebt, uint seniorBalance) external returns(uint);
-    function changeSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
+    function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) external;
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
     function currentNAV() external view returns(uint);
-}
+    function totalBalance() external returns(uint);
+    function calcExpectedSeniorAsset(uint seniorRedeem, uint seniorSupply, uint seniorBalance_, uint seniorDebt_) external view returns(uint);
+    }
 
 interface CoordinatorLike {
-    function validate(uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) external returns(int);
+    function validate(uint reserve, uint nav, uint seniorAsset, uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) external returns(int);
+    function validatePoolConstraints(uint reserve_, uint seniorAsset, uint nav_) external returns(int);
     function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply, uint currSeniorAsset, uint reserve_, uint nav_) external returns(uint);
     function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) external returns(uint);
     function submissionPeriod() external returns(bool);
@@ -123,7 +140,7 @@ contract Clerk is Auth, Math {
         if (what == "buffer") {
             matBuffer = value;
         }
-    } 
+    }
 
     function remainingCredit() public returns (uint) {
         if (creditline <= (mgr.cdptab())) {
@@ -137,7 +154,7 @@ contract Clerk is Auth, Math {
         uint requiredCollateralDAI = calcOvercollAmount(mgr.cdptab());
         if (requiredCollateralDAI > lockedCollateralDAI) {
             return safeSub(requiredCollateralDAI, lockedCollateralDAI);
-        }  
+        }
         return 0;
     }
 
@@ -232,20 +249,20 @@ contract Clerk is Auth, Math {
         uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);
         // check if the new creditline would break the pool constraints
         require((validate(protectionDAI, 0, 0, overcollAmountDAI) == 0), "pool constraints violated");
-       
+
         // increase MKR crediline by amount
         creditline = safeSub(creditline, amountDAI);
     }
 
-    function heal(uint amountDAI) public auth active {    
+    function heal(uint amountDAI) public auth active {
         uint collatDeficitDAI = collatDeficit();
         require(collatDeficitDAI > 0, "no healing required");
-    
+
         // heal max up to the required missing collateral amount
         if (collatDeficitDAI < amountDAI) {
             amountDAI = collatDeficitDAI;
         }
-  
+
         require((validate(0, amountDAI, 0, 0) == 0), "supply not possible, pool constraints violated");
         // mint drop and move into cdp
         uint priceDROP = assessor.calcSeniorTokenPrice();
@@ -266,16 +283,17 @@ contract Clerk is Auth, Math {
     }
 
     // checks if the Maker credit line increase could violate the pool constraints // -> make function pure and call with current pool values approxNav
-    function validate(uint juniorSupplyDAI, uint juniorRedeemDAI, uint seniorSupplyDAI, uint seniorRedeemDAI) internal returns (int) {
-        return coordinator.validate(juniorSupplyDAI, juniorRedeemDAI, seniorSupplyDAI, seniorRedeemDAI);
-    }
+    function validate(uint juniorSupplyDAI, uint juniorRedeemDAI, uint seniorSupplyDAI, uint seniorRedeemDAI) internal returns(int) {
+        uint newReserve = safeSub(safeSub(safeAdd(safeAdd(assessor.totalBalance(), seniorSupplyDAI),
+            juniorSupplyDAI), juniorRedeemDAI), seniorRedeemDAI);
+        uint expectedSeniorAsset = assessor.calcExpectedSeniorAsset(seniorRedeemDAI, seniorSupplyDAI,
+            assessor.seniorBalance(), assessor.seniorDebt());
+        return coordinator.validatePoolConstraints(newReserve, expectedSeniorAsset,
+            assessor.currentNAV());
+   }
 
     function updateSeniorAsset(uint decreaseDAI, uint increaseDAI) internal  {
-        uint currenNav = assessor.currentNAV();
-        uint newSeniorAsset = coordinator.calcSeniorAssetValue(decreaseDAI, increaseDAI,
-            assessor.calcSeniorAssetValue(assessor.seniorDebt(), assessor.seniorBalance()), reserve.totalBalance(), currenNav);
-        uint newSeniorRatio = coordinator.calcSeniorRatio(newSeniorAsset, currenNav, reserve.totalBalance());
-        assessor.changeSeniorAsset(newSeniorRatio, increaseDAI, decreaseDAI);
+        assessor.changeSeniorAsset(increaseDAI, decreaseDAI);
     }
 
     // returns the collateral amount in the cdp

@@ -19,7 +19,7 @@ import "./../../assessor.sol";
 interface ClerkLike {
     function remainingCredit() external view returns (uint);
     function juniorStake() external view returns (uint);
-    function remainingCreditCollateral() external view returns (uint);
+    function remainingOvercollCredit() external view returns (uint);
 }
 
 contract MKRAssessor is Assessor {
@@ -77,7 +77,15 @@ contract MKRAssessor is Assessor {
     }
 
     function seniorBalance() public view returns(uint) {
-        return safeAdd(seniorBalance_, clerk.remainingCreditCollateral());
+        return safeAdd(seniorBalance_, clerk.remainingOvercollCredit());
+    }
+
+    function effectiveSeniorBalance() public view returns(uint) {
+        return seniorBalance_;
+    }
+
+    function effectiveTotalBalance() public view returns(uint) {
+        return reserve.totalBalance();
     }
 
     function totalBalance() public view returns(uint) {

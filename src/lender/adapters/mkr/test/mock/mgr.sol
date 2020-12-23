@@ -15,12 +15,12 @@ pragma solidity >=0.5.15 <0.6.0;
 import "ds-test/test.sol";
 
 import "../../../../../test/mock/mock.sol";
-import "tinlake-auth/auth.sol";
 
-contract ManagerMock is Mock  {
+contract ManagerMock is Mock {
 
-    SimpleTokenLike currency; 
-    SimpleTokenLike collateral; 
+    SimpleTokenLike currency;
+    SimpleTokenLike collateral;
+
     address public owner;
 
     modifier ownerOnly {
@@ -52,7 +52,7 @@ contract ManagerMock is Mock  {
         currency.mint(usr, amountDAI);
         values_uint["tab"] = safeAdd(values_uint["tab"], amountDAI);
     }
-   
+
     function wipe(uint amountDAI) external {
         // mimic cdp behav: move DAI from clerk to mgr
         currency.transferFrom(msg.sender, address(this), amountDAI);

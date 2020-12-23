@@ -28,10 +28,13 @@ import "../../../test/mock/tranche.sol";
 import "./mock/mgr.sol";
 import "./mock/spotter.sol";
 import "./mock/vat.sol";
+import "../../../definitions.sol";
 
 contract Hevm {
     function warp(uint256) public;
 }
+
+contract AssessorMockWithDef is AssessorMock, Definitions { }
 
 contract ClerkTest is Math, DSTest {
     Hevm hevm;
@@ -39,7 +42,7 @@ contract ClerkTest is Math, DSTest {
     SimpleToken currency;
     SimpleToken collateral;
     ReserveMock reserve;
-    AssessorMock assessor;
+    AssessorMockWithDef assessor;
     CoordinatorMock coordinator;
     TrancheMock tranche;
 
@@ -55,7 +58,7 @@ contract ClerkTest is Math, DSTest {
         collateral = new SimpleToken("DROP", "DROP");
 
         reserve = new ReserveMock(address(currency));
-        assessor = new AssessorMock();
+        assessor = new AssessorMockWithDef();
         coordinator = new CoordinatorMock();
         tranche = new TrancheMock();
         mgr = new ManagerMock(address(currency), address(collateral));
@@ -81,7 +84,7 @@ contract ClerkTest is Math, DSTest {
 
         // set values for the MKR contracts
         // mat = 110% -> 10% extra security margin required for mkr
-        uint mat = rdiv(rmul(110, ONE), 100);
+        uint mat = 1.1 * 10**27;
         spotter.setReturn("mat", mat);
         spotter.setReturn("pip", address(0));
         mgr.setBytes32Return("ilk", "DROP");
@@ -94,15 +97,17 @@ contract ClerkTest is Math, DSTest {
         // make clerk ward on mgr
         mgr.setOwner(address(clerk));
         assertEq(mgr.owner(), address(clerk));
+        clerk.file("buffer", 0);
     }
 
     function raise(uint amountDAI) public{
         uint creditlineInit = clerk.creditline();
         uint remainingCreditInit = clerk.remainingCredit();
-        uint validateCallsInit = coordinator.calls("validate");
+        uint validateCallsInit = coordinator.calls("validatePoolConstraints");
         uint submissionPeriodCallsInit = coordinator.calls("submissionPeriod");
         uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
         uint creditProtection = safeSub(overcollAmount, amountDAI);
+
         // raise creditLine
         clerk.raise(amountDAI);
 
@@ -111,10 +116,9 @@ contract ClerkTest is Math, DSTest {
         // assert remainingCreditLine was also increased
         assertEq(clerk.remainingCredit(), safeAdd(remainingCreditInit, amountDAI));
         // assert call count coordinator & function arguments
-        assertEq(coordinator.calls("validate"), safeAdd(validateCallsInit, 1));
         assertEq(coordinator.calls("submissionPeriod"), safeAdd(submissionPeriodCallsInit, 1));
-        assertEq(coordinator.values_uint("seniorSupply"), overcollAmount);
-        assertEq(coordinator.values_uint("juniorRedeem"), creditProtection);
+        assertEq(coordinator.values_uint("reserve"), overcollAmount-creditProtection);
+        assertEq(coordinator.values_uint("seniorAsset"), overcollAmount);
     }
 
     function draw(uint amountDAI, uint dropPrice) public {
@@ -217,18 +221,21 @@ contract ClerkTest is Math, DSTest {
         }
         // for testing increase ink value in vat mock
         vat.setInk(safeAdd(clerk.cdpink(), amount));
-        assertEq(coordinator.values_uint("juniorRedeem"), amount);
         assertEq(collateral.totalSupply(), safeAdd(totalBalanceDropInit, amount));
     }
 
     function sink(uint amountDAI) public {
         uint creditlineInit = clerk.creditline();
         uint remainingCreditInit = clerk.remainingCredit();
-        uint validateCallsInit = coordinator.calls("validate");
+        uint validateCallsInit = coordinator.calls("validatePoolConstraints");
         uint submissionPeriodCallsInit = coordinator.calls("submissionPeriod");
         uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
         uint creditProtection = safeSub(overcollAmount, amountDAI);
 
+        uint reserve = 1000 ether;
+        uint seniorBalance = 800 ether;
+        assessor.setReturn("balance", reserve);
+        assessor.setReturn("seniorBalance", seniorBalance);
         // raise creditLine
         clerk.sink(amountDAI);
         // assert creditLine was decreased
@@ -236,25 +243,24 @@ contract ClerkTest is Math, DSTest {
         // assert remainingCreditLine was also decreased
         assertEq(clerk.remainingCredit(), safeSub(remainingCreditInit, amountDAI));
         // assert call count coordinator & function arguments
-        assertEq(coordinator.calls("validate"), safeAdd(validateCallsInit, 1));
         assertEq(coordinator.calls("submissionPeriod"), safeAdd(submissionPeriodCallsInit, 1));
-        assertEq(coordinator.values_uint("seniorRedeem"), overcollAmount);
-        assertEq(coordinator.values_uint("juniorSupply"), creditProtection);
+        assertEq(coordinator.values_uint("reserve"), reserve - overcollAmount + creditProtection);
+        assertEq(coordinator.values_uint("seniorAsset"), seniorBalance -overcollAmount);
     }
 
     function testRaise() public {
         // set submission period in coordinator to false
         coordinator.setReturn("submissionPeriod", false);
         // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validate", 0);
+        coordinator.setIntReturn("validatePoolConstraints", 0);
         uint amountDAI = 100 ether;
         // assert calcOvercollAmount computes the correct value
         uint overcollAmountDAI = clerk.calcOvercollAmount(amountDAI);
 
-        assertEq(overcollAmountDAI, 111 ether);
+        assertEq(overcollAmountDAI, 110 ether);
         // assert the security margin is computed correctly
         uint creditProtection = safeSub(overcollAmountDAI, amountDAI);
-        assertEq(creditProtection, 11 ether);
+        assertEq(creditProtection, 10 ether);
 
         raise(amountDAI);
     }
@@ -263,7 +269,7 @@ contract ClerkTest is Math, DSTest {
         // set submission period in coordinator to false
         coordinator.setReturn("submissionPeriod", false);
         // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validate", 0);
+        coordinator.setIntReturn("validatePoolConstraints", 0);
         uint amountDAI = 100 ether;
         // raise 100 DAI
         raise(amountDAI);
@@ -275,7 +281,7 @@ contract ClerkTest is Math, DSTest {
         // fail condition: set submission period in coordinator to true
         coordinator.setReturn("submissionPeriod", true);
         // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validate", 0);
+        coordinator.setIntReturn("validatePoolConstraints", 0);
         uint amountDAI = 100 ether;
         raise(amountDAI);
     }
@@ -284,7 +290,7 @@ contract ClerkTest is Math, DSTest {
        // set submission period in coordinator to false
         coordinator.setReturn("submissionPeriod", false);
         // set validation result in coordinator to -1 -> failure
-        coordinator.setIntReturn("validate", -1);
+        coordinator.setIntReturn("validatePoolConstraints", -1);
         uint amountDAI = 100 ether;
         raise(amountDAI);
     }
@@ -297,6 +303,7 @@ contract ClerkTest is Math, DSTest {
 
     function testPartialDraw() public {
         testRaise();
+
         uint dropPrice = ONE;
         // draw half creditline
         draw(safeDiv(clerk.creditline(), 2), dropPrice);
@@ -517,10 +524,12 @@ contract ClerkTest is Math, DSTest {
         testFullDraw();
         assert(clerk.juniorStake() > 0);
         mgr.setReturn("live", false);
-        assertEq(clerk.juniorStake(), 0); 
+        assertEq(clerk.juniorStake(), 0);
     }
 
     function testMat() public {
+        // add mat buffer of 1%
+        clerk.file("buffer", 0.01 * 10**27);
         uint mat = rdiv(rmul(150, ONE), 100); // mat value 150 %
         spotter.setReturn("mat", mat);
         // default matBuffer in clerk 1% -> assert cler.mat = 151 %
@@ -538,36 +547,39 @@ contract ClerkTest is Math, DSTest {
     function testHealPartial() public {
         uint dropPrice = ONE;
         testFullDraw();
-        // increase Mat value from deafault 1% to 5%
-        clerk.file("buffer", rdiv(rmul(5, ONE), 100));
+        // increase Mat value to 5%
+        clerk.file("buffer", 0.05 * 10**27);
         // additional buffer can be minted
-        coordinator.setIntReturn("validate", 0);
-        
+        coordinator.setIntReturn("validatePoolConstraints", 0);
+
         uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
         uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
 
-        assertEq(lockedCollateralDAI, 111 ether);
+        assertEq(lockedCollateralDAI, 110 ether);
         assertEq(requiredCollateralDAI, 115 ether);
         // partial healing
         uint healingAmount = safeDiv(safeSub(requiredCollateralDAI, lockedCollateralDAI), 2); // healing amount = 2
+        assessor.setReturn("balance", 200 ether);
         heal(healingAmount, healingAmount, false);
-    } 
+    }
 
     function testHealFull() public {
         uint dropPrice = ONE;
         testFullDraw();
-        // increase Mat value from deafault 1% to 5%
-        clerk.file("buffer", rdiv(rmul(5, ONE), 100));
+        // increase Mat value to additional 5%
+        clerk.file("buffer", 0.05 * 10**27);
         // additional buffer can be minted
-        coordinator.setIntReturn("validate", 0);
-        
+        coordinator.setIntReturn("validatePoolConstraints", 0);
+
         uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
         uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
 
-        assertEq(lockedCollateralDAI, 111 ether);
+        assertEq(lockedCollateralDAI, 110 ether);
         assertEq(requiredCollateralDAI, 115 ether);
         // full healing
         uint healingAmount = safeSub(requiredCollateralDAI, lockedCollateralDAI); // healing amount = 4
+        // currency in reserve for validate
+        assessor.setReturn("balance", 200 ether);
         heal(healingAmount, healingAmount, true);
 
     }
@@ -578,15 +590,16 @@ contract ClerkTest is Math, DSTest {
         // increase Mat value from deafault 1% to 5%
         clerk.file("buffer", rdiv(rmul(5, ONE), 100));
         // additional buffer can be minted
-        coordinator.setIntReturn("validate", 0);
-        
+        coordinator.setIntReturn("validatePoolConstraints", 0);
+
         uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
         uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
 
-        assertEq(lockedCollateralDAI, 111 ether);
+        assertEq(lockedCollateralDAI, 110 ether);
         assertEq(requiredCollateralDAI, 115 ether);
         // partial healing
         uint healingAmount = safeDiv(safeSub(requiredCollateralDAI, lockedCollateralDAI), 2); // healing amount = 2
+        assessor.setReturn("balance", 200 ether);
         heal(10, 4, false);
 
     }
@@ -595,10 +608,10 @@ contract ClerkTest is Math, DSTest {
          uint dropPrice = ONE;
         testFullDraw();
         // increase Mat value from deafault 1% to 5%
-        clerk.file("buffer", rdiv(rmul(5, ONE), 100));
+        clerk.file("buffer", 0.05 * 10**27);
         // additional buffer can be minted
-        coordinator.setIntReturn("validate", -1);
-        
+        coordinator.setIntReturn("validatePoolConstraints", -1);
+
         uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
         uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
 
@@ -606,6 +619,7 @@ contract ClerkTest is Math, DSTest {
         assertEq(requiredCollateralDAI, 115 ether);
         // partial healing
         uint healingAmount = safeDiv(safeSub(requiredCollateralDAI, lockedCollateralDAI), 2); // healing amount = 2
-         heal(healingAmount, healingAmount, false);
+        assessor.setReturn("balance", 200 ether);
+        heal(healingAmount, healingAmount, false);
     }
 }

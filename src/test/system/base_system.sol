@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pragma solidity >=0.5.15 <0.6.0;
+pragma experimental ABIEncoderV2;
 
 import "ds-test/test.sol";
 import "./setup.sol";
@@ -23,8 +24,10 @@ import "./users/investor.sol";
 import "./users/borrower.sol";
 import "./users/keeper.sol";
 import "tinlake-math/math.sol";
+import {BaseTypes} from "../../lender/test/coordinator-base.t.sol";
+import "./assertions.sol";
 
-contract BaseSystemTest is TestSetup, Math, DSTest {
+contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
     // users
     Borrower borrower;
     address borrower_;
@@ -197,9 +200,7 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
 
         tokenId = collateralNFT.issue(borrower_);
         loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup, maturityDate);
-        emit log_named_uint("seniorDebtXXX", assessor.seniorDebt());
         borrow(loan, tokenId, borrowAmount, lenderFundingRequired);
-        emit log_named_uint("seniorDebtXX", assessor.seniorDebt());
         return (loan, tokenId);
     }
 
@@ -240,13 +241,10 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         borrower.approveNFT(collateralNFT, address(shelf));
         if (fundLenderRequired) {
             fundLender(borrowAmount);
-            emit log_named_uint("xxxx", assessor.seniorDebt());
+
         }
-        emit log_named_uint("xxx", assessor.seniorDebt());
         borrower.borrowAction(loan, borrowAmount);
-        emit log_named_uint("fdf", assessor.seniorDebt());
         checkAfterBorrow(tokenId, borrowAmount);
-        emit log_named_uint("aaa", assessor.seniorDebt());
     }
 
     function defaultCollateral() public pure returns(uint nftPrice_, uint riskGroup_) {
@@ -294,13 +292,6 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         checkAfterRepay(loan, tokenId, totalT, distributorShould);
     }
 
-    uint TWO_DECIMAL_PRECISION = 10**16;
-    uint FIXED27_TWO_DECIMAL_PRECISION = 10**25;
-    uint FIXED27_TEN_DECIMAL_PRECISION = 10**17;
-
-    function assertEq(uint a, uint b, uint precision)  public {
-        assertEq(a/precision, b/precision);
-    }
 
     function fixed18To27(uint valPower18) public pure returns(uint) {
         // convert 10^18 to 10^27
@@ -316,5 +307,4 @@ contract BaseSystemTest is TestSetup, Math, DSTest {
         borrower.doApproveCurrency(address(shelf), uint(-1));
         return extra;
     }
-
 }

@@ -76,10 +76,10 @@ contract AssessorMKRTest is DSTest, Math {
     }
 
     function testSeniorBalance() public {
-        uint remainingCreditCollateral = 90 ether;
+        uint remainingOvercollCredit = 90 ether;
         uint seniorSupply = 10 ether;
         assessor.changeSeniorAsset(seniorSupply, 0);
-        clerk.setReturn("remainingCreditCollateral", remainingCreditCollateral);
+        clerk.setReturn("remainingOvercollCredit", remainingOvercollCredit);
         // balance should not have an effect
         reserveMock.setReturn("balance", 1000 ether);
         assertEq(assessor.seniorBalance(), 100 ether);

@@ -41,6 +41,7 @@ contract MKRLenderDeployer is LenderDeployer {
     function deployClerk() public {
         require(seniorToken != address(0));
         clerk = clerkFab.newClerk(currency, seniorToken);
+        AuthLike(clerk).rely(root);
     }
 
     function init(uint minSeniorRatio_, uint maxSeniorRatio_, uint maxReserve_, uint challengeTime_, uint seniorInterestRate_,
@@ -68,11 +69,15 @@ contract MKRLenderDeployer is LenderDeployer {
         DependLike(clerk).depend("vat", mkrVat);
 
         // clerk as ward
-        AuthLike(seniorToken).rely(clerk);
+        AuthLike(seniorTranche).rely(clerk);
         AuthLike(reserve).rely(clerk);
         AuthLike(assessor).rely(clerk);
+        // allow clerk to hold seniorToken
+        MemberlistLike(seniorMemberlist).updateMember(clerk, uint(-1));
+        MemberlistLike(seniorMemberlist).updateMember(mkrMgr, uint(-1));
 
         DependLike(assessor).depend("clerk", clerk);
+
     }
 }
 

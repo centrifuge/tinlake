@@ -16,12 +16,13 @@
 pragma solidity >=0.5.15 <0.6.0;
 pragma experimental ABIEncoderV2;
 
-import "../base_system.sol";
+
 import "tinlake-math/interest.sol";
 import {BaseTypes} from "../../../lender/test/coordinator-base.t.sol";
 
-contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
-    Hevm public hevm;
+import "../test_suite.sol";
+
+contract LenderSystemTest is TestSuite, Interest {
 
     function setUp() public {
         // setup hevm
@@ -31,38 +32,6 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
         createTestUsers();
         nftFeed_ = NFTFeedLike(address(nftFeed));
 
-    }
-
-    function seniorSupply(uint currencyAmount) public {
-        seniorSupply(currencyAmount, seniorInvestor);
-    }
-
-    function seniorSupply(uint currencyAmount, Investor investor) public {
-        admin.makeSeniorTokenMember(address(investor), safeAdd(now, 8 days));
-        currency.mint(address(investor), currencyAmount);
-        investor.supplyOrder(currencyAmount);
-        (,uint supplyAmount, ) = seniorTranche.users(address(investor));
-        assertEq(supplyAmount, currencyAmount);
-    }
-
-    function juniorSupply(uint currencyAmount) public {
-        currency.mint(address(juniorInvestor), currencyAmount);
-        admin.makeJuniorTokenMember(juniorInvestor_, safeAdd(now, 8 days));
-        juniorInvestor.supplyOrder(currencyAmount);
-        (,uint supplyAmount, ) = juniorTranche.users(juniorInvestor_);
-        assertEq(supplyAmount, currencyAmount);
-    }
-
-    function closeEpoch(bool closeWithExecute) public {
-        uint currentEpoch = coordinator.currentEpoch();
-        uint lastEpochExecuted = coordinator.lastEpochExecuted();
-
-        coordinator.closeEpoch();
-        assertEq(coordinator.currentEpoch(), currentEpoch+1);
-        if(closeWithExecute == true) {
-            lastEpochExecuted++;
-        }
-        assertEq(coordinator.lastEpochExecuted(), lastEpochExecuted);
     }
 
     function testSupplyClose() public {
@@ -75,62 +44,6 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
 
         closeEpoch(true);
     }
-
-
-    function supplyAndBorrowFirstLoan(uint seniorSupplyAmount, uint juniorSupplyAmount,
-        uint nftPrice, uint borrowAmount, uint maturityDate, ModelInput memory submission) public returns (uint loan, uint tokenId) {
-        seniorSupply(seniorSupplyAmount);
-        juniorSupply(juniorSupplyAmount);
-
-        hevm.warp(now + 1 days);
-
-        closeEpoch(false);
-        assertTrue(coordinator.submissionPeriod() == true);
-
-        int valid = submitSolution(address(coordinator), submission);
-        assertEq(valid, coordinator.NEW_BEST());
-
-        hevm.warp(now + 2 hours);
-
-        coordinator.executeEpoch();
-        assertEq(reserve.totalBalance(), submission.seniorSupply + submission.juniorSupply);
-
-        // senior
-        (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) = seniorInvestor.disburse();
-        // equal because of token price 1
-        assertEq(payoutTokenAmount, submission.seniorSupply);
-        assertEq(remainingSupplyCurrency, seniorSupplyAmount- submission.seniorSupply);
-
-        // junior
-        (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken) = juniorInvestor.disburse();
-        assertEq(payoutTokenAmount, submission.juniorSupply);
-        assertEq(remainingSupplyCurrency, juniorSupplyAmount- submission.juniorSupply);
-
-        assertEq(seniorToken.balanceOf(seniorInvestor_), submission.seniorSupply);
-        assertEq(juniorToken.balanceOf(juniorInvestor_), submission.juniorSupply);
-
-        // borrow loans maturity date 5 days from now
-        (loan, tokenId) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(now) +maturityDate);
-
-        assertEq(currency.balanceOf(address(borrower)), borrowAmount);
-
-        uint nav = nftFeed.calcUpdateNAV();
-        uint fv = nftFeed.futureValue(nftFeed.nftID(loan));
-
-        // FV = 100 * 1.05^5 = 127.62815625
-        assertEq(fv, 127.62815625 ether);
-
-        // (FV/1.03^5) = 110.093;
-        assertEq(nav, 110.093921369062927876 ether);
-
-        assertEq(assessor.seniorDebt(), rmul(submission.seniorSupply+submission.juniorSupply, assessor.seniorRatio()));
-
-        uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, 0);
-        assertEq(seniorTokenPrice, ONE);
-
-        return (loan, tokenId);
-    }
-
 
     function testSupplyAndBorrow() public {
         uint seniorSupplyAmount = 500 ether;
@@ -147,7 +60,15 @@ contract LenderSystemTest is BaseSystemTest, BaseTypes, Interest {
             juniorRedeem : 0 ether
             });
 
-        supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate, submission);
+        (uint loan, ) = supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate, submission);
+        uint nav = nftFeed.calcUpdateNAV();
+        uint fv = nftFeed.futureValue(nftFeed.nftID(loan));
+
+        // FV = 100 * 1.05^5 = 127.62815625
+        assertEq(fv, 127.62815625 ether);
+
+        // (FV/1.03^5) = 110.093;
+        assertEq(nav, 110.093921369062927876 ether);
 
     }
 
