@@ -33,7 +33,7 @@ contract CoordinatorMock is Mock {
         values_uint["reserve"] = reserve_;
         values_uint["seniorAsset"] = seniorAsset_;
         values_uint["nav"] = nav_;
-        return values_int_return["validate"];
+        return values_int_return["validatePoolConstraints"];
     }
 
     function calcSeniorAssetValue(uint, uint, uint, uint, uint) public returns(uint) {

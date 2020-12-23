@@ -103,7 +103,7 @@ contract ClerkTest is Math, DSTest {
     function raise(uint amountDAI) public{
         uint creditlineInit = clerk.creditline();
         uint remainingCreditInit = clerk.remainingCredit();
-        uint validateCallsInit = coordinator.calls("validate");
+        uint validateCallsInit = coordinator.calls("validatePoolConstraints");
         uint submissionPeriodCallsInit = coordinator.calls("submissionPeriod");
         uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
         uint creditProtection = safeSub(overcollAmount, amountDAI);
@@ -227,7 +227,7 @@ contract ClerkTest is Math, DSTest {
     function sink(uint amountDAI) public {
         uint creditlineInit = clerk.creditline();
         uint remainingCreditInit = clerk.remainingCredit();
-        uint validateCallsInit = coordinator.calls("validate");
+        uint validateCallsInit = coordinator.calls("validatePoolConstraints");
         uint submissionPeriodCallsInit = coordinator.calls("submissionPeriod");
         uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
         uint creditProtection = safeSub(overcollAmount, amountDAI);
@@ -252,7 +252,7 @@ contract ClerkTest is Math, DSTest {
         // set submission period in coordinator to false
         coordinator.setReturn("submissionPeriod", false);
         // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validate", 0);
+        coordinator.setIntReturn("validatePoolConstraints", 0);
         uint amountDAI = 100 ether;
         // assert calcOvercollAmount computes the correct value
         uint overcollAmountDAI = clerk.calcOvercollAmount(amountDAI);
@@ -269,7 +269,7 @@ contract ClerkTest is Math, DSTest {
         // set submission period in coordinator to false
         coordinator.setReturn("submissionPeriod", false);
         // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validate", 0);
+        coordinator.setIntReturn("validatePoolConstraints", 0);
         uint amountDAI = 100 ether;
         // raise 100 DAI
         raise(amountDAI);
@@ -281,7 +281,7 @@ contract ClerkTest is Math, DSTest {
         // fail condition: set submission period in coordinator to true
         coordinator.setReturn("submissionPeriod", true);
         // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validate", 0);
+        coordinator.setIntReturn("validatePoolConstraints", 0);
         uint amountDAI = 100 ether;
         raise(amountDAI);
     }
@@ -290,7 +290,7 @@ contract ClerkTest is Math, DSTest {
        // set submission period in coordinator to false
         coordinator.setReturn("submissionPeriod", false);
         // set validation result in coordinator to -1 -> failure
-        coordinator.setIntReturn("validate", -1);
+        coordinator.setIntReturn("validatePoolConstraints", -1);
         uint amountDAI = 100 ether;
         raise(amountDAI);
     }
@@ -550,7 +550,7 @@ contract ClerkTest is Math, DSTest {
         // increase Mat value to 5%
         clerk.file("buffer", 0.05 * 10**27);
         // additional buffer can be minted
-        coordinator.setIntReturn("validate", 0);
+        coordinator.setIntReturn("validatePoolConstraints", 0);
 
         uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
         uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
@@ -567,9 +567,9 @@ contract ClerkTest is Math, DSTest {
         uint dropPrice = ONE;
         testFullDraw();
         // increase Mat value to additional 5%
-        clerk.file("buffer", rdiv(rmul(5, ONE), 100));
+        clerk.file("buffer", 0.05 * 10**27);
         // additional buffer can be minted
-        coordinator.setIntReturn("validate", 0);
+        coordinator.setIntReturn("validatePoolConstraints", 0);
 
         uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
         uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
@@ -590,7 +590,7 @@ contract ClerkTest is Math, DSTest {
         // increase Mat value from deafault 1% to 5%
         clerk.file("buffer", rdiv(rmul(5, ONE), 100));
         // additional buffer can be minted
-        coordinator.setIntReturn("validate", 0);
+        coordinator.setIntReturn("validatePoolConstraints", 0);
 
         uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
         uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
@@ -608,9 +608,9 @@ contract ClerkTest is Math, DSTest {
          uint dropPrice = ONE;
         testFullDraw();
         // increase Mat value from deafault 1% to 5%
-        clerk.file("buffer", rdiv(rmul(5, ONE), 100));
+        clerk.file("buffer", 0.05 * 10**27);
         // additional buffer can be minted
-        coordinator.setIntReturn("validate", -1);
+        coordinator.setIntReturn("validatePoolConstraints", -1);
 
         uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
         uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
