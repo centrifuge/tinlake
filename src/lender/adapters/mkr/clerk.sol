@@ -19,7 +19,7 @@ import "tinlake-math/math.sol";
 
 interface ManagerLike {
     // collateral debt
-    function cdptab() external returns(uint);
+    function cdptab() external view returns(uint);
     // put collateral into cdp
     function join(uint amountDROP) external;
     // draw DAi from cdp
@@ -69,8 +69,8 @@ interface CoordinatorLike {
 
 interface ReserveLike {
     function totalBalance() external returns(uint);
-    function deposit(uint daiAmount) external;
-    function payout(uint currencyAmount) external;
+    function hardDeposit(uint daiAmount) external;
+    function hardPayout(uint currencyAmount) external;
 }
 
 interface TrancheLike {
@@ -201,7 +201,7 @@ contract Clerk is Auth, Math {
         mgr.draw(amountDAI, address(this));
         // move dai to reserve
         dai.approve(address(reserve), amountDAI);
-        reserve.deposit(amountDAI);
+        reserve.hardDeposit(amountDAI);
         // increase seniorAsset by amountDAI
         updateSeniorAsset(0, collateralDAI);
     }
@@ -215,7 +215,7 @@ contract Clerk is Auth, Math {
             amountDAI = mgr.cdptab();
         }
         // get DAI from reserve
-        reserve.payout(amountDAI);
+        reserve.hardPayout(amountDAI);
         // repay cdp debt
         dai.approve(address(mgr), amountDAI);
         mgr.wipe(amountDAI);
@@ -317,10 +317,14 @@ contract Clerk is Auth, Math {
     function returnDAI() public auth {
         uint amountDAI = dai.balanceOf(address(this));
         dai.approve(address(reserve), amountDAI);
-        reserve.deposit(amountDAI);
+        reserve.hardDeposit(amountDAI);
     }
 
     function changeOwnerMgr(address usr) public auth {
         mgr.setOwner(usr);
+    }
+
+    function debt() public view returns(uint) {
+        return mgr.cdptab();
     }
 }

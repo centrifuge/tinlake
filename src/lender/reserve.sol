@@ -3,29 +3,29 @@ pragma solidity >=0.5.15 <0.6.0;
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
 
-contract ERC20Like {
-    function balanceOf(address) public view returns (uint256);
-
-    function transferFrom(
-        address,
-        address,
-        uint256
-    ) public returns (bool);
-
-    function mint(address, uint256) public;
-
-    function burn(address, uint256) public;
-
-    function totalSupply() public view returns (uint256);
+interface ERC20Like {
+    function balanceOf(address) external view returns (uint256);
+    function transferFrom(address, address, uint) external returns (bool);
+    function mint(address, uint256) external;
+    function burn(address, uint256) external;
+    function totalSupply() external view returns (uint256);
+    function approve(address, uint) external;
 }
 
-contract ShelfLike {
-    function balanceRequest() public returns (bool requestWant, uint256 amount);
+interface ShelfLike {
+    function balanceRequest() external returns (bool requestWant, uint256 amount);
 }
 
-contract AssessorLike {
-    function repaymentUpdate(uint amount) public;
-    function borrowUpdate(uint amount) public;
+interface AssessorLike {
+    function repaymentUpdate(uint amount) external;
+    function borrowUpdate(uint amount) external;
+}
+
+interface LendingAdapter {
+    function remainingCredit() external view returns (uint);
+    function draw(uint amount) external;
+    function wipe(uint amount) external;
+    function debt() external view returns(uint);
 }
 
 // The reserve keeps track of the currency and the bookkeeping
@@ -34,6 +34,10 @@ contract Reserve is Math, Auth {
     ERC20Like public currency;
     ShelfLike public shelf;
     AssessorLike public assessor;
+
+    // additional currency from lending adapters
+    // for deactivating set to address(0)
+    LendingAdapter public lending;
 
     // currency available for borrowing new loans
     uint256 public currencyAvailable;
@@ -66,6 +70,8 @@ contract Reserve is Math, Auth {
             assessor = AssessorLike(addr);
         } else if (contractName == "pot") {
             pot = addr;
+        } else if (contractName == "lending") {
+            lending = LendingAdapter(addr);
         } else revert();
     }
 
@@ -78,9 +84,32 @@ contract Reserve is Math, Auth {
         _deposit(msg.sender, currencyAmount);
     }
 
-    function _deposit(address usr, uint currencyAmount) internal {
+    // hard deposit guarantees that the currency stays in the reserve
+    function hardDeposit(uint currencyAmount) public auth {
+        _depositAction(msg.sender, currencyAmount);
+    }
+
+
+    // hard payout guarantees that the currency stays in the reserve
+    function hardPayout(uint currencyAmount) public auth {
+        _payoutAction(msg.sender, currencyAmount);
+    }
+
+    function _depositAction(address usr, uint currencyAmount) internal {
         require(currency.transferFrom(usr, pot, currencyAmount), "reserve-deposit-failed");
         balance_ = safeAdd(balance_, currencyAmount);
+    }
+
+    function _deposit(address usr, uint currencyAmount) internal {
+        _depositAction(usr, currencyAmount);
+        if(address(lending) != address(0) && lending.debt() > 0) {
+            uint wipeAmount = lending.debt();
+            uint available = currency.balanceOf(pot);
+            if(available < wipeAmount) {
+                wipeAmount = available;
+            }
+            lending.wipe(wipeAmount);
+        }
     }
 
     // remove currency from the reserve
@@ -88,9 +117,23 @@ contract Reserve is Math, Auth {
         _payout(msg.sender, currencyAmount);
     }
 
+    function _payoutAction(address usr, uint currencyAmount) internal {
+        require(currency.transferFrom(pot, usr, currencyAmount), "reserve-payout-failed");
+        balance_ = safeSub(balance_, currencyAmount);
+    }
+
     function _payout(address usr, uint currencyAmount)  internal {
-      require(currency.transferFrom(pot, usr, currencyAmount), "reserve-payout-failed");
-      balance_ = safeSub(balance_, currencyAmount);
+        uint reserveBalance = currency.balanceOf(pot);
+        if (currencyAmount > reserveBalance && address(lending) != address(0)) {
+            uint drawAmount = safeSub(currencyAmount, reserveBalance);
+            uint left = lending.remainingCredit();
+            if(drawAmount > left) {
+                drawAmount = left;
+            }
+            lending.draw(drawAmount);
+        }
+
+        _payoutAction(usr, currencyAmount);
     }
 
     // balance handles currency requests from the borrower side
