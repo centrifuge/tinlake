@@ -54,13 +54,12 @@ interface AssessorLike {
     function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) external;
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
-    function currentNAV() external view returns(uint);
+    function getNAV() external view returns(uint);
     function totalBalance() external returns(uint);
     function calcExpectedSeniorAsset(uint seniorRedeem, uint seniorSupply, uint seniorBalance_, uint seniorDebt_) external view returns(uint);
     }
 
 interface CoordinatorLike {
-    function validate(uint reserve, uint nav, uint seniorAsset, uint seniorRedeem, uint juniorRedeem, uint seniorSupply, uint juniorSupply) external returns(int);
     function validatePoolConstraints(uint reserve_, uint seniorAsset, uint nav_) external returns(int);
     function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply, uint currSeniorAsset, uint reserve_, uint nav_) external returns(uint);
     function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) external returns(uint);
@@ -289,7 +288,7 @@ contract Clerk is Auth, Math {
         uint expectedSeniorAsset = assessor.calcExpectedSeniorAsset(seniorRedeemDAI, seniorSupplyDAI,
             assessor.seniorBalance(), assessor.seniorDebt());
         return coordinator.validatePoolConstraints(newReserve, expectedSeniorAsset,
-            assessor.currentNAV());
+            assessor.getNAV());
    }
 
     function updateSeniorAsset(uint decreaseDAI, uint increaseDAI) internal  {
