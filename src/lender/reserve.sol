@@ -28,9 +28,11 @@ interface LendingAdapter {
     function debt() external view returns(uint);
 }
 
+import "ds-test/test.sol";
+
 // The reserve keeps track of the currency and the bookkeeping
 // of the total balance
-contract Reserve is Math, Auth {
+contract Reserve is Math, Auth, DSTest {
     ERC20Like public currency;
     ShelfLike public shelf;
     AssessorLike public assessor;
@@ -123,13 +125,16 @@ contract Reserve is Math, Auth {
     }
 
     function _payout(address usr, uint currencyAmount)  internal {
+        emit log_named_uint("sdfsdf", 3);
         uint reserveBalance = currency.balanceOf(pot);
         if (currencyAmount > reserveBalance && address(lending) != address(0)) {
+            emit log_named_uint("fuu", 1);
             uint drawAmount = safeSub(currencyAmount, reserveBalance);
             uint left = lending.remainingCredit();
             if(drawAmount > left) {
                 drawAmount = left;
             }
+            emit log_named_uint("fuu", 2);
             lending.draw(drawAmount);
         }
 
@@ -141,8 +146,9 @@ contract Reserve is Math, Auth {
     function balance() public {
         (bool requestWant, uint256 currencyAmount) = shelf.balanceRequest();
         if (requestWant) {
+        //    uint a = safeAdd(currencyAvailable, lending.remainingCredit());
             require(
-                currencyAvailable >= currencyAmount,
+                currencyAvailable  >= currencyAmount,
                 "not-enough-currency-reserve"
             );
 

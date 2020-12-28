@@ -108,4 +108,40 @@ contract LenderSystemTest is TestSuite, Interest {
 
         assertEq(assessor.totalBalance(), safeAdd(preReserve, creditLineAmount));
     }
+
+
+    function _setUpMKRLine(uint juniorAmount, uint mkrAmount) internal {
+        root.relyContract(address(reserve), address(this));
+
+        root.relyContract(address(mkrAssessor), address(this));
+        mkrAssessor.file("minSeniorRatio",0);
+
+        // activate clerk in reserve
+        reserve.depend("lending", address(clerk));
+
+        uint juniorSupplyAmount = 200 ether;
+        juniorSupply(juniorSupplyAmount);
+
+        hevm.warp(now + 1 days);
+
+        bool closeWithExecute = true;
+        closeEpoch(true);
+        assertTrue(coordinator.submissionPeriod() == false);
+
+        uint creditLineAmount = 500 ether;
+        clerk.raise(creditLineAmount);
+
+        assertEq(clerk.remainingCredit(), creditLineAmount);
+    }
+
+    function testOnDemandDraw() public {
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        _setUpMKRLine(juniorAmount, mkrAmount);
+
+        uint borrowAmount = 200 ether;
+        setupOngoingLoan(borrowAmount);
+        assertEq(currency.balanceOf(address(borrower)), borrowAmount, " testOnDemandDraw#1");
+    }
+
 }

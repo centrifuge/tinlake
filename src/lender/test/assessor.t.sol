@@ -395,10 +395,10 @@ contract AssessorTest is DSTest, Math {
         assertEq(assessor.totalBalance(), totalBalance);
     }
 
-    function testChangeReserveAvailable() public {
+    function testchangeBorrowAmountEpoch() public {
         uint amount = 100 ether;
-        assertEq(reserveMock.values_uint("currency_available"), 0);
-        assessor.changeReserveAvailable(amount);
-        assertEq(reserveMock.values_uint("currency_available"), amount);
+        assertEq(reserveMock.values_uint("borrow_amount"), 0);
+        assessor.changeBorrowAmountEpoch(amount);
+        assertEq(reserveMock.values_uint("borrow_amount"), amount);
     }
 }

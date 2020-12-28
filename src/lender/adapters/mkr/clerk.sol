@@ -57,6 +57,8 @@ interface AssessorLike {
     function getNAV() external view returns(uint);
     function totalBalance() external returns(uint);
     function calcExpectedSeniorAsset(uint seniorRedeem, uint seniorSupply, uint seniorBalance_, uint seniorDebt_) external view returns(uint);
+    function changeBorrowAmountEpoch(uint currencyAmount) external;
+    function borrowAmountEpoch() external view returns(uint);
     }
 
 interface CoordinatorLike {
@@ -181,6 +183,8 @@ contract Clerk is Auth, Math {
         require((validate(0, protectionDAI, overcollAmountDAI, 0) == 0), "supply not possible, pool constraints violated");
         // increase MKR crediline by amount
         creditline = safeAdd(creditline, amountDAI);
+        // make increase in creditline available to new loans
+        assessor.changeBorrowAmountEpoch(safeAdd(assessor.borrowAmountEpoch(), amountDAI));
     }
 
     // mint DROP, join DROP into cdp, draw DAI and send to reserve
@@ -251,6 +255,8 @@ contract Clerk is Auth, Math {
 
         // increase MKR crediline by amount
         creditline = safeSub(creditline, amountDAI);
+        // decrease in creditline impacts amount available for new loans
+        assessor.changeBorrowAmountEpoch(safeSub(assessor.borrowAmountEpoch(), amountDAI));
     }
 
     function heal(uint amountDAI) public auth active {

@@ -49,10 +49,8 @@ contract AssessorLike is FixedPoint {
     function seniorRatioBounds() external view returns(Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio);
 
     function totalBalance() external returns(uint);
-
-
     // change state
-    function changeReserveAvailable(uint currencyAmount) public;
+    function changeBorrowAmountEpoch(uint currencyAmount) public;
     function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) external;
     function changeSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
 }
@@ -187,7 +185,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         lastEpochClosed = block.timestamp;
         currentEpoch = currentEpoch + 1;
         reserve.balance();
-        assessor.changeReserveAvailable(0);
+        assessor.changeBorrowAmountEpoch(0);
 
         (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.closeEpoch();
         (uint orderSeniorSupply, uint orderSeniorRedeem) = seniorTranche.closeEpoch();
@@ -586,7 +584,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         // assessor performs senior debt reBalancing according to new ratio
         assessor.changeSeniorAsset(seniorSupply, seniorRedeem);
         // the new reserve after this epoch can be used for new loans
-        assessor.changeReserveAvailable(newReserve);
+        assessor.changeBorrowAmountEpoch(newReserve);
         // reset state for next epochs
         lastEpochExecuted = epochID;
         submissionPeriod = false;

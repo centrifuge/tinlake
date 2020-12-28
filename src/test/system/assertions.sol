@@ -30,6 +30,13 @@ contract Assertions is DSTest, Math {
         assertEq(a/precision, b/precision);
     }
 
+    // assertEq with precision tolerance
+    function assertEq(uint a, uint b, bytes32 msg)  public {
+        emit log_named_bytes32(msg, "SystemTest - Assert Equal Failed");
+        assertEq(a, b);
+    }
+
+
     // assert equal two variables with a wei tolerance
     function assertEqTol(uint actual, uint expected, bytes32 msg) public {
         uint diff;
