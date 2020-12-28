@@ -158,4 +158,8 @@ contract AssessorMock is Mock {
     function currentNAV() public view returns(uint) {
         return values_uint["currentNAV"];
     }
+
+    function getNAV() public view returns(uint) {
+        return values_uint["getNAV"];
+    }
 }

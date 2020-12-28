@@ -92,7 +92,13 @@ contract MKRAssessor is Assessor {
         return safeAdd(reserve.totalBalance(), clerk.remainingCredit());
     }
 
+    // returns the current NAV
     function currentNAV() public view returns(uint) {
         return navFeed.currentNAV();
+    }
+
+    // returns the approximated NAV for gas-performance reasons
+    function getNAV() public view returns(uint) {
+        return navFeed.approximatedNAV();
     }
 }
