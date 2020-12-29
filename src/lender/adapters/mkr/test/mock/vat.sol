@@ -17,7 +17,7 @@ import "ds-test/test.sol";
 import "../../../../../test/mock/mock.sol";
 
 contract VatMock is Mock {
-    function urns(bytes32, address) external returns (uint, uint) {
+    function urns(bytes32, address) external view returns (uint, uint) {
         return (values_return["ink"], 0);
     }
 

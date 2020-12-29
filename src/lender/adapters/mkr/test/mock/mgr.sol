@@ -59,15 +59,15 @@ contract ManagerMock is Mock {
         values_uint["tab"] = safeSub(values_uint["tab"], amountDAI);
     }
 
-    function safe() external returns(bool) {
+    function safe() external view returns(bool) {
         return values_bool_return["safe"];
     }
 
-    function glad() external returns(bool) {
+    function glad() external view returns(bool) {
         return values_bool_return["glad"];
     }
 
-    function live() external returns(bool) {
+    function live() external view returns(bool) {
         return values_bool_return["live"];
     }
 

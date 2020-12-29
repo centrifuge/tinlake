@@ -21,14 +21,12 @@ contract SimpleMkr is Math {
     uint debt;
 
     bytes32 public ilk;
-    uint mat;
 
     bool safeFlag;
 
-    constructor(uint stabilityFee_, bytes32 ilk_, uint mat_) public {
+    constructor(uint stabilityFee_, bytes32 ilk_) public {
         stabilityFee = stabilityFee_;
         ilk = ilk_;
-        mat = mat_;
         safeFlag = true;
     }
 
@@ -76,8 +74,12 @@ contract SimpleMkr is Math {
         return (drop.balanceOf(address(this)), 0);
     }
 
-    // Spotter Like
-    function ilks(bytes32) external returns(address, uint256) {
-        return (address(drop), mat);
+    function ilks(bytes32) external returns(uint, uint, uint, uint, uint)  {
+        return(0, stabilityFee, 0, 0, 0);
     }
+
+//    // Spotter Like
+//    function ilks(bytes32) external returns(address, uint256) {
+//        return (address(drop), mat);
+//    }
 }

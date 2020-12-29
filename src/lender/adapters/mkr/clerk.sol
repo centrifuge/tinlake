@@ -29,23 +29,24 @@ interface ManagerLike {
     // remove collateral from cdp
     function exit(address usr, uint amountDROP) external;
     // collateral ID
-    function ilk() external returns(bytes32);
+    function ilk() external view returns(bytes32);
     // indicates if soft-liquidation was activated
-    function safe() external returns(bool);
+    function safe() external view returns(bool);
     // indicates if hard-liquidation was activated
-    function glad() external returns(bool);
+    function glad() external view returns(bool);
     // indicates if global settlement was triggered
-    function live() external returns(bool);
+    function live() external view returns(bool);
     // auth functions
     function setOwner(address newOwner) external;
 }
 
 interface VatLike {
     function urns(bytes32, address) external returns (uint,uint);
+    function ilks(bytes32) external view returns(uint, uint, uint, uint, uint);
 }
 
 interface SpotterLike {
-    function ilks(bytes32) external returns(address, uint256);
+    function ilks(bytes32) external view returns(address, uint256);
 }
 
 interface AssessorLike {
@@ -331,5 +332,10 @@ contract Clerk is Auth, Math {
 
     function debt() public view returns(uint) {
         return mgr.cdptab();
+    }
+
+    function stabilityFee() public view returns(uint) {
+        (, uint rate, , ,) = vat.ilks(mgr.ilk());
+        return rate;
     }
 }
