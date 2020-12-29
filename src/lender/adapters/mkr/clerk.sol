@@ -41,7 +41,7 @@ interface ManagerLike {
 }
 
 interface VatLike {
-    function urns(bytes32, address) external returns (uint,uint);
+    function urns(bytes32, address) external view returns (uint,uint);
     function ilks(bytes32) external view returns(uint, uint, uint, uint, uint);
 }
 
@@ -50,8 +50,8 @@ interface SpotterLike {
 }
 
 interface AssessorLike {
-    function calcSeniorTokenPrice() external returns(uint);
-    function calcSeniorAssetValue(uint seniorDebt, uint seniorBalance) external returns(uint);
+    function calcSeniorTokenPrice() external view returns(uint);
+    function calcSeniorAssetValue(uint seniorDebt, uint seniorBalance) external view returns(uint);
     function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) external;
     function seniorDebt() external returns(uint);
     function seniorBalance() external returns(uint);
@@ -87,7 +87,7 @@ interface ERC20Like {
     function approve(address usr, uint amount) external;
 }
 
-contract Clerk is Auth, Math {
+contract Clerk is Auth, Math  {
 
     // max amount of DAI that can be brawn from MKR
     uint public creditline;
@@ -170,7 +170,7 @@ contract Clerk is Auth, Math {
 
 
    // junior stake in the cdpink -> value of drop used for cdptab protection
-    function juniorStake() public returns (uint) {
+    function juniorStake() public view returns (uint) {
         // junior looses stake in case cdp is in soft liquidation mode
         if (!(mgr.safe() && mgr.glad() && mgr.live())) {
             return 0;
@@ -297,7 +297,7 @@ contract Clerk is Auth, Math {
         uint newReserve = safeSub(safeSub(safeAdd(safeAdd(assessor.totalBalance(), seniorSupplyDAI),
             juniorSupplyDAI), juniorRedeemDAI), seniorRedeemDAI);
         uint expectedSeniorAsset = assessor.calcExpectedSeniorAsset(seniorRedeemDAI, seniorSupplyDAI,
-            assessor.seniorBalance(), assessor.seniorDebt());
+          assessor.seniorBalance(), assessor.seniorDebt());
         return coordinator.validatePoolConstraints(newReserve, expectedSeniorAsset,
             assessor.getNAV());
    }
@@ -307,13 +307,13 @@ contract Clerk is Auth, Math {
     }
 
     // returns the collateral amount in the cdp
-    function cdpink() public returns (uint) {
+    function cdpink() public view returns (uint) {
         (uint ink, ) = vat.urns(mgr.ilk(), address(mgr));
         return ink;
     }
 
     // returns the required security margin for the DROP tokens
-    function mat() public returns (uint) {
+    function mat() public view returns (uint) {
         (, uint256 mat) = spotter.ilks(mgr.ilk());
         return safeAdd(mat, matBuffer); //  e.g 150% denominated in RAY
     }

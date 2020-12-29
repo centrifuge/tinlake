@@ -32,7 +32,9 @@ contract Assertions is DSTest, Math {
 
     // assertEq with precision tolerance
     function assertEq(uint a, uint b, bytes32 msg)  public {
-        emit log_named_bytes32(msg, "SystemTest - Assert Equal Failed");
+        if(a != b) {
+            emit log_named_bytes32(msg, "SystemTest - Assert Equal Failed");
+        }
         assertEq(a, b);
     }
 
