@@ -298,7 +298,8 @@ contract TestSetup  {
     }
 
     function _initMKR(LenderInit memory l) public {
-        mkr = new SimpleMkr(0, "drop");
+        uint ONE = 10**27;
+        mkr = new SimpleMkr(ONE, "drop");
         address mkr_ = address(mkr);
 
         SpotterMock spotter = new SpotterMock();
