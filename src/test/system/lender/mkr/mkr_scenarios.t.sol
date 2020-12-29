@@ -139,9 +139,18 @@ contract LenderSystemTest is TestSuite, Interest {
         uint mkrAmount = 500 ether;
         _setUpMKRLine(juniorAmount, mkrAmount);
 
-        uint borrowAmount = 200 ether;
+        uint borrowAmount = 300 ether;
         setupOngoingLoan(borrowAmount);
         assertEq(currency.balanceOf(address(borrower)), borrowAmount, " testOnDemandDraw#1");
+        assertEq(clerk.debt(), 100 ether);
+    }
+
+    function testOnDemandDrawWithStabilityFee() public {
+        // todo not implemented
+    }
+
+    function testLoanRepayWipe() public {
+        // todo not implemented
     }
 
 }

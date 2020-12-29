@@ -72,6 +72,10 @@ contract MKRLenderDeployer is LenderDeployer {
         AuthLike(seniorTranche).rely(clerk);
         AuthLike(reserve).rely(clerk);
         AuthLike(assessor).rely(clerk);
+
+        // reserve can draw and wipe on clerk
+        AuthLike(clerk).rely(reserve);
+
         // allow clerk to hold seniorToken
         MemberlistLike(seniorMemberlist).updateMember(clerk, uint(-1));
         MemberlistLike(seniorMemberlist).updateMember(mkrMgr, uint(-1));
