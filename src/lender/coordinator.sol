@@ -567,6 +567,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         uint seniorSupply, uint juniorSupply) internal {
 
         uint epochID = safeAdd(lastEpochExecuted, 1);
+        submissionPeriod = false;
 
         // tranche epochUpdates triggers currency transfers from/to reserve
         // an mint/burn tokens
@@ -587,7 +588,6 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         assessor.changeBorrowAmountEpoch(newReserve);
         // reset state for next epochs
         lastEpochExecuted = epochID;
-        submissionPeriod = false;
         minChallengePeriodEnd = 0;
         bestSubScore = 0;
         gotFullValidSolution = false;
