@@ -210,19 +210,26 @@ contract LenderSystemTest is TestSuite, Interest {
         uint expectedDebt = 101 ether;
         assertEqTol(clerk.debt(), expectedDebt, "testMKRHarvest#1");
 
-        emit log_named_uint("nav", nftFeed_.currentNAV());
-        hevm.warp(now + 1 days);
-
-        emit log_named_uint("nav", nftFeed_.currentNAV());
+        hevm.warp(now + 3 days);
 
         uint seniorPrice = mkrAssessor.calcSeniorTokenPrice();
-        emit log_named_uint("f", 2);
         uint juniorPrice = mkrAssessor.calcJuniorTokenPrice();
-        emit log_named_uint("f", 4);
 
-        emit log_named_uint("seniorPrice", seniorPrice);
-        emit log_named_uint("juniorPrice", juniorPrice);
-        assertTrue(false);
+        uint dropPrice = assessor.calcSeniorTokenPrice();
+        uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
+        // profit => diff between the DAI value of the locked collateral in the cdp & the actual cdp debt including protection buffer
+        uint profitDAI = safeSub(lockedCollateralDAI, clerk.calcOvercollAmount(clerk.debt()));
+        uint preSeniorAsset = safeAdd(assessor.seniorDebt(), assessor.seniorBalance_());
+
+        uint preJuniorStake = clerk.juniorStake();
+
+        clerk.harvest();
+
+        uint newJuniorPrice = mkrAssessor.calcJuniorTokenPrice();
+        uint newSeniorPrice =  mkrAssessor.calcSeniorTokenPrice();
+
+        assertEq(newJuniorPrice, juniorPrice);
+        assertEq(preJuniorStake, safeAdd(clerk.juniorStake(), profitDAI));
+        assertEq(safeSub(preSeniorAsset,profitDAI), safeAdd(assessor.seniorDebt(), assessor.seniorBalance_()));
     }
-
 }
