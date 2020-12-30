@@ -71,6 +71,7 @@ import {SimpleMkr} from "./../simple/mkr.sol";
 import "../../borrower/test/mock/shelf.sol";
 import "../../lender/test/mock/navFeed.sol";
 import "../../lender/adapters/mkr/test/mock/spotter.sol";
+import "./config.sol";
 
 // abstract contract
 contract LenderDeployerLike {
@@ -111,7 +112,7 @@ contract LenderDeployerLike {
     function deploy() external;
 }
 
-contract TestSetup  {
+contract TestSetup is Config  {
     Title public collateralNFT;
     address      public collateralNFT_;
     SimpleToken  public currency;
@@ -140,9 +141,6 @@ contract TestSetup  {
     Memberlist seniorMemberlist;
     Memberlist juniorMemberlist;
 
-
-
-
     // Deployers
     BorrowerDeployer public borrowerDeployer;
     LenderDeployer public  lenderDeployer;
@@ -157,7 +155,7 @@ contract TestSetup  {
     TestRoot root;
     address  root_;
 
-    uint mkrMAT = 1.10 * 10**27;
+    TinlakeConfig internal deploymentConfig;
 
     function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
         tokenId = collateralNFT.issue(usr);
@@ -168,20 +166,22 @@ contract TestSetup  {
 
     function deployContracts() public {
         bool mkrAdapter = false;
-        deployContracts(mkrAdapter);
+        TinlakeConfig memory defaultConfig = defaultConfig();
+        deployContracts(mkrAdapter, defaultConfig);
     }
 
-    function deployContracts(bool mkrAdapter) public {
+    function deployContracts(bool mkrAdapter, TinlakeConfig memory config) public {
         deployTestRoot();
         deployCollateralNFT();
         deployCurrency();
-        deployBorrower();
+        deployBorrower(config);
 
         prepareDeployLender(root_, mkrAdapter);
-        deployLender(mkrAdapter);
+        deployLender(mkrAdapter, config);
 
         root.prepare(lenderDeployerAddr, address(borrowerDeployer), address(this));
         root.deploy();
+        deploymentConfig = config;
     }
 
     function deployTestRoot() public {
@@ -199,7 +199,7 @@ contract TestSetup  {
         collateralNFT_ = address(collateralNFT);
     }
 
-    function deployBorrower() private {
+    function deployBorrower(TinlakeConfig memory config) internal {
         TitleFab titlefab = new TitleFab();
         ShelfFab shelffab = new ShelfFab();
         PileFab pileFab = new PileFab();
@@ -207,9 +207,8 @@ contract TestSetup  {
         address nftFeedFab_;
         nftFeedFab_ = address(new NAVFeedFab());
 
-        uint discountRate = uint(1000000342100000000000000000);
-
-        borrowerDeployer = new BorrowerDeployer(root_, address(titlefab), address(shelffab), address(pileFab), address(collectorFab), nftFeedFab_, currency_, "Tinlake Loan Token", "TLNT", discountRate);
+        borrowerDeployer = new BorrowerDeployer(root_, address(titlefab), address(shelffab), address(pileFab),
+            address(collectorFab), nftFeedFab_, currency_, config.titleName, config.titleSymbol, config.discountRate);
 
         borrowerDeployer.deployTitle();
         borrowerDeployer.deployPile();
@@ -230,6 +229,7 @@ contract TestSetup  {
         currency_ = address(currency);
 
         prepareDeployLender(rootAddr, false);
+
         deployLender();
 
         // add root mock
@@ -281,61 +281,46 @@ contract TestSetup  {
 
     function deployLender() public {
         bool mkrAdapter = false;
-        deployLender(mkrAdapter);
+        TinlakeConfig memory defaultConfig = defaultConfig();
+        deployLender(mkrAdapter, defaultConfig);
+        deploymentConfig = defaultConfig;
     }
 
-
-    struct LenderInit {
-        uint seniorInterestRate;
-        uint maxReserve;
-        uint maxSeniorRatio;
-        uint minSeniorRatio;
-        uint challengeTime;
-        string  seniorTokenName;
-        string  seniorTokenSymbol;
-        string  juniorTokenName;
-        string  juniorTokenSymbol;
-    }
-
-    function _initMKR(LenderInit memory l) public {
-        uint ONE = 10**27;
-        mkr = new SimpleMkr(ONE, "drop");
+    function _initMKR(TinlakeConfig memory config) public {
+        mkr = new SimpleMkr(config.mkrStabilityFee, config.mkrILK);
         address mkr_ = address(mkr);
 
         SpotterMock spotter = new SpotterMock();
-        spotter.setReturn("mat", mkrMAT);
+        spotter.setReturn("mat", config.mkrMAT);
 
-        mkrLenderDeployer.init(l.minSeniorRatio, l.maxSeniorRatio, l.maxReserve, l.challengeTime, l.seniorInterestRate, l.seniorTokenName,
-            l.seniorTokenSymbol, l.juniorTokenName, l.juniorTokenSymbol, address(mkr), address(spotter), address(mkr));
+        mkrLenderDeployer.init(config.minSeniorRatio, config.maxSeniorRatio, config.maxReserve, config.challengeTime, config.seniorInterestRate, config.seniorTokenName,
+            config.seniorTokenSymbol, config.juniorTokenName, config.juniorTokenSymbol, address(mkr), address(spotter), address(mkr));
     }
 
-    function deployLender(bool mkrAdapter) public {
-        // 2 % per day
-        uint seniorInterestRate = uint(1000000229200000000000000000);
-        uint maxReserve = uint(-1);
-        uint maxSeniorRatio = 85 * 10 **25;
-        uint minSeniorRatio = 75 * 10 **25;
-        uint challengeTime = 1 hours;
+    function fetchContractAddr(LenderDeployerLike ld) internal {
+        assessor = Assessor(ld.assessor());
+        assessorAdmin = AssessorAdmin(ld.assessorAdmin());
+        reserve = Reserve(ld.reserve());
+        coordinator = EpochCoordinator(ld.coordinator());
+        seniorTranche = Tranche(ld.seniorTranche());
+        juniorTranche = Tranche(ld.juniorTranche());
+        juniorOperator = Operator(ld.juniorOperator());
+        seniorOperator = Operator(ld.seniorOperator());
+        seniorToken = RestrictedToken(ld.seniorToken());
+        juniorToken = RestrictedToken(ld.juniorToken());
+        juniorMemberlist = Memberlist(ld.juniorMemberlist());
+        seniorMemberlist = Memberlist(ld.seniorMemberlist());
+    }
 
-        string memory seniorTokenName = "DROP Token";
-        string memory seniorTokenSymbol = "DROP";
-        string memory juniorTokenName = "TIN Token";
-        string memory juniorTokenSymbol = "TIN";
-
+    function deployLender(bool mkrAdapter, TinlakeConfig memory config) public {
         LenderDeployerLike ld = LenderDeployerLike(lenderDeployerAddr);
 
         if (mkrAdapter) {
-            _initMKR(LenderInit({seniorInterestRate:seniorInterestRate,
-            maxReserve:maxReserve,
-            maxSeniorRatio: maxSeniorRatio,
-            minSeniorRatio: minSeniorRatio,
-            challengeTime: challengeTime,
-            seniorTokenName: seniorTokenName,
-            seniorTokenSymbol: seniorTokenSymbol,
-            juniorTokenName: juniorTokenName,
-            juniorTokenSymbol: juniorTokenSymbol}));
+            _initMKR(config);
         } else {
-            lenderDeployer.init(minSeniorRatio, maxSeniorRatio, maxReserve, challengeTime, seniorInterestRate, seniorTokenName, seniorTokenSymbol, juniorTokenName, juniorTokenSymbol);
+            lenderDeployer.init(
+                config.minSeniorRatio, config.maxSeniorRatio, config.maxReserve, config.challengeTime, config.seniorInterestRate,
+                    config.seniorTokenName, config.seniorTokenSymbol, config.juniorTokenName, config.juniorTokenSymbol);
         }
 
         ld.deployJunior();
@@ -351,18 +336,6 @@ contract TestSetup  {
         }
 
         ld.deploy();
-
-        assessor = Assessor(ld.assessor());
-        assessorAdmin = AssessorAdmin(ld.assessorAdmin());
-        reserve = Reserve(ld.reserve());
-        coordinator = EpochCoordinator(ld.coordinator());
-        seniorTranche = Tranche(ld.seniorTranche());
-        juniorTranche = Tranche(ld.juniorTranche());
-        juniorOperator = Operator(ld.juniorOperator());
-        seniorOperator = Operator(ld.seniorOperator());
-        seniorToken = RestrictedToken(ld.seniorToken());
-        juniorToken = RestrictedToken(ld.juniorToken());
-        juniorMemberlist = Memberlist(ld.juniorMemberlist());
-        seniorMemberlist = Memberlist(ld.seniorMemberlist());
+        fetchContractAddr(ld);
     }
 }

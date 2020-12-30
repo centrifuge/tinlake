@@ -30,7 +30,8 @@ contract LenderSystemTest is TestSuite, Interest {
         hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
         bool mkrAdapter = true;
-        deployContracts(mkrAdapter);
+        TinlakeConfig memory defaultConfig = defaultConfig();
+        deployContracts(mkrAdapter, defaultConfig);
         createTestUsers();
 
         nftFeed_ = NFTFeedLike(address(nftFeed));
@@ -231,5 +232,9 @@ contract LenderSystemTest is TestSuite, Interest {
         assertEq(newJuniorPrice, juniorPrice);
         assertEq(preJuniorStake, safeAdd(clerk.juniorStake(), profitDAI));
         assertEq(safeSub(preSeniorAsset,profitDAI), safeAdd(assessor.seniorDebt(), assessor.seniorBalance_()));
+    }
+
+    function testMKRSink() public {
+        // high stability fee
     }
 }
