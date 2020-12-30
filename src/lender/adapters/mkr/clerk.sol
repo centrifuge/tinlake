@@ -66,7 +66,7 @@ interface CoordinatorLike {
     function validatePoolConstraints(uint reserve_, uint seniorAsset, uint nav_) external returns(int);
     function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply, uint currSeniorAsset, uint reserve_, uint nav_) external returns(uint);
     function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) external returns(uint);
-    function submissionPeriod() external returns(bool);
+    function submissionPeriod() external view returns(bool);
 }
 
 interface ReserveLike {
@@ -110,7 +110,11 @@ contract Clerk is Auth, Math {
     uint matBuffer = 0.01 * 10**27;
 
     // adapter functions can only be active if the tinlake pool is currently not in epoch closing/submissions/execution state
-    modifier active() { require((coordinator.submissionPeriod() == false), "epoch-closing"); _; }
+    modifier active() { require(activated(), "epoch-closing"); _; }
+
+    function activated() public view returns(bool) {
+        return coordinator.submissionPeriod() == false;
+    }
 
     constructor(address dai_, address collateral_) public {
         wards[msg.sender] = 1;

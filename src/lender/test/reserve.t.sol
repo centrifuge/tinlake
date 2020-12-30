@@ -87,6 +87,7 @@ contract ReserveTest is DSTest, Math {
         lending = new LendingAdapterMock(currency_, reserve_);
         reserve.depend("lending", address(lending));
         reserve.rely(address(lending));
+        lending.setReturn("activated", true);
     }
 
     function fundReserve(uint amount) public {

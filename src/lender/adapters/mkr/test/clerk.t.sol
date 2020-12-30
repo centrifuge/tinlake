@@ -104,7 +104,6 @@ contract ClerkTest is Math, DSTest {
         uint creditlineInit = clerk.creditline();
         uint remainingCreditInit = clerk.remainingCredit();
         uint validateCallsInit = coordinator.calls("validatePoolConstraints");
-        uint submissionPeriodCallsInit = coordinator.calls("submissionPeriod");
         uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
         uint creditProtection = safeSub(overcollAmount, amountDAI);
 
@@ -116,7 +115,6 @@ contract ClerkTest is Math, DSTest {
         // assert remainingCreditLine was also increased
         assertEq(clerk.remainingCredit(), safeAdd(remainingCreditInit, amountDAI));
         // assert call count coordinator & function arguments
-        assertEq(coordinator.calls("submissionPeriod"), safeAdd(submissionPeriodCallsInit, 1));
         assertEq(coordinator.values_uint("reserve"), overcollAmount-creditProtection);
         assertEq(coordinator.values_uint("seniorAsset"), overcollAmount);
     }
@@ -228,7 +226,6 @@ contract ClerkTest is Math, DSTest {
         uint creditlineInit = clerk.creditline();
         uint remainingCreditInit = clerk.remainingCredit();
         uint validateCallsInit = coordinator.calls("validatePoolConstraints");
-        uint submissionPeriodCallsInit = coordinator.calls("submissionPeriod");
         uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
         uint creditProtection = safeSub(overcollAmount, amountDAI);
 
@@ -244,7 +241,7 @@ contract ClerkTest is Math, DSTest {
         // assert remainingCreditLine was also decreased
         assertEq(clerk.remainingCredit(), safeSub(remainingCreditInit, amountDAI));
         // assert call count coordinator & function arguments
-        assertEq(coordinator.calls("submissionPeriod"), safeAdd(submissionPeriodCallsInit, 1));
+
         assertEq(coordinator.values_uint("reserve"), reserve - overcollAmount + creditProtection);
         assertEq(coordinator.values_uint("seniorAsset"), seniorBalance -overcollAmount);
     }

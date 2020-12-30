@@ -16,8 +16,7 @@ pragma solidity >=0.5.15 <0.6.0;
 import "../../../test/mock/mock.sol";
 
 contract CoordinatorMock is Mock {
-    function submissionPeriod() public returns(bool) {
-        calls["submissionPeriod"]++;
+    function submissionPeriod() public view returns(bool) {
         return values_bool_return["submissionPeriod"];
     }
 

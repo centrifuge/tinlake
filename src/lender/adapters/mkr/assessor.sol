@@ -105,7 +105,7 @@ contract MKRAssessor is Assessor {
         // over the time the remainingCredit will decrease because of the accumulated debt interest
         // therefore a buffer is reduced from the  remainingCredit to prevent the usage of currency which is not available
         uint debtIncrease = safeSub(rmul(rpow(clerk.stabilityFee(),
-            safeSub(safeAdd(block.timestamp, creditBufferTime), block.timestamp), ONE), debt), debt);
+            creditBufferTime, ONE), debt), debt);
 
         if(clerk.remainingCredit() > debtIncrease) {
             return safeAdd(reserve.totalBalance(), safeSub(clerk.remainingCredit(), debtIncrease));
