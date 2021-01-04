@@ -115,7 +115,7 @@ contract LenderSystemTest is TestSuite, Interest {
         root.relyContract(address(reserve), address(this));
 
         root.relyContract(address(mkrAssessor), address(this));
-        mkrAssessor.file("minSeniorRatio",0);
+        mkrAssessor.file("minSeniorRatio", 0);
 
         // activate clerk in reserve
         reserve.depend("lending", address(clerk));
@@ -265,6 +265,35 @@ contract LenderSystemTest is TestSuite, Interest {
     }
 
     function testMKRSink() public {
-        // high stability fee
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+
+        uint sinkAmount = 50 ether;
+        uint totalBalance = mkrAssessor.totalBalance();
+        uint seniorBalance = mkrAssessor.seniorBalance();
+
+        clerk.sink(sinkAmount);
+        assertEq(mkrAssessor.totalBalance()+sinkAmount, totalBalance);
+        assertEq(mkrAssessor.seniorBalance()+rmul(sinkAmount, clerk.mat()), seniorBalance);
     }
+
+    function testFailMKRSinkTooHigh() public {
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+
+        uint sinkAmount = 401 ether;
+        clerk.sink(sinkAmount);
+    }
+
+    function testMKRSinkAfterRaise() public {
+        uint mkrAmount = 500 ether;
+        uint juniorAmount = 200 ether;
+        _setUpMKRLine(juniorAmount, mkrAmount);
+       clerk.sink(mkrAmount);
+    }
+
 }
