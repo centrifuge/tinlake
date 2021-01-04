@@ -205,6 +205,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
             // assessor performs re-balancing
             assessor.changeSeniorAsset(0, 0);
+            assessor.changeBorrowAmountEpoch(epochReserve);
             lastEpochExecuted = safeAdd(lastEpochExecuted, 1);
             return;
         }
