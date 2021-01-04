@@ -254,10 +254,14 @@ contract LenderSystemTest is TestSuite, Interest {
         uint wantedLocked = clerk.calcOvercollAmount(clerk.debt());
         assertTrue(wantedLocked > lockedCollateralDAI);
 
+        uint amountOfDROP = clerk.cdpink();
+
         clerk.heal();
         // heal should have minted additional DROP tokens
         lockedCollateralDAI = rmul(clerk.cdpink(), seniorPrice);
         assertEqTol(lockedCollateralDAI, wantedLocked, "testMKRHeal#2");
+        assertTrue(clerk.cdpink() > amountOfDROP);
+
     }
 
     function testMKRSink() public {
