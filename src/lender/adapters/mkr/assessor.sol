@@ -27,7 +27,7 @@ interface ClerkLike {
 contract MKRAssessor is Assessor {
     ClerkLike public clerk;
 
-    uint public creditBufferTime = 10 days;
+    uint public creditBufferTime = 1 days;
 
     function file(bytes32 name, uint value) public auth {
         if(name == "creditBufferTime") {

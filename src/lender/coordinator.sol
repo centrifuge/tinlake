@@ -467,18 +467,9 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         return SUCCESS;
     }
 
-
-    /// validates if a solution satisfies the pool constraints
+    /// validates if a solution satisfies the ratio constraints
     /// returns: first constraint which is not satisfied or success
-    function validatePoolConstraints(uint reserve_, uint seniorAsset, uint nav_) public view returns (int err) {
-        // constraint 3: max reserve
-        if (reserve_ > assessor.maxReserve()) {
-            // maxReserveConstraint => -3
-            return ERR_MAX_RESERVE;
-        }
-
-        uint assets = safeAdd(nav_, reserve_);
-
+    function validateRatioConstraints(uint assets, uint seniorAsset) public view returns(int) {
         (Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio) = assessor.seniorRatioBounds();
 
         // constraint 4: min senior ratio constraint
@@ -493,6 +484,19 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
         }
         // successful => 0
         return SUCCESS;
+    }
+
+    /// validates if a solution satisfies the pool constraints
+    /// returns: first constraint which is not satisfied or success
+    function validatePoolConstraints(uint reserve_, uint seniorAsset, uint nav_) public view returns (int err) {
+        // constraint 3: max reserve
+        if (reserve_ > assessor.maxReserve()) {
+            // maxReserveConstraint => -3
+            return ERR_MAX_RESERVE;
+        }
+
+        uint assets = safeAdd(nav_, reserve_);
+        return validateRatioConstraints(assets, seniorAsset);
     }
 
     /// validates if a solution satisfies core and pool constraints
