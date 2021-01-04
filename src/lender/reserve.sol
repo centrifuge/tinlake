@@ -26,6 +26,7 @@ interface LendingAdapter {
     function draw(uint amount) external;
     function wipe(uint amount) external;
     function debt() external view returns(uint);
+    function activated() external view returns(bool);
 }
 
 // The reserve keeps track of the currency and the bookkeeping
@@ -102,7 +103,7 @@ contract Reserve is Math, Auth {
 
     function _deposit(address usr, uint currencyAmount) internal {
         _depositAction(usr, currencyAmount);
-        if(address(lending) != address(0) && lending.debt() > 0) {
+        if(address(lending) != address(0) && lending.debt() > 0 && lending.activated()) {
             uint wipeAmount = lending.debt();
             uint available = currency.balanceOf(pot);
             if(available < wipeAmount) {
@@ -124,12 +125,13 @@ contract Reserve is Math, Auth {
 
     function _payout(address usr, uint currencyAmount)  internal {
         uint reserveBalance = currency.balanceOf(pot);
-        if (currencyAmount > reserveBalance && address(lending) != address(0)) {
+        if (currencyAmount > reserveBalance && address(lending) != address(0) && lending.activated()) {
             uint drawAmount = safeSub(currencyAmount, reserveBalance);
             uint left = lending.remainingCredit();
             if(drawAmount > left) {
                 drawAmount = left;
             }
+
             lending.draw(drawAmount);
         }
 
@@ -142,7 +144,7 @@ contract Reserve is Math, Auth {
         (bool requestWant, uint256 currencyAmount) = shelf.balanceRequest();
         if (requestWant) {
             require(
-                currencyAvailable >= currencyAmount,
+                currencyAvailable  >= currencyAmount,
                 "not-enough-currency-reserve"
             );
 

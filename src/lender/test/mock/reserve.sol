@@ -32,7 +32,7 @@ contract ReserveMock is Mock, Auth {
     }
 
     function file(bytes32 , uint currencyAmount) public {
-        values_uint["currency_available"] = currencyAmount;
+        values_uint["borrow_amount"] = currencyAmount;
     }
 
     function balance() public returns (uint) {

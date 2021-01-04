@@ -31,6 +31,7 @@ interface TrancheLike {
 interface ReserveLike {
     function totalBalance() external view returns(uint);
     function file(bytes32 what, uint currencyAmount) external;
+    function currencyAvailable() external view returns(uint);
 }
 
 contract Assessor is Definitions, Auth, Interest {
@@ -249,7 +250,11 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     // changes the total amount available for borrowing loans
-    function changeReserveAvailable(uint currencyAmount) public auth {
+    function changeBorrowAmountEpoch(uint currencyAmount) public auth {
         reserve.file("currencyAvailable", currencyAmount);
+    }
+
+    function borrowAmountEpoch() public view returns(uint) {
+        return reserve.currencyAvailable();
     }
 }

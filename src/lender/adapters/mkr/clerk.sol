@@ -29,23 +29,24 @@ interface ManagerLike {
     // remove collateral from cdp
     function exit(address usr, uint amountDROP) external;
     // collateral ID
-    function ilk() external returns(bytes32);
+    function ilk() external view returns(bytes32);
     // indicates if soft-liquidation was activated
-    function safe() external returns(bool);
+    function safe() external view returns(bool);
     // indicates if hard-liquidation was activated
-    function glad() external returns(bool);
+    function glad() external view returns(bool);
     // indicates if global settlement was triggered
-    function live() external returns(bool);
+    function live() external view returns(bool);
     // auth functions
     function setOwner(address newOwner) external;
 }
 
 interface VatLike {
     function urns(bytes32, address) external returns (uint,uint);
+    function ilks(bytes32) external view returns(uint, uint, uint, uint, uint);
 }
 
 interface SpotterLike {
-    function ilks(bytes32) external returns(address, uint256);
+    function ilks(bytes32) external view returns(address, uint256);
 }
 
 interface AssessorLike {
@@ -57,13 +58,15 @@ interface AssessorLike {
     function getNAV() external view returns(uint);
     function totalBalance() external returns(uint);
     function calcExpectedSeniorAsset(uint seniorRedeem, uint seniorSupply, uint seniorBalance_, uint seniorDebt_) external view returns(uint);
+    function changeBorrowAmountEpoch(uint currencyAmount) external;
+    function borrowAmountEpoch() external view returns(uint);
     }
 
 interface CoordinatorLike {
     function validatePoolConstraints(uint reserve_, uint seniorAsset, uint nav_) external returns(int);
     function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply, uint currSeniorAsset, uint reserve_, uint nav_) external returns(uint);
     function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) external returns(uint);
-    function submissionPeriod() external returns(bool);
+    function submissionPeriod() external view returns(bool);
 }
 
 interface ReserveLike {
@@ -107,7 +110,11 @@ contract Clerk is Auth, Math {
     uint matBuffer = 0.01 * 10**27;
 
     // adapter functions can only be active if the tinlake pool is currently not in epoch closing/submissions/execution state
-    modifier active() { require((coordinator.submissionPeriod() == false), "epoch-closing"); _; }
+    modifier active() { require(activated(), "epoch-closing"); _; }
+
+    function activated() public view returns(bool) {
+        return coordinator.submissionPeriod() == false;
+    }
 
     constructor(address dai_, address collateral_) public {
         wards[msg.sender] = 1;
@@ -181,6 +188,8 @@ contract Clerk is Auth, Math {
         require((validate(0, protectionDAI, overcollAmountDAI, 0) == 0), "supply not possible, pool constraints violated");
         // increase MKR crediline by amount
         creditline = safeAdd(creditline, amountDAI);
+        // make increase in creditline available to new loans
+        assessor.changeBorrowAmountEpoch(safeAdd(assessor.borrowAmountEpoch(), amountDAI));
     }
 
     // mint DROP, join DROP into cdp, draw DAI and send to reserve
@@ -251,6 +260,8 @@ contract Clerk is Auth, Math {
 
         // increase MKR crediline by amount
         creditline = safeSub(creditline, amountDAI);
+        // decrease in creditline impacts amount available for new loans
+        assessor.changeBorrowAmountEpoch(safeSub(assessor.borrowAmountEpoch(), amountDAI));
     }
 
     function heal(uint amountDAI) public auth active {
@@ -325,5 +336,10 @@ contract Clerk is Auth, Math {
 
     function debt() public view returns(uint) {
         return mgr.cdptab();
+    }
+
+    function stabilityFee() public view returns(uint) {
+        (, uint rate, , ,) = vat.ilks(mgr.ilk());
+        return rate;
     }
 }

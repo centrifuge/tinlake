@@ -30,7 +30,7 @@ contract Hevm {
     function warp(uint256) public;
 }
 
-contract AssessorMKRTest is DSTest, Math {
+contract AssessorMKRTest is DSTest, Interest {
     Hevm hevm;
     MKRAssessor assessor;
     TrancheMock seniorTranche;
@@ -128,5 +128,28 @@ contract AssessorMKRTest is DSTest, Math {
         juniorTokenPrice = assessor.calcJuniorTokenPrice(nav, 123123 ether);
 
         assertEq(juniorTokenPrice, 2 * 10**27);
+    }
+
+    function testTotalBalanceBuffer() public {
+        uint nav = 20 ether;
+        navFeed.setReturn("approximatedNAV", nav);
+        uint reserve = 80 ether;
+        reserveMock.setReturn("balance", reserve);
+        assertEq(assessor.totalBalance(), 80 ether);
+        // 5% per day)
+        uint fee = 1000000593415115246806684338;
+        clerk.setReturn("stabilityFee", fee);
+
+        uint creditLine = 100 ether;
+        uint debt = 20 ether;
+        clerk.setReturn("remainingCredit", creditLine-debt);
+        clerk.setReturn("debt", debt);
+        uint expectedTotalBalance = safeAdd(reserve, creditLine-debt);
+
+        uint interest = safeSub(rmul(rpow(clerk.stabilityFee(),
+            safeSub(safeAdd(block.timestamp, assessor.creditBufferTime()), block.timestamp), ONE), debt), debt);
+
+        expectedTotalBalance = expectedTotalBalance - interest;
+        assertEq(assessor.totalBalance(), expectedTotalBalance);
     }
 }

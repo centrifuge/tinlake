@@ -30,5 +30,13 @@ contract ClerkMock is Mock {
     function debt() external view returns(uint) {
         return values_return["debt"];
     }
+
+    function stabilityFee() external view returns(uint) {
+        return values_return["stabilityFee"];
+    }
+
+    function activated() public view returns(bool) {
+        return values_bool_return["activated"];
+    }
 }
 

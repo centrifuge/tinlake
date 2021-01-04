@@ -151,8 +151,12 @@ contract AssessorMock is Mock {
         return call("balance");
     }
 
-    function changeReserveAvailable(uint currencyAmount) public {
-        values_uint["currency_available"] = currencyAmount;
+    function changeBorrowAmountEpoch(uint currencyAmount) public {
+        values_uint["borrow_amount"] = currencyAmount;
+    }
+
+    function borrowAmountEpoch() public view returns(uint) {
+        return values_return["borrowAmountEpoch"];
     }
 
     function currentNAV() public view returns(uint) {

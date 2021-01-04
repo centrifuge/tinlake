@@ -20,10 +20,22 @@ interface ClerkLike {
     function remainingCredit() external view returns (uint);
     function juniorStake() external view returns (uint);
     function remainingOvercollCredit() external view returns (uint);
+    function stabilityFee() external view returns(uint);
+    function debt() external view returns(uint);
 }
 
 contract MKRAssessor is Assessor {
     ClerkLike public clerk;
+
+    uint public creditBufferTime = 10 days;
+
+    function file(bytes32 name, uint value) public auth {
+        if(name == "creditBufferTime") {
+            creditBufferTime = value;
+            return;
+        }
+        super.file(name, value);
+    }
 
     function depend(bytes32 contractName, address addr) public auth {
         if (contractName == "clerk") {
@@ -89,7 +101,17 @@ contract MKRAssessor is Assessor {
     }
 
     function totalBalance() public view returns(uint) {
-        return safeAdd(reserve.totalBalance(), clerk.remainingCredit());
+        uint debt = clerk.debt();
+        // over the time the remainingCredit will decrease because of the accumulated debt interest
+        // therefore a buffer is reduced from the  remainingCredit to prevent the usage of currency which is not available
+        uint debtIncrease = safeSub(rmul(rpow(clerk.stabilityFee(),
+            creditBufferTime, ONE), debt), debt);
+
+        if(clerk.remainingCredit() > debtIncrease) {
+            return safeAdd(reserve.totalBalance(), safeSub(clerk.remainingCredit(), debtIncrease));
+        }
+
+        return reserve.totalBalance();
     }
 
     // returns the current NAV
@@ -100,5 +122,10 @@ contract MKRAssessor is Assessor {
     // returns the approximated NAV for gas-performance reasons
     function getNAV() public view returns(uint) {
         return navFeed.approximatedNAV();
+    }
+
+    // changes the total amount available for borrowing loans
+    function changeBorrowAmountEpoch(uint currencyAmount) public auth {
+        reserve.file("currencyAvailable", currencyAmount);
     }
 }
