@@ -243,5 +243,35 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         assertEq(submitSolution(solution), coordinator.NEW_BEST());
         assertTrue(coordinator.gotFullValidSolution() == true);
     }
+
+    function testScoreRatioImprovementEdge() public {
+        LenderModel memory model = getDefaultModel();
+        model.maxReserve = 200 ether;
+
+        initTestConfig(model);
+
+        // newReserve <= maxReserve
+        uint newReserve = 199 ether;
+        assertEq(coordinator.scoreReserveImprovement(newReserve), coordinator.BIG_NUMBER());
+        // newReserve == maxReserve
+        newReserve = 200 ether;
+        assertEq(coordinator.scoreReserveImprovement(newReserve), coordinator.BIG_NUMBER());
+
+        assertTrue(coordinator.scoreReserveImprovement(201 ether) > coordinator.scoreReserveImprovement(202 ether));
+    }
+
+    function testScoreRatioImprovementZeroMaxReserve() public {
+        LenderModel memory model = getDefaultModel();
+        model.maxReserve = 0;
+
+        initTestConfig(model);
+        assertTrue(coordinator.scoreReserveImprovement(201 ether) > coordinator.scoreReserveImprovement(202 ether));
+        assertEq(coordinator.scoreReserveImprovement(0), coordinator.BIG_NUMBER());
+
+        uint lowestScore = coordinator.scoreReserveImprovement(uint(-1));
+        uint lowScore = coordinator.scoreReserveImprovement(10*18 * 1 ether);
+
+        assertTrue(lowScore > lowestScore);
+    }
 }
 
