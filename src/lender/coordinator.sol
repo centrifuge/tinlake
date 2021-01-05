@@ -381,10 +381,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
             // highest possible score
             return BIG_NUMBER;
         }
-        // normalize reserve by defining maxReserve as ONE
-        Fixed27 memory normalizedNewReserve = Fixed27(rdiv(newReserve_, assessor.maxReserve()));
 
-        return rmul(IMPROVEMENT_WEIGHT, rdiv(ONE,  absDistance(safeDiv(ONE, 2), normalizedNewReserve.value)));
+        return rmul(IMPROVEMENT_WEIGHT, rdiv(ONE, safeSub(newReserve_, assessor.maxReserve())));
     }
 
     // the score improvement ratio uses the normalized distance to (minRatio+maxRatio)/2 as score
