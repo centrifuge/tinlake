@@ -42,7 +42,6 @@ contract LenderSystemTest is TestSuite, Interest {
         mkr.depend("drop", mkrLenderDeployer.seniorToken());
     }
 
-    // setup a running pool with default values
     function _setupRunningPool() internal {
         uint seniorSupplyAmount = 1500 ether;
         uint juniorSupplyAmount = 200 ether;
