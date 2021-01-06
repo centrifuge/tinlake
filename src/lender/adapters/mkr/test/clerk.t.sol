@@ -103,7 +103,7 @@ contract ClerkTest is Math, DSTest {
     function raise(uint amountDAI) public{
         uint creditlineInit = clerk.creditline();
         uint remainingCreditInit = clerk.remainingCredit();
-        uint validateCallsInit = coordinator.calls("validatePoolConstraints");
+        uint validateCallsInit = coordinator.calls("validateRatioConstraints");
         uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
         uint creditProtection = safeSub(overcollAmount, amountDAI);
 
@@ -117,7 +117,6 @@ contract ClerkTest is Math, DSTest {
         // assert remainingCreditLine was also increased
         assertEq(clerk.remainingCredit(), safeAdd(remainingCreditInit, amountDAI));
         // assert call count coordinator & function arguments
-        assertEq(coordinator.values_uint("reserve"), overcollAmount-creditProtection);
         assertEq(coordinator.values_uint("seniorAsset"), overcollAmount);
     }
 
@@ -227,7 +226,7 @@ contract ClerkTest is Math, DSTest {
     function sink(uint amountDAI) public {
         uint creditlineInit = clerk.creditline();
         uint remainingCreditInit = clerk.remainingCredit();
-        uint validateCallsInit = coordinator.calls("validatePoolConstraints");
+        uint validateCallsInit = coordinator.calls("validateRatioConstraints");
         uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
         uint creditProtection = safeSub(overcollAmount, amountDAI);
 
@@ -244,7 +243,6 @@ contract ClerkTest is Math, DSTest {
         assertEq(clerk.remainingCredit(), safeSub(remainingCreditInit, amountDAI));
         // assert call count coordinator & function arguments
 
-        assertEq(coordinator.values_uint("reserve"), reserve - overcollAmount + creditProtection);
         assertEq(coordinator.values_uint("seniorAsset"), seniorBalance -overcollAmount);
     }
 
@@ -252,7 +250,7 @@ contract ClerkTest is Math, DSTest {
         // set submission period in coordinator to false
         coordinator.setReturn("submissionPeriod", false);
         // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validatePoolConstraints", 0);
+        coordinator.setIntReturn("validateRatioConstraints", 0);
         uint amountDAI = 100 ether;
         // assert calcOvercollAmount computes the correct value
         uint overcollAmountDAI = clerk.calcOvercollAmount(amountDAI);
@@ -269,7 +267,7 @@ contract ClerkTest is Math, DSTest {
         // set submission period in coordinator to false
         coordinator.setReturn("submissionPeriod", false);
         // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validatePoolConstraints", 0);
+        coordinator.setIntReturn("validateRatioConstraints", 0);
         uint amountDAI = 100 ether;
         // raise 100 DAI
         raise(amountDAI);
@@ -281,7 +279,7 @@ contract ClerkTest is Math, DSTest {
         // fail condition: set submission period in coordinator to true
         coordinator.setReturn("submissionPeriod", true);
         // set validation result in coordinator to 0 -> success
-        coordinator.setIntReturn("validatePoolConstraints", 0);
+        coordinator.setIntReturn("validateRatioConstraints", 0);
         uint amountDAI = 100 ether;
         raise(amountDAI);
     }
@@ -290,7 +288,7 @@ contract ClerkTest is Math, DSTest {
        // set submission period in coordinator to false
         coordinator.setReturn("submissionPeriod", false);
         // set validation result in coordinator to -1 -> failure
-        coordinator.setIntReturn("validatePoolConstraints", -1);
+        coordinator.setIntReturn("validateRatioConstraints", -1);
         uint amountDAI = 100 ether;
         raise(amountDAI);
     }
@@ -550,7 +548,7 @@ contract ClerkTest is Math, DSTest {
         // increase Mat value to 5%
         clerk.file("buffer", 0.05 * 10**27);
         // additional buffer can be minted
-        coordinator.setIntReturn("validatePoolConstraints", 0);
+        coordinator.setIntReturn("validateRatioConstraints", 0);
 
         uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
         uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
@@ -569,7 +567,7 @@ contract ClerkTest is Math, DSTest {
         // increase Mat value to additional 5%
         clerk.file("buffer", 0.05 * 10**27);
         // additional buffer can be minted
-        coordinator.setIntReturn("validatePoolConstraints", 0);
+        coordinator.setIntReturn("validateRatioConstraints", 0);
 
         uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
         uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
@@ -590,7 +588,7 @@ contract ClerkTest is Math, DSTest {
         // increase Mat value from deafault 1% to 5%
         clerk.file("buffer", rdiv(rmul(5, ONE), 100));
         // additional buffer can be minted
-        coordinator.setIntReturn("validatePoolConstraints", 0);
+        coordinator.setIntReturn("validateRatioConstraints", 0);
 
         uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
         uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
@@ -610,7 +608,7 @@ contract ClerkTest is Math, DSTest {
         // increase Mat value from deafault 1% to 5%
         clerk.file("buffer", 0.05 * 10**27);
         // additional buffer can be minted
-        coordinator.setIntReturn("validatePoolConstraints", -1);
+        coordinator.setIntReturn("validateRatioConstraints", -1);
 
         uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
         uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());

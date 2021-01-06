@@ -42,6 +42,7 @@ contract LenderSystemTest is TestSuite, Interest {
         mkr.depend("drop", mkrLenderDeployer.seniorToken());
     }
 
+    // setup a running pool with default values
     function _setupRunningPool() internal {
         uint seniorSupplyAmount = 1500 ether;
         uint juniorSupplyAmount = 200 ether;
@@ -114,7 +115,7 @@ contract LenderSystemTest is TestSuite, Interest {
         root.relyContract(address(reserve), address(this));
 
         root.relyContract(address(mkrAssessor), address(this));
-        mkrAssessor.file("minSeniorRatio",0);
+        mkrAssessor.file("minSeniorRatio", 0);
 
         // activate clerk in reserve
         reserve.depend("lending", address(clerk));
@@ -215,8 +216,7 @@ contract LenderSystemTest is TestSuite, Interest {
         uint seniorPrice = mkrAssessor.calcSeniorTokenPrice();
         uint juniorPrice = mkrAssessor.calcJuniorTokenPrice();
 
-        uint dropPrice = assessor.calcSeniorTokenPrice();
-        uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
+        uint lockedCollateralDAI = rmul(clerk.cdpink(), seniorPrice);
         // profit => diff between the DAI value of the locked collateral in the cdp & the actual cdp debt including protection buffer
         uint profitDAI = safeSub(lockedCollateralDAI, clerk.calcOvercollAmount(clerk.debt()));
         uint preSeniorAsset = safeAdd(assessor.seniorDebt(), assessor.seniorBalance_());
@@ -233,7 +233,67 @@ contract LenderSystemTest is TestSuite, Interest {
         assertEq(safeSub(preSeniorAsset,profitDAI), safeAdd(assessor.seniorDebt(), assessor.seniorBalance_()));
     }
 
-    function testMKRSink() public {
-        // high stability fee
+    function testMKRHeal() public {
+        // high stability fee: 10% a day
+        uint fee = uint(1000001103127689513476993126);
+        mkr.file("stabilityFee", fee);
+
+        // sanity check
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+
+        hevm.warp(now + 1 days);
+        uint expectedDebt = 110 ether;
+
+        uint seniorPrice = mkrAssessor.calcSeniorTokenPrice();
+        uint lockedCollateralDAI = rmul(clerk.cdpink(), seniorPrice);
+        assertEqTol(clerk.debt(), expectedDebt, "testMKRHeal#1");
+
+        uint wantedLocked = clerk.calcOvercollAmount(clerk.debt());
+        assertTrue(wantedLocked > lockedCollateralDAI);
+
+        uint amountOfDROP = clerk.cdpink();
+
+        clerk.heal();
+        // heal should have minted additional DROP tokens
+        lockedCollateralDAI = rmul(clerk.cdpink(), seniorPrice);
+        assertEqTol(lockedCollateralDAI, wantedLocked, "testMKRHeal#2");
+        assertTrue(clerk.cdpink() > amountOfDROP);
+
     }
+
+    function testMKRSink() public {
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+
+        uint sinkAmount = 50 ether;
+        uint totalBalance = mkrAssessor.totalBalance();
+        uint seniorBalance = mkrAssessor.seniorBalance();
+
+        clerk.sink(sinkAmount);
+        assertEq(mkrAssessor.totalBalance()+sinkAmount, totalBalance);
+        assertEq(mkrAssessor.seniorBalance()+rmul(sinkAmount, clerk.mat()), seniorBalance);
+    }
+
+    function testFailMKRSinkTooHigh() public {
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+
+        uint sinkAmount = 401 ether;
+        clerk.sink(sinkAmount);
+    }
+
+    function testMKRSinkAfterRaise() public {
+        uint mkrAmount = 500 ether;
+        uint juniorAmount = 200 ether;
+        _setUpMKRLine(juniorAmount, mkrAmount);
+       clerk.sink(mkrAmount);
+    }
+
 }

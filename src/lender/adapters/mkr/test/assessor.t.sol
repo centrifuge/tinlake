@@ -79,7 +79,7 @@ contract AssessorMKRTest is DSTest, Interest {
         uint remainingOvercollCredit = 90 ether;
         uint seniorSupply = 10 ether;
         assessor.changeSeniorAsset(seniorSupply, 0);
-        clerk.setReturn("remainingOvercollCredit", remainingOvercollCredit);
+        clerk.setReturn("calcOvercollAmount", remainingOvercollCredit);
         // balance should not have an effect
         reserveMock.setReturn("balance", 1000 ether);
         assertEq(assessor.seniorBalance(), 100 ether);
@@ -151,5 +151,32 @@ contract AssessorMKRTest is DSTest, Interest {
 
         expectedTotalBalance = expectedTotalBalance - interest;
         assertEq(assessor.totalBalance(), expectedTotalBalance);
+    }
+
+    function testSeniorBalanceBuffer() public {
+        // add seniorBalance
+        uint seniorSupply = 10 ether;
+        assessor.changeSeniorAsset(seniorSupply, 0);
+
+        uint effectiveSeniorBalance = assessor.effectiveSeniorBalance();
+
+        // 5% per day)
+        uint fee = 1000000593415115246806684338;
+        clerk.setReturn("stabilityFee", fee);
+
+        uint creditLine = 100 ether;
+        uint debt = 20 ether;
+        uint remainingCredit = creditLine-debt;
+        clerk.setReturn("remainingCredit", remainingCredit);
+        clerk.setReturn("debt", debt);
+
+        uint interest = safeSub(rmul(rpow(clerk.stabilityFee(),
+            safeSub(safeAdd(block.timestamp, assessor.creditBufferTime()), block.timestamp), ONE), debt), debt);
+
+        uint overCollAmount = rmul(remainingCredit-interest, 1.1 * 10**27);
+        clerk.setReturn("calcOvercollAmount", overCollAmount);
+
+        uint expectedSeniorBalance = safeSub(overCollAmount, interest);
+        assertEq(assessor.seniorBalance(), safeAdd(effectiveSeniorBalance, overCollAmount));
     }
 }

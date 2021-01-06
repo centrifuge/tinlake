@@ -19,7 +19,7 @@ import "./../../assessor.sol";
 interface ClerkLike {
     function remainingCredit() external view returns (uint);
     function juniorStake() external view returns (uint);
-    function remainingOvercollCredit() external view returns (uint);
+    function calcOvercollAmount(uint amount) external view returns (uint);
     function stabilityFee() external view returns(uint);
     function debt() external view returns(uint);
 }
@@ -27,7 +27,7 @@ interface ClerkLike {
 contract MKRAssessor is Assessor {
     ClerkLike public clerk;
 
-    uint public creditBufferTime = 10 days;
+    uint public creditBufferTime = 1 days;
 
     function file(bytes32 name, uint value) public auth {
         if(name == "creditBufferTime") {
@@ -89,7 +89,7 @@ contract MKRAssessor is Assessor {
     }
 
     function seniorBalance() public view returns(uint) {
-        return safeAdd(seniorBalance_, clerk.remainingOvercollCredit());
+        return safeAdd(seniorBalance_, remainingOvercollCredit());
     }
 
     function effectiveSeniorBalance() public view returns(uint) {
@@ -101,17 +101,7 @@ contract MKRAssessor is Assessor {
     }
 
     function totalBalance() public view returns(uint) {
-        uint debt = clerk.debt();
-        // over the time the remainingCredit will decrease because of the accumulated debt interest
-        // therefore a buffer is reduced from the  remainingCredit to prevent the usage of currency which is not available
-        uint debtIncrease = safeSub(rmul(rpow(clerk.stabilityFee(),
-            creditBufferTime, ONE), debt), debt);
-
-        if(clerk.remainingCredit() > debtIncrease) {
-            return safeAdd(reserve.totalBalance(), safeSub(clerk.remainingCredit(), debtIncrease));
-        }
-
-        return reserve.totalBalance();
+        return safeAdd(reserve.totalBalance(), remainingCredit());
     }
 
     // returns the current NAV
@@ -127,5 +117,23 @@ contract MKRAssessor is Assessor {
     // changes the total amount available for borrowing loans
     function changeBorrowAmountEpoch(uint currencyAmount) public auth {
         reserve.file("currencyAvailable", currencyAmount);
+    }
+
+    // returns the remainingCredit plus a buffer for the interest increase
+    function remainingCredit() public view returns(uint) {
+        // over the time the remainingCredit will decrease because of the accumulated debt interest
+        // therefore a buffer is reduced from the  remainingCredit to prevent the usage of currency which is not available
+        uint debt = clerk.debt();
+        uint stabilityBuffer = safeSub(rmul(rpow(clerk.stabilityFee(),
+            creditBufferTime, ONE), debt), debt);
+        uint remainingCredit = clerk.remainingCredit();
+        if(remainingCredit > stabilityBuffer) {
+            return safeSub(remainingCredit, stabilityBuffer);
+        }
+        return 0;
+    }
+
+    function remainingOvercollCredit() public view returns(uint) {
+        return clerk.calcOvercollAmount(remainingCredit());
     }
 }

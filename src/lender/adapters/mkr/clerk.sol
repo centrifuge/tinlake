@@ -63,7 +63,7 @@ interface AssessorLike {
     }
 
 interface CoordinatorLike {
-    function validatePoolConstraints(uint reserve_, uint seniorAsset, uint nav_) external returns(int);
+    function validateRatioConstraints(uint assets, uint seniorAsset) external returns(int);
     function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply, uint currSeniorAsset, uint reserve_, uint nav_) external returns(uint);
     function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) external returns(uint);
     function submissionPeriod() external view returns(bool);
@@ -274,7 +274,7 @@ contract Clerk is Auth, Math  {
         }
 
         require((validate(0, amountDAI, 0, 0) == 0), "supply not possible, pool constraints violated");
-        // mint drop and move into cdp
+     //    mint drop and move into vault
         uint priceDROP = assessor.calcSeniorTokenPrice();
         uint collateralDROP = rdiv(amountDAI, priceDROP);
         tranche.mint(address(this), collateralDROP);
@@ -294,12 +294,11 @@ contract Clerk is Auth, Math  {
 
     // checks if the Maker credit line increase could violate the pool constraints // -> make function pure and call with current pool values approxNav
     function validate(uint juniorSupplyDAI, uint juniorRedeemDAI, uint seniorSupplyDAI, uint seniorRedeemDAI) internal returns(int) {
-        uint newReserve = safeSub(safeSub(safeAdd(safeAdd(assessor.totalBalance(), seniorSupplyDAI),
+        uint newAssets = safeSub(safeSub(safeAdd(safeAdd(safeAdd(assessor.totalBalance(), assessor.getNAV()), seniorSupplyDAI),
             juniorSupplyDAI), juniorRedeemDAI), seniorRedeemDAI);
         uint expectedSeniorAsset = assessor.calcExpectedSeniorAsset(seniorRedeemDAI, seniorSupplyDAI,
           assessor.seniorBalance(), assessor.seniorDebt());
-        return coordinator.validatePoolConstraints(newReserve, expectedSeniorAsset,
-            assessor.getNAV());
+        return coordinator.validateRatioConstraints(newAssets, expectedSeniorAsset);
    }
 
     function updateSeniorAsset(uint decreaseDAI, uint increaseDAI) internal  {
