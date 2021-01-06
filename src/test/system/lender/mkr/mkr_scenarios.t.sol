@@ -23,7 +23,6 @@ import { MKRAssessor }from "../../../../lender/adapters/mkr/assessor.sol";
 
 
 contract LenderSystemTest is TestSuite, Interest {
-
     MKRAssessor mkrAssessor;
 
     function setUp() public {
@@ -42,6 +41,7 @@ contract LenderSystemTest is TestSuite, Interest {
         mkr.depend("drop", mkrLenderDeployer.seniorToken());
     }
 
+    // setup a running pool with default values
     function _setupRunningPool() internal {
         uint seniorSupplyAmount = 1500 ether;
         uint juniorSupplyAmount = 200 ether;
@@ -134,23 +134,102 @@ contract LenderSystemTest is TestSuite, Interest {
         assertEq(clerk.remainingCredit(), creditLineAmount);
     }
 
+    function _setUpDraw(uint mkrAmount, uint juniorAmount, uint borrowAmount) public {
+        _setUpMKRLine(juniorAmount, mkrAmount);
+        setupOngoingDefaultLoan(borrowAmount);
+        assertEq(currency.balanceOf(address(borrower)), borrowAmount, " _setUpDraw#1");
+        uint debt = 0;
+        if(borrowAmount > juniorAmount) {
+            debt = safeSub(borrowAmount, juniorAmount);
+        }
+        assertEq(clerk.debt(), debt);
+    }
+
     function testOnDemandDraw() public {
         uint juniorAmount = 200 ether;
         uint mkrAmount = 500 ether;
-        _setUpMKRLine(juniorAmount, mkrAmount);
-
         uint borrowAmount = 300 ether;
-        setupOngoingLoan(borrowAmount);
-        assertEq(currency.balanceOf(address(borrower)), borrowAmount, " testOnDemandDraw#1");
-        assertEq(clerk.debt(), 100 ether);
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
     }
 
     function testOnDemandDrawWithStabilityFee() public {
-        // todo not implemented
+        uint fee = 1000000564701133626865910626; // 5% per day
+        mkr.file("stabilityFee", fee);
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+        hevm.warp(now + 1 days);
+        assertEq(clerk.debt(), 105 ether, "testStabilityFee#2");
+    }
+
+    function testTotalBalanceBuffer() public {
+        uint fee = 1000000564701133626865910626; // 5% per day
+        mkr.file("stabilityFee", fee);
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+        hevm.warp(now + 1 days);
+
+        uint debt = clerk.debt();
+        uint buffer = safeSub(rmul(rpow(clerk.stabilityFee(),
+                safeSub(safeAdd(block.timestamp, mkrAssessor.creditBufferTime()), block.timestamp), ONE), debt), debt);
+
+        uint remainingCredit = clerk.remainingCredit();
+        assertEq(assessor.totalBalance(), safeSub(remainingCredit, buffer));
     }
 
     function testLoanRepayWipe() public {
-        // todo not implemented
+        uint fee = 1000000564701133626865910626; // 5% per day
+        mkr.file("stabilityFee", fee);
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+        hevm.warp(now + 1 days);
+        uint expectedDebt = 105 ether;
+        assertEq(clerk.debt(), expectedDebt, "testLoanRepayWipe#1");
+
+        uint repayAmount = 50 ether;
+        repayDefaultLoan(repayAmount);
+
+        // reduces clerk debt
+        assertEq(clerk.debt(), expectedDebt-repayAmount, "testLoanRepayWipe#2");
+        assertEq(reserve.totalBalance(), 0, "testLoanRepayWipe#3");
     }
 
+    function testMKRHarvest() public {
+        uint fee = uint(1000000115165872987700711356);    // 1 % day
+        mkr.file("stabilityFee", fee);
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+        hevm.warp(now + 1 days);
+        uint expectedDebt = 101 ether;
+        assertEqTol(clerk.debt(), expectedDebt, "testMKRHarvest#1");
+
+        hevm.warp(now + 3 days);
+
+        uint seniorPrice = mkrAssessor.calcSeniorTokenPrice();
+        uint juniorPrice = mkrAssessor.calcJuniorTokenPrice();
+
+        uint dropPrice = assessor.calcSeniorTokenPrice();
+        uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
+        // profit => diff between the DAI value of the locked collateral in the cdp & the actual cdp debt including protection buffer
+        uint profitDAI = safeSub(lockedCollateralDAI, clerk.calcOvercollAmount(clerk.debt()));
+        uint preSeniorAsset = safeAdd(assessor.seniorDebt(), assessor.seniorBalance_());
+
+        uint preJuniorStake = clerk.juniorStake();
+
+        clerk.harvest();
+
+        uint newJuniorPrice = mkrAssessor.calcJuniorTokenPrice();
+        uint newSeniorPrice =  mkrAssessor.calcSeniorTokenPrice();
+
+        assertEq(newJuniorPrice, juniorPrice);
+        assertEq(preJuniorStake, safeAdd(clerk.juniorStake(), profitDAI));
+        assertEq(safeSub(preSeniorAsset,profitDAI), safeAdd(assessor.seniorDebt(), assessor.seniorBalance_()));
+    }
 }

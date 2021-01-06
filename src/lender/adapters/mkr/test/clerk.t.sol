@@ -107,7 +107,9 @@ contract ClerkTest is Math, DSTest {
         uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
         uint creditProtection = safeSub(overcollAmount, amountDAI);
 
+        emit log_named_uint("f", overcollAmount);
         // raise creditLine
+        emit log_named_address("clerk", address(clerk));
         clerk.raise(amountDAI);
 
         // assert creditLine was increased

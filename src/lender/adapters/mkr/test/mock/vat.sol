@@ -24,4 +24,8 @@ contract VatMock is Mock {
     function setInk(uint amountDROP) external {
         values_return["ink"] = amountDROP;
     }
+
+    function ilks(bytes32) external view returns(uint, uint, uint, uint, uint)  {
+        return(0, values_return["stabilityFee"], 0, 0, 0);
+    }
 }

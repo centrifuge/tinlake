@@ -89,16 +89,16 @@ contract AssessorMock is Mock {
         return call("calcJuniorTokenPrice");
     }
 
-    function calcSeniorTokenPrice() external returns(uint) {
-        return call("calcSeniorTokenPrice");
+    function calcSeniorTokenPrice() external view returns(uint) {
+        return values_return["calcSeniorTokenPrice"];
     }
 
-    function calcJuniorTokenPrice() external returns(uint) {
-        return call("calcJuniorTokenPrice");
+    function calcJuniorTokenPrice() external view returns(uint) {
+        return values_return["calcJuniorTokenPrice"];
     }
 
-     function calcSeniorAssetValue(uint, uint) external returns(uint) {
-          return call("calcSeniorAssetValue");
+     function calcSeniorAssetValue(uint, uint) external view returns(uint) {
+          return values_return["calcSeniorAssetValue"];
      }
 
     function seniorRatioBounds() public view returns (uint minSeniorRatio_, uint maxSeniorRatio_) {

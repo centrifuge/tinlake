@@ -1,33 +1,47 @@
 pragma solidity >=0.5.15 <0.6.0;
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
+import "../../../lib/tinlake-math/src/interest.sol";
 
 interface ERC20Like {
     function transferFrom(address from, address to, uint amount) external;
     function mint(address to, uint amount) external;
     function burn(address usr, uint amount) external;
-    function balanceOf(address usr) external returns (uint);
+    function balanceOf(address usr) external view returns (uint);
 }
 
 // simple mock implementation of relevant MKR contracts
 // contract will mint currency tokens to simulate the mkr behaviour
 // implements mgr, spotter, vat interfaces
-contract SimpleMkr is Math {
-
+contract SimpleMkr is Interest {
     ERC20Like public currency;
     ERC20Like public drop;
     uint public stabilityFee;
 
+    uint public lastDebtUpdate;
     uint debt;
 
     bytes32 public ilk;
 
     bool safeFlag;
+    bool gladFlag;
+    bool liveFlag;
 
     constructor(uint stabilityFee_, bytes32 ilk_) public {
         stabilityFee = stabilityFee_;
         ilk = ilk_;
         safeFlag = true;
+        gladFlag = true;
+        liveFlag = true;
+        lastDebtUpdate = now;
+    }
+
+    function file(bytes32 what, uint value) public {
+        if(what == "stabilityFee") {
+            stabilityFee = value;
+        } else {
+            revert();
+        }
     }
 
     function depend(bytes32 name, address addr) public {
@@ -40,9 +54,27 @@ contract SimpleMkr is Math {
         }
     }
 
+    function dripDebt() public returns (uint) {
+        uint newDebt = calcDebt();
+
+        if (newDebt > debt) {
+            debt = newDebt;
+            lastDebtUpdate = block.timestamp;
+        }
+
+        return debt;
+    }
+
+    function calcDebt() public view returns (uint) {
+        if (now >= lastDebtUpdate) {
+            return chargeInterest(debt, stabilityFee, lastDebtUpdate);
+        }
+        return debt;
+    }
+
     // collateral debt
     function cdptab() external returns(uint) {
-        return debt;
+        return calcDebt();
     }
     // put collateral into cdp
     function join(uint amountDROP) external {
@@ -51,13 +83,17 @@ contract SimpleMkr is Math {
     // draw DAI from cdp
     function draw(uint amountDAI, address usr) external  {
         currency.mint(usr, amountDAI);
+        dripDebt();
         debt = safeAdd(debt, amountDAI);
+        lastDebtUpdate = block.timestamp;
     }
     // repay cdp debt
     function wipe(uint amountDAI) external {
         currency.transferFrom(msg.sender, address(this), amountDAI);
         currency.burn(address(this), amountDAI);
+        dripDebt();
         debt = safeSub(debt, amountDAI);
+        lastDebtUpdate = block.timestamp;
     }
     // remove collateral from cdp
     function exit(address usr, uint amountDROP) external {
@@ -69,17 +105,22 @@ contract SimpleMkr is Math {
         return safeFlag;
     }
 
+    // indicates if soft-liquidation was activated
+    function glad() external returns(bool) {
+        return gladFlag;
+    }
+
+    // indicates if soft-liquidation was activated
+    function live() external returns(bool) {
+        return liveFlag;
+    }
+
     // VAT Like
-    function urns(bytes32, address) external returns (uint,uint) {
+    function urns(bytes32, address) external view returns (uint,uint) {
         return (drop.balanceOf(address(this)), 0);
     }
 
-    function ilks(bytes32) external returns(uint, uint, uint, uint, uint)  {
+    function ilks(bytes32) external view returns(uint, uint, uint, uint, uint)  {
         return(0, stabilityFee, 0, 0, 0);
     }
-
-//    // Spotter Like
-//    function ilks(bytes32) external returns(address, uint256) {
-//        return (address(drop), mat);
-//    }
 }
