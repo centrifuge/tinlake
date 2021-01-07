@@ -32,7 +32,7 @@ interface ERC20Like {
 interface ReserveLike {
     function deposit(uint amount) external;
     function payout(uint amount) external;
-    function totalBalance() external returns (uint);
+    function totalBalanceAvailable() external returns (uint);
 }
 
 interface EpochTickerLike {
@@ -276,7 +276,7 @@ contract Tranche is Math, Auth, FixedPoint {
     }
 
     function safePayout(uint currencyAmount) internal {
-        uint max = reserve.totalBalance();
+        uint max = reserve.totalBalanceAvailable();
         if(currencyAmount > max) {
             currencyAmount = max;
         }
@@ -346,5 +346,5 @@ contract Tranche is Math, Auth, FixedPoint {
             return 0;
         }
         return safeSub(total, amount);
-    } 
+    }
 }

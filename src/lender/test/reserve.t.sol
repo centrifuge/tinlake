@@ -319,4 +319,5 @@ contract ReserveTest is DSTest, Math {
         assertEq(currency.balanceOf(reserve_), amount);
 
     }
+
 }

@@ -76,8 +76,18 @@ contract Reserve is Math, Auth {
         } else revert();
     }
 
+    // returns the amount of currency currently in the reserve
     function totalBalance() public view returns (uint) {
         return balance_;
+    }
+
+    // return the amount of currency and the available currency from the lending adapter
+    function totalBalanceAvailable() public view returns (uint) {
+        if(address(lending) == address(0)) {
+            return balance_;
+        }
+
+        return safeAdd(balance_, lending.remainingCredit());
     }
 
     // deposits currency in the the reserve
