@@ -314,12 +314,25 @@ contract LenderSystemTest is TestSuite, Interest {
         assertEq(currency.balanceOf(address(juniorInvestor)), payoutCurrency);
     }
 
-    function testVaultLiquidation() public {
+    function mkrLiquidationPostAssertions() public {
+        //sanity check - correct currency amount for each token
+        assertEq(mkrAssessor.currentNAV() + reserve.totalBalance(), rmul(seniorToken.totalSupply(), mkrAssessor.calcSeniorTokenPrice())
+            + rmul(juniorToken.totalSupply(), mkrAssessor.calcJuniorTokenPrice()));
+
+        assertEq(clerk.remainingCredit(), 0);
+        assertEq(clerk.juniorStake(), 0);
+    }
+
+    function setUpOngoingMKR() public {
         uint juniorAmount = 200 ether;
         uint mkrAmount = 500 ether;
         uint borrowAmount = 300 ether;
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+        assertEq(clerk.remainingCredit(), 400 ether);
+    }
 
+    function testVaultLiquidation() public {
+        setUpOngoingMKR();
         uint juniorTokenPrice = mkrAssessor.calcJuniorTokenPrice();
 
         // liquidation
@@ -335,10 +348,39 @@ contract LenderSystemTest is TestSuite, Interest {
         // reserve should keep the currency no automatic clerk.wipe
         assertTrue(reserve.totalBalance() > 0);
 
-        //sanity check - correct currency amount for each token
-        assertEq(reserve.totalBalance(), rmul(seniorToken.totalSupply(), mkrAssessor.calcSeniorTokenPrice())
-            + rmul(juniorToken.totalSupply(), mkrAssessor.calcJuniorTokenPrice()));
-
+        mkrLiquidationPostAssertions();
     }
 
+    function testVaultLiquidation2() public {
+        setUpOngoingMKR();
+        mkr.file("glad", false);
+        mkrLiquidationPostAssertions();
+    }
+
+    function testVaultLiquidation3() public {
+        setUpOngoingMKR();
+        mkr.file("safe", false);
+        mkrLiquidationPostAssertions();
+    }
+
+    function testFailLiqDraw() public {
+        setUpOngoingMKR();
+        mkr.file("glad", false);
+        clerk.draw(1);
+    }
+
+    function testFailLiqSink() public {
+        setUpOngoingMKR();
+        mkr.file("glad", false);
+        clerk.sink(1);
+    }
+
+    function testFailLiqWipe() public {
+        setUpOngoingMKR();
+        mkr.file("glad", false);
+        // repay loans and everybody redeems
+        repayAllDebtDefaultLoan();
+        assertTrue(reserve.totalBalance() > 0);
+        clerk.wipe(1);
+    }
 }
