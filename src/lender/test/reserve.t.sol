@@ -317,7 +317,18 @@ contract ReserveTest is DSTest, Math {
         uint amount = 100 ether;
         fundReserve(amount);
         assertEq(currency.balanceOf(reserve_), amount);
+    }
 
+    function testTotalReserveAvailable() public {
+        uint amount = 100 ether;
+        fundReserve(amount);
+
+        assertEq(reserve.totalBalanceAvailable(), amount);
+
+        setUpLendingAdapter();
+        uint remainingCredit = 50 ether;
+        lending.setReturn("remainingCredit", remainingCredit);
+        assertEq(reserve.totalBalanceAvailable(), amount+remainingCredit);
     }
 
 }
