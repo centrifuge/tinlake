@@ -153,7 +153,7 @@ contract Clerk is Auth, Math  {
     }
 
     function remainingCredit() public returns (uint) {
-        if (creditline <= (mgr.cdptab())) {
+        if (creditline <= (mgr.cdptab()) || mkrActive() == false) {
             return 0;
         }
         return safeSub(creditline, mgr.cdptab());

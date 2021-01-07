@@ -43,6 +43,10 @@ contract ReserveMock is Mock, Auth {
         return values_return["balance"];
     }
 
+    function totalBalanceAvailable() public view returns (uint) {
+        return values_return["totalBalanceAvailable"];
+    }
+
     function hardDeposit(uint amount) public {
         values_uint["deposit_amount"] = amount;
         currency.transferFrom(msg.sender, address(this), amount);
