@@ -296,4 +296,36 @@ contract LenderSystemTest is TestSuite, Interest {
        clerk.sink(mkrAmount);
     }
 
+    function testVaultLiquidation() public {
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+
+        uint juniorTokenPrice = mkrAssessor.calcJuniorTokenPrice();
+
+        // liquidation
+        mkr.file("live", false);
+
+        assertTrue(mkrAssessor.calcJuniorTokenPrice() <  juniorTokenPrice);
+        // no currency in reserve
+        assertEq(reserve.totalBalance(),  0);
+
+        // repay loans and everybody redeems
+        repayAllDebtDefaultLoan();
+        assertEq(mkrAssessor.currentNAV(), 0);
+        // reserve should keep the currency no automatic clerk.wipe
+        assertTrue(reserve.totalBalance() > 0);
+
+        //sanity check - correct currency amount for each token
+
+        uint seniorTokenInMK = clerk.cdpink();
+        uint seniorTokenSeniorInvestor = seniorToken.balanceOf(address(seniorInvestor));
+        uint unRedeemedSeniorToken = seniorToken.balanceOf(address(seniorTranche));
+        uint juniorInvestorToken = juniorToken.balanceOf(address(juniorInvestor));
+
+        assertEq(reserve.totalBalance(), rmul(seniorTokenInMK + seniorTokenSeniorInvestor + unRedeemedSeniorToken, assessor.calcSeniorTokenPrice())
+            + rmul(juniorInvestorToken, assessor.calcJuniorTokenPrice()));
+    }
+
 }
