@@ -18,7 +18,6 @@ pragma experimental ABIEncoderV2;
 import "./../fixed_point.sol";
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
-import "ds-test/test.sol";
 
 interface EpochTrancheLike {
     function epochUpdate(uint epochID, uint supplyFulfillment_,
@@ -64,7 +63,7 @@ contract AssessorLike is FixedPoint {
 // The problem of finding the maximum amount of supply and redeem orders which still satisfies all constraints
 // can be seen as a linear programming (linear optimization problem).
 // The optimal solution can be calculated off-chain
-contract EpochCoordinator is Auth, Math, FixedPoint, DSTest  {
+contract EpochCoordinator is Auth, Math, FixedPoint {
     struct OrderSummary {
         // all variables are stored in currency
         uint  seniorRedeem;
