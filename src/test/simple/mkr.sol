@@ -41,6 +41,11 @@ contract SimpleMkr is Interest, DSTest{
 
     function file(bytes32 what, uint value) public {
         if(what == "stabilityFee") {
+            if(pie > 0) {
+                dripFee();
+                uint debt = rmul(pie, stabilityFee);
+                pie = rdivup(debt, value);
+            }
             stabilityFee = value;
             ratePerSecond =  value;
         }
