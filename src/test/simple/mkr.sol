@@ -72,10 +72,6 @@ contract SimpleMkr is Interest {
         return debt;
     }
 
-    // collateral debt
-    function cdptab() external returns(uint) {
-        return calcDebt();
-    }
     // put collateral into cdp
     function join(uint amountDROP) external {
         drop.transferFrom(msg.sender, address(this), amountDROP);
@@ -117,7 +113,7 @@ contract SimpleMkr is Interest {
 
     // VAT Like
     function urns(bytes32, address) external view returns (uint,uint) {
-        return (drop.balanceOf(address(this)), 0);
+        return (drop.balanceOf(address(this)), calcDebt());
     }
 
     function ilks(bytes32) external view returns(uint, uint, uint, uint, uint)  {

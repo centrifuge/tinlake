@@ -15,11 +15,13 @@ pragma solidity >=0.5.15 <0.6.0;
 import "ds-test/test.sol";
 
 import "../../../../../test/mock/mock.sol";
+import "./vat.sol";
 
 contract ManagerMock is Mock {
 
     SimpleTokenLike currency;
     SimpleTokenLike collateral;
+    VatMock vat;
 
     address public owner;
 
@@ -34,8 +36,8 @@ contract ManagerMock is Mock {
         collateral = SimpleTokenLike(collateral_);
     }
 
-    function cdptab() public view returns (uint) {
-        return values_uint["tab"];
+    function setVat(address vat_) external {
+        vat = VatMock(vat_);
     }
 
     function ilk() public view returns (bytes32) {
@@ -50,13 +52,14 @@ contract ManagerMock is Mock {
     function draw(uint amountDAI, address usr) external  {
         // mimic cdp behav and mint DAI to clerk
         currency.mint(usr, amountDAI);
-        values_uint["tab"] = safeAdd(values_uint["tab"], amountDAI);
+        vat.increaseTab(amountDAI);
+
     }
 
     function wipe(uint amountDAI) external {
         // mimic cdp behav: move DAI from clerk to mgr
         currency.transferFrom(msg.sender, address(this), amountDAI);
-        values_uint["tab"] = safeSub(values_uint["tab"], amountDAI);
+        vat.decreaseTab(amountDAI);
     }
 
     function safe() external view returns(bool) {
@@ -75,13 +78,8 @@ contract ManagerMock is Mock {
        collateral.transferFrom(address(this), usr, amountDROP);
     }
 
-    function increaseTab(uint amountDAI) external {
-        values_uint["tab"] = safeAdd(values_uint["tab"], amountDAI);
-    }
-
     // --- Administration ---
     function setOwner(address newOwner) external ownerOnly {
         owner = newOwner;
     }
-
 }

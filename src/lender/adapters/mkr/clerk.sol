@@ -18,8 +18,6 @@ import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 
 interface ManagerLike {
-    // collateral debt
-    function cdptab() external view returns(uint);
     // put collateral into cdp
     function join(uint amountDROP) external;
     // draw DAi from cdp
@@ -149,15 +147,15 @@ contract Clerk is Auth, Math  {
     }
 
     function remainingCredit() public returns (uint) {
-        if (creditline <= (mgr.cdptab())) {
+        if (creditline <= (cdptab())) {
             return 0;
         }
-        return safeSub(creditline, mgr.cdptab());
+        return safeSub(creditline, cdptab());
     }
 
     function collatDeficit() public returns (uint) {
         uint lockedCollateralDAI = rmul(cdpink(), assessor.calcSeniorTokenPrice());
-        uint requiredCollateralDAI = calcOvercollAmount(mgr.cdptab());
+        uint requiredCollateralDAI = calcOvercollAmount(cdptab());
         if (requiredCollateralDAI > lockedCollateralDAI) {
             return safeSub(requiredCollateralDAI, lockedCollateralDAI);
         }
@@ -175,7 +173,7 @@ contract Clerk is Auth, Math  {
         if (!(mgr.safe() && mgr.glad() && mgr.live())) {
             return 0;
         }
-        return safeSub(rmul(cdpink(), assessor.calcSeniorTokenPrice()), mgr.cdptab());
+        return safeSub(rmul(cdpink(), assessor.calcSeniorTokenPrice()), cdptab());
     }
 
     // increase MKR credit line
@@ -216,11 +214,11 @@ contract Clerk is Auth, Math  {
 
     // transfer DAI from reserve, wipe cdp debt, exit DROP from cdp, burn DROP, harvest junior profit
     function wipe(uint amountDAI) public auth active {
-        require((mgr.cdptab() > 0), "cdp debt already repaid");
+        require((cdptab() > 0), "cdp debt already repaid");
 
         // repayment amount should not exceed cdp debt
-        if (amountDAI > mgr.cdptab()) {
-            amountDAI = mgr.cdptab();
+        if (amountDAI > cdptab()) {
+            amountDAI = cdptab();
         }
         // get DAI from reserve
         reserve.hardPayout(amountDAI);
@@ -238,7 +236,7 @@ contract Clerk is Auth, Math  {
         uint dropPrice = assessor.calcSeniorTokenPrice();
         uint lockedCollateralDAI = rmul(cdpink(), dropPrice);
         // profit => diff between the DAI value of the locked collateral in the cdp & the actual cdp debt including protection buffer
-        uint profitDAI = safeSub(lockedCollateralDAI, calcOvercollAmount(mgr.cdptab()));
+        uint profitDAI = safeSub(lockedCollateralDAI, calcOvercollAmount(cdptab()));
         uint profitDROP = rdiv(profitDAI, dropPrice);
         // remove profitDROP from the vault & brun them
         mgr.exit(address(this), profitDROP);
@@ -304,6 +302,12 @@ contract Clerk is Auth, Math  {
     function updateSeniorAsset(uint decreaseDAI, uint increaseDAI) internal  {
         assessor.changeSeniorAsset(increaseDAI, decreaseDAI);
     }
+    
+    // returns the debt towards mkr
+    function cdptab() public view returns (uint) {
+        (, uint art) = vat.urns(mgr.ilk(), address(mgr));
+        return rmul(art, stabilityFee());
+    }
 
     // returns the collateral amount in the cdp
     function cdpink() public view returns (uint) {
@@ -322,7 +326,7 @@ contract Clerk is Auth, Math  {
         return rmul(amountDAI, mat());
     }
 
-        // In case contract received DAI as a leftover from the cdp liquidation return back to reserve
+    // In case contract received DAI as a leftover from the cdp liquidation return back to reserve
     function returnDAI() public auth {
         uint amountDAI = dai.balanceOf(address(this));
         dai.approve(address(reserve), amountDAI);
@@ -334,7 +338,7 @@ contract Clerk is Auth, Math  {
     }
 
     function debt() public view returns(uint) {
-        return mgr.cdptab();
+        return cdptab();
     }
 
     function stabilityFee() public view returns(uint) {
