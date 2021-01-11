@@ -98,7 +98,7 @@ contract SimpleMkr is Interest, DSTest{
         currency.transferFrom(msg.sender, address(this), amountDAI);
         currency.burn(address(this), amountDAI);
         dripFee();
-        pie = safeSub(pie, rmul(amountDAI, stabilityFee));
+        pie = safeSub(pie, rdivup(amountDAI, stabilityFee));
     }
     // remove collateral from cdp
     function exit(address usr, uint amountDROP) external {
