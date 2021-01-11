@@ -21,7 +21,7 @@ contract SimpleMkr is Interest, DSTest{
     uint public ratePerSecond;
 
     uint public lastDebtUpdate;
-    uint pie = ONE;
+    uint public pie;
 
     bytes32 public ilk;
 
@@ -69,13 +69,6 @@ contract SimpleMkr is Interest, DSTest{
         } else {
             revert();
         }
-    }
-
-    function calcDebt() public returns (uint) {
-        if (block.timestamp >= lastDebtUpdate) {
-            dripFee();
-        }
-        return rmul(pie, stabilityFee);
     }
     
     function dripFee() public returns (uint) {

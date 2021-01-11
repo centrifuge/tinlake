@@ -194,7 +194,6 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         // create a snapshot of the current lender state
 
         epochNAV = assessor.calcUpdateNAV();
-
         epochReserve = assessor.totalBalance();
         //  if no orders exist epoch can be executed without validation
         if (orderSeniorRedeem == 0 && orderJuniorRedeem == 0 &&
