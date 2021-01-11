@@ -85,7 +85,7 @@ interface ERC20Like {
     function approve(address usr, uint amount) external;
 }
 
-contract Clerk is Auth, Math  {
+contract Clerk is Auth, Math {
 
     // max amount of DAI that can be brawn from MKR
     uint public creditline;

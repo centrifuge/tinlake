@@ -131,7 +131,6 @@ contract LenderSystemTest is TestSuite, Interest {
 
         uint creditLineAmount = 500 ether;
         clerk.raise(creditLineAmount);
-
         assertEq(clerk.remainingCredit(), creditLineAmount);
     }
 
@@ -188,7 +187,8 @@ contract LenderSystemTest is TestSuite, Interest {
         uint mkrAmount = 500 ether;
         uint borrowAmount = 300 ether;
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
-        hevm.warp(now + 1 days);
+        hevm.warp(now + 1 days);   
+        mkr.dripFee(); 
         uint expectedDebt = 105 ether;
         assertEq(clerk.debt(), expectedDebt, "testLoanRepayWipe#1");
 
@@ -196,7 +196,7 @@ contract LenderSystemTest is TestSuite, Interest {
         repayDefaultLoan(repayAmount);
 
         // reduces clerk debt
-        assertEq(clerk.debt(), expectedDebt-repayAmount, "testLoanRepayWipe#2");
+        assertEq(clerk.debt(), safeSub(expectedDebt, repayAmount), "testLoanRepayWipe#2");
         assertEq(reserve.totalBalance(), 0, "testLoanRepayWipe#3");
     }
 

@@ -15,7 +15,7 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 import "./../../assessor.sol";
-
+import "ds-test/test.sol";
 interface ClerkLike {
     function remainingCredit() external view returns (uint);
     function juniorStake() external view returns (uint);
@@ -24,7 +24,7 @@ interface ClerkLike {
     function debt() external view returns(uint);
 }
 
-contract MKRAssessor is Assessor {
+contract MKRAssessor is Assessor, DSTest {
     ClerkLike public clerk;
 
     uint public creditBufferTime = 1 days;

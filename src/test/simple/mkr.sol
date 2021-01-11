@@ -2,6 +2,7 @@ pragma solidity >=0.5.15 <0.6.0;
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 import "../../../lib/tinlake-math/src/interest.sol";
+import "ds-test/test.sol";
 
 interface ERC20Like {
     function transferFrom(address from, address to, uint amount) external;
@@ -13,13 +14,14 @@ interface ERC20Like {
 // simple mock implementation of relevant MKR contracts
 // contract will mint currency tokens to simulate the mkr behaviour
 // implements mgr, spotter, vat interfaces
-contract SimpleMkr is Interest {
+contract SimpleMkr is Interest, DSTest{
     ERC20Like public currency;
     ERC20Like public drop;
     uint public stabilityFee;
+    uint public ratePerSecond;
 
     uint public lastDebtUpdate;
-    uint debt;
+    uint pie = ONE;
 
     bytes32 public ilk;
 
@@ -29,16 +31,18 @@ contract SimpleMkr is Interest {
 
     constructor(uint stabilityFee_, bytes32 ilk_) public {
         stabilityFee = stabilityFee_;
+        ratePerSecond =  stabilityFee_;
         ilk = ilk_;
         safeFlag = true;
         gladFlag = true;
         liveFlag = true;
-        lastDebtUpdate = now;
+        lastDebtUpdate = block.timestamp;
     }
 
     function file(bytes32 what, uint value) public {
         if(what == "stabilityFee") {
             stabilityFee = value;
+            ratePerSecond =  value;
         }
         else {
             revert();
@@ -67,22 +71,18 @@ contract SimpleMkr is Interest {
         }
     }
 
-    function dripDebt() public returns (uint) {
-        uint newDebt = calcDebt();
-
-        if (newDebt > debt) {
-            debt = newDebt;
+    function calcDebt() public returns (uint) {
+        if (block.timestamp >= lastDebtUpdate) {
+            dripFee();
+        }
+        return rmul(pie, stabilityFee);
+    }
+    
+    function dripFee() public returns (uint) {
+        if (block.timestamp >= lastDebtUpdate) {
+            stabilityFee = rpow(ratePerSecond, safeSub(block.timestamp, lastDebtUpdate), ONE);
             lastDebtUpdate = block.timestamp;
         }
-
-        return debt;
-    }
-
-    function calcDebt() public view returns (uint) {
-        if (now >= lastDebtUpdate) {
-            return chargeInterest(debt, stabilityFee, lastDebtUpdate);
-        }
-        return debt;
     }
 
     // put collateral into cdp
@@ -92,17 +92,15 @@ contract SimpleMkr is Interest {
     // draw DAI from cdp
     function draw(uint amountDAI, address usr) external  {
         currency.mint(usr, amountDAI);
-        dripDebt();
-        debt = safeAdd(debt, amountDAI);
-        lastDebtUpdate = block.timestamp;
+        dripFee();
+        pie = safeAdd(pie, rdivup(amountDAI, stabilityFee));
     }
     // repay cdp debt
     function wipe(uint amountDAI) external {
         currency.transferFrom(msg.sender, address(this), amountDAI);
         currency.burn(address(this), amountDAI);
-        dripDebt();
-        debt = safeSub(debt, amountDAI);
-        lastDebtUpdate = block.timestamp;
+        dripFee();
+        pie = safeSub(pie, rmul(amountDAI, stabilityFee));
     }
     // remove collateral from cdp
     function exit(address usr, uint amountDROP) external {
@@ -126,7 +124,7 @@ contract SimpleMkr is Interest {
 
     // VAT Like
     function urns(bytes32, address) external view returns (uint,uint) {
-        return (drop.balanceOf(address(this)), calcDebt());
+        return (drop.balanceOf(address(this)), pie);
     }
 
     function ilks(bytes32) external view returns(uint, uint, uint, uint, uint)  {
