@@ -187,9 +187,11 @@ contract LenderSystemTest is TestSuite, Interest {
         uint mkrAmount = 500 ether;
         uint borrowAmount = 300 ether;
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+           emit log_named_uint("clerk", clerk.stabilityFee());
         hevm.warp(now + 1 days);   
-        mkr.dripFee(); 
         uint expectedDebt = 105 ether;
+        emit log_named_uint("clerk", clerk.stabilityFee());
+        emit log_named_uint("clerk", mkr.stabilityFee());
         assertEq(clerk.debt(), expectedDebt, "testLoanRepayWipe#1");
 
         uint repayAmount = 50 ether;
@@ -246,7 +248,7 @@ contract LenderSystemTest is TestSuite, Interest {
 
         hevm.warp(now + 1 days);
         uint expectedDebt = 110 ether;
-
+  
         uint seniorPrice = mkrAssessor.calcSeniorTokenPrice();
         uint lockedCollateralDAI = rmul(clerk.cdpink(), seniorPrice);
         assertEqTol(clerk.debt(), expectedDebt, "testMKRHeal#1");
@@ -261,7 +263,6 @@ contract LenderSystemTest is TestSuite, Interest {
         lockedCollateralDAI = rmul(clerk.cdpink(), seniorPrice);
         assertEqTol(lockedCollateralDAI, wantedLocked, "testMKRHeal#2");
         assertTrue(clerk.cdpink() > amountOfDROP);
-
     }
 
     function testMKRSink() public {

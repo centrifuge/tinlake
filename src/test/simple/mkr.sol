@@ -17,10 +17,9 @@ interface ERC20Like {
 contract SimpleMkr is Interest, DSTest{
     ERC20Like public currency;
     ERC20Like public drop;
-    uint public stabilityFee;
     uint public ratePerSecond;
 
-    uint public lastDebtUpdate;
+    uint public lastFeeUpdate;
     uint public pie;
 
     bytes32 public ilk;
@@ -29,25 +28,23 @@ contract SimpleMkr is Interest, DSTest{
     bool gladFlag;
     bool liveFlag;
 
-    constructor(uint stabilityFee_, bytes32 ilk_) public {
-        stabilityFee = stabilityFee_;
-        ratePerSecond =  stabilityFee_;
+    constructor(uint ratePerSecond_, bytes32 ilk_) public {
+        ratePerSecond = ratePerSecond_;
         ilk = ilk_;
         safeFlag = true;
         gladFlag = true;
         liveFlag = true;
-        lastDebtUpdate = block.timestamp;
+        lastFeeUpdate = block.timestamp;
     }
 
     function file(bytes32 what, uint value) public {
         if(what == "stabilityFee") {
             if(pie > 0) {
-                dripFee();
-                uint debt = rmul(pie, stabilityFee);
+                uint debt = rmul(pie, stabilityFee());
                 pie = rdivup(debt, value);
             }
-            stabilityFee = value;
             ratePerSecond =  value;
+            lastFeeUpdate = block.timestamp;
         }
         else {
             revert();
@@ -76,13 +73,6 @@ contract SimpleMkr is Interest, DSTest{
         }
     }
     
-    function dripFee() public returns (uint) {
-        if (block.timestamp >= lastDebtUpdate) {
-            stabilityFee = rpow(ratePerSecond, safeSub(block.timestamp, lastDebtUpdate), ONE);
-            lastDebtUpdate = block.timestamp;
-        }
-    }
-
     // put collateral into cdp
     function join(uint amountDROP) external {
         drop.transferFrom(msg.sender, address(this), amountDROP);
@@ -90,15 +80,13 @@ contract SimpleMkr is Interest, DSTest{
     // draw DAI from cdp
     function draw(uint amountDAI, address usr) external  {
         currency.mint(usr, amountDAI);
-        dripFee();
-        pie = safeAdd(pie, rdivup(amountDAI, stabilityFee));
+        pie = safeAdd(pie, rdivup(amountDAI, stabilityFee()));
     }
     // repay cdp debt
     function wipe(uint amountDAI) external {
         currency.transferFrom(msg.sender, address(this), amountDAI);
         currency.burn(address(this), amountDAI);
-        dripFee();
-        pie = safeSub(pie, rdivup(amountDAI, stabilityFee));
+        pie = safeSub(pie, rdivup(amountDAI, stabilityFee()));
     }
     // remove collateral from cdp
     function exit(address usr, uint amountDROP) external {
@@ -126,6 +114,13 @@ contract SimpleMkr is Interest, DSTest{
     }
 
     function ilks(bytes32) external view returns(uint, uint, uint, uint, uint)  {
-        return(0, stabilityFee, 0, 0, 0);
+        return(0, stabilityFee(),  0, 0, 0);
+    }
+
+    function stabilityFee() public view returns (uint) {
+        if (block.timestamp > lastFeeUpdate) {
+            return rpow(ratePerSecond, safeSub(block.timestamp, lastFeeUpdate), ONE);
+        }
+        return ratePerSecond;
     }
 }

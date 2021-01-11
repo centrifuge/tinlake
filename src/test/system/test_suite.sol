@@ -49,7 +49,6 @@ contract TestSuite is BaseSystemTest {
         uint lastEpochExecuted = coordinator.lastEpochExecuted();
 
         coordinator.closeEpoch();
-        emit log_named_uint("fuchs", 1);
         assertEq(coordinator.currentEpoch(), currentEpoch+1);
         if(closeWithExecute == true) {
             lastEpochExecuted++;
