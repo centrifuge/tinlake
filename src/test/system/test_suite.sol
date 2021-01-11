@@ -22,6 +22,8 @@ import "./base_system.sol";
 contract TestSuite is BaseSystemTest {
     Hevm public hevm;
 
+    uint defaultLoanId = 1;
+
     function seniorSupply(uint currencyAmount) public {
         seniorSupply(currencyAmount, seniorInvestor);
     }
@@ -62,8 +64,12 @@ contract TestSuite is BaseSystemTest {
 
     function repayDefaultLoan(uint currencyAmount) public {
         address usr = address(borrower);
-        uint loanId = 1;
-        repayLoan(usr, loanId, currencyAmount);
+        repayLoan(usr, defaultLoanId, currencyAmount);
+    }
+
+    function repayAllDebtDefaultLoan() public {
+        uint debt = pile.debt(defaultLoanId);
+        repayDefaultLoan(debt);
     }
 
     function supplyAndBorrowFirstLoan(uint seniorSupplyAmount, uint juniorSupplyAmount,

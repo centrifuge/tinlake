@@ -296,4 +296,91 @@ contract LenderSystemTest is TestSuite, Interest {
        clerk.sink(mkrAmount);
     }
 
+    function testRedeemCurrencyFromMKR() public {
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+        (,uint payoutTokenAmount,,) = juniorInvestor.disburse();
+
+        uint redeemTokenAmount = 20 ether;
+        juniorInvestor.redeemOrder(redeemTokenAmount);
+        hevm.warp(now + 1 days);
+        // currency should come from MKR
+        assertEq(reserve.totalBalance(), 0);
+        coordinator.closeEpoch();
+        (uint payoutCurrency,,,uint remainingRedeemToken) = juniorInvestor.disburse();
+        // juniorTokenPrice should be still ONE
+        assertEq(currency.balanceOf(address(juniorInvestor)), payoutCurrency);
+    }
+
+    function mkrLiquidationPostAssertions() public {
+        //sanity check - correct currency amount for each token
+        assertEq(mkrAssessor.currentNAV() + reserve.totalBalance(), rmul(seniorToken.totalSupply(), mkrAssessor.calcSeniorTokenPrice())
+            + rmul(juniorToken.totalSupply(), mkrAssessor.calcJuniorTokenPrice()));
+
+        assertEq(clerk.remainingCredit(), 0);
+        assertEq(clerk.juniorStake(), 0);
+    }
+
+    function setUpOngoingMKR() public {
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+        assertEq(clerk.remainingCredit(), 400 ether);
+    }
+
+    function testVaultLiquidation() public {
+        setUpOngoingMKR();
+        uint juniorTokenPrice = mkrAssessor.calcJuniorTokenPrice();
+
+        // liquidation
+        mkr.file("live", false);
+
+        assertTrue(mkrAssessor.calcJuniorTokenPrice() <  juniorTokenPrice);
+        // no currency in reserve
+        assertEq(reserve.totalBalance(),  0);
+
+        // repay loans and everybody redeems
+        repayAllDebtDefaultLoan();
+        assertEq(mkrAssessor.currentNAV(), 0);
+        // reserve should keep the currency no automatic clerk.wipe
+        assertTrue(reserve.totalBalance() > 0);
+
+        mkrLiquidationPostAssertions();
+    }
+
+    function testVaultLiquidation2() public {
+        setUpOngoingMKR();
+        mkr.file("glad", false);
+        mkrLiquidationPostAssertions();
+    }
+
+    function testVaultLiquidation3() public {
+        setUpOngoingMKR();
+        mkr.file("safe", false);
+        mkrLiquidationPostAssertions();
+    }
+
+    function testFailLiqDraw() public {
+        setUpOngoingMKR();
+        mkr.file("glad", false);
+        clerk.draw(1);
+    }
+
+    function testFailLiqSink() public {
+        setUpOngoingMKR();
+        mkr.file("glad", false);
+        clerk.sink(1);
+    }
+
+    function testFailLiqWipe() public {
+        setUpOngoingMKR();
+        mkr.file("glad", false);
+        // repay loans and everybody redeems
+        repayAllDebtDefaultLoan();
+        assertTrue(reserve.totalBalance() > 0);
+        clerk.wipe(1);
+    }
 }

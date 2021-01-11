@@ -113,7 +113,11 @@ contract Clerk is Auth, Math  {
     modifier active() { require(activated(), "epoch-closing"); _; }
 
     function activated() public view returns(bool) {
-        return coordinator.submissionPeriod() == false;
+        return coordinator.submissionPeriod() == false && mkrActive();
+    }
+
+    function mkrActive() public view returns (bool) {
+        return mgr.safe() && mgr.glad() && mgr.live();
     }
 
     constructor(address dai_, address collateral_) public {
@@ -149,7 +153,7 @@ contract Clerk is Auth, Math  {
     }
 
     function remainingCredit() public returns (uint) {
-        if (creditline <= (mgr.cdptab())) {
+        if (creditline <= (mgr.cdptab()) || mkrActive() == false) {
             return 0;
         }
         return safeSub(creditline, mgr.cdptab());
@@ -171,8 +175,8 @@ contract Clerk is Auth, Math  {
 
    // junior stake in the cdpink -> value of drop used for cdptab protection
     function juniorStake() public view returns (uint) {
-        // junior looses stake in case cdp is in soft liquidation mode
-        if (!(mgr.safe() && mgr.glad() && mgr.live())) {
+        // junior looses stake in case vault is in soft/hard liquidation mode
+        if (mkrActive() == false) {
             return 0;
         }
         return safeSub(rmul(cdpink(), assessor.calcSeniorTokenPrice()), mgr.cdptab());

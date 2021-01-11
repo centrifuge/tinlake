@@ -39,6 +39,19 @@ contract SimpleMkr is Interest {
     function file(bytes32 what, uint value) public {
         if(what == "stabilityFee") {
             stabilityFee = value;
+        }
+        else {
+            revert();
+        }
+    }
+
+    function file(bytes32 what, bool value) public {
+        if(what == "safe") {
+            safeFlag = value;
+        } else if (what == "glad") {
+            gladFlag = value;
+        } else if (what == "live") {
+            liveFlag = value;
         } else {
             revert();
         }
