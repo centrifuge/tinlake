@@ -186,7 +186,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         uint tokenAmount = 100 ether;
         redeemOrder(tokenAmount);
 
-        reserve.setReturn("balance", uint(-1));
+        reserve.setReturn("totalBalanceAvailable", uint(-1));
 
         uint supplyFulfillment_ = 0;
 
@@ -223,7 +223,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         // increase to 100 ether
         uint tokenAmount = 100 ether;
         redeemOrder(tokenAmount);
-        reserve.setReturn("balance", uint(-1));
+        reserve.setReturn("totalBalanceAvailable", uint(-1));
 
 
         // 75 % for redeem Fulfillment
