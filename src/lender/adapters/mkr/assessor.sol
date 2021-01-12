@@ -20,7 +20,7 @@ interface ClerkLike {
     function remainingCredit() external view returns (uint);
     function juniorStake() external view returns (uint);
     function calcOvercollAmount(uint amount) external view returns (uint);
-    function stabilityFeeRate() external view returns(uint);
+    function stabilityFee() external view returns(uint);
     function debt() external view returns(uint);
 }
 
@@ -124,7 +124,7 @@ contract MKRAssessor is Assessor {
         // over the time the remainingCredit will decrease because of the accumulated debt interest
         // therefore a buffer is reduced from the  remainingCredit to prevent the usage of currency which is not available
         uint debt = clerk.debt();
-        uint stabilityBuffer = safeSub(rmul(rpow(clerk.stabilityFeeRate(),
+        uint stabilityBuffer = safeSub(rmul(rpow(clerk.stabilityFee(),
             creditBufferTime, ONE), debt), debt);
         uint remainingCredit = clerk.remainingCredit();
         if(remainingCredit > stabilityBuffer) {

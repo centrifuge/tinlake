@@ -318,7 +318,7 @@ contract Clerk is Auth, Math {
     // returns the debt towards mkr
     function cdptab() public view returns (uint) {
         (, uint art) = vat.urns(mgr.ilk(), address(mgr));
-        return rmul(art, stabilityFee());
+        return rmul(art, stabilityFeeIndex());
     }
 
     // returns the collateral amount in the cdp
@@ -353,12 +353,12 @@ contract Clerk is Auth, Math {
         return cdptab();
     }
 
-    function stabilityFee() public view returns(uint) {
+    function stabilityFeeIndex() public view returns(uint) {
         (, uint rate, , ,) = vat.ilks(mgr.ilk());
         return rate;
     }
 
-    function stabilityFeeRate() public view returns(uint) {
+    function stabilityFee() public view returns(uint) {
         // mkr.duty is the stability fee in the mkr system
         (uint duty, ) =  jug.ilks(mgr.ilk());
         return duty;

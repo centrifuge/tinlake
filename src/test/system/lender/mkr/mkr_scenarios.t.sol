@@ -173,7 +173,7 @@ contract LenderSystemTest is TestSuite, Interest {
         hevm.warp(now + 1 days);
 
         uint debt = clerk.debt();
-        uint buffer = safeSub(rmul(rpow(clerk.stabilityFeeRate(),
+        uint buffer = safeSub(rmul(rpow(clerk.stabilityFee(),
                 safeSub(safeAdd(block.timestamp, mkrAssessor.creditBufferTime()), block.timestamp), ONE), debt), debt);
 
         uint remainingCredit = clerk.remainingCredit();
