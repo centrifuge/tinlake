@@ -35,6 +35,10 @@ contract ClerkMock is Mock {
         return values_return["stabilityFee"];
     }
 
+    function stabilityFeeRate() external view returns(uint) {
+        return values_return["stabilityFeeRate"];
+    }
+
     function activated() public view returns(bool) {
         return values_bool_return["activated"];
     }

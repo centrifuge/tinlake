@@ -138,7 +138,7 @@ contract AssessorMKRTest is DSTest, Interest {
         assertEq(assessor.totalBalance(), 80 ether);
         // 5% per day)
         uint fee = 1000000593415115246806684338;
-        clerk.setReturn("stabilityFee", fee);
+        clerk.setReturn("stabilityFeeRate", fee);
 
         uint creditLine = 100 ether;
         uint debt = 20 ether;
@@ -146,7 +146,7 @@ contract AssessorMKRTest is DSTest, Interest {
         clerk.setReturn("debt", debt);
         uint expectedTotalBalance = safeAdd(reserve, creditLine-debt);
 
-        uint interest = safeSub(rmul(rpow(clerk.stabilityFee(),
+        uint interest = safeSub(rmul(rpow(clerk.stabilityFeeRate(),
             safeSub(safeAdd(block.timestamp, assessor.creditBufferTime()), block.timestamp), ONE), debt), debt);
 
         expectedTotalBalance = expectedTotalBalance - interest;
@@ -162,7 +162,7 @@ contract AssessorMKRTest is DSTest, Interest {
 
         // 5% per day)
         uint fee = 1000000593415115246806684338;
-        clerk.setReturn("stabilityFee", fee);
+        clerk.setReturn("stabilityFeeRate", fee);
 
         uint creditLine = 100 ether;
         uint debt = 20 ether;
@@ -170,7 +170,7 @@ contract AssessorMKRTest is DSTest, Interest {
         clerk.setReturn("remainingCredit", remainingCredit);
         clerk.setReturn("debt", debt);
 
-        uint interest = safeSub(rmul(rpow(clerk.stabilityFee(),
+        uint interest = safeSub(rmul(rpow(clerk.stabilityFeeRate(),
             safeSub(safeAdd(block.timestamp, assessor.creditBufferTime()), block.timestamp), ONE), debt), debt);
 
         uint overCollAmount = rmul(remainingCredit-interest, 1.1 * 10**27);

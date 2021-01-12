@@ -14,6 +14,22 @@ interface ERC20Like {
 // simple mock implementation of relevant MKR contracts
 // contract will mint currency tokens to simulate the mkr behaviour
 // implements mgr, spotter, vat interfaces
+
+contract JugMock {
+      uint public duty;
+      function file(bytes32 what, uint value) external {
+
+          if(what == "duty") {
+              duty = value;
+          }
+      }
+
+      function ilks(bytes32 ilk) public view returns (uint ,uint) {
+          return (duty, 0);
+      }
+}
+
+
 contract SimpleMkr is Interest, DSTest{
     ERC20Like public currency;
     ERC20Like public drop;
@@ -28,6 +44,8 @@ contract SimpleMkr is Interest, DSTest{
     bool gladFlag;
     bool liveFlag;
 
+    JugMock public jugMock;
+
     constructor(uint ratePerSecond_, bytes32 ilk_) public {
         ratePerSecond = ratePerSecond_;
         ilk = ilk_;
@@ -35,6 +53,8 @@ contract SimpleMkr is Interest, DSTest{
         gladFlag = true;
         liveFlag = true;
         lastFeeUpdate = block.timestamp;
+        jugMock = new JugMock();
+        jugMock.file("duty", ratePerSecond_);
     }
 
     function file(bytes32 what, uint value) public {
@@ -72,7 +92,7 @@ contract SimpleMkr is Interest, DSTest{
             revert();
         }
     }
-    
+
     // put collateral into cdp
     function join(uint amountDROP) external {
         drop.transferFrom(msg.sender, address(this), amountDROP);
@@ -80,7 +100,9 @@ contract SimpleMkr is Interest, DSTest{
     // draw DAI from cdp
     function draw(uint amountDAI, address usr) external  {
         currency.mint(usr, amountDAI);
+        emit log_named_uint("hse", 1);
         pie = safeAdd(pie, rdivup(amountDAI, stabilityFee()));
+        emit log_named_uint("he", 1);
     }
     // repay cdp debt
     function wipe(uint amountDAI) external {

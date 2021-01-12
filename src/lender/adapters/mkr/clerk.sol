@@ -38,13 +38,18 @@ interface ManagerLike {
     function setOwner(address newOwner) external;
 }
 
+// MKR contract
 interface VatLike {
     function urns(bytes32, address) external view returns (uint,uint);
     function ilks(bytes32) external view returns(uint, uint, uint, uint, uint);
 }
-
+// MKR contract
 interface SpotterLike {
     function ilks(bytes32) external view returns(address, uint256);
+}
+// MKR contract
+interface JugLike {
+    function ilks(bytes32) external view returns(uint, uint);
 }
 
 interface AssessorLike {
@@ -91,18 +96,19 @@ contract Clerk is Auth, Math {
     uint public creditline;
 
     // tinlake contracts
-    CoordinatorLike coordinator;
-    AssessorLike assessor;
-    ReserveLike reserve;
-    TrancheLike tranche;
+    CoordinatorLike public coordinator;
+    AssessorLike public assessor;
+    ReserveLike public reserve;
+    TrancheLike public tranche;
 
     // MKR contracts
-    ManagerLike mgr;
-    VatLike vat;
-    SpotterLike spotter;
+    ManagerLike public mgr;
+    VatLike public vat;
+    SpotterLike public spotter;
+    JugLike public jug;
 
-    ERC20Like dai;
-    ERC20Like collateral;
+    ERC20Like public dai;
+    ERC20Like public collateral;
 
     // buffer to add on top of mat to avoid cdp liquidation => default 1%
     uint matBuffer = 0.01 * 10**27;
@@ -141,6 +147,8 @@ contract Clerk is Auth, Math {
             spotter = SpotterLike(addr);
         } else if (contractName == "vat") {
             vat = VatLike(addr);
+        } else if (contractName == "jug") {
+            jug = JugLike(addr);
         } else revert();
     }
 
@@ -196,8 +204,8 @@ contract Clerk is Auth, Math {
 
     // mint DROP, join DROP into cdp, draw DAI and send to reserve
     function draw(uint amountDAI) public auth active {
-        // make sure ther eis no collateral deficit before drawing out new DAI
-        // require(collatDeficit() == 0, "please heal cdp first"); // tbd
+         //make sure there is no collateral deficit before drawing out new DAI
+        require(collatDeficit() == 0, "please heal cdp first"); // tbd
         require(amountDAI <= remainingCredit(), "not enough credit left");
         // collateral value that needs to be locked in vault to draw amountDAI
         uint collateralDAI = calcOvercollAmount(amountDAI);
@@ -306,7 +314,7 @@ contract Clerk is Auth, Math {
     function updateSeniorAsset(uint decreaseDAI, uint increaseDAI) internal  {
         assessor.changeSeniorAsset(increaseDAI, decreaseDAI);
     }
-    
+
     // returns the debt towards mkr
     function cdptab() public view returns (uint) {
         (, uint art) = vat.urns(mgr.ilk(), address(mgr));
@@ -348,5 +356,11 @@ contract Clerk is Auth, Math {
     function stabilityFee() public view returns(uint) {
         (, uint rate, , ,) = vat.ilks(mgr.ilk());
         return rate;
+    }
+
+    function stabilityFeeRate() public view returns(uint) {
+        // mkr.duty is the stability fee in the mkr system
+        (uint duty, ) =  jug.ilks(mgr.ilk());
+        return duty;
     }
 }

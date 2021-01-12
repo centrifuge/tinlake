@@ -290,11 +290,15 @@ contract TestSetup is Config  {
         mkr = new SimpleMkr(config.mkrStabilityFee, config.mkrILK);
         address mkr_ = address(mkr);
 
+        address jug_ = address(mkr.jugMock());
+
         SpotterMock spotter = new SpotterMock();
         spotter.setReturn("mat", config.mkrMAT);
 
         mkrLenderDeployer.init(config.minSeniorRatio, config.maxSeniorRatio, config.maxReserve, config.challengeTime, config.seniorInterestRate, config.seniorTokenName,
-            config.seniorTokenSymbol, config.juniorTokenName, config.juniorTokenSymbol, address(mkr), address(spotter), address(mkr));
+            config.seniorTokenSymbol, config.juniorTokenName, config.juniorTokenSymbol);
+
+        mkrLenderDeployer.initMKR(address(mkr), address(spotter), address(mkr), jug_);
     }
 
     function fetchContractAddr(LenderDeployerLike ld) internal {
