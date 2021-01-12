@@ -2,6 +2,7 @@ pragma solidity >=0.5.15 <0.6.0;
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 import "../../../lib/tinlake-math/src/interest.sol";
+import "ds-test/test.sol";
 
 interface ERC20Like {
     function transferFrom(address from, address to, uint amount) external;
@@ -13,13 +14,29 @@ interface ERC20Like {
 // simple mock implementation of relevant MKR contracts
 // contract will mint currency tokens to simulate the mkr behaviour
 // implements mgr, spotter, vat interfaces
-contract SimpleMkr is Interest {
+
+contract JugMock {
+      uint public duty;
+      function file(bytes32 what, uint value) external {
+
+          if(what == "duty") {
+              duty = value;
+          }
+      }
+
+      function ilks(bytes32 ilk) public view returns (uint ,uint) {
+          return (duty, 0);
+      }
+}
+
+
+contract SimpleMkr is Interest, DSTest{
     ERC20Like public currency;
     ERC20Like public drop;
-    uint public stabilityFee;
+    uint public ratePerSecond;
 
-    uint public lastDebtUpdate;
-    uint debt;
+    uint public lastFeeUpdate;
+    uint public pie;
 
     bytes32 public ilk;
 
@@ -27,18 +44,27 @@ contract SimpleMkr is Interest {
     bool gladFlag;
     bool liveFlag;
 
-    constructor(uint stabilityFee_, bytes32 ilk_) public {
-        stabilityFee = stabilityFee_;
+    JugMock public jugMock;
+
+    constructor(uint ratePerSecond_, bytes32 ilk_) public {
+        ratePerSecond = ratePerSecond_;
         ilk = ilk_;
         safeFlag = true;
         gladFlag = true;
         liveFlag = true;
-        lastDebtUpdate = now;
+        lastFeeUpdate = block.timestamp;
+        jugMock = new JugMock();
+        jugMock.file("duty", ratePerSecond_);
     }
 
     function file(bytes32 what, uint value) public {
         if(what == "stabilityFee") {
-            stabilityFee = value;
+            if(pie > 0) {
+                uint debt = rmul(pie, stabilityFee());
+                pie = rdivup(debt, value);
+            }
+            ratePerSecond =  value;
+            lastFeeUpdate = block.timestamp;
         }
         else {
             revert();
@@ -67,28 +93,6 @@ contract SimpleMkr is Interest {
         }
     }
 
-    function dripDebt() public returns (uint) {
-        uint newDebt = calcDebt();
-
-        if (newDebt > debt) {
-            debt = newDebt;
-            lastDebtUpdate = block.timestamp;
-        }
-
-        return debt;
-    }
-
-    function calcDebt() public view returns (uint) {
-        if (now >= lastDebtUpdate) {
-            return chargeInterest(debt, stabilityFee, lastDebtUpdate);
-        }
-        return debt;
-    }
-
-    // collateral debt
-    function cdptab() external returns(uint) {
-        return calcDebt();
-    }
     // put collateral into cdp
     function join(uint amountDROP) external {
         drop.transferFrom(msg.sender, address(this), amountDROP);
@@ -96,17 +100,15 @@ contract SimpleMkr is Interest {
     // draw DAI from cdp
     function draw(uint amountDAI, address usr) external  {
         currency.mint(usr, amountDAI);
-        dripDebt();
-        debt = safeAdd(debt, amountDAI);
-        lastDebtUpdate = block.timestamp;
+        emit log_named_uint("hse", 1);
+        pie = safeAdd(pie, rdivup(amountDAI, stabilityFee()));
+        emit log_named_uint("he", 1);
     }
     // repay cdp debt
     function wipe(uint amountDAI) external {
         currency.transferFrom(msg.sender, address(this), amountDAI);
         currency.burn(address(this), amountDAI);
-        dripDebt();
-        debt = safeSub(debt, amountDAI);
-        lastDebtUpdate = block.timestamp;
+        pie = safeSub(pie, rdivup(amountDAI, stabilityFee()));
     }
     // remove collateral from cdp
     function exit(address usr, uint amountDROP) external {
@@ -130,10 +132,17 @@ contract SimpleMkr is Interest {
 
     // VAT Like
     function urns(bytes32, address) external view returns (uint,uint) {
-        return (drop.balanceOf(address(this)), 0);
+        return (drop.balanceOf(address(this)), pie);
     }
 
     function ilks(bytes32) external view returns(uint, uint, uint, uint, uint)  {
-        return(0, stabilityFee, 0, 0, 0);
+        return(0, stabilityFee(),  0, 0, 0);
+    }
+
+    function stabilityFee() public view returns (uint) {
+        if (block.timestamp > lastFeeUpdate) {
+            return rpow(ratePerSecond, safeSub(block.timestamp, lastFeeUpdate), ONE);
+        }
+        return ratePerSecond;
     }
 }

@@ -58,7 +58,7 @@ contract LenderSystemTest is TestSuite, Interest {
             juniorRedeem : 0 ether
             });
 
-        supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate, submission);
+       supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate, submission);
     }
 
     function testMKRRaise() public {
@@ -131,7 +131,6 @@ contract LenderSystemTest is TestSuite, Interest {
 
         uint creditLineAmount = 500 ether;
         clerk.raise(creditLineAmount);
-
         assertEq(clerk.remainingCredit(), creditLineAmount);
     }
 
@@ -187,7 +186,20 @@ contract LenderSystemTest is TestSuite, Interest {
         uint juniorAmount = 200 ether;
         uint mkrAmount = 500 ether;
         uint borrowAmount = 300 ether;
+
+        emit log_named_uint("stability fee", clerk.stabilityFee());
+        emit log_named_uint("debt", clerk.debt());
+        emit log_named_uint("remaining", clerk.remainingCredit());
+        emit log_named_uint("senior", assessor.seniorBalance());
+        emit log_named_uint("senior", assessor.seniorDebt());
+        emit log_named_uint("assess.or", mkrAssessor.remainingCredit());
+
+        emit log_named_uint("sdf", 1);
+        emit log_named_uint("cdptab", clerk.cdptab());
+
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+        emit log_named_uint("done draw", clerk.cdptab());
+
         hevm.warp(now + 1 days);
         uint expectedDebt = 105 ether;
         assertEq(clerk.debt(), expectedDebt, "testLoanRepayWipe#1");
@@ -196,7 +208,7 @@ contract LenderSystemTest is TestSuite, Interest {
         repayDefaultLoan(repayAmount);
 
         // reduces clerk debt
-        assertEq(clerk.debt(), expectedDebt-repayAmount, "testLoanRepayWipe#2");
+        assertEqTol(clerk.debt(), safeSub(expectedDebt, repayAmount), "testLoanRepayWipe#2");
         assertEq(reserve.totalBalance(), 0, "testLoanRepayWipe#3");
     }
 
@@ -261,7 +273,6 @@ contract LenderSystemTest is TestSuite, Interest {
         lockedCollateralDAI = rmul(clerk.cdpink(), seniorPrice);
         assertEqTol(lockedCollateralDAI, wantedLocked, "testMKRHeal#2");
         assertTrue(clerk.cdpink() > amountOfDROP);
-
     }
 
     function testMKRSink() public {

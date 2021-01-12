@@ -25,9 +25,12 @@ contract MKRLenderDeployer is LenderDeployer {
     ClerkFabLike public clerkFab;
     address public clerk;
 
+    address mkrDeployer;
+
     address public mkrMgr;
     address public mkrVat;
     address public mkrSpotter;
+    address public mkrJug;
 
     constructor(address root_, address currency_, address trancheFab_, address memberlistFab_,
         address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_,
@@ -36,6 +39,7 @@ contract MKRLenderDeployer is LenderDeployer {
         restrictedtokenFab_, reserveFab_, assessorFab_, coordinatorFab_, operatorFab_, assessorAdminFab_) {
 
         clerkFab = ClerkFabLike(clerkFabLike_);
+        mkrDeployer = msg.sender;
     }
 
     function deployClerk() public {
@@ -44,15 +48,14 @@ contract MKRLenderDeployer is LenderDeployer {
         AuthLike(clerk).rely(root);
     }
 
-    function init(uint minSeniorRatio_, uint maxSeniorRatio_, uint maxReserve_, uint challengeTime_, uint seniorInterestRate_,
-        string memory seniorName_, string memory seniorSymbol_, string memory juniorName_, string memory juniorSymbol_,
-        address mkrMgr_, address mkrSpotter_, address mkrVat_) public {
-        super.init(minSeniorRatio_, maxSeniorRatio_, maxReserve_,
-                challengeTime_, seniorInterestRate_, seniorName_, seniorSymbol_, juniorName_, juniorSymbol_);
 
+    function initMKR(address mkrMgr_, address mkrSpotter_, address mkrVat_, address mkrJug_) public {
+        require(mkrDeployer == msg.sender);
         mkrMgr = mkrMgr_;
         mkrSpotter = mkrSpotter_;
         mkrVat = mkrVat_;
+        mkrJug = mkrJug_;
+        mkrDeployer = address(1);
     }
 
     function deploy() public {
@@ -67,6 +70,7 @@ contract MKRLenderDeployer is LenderDeployer {
         DependLike(clerk).depend("mgr", mkrMgr);
         DependLike(clerk).depend("spotter", mkrSpotter);
         DependLike(clerk).depend("vat", mkrVat);
+        DependLike(clerk).depend("jug", mkrJug);
 
         // clerk as ward
         AuthLike(seniorTranche).rely(clerk);
