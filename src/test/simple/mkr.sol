@@ -98,11 +98,9 @@ contract SimpleMkr is Interest, DSTest{
         drop.transferFrom(msg.sender, address(this), amountDROP);
     }
     // draw DAI from cdp
-    function draw(uint amountDAI, address usr) external  {
-        currency.mint(usr, amountDAI);
-        emit log_named_uint("hse", 1);
+    function draw(uint amountDAI) external  {
+        currency.mint(msg.sender, amountDAI);
         pie = safeAdd(pie, rdivup(amountDAI, stabilityFee()));
-        emit log_named_uint("he", 1);
     }
     // repay cdp debt
     function wipe(uint amountDAI) external {
@@ -111,8 +109,8 @@ contract SimpleMkr is Interest, DSTest{
         pie = safeSub(pie, rdivup(amountDAI, stabilityFee()));
     }
     // remove collateral from cdp
-    function exit(address usr, uint amountDROP) external {
-        drop.transferFrom(address(this), usr, amountDROP);
+    function exit(uint amountDROP) external {
+        drop.transferFrom(address(this), msg.sender, amountDROP);
     }
 
     // indicates if soft-liquidation was activated

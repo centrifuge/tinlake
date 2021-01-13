@@ -21,11 +21,11 @@ interface ManagerLike {
     // put collateral into cdp
     function join(uint amountDROP) external;
     // draw DAi from cdp
-    function draw(uint amountDAI, address usr) external;
+    function draw(uint amountDAI) external;
     // repay cdp debt
     function wipe(uint amountDAI) external;
     // remove collateral from cdp
-    function exit(address usr, uint amountDROP) external;
+    function exit(uint amountDROP) external;
     // collateral ID
     function ilk() external view returns(bytes32);
     // indicates if soft-liquidation was activated
@@ -216,7 +216,7 @@ contract Clerk is Auth, Math {
         collateral.approve(address(mgr), collateralDROP);
         mgr.join(collateralDROP);
         // draw dai from cdp
-        mgr.draw(amountDAI, address(this));
+        mgr.draw(amountDAI);
         // move dai to reserve
         dai.approve(address(reserve), amountDAI);
         reserve.hardDeposit(amountDAI);
@@ -251,7 +251,7 @@ contract Clerk is Auth, Math {
         uint profitDAI = safeSub(lockedCollateralDAI, calcOvercollAmount(cdptab()));
         uint profitDROP = rdiv(profitDAI, dropPrice);
         // remove profitDROP from the vault & brun them
-        mgr.exit(address(this), profitDROP);
+        mgr.exit(profitDROP);
         collateral.burn(address(this), profitDROP);
         // decrease the seniorAssetValue by profitDAI -> DROP price stays constant
         updateSeniorAsset(profitDAI, 0);

@@ -49,9 +49,9 @@ contract ManagerMock is Mock {
         collateral.transferFrom(msg.sender, address(this), amountDROP);
     }
 
-    function draw(uint amountDAI, address usr) external  {
+    function draw(uint amountDAI) external  {
         // mimic cdp behav and mint DAI to clerk
-        currency.mint(usr, amountDAI);
+        currency.mint(msg.sender, amountDAI);
         vat.increaseTab(amountDAI);
 
     }
@@ -74,8 +74,8 @@ contract ManagerMock is Mock {
         return values_bool_return["live"];
     }
 
-    function exit(address usr, uint amountDROP) external {
-       collateral.transferFrom(address(this), usr, amountDROP);
+    function exit(uint amountDROP) external {
+       collateral.transferFrom(address(this), msg.sender, amountDROP);
     }
 
     // --- Administration ---
