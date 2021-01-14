@@ -140,7 +140,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
     }
 
     function testVaultLiquidation() public {
-        setUpOngoingMKR();
+        _setUpOngoingMKR();
         uint juniorTokenPrice = mkrAssessor.calcJuniorTokenPrice();
 
         // liquidation
@@ -156,35 +156,35 @@ contract MKRLenderSystemTest is MKRTestBasis {
         // reserve should keep the currency no automatic clerk.wipe
         assertTrue(reserve.totalBalance() > 0);
 
-        mkrLiquidationPostAssertions();
+        _mkrLiquidationPostAssertions();
     }
 
     function testVaultLiquidation2() public {
-        setUpOngoingMKR();
+        _setUpOngoingMKR();
         mkr.file("glad", false);
-        mkrLiquidationPostAssertions();
+        _mkrLiquidationPostAssertions();
     }
 
     function testVaultLiquidation3() public {
-        setUpOngoingMKR();
+        _setUpOngoingMKR();
         mkr.file("safe", false);
-        mkrLiquidationPostAssertions();
+        _mkrLiquidationPostAssertions();
     }
 
     function testFailLiqDraw() public {
-        setUpOngoingMKR();
+        _setUpOngoingMKR();
         mkr.file("glad", false);
         clerk.draw(1);
     }
 
     function testFailLiqSink() public {
-        setUpOngoingMKR();
+        _setUpOngoingMKR();
         mkr.file("glad", false);
         clerk.sink(1);
     }
 
     function testFailLiqWipe() public {
-        setUpOngoingMKR();
+        _setUpOngoingMKR();
         mkr.file("glad", false);
         // repay loans and everybody redeems
         repayAllDebtDefaultLoan();

@@ -96,7 +96,7 @@ contract MKRTestBasis is TestSuite, Interest {
         assertEq(clerk.debt(), debt);
     }
 
-    function setUpOngoingMKR() public {
+    function _setUpOngoingMKR() public {
         uint juniorAmount = 200 ether;
         uint mkrAmount = 500 ether;
         uint borrowAmount = 300 ether;
@@ -104,7 +104,7 @@ contract MKRTestBasis is TestSuite, Interest {
         assertEq(clerk.remainingCredit(), 400 ether);
     }
 
-    function mkrLiquidationPostAssertions() public {
+    function _mkrLiquidationPostAssertions() public {
         //sanity check - correct currency amount for each token
         assertEq(mkrAssessor.currentNAV() + reserve.totalBalance(), rmul(seniorToken.totalSupply(), mkrAssessor.calcSeniorTokenPrice())
             + rmul(juniorToken.totalSupply(), mkrAssessor.calcJuniorTokenPrice()));
