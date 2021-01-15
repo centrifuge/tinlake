@@ -23,27 +23,41 @@ import { MKRAssessor }from "../../../../lender/adapters/mkr/assessor.sol";
 import {MKRTestBasis} from "./mkr_basic.t.sol";
 
 contract MKRLenderSystemTest is MKRTestBasis {
+    function dripMakerDebt() public {}
+
+    function setStabilityFee(uint fee) public {
+        mkr.file("stabilityFee", fee);
+    }
+
+    function makerEvent(bytes32 name, bool flag) public {
+        mkr.file(name, flag);
+    }
+
+    function warp(uint plusTime) public {
+        hevm.warp(now + plusTime);
+    }
+
     function testOnDemandDrawWithStabilityFee() public {
         uint fee = 1000000564701133626865910626; // 5% per day
-        mkr.file("stabilityFee", fee);
+        setStabilityFee(fee);
         uint juniorAmount = 200 ether;
         uint mkrAmount = 500 ether;
         uint borrowAmount = 300 ether;
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
-        hevm.warp(now + 1 days);
+        warp(1 days);
         assertEq(clerk.debt(), 105 ether, "testStabilityFee#2");
     }
 
     function testLoanRepayWipe() public {
         uint fee = 1000000564701133626865910626; // 5% per day
-        mkr.file("stabilityFee", fee);
+        setStabilityFee(fee);
         uint juniorAmount = 200 ether;
         uint mkrAmount = 500 ether;
         uint borrowAmount = 300 ether;
 
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
 
-        hevm.warp(now + 1 days);
+        warp(1 days);
         uint expectedDebt = 105 ether;
         assertEq(clerk.debt(), expectedDebt, "testLoanRepayWipe#1");
 
@@ -56,17 +70,16 @@ contract MKRLenderSystemTest is MKRTestBasis {
     }
 
     function testMKRHarvest() public {
-        uint fee = uint(1000000115165872987700711356);    // 1 % day
-        mkr.file("stabilityFee", fee);
+        setStabilityFee(uint(1000000115165872987700711356));   // 1 % day
         uint juniorAmount = 200 ether;
         uint mkrAmount = 500 ether;
         uint borrowAmount = 300 ether;
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
-        hevm.warp(now + 1 days);
+        warp(1 days);
         uint expectedDebt = 101 ether;
         assertEqTol(clerk.debt(), expectedDebt, "testMKRHarvest#1");
 
-        hevm.warp(now + 3 days);
+        warp(3 days);
 
         uint seniorPrice = mkrAssessor.calcSeniorTokenPrice();
         uint juniorPrice = mkrAssessor.calcJuniorTokenPrice();
@@ -91,7 +104,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
     function testMKRHeal() public {
         // high stability fee: 10% a day
         uint fee = uint(1000001103127689513476993126);
-        mkr.file("stabilityFee", fee);
+        setStabilityFee(fee);
 
         // sanity check
         uint juniorAmount = 200 ether;
@@ -99,7 +112,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         uint borrowAmount = 300 ether;
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
 
-        hevm.warp(now + 1 days);
+        warp(1 days);
         uint expectedDebt = 110 ether;
 
         uint seniorPrice = mkrAssessor.calcSeniorTokenPrice();
@@ -133,7 +146,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         uint juniorTokenPrice = mkrAssessor.calcJuniorTokenPrice();
 
         // liquidation
-        mkr.file("live", false);
+        makerEvent("live", false);
 
         assertTrue(mkrAssessor.calcJuniorTokenPrice() <  juniorTokenPrice);
         // no currency in reserve
@@ -150,31 +163,31 @@ contract MKRLenderSystemTest is MKRTestBasis {
 
     function testVaultLiquidation2() public {
         _setUpOngoingMKR();
-        mkr.file("glad", false);
+        makerEvent("glad", false);
         _mkrLiquidationPostAssertions();
     }
 
     function testVaultLiquidation3() public {
         _setUpOngoingMKR();
-        mkr.file("safe", false);
+        makerEvent("safe", false);
         _mkrLiquidationPostAssertions();
     }
 
     function testFailLiqDraw() public {
         _setUpOngoingMKR();
-        mkr.file("glad", false);
+        makerEvent("glad", false);
         clerk.draw(1);
     }
 
     function testFailLiqSink() public {
         _setUpOngoingMKR();
-        mkr.file("glad", false);
+        makerEvent("glad", false);
         clerk.sink(1);
     }
 
     function testFailLiqWipe() public {
         _setUpOngoingMKR();
-        mkr.file("glad", false);
+        makerEvent("glad", false);
         // repay loans and everybody redeems
         repayAllDebtDefaultLoan();
         assertTrue(reserve.totalBalance() > 0);
