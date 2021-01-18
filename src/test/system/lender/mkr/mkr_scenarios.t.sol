@@ -193,4 +193,30 @@ contract MKRLenderSystemTest is MKRTestBasis {
         assertTrue(reserve.totalBalance() > 0);
         clerk.wipe(1);
     }
+
+    function testDrawWipeDrawAgain() public {
+        uint fee = 1000000564701133626865910626; // 5% per day
+        setStabilityFee(fee);
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+
+        warp(1 days);
+        uint expectedDebt = 105 ether;
+        assertEq(clerk.debt(), expectedDebt, "testLoanRepayWipe#1");
+
+        // repay loan and entire maker debt
+        uint repayAmount = expectedDebt;
+        repayDefaultLoan(repayAmount);
+
+        assertEqTol(clerk.debt(), 0, "testLoanRepayWipe#2");
+        assertEq(reserve.totalBalance(), 0, "testLoanRepayWipe#3");
+
+        // draw again
+        borrowAmount = 50 ether;
+        setupOngoingDefaultLoan(borrowAmount);
+        assertEqTol(clerk.debt(), borrowAmount, "testLoanRepayWipe#4");
+    }
 }

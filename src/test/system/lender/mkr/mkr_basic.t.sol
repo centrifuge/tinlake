@@ -62,6 +62,7 @@ contract MKRTestBasis is TestSuite, Interest {
         supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate, submission);
     }
 
+    // invests juniorToken into Tinlake and raises for MKR
     function _setUpMKRLine(uint juniorAmount, uint mkrAmount) internal {
         root.relyContract(address(reserve), address(this));
 
@@ -71,8 +72,7 @@ contract MKRTestBasis is TestSuite, Interest {
         // activate clerk in reserve
         reserve.depend("lending", address(clerk));
 
-        uint juniorSupplyAmount = 200 ether;
-        juniorSupply(juniorSupplyAmount);
+        juniorSupply(juniorAmount);
 
         hevm.warp(now + 1 days);
 
@@ -80,9 +80,8 @@ contract MKRTestBasis is TestSuite, Interest {
         closeEpoch(true);
         assertTrue(coordinator.submissionPeriod() == false);
 
-        uint creditLineAmount = 500 ether;
-        clerk.raise(creditLineAmount);
-        assertEq(clerk.remainingCredit(), creditLineAmount);
+        clerk.raise(mkrAmount);
+        assertEq(clerk.remainingCredit(), mkrAmount);
     }
 
     function _setUpDraw(uint mkrAmount, uint juniorAmount, uint borrowAmount) public {
