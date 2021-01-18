@@ -54,6 +54,9 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
     uint constant public DEFAULT_HIGH_FUND_BORROWER = 100000000000 ether;
     uint constant public DEFAULT_NFT_PRICE = 100;
 
+    uint constant public DEFAULT_SENIOR_RATIO = 82 * 10**25;
+    uint constant public DEFAULT_JUNIOR_RATIO = 18 * 10**25;
+
     function baseSetup() public {
         deployContracts();
     }
@@ -159,13 +162,13 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
     }
 
     // helpers lenders
-    function invest(uint currencyAmount) public {
+    function defaultInvest(uint currencyAmount) public {
         uint validUntil = safeAdd(now, 8 days);
         admin.makeJuniorTokenMember(juniorInvestor_, validUntil);
         admin.makeSeniorTokenMember(seniorInvestor_, validUntil);
 
-        uint amountSenior = rmul(currencyAmount, 82 * 10**25);
-        uint amountJunior = rmul(currencyAmount, 18 * 10**25);
+        uint amountSenior = rmul(currencyAmount, DEFAULT_SENIOR_RATIO);
+        uint amountJunior = rmul(currencyAmount, DEFAULT_JUNIOR_RATIO);
 
         currency.mint(seniorInvestor_, amountSenior);
         currency.mint(juniorInvestor_, amountJunior);
@@ -175,7 +178,6 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
     }
 
     // helpers keeper
-
     function seize(uint loanId) public {
         collector.seize(loanId);
     }
@@ -189,7 +191,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
     }
 
     function setupCurrencyOnLender(uint amount) public {
-        invest(amount);
+        defaultInvest(amount);
     }
 
     function supplyFunds(uint amount, address addr) public {
@@ -246,7 +248,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
     }
 
     function fundLender(uint amount) public {
-        invest(amount);
+        defaultInvest(amount);
         hevm.warp(now + 1 days);
         coordinator.closeEpoch();
     }
@@ -307,7 +309,6 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         uint totalT = uint(currency.totalSupply());
         checkAfterRepay(loan, tokenId, totalT, distributorShould);
     }
-
 
     function fixed18To27(uint valPower18) public pure returns(uint) {
         // convert 10^18 to 10^27
