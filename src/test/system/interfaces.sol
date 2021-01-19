@@ -48,6 +48,7 @@ contract NFTFeedLike {
     function file(bytes32 what, bytes32 nftID_, uint maturityDate_) public;
     function approximatedNAV() public returns (uint);
     function currentNAV() public returns (uint);
+    function calcUpdateNAV() public returns (uint);
 }
 
 contract PileLike {

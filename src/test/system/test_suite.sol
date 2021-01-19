@@ -57,11 +57,12 @@ contract TestSuite is BaseSystemTest {
         assertEq(coordinator.lastEpochExecuted(), lastEpochExecuted);
     }
 
-    function setupOngoingDefaultLoan(uint borrowAmount) public {
+    function setupOngoingDefaultLoan(uint borrowAmount) public returns(uint) {
         // borrow loans with default maturity date 5 days from now
         uint maturityDate = DEFAULT_MATURITY_DATE;
         uint nftPrice = borrowAmount*3;
-        setupOngoingLoan(nftPrice, borrowAmount, nftFeed.uniqueDayTimestamp(now) +maturityDate);
+        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, nftFeed.uniqueDayTimestamp(now) +maturityDate);
+        return loan;
     }
 
     function repayDefaultLoan(uint currencyAmount) public {
