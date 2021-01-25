@@ -322,4 +322,23 @@ contract MKRLenderSystemTest is MKRTestBasis {
         assertEqTol(clerk.debt(), preClerkDebt-repayAmount, "testJuniorLostAll#1");
 
     }
+
+    function testRedeemCurrencyFromMKR() public {
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+        (,uint payoutTokenAmount,,) = juniorInvestor.disburse();
+
+        uint redeemTokenAmount = 20 ether;
+        juniorInvestor.redeemOrder(redeemTokenAmount);
+        hevm.warp(now + 1 days);
+        // currency should come from MKR
+        assertEq(reserve.totalBalance(), 0);
+        coordinator.closeEpoch();
+        (uint payoutCurrency,,,uint remainingRedeemToken) = juniorInvestor.disburse();
+        // juniorTokenPrice should be still ONE
+        assertEq(currency.balanceOf(address(juniorInvestor)), payoutCurrency);
+    }
+
 }

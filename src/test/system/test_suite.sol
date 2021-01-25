@@ -63,6 +63,7 @@ contract TestSuite is BaseSystemTest {
         uint nftPrice = borrowAmount*3;
         (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, nftFeed.uniqueDayTimestamp(now) +maturityDate);
         return loan;
+
     }
 
     function repayDefaultLoan(uint currencyAmount) public {
