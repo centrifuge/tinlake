@@ -22,7 +22,8 @@ import "./base_system.sol";
 contract TestSuite is BaseSystemTest {
     Hevm public hevm;
 
-    uint defaultLoanId = 1;
+    uint constant DEFAULT_LOAN_ID = 1;
+    uint constant DEFAULT_MATURITY_DATE = 5 days;
 
     function seniorSupply(uint currencyAmount) public {
         seniorSupply(currencyAmount, seniorInvestor);
@@ -57,18 +58,19 @@ contract TestSuite is BaseSystemTest {
     }
 
     function setupOngoingDefaultLoan(uint borrowAmount) public {
-        // borrow loans maturity date 5 days from now
-        uint maturityDate = 5 days;
-        setupOngoingLoan(borrowAmount*3, borrowAmount, false, nftFeed.uniqueDayTimestamp(now) +maturityDate);
+        // borrow loans with default maturity date 5 days from now
+        uint maturityDate = DEFAULT_MATURITY_DATE;
+        uint nftPrice = borrowAmount*3;
+        setupOngoingLoan(nftPrice, borrowAmount, nftFeed.uniqueDayTimestamp(now) +maturityDate);
     }
 
     function repayDefaultLoan(uint currencyAmount) public {
         address usr = address(borrower);
-        repayLoan(usr, defaultLoanId, currencyAmount);
+        repayLoan(usr, DEFAULT_LOAN_ID, currencyAmount);
     }
 
     function repayAllDebtDefaultLoan() public {
-        uint debt = pile.debt(defaultLoanId);
+        uint debt = pile.debt(DEFAULT_LOAN_ID);
         repayDefaultLoan(debt);
     }
 

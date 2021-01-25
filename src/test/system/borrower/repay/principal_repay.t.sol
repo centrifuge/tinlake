@@ -32,7 +32,7 @@ contract PrincipalRepayTest is BaseSystemTest {
 
     function fundTranches() public {
         uint defaultAmount = 1000 ether;
-        invest(defaultAmount);
+        defaultInvest(defaultAmount);
         hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
     }
