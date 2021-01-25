@@ -20,175 +20,44 @@ import "../../test_suite.sol";
 import "tinlake-math/interest.sol";
 import {BaseTypes} from "../../../../lender/test/coordinator-base.t.sol";
 import { MKRAssessor }from "../../../../lender/adapters/mkr/assessor.sol";
+import {MKRTestBasis} from "./mkr_basic.t.sol";
 
+contract MKRLenderSystemTest is MKRTestBasis {
+    function dripMakerDebt() public {}
 
-contract LenderSystemTest is TestSuite, Interest {
-    MKRAssessor mkrAssessor;
-
-    function setUp() public {
-        // setup hevm
-        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-
-        bool mkrAdapter = true;
-        TinlakeConfig memory defaultConfig = defaultConfig();
-        deployContracts(mkrAdapter, defaultConfig);
-        createTestUsers();
-
-        nftFeed_ = NFTFeedLike(address(nftFeed));
-
-        root.relyContract(address(clerk), address(this));
-        mkrAssessor = MKRAssessor(address(assessor));
-        mkr.depend("currency" ,currency_);
-        mkr.depend("drop", mkrLenderDeployer.seniorToken());
+    function setStabilityFee(uint fee) public {
+        mkr.file("stabilityFee", fee);
     }
 
-    // setup a running pool with default values
-    function _setupRunningPool() internal {
-        uint seniorSupplyAmount = 1500 ether;
-        uint juniorSupplyAmount = 200 ether;
-        uint nftPrice = 200 ether;
-        // interest rate default => 5% per day
-        uint borrowAmount = 100 ether;
-        uint maturityDate = 5 days;
-
-        ModelInput memory submission = ModelInput({
-            seniorSupply : 800 ether,
-            juniorSupply : 200 ether,
-            seniorRedeem : 0 ether,
-            juniorRedeem : 0 ether
-            });
-
-        supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate, submission);
+    function makerEvent(bytes32 name, bool flag) public {
+        mkr.file(name, flag);
     }
 
-    function testMKRRaise() public {
-        _setupRunningPool();
-        uint preReserve = assessor.totalBalance();
-        uint nav = nftFeed.calcUpdateNAV();
-        uint preSeniorBalance = assessor.seniorBalance();
-
-        uint amountDAI = 10 ether;
-
-        clerk.raise(amountDAI);
-
-        //raise reserves a spot for drop and locks the tin
-        assertEq(assessor.seniorBalance(), safeAdd(preSeniorBalance, rmul(amountDAI, clerk.mat())));
-        assertEq(assessor.totalBalance(), safeAdd(preReserve, amountDAI));
-
-        assertEq(mkrAssessor.effectiveTotalBalance(), preReserve);
-        assertEq(mkrAssessor.effectiveSeniorBalance(), preSeniorBalance);
-        assertEq(clerk.remainingCredit(), amountDAI);
-    }
-
-    function testMKRDraw() public {
-        _setupRunningPool();
-        uint preReserve = assessor.totalBalance();
-        uint nav = nftFeed.calcUpdateNAV();
-        uint preSeniorBalance = assessor.seniorBalance();
-
-        uint creditLineAmount = 10 ether;
-        uint drawAmount = 5 ether;
-        clerk.raise(creditLineAmount);
-
-        //raise reserves a spot for drop and locks the tin
-        assertEq(assessor.seniorBalance(), safeAdd(preSeniorBalance, rmul(creditLineAmount, clerk.mat())));
-        assertEq(assessor.totalBalance(), safeAdd(preReserve, creditLineAmount));
-
-        uint preSeniorDebt = assessor.seniorDebt();
-        clerk.draw(drawAmount);
-
-        // seniorBalance and reserve should have changed
-        assertEq(mkrAssessor.effectiveTotalBalance(), safeAdd(preReserve, drawAmount));
-
-        assertEq(safeAdd(mkrAssessor.effectiveSeniorBalance(),assessor.seniorDebt()),
-            safeAdd(safeAdd(preSeniorBalance, rmul(drawAmount, clerk.mat())), preSeniorDebt));
-
-        //raise reserves a spot for drop and locks the tin. no impact from the draw function
-        assertEq(safeAdd(assessor.seniorBalance(),assessor.seniorDebt()),
-            safeAdd(safeAdd(preSeniorBalance, rmul(creditLineAmount, clerk.mat())), preSeniorDebt));
-
-        assertEq(assessor.totalBalance(), safeAdd(preReserve, creditLineAmount));
-    }
-
-
-    function _setUpMKRLine(uint juniorAmount, uint mkrAmount) internal {
-        root.relyContract(address(reserve), address(this));
-
-        root.relyContract(address(mkrAssessor), address(this));
-        mkrAssessor.file("minSeniorRatio", 0);
-
-        // activate clerk in reserve
-        reserve.depend("lending", address(clerk));
-
-        uint juniorSupplyAmount = 200 ether;
-        juniorSupply(juniorSupplyAmount);
-
-        hevm.warp(now + 1 days);
-
-        bool closeWithExecute = true;
-        closeEpoch(true);
-        assertTrue(coordinator.submissionPeriod() == false);
-
-        uint creditLineAmount = 500 ether;
-        clerk.raise(creditLineAmount);
-
-        assertEq(clerk.remainingCredit(), creditLineAmount);
-    }
-
-    function _setUpDraw(uint mkrAmount, uint juniorAmount, uint borrowAmount) public {
-        _setUpMKRLine(juniorAmount, mkrAmount);
-        setupOngoingDefaultLoan(borrowAmount);
-        assertEq(currency.balanceOf(address(borrower)), borrowAmount, " _setUpDraw#1");
-        uint debt = 0;
-        if(borrowAmount > juniorAmount) {
-            debt = safeSub(borrowAmount, juniorAmount);
-        }
-        assertEq(clerk.debt(), debt);
-    }
-
-    function testOnDemandDraw() public {
-        uint juniorAmount = 200 ether;
-        uint mkrAmount = 500 ether;
-        uint borrowAmount = 300 ether;
-        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+    function warp(uint plusTime) public {
+        hevm.warp(now + plusTime);
     }
 
     function testOnDemandDrawWithStabilityFee() public {
         uint fee = 1000000564701133626865910626; // 5% per day
-        mkr.file("stabilityFee", fee);
+        setStabilityFee(fee);
         uint juniorAmount = 200 ether;
         uint mkrAmount = 500 ether;
         uint borrowAmount = 300 ether;
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
-        hevm.warp(now + 1 days);
+        warp(1 days);
         assertEq(clerk.debt(), 105 ether, "testStabilityFee#2");
-    }
-
-    function testTotalBalanceBuffer() public {
-        uint fee = 1000000564701133626865910626; // 5% per day
-        mkr.file("stabilityFee", fee);
-        uint juniorAmount = 200 ether;
-        uint mkrAmount = 500 ether;
-        uint borrowAmount = 300 ether;
-        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
-        hevm.warp(now + 1 days);
-
-        uint debt = clerk.debt();
-        uint buffer = safeSub(rmul(rpow(clerk.stabilityFee(),
-                safeSub(safeAdd(block.timestamp, mkrAssessor.creditBufferTime()), block.timestamp), ONE), debt), debt);
-
-        uint remainingCredit = clerk.remainingCredit();
-        assertEq(assessor.totalBalance(), safeSub(remainingCredit, buffer));
     }
 
     function testLoanRepayWipe() public {
         uint fee = 1000000564701133626865910626; // 5% per day
-        mkr.file("stabilityFee", fee);
+        setStabilityFee(fee);
         uint juniorAmount = 200 ether;
         uint mkrAmount = 500 ether;
         uint borrowAmount = 300 ether;
+
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
-        hevm.warp(now + 1 days);
+
+        warp(1 days);
         uint expectedDebt = 105 ether;
         assertEq(clerk.debt(), expectedDebt, "testLoanRepayWipe#1");
 
@@ -196,22 +65,21 @@ contract LenderSystemTest is TestSuite, Interest {
         repayDefaultLoan(repayAmount);
 
         // reduces clerk debt
-        assertEq(clerk.debt(), expectedDebt-repayAmount, "testLoanRepayWipe#2");
+        assertEqTol(clerk.debt(), safeSub(expectedDebt, repayAmount), "testLoanRepayWipe#2");
         assertEq(reserve.totalBalance(), 0, "testLoanRepayWipe#3");
     }
 
     function testMKRHarvest() public {
-        uint fee = uint(1000000115165872987700711356);    // 1 % day
-        mkr.file("stabilityFee", fee);
+        setStabilityFee(uint(1000000115165872987700711356));   // 1 % day
         uint juniorAmount = 200 ether;
         uint mkrAmount = 500 ether;
         uint borrowAmount = 300 ether;
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
-        hevm.warp(now + 1 days);
+        warp(1 days);
         uint expectedDebt = 101 ether;
         assertEqTol(clerk.debt(), expectedDebt, "testMKRHarvest#1");
 
-        hevm.warp(now + 3 days);
+        warp(3 days);
 
         uint seniorPrice = mkrAssessor.calcSeniorTokenPrice();
         uint juniorPrice = mkrAssessor.calcJuniorTokenPrice();
@@ -236,7 +104,7 @@ contract LenderSystemTest is TestSuite, Interest {
     function testMKRHeal() public {
         // high stability fee: 10% a day
         uint fee = uint(1000001103127689513476993126);
-        mkr.file("stabilityFee", fee);
+        setStabilityFee(fee);
 
         // sanity check
         uint juniorAmount = 200 ether;
@@ -244,7 +112,7 @@ contract LenderSystemTest is TestSuite, Interest {
         uint borrowAmount = 300 ether;
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
 
-        hevm.warp(now + 1 days);
+        warp(1 days);
         uint expectedDebt = 110 ether;
 
         uint seniorPrice = mkrAssessor.calcSeniorTokenPrice();
@@ -261,22 +129,6 @@ contract LenderSystemTest is TestSuite, Interest {
         lockedCollateralDAI = rmul(clerk.cdpink(), seniorPrice);
         assertEqTol(lockedCollateralDAI, wantedLocked, "testMKRHeal#2");
         assertTrue(clerk.cdpink() > amountOfDROP);
-
-    }
-
-    function testMKRSink() public {
-        uint juniorAmount = 200 ether;
-        uint mkrAmount = 500 ether;
-        uint borrowAmount = 300 ether;
-        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
-
-        uint sinkAmount = 50 ether;
-        uint totalBalance = mkrAssessor.totalBalance();
-        uint seniorBalance = mkrAssessor.seniorBalance();
-
-        clerk.sink(sinkAmount);
-        assertEq(mkrAssessor.totalBalance()+sinkAmount, totalBalance);
-        assertEq(mkrAssessor.seniorBalance()+rmul(sinkAmount, clerk.mat()), seniorBalance);
     }
 
     function testFailMKRSinkTooHigh() public {
@@ -289,13 +141,84 @@ contract LenderSystemTest is TestSuite, Interest {
         clerk.sink(sinkAmount);
     }
 
-    function testMKRSinkAfterRaise() public {
-        uint mkrAmount = 500 ether;
-        uint juniorAmount = 200 ether;
-        _setUpMKRLine(juniorAmount, mkrAmount);
-       clerk.sink(mkrAmount);
+    function testVaultLiquidation() public {
+        _setUpOngoingMKR();
+        uint juniorTokenPrice = mkrAssessor.calcJuniorTokenPrice();
+
+        // liquidation
+        makerEvent("live", false);
+
+        assertTrue(mkrAssessor.calcJuniorTokenPrice() <  juniorTokenPrice);
+        // no currency in reserve
+        assertEq(reserve.totalBalance(),  0);
+
+        // repay loans and everybody redeems
+        repayAllDebtDefaultLoan();
+        assertEq(mkrAssessor.currentNAV(), 0);
+        // reserve should keep the currency no automatic clerk.wipe
+        assertTrue(reserve.totalBalance() > 0);
+
+        _mkrLiquidationPostAssertions();
     }
 
+    function testVaultLiquidation2() public {
+        _setUpOngoingMKR();
+        makerEvent("glad", false);
+        _mkrLiquidationPostAssertions();
+    }
+
+    function testVaultLiquidation3() public {
+        _setUpOngoingMKR();
+        makerEvent("safe", false);
+        _mkrLiquidationPostAssertions();
+    }
+
+    function testFailLiqDraw() public {
+        _setUpOngoingMKR();
+        makerEvent("glad", false);
+        clerk.draw(1);
+    }
+
+    function testFailLiqSink() public {
+        _setUpOngoingMKR();
+        makerEvent("glad", false);
+        clerk.sink(1);
+    }
+
+    function testFailLiqWipe() public {
+        _setUpOngoingMKR();
+        makerEvent("glad", false);
+        // repay loans and everybody redeems
+        repayAllDebtDefaultLoan();
+        assertTrue(reserve.totalBalance() > 0);
+        clerk.wipe(1);
+    }
+
+    function testDrawWipeDrawAgain() public {
+        uint fee = 1000000564701133626865910626; // 5% per day
+        setStabilityFee(fee);
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+
+        warp(1 days);
+        uint expectedDebt = 105 ether;
+        assertEq(clerk.debt(), expectedDebt, "testLoanRepayWipe#1");
+
+        // repay loan and entire maker debt
+        uint repayAmount = expectedDebt;
+        repayDefaultLoan(repayAmount);
+
+        assertEqTol(clerk.debt(), 0, "testLoanRepayWipe#2");
+        assertEq(reserve.totalBalance(), 0, "testLoanRepayWipe#3");
+
+        // draw again
+        borrowAmount = 50 ether;
+        setupOngoingDefaultLoan(borrowAmount);
+        assertEqTol(clerk.debt(), borrowAmount, "testLoanRepayWipe#4");
+    }
     function testRedeemCurrencyFromMKR() public {
         uint juniorAmount = 200 ether;
         uint mkrAmount = 500 ether;

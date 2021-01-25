@@ -435,4 +435,28 @@ contract LenderSystemTest is TestSuite, Interest {
         // 100% of currency borrowed => seniorRatio = curr. SeniorDebt/curr NAV
         assertEq(assessor.seniorRatio(), rdiv(assessor.seniorDebt(), assessor.calcUpdateNAV()), FIXED27_TEN_DECIMAL_PRECISION);
     }
+
+    function testCloseEpochNoOrdersReserveUpdate() public {
+        // supply currency
+        seniorSupply(80 ether, seniorInvestor);
+        juniorSupply(20 ether);
+        hevm.warp(now + 1 days);
+        coordinator.closeEpoch();
+
+        // borrow loans maturity date 5 days from now
+        uint borrowAmount = 100 ether;
+        uint nftPrice = 200 ether;
+        uint maturityDate = 5 days;
+        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(now) +maturityDate);
+
+        hevm.warp(now + 1 days);
+
+        uint repayAmount = 60 ether;
+        repayLoan(address(borrower), loan, repayAmount);
+
+        assertEq(reserve.currencyAvailable(), 0 );
+        coordinator.closeEpoch();
+        // repaid amount should be available for new loans after epoch is closed
+        assertEq(reserve.currencyAvailable(), repayAmount);
+    }
  }

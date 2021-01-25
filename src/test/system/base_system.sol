@@ -49,6 +49,14 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
 
     Hevm public hevm;
 
+    uint constant public DEFAULT_RISK_GROUP_TEST_LOANS = 3;
+    uint constant public DEFAULT_FUND_BORROWER = 1000 ether;
+    uint constant public DEFAULT_HIGH_FUND_BORROWER = 100000000000 ether;
+    uint constant public DEFAULT_NFT_PRICE = 100;
+
+    uint constant public DEFAULT_SENIOR_RATIO = 82 * 10**25;
+    uint constant public DEFAULT_JUNIOR_RATIO = 18 * 10**25;
+
     function baseSetup() public {
         deployContracts();
     }
@@ -154,13 +162,13 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
     }
 
     // helpers lenders
-    function invest(uint currencyAmount) public {
+    function defaultInvest(uint currencyAmount) public {
         uint validUntil = safeAdd(now, 8 days);
         admin.makeJuniorTokenMember(juniorInvestor_, validUntil);
         admin.makeSeniorTokenMember(seniorInvestor_, validUntil);
 
-        uint amountSenior = rmul(currencyAmount, 82 * 10**25);
-        uint amountJunior = rmul(currencyAmount, 18 * 10**25);
+        uint amountSenior = rmul(currencyAmount, DEFAULT_SENIOR_RATIO);
+        uint amountJunior = rmul(currencyAmount, DEFAULT_JUNIOR_RATIO);
 
         currency.mint(seniorInvestor_, amountSenior);
         currency.mint(juniorInvestor_, amountJunior);
@@ -170,7 +178,6 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
     }
 
     // helpers keeper
-
     function seize(uint loanId) public {
         collector.seize(loanId);
     }
@@ -184,23 +191,35 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
     }
 
     function setupCurrencyOnLender(uint amount) public {
-        invest(amount);
+        defaultInvest(amount);
     }
 
     function supplyFunds(uint amount, address addr) public {
         currency.mint(address(addr), amount);
     }
     function topUp(address usr) public {
-        currency.mint(address(usr), 1000 ether);
+        currency.mint(address(usr), DEFAULT_FUND_BORROWER);
     }
 
     function setupOngoingLoan(uint nftPrice, uint borrowAmount, bool lenderFundingRequired, uint maturityDate) public returns (uint loan, uint tokenId) {
         // default risk group for system tests
-        uint riskGroup = 3;
-
         tokenId = collateralNFT.issue(borrower_);
-        loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup, maturityDate);
+        loan = setupLoan(tokenId, collateralNFT_, nftPrice, DEFAULT_RISK_GROUP_TEST_LOANS, maturityDate);
         borrow(loan, tokenId, borrowAmount, lenderFundingRequired);
+        return (loan, tokenId);
+    }
+
+    function setupOngoingLoan(uint nftPrice, uint borrowAmount, uint maturityDate) public returns (uint loan, uint tokenId) {
+        // default risk group for system tests
+        tokenId = collateralNFT.issue(borrower_);
+        loan = setupLoan(tokenId, collateralNFT_, nftPrice, DEFAULT_RISK_GROUP_TEST_LOANS, maturityDate);
+        borrower.approveNFT(collateralNFT, address(shelf));
+
+        uint preBalance = currency.balanceOf(borrower_);
+        borrower.borrowAction(loan, borrowAmount);
+
+        assertEq(currency.balanceOf(borrower_), borrowAmount + preBalance);
+        assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
         return (loan, tokenId);
     }
 
@@ -209,6 +228,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         // create borrower collateral collateralNFT
         tokenId = collateralNFT.issue(borrower_);
         loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup);
+        // borrow max amount possible
         uint ceiling_ = nftFeed_.ceiling(loan);
         borrow(loan, tokenId, ceiling_);
         return (loan, tokenId, ceiling_);
@@ -228,7 +248,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
     }
 
     function fundLender(uint amount) public {
-        invest(amount);
+        defaultInvest(amount);
         hevm.warp(now + 1 days);
         coordinator.closeEpoch();
     }
@@ -248,9 +268,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
     }
 
     function defaultCollateral() public pure returns(uint nftPrice_, uint riskGroup_) {
-        nftPrice_ = 100 ether;
-        riskGroup_ = 2;
-        return (nftPrice_, riskGroup_);
+        return (DEFAULT_NFT_PRICE, DEFAULT_RISK_GROUP_TEST_LOANS);
     }
 
     // note: this method will be refactored with the new lender side contracts, as the distributor should not hold any currency
@@ -292,7 +310,6 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         checkAfterRepay(loan, tokenId, totalT, distributorShould);
     }
 
-
     function fixed18To27(uint valPower18) public pure returns(uint) {
         // convert 10^18 to 10^27
         return valPower18 * 10**9;
@@ -300,11 +317,9 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
 
     function setupRepayReq() public returns(uint) {
         // borrower needs some currency to pay rate
-        uint extra = 100000000000 ether;
-        currency.mint(borrower_, extra);
-
+        currency.mint(borrower_, DEFAULT_HIGH_FUND_BORROWER);
         // allow pile full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
-        return extra;
+        return DEFAULT_HIGH_FUND_BORROWER;
     }
 }

@@ -18,16 +18,14 @@ import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 
 interface ManagerLike {
-    // collateral debt
-    function cdptab() external view returns(uint);
     // put collateral into cdp
     function join(uint amountDROP) external;
     // draw DAi from cdp
-    function draw(uint amountDAI, address usr) external;
+    function draw(uint amountDAI) external;
     // repay cdp debt
     function wipe(uint amountDAI) external;
     // remove collateral from cdp
-    function exit(address usr, uint amountDROP) external;
+    function exit(uint amountDROP) external;
     // collateral ID
     function ilk() external view returns(bytes32);
     // indicates if soft-liquidation was activated
@@ -40,13 +38,18 @@ interface ManagerLike {
     function setOwner(address newOwner) external;
 }
 
+// MKR contract
 interface VatLike {
     function urns(bytes32, address) external view returns (uint,uint);
     function ilks(bytes32) external view returns(uint, uint, uint, uint, uint);
 }
-
+// MKR contract
 interface SpotterLike {
     function ilks(bytes32) external view returns(address, uint256);
+}
+// MKR contract
+interface JugLike {
+    function ilks(bytes32) external view returns(uint, uint);
 }
 
 interface AssessorLike {
@@ -87,24 +90,25 @@ interface ERC20Like {
     function approve(address usr, uint amount) external;
 }
 
-contract Clerk is Auth, Math  {
+contract Clerk is Auth, Math {
 
     // max amount of DAI that can be brawn from MKR
     uint public creditline;
 
     // tinlake contracts
-    CoordinatorLike coordinator;
-    AssessorLike assessor;
-    ReserveLike reserve;
-    TrancheLike tranche;
+    CoordinatorLike public coordinator;
+    AssessorLike public assessor;
+    ReserveLike public reserve;
+    TrancheLike public tranche;
 
     // MKR contracts
-    ManagerLike mgr;
-    VatLike vat;
-    SpotterLike spotter;
+    ManagerLike public mgr;
+    VatLike public vat;
+    SpotterLike public spotter;
+    JugLike public jug;
 
-    ERC20Like dai;
-    ERC20Like collateral;
+    ERC20Like public dai;
+    ERC20Like public collateral;
 
     // buffer to add on top of mat to avoid cdp liquidation => default 1%
     uint matBuffer = 0.01 * 10**27;
@@ -113,7 +117,11 @@ contract Clerk is Auth, Math  {
     modifier active() { require(activated(), "epoch-closing"); _; }
 
     function activated() public view returns(bool) {
-        return coordinator.submissionPeriod() == false;
+        return coordinator.submissionPeriod() == false && mkrActive();
+    }
+
+    function mkrActive() public view returns (bool) {
+        return mgr.safe() && mgr.glad() && mgr.live();
     }
 
     constructor(address dai_, address collateral_) public {
@@ -139,6 +147,8 @@ contract Clerk is Auth, Math  {
             spotter = SpotterLike(addr);
         } else if (contractName == "vat") {
             vat = VatLike(addr);
+        } else if (contractName == "jug") {
+            jug = JugLike(addr);
         } else revert();
     }
 
@@ -149,15 +159,15 @@ contract Clerk is Auth, Math  {
     }
 
     function remainingCredit() public returns (uint) {
-        if (creditline <= (mgr.cdptab())) {
+        if (creditline <= (cdptab()) || mkrActive() == false) {
             return 0;
         }
-        return safeSub(creditline, mgr.cdptab());
+        return safeSub(creditline, cdptab());
     }
 
     function collatDeficit() public returns (uint) {
         uint lockedCollateralDAI = rmul(cdpink(), assessor.calcSeniorTokenPrice());
-        uint requiredCollateralDAI = calcOvercollAmount(mgr.cdptab());
+        uint requiredCollateralDAI = calcOvercollAmount(cdptab());
         if (requiredCollateralDAI > lockedCollateralDAI) {
             return safeSub(requiredCollateralDAI, lockedCollateralDAI);
         }
@@ -171,11 +181,11 @@ contract Clerk is Auth, Math  {
 
    // junior stake in the cdpink -> value of drop used for cdptab protection
     function juniorStake() public view returns (uint) {
-        // junior looses stake in case cdp is in soft liquidation mode
-        if (!(mgr.safe() && mgr.glad() && mgr.live())) {
+        // junior looses stake in case vault is in soft/hard liquidation mode
+        if (mkrActive() == false) {
             return 0;
         }
-        return safeSub(rmul(cdpink(), assessor.calcSeniorTokenPrice()), mgr.cdptab());
+        return safeSub(rmul(cdpink(), assessor.calcSeniorTokenPrice()), cdptab());
     }
 
     // increase MKR credit line
@@ -194,8 +204,8 @@ contract Clerk is Auth, Math  {
 
     // mint DROP, join DROP into cdp, draw DAI and send to reserve
     function draw(uint amountDAI) public auth active {
-        // make sure ther eis no collateral deficit before drawing out new DAI
-        // require(collatDeficit() == 0, "please heal cdp first"); // tbd
+         //make sure there is no collateral deficit before drawing out new DAI
+        require(collatDeficit() == 0, "please heal cdp first"); // tbd
         require(amountDAI <= remainingCredit(), "not enough credit left");
         // collateral value that needs to be locked in vault to draw amountDAI
         uint collateralDAI = calcOvercollAmount(amountDAI);
@@ -206,7 +216,7 @@ contract Clerk is Auth, Math  {
         collateral.approve(address(mgr), collateralDROP);
         mgr.join(collateralDROP);
         // draw dai from cdp
-        mgr.draw(amountDAI, address(this));
+        mgr.draw(amountDAI);
         // move dai to reserve
         dai.approve(address(reserve), amountDAI);
         reserve.hardDeposit(amountDAI);
@@ -216,11 +226,11 @@ contract Clerk is Auth, Math  {
 
     // transfer DAI from reserve, wipe cdp debt, exit DROP from cdp, burn DROP, harvest junior profit
     function wipe(uint amountDAI) public auth active {
-        require((mgr.cdptab() > 0), "cdp debt already repaid");
+        require((cdptab() > 0), "cdp debt already repaid");
 
         // repayment amount should not exceed cdp debt
-        if (amountDAI > mgr.cdptab()) {
-            amountDAI = mgr.cdptab();
+        if (amountDAI > cdptab()) {
+            amountDAI = cdptab();
         }
         // get DAI from reserve
         reserve.hardPayout(amountDAI);
@@ -238,10 +248,10 @@ contract Clerk is Auth, Math  {
         uint dropPrice = assessor.calcSeniorTokenPrice();
         uint lockedCollateralDAI = rmul(cdpink(), dropPrice);
         // profit => diff between the DAI value of the locked collateral in the cdp & the actual cdp debt including protection buffer
-        uint profitDAI = safeSub(lockedCollateralDAI, calcOvercollAmount(mgr.cdptab()));
+        uint profitDAI = safeSub(lockedCollateralDAI, calcOvercollAmount(cdptab()));
         uint profitDROP = rdiv(profitDAI, dropPrice);
         // remove profitDROP from the vault & brun them
-        mgr.exit(address(this), profitDROP);
+        mgr.exit(profitDROP);
         collateral.burn(address(this), profitDROP);
         // decrease the seniorAssetValue by profitDAI -> DROP price stays constant
         updateSeniorAsset(profitDAI, 0);
@@ -305,6 +315,12 @@ contract Clerk is Auth, Math  {
         assessor.changeSeniorAsset(increaseDAI, decreaseDAI);
     }
 
+    // returns the debt towards mkr
+    function cdptab() public view returns (uint) {
+        (, uint art) = vat.urns(mgr.ilk(), address(mgr));
+        return rmul(art, stabilityFeeIndex());
+    }
+
     // returns the collateral amount in the cdp
     function cdpink() public view returns (uint) {
         (uint ink, ) = vat.urns(mgr.ilk(), address(mgr));
@@ -322,7 +338,7 @@ contract Clerk is Auth, Math  {
         return rmul(amountDAI, mat());
     }
 
-        // In case contract received DAI as a leftover from the cdp liquidation return back to reserve
+    // In case contract received DAI as a leftover from the cdp liquidation return back to reserve
     function returnDAI() public auth {
         uint amountDAI = dai.balanceOf(address(this));
         dai.approve(address(reserve), amountDAI);
@@ -334,11 +350,17 @@ contract Clerk is Auth, Math  {
     }
 
     function debt() public view returns(uint) {
-        return mgr.cdptab();
+        return cdptab();
+    }
+
+    function stabilityFeeIndex() public view returns(uint) {
+        (, uint rate, , ,) = vat.ilks(mgr.ilk());
+        return rate;
     }
 
     function stabilityFee() public view returns(uint) {
-        (, uint rate, , ,) = vat.ilks(mgr.ilk());
-        return rate;
+        // mkr.duty is the stability fee in the mkr system
+        (uint duty, ) =  jug.ilks(mgr.ilk());
+        return duty;
     }
 }

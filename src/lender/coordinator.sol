@@ -63,7 +63,7 @@ contract AssessorLike is FixedPoint {
 // The problem of finding the maximum amount of supply and redeem orders which still satisfies all constraints
 // can be seen as a linear programming (linear optimization problem).
 // The optimal solution can be calculated off-chain
-contract EpochCoordinator is Auth, Math, FixedPoint  {
+contract EpochCoordinator is Auth, Math, FixedPoint {
     struct OrderSummary {
         // all variables are stored in currency
         uint  seniorRedeem;
@@ -189,30 +189,29 @@ contract EpochCoordinator is Auth, Math, FixedPoint  {
 
         (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.closeEpoch();
         (uint orderSeniorSupply, uint orderSeniorRedeem) = seniorTranche.closeEpoch();
-
         epochSeniorAsset = safeAdd(assessor.seniorDebt(), assessor.seniorBalance());
 
         // create a snapshot of the current lender state
+
         epochNAV = assessor.calcUpdateNAV();
         epochReserve = assessor.totalBalance();
-
         //  if no orders exist epoch can be executed without validation
         if (orderSeniorRedeem == 0 && orderJuniorRedeem == 0 &&
         orderSeniorSupply == 0 && orderJuniorSupply == 0) {
 
             juniorTranche.epochUpdate(currentEpoch, 0, 0, 0, 0, 0);
             seniorTranche.epochUpdate(currentEpoch, 0, 0, 0, 0, 0);
-
             // assessor performs re-balancing
             assessor.changeSeniorAsset(0, 0);
+            assessor.changeBorrowAmountEpoch(epochReserve);
             lastEpochExecuted = safeAdd(lastEpochExecuted, 1);
             return;
         }
 
         // calculate current token prices which are used for the execute
+
         epochSeniorTokenPrice = assessor.calcSeniorTokenPrice(epochNAV, epochReserve);
         epochJuniorTokenPrice = assessor.calcJuniorTokenPrice(epochNAV, epochReserve);
-
         // start closing the pool if juniorTranche lost everything
         // the flag will change the behaviour of the validate function for not allowing new supplies
         if(epochJuniorTokenPrice.value == 0) {

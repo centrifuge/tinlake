@@ -87,6 +87,9 @@ contract ClerkTest is Math, DSTest {
         uint mat = 1.1 * 10**27;
         spotter.setReturn("mat", mat);
         spotter.setReturn("pip", address(0));
+        // set stability fee to 0
+        vat.setReturn("stabilityFee", ONE);
+        mgr.setVat(address(vat));
         mgr.setBytes32Return("ilk", "DROP");
         // cdp not in soft liquidation
         mgr.setReturn("safe", true);
@@ -107,9 +110,6 @@ contract ClerkTest is Math, DSTest {
         uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
         uint creditProtection = safeSub(overcollAmount, amountDAI);
 
-        emit log_named_uint("f", overcollAmount);
-        // raise creditLine
-        emit log_named_address("clerk", address(clerk));
         clerk.raise(amountDAI);
 
         // assert creditLine was increased
@@ -147,7 +147,7 @@ contract ClerkTest is Math, DSTest {
     }
 
     function wipe(uint amountDAI, uint dropPrice) public {
-        uint tabInit = mgr.cdptab();
+        uint tabInit = clerk.cdptab();
         uint reserveDAIBalanceInit = currency.balanceOf(address(reserve));
         uint mgrDAIBalanceInit = currency.balanceOf(address(mgr));
         uint collLockedInit = collateral.balanceOf(address(mgr));
@@ -158,6 +158,12 @@ contract ClerkTest is Math, DSTest {
         // repay maker debt
         clerk.wipe(amountDAI);
 
+        // for testing set vat values correclty
+        // assert collateral amount in cdp correct
+        uint mat = clerk.mat();
+        uint collLockedExpected = rdiv(rmul(clerk.cdptab(), mat), dropPrice);
+        vat.setInk(collLockedExpected);
+     
         // assert that the amount repaid is never higher than the actual debt
         if (amountDAI > tabInit) {
             amountDAI = tabInit;
@@ -166,30 +172,26 @@ contract ClerkTest is Math, DSTest {
         assertEq(currency.balanceOf(address(mgr)), safeAdd(mgrDAIBalanceInit, amountDAI));
         assertEq(currency.balanceOf(address(reserve)), safeSub(reserveDAIBalanceInit, amountDAI));
         // assert mkr debt reduced
-        assertEq(mgr.cdptab(), safeSub(tabInit, amountDAI));
+        assertEq(clerk.cdptab(), safeSub(tabInit, amountDAI));
         // assert remainingCredit is correct
         // remainingCredit can be maximum increased up to creditline value.
         // Mkr debt can grow bigger then creditline with accrued interest. When repaying mkr debt, make sure that remaining credit never exceeds creditline.
         uint remainingCreditExpected;
-        if (mgr.cdptab() > clerk.creditline()) {
+        if (clerk.cdptab() > clerk.creditline()) {
             remainingCreditExpected = 0;
         } else {
-            remainingCreditExpected = safeSub(clerk.creditline(), mgr.cdptab());
+            remainingCreditExpected = safeSub(clerk.creditline(), clerk.cdptab());
         }
         assertEq(clerk.remainingCredit(), remainingCreditExpected);
         // assert juniorStake was reduced correctly
-        uint mat = clerk.mat();
-        // assert collateral amount in cdp correct
-        uint collLockedExpected = rdiv(rmul(mgr.cdptab(), mat), dropPrice);
         assertEq(collateral.balanceOf(address(mgr)), collLockedExpected);
         // assert correct amount of collateral burned
         uint collBurnedExpected = safeSub(collLockedInit, collLockedExpected);
         assertEq(collateral.totalSupply(), safeSub(collateralTotalBalanceInit, collBurnedExpected));
         // assert senior asset value decreased by correct amount
         assertEq(assessor.values_uint("changeSeniorAsset_seniorRedeem"), rmul(collBurnedExpected, dropPrice));
-        // for testing increase ink value in vat mock
-        vat.setInk(collLockedExpected);
-        assertEq(clerk.juniorStake(), safeSub(rmul(collLockedExpected, dropPrice), mgr.cdptab()));
+
+        assertEq(clerk.juniorStake(), safeSub(rmul(collLockedExpected, dropPrice), clerk.cdptab()));
     }
 
     function harvest(uint dropPrice) public {
@@ -200,7 +202,7 @@ contract ClerkTest is Math, DSTest {
 
         clerk.harvest();
         // assert collateral amount in cdp correct
-        uint collLockedExpected = rdiv(rmul(mgr.cdptab(), mat), dropPrice);
+        uint collLockedExpected = rdiv(rmul(clerk.cdptab(), mat), dropPrice);
         assertEq(collateral.balanceOf(address(mgr)), collLockedExpected);
         // assert correct amount of collateral burned
         uint collBurnedExpected = safeSub(collLockedInit, collLockedExpected);
@@ -340,9 +342,9 @@ contract ClerkTest is Math, DSTest {
         // increase dropPrice
         uint dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
-        mgr.increaseTab(10 ether);
+        vat.increaseTab(10 ether);
         // make sure maker debt is set correclty
-        uint tab = mgr.cdptab();
+        uint tab = clerk.cdptab();
         assertEq(tab, 110 ether);
         // make sure reserve has enough DAI
         currency.mint(address(reserve), tab);
@@ -355,9 +357,9 @@ contract ClerkTest is Math, DSTest {
         // increase dropPrice
         uint dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
-        mgr.increaseTab(10 ether);
+        vat.increaseTab(10 ether);
         // make sure maker debt is set correclty
-        uint tab = mgr.cdptab();
+        uint tab = clerk.cdptab();
         assertEq(tab, 110 ether);
         // make sure reserve has enough DAI
         currency.mint(address(reserve), tab);
@@ -373,9 +375,9 @@ contract ClerkTest is Math, DSTest {
         // increase dropPrice
         uint dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
-        mgr.increaseTab(10 ether);
+        vat.increaseTab(10 ether);
         // make sure maker debt is set correclty
-        uint tab = mgr.cdptab();
+        uint tab = clerk.cdptab();
         assertEq(tab, 110 ether);
         // make sure reserve has enough DAI
         currency.mint(address(reserve), tab);
@@ -397,9 +399,9 @@ contract ClerkTest is Math, DSTest {
         // increase dropPrice
         uint dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
-        mgr.increaseTab(10 ether);
+        vat.increaseTab(10 ether);
         // make sure maker debt is set correclty
-        uint tab = mgr.cdptab();
+        uint tab = clerk.cdptab();
         assertEq(tab, 110 ether);
         // make sure reserve has enough DAI
         currency.mint(address(reserve), tab);
@@ -412,9 +414,9 @@ contract ClerkTest is Math, DSTest {
         // increase dropPrice
         uint dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
-        mgr.increaseTab(10 ether);
+        vat.increaseTab(10 ether);
         // make sure maker debt is set correclty
-        uint tab = mgr.cdptab();
+        uint tab = clerk.cdptab();
         assertEq(tab, 110 ether);
         // fail conditon: not enough DAI in reserve (only 100 DAI that were drawn before) -> 110 required
         // repay full debt
@@ -429,9 +431,9 @@ contract ClerkTest is Math, DSTest {
         // assessor: set DROP token price
         assessor.setReturn("calcSeniorTokenPrice", dropPrice);
         // increase maker debt by 10 DAI
-        mgr.increaseTab(10 ether);
+        vat.increaseTab(10 ether);
         // make sure maker debt is set correclty
-        uint tab = mgr.cdptab();
+        uint tab = clerk.cdptab();
         assertEq(tab, 110 ether);
         // harvest junior profit
         // 110 DROP locked -> 220 DAI
@@ -449,9 +451,9 @@ contract ClerkTest is Math, DSTest {
         // assessor: set DROP token price
         assessor.setReturn("calcSeniorTokenPrice", dropPrice);
         // increase maker debt by 10 DAI
-        mgr.increaseTab(10 ether);
+        vat.increaseTab(10 ether);
         // make sure maker debt is set correclty
-        uint tab = mgr.cdptab();
+        uint tab = clerk.cdptab();
         assertEq(tab, 110 ether);
         // harvest junior profit
         // 110 DROP locked -> 220 DAI
@@ -551,7 +553,7 @@ contract ClerkTest is Math, DSTest {
         coordinator.setIntReturn("validateRatioConstraints", 0);
 
         uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
-        uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
+        uint requiredCollateralDAI = clerk.calcOvercollAmount(clerk.cdptab());
 
         assertEq(lockedCollateralDAI, 110 ether);
         assertEq(requiredCollateralDAI, 115 ether);
@@ -570,7 +572,7 @@ contract ClerkTest is Math, DSTest {
         coordinator.setIntReturn("validateRatioConstraints", 0);
 
         uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
-        uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
+        uint requiredCollateralDAI = clerk.calcOvercollAmount(clerk.cdptab());
 
         assertEq(lockedCollateralDAI, 110 ether);
         assertEq(requiredCollateralDAI, 115 ether);
@@ -591,7 +593,7 @@ contract ClerkTest is Math, DSTest {
         coordinator.setIntReturn("validateRatioConstraints", 0);
 
         uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
-        uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
+        uint requiredCollateralDAI = clerk.calcOvercollAmount(clerk.cdptab());
 
         assertEq(lockedCollateralDAI, 110 ether);
         assertEq(requiredCollateralDAI, 115 ether);
@@ -611,7 +613,7 @@ contract ClerkTest is Math, DSTest {
         coordinator.setIntReturn("validateRatioConstraints", -1);
 
         uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
-        uint requiredCollateralDAI = clerk.calcOvercollAmount(mgr.cdptab());
+        uint requiredCollateralDAI = clerk.calcOvercollAmount(clerk.cdptab());
 
         assertEq(lockedCollateralDAI, 111 ether);
         assertEq(requiredCollateralDAI, 115 ether);
