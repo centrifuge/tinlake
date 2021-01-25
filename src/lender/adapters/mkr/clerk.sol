@@ -182,10 +182,12 @@ contract Clerk is Auth, Math {
    // junior stake in the cdpink -> value of drop used for cdptab protection
     function juniorStake() public view returns (uint) {
         // junior looses stake in case vault is in soft/hard liquidation mode
-        if (mkrActive() == false) {
+        uint collateralValue = rmul(cdpink(), assessor.calcSeniorTokenPrice());
+        uint mkrDebt = cdptab();
+        if (mkrActive() == false || collateralValue < mkrDebt) {
             return 0;
         }
-        return safeSub(rmul(cdpink(), assessor.calcSeniorTokenPrice()), cdptab());
+        return safeSub(collateralValue, mkrDebt);
     }
 
     // increase MKR credit line
@@ -248,7 +250,12 @@ contract Clerk is Auth, Math {
         uint dropPrice = assessor.calcSeniorTokenPrice();
         uint lockedCollateralDAI = rmul(cdpink(), dropPrice);
         // profit => diff between the DAI value of the locked collateral in the cdp & the actual cdp debt including protection buffer
-        uint profitDAI = safeSub(lockedCollateralDAI, calcOvercollAmount(cdptab()));
+        uint requiredLocked = calcOvercollAmount(cdptab());
+        if(lockedCollateralDAI < requiredLocked) {
+            // nothing to harvest, currently under-collateralized
+            return;
+        }
+        uint profitDAI = safeSub(lockedCollateralDAI, requiredLocked);
         uint profitDROP = rdiv(profitDAI, dropPrice);
         // remove profitDROP from the vault & brun them
         mgr.exit(profitDROP);

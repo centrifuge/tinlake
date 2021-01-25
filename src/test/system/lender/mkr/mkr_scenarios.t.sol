@@ -205,20 +205,124 @@ contract MKRLenderSystemTest is MKRTestBasis {
 
         warp(1 days);
         uint expectedDebt = 105 ether;
-        assertEq(clerk.debt(), expectedDebt, "testLoanRepayWipe#1");
+        assertEq(clerk.debt(), expectedDebt, "testDrawWipeDrawAgain#1");
 
         // repay loan and entire maker debt
         uint repayAmount = expectedDebt;
         repayDefaultLoan(repayAmount);
 
-        assertEqTol(clerk.debt(), 0, "testLoanRepayWipe#2");
-        assertEq(reserve.totalBalance(), 0, "testLoanRepayWipe#3");
+        assertEqTol(clerk.debt(), 0, "testDrawWipeDrawAgain#2");
+        assertEq(reserve.totalBalance(), 0, "testDrawWipeDrawAgain#3");
 
         // draw again
         borrowAmount = 50 ether;
         setupOngoingDefaultLoan(borrowAmount);
-        assertEqTol(clerk.debt(), borrowAmount, "testLoanRepayWipe#4");
+        assertEqTol(clerk.debt(), borrowAmount, "testDrawWipeDrawAgain#4");
     }
+
+    function testDrawMax() public {
+        uint fee = 1000000564701133626865910626; // 5% per day
+        setStabilityFee(fee);
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 100 ether;
+        uint borrowAmount = 300 ether;
+
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+        assertEq(clerk.remainingCredit(), 0);
+
+        warp(1 days);
+        uint expectedDebt = 105 ether;
+        assertEq(clerk.debt(), expectedDebt, "testDrawMax#1");
+        assertEq(clerk.remainingCredit(), 0);
+
+        // repay loan and entire maker debt
+        uint repayAmount = expectedDebt;
+        repayDefaultLoan(repayAmount);
+        assertEqTol(clerk.debt(), 0, "testDrawMax#4");
+    }
+
+    function testLoanRepayToMKRAndReserve() public {
+        uint fee = 1000000564701133626865910626; // 5% per day
+        setStabilityFee(fee);
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 100 ether;
+        uint borrowAmount = 300 ether;
+
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+        assertEq(clerk.remainingCredit(), 0);
+
+        warp(1 days);
+        uint expectedDebt = 105 ether;
+        assertEq(clerk.debt(), expectedDebt, "testLoanRepayToMKRAndReserve#1");
+        assertEq(clerk.remainingCredit(), 0);
+
+        // repay loan and entire maker debt
+        uint loan = 1;
+        uint repayAmount = pile.debt(loan);
+        repayDefaultLoan(repayAmount);
+
+        assertEq(clerk.debt(), 0, "testLoanRepayToMKRAndReserve#2");
+        assertEq(reserve.totalBalance(), repayAmount-expectedDebt);
+    }
+
+    function testMKRDebtHigherThanCollateral() public {
+        uint fee = uint(1000001103127689513476993126); // 10% per day
+        setStabilityFee(fee);
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 300 ether;
+        uint borrowAmount = 300 ether;
+
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+        warp(4 days);
+
+        assertTrue(clerk.debt() > clerk.cdpink());
+
+        nftFeed.calcUpdateNAV();
+
+        // repay entire debt
+        // normally the maker liquidation would kick in that scenario
+        uint loan = 1;
+        uint repayAmount = pile.debt(loan);
+        repayDefaultLoan(repayAmount);
+        assertEq(clerk.debt(), 0, "testMKRDebtHigherThan#2");
+    }
+
+    function testJuniorLostAllRepayToMKR() public {
+        uint fee = 1000000564701133626865910626; // 5% per day
+        setStabilityFee(fee);
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 300 ether;
+        uint borrowAmount = 250 ether;
+
+        uint firstLoan = 1;
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+
+        // second loan same ammount
+        uint secondLoan = setupOngoingDefaultLoan(borrowAmount);
+        warp(1 days);
+        // repay small amount of loan debt
+        uint repayAmount = 5 ether;
+        repayDefaultLoan(repayAmount);
+
+        // nav will be zero because loan is overdue
+        warp(5 days);
+        // write 40% of debt off / second loan 100% loss
+        root.relyContract(address(pile), address(this));
+        pile.changeRate(firstLoan, nftFeed.WRITE_OFF_PHASE_A());
+
+        assertTrue(mkrAssessor.calcSeniorTokenPrice() > 0);
+        assertEq(mkrAssessor.calcJuniorTokenPrice(), 0);
+        assertTrue(clerk.debt() > clerk.cdpink());
+
+        uint preClerkDebt = clerk.debt();
+
+        repayAmount = 50 ether;
+        repayDefaultLoan(repayAmount);
+
+        assertEqTol(clerk.debt(), preClerkDebt-repayAmount, "testJuniorLostAll#1");
+
+    }
+
     function testRedeemCurrencyFromMKR() public {
         uint juniorAmount = 200 ether;
         uint mkrAmount = 500 ether;

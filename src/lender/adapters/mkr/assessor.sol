@@ -45,10 +45,13 @@ contract MKRAssessor is Assessor {
         }
     }
 
-    // calculates the tokenPrice based on the nav and the reserve
-    function calcSeniorTokenPrice(uint nav_, uint) public view returns(uint) {
+    function calcSeniorTokenPrice() external view returns(uint) {
+        return calcSeniorTokenPrice(navFeed.approximatedNAV(), reserve.totalBalance());
+    }
+
+    function _calcSeniorTokenPrice(uint nav_, uint reserve_) internal view returns(uint) {
         // the coordinator interface will pass the reserveAvailable
-        uint reserve_ = reserve.totalBalance();
+
         if ((nav_ == 0 && reserve_ == 0) || seniorTranche.tokenSupply() == 0) {
             // initial token price at start 1.00
             return ONE;
@@ -66,8 +69,12 @@ contract MKRAssessor is Assessor {
         return rdiv(seniorAssetValue, seniorTranche.tokenSupply());
     }
 
-    function calcJuniorTokenPrice(uint nav_, uint) public view returns (uint) {
-        uint reserve_ = reserve.totalBalance();
+    // calculates the tokenPrice based on the nav and the reserve
+    function calcSeniorTokenPrice(uint nav_, uint) public view returns(uint) {
+        return _calcSeniorTokenPrice(nav_, reserve.totalBalance());
+    }
+
+    function _calcJuniorTokenPrice(uint nav_, uint reserve_) internal view returns (uint) {
         if ((nav_ == 0 && reserve_ == 0) || juniorTranche.tokenSupply() == 0) {
             // initial token price at start 1.00
             return ONE;
@@ -85,7 +92,11 @@ contract MKRAssessor is Assessor {
         // the junior tranche only needs to pay for the mkr over-collateralization if
         // the mkr vault is liquidated, if that is true juniorStake=0
         return rdiv(safeAdd(safeSub(totalAssets, seniorAssetValue), clerk.juniorStake()),
-                juniorTranche.tokenSupply());
+            juniorTranche.tokenSupply());
+    }
+
+    function calcJuniorTokenPrice(uint nav_, uint) public view returns (uint) {
+        return _calcJuniorTokenPrice(nav_, reserve.totalBalance());
     }
 
     function seniorBalance() public view returns(uint) {
