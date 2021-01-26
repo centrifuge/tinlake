@@ -261,7 +261,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         uint repayAmount = pile.debt(loan);
         repayDefaultLoan(repayAmount);
 
-        assertEq(clerk.debt(), 0, "testLoanRepayToMKRAndReserve#2");
+        assertEqTol(clerk.debt(), 0, "testLoanRepayToMKRAndReserve#2");
         assertEq(reserve.totalBalance(), repayAmount-expectedDebt);
     }
 
@@ -284,7 +284,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         uint loan = 1;
         uint repayAmount = pile.debt(loan);
         repayDefaultLoan(repayAmount);
-        assertEq(clerk.debt(), 0, "testMKRDebtHigherThan#2");
+        assertEqTol(clerk.debt(), 0, "testMKRDebtHigherThan#2");
     }
 
     function testJuniorLostAllRepayToMKR() public {
