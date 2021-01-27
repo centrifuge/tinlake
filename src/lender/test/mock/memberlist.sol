@@ -15,10 +15,17 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
+import "tinlake-auth/auth.sol";
+
 import "../../../test/mock/mock.sol";
 
-contract MemberlistMock is Mock {
-    function updateMember(address usr, uint256 validUntil) public {
+contract MemberlistMock is Mock, Auth {
+
+    constructor() public {
+        wards[msg.sender] = 1;
+    }
+
+    function updateMember(address usr, uint256 validUntil) public auth {
       calls["updateMember"]++;
       values_address["updateMember_usr"] = usr;
       values_uint["updateMember_validUntil"] = validUntil;
