@@ -25,17 +25,15 @@ dapp test
 ```
 
 ### Run specific tests
-A regular expression can be used to only run specific tests.
+A regular expression can be used to only run specific tests. The regex matches test names, rather than contract names.
 
 ```bash
 dapp test -m <REGEX>
-dapp test -m ':ContractName\.'
+dapp test -m testName
 ```
 
 ## Deployment
 For deploying the Tinlake contracts to mainnet or a testnet, view our deploy scripts in [Tinlake Deploy](https://github.com/centrifuge/tinlake-deploy).
 
 ## Community
-Join our public slack channel.
-
-[Centrifuge Slack](http://centrifuge.io/slack)
+Join our public Slack channel: [Centrifuge Slack](http://centrifuge.io/slack).
