@@ -179,4 +179,43 @@ contract AssessorMKRTest is DSTest, Interest {
         uint expectedSeniorBalance = safeSub(overCollAmount, interest);
         assertEq(assessor.seniorBalance(), safeAdd(effectiveSeniorBalance, overCollAmount));
     }
+
+    function testCalcJuniorRatio() public {
+        uint nav = 20 ether;
+        navFeed.setReturn("approximatedNAV", nav);
+        uint reserve = 80 ether;
+        reserveMock.setReturn("balance", reserve);
+
+        // add seniorBalance
+        uint seniorSupply = 80 ether;
+        assessor.changeSeniorAsset(seniorSupply, 0);
+
+        assertEq(assessor.calcJuniorRatio(), 0.2 * 10**27);
+    }
+
+    function testCalcJuniorRatioZero() public {
+        assertEq(assessor.calcJuniorRatio(), 0);
+    }
+
+    function testCalcJuniorRatioNoSeniorAsset() public {
+        uint nav = 20 ether;
+        navFeed.setReturn("approximatedNAV", nav);
+        uint reserve = 80 ether;
+        reserveMock.setReturn("balance", reserve);
+
+        assertEq(assessor.calcJuniorRatio(), ONE);
+    }
+
+    function testCalcJuniorRatioJuniorAllLost() public {
+        uint nav = 20 ether;
+        navFeed.setReturn("approximatedNAV", nav);
+        uint reserve = 80 ether;
+        reserveMock.setReturn("balance", reserve);
+
+        // add seniorBalance
+        uint seniorSupply = 110 ether;
+        assessor.changeSeniorAsset(seniorSupply, 0);
+
+        assertEq(assessor.calcJuniorRatio(), 0);
+    }
 }

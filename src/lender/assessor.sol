@@ -221,8 +221,6 @@ contract Assessor is Definitions, Auth, Interest {
         lastUpdateSeniorInterest = block.timestamp;
     }
 
-
-
     function dripSeniorDebt() public returns (uint) {
         uint newSeniorDebt = seniorDebt();
 
@@ -256,5 +254,26 @@ contract Assessor is Definitions, Auth, Interest {
 
     function borrowAmountEpoch() public view returns(uint) {
         return reserve.currencyAvailable();
+    }
+
+    // returns the current junior ratio protection in the Tinlake
+    // juniorRatio is denominated in RAY (10^27)
+    function calcJuniorRatio() public view returns(uint) {
+        uint seniorAsset = safeAdd(seniorDebt(), seniorBalance_);
+        uint assets = safeAdd(navFeed.approximatedNAV(), reserve.totalBalance());
+
+        if(seniorAsset == 0 && assets == 0) {
+            return 0;
+        }
+
+        if(seniorAsset == 0 && assets > 0) {
+            return ONE;
+        }
+
+        if (seniorAsset > assets) {
+            return 0;
+        }
+
+        return safeSub(ONE, rdiv(seniorAsset, assets));
     }
 }
