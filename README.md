@@ -30,7 +30,7 @@ A regular expression can be used to only run specific tests.
 ```bash
 dapp test -m <REGEX>
 dapp test -m testName
-dapp test --match ':ContractName\.'
+dapp test -m ':ContractName\.'
 ```
 
 ## Deployment
