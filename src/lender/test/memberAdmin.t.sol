@@ -24,15 +24,21 @@ import "./mock/memberlist.sol";
 contract MemberAdminTest is DSTest {
     MemberAdmin memberAdmin;
     MemberlistMock memberlist;
+    address[] users;
 
     function setUp() public {
         memberAdmin = new MemberAdmin();
         memberlist = new MemberlistMock();
         memberlist.rely(address(memberAdmin));
+
+        users = new address[](3);
+        users[0] = address(1);
+        users[1] = address(2);
+        users[2] = address(3);
     }
 
     function updateMember() public {
-        address usr = 0x0A735602a357802f553113F5831FE2fbf2F0E2e0;
+        address usr = address(1);
         uint validUntil = now + 365 days;
         memberAdmin.updateMember(address(memberlist), usr, validUntil);
 
@@ -41,12 +47,31 @@ contract MemberAdminTest is DSTest {
         assertEq(memberlist.values_uint("updateMember_validUntil"), validUntil);
     }
 
-    function test_updateMemberAsAdmin() public {
+    function testUpdateMemberAsAdmin() public {
         memberAdmin.relyAdmin(address(this));
         updateMember();
     }
 
-    function testFail_updateMemberAsNonAdmin() public {
+    function testFailUpdateMemberAsNonAdmin() public {
+        memberAdmin.denyAdmin(address(this));
+        updateMember();
+    }
+
+    function updateMembers() public {
+        uint validUntil = now + 365 days;
+        memberAdmin.updateMembers(address(memberlist), users, validUntil);
+
+        assertEq(memberlist.calls("updateMembers"), 1);
+        assertEq(memberlist.values_address("updateMember_usr"), users[users.length]);
+        assertEq(memberlist.values_uint("updateMember_validUntil"), validUntil);
+    }
+
+    function testUpdateMembersAsAdmin() public {
+        memberAdmin.relyAdmin(address(this));
+        updateMember();
+    }
+
+    function testFailUpdateMembersAsNonAdmin() public {
         memberAdmin.denyAdmin(address(this));
         updateMember();
     }

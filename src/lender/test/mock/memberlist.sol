@@ -30,4 +30,13 @@ contract MemberlistMock is Mock, Auth {
       values_address["updateMember_usr"] = usr;
       values_uint["updateMember_validUntil"] = validUntil;
     }
+
+    function updateMembers(address[] memory users, uint256 validUntil) public auth {
+      calls["updateMembers"]++;
+
+      for (uint i=0; i<users.length; i++) {
+        values_address["updateMembers_usr"] = users[i];
+        values_uint["updateMembers_validUntil"] = validUntil;
+      }
+    }
 }
