@@ -25,11 +25,12 @@ dapp test
 ```
 
 ### Run specific tests
-A regular expression can be used to only run specific tests. The regex matches test names, rather than contract names.
+A regular expression can be used to only run specific tests.
 
 ```bash
 dapp test -m <REGEX>
 dapp test -m testName
+dapp test --match ':ContractName\.'
 ```
 
 ## Deployment
