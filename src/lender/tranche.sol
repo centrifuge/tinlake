@@ -194,15 +194,16 @@ contract Tranche is Math, Auth, FixedPoint {
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
     function disburse(address usr) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
-       return disburse(usr, epochTicker.lastEpochExecuted());
+        return disburse(usr, epochTicker.lastEpochExecuted());
     }
 
-    function _safeTransfer(ERC20Like erc20, address usr, uint amount) internal {
+    function _safeTransfer(ERC20Like erc20, address usr, uint amount) internal returns(uint) {
         uint max = erc20.balanceOf(self);
         if(amount > max) {
             amount = max;
         }
         require(erc20.transferFrom(self, usr, amount), "token-transfer-failed");
+        return amount;
     }
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
@@ -217,7 +218,7 @@ contract Tranche is Math, Auth, FixedPoint {
         }
 
         (payoutCurrencyAmount, payoutTokenAmount,
-         remainingSupplyCurrency, remainingRedeemToken) = calcDisburse(usr, endEpoch);
+        remainingSupplyCurrency, remainingRedeemToken) = calcDisburse(usr, endEpoch);
         users[usr].supplyCurrencyAmount = remainingSupplyCurrency;
         users[usr].redeemTokenAmount = remainingRedeemToken;
         // if lastEpochExecuted is disbursed, orderInEpoch is at the current epoch again
@@ -226,11 +227,11 @@ contract Tranche is Math, Auth, FixedPoint {
 
 
         if (payoutCurrencyAmount > 0) {
-            _safeTransfer(currency, usr, payoutCurrencyAmount);
+            payoutCurrencyAmount = _safeTransfer(currency, usr, payoutCurrencyAmount);
         }
 
         if (payoutTokenAmount > 0) {
-            _safeTransfer(token, usr, payoutTokenAmount);
+            payoutTokenAmount = _safeTransfer(token, usr, payoutTokenAmount);
         }
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
     }
@@ -292,9 +293,9 @@ contract Tranche is Math, Auth, FixedPoint {
             mintAmount = rmul(epochSupplyToken, epochs[epochID].supplyFulfillment.value);
         }
 
-      // burn token amount for redeem
+        // burn token amount for redeem
         uint burnAmount = rmul(epochRedeemToken, epochs[epochID].redeemFulfillment.value);
-       // burn tokens that are not needed for disbursement
+        // burn tokens that are not needed for disbursement
         if (burnAmount > mintAmount) {
             uint diff = safeSub(burnAmount, mintAmount);
             safeBurn(diff);
