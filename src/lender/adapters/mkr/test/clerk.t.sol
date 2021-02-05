@@ -98,8 +98,8 @@ contract ClerkTest is Math, DSTest {
         // global settlement not triggere
         mgr.setReturn("live", true);
         // make clerk ward on mgr
-        mgr.setOwner(address(clerk));
-        assertEq(mgr.owner(), address(clerk));
+        mgr.setOperator(address(clerk));
+        assertEq(mgr.operator(), address(clerk));
         clerk.file("buffer", 0);
     }
 
@@ -163,7 +163,7 @@ contract ClerkTest is Math, DSTest {
         uint mat = clerk.mat();
         uint collLockedExpected = rdiv(rmul(clerk.cdptab(), mat), dropPrice);
         vat.setInk(collLockedExpected);
-     
+
         // assert that the amount repaid is never higher than the actual debt
         if (amountDAI > tabInit) {
             amountDAI = tabInit;
@@ -502,10 +502,10 @@ contract ClerkTest is Math, DSTest {
     }
 
     function testChangeOwner() public {
-        assertEq(mgr.owner(), address(clerk));
+        assertEq(mgr.operator(), address(clerk));
         // change mgr ownership
         clerk.changeOwnerMgr(address(assessor));
-        assertEq(mgr.owner(), address(assessor));
+        assertEq(mgr.operator(), address(assessor));
     }
 
     function testJuniorStakeZeroWhenSoftLiquidation() public {

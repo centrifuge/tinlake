@@ -23,15 +23,15 @@ contract ManagerMock is Mock {
     SimpleTokenLike collateral;
     VatMock vat;
 
-    address public owner;
+    address public operator;
 
     modifier ownerOnly {
-        require(msg.sender == owner, "TinlakeMgr/owner-only");
+        require(msg.sender == operator, "TinlakeMgr/owner-only");
         _;
     }
 
     constructor(address currency_, address collateral_) public {
-        owner = msg.sender;
+        operator = msg.sender;
         currency = SimpleTokenLike(currency_);
         collateral = SimpleTokenLike(collateral_);
     }
@@ -79,7 +79,7 @@ contract ManagerMock is Mock {
     }
 
     // --- Administration ---
-    function setOwner(address newOwner) external ownerOnly {
-        owner = newOwner;
+    function setOperator(address newOperator) external ownerOnly {
+        operator = newOperator;
     }
 }
