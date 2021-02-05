@@ -35,7 +35,7 @@ interface ManagerLike {
     // indicates if global settlement was triggered
     function live() external view returns(bool);
     // auth functions
-    function setOwner(address newOwner) external;
+    function setOperator(address newOperator) external;
 }
 
 // MKR contract
@@ -353,7 +353,7 @@ contract Clerk is Auth, Math {
     }
 
     function changeOwnerMgr(address usr) public auth {
-        mgr.setOwner(usr);
+        mgr.setOperator(usr);
     }
 
     function debt() public view returns(uint) {
