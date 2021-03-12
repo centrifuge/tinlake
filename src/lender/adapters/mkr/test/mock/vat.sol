@@ -1,5 +1,4 @@
 // Copyright (C) 2020 Centrifuge
-
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -12,18 +11,30 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 pragma solidity >=0.5.15 <0.6.0;
+import "ds-test/test.sol";
 
-import { AssessorAdmin } from "./../admin/assessor.sol";
+import "../../../../../test/mock/mock.sol";
 
-contract AssessorAdminFab {
-    function newAssessorAdmin() public returns (address) {
-        AssessorAdmin assessorAdmin = new AssessorAdmin();
+contract VatMock is Mock {
+    function urns(bytes32, address) external view returns (uint, uint) {
+        return (values_return["ink"], values_uint["tab"]);
+    }
 
-        assessorAdmin.rely(msg.sender);
-        assessorAdmin.deny(address(this));
+    function setInk(uint amountDROP) external {
+        values_return["ink"] = amountDROP;
+    }
 
-        return address(assessorAdmin);
+
+    function increaseTab(uint amountDAI) external {
+        values_uint["tab"] = safeAdd(values_uint["tab"], amountDAI);
+    }
+
+    function decreaseTab(uint amountDAI) external {
+        values_uint["tab"] = safeSub(values_uint["tab"], amountDAI);
+    }
+
+    function ilks(bytes32) external view returns(uint, uint, uint, uint, uint)  {
+        return(0, values_return["stabilityFee"], 0, 0, 0);
     }
 }

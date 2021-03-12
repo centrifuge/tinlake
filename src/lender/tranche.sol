@@ -32,7 +32,7 @@ interface ERC20Like {
 interface ReserveLike {
     function deposit(uint amount) external;
     function payout(uint amount) external;
-    function totalBalance() external returns (uint);
+    function totalBalanceAvailable() external returns (uint);
 }
 
 interface EpochTickerLike {
@@ -199,12 +199,13 @@ contract Tranche is Math, Auth, FixedPoint {
         return disburse(usr, epochTicker.lastEpochExecuted());
     }
 
-    function _safeTransfer(ERC20Like erc20, address usr, uint amount) internal {
+    function _safeTransfer(ERC20Like erc20, address usr, uint amount) internal returns(uint) {
         uint max = erc20.balanceOf(self);
         if(amount > max) {
             amount = max;
         }
         require(erc20.transferFrom(self, usr, amount), "token-transfer-failed");
+        return amount;
     }
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
@@ -228,11 +229,11 @@ contract Tranche is Math, Auth, FixedPoint {
 
 
         if (payoutCurrencyAmount > 0) {
-            _safeTransfer(currency, usr, payoutCurrencyAmount);
+            payoutCurrencyAmount = _safeTransfer(currency, usr, payoutCurrencyAmount);
         }
 
         if (payoutTokenAmount > 0) {
-            _safeTransfer(token, usr, payoutTokenAmount);
+            payoutTokenAmount = _safeTransfer(token, usr, payoutTokenAmount);
         }
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
     }
@@ -278,7 +279,8 @@ contract Tranche is Math, Auth, FixedPoint {
     }
 
     function safePayout(uint currencyAmount) internal returns(uint payoutAmount) {
-        uint max = reserve.totalBalance();
+        uint max = reserve.totalBalanceAvailable();
+
         if(currencyAmount > max) {
             // currently reserve can't fulfill the entire request
             currencyAmount = max;

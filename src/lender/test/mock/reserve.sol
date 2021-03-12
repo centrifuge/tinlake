@@ -32,7 +32,7 @@ contract ReserveMock is Mock, Auth {
     }
 
     function file(bytes32 , uint currencyAmount) public {
-        values_uint["currency_available"] = currencyAmount;
+        values_uint["borrow_amount"] = currencyAmount;
     }
 
     function balance() public returns (uint) {
@@ -43,11 +43,25 @@ contract ReserveMock is Mock, Auth {
         return values_return["balance"];
     }
 
+    function totalBalanceAvailable() public view returns (uint) {
+        return values_return["totalBalanceAvailable"];
+    }
+
+    function hardDeposit(uint amount) public {
+        values_uint["deposit_amount"] = amount;
+        currency.transferFrom(msg.sender, address(this), amount);
+    }
+
+    function hardPayout(uint amount) public {
+        values_uint["deposit_amount"] = amount;
+        currency.transferFrom(address(this), msg.sender, amount);
+    }
+
     function deposit(uint amount) public {
         values_uint["deposit_amount"] = amount;
         currency.transferFrom(msg.sender, address(this), amount);
     }
-    
+
     function payout(uint amount) public {
         values_uint["deposit_amount"] = amount;
         currency.transferFrom(address(this), msg.sender, amount);

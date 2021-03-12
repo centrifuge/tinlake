@@ -14,10 +14,10 @@
 pragma solidity >=0.5.15 <0.6.0;
 import "ds-test/test.sol";
 
-import "../../../../test/mock/mock.sol";
+import "../../../../../test/mock/mock.sol";
 
 contract SpotterMock is Mock {
-    function ilks(bytes32 id) external returns(address, uint256) {
+    function ilks(bytes32 id) external view returns(address, uint256) {
         return (values_address_return["pip"], values_return["mat"]);
     }
 }

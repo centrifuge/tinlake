@@ -15,15 +15,13 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import { AssessorAdmin } from "./../admin/assessor.sol";
+import { Clerk } from "./../clerk.sol";
 
-contract AssessorAdminFab {
-    function newAssessorAdmin() public returns (address) {
-        AssessorAdmin assessorAdmin = new AssessorAdmin();
-
-        assessorAdmin.rely(msg.sender);
-        assessorAdmin.deny(address(this));
-
-        return address(assessorAdmin);
+contract ClerkFab {
+    function newClerk(address dai, address collateral) public returns (address) {
+        Clerk clerk = new Clerk(dai, collateral);
+        clerk.rely(msg.sender);
+        clerk.deny(address(this));
+        return address(clerk);
     }
 }

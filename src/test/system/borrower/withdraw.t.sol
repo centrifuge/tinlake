@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pragma solidity >=0.5.15 <0.6.0;
+pragma experimental ABIEncoderV2;
 
 import "../base_system.sol";
 
@@ -30,7 +31,7 @@ contract WithdrawTest is BaseSystemTest {
 
     function fundTranches() public {
         uint defaultAmount = 1000 ether;
-        invest(defaultAmount);
+        defaultInvest(defaultAmount);
         hevm.warp(now + 1 days);
         coordinator.closeEpoch();
         emit log_named_uint("reserve", reserve.totalBalance());

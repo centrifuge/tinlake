@@ -82,7 +82,7 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         emit log_named_uint("maxSeniorRatio", model.maxSeniorRatio);
         emit log_named_uint("maxSeniorRatio", model.minSeniorRatio);
 
-        uint currentRatio = coordinator.calcSeniorRatio(coordinator.calcSeniorAssetValue(0,0,safeAdd(model.seniorDebt, model.seniorBalance), model.reserve, model.NAV),
+        uint currentRatio = assessor.calcSeniorRatio(assessor.calcSeniorAssetValue(0,0,safeAdd(model.seniorDebt, model.seniorBalance), model.reserve, model.NAV),
             model.NAV, model.reserve);
 
         // check if ratio is broken
@@ -178,7 +178,7 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         hevm.warp(now + 1 days);
         coordinator.closeEpoch();
 
-        uint currentRatio = coordinator.calcSeniorRatio(coordinator.calcSeniorAssetValue(0,0,safeAdd(model.seniorDebt, model.seniorBalance), model.reserve, model.NAV),
+        uint currentRatio = assessor.calcSeniorRatio(assessor.calcSeniorAssetValue(0,0,safeAdd(model.seniorDebt, model.seniorBalance), model.reserve, model.NAV),
             model.NAV, model.reserve);
 
         // check ratio okay
@@ -242,6 +242,36 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         // benchmark status is better there for no best solution
         assertEq(submitSolution(solution), coordinator.NEW_BEST());
         assertTrue(coordinator.gotFullValidSolution() == true);
+    }
+
+    function testScoreRatioImprovementEdge() public {
+        LenderModel memory model = getDefaultModel();
+        model.maxReserve = 200 ether;
+
+        initTestConfig(model);
+
+        // newReserve <= maxReserve
+        uint newReserve = 199 ether;
+        assertEq(coordinator.scoreReserveImprovement(newReserve), coordinator.BIG_NUMBER());
+        // newReserve == maxReserve
+        newReserve = 200 ether;
+        assertEq(coordinator.scoreReserveImprovement(newReserve), coordinator.BIG_NUMBER());
+
+        assertTrue(coordinator.scoreReserveImprovement(201 ether) > coordinator.scoreReserveImprovement(202 ether));
+    }
+
+    function testScoreRatioImprovementZeroMaxReserve() public {
+        LenderModel memory model = getDefaultModel();
+        model.maxReserve = 0;
+
+        initTestConfig(model);
+        assertTrue(coordinator.scoreReserveImprovement(201 ether) > coordinator.scoreReserveImprovement(202 ether));
+        assertEq(coordinator.scoreReserveImprovement(0), coordinator.BIG_NUMBER());
+
+        uint lowestScore = coordinator.scoreReserveImprovement(uint(-1));
+        uint lowScore = coordinator.scoreReserveImprovement(10*18 * 1 ether);
+
+        assertTrue(lowScore > lowestScore);
     }
 }
 

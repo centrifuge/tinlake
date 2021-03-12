@@ -22,7 +22,7 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
     function setUp() public {
         super.setUp();
         // set max available currency to 1 to check if it was set to 0 on close
-        assessor.changeReserveAvailable(1);
+        assessor.changeBorrowAmountEpoch(1);
     }
 
     function testMinimumEpochTime() public {
@@ -97,7 +97,6 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
         coordinator.closeEpoch();
         assertEq(coordinator.lastEpochExecuted(), 1);
         assertTrue(coordinator.submissionPeriod() == false);
-        assertEq(assessor.values_uint("changeSeniorAsset_seniorRatio"), 0.80 * 10**27);
     }
 
     function testCloseEpochSubmissionPeriod() public {
@@ -111,7 +110,7 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
         coordinator.closeEpoch();
         assertEq(coordinator.lastEpochExecuted(), 0);
         assertTrue(coordinator.submissionPeriod() == true);
-        assertEq(assessor.values_uint("currency_available"), 0);
+        assertEq(assessor.values_uint("borrow_amount"), 0);
     }
 }
 

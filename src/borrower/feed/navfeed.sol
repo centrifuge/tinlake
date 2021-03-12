@@ -255,8 +255,10 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         uint maturityDate_ = maturityDate[nftID_];
 
 
-        // no fv decrease calculation needed if maturaity date is in the past 
-        if (maturityDate_ < block.timestamp) {
+        // no fv decrease calculation needed if maturity date is in the past
+        if (maturityDate_ < uniqueDayTimestamp(block.timestamp)) {
+            // if a loan is overdue, the portfolio value is initially equal to the existing debt
+            // it will be reduced by a write off factor once it is moved to a write off group
             return amount;
         }
 
@@ -283,12 +285,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         }
 
         // return decrease NAV amount
-        if (block.timestamp < maturityDate_) {
-            return calcDiscount(safeSub(preFutureValue, fv), uniqueDayTimestamp(block.timestamp), maturityDate_);
-        }
-
-        // if a loan is overdue the portfolio value is equal to the existing debt multiplied with a write off factor
-        return amount;
+        return calcDiscount(safeSub(preFutureValue, fv), uniqueDayTimestamp(block.timestamp), maturityDate_);
     }
 
     function calcDiscount(uint amount, uint normalizedBlockTimestamp, uint maturityDate_) public view returns (uint result) {

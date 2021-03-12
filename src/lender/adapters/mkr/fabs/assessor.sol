@@ -1,4 +1,5 @@
 // Copyright (C) 2020 Centrifuge
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -11,17 +12,16 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 pragma solidity >=0.5.15 <0.6.0;
-import "ds-test/test.sol";
 
-import "../../../../test/mock/mock.sol";
+import { MKRAssessor } from "./../assessor.sol";
 
-contract VatMock is Mock {
-    function urns(bytes32, address) external returns (uint, uint) {
-        return (values_return["ink"], 0);
-    }
-
-    function setInk(uint amountDROP) external {
-        values_return["ink"] = amountDROP;
+contract MKRAssessorFab {
+    function newAssessor() public returns (address) {
+        MKRAssessor assessor = new MKRAssessor();
+        assessor.rely(msg.sender);
+        assessor.deny(address(this));
+        return address(assessor);
     }
 }

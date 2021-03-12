@@ -89,16 +89,16 @@ contract AssessorMock is Mock {
         return call("calcJuniorTokenPrice");
     }
 
-    function calcSeniorTokenPrice() external returns(uint) {
-        return call("calcSeniorTokenPrice");
+    function calcSeniorTokenPrice() external view returns(uint) {
+        return values_return["calcSeniorTokenPrice"];
     }
 
-    function calcJuniorTokenPrice() external returns(uint) {
-        return call("calcJuniorTokenPrice");
+    function calcJuniorTokenPrice() external view returns(uint) {
+        return values_return["calcJuniorTokenPrice"];
     }
 
-     function calcSeniorAssetValue(uint, uint) external returns(uint) {
-          return call("calcSeniorAssetValue");
+     function calcSeniorAssetValue(uint, uint) external view returns(uint) {
+          return values_return["calcSeniorAssetValue"];
      }
 
     function seniorRatioBounds() public view returns (uint minSeniorRatio_, uint maxSeniorRatio_) {
@@ -114,12 +114,29 @@ contract AssessorMock is Mock {
     function seniorBalance() external returns (uint) {
         return call("seniorBalance");
     }
-    
+
+    function effectiveSeniorBalance() external view returns(uint) {
+        return values_return["seniorBalance"];
+    }
+    function effectiveTotalBalance() external view returns(uint) {
+        return values_return["totalBalance"];
+    }
+
+    function calcExpectedSeniorAsset() external view returns(uint) {
+        return values_return["calcSeniorAssetValue"];
+    }
+
     function changeSeniorAsset(uint seniorRatio_, uint seniorSupply, uint seniorRedeem) public {
         values_uint["changeSeniorAsset_seniorRatio"] = seniorRatio_;
+        changeSeniorAsset(seniorSupply, seniorRedeem);
+
+    }
+
+    function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) public {
         values_uint["changeSeniorAsset_seniorSupply"] = seniorSupply;
         values_uint["changeSeniorAsset_seniorRedeem"] = seniorRedeem;
     }
+
 
     function repaymentUpdate(uint currencyAmount) public  {
         values_uint["repaymentUpdate_currencyAmount"] = currencyAmount;
@@ -134,7 +151,19 @@ contract AssessorMock is Mock {
         return call("balance");
     }
 
-    function changeReserveAvailable(uint currencyAmount) public {
-        values_uint["currency_available"] = currencyAmount;
+    function changeBorrowAmountEpoch(uint currencyAmount) public {
+        values_uint["borrow_amount"] = currencyAmount;
+    }
+
+    function borrowAmountEpoch() public view returns(uint) {
+        return values_return["borrowAmountEpoch"];
+    }
+
+    function currentNAV() public view returns(uint) {
+        return values_uint["currentNAV"];
+    }
+
+    function getNAV() public view returns(uint) {
+        return values_uint["getNAV"];
     }
 }

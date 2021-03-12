@@ -14,9 +14,9 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import "./../fixed_point.sol";
 import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
+import "./definitions.sol";
 
 interface NAVFeedLike {
     function calcUpdateNAV() external returns (uint);
@@ -31,9 +31,10 @@ interface TrancheLike {
 interface ReserveLike {
     function totalBalance() external view returns(uint);
     function file(bytes32 what, uint currencyAmount) external;
+    function currencyAvailable() external view returns(uint);
 }
 
-contract Assessor is Auth, FixedPoint, Interest {
+contract Assessor is Definitions, Auth, Interest {
     // senior ratio from the last epoch executed
     Fixed27        public seniorRatio;
 
@@ -99,6 +100,10 @@ contract Assessor is Auth, FixedPoint, Interest {
         // re-balancing according to new ratio
         // we use the approximated NAV here because during the submission period
         // new loans might have been repaid in the meanwhile which are not considered in the epochNAV
+        if(seniorRatio_ > ONE) {
+            seniorRatio_ = ONE;
+        }
+
         seniorDebt_ = rmul(navFeed.approximatedNAV(), seniorRatio_);
         if(seniorDebt_ > seniorAsset_) {
             seniorDebt_ = seniorAsset_;
@@ -108,10 +113,14 @@ contract Assessor is Auth, FixedPoint, Interest {
         seniorBalance_ = safeSub(seniorAsset_, seniorDebt_);
     }
 
-    function changeSeniorAsset(uint seniorRatio_, uint seniorSupply, uint seniorRedeem) external auth {
-        dripSeniorDebt();
-        uint seniorAsset = safeSub(safeAdd(safeAdd(seniorDebt_, seniorBalance_),seniorSupply), seniorRedeem);
-        reBalance(seniorAsset, seniorRatio_);
+    function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) external auth {
+        uint nav_ = navFeed.approximatedNAV();
+        uint reserve_ = reserve.totalBalance();
+
+        uint seniorAsset_ = calcExpectedSeniorAsset(seniorRedeem, seniorSupply, seniorBalance_, dripSeniorDebt());
+
+        uint seniorRatio_ = calcSeniorRatio(seniorAsset_, nav_, reserve_);
+        reBalance(seniorAsset_, seniorRatio_);
         seniorRatio = Fixed27(seniorRatio_);
     }
 
@@ -120,7 +129,7 @@ contract Assessor is Auth, FixedPoint, Interest {
     }
 
     function calcUpdateNAV() external returns (uint) {
-         return navFeed.calcUpdateNAV();
+        return navFeed.calcUpdateNAV();
     }
 
     function calcSeniorTokenPrice() external view returns(uint) {
@@ -147,7 +156,7 @@ contract Assessor is Auth, FixedPoint, Interest {
             return ONE;
         }
         uint totalAssets = safeAdd(epochNAV, epochReserve);
-        uint seniorAssetValue = calcSeniorAssetValue(seniorDebt(), seniorBalance_);
+        uint seniorAssetValue = calcExpectedSeniorAsset(seniorDebt(), seniorBalance_);
 
         if(totalAssets < seniorAssetValue) {
             seniorAssetValue = totalAssets;
@@ -161,7 +170,7 @@ contract Assessor is Auth, FixedPoint, Interest {
             return ONE;
         }
         uint totalAssets = safeAdd(epochNAV, epochReserve);
-        uint seniorAssetValue = calcSeniorAssetValue(seniorDebt(), seniorBalance_);
+        uint seniorAssetValue = calcExpectedSeniorAsset(seniorDebt(), seniorBalance_);
 
         if(totalAssets < seniorAssetValue) {
             return 0;
@@ -178,7 +187,7 @@ contract Assessor is Auth, FixedPoint, Interest {
         uint decAmount = rmul(currencyAmount, seniorRatio.value);
 
         if (decAmount > seniorDebt_) {
-            seniorBalance_ = calcSeniorAssetValue(seniorDebt_, seniorBalance_);
+            seniorBalance_ = calcExpectedSeniorAsset(seniorDebt_, seniorBalance_);
             seniorDebt_ = 0;
             return;
         }
@@ -201,7 +210,7 @@ contract Assessor is Auth, FixedPoint, Interest {
         // this case should most likely never happen
         if (incAmount > seniorBalance_) {
             // all the currency of senior is used as interest bearing currencyAmount
-            seniorDebt_ = calcSeniorAssetValue(seniorDebt_, seniorBalance_);
+            seniorDebt_ = calcExpectedSeniorAsset(seniorDebt_, seniorBalance_);
             seniorBalance_ = 0;
             return;
         }
@@ -210,10 +219,6 @@ contract Assessor is Auth, FixedPoint, Interest {
         seniorDebt_ = safeAdd(seniorDebt_, incAmount);
         seniorBalance_ = safeSub(seniorBalance_, incAmount);
         lastUpdateSeniorInterest = block.timestamp;
-    }
-
-    function calcSeniorAssetValue(uint _seniorDebt, uint _seniorBalance) public pure returns(uint) {
-        return safeAdd(_seniorDebt, _seniorBalance);
     }
 
     function dripSeniorDebt() public returns (uint) {
@@ -243,7 +248,32 @@ contract Assessor is Auth, FixedPoint, Interest {
     }
 
     // changes the total amount available for borrowing loans
-    function changeReserveAvailable(uint currencyAmount) public auth {
+    function changeBorrowAmountEpoch(uint currencyAmount) public auth {
         reserve.file("currencyAvailable", currencyAmount);
+    }
+
+    function borrowAmountEpoch() public view returns(uint) {
+        return reserve.currencyAvailable();
+    }
+
+    // returns the current junior ratio protection in the Tinlake
+    // juniorRatio is denominated in RAY (10^27)
+    function calcJuniorRatio() public view returns(uint) {
+        uint seniorAsset = safeAdd(seniorDebt(), seniorBalance_);
+        uint assets = safeAdd(navFeed.approximatedNAV(), reserve.totalBalance());
+
+        if(seniorAsset == 0 && assets == 0) {
+            return 0;
+        }
+
+        if(seniorAsset == 0 && assets > 0) {
+            return ONE;
+        }
+
+        if (seniorAsset > assets) {
+            return 0;
+        }
+
+        return safeSub(ONE, rdiv(seniorAsset, assets));
     }
 }

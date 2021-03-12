@@ -14,20 +14,30 @@
 pragma solidity >=0.5.15 <0.6.0;
 import "ds-test/test.sol";
 
-import "../../../../test/mock/mock.sol";
+import "../../../../../test/mock/mock.sol";
+import "./vat.sol";
 
 contract ManagerMock is Mock {
 
-    SimpleTokenLike currency; 
-    SimpleTokenLike collateral; 
+    SimpleTokenLike currency;
+    SimpleTokenLike collateral;
+    VatMock vat;
+
+    address public operator;
+
+    modifier ownerOnly {
+        require(msg.sender == operator, "TinlakeMgr/owner-only");
+        _;
+    }
 
     constructor(address currency_, address collateral_) public {
+        operator = msg.sender;
         currency = SimpleTokenLike(currency_);
         collateral = SimpleTokenLike(collateral_);
     }
 
-    function cdptab() public view returns (uint) {
-        return values_uint["tab"];
+    function setVat(address vat_) external {
+        vat = VatMock(vat_);
     }
 
     function ilk() public view returns (bytes32) {
@@ -39,28 +49,37 @@ contract ManagerMock is Mock {
         collateral.transferFrom(msg.sender, address(this), amountDROP);
     }
 
-    function draw(uint amountDAI, address usr) external  {
+    function draw(uint amountDAI) external  {
         // mimic cdp behav and mint DAI to clerk
-        currency.mint(usr, amountDAI);
-        values_uint["tab"] = safeAdd(values_uint["tab"], amountDAI);
+        currency.mint(msg.sender, amountDAI);
+        vat.increaseTab(amountDAI);
+
     }
-   
+
     function wipe(uint amountDAI) external {
         // mimic cdp behav: move DAI from clerk to mgr
         currency.transferFrom(msg.sender, address(this), amountDAI);
-        values_uint["tab"] = safeSub(values_uint["tab"], amountDAI);
+        vat.decreaseTab(amountDAI);
     }
 
-    function safe() external returns(bool) {
+    function safe() external view returns(bool) {
         return values_bool_return["safe"];
     }
 
-    function exit(address usr, uint amountDROP) external {
-       collateral.transferFrom(address(this), usr, amountDROP);
+    function glad() external view returns(bool) {
+        return values_bool_return["glad"];
     }
 
-    function increaseTab(uint amountDAI) external {
-        values_uint["tab"] = safeAdd(values_uint["tab"], amountDAI);
+    function live() external view returns(bool) {
+        return values_bool_return["live"];
     }
 
+    function exit(uint amountDROP) external {
+       collateral.transferFrom(address(this), msg.sender, amountDROP);
+    }
+
+    // --- Administration ---
+    function setOperator(address newOperator) external ownerOnly {
+        operator = newOperator;
+    }
 }

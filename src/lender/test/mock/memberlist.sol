@@ -15,15 +15,28 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import { AssessorAdmin } from "./../admin/assessor.sol";
+import "tinlake-auth/auth.sol";
 
-contract AssessorAdminFab {
-    function newAssessorAdmin() public returns (address) {
-        AssessorAdmin assessorAdmin = new AssessorAdmin();
+import "../../../test/mock/mock.sol";
 
-        assessorAdmin.rely(msg.sender);
-        assessorAdmin.deny(address(this));
+contract MemberlistMock is Mock, Auth {
 
-        return address(assessorAdmin);
+    constructor() public {
+        wards[msg.sender] = 1;
+    }
+
+    function updateMember(address usr, uint256 validUntil) public auth {
+      calls["updateMember"]++;
+      values_address["updateMember_usr"] = usr;
+      values_uint["updateMember_validUntil"] = validUntil;
+    }
+
+    function updateMembers(address[] memory users, uint256 validUntil) public auth {
+      calls["updateMembers"]++;
+
+      for (uint i=0; i<users.length; i++) {
+        values_address["updateMembers_usr"] = users[i];
+        values_uint["updateMembers_validUntil"] = validUntil;
+      }
     }
 }
