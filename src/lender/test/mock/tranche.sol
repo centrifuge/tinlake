@@ -84,5 +84,9 @@ contract TrancheMock is Mock, Auth  {
     function mint(address usr, uint amount) public auth {
         token.mint(usr, amount);
     }
+
+    function balanceCurrencyRequest() public returns (uint) {
+        return values_return["balanceCurrencyRequest"];
+    }
 }
 

@@ -23,6 +23,7 @@ interface EpochTrancheLike {
     function epochUpdate(uint epochID, uint supplyFulfillment_,
         uint redeemFulfillment_, uint tokenPrice_, uint epochSupplyCurrency, uint epochRedeemCurrency) external;
     function closeEpoch() external returns(uint totalSupply, uint totalRedeem);
+    function balanceCurrencyRequest() external;
 }
 
 interface ReserveLike {
@@ -579,6 +580,9 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         juniorTranche.epochUpdate(epochID, calcFulfillment(juniorSupply, order.juniorSupply).value,
             calcFulfillment(juniorRedeem, order.juniorRedeem).value,
             epochJuniorTokenPrice.value, order.juniorSupply, order.juniorRedeem);
+
+        // todo only seniorTranche could miss currency, we could add it for junior as well for rounding differences
+        seniorTranche.balanceCurrencyRequest();
 
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem
         , seniorSupply, juniorSupply);
