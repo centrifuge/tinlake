@@ -70,6 +70,8 @@ contract Tranche is Math, Auth, FixedPoint {
     ReserveLike public reserve;
     EpochTickerLike public epochTicker;
 
+    // additional requested currency if the reserve could not fulfill a tranche request
+    uint public requestCurrency;
     address self;
 
     bool public waitingForUpdate = false;
@@ -194,7 +196,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
     function disburse(address usr) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
-       return disburse(usr, epochTicker.lastEpochExecuted());
+        return disburse(usr, epochTicker.lastEpochExecuted());
     }
 
     function _safeTransfer(ERC20Like erc20, address usr, uint amount) internal {
@@ -217,7 +219,7 @@ contract Tranche is Math, Auth, FixedPoint {
         }
 
         (payoutCurrencyAmount, payoutTokenAmount,
-         remainingSupplyCurrency, remainingRedeemToken) = calcDisburse(usr, endEpoch);
+        remainingSupplyCurrency, remainingRedeemToken) = calcDisburse(usr, endEpoch);
         users[usr].supplyCurrencyAmount = remainingSupplyCurrency;
         users[usr].redeemTokenAmount = remainingRedeemToken;
         // if lastEpochExecuted is disbursed, orderInEpoch is at the current epoch again
@@ -275,14 +277,23 @@ contract Tranche is Math, Auth, FixedPoint {
         token.burn(self, tokenAmount);
     }
 
-    function safePayout(uint currencyAmount) internal {
+    function safePayout(uint currencyAmount) internal returns(uint payoutAmount) {
         uint max = reserve.totalBalance();
         if(currencyAmount > max) {
+            // currently reserve can't fulfill the entire request
             currencyAmount = max;
         }
         reserve.payout(currencyAmount);
+        return currencyAmount;
     }
 
+    function balanceCurrencyRequest() public {
+        if(requestCurrency > 0) {
+            // todo check for potential re-entrancy booking-keeping first would cost a bit more gas
+            uint payoutAmount = safePayout(requestCurrency);
+            requestCurrency = safeSub(requestCurrency, payoutAmount);
+        }
+    }
     // adjust token balance after epoch execution -> min/burn tokens
     function adjustTokenBalance(uint epochID, uint epochSupplyToken, uint epochRedeemToken) internal {
         // mint token amount for supply
@@ -292,9 +303,9 @@ contract Tranche is Math, Auth, FixedPoint {
             mintAmount = rmul(epochSupplyToken, epochs[epochID].supplyFulfillment.value);
         }
 
-      // burn token amount for redeem
+        // burn token amount for redeem
         uint burnAmount = rmul(epochRedeemToken, epochs[epochID].redeemFulfillment.value);
-       // burn tokens that are not needed for disbursement
+        // burn tokens that are not needed for disbursement
         if (burnAmount > mintAmount) {
             uint diff = safeSub(burnAmount, mintAmount);
             safeBurn(diff);
@@ -330,7 +341,11 @@ contract Tranche is Math, Auth, FixedPoint {
         uint diff = safeSub(currencyRequired, currencySupplied);
         if (diff > 0) {
             // get missing currency from reserve
-            safePayout(diff);
+            uint payoutAmount = safePayout(diff);
+            if(payoutAmount < diff) {
+                // reserve couldn't fulfill the entire request
+                requestCurrency = safeAdd(requestCurrency, safeSub(diff, payoutAmount));
+            }
         }
     }
 
@@ -346,5 +361,5 @@ contract Tranche is Math, Auth, FixedPoint {
             return 0;
         }
         return safeSub(total, amount);
-    } 
+    }
 }
