@@ -70,6 +70,8 @@ contract Tranche is Math, Auth, FixedPoint {
     ReserveLike public reserve;
     EpochTickerLike public epochTicker;
 
+    // additional requested currency if the reserve could not fulfill a tranche request
+    uint public requestedCurrency;
     address self;
 
     bool public waitingForUpdate = false;
@@ -236,6 +238,7 @@ contract Tranche is Math, Auth, FixedPoint {
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
     }
 
+
     // called by epoch coordinator in epoch execute method
     function epochUpdate(uint epochID, uint supplyFulfillment_, uint redeemFulfillment_, uint tokenPrice_, uint epochSupplyOrderCurrency, uint epochRedeemOrderCurrency) public auth {
         require(waitingForUpdate == true);
@@ -276,14 +279,23 @@ contract Tranche is Math, Auth, FixedPoint {
         token.burn(self, tokenAmount);
     }
 
-    function safePayout(uint currencyAmount) internal {
+    function safePayout(uint currencyAmount) internal returns(uint payoutAmount) {
         uint max = reserve.totalBalanceAvailable();
+
         if(currencyAmount > max) {
+            // currently reserve can't fulfill the entire request
             currencyAmount = max;
         }
         reserve.payout(currencyAmount);
+        return currencyAmount;
     }
 
+    function payoutRequestedCurrency() public {
+        if(requestedCurrency > 0) {
+            uint payoutAmount = safePayout(requestedCurrency);
+            requestedCurrency = safeSub(requestedCurrency, payoutAmount);
+        }
+    }
     // adjust token balance after epoch execution -> min/burn tokens
     function adjustTokenBalance(uint epochID, uint epochSupplyToken, uint epochRedeemToken) internal {
         // mint token amount for supply
@@ -331,7 +343,11 @@ contract Tranche is Math, Auth, FixedPoint {
         uint diff = safeSub(currencyRequired, currencySupplied);
         if (diff > 0) {
             // get missing currency from reserve
-            safePayout(diff);
+            uint payoutAmount = safePayout(diff);
+            if(payoutAmount < diff) {
+                // reserve couldn't fulfill the entire request
+                requestedCurrency = safeAdd(requestedCurrency, safeSub(diff, payoutAmount));
+            }
         }
     }
 

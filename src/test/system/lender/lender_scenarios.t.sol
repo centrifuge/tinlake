@@ -436,6 +436,7 @@ contract LenderSystemTest is TestSuite, Interest {
         assertEq(assessor.seniorRatio(), rdiv(assessor.seniorDebt(), assessor.calcUpdateNAV()), FIXED27_TEN_DECIMAL_PRECISION);
     }
 
+
     function testCloseEpochNoOrdersReserveUpdate() public {
         // supply currency
         seniorSupply(80 ether, seniorInvestor);
@@ -458,5 +459,58 @@ contract LenderSystemTest is TestSuite, Interest {
         coordinator.closeEpoch();
         // repaid amount should be available for new loans after epoch is closed
         assertEq(reserve.currencyAvailable(), repayAmount);
+    }
+
+    function testRedeemFinancedWithInvestments() public {
+        uint seniorSupplyAmount = 840 ether;
+        uint juniorSupplyAmount = 1000 ether;
+        uint nftPrice = 2000 ether;
+        // interest rate default => 5% per day
+        uint borrowAmount = 1000 ether;
+        uint maturityDate = 5 days;
+
+        ModelInput memory submission = ModelInput({
+            seniorSupply : 840 ether,
+            juniorSupply : 160 ether,
+            seniorRedeem : 0 ether,
+            juniorRedeem : 0 ether
+            });
+
+        supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate, submission);
+
+        // test case scenario
+        // reserve: 0
+        // seniorRedeem: 1 ether
+        // juniorInvest: 1 ether
+        assertEq(reserve.totalBalance(), 0);
+        juniorSupply(1 ether);
+        seniorInvestor.redeemOrder(1.5 ether);
+
+        hevm.warp(now + 1 days);
+
+        coordinator.closeEpoch();
+        submission = ModelInput({
+            seniorSupply : 0 ether,
+            juniorSupply : 1 ether,
+            seniorRedeem : 1 ether,
+            juniorRedeem : 0 ether
+            });
+
+
+        int valid = submitSolution(address(coordinator), submission);
+        assertEq(valid, coordinator.NEW_BEST());
+
+        hevm.warp(now + 2 hours);
+
+        coordinator.executeEpoch();
+
+        uint preBalance = currency.balanceOf(seniorInvestor_);
+
+        (uint seniorRedeem,,,) = coordinator.order();
+
+        (uint payoutCurrencyAmount,  ,  ,  uint remainingRedeemToken) = juniorInvestor.disburse();
+
+        assertEq(currency.balanceOf(seniorInvestor_), safeAdd(preBalance, payoutCurrencyAmount));
+        assertEq(seniorTranche.requestedCurrency(), 0);
     }
  }
