@@ -27,95 +27,76 @@ interface ManagerLike {
     // remove collateral from cdp
     function exit(uint amountDROP) external;
     // collateral ID
-    function ilk() external view returns (bytes32);
+    function ilk() external view returns(bytes32);
     // indicates if soft-liquidation was activated
-    function safe() external view returns (bool);
+    function safe() external view returns(bool);
     // indicates if hard-liquidation was activated
-    function glad() external view returns (bool);
+    function glad() external view returns(bool);
     // indicates if global settlement was triggered
-    function live() external view returns (bool);
+    function live() external view returns(bool);
     // auth functions
     function file(bytes32 what, address data) external;
 
-    function urn() external view returns (address);
+    function urn() external view returns(address);
 }
 
 // MKR contract
 interface VatLike {
-    function urns(bytes32, address) external view returns (uint, uint);
-
-    function ilks(bytes32) external view returns (uint, uint, uint, uint, uint);
+    function urns(bytes32, address) external view returns (uint,uint);
+    function ilks(bytes32) external view returns(uint, uint, uint, uint, uint);
 }
 // MKR contract
 interface SpotterLike {
-    function ilks(bytes32) external view returns (address, uint256);
+    function ilks(bytes32) external view returns(address, uint256);
 }
 // MKR contract
 interface JugLike {
-    function ilks(bytes32) external view returns (uint, uint);
+    function ilks(bytes32) external view returns(uint, uint);
 }
 
 interface GemJoinLike {
-    function ilk() external view returns (bytes32);
+    function ilk() external view returns(bytes32);
 }
 
 interface UrnLike {
-    function gemJoin() external view returns (address);
+    function gemJoin() external view returns(address);
 }
 
 interface AssessorLike {
-    function calcSeniorTokenPrice() external view returns (uint);
-
-    function calcSeniorAssetValue(uint seniorDebt, uint seniorBalance) external view returns (uint);
-
+    function calcSeniorTokenPrice() external view returns(uint);
+    function calcSeniorAssetValue(uint seniorDebt, uint seniorBalance) external view returns(uint);
     function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) external;
-
-    function seniorDebt() external returns (uint);
-
-    function seniorBalance() external returns (uint);
-
-    function getNAV() external view returns (uint);
-
-    function totalBalance() external returns (uint);
-
-    function calcExpectedSeniorAsset(uint seniorRedeem, uint seniorSupply, uint seniorBalance_, uint seniorDebt_) external view returns (uint);
-
+    function seniorDebt() external returns(uint);
+    function seniorBalance() external returns(uint);
+    function getNAV() external view returns(uint);
+    function totalBalance() external returns(uint);
+    function calcExpectedSeniorAsset(uint seniorRedeem, uint seniorSupply, uint seniorBalance_, uint seniorDebt_) external view returns(uint);
     function changeBorrowAmountEpoch(uint currencyAmount) external;
-
-    function borrowAmountEpoch() external view returns (uint);
+    function borrowAmountEpoch() external view returns(uint);
 }
 
 interface CoordinatorLike {
-    function validateRatioConstraints(uint assets, uint seniorAsset) external returns (int);
-
-    function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply, uint currSeniorAsset, uint reserve_, uint nav_) external returns (uint);
-
-    function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) external returns (uint);
-
-    function submissionPeriod() external view returns (bool);
+    function validateRatioConstraints(uint assets, uint seniorAsset) external returns(int);
+    function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply, uint currSeniorAsset, uint reserve_, uint nav_) external returns(uint);
+    function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) external returns(uint);
+    function submissionPeriod() external view returns(bool);
 }
 
 interface ReserveLike {
-    function totalBalance() external returns (uint);
-
+    function totalBalance() external returns(uint);
     function hardDeposit(uint daiAmount) external;
-
     function hardPayout(uint currencyAmount) external;
 }
 
 interface TrancheLike {
     function mint(address usr, uint amount) external;
-
-    function token() external returns (address);
+    function token() external returns(address);
 }
 
 interface ERC20Like {
     function burn(address, uint) external;
-
     function balanceOf(address) external view returns (uint);
-
     function transferFrom(address, address, uint) external returns (bool);
-
     function approve(address usr, uint amount) external;
 }
 
@@ -140,13 +121,12 @@ contract Clerk is Auth, Math {
     ERC20Like public collateral;
 
     // buffer to add on top of mat to avoid cdp liquidation => default 1%
-    uint matBuffer = 0.01 * 10 ** 27;
+    uint matBuffer = 0.01 * 10**27;
 
     // adapter functions can only be active if the tinlake pool is currently not in epoch closing/submissions/execution state
-    modifier active() {require(activated(), "epoch-closing");
-        _;}
+    modifier active() { require(activated(), "epoch-closing"); _; }
 
-    function activated() public view returns (bool) {
+    function activated() public view returns(bool) {
         return coordinator.submissionPeriod() == false && mkrActive();
     }
 
@@ -156,13 +136,13 @@ contract Clerk is Auth, Math {
 
     constructor(address dai_, address collateral_) public {
         wards[msg.sender] = 1;
-        dai = ERC20Like(dai_);
-        collateral = ERC20Like(collateral_);
+        dai =  ERC20Like(dai_);
+        collateral =  ERC20Like(collateral_);
     }
 
     function depend(bytes32 contractName, address addr) public auth {
         if (contractName == "mgr") {
-            mgr = ManagerLike(addr);
+            mgr =  ManagerLike(addr);
         } else if (contractName == "coordinator") {
             coordinator = CoordinatorLike(addr);
         } else if (contractName == "assessor") {
@@ -223,7 +203,7 @@ contract Clerk is Auth, Math {
     // increase MKR credit line
     function raise(uint amountDAI) public auth active {
         // creditline amount including required overcollateralization => amount by that the seniorAssetValue should be increased
-        uint overcollAmountDAI = calcOvercollAmount(amountDAI);
+        uint overcollAmountDAI =  calcOvercollAmount(amountDAI);
         // protection value for the creditline increase coming from the junior tranche => amount by that the juniorAssetValue should be decreased
         uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);
         // check if the new creditline would break the pool constraints
@@ -237,8 +217,7 @@ contract Clerk is Auth, Math {
     // mint DROP, join DROP into cdp, draw DAI and send to reserve
     function draw(uint amountDAI) public auth active {
         //make sure there is no collateral deficit before drawing out new DAI
-        require(collatDeficit() == 0, "please heal cdp first");
-        // tbd
+        require(collatDeficit() == 0, "please heal cdp first"); // tbd
         require(amountDAI <= remainingCredit(), "not enough credit left");
         // collateral value that needs to be locked in vault to draw amountDAI
         uint collateralDAI = calcOvercollAmount(amountDAI);
@@ -282,7 +261,7 @@ contract Clerk is Auth, Math {
         uint lockedCollateralDAI = rmul(cdpink(), dropPrice);
         // profit => diff between the DAI value of the locked collateral in the cdp & the actual cdp debt including protection buffer
         uint requiredLocked = calcOvercollAmount(cdptab());
-        if (lockedCollateralDAI < requiredLocked) {
+        if(lockedCollateralDAI < requiredLocked) {
             // nothing to harvest, currently under-collateralized
             return;
         }
@@ -333,7 +312,7 @@ contract Clerk is Auth, Math {
     }
 
     // heal the cdp and put in more drop in case the collateral value has fallen below the bufferedmat ratio
-    function heal() public auth active {
+    function heal() public auth active{
         uint collatDeficitDAI = collatDeficit();
         if (collatDeficitDAI > 0) {
             heal(collatDeficitDAI);
@@ -341,7 +320,7 @@ contract Clerk is Auth, Math {
     }
 
     // checks if the Maker credit line increase could violate the pool constraints // -> make function pure and call with current pool values approxNav
-    function validate(uint juniorSupplyDAI, uint juniorRedeemDAI, uint seniorSupplyDAI, uint seniorRedeemDAI) internal returns (int) {
+    function validate(uint juniorSupplyDAI, uint juniorRedeemDAI, uint seniorSupplyDAI, uint seniorRedeemDAI) internal returns(int) {
         uint newAssets = safeSub(safeSub(safeAdd(safeAdd(safeAdd(assessor.totalBalance(), assessor.getNAV()), seniorSupplyDAI),
             juniorSupplyDAI), juniorRedeemDAI), seniorRedeemDAI);
         uint expectedSeniorAsset = assessor.calcExpectedSeniorAsset(seniorRedeemDAI, seniorSupplyDAI,
@@ -349,7 +328,7 @@ contract Clerk is Auth, Math {
         return coordinator.validateRatioConstraints(newAssets, expectedSeniorAsset);
     }
 
-    function updateSeniorAsset(uint decreaseDAI, uint increaseDAI) internal {
+    function updateSeniorAsset(uint decreaseDAI, uint increaseDAI) internal  {
         assessor.changeSeniorAsset(increaseDAI, decreaseDAI);
     }
 
@@ -368,8 +347,7 @@ contract Clerk is Auth, Math {
     // returns the required security margin for the DROP tokens
     function mat() public view returns (uint) {
         (, uint256 mat) = spotter.ilks(ilk());
-        return safeAdd(mat, matBuffer);
-        //  e.g 150% denominated in RAY
+        return safeAdd(mat, matBuffer); //  e.g 150% denominated in RAY
     }
 
     // helper function that returns the overcollateralized DAI amount considering the current mat value
@@ -388,18 +366,18 @@ contract Clerk is Auth, Math {
         mgr.file("owner", usr);
     }
 
-    function debt() public view returns (uint) {
+    function debt() public view returns(uint) {
         return cdptab();
     }
 
-    function stabilityFeeIndex() public view returns (uint) {
+    function stabilityFeeIndex() public view returns(uint) {
         (, uint rate, , ,) = vat.ilks(ilk());
         return rate;
     }
 
-    function stabilityFee() public view returns (uint) {
+    function stabilityFee() public view returns(uint) {
         // mkr.duty is the stability fee in the mkr system
-        (uint duty,) = jug.ilks(ilk());
+        (uint duty, ) =  jug.ilks(ilk());
         return duty;
     }
 
