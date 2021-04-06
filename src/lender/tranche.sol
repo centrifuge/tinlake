@@ -71,7 +71,7 @@ contract Tranche is Math, Auth, FixedPoint {
     EpochTickerLike public epochTicker;
 
     // additional requested currency if the reserve could not fulfill a tranche request
-    uint public requestCurrency;
+    uint public requestedCurrency;
     address self;
 
     bool public waitingForUpdate = false;
@@ -238,6 +238,7 @@ contract Tranche is Math, Auth, FixedPoint {
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
     }
 
+
     // called by epoch coordinator in epoch execute method
     function epochUpdate(uint epochID, uint supplyFulfillment_, uint redeemFulfillment_, uint tokenPrice_, uint epochSupplyOrderCurrency, uint epochRedeemOrderCurrency) public auth {
         require(waitingForUpdate == true);
@@ -289,11 +290,10 @@ contract Tranche is Math, Auth, FixedPoint {
         return currencyAmount;
     }
 
-    function balanceCurrencyRequest() public {
-        if(requestCurrency > 0) {
-            // todo check for potential re-entrancy booking-keeping first would cost a bit more gas
-            uint payoutAmount = safePayout(requestCurrency);
-            requestCurrency = safeSub(requestCurrency, payoutAmount);
+    function payoutRequestedCurrency() public {
+        if(requestedCurrency > 0) {
+            uint payoutAmount = safePayout(requestedCurrency);
+            requestedCurrency = safeSub(requestedCurrency, payoutAmount);
         }
     }
     // adjust token balance after epoch execution -> min/burn tokens
@@ -346,7 +346,7 @@ contract Tranche is Math, Auth, FixedPoint {
             uint payoutAmount = safePayout(diff);
             if(payoutAmount < diff) {
                 // reserve couldn't fulfill the entire request
-                requestCurrency = safeAdd(requestCurrency, safeSub(diff, payoutAmount));
+                requestedCurrency = safeAdd(requestedCurrency, safeSub(diff, payoutAmount));
             }
         }
     }

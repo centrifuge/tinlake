@@ -511,6 +511,18 @@ contract LenderSystemTest is TestSuite, Interest {
         (uint payoutCurrencyAmount,  ,  ,  uint remainingRedeemToken) = juniorInvestor.disburse();
 
         assertEq(currency.balanceOf(seniorInvestor_), safeAdd(preBalance, payoutCurrencyAmount));
-        assertEq(seniorTranche.requestCurrency(), 0);
+        assertEq(seniorTranche.requestedCurrency(), 0);
+    }
+
+    function testMaria() public {
+        bytes32 searchSeed = 0x5713bdf5d1c3398a8f12f881f0f03b5025b6f9c17a97441a694d5752beb92a3d;
+        bytes32 seed = 0x7375d5ba2c5e7f9a2a56fb345e50b66c32ba1799b15f1d5845693de97ed35514;
+
+        bytes32 catIdHash = keccak256(abi.encodePacked(seed, searchSeed)); // generate the prospective catIdHash
+        require(catIdHash[0] | catIdHash[1] | catIdHash[2] == 0x0); // ensures the validity of the catIdHash
+        bytes5 catId = bytes5((catIdHash & bytes32(0xffffffff00000000000000000000000000000000000000000000000000000000)) << 216);
+
+        emit log_named_uint("id",uint(bytes32(catId)));
+        assertTrue(false);
     }
  }
