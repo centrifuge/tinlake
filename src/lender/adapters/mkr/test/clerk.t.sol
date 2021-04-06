@@ -62,6 +62,7 @@ contract ClerkTest is Math, DSTest {
         coordinator = new CoordinatorMock();
         tranche = new TrancheMock();
         mgr = new ManagerMock(address(currency), address(collateral));
+        mgr.setIlk("DROP");
         vat = new VatMock();
         spotter = new SpotterMock();
 
@@ -502,10 +503,10 @@ contract ClerkTest is Math, DSTest {
     }
 
     function testChangeOwner() public {
-        assertEq(mgr.operator(), address(clerk));
         // change mgr ownership
-        clerk.changeOwnerMgr(address(assessor));
-        assertEq(mgr.operator(), address(assessor));
+        assertEq(mgr.owner(), address(0));
+        clerk.changeOwnerMgr(address(123));
+        assertEq(mgr.owner(), address(123));
     }
 
     function testJuniorStakeZeroWhenSoftLiquidation() public {

@@ -16,6 +16,8 @@ import "ds-test/test.sol";
 
 import "../../../../../test/mock/mock.sol";
 import "./vat.sol";
+import {GemJoin} from "./gemJoin.sol";
+import {Urn} from "./urn.sol";
 
 contract ManagerMock is Mock {
 
@@ -24,6 +26,9 @@ contract ManagerMock is Mock {
     VatMock vat;
 
     address public operator;
+
+    GemJoin public gemJoin;
+    Urn public urn;
 
     modifier ownerOnly {
         require(msg.sender == operator, "TinlakeMgr/owner-only");
@@ -34,6 +39,9 @@ contract ManagerMock is Mock {
         operator = msg.sender;
         currency = SimpleTokenLike(currency_);
         collateral = SimpleTokenLike(collateral_);
+        gemJoin = new GemJoin();
+        urn = new Urn();
+        urn.setReturn("gemJoin", address(gemJoin));
     }
 
     function setVat(address vat_) external {
@@ -81,5 +89,20 @@ contract ManagerMock is Mock {
     // --- Administration ---
     function setOperator(address newOperator) external ownerOnly {
         operator = newOperator;
+    }
+
+    function setIlk(bytes32 ilk) external {
+        gemJoin.setBytes32Return("ilk", ilk);
+    }
+    function file(bytes32 what, address addr) external {
+        values_bytes32["file"] = what;
+        values_address["address"] = addr;
+        if(what == "owner") {
+        values_address_return["owner"] = addr;
+        }
+    }
+
+    function owner() public returns(address) {
+        return values_address_return["owner"];
     }
 }
