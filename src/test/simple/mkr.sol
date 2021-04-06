@@ -14,7 +14,6 @@ interface ERC20Like {
 // simple mock implementation of relevant MKR contracts
 // contract will mint currency tokens to simulate the mkr behaviour
 // implements mgr, spotter, vat interfaces
-
 contract JugMock {
       uint public duty;
       function file(bytes32 what, uint value) external {
@@ -29,6 +28,19 @@ contract JugMock {
       }
 }
 
+contract UrnMock {
+    address public gemJoin;
+    constructor(address gemJoin_) public {
+        gemJoin = gemJoin_;
+    }
+}
+
+contract GemJoinMock {
+    bytes32 public ilk;
+    constructor(bytes32 ilk_) public {
+        ilk = ilk_;
+    }
+}
 
 contract SimpleMkr is Interest, DSTest{
     ERC20Like public currency;
@@ -45,6 +57,7 @@ contract SimpleMkr is Interest, DSTest{
     bool liveFlag;
 
     JugMock public jugMock;
+    UrnMock public urn;
 
     constructor(uint ratePerSecond_, bytes32 ilk_) public {
         ratePerSecond = ratePerSecond_;
@@ -55,6 +68,9 @@ contract SimpleMkr is Interest, DSTest{
         lastFeeUpdate = block.timestamp;
         jugMock = new JugMock();
         jugMock.file("duty", ratePerSecond_);
+
+        GemJoinMock gemJoin = new GemJoinMock(ilk);
+        urn = new UrnMock(address(gemJoin));
     }
 
     function file(bytes32 what, uint value) public {

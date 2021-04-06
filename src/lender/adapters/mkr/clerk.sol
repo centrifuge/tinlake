@@ -35,7 +35,9 @@ interface ManagerLike {
     // indicates if global settlement was triggered
     function live() external view returns(bool);
     // auth functions
-    function setOperator(address newOperator) external;
+    function file(bytes32 what, address data) external;
+
+    function urn() external view returns(address);
 }
 
 // MKR contract
@@ -52,6 +54,14 @@ interface JugLike {
     function ilks(bytes32) external view returns(uint, uint);
 }
 
+interface GemJoinLike {
+    function ilk() external view returns(bytes32);
+}
+
+interface UrnLike {
+    function gemJoin() external view returns(address);
+}
+
 interface AssessorLike {
     function calcSeniorTokenPrice() external view returns(uint);
     function calcSeniorAssetValue(uint seniorDebt, uint seniorBalance) external view returns(uint);
@@ -63,7 +73,7 @@ interface AssessorLike {
     function calcExpectedSeniorAsset(uint seniorRedeem, uint seniorSupply, uint seniorBalance_, uint seniorDebt_) external view returns(uint);
     function changeBorrowAmountEpoch(uint currencyAmount) external;
     function borrowAmountEpoch() external view returns(uint);
-    }
+}
 
 interface CoordinatorLike {
     function validateRatioConstraints(uint assets, uint seniorAsset) external returns(int);
@@ -179,7 +189,7 @@ contract Clerk is Auth, Math {
     }
 
 
-   // junior stake in the cdpink -> value of drop used for cdptab protection
+    // junior stake in the cdpink -> value of drop used for cdptab protection
     function juniorStake() public view returns (uint) {
         // junior looses stake in case vault is in soft/hard liquidation mode
         uint collateralValue = rmul(cdpink(), assessor.calcSeniorTokenPrice());
@@ -206,7 +216,7 @@ contract Clerk is Auth, Math {
 
     // mint DROP, join DROP into cdp, draw DAI and send to reserve
     function draw(uint amountDAI) public auth active {
-         //make sure there is no collateral deficit before drawing out new DAI
+        //make sure there is no collateral deficit before drawing out new DAI
         require(collatDeficit() == 0, "please heal cdp first"); // tbd
         require(amountDAI <= remainingCredit(), "not enough credit left");
         // collateral value that needs to be locked in vault to draw amountDAI
@@ -291,7 +301,7 @@ contract Clerk is Auth, Math {
         }
 
         require((validate(0, amountDAI, 0, 0) == 0), "supply not possible, pool constraints violated");
-     //    mint drop and move into vault
+        //    mint drop and move into vault
         uint priceDROP = assessor.calcSeniorTokenPrice();
         uint collateralDROP = rdiv(amountDAI, priceDROP);
         tranche.mint(address(this), collateralDROP);
@@ -314,9 +324,9 @@ contract Clerk is Auth, Math {
         uint newAssets = safeSub(safeSub(safeAdd(safeAdd(safeAdd(assessor.totalBalance(), assessor.getNAV()), seniorSupplyDAI),
             juniorSupplyDAI), juniorRedeemDAI), seniorRedeemDAI);
         uint expectedSeniorAsset = assessor.calcExpectedSeniorAsset(seniorRedeemDAI, seniorSupplyDAI,
-          assessor.seniorBalance(), assessor.seniorDebt());
+            assessor.seniorBalance(), assessor.seniorDebt());
         return coordinator.validateRatioConstraints(newAssets, expectedSeniorAsset);
-   }
+    }
 
     function updateSeniorAsset(uint decreaseDAI, uint increaseDAI) internal  {
         assessor.changeSeniorAsset(increaseDAI, decreaseDAI);
@@ -324,19 +334,19 @@ contract Clerk is Auth, Math {
 
     // returns the debt towards mkr
     function cdptab() public view returns (uint) {
-        (, uint art) = vat.urns(mgr.ilk(), address(mgr));
+        (, uint art) = vat.urns(ilk(), mgr.urn());
         return rmul(art, stabilityFeeIndex());
     }
 
     // returns the collateral amount in the cdp
     function cdpink() public view returns (uint) {
-        (uint ink, ) = vat.urns(mgr.ilk(), address(mgr));
+        uint ink = collateral.balanceOf(address(mgr));
         return ink;
     }
 
     // returns the required security margin for the DROP tokens
     function mat() public view returns (uint) {
-        (, uint256 mat) = spotter.ilks(mgr.ilk());
+        (, uint256 mat) = spotter.ilks(ilk());
         return safeAdd(mat, matBuffer); //  e.g 150% denominated in RAY
     }
 
@@ -353,7 +363,7 @@ contract Clerk is Auth, Math {
     }
 
     function changeOwnerMgr(address usr) public auth {
-        mgr.setOperator(usr);
+        mgr.file("owner", usr);
     }
 
     function debt() public view returns(uint) {
@@ -361,13 +371,17 @@ contract Clerk is Auth, Math {
     }
 
     function stabilityFeeIndex() public view returns(uint) {
-        (, uint rate, , ,) = vat.ilks(mgr.ilk());
+        (, uint rate, , ,) = vat.ilks(ilk());
         return rate;
     }
 
     function stabilityFee() public view returns(uint) {
         // mkr.duty is the stability fee in the mkr system
-        (uint duty, ) =  jug.ilks(mgr.ilk());
+        (uint duty, ) =  jug.ilks(ilk());
         return duty;
+    }
+
+    function ilk() public view returns (bytes32) {
+        return GemJoinLike(UrnLike(mgr.urn()).gemJoin()).ilk();
     }
 }
