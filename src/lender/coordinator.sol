@@ -79,7 +79,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
                         // timestamp last epoch closed
     uint                public lastEpochClosed;
                         // default minimum length of an epoch
-    uint                public minimumEpochTime = 1 days;
+                        // (1 day, with 10 min buffer, so we can close the epochs automatically on a daily basis at the same time)
+    uint                public minimumEpochTime = 1 days - 10 minutes;
 
     EpochTrancheLike    public juniorTranche;
     EpochTrancheLike    public seniorTranche;

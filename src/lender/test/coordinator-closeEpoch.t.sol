@@ -28,7 +28,7 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
     function testMinimumEpochTime() public {
         assertEq(coordinator.lastEpochExecuted(), 0);
         assertEq(coordinator.currentEpoch(), 1);
-        hevm.warp(now + 1 days);
+        hevm.warp(now + coordinator.minimumEpochTime());
         // close and execute because no submissions
         coordinator.closeEpoch();
         assertEq(coordinator.currentEpoch(), 2);
@@ -113,4 +113,3 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
         assertEq(assessor.values_uint("borrow_amount"), 0);
     }
 }
-
