@@ -335,13 +335,11 @@ contract Clerk is Auth, Math {
     // returns the debt towards mkr
     function cdptab() public view returns (uint) {
         (, uint art) = vat.urns(ilk(), mgr.urn());
-        // uint art = collateral.balanceOf(address(mgr));
         return rmul(art, stabilityFeeIndex());
     }
 
     // returns the collateral amount in the cdp
     function cdpink() public view returns (uint) {
-        //(uint ink, ) = vat.urns(ilk(), address(mgr));
         uint ink = collateral.balanceOf(address(mgr));
         return ink;
     }
