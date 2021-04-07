@@ -21,8 +21,8 @@ interface AssessorLike {
 }
 
 interface LendingAdapter {
-    function raise(uint256 amountDAI) external;
-    function sink(uint256 amountDAI) external;
+    function raise(uint256 amount) external;
+    function sink(uint256 amount) external;
 }
 
 contract MemberlistLike {
