@@ -79,12 +79,12 @@ contract PoolAdmin is Auth {
     }
 
     // Manage creditline
-    function raiseCreditline(uint256 amountDAI) public admin {
-        lending.raise(amountDAI);
+    function raiseCreditline(uint256 amount) public admin {
+        lending.raise(amount);
     }
 
-    function sinkCreditline(uint256 amountDAI) public admin {
-        lending.sink(amountDAI);
+    function sinkCreditline(uint256 amount) public admin {
+        lending.sink(amount);
     }
 
     // Manage memberlists
