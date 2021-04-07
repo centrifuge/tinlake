@@ -19,53 +19,134 @@ import "ds-test/test.sol";
 
 import "./../assessor.sol";
 import "./../admin/pool.sol";
-
+import "./mock/memberlist.sol";
 
 contract PoolAdminTest is DSTest {
 
     Assessor assessor;
     PoolAdmin poolAdmin;
+    MemberlistMock seniorMemberlist;
+    MemberlistMock juniorMemberlist;
 
-    address assessor_;
-    address poolAdmin_;
+    address[] users;
 
     function setUp() public {
         assessor = new Assessor();
+        seniorMemberlist = new MemberlistMock();
+        juniorMemberlist = new MemberlistMock();
         poolAdmin = new PoolAdmin();
 
-        assessor_ = address(assessor);
-        poolAdmin_ = address(poolAdmin);
-        poolAdmin.depend("assessor", assessor_);
+        assessor.rely(address(poolAdmin));
+        seniorMemberlist.rely(address(poolAdmin));
+        juniorMemberlist.rely(address(poolAdmin));
+
+        users = new address[](3);
+        users[0] = address(1);
+        users[1] = address(2);
+        users[2] = address(3);
+
+        poolAdmin.depend("assessor", address(assessor));
+        poolAdmin.depend("seniorMemberlist", address(seniorMemberlist));
+        poolAdmin.depend("juniorMemberlist", address(juniorMemberlist));
     }
 
+    // Test setting max reserve
     function callMaxReserve() public {
         uint maxReserve = 150 ether;
         
-        // call setMaxReserve 
         poolAdmin.setMaxReserve(maxReserve);
-
-        // assert maxReserve value was set
         assertEq(assessor.maxReserve(), maxReserve);
     }
 
     function testSetMaxReserve() public {
-        // rely poolAdmin on assessor and make this test an admin
-        assessor.rely(poolAdmin_);
         poolAdmin.relyAdmin(address(this));
-
-        callMaxReserve(); 
-    }
-
-    function testFailSetMaxReserveNoPermissions() public {
-         // do not rely poolAdmin on assessor
         callMaxReserve(); 
     }
 
     function testFailSetMaxReserveNotAdmin() public {
-         // do rely poolAdmin on assessor but do not make this test an admin
-        assessor.rely(poolAdmin_);
-        
         callMaxReserve(); 
+    }
+
+    // TODO: test lending adapter
+
+    // Test senior memberlist
+    function updateSeniorMember() public {
+        address usr = address(1);
+        uint validUntil = now + 365 days;
+        poolAdmin.updateSeniorMember(usr, validUntil);
+
+        assertEq(seniorMemberlist.calls("updateMember"), 1);
+        assertEq(seniorMemberlist.values_address("updateMember_usr"), usr);
+        assertEq(seniorMemberlist.values_uint("updateMember_validUntil"), validUntil);
+    }
+
+    function testUpdateSeniorMemberAsAdmin() public {
+        poolAdmin.relyAdmin(address(this));
+        updateSeniorMember();
+    }
+
+    function testFailUpdateSeniorMemberAsNonAdmin() public {
+        poolAdmin.denyAdmin(address(this));
+        updateSeniorMember();
+    }
+
+    function updateSeniorMembers() public {
+        uint validUntil = now + 365 days;
+        poolAdmin.updateSeniorMembers(users, validUntil);
+
+        assertEq(seniorMemberlist.calls("updateMembers"), 1);
+        assertEq(seniorMemberlist.values_address("updateMember_usr"), users[users.length]);
+        assertEq(seniorMemberlist.values_uint("updateMember_validUntil"), validUntil);
+    }
+
+    function testUpdateSeniorMembersAsAdmin() public {
+        poolAdmin.relyAdmin(address(this));
+        updateSeniorMember();
+    }
+
+    function testFailUpdateSeniorMembersAsNonAdmin() public {
+        poolAdmin.denyAdmin(address(this));
+        updateSeniorMember();
+    }
+
+    // Test junior memberlist
+    function updateJuniorMember() public {
+        address usr = address(1);
+        uint validUntil = now + 365 days;
+        poolAdmin.updateJuniorMember(usr, validUntil);
+
+        assertEq(juniorMemberlist.calls("updateMember"), 1);
+        assertEq(juniorMemberlist.values_address("updateMember_usr"), usr);
+        assertEq(juniorMemberlist.values_uint("updateMember_validUntil"), validUntil);
+    }
+
+    function testUpdateJuniorMemberAsAdmin() public {
+        poolAdmin.relyAdmin(address(this));
+        updateJuniorMember();
+    }
+
+    function testFailUpdateJuniorMemberAsNonAdmin() public {
+        poolAdmin.denyAdmin(address(this));
+        updateJuniorMember();
+    }
+
+    function updateJuniorMembers() public {
+        uint validUntil = now + 365 days;
+        poolAdmin.updateJuniorMembers(users, validUntil);
+
+        assertEq(juniorMemberlist.calls("updateMembers"), 1);
+        assertEq(juniorMemberlist.values_address("updateMember_usr"), users[users.length]);
+        assertEq(juniorMemberlist.values_uint("updateMember_validUntil"), validUntil);
+    }
+
+    function testUpdateJuniorMembersAsAdmin() public {
+        poolAdmin.relyAdmin(address(this));
+        updateJuniorMember();
+    }
+
+    function testFailUpdateJuniorMembersAsNonAdmin() public {
+        poolAdmin.denyAdmin(address(this));
+        updateJuniorMember();
     }
 
 }
