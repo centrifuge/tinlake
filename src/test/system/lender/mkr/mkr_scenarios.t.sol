@@ -96,9 +96,10 @@ contract MKRLenderSystemTest is MKRTestBasis {
         uint newJuniorPrice = mkrAssessor.calcJuniorTokenPrice();
         uint newSeniorPrice =  mkrAssessor.calcSeniorTokenPrice();
 
-        assertEq(newJuniorPrice, juniorPrice);
-        assertEq(preJuniorStake, safeAdd(clerk.juniorStake(), profitDAI));
-        assertEq(safeSub(preSeniorAsset,profitDAI), safeAdd(assessor.seniorDebt(), assessor.seniorBalance_()));
+        uint fixed27Tolerance = 100000000;
+        assertEq(newJuniorPrice, juniorPrice, fixed27Tolerance);
+        assertEqTol(preJuniorStake, safeAdd(clerk.juniorStake(), profitDAI), "testMKRHarvest#2");
+        assertEqTol(safeSub(preSeniorAsset,profitDAI), safeAdd(assessor.seniorDebt(), assessor.seniorBalance_()), "testMKRHarvest#3");
     }
 
     function testMKRHeal() public {
