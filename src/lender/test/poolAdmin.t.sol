@@ -20,34 +20,39 @@ import "ds-test/test.sol";
 import "./../assessor.sol";
 import "./../admin/pool.sol";
 import "./mock/memberlist.sol";
+import "./mock/clerk.sol";
 
 contract PoolAdminTest is DSTest {
 
     Assessor assessor;
-    PoolAdmin poolAdmin;
+    ClerkMock lending;
     MemberlistMock seniorMemberlist;
     MemberlistMock juniorMemberlist;
+    PoolAdmin poolAdmin;
 
     address[] users;
 
     function setUp() public {
         assessor = new Assessor();
+        lending = new ClerkMock();
         seniorMemberlist = new MemberlistMock();
         juniorMemberlist = new MemberlistMock();
         poolAdmin = new PoolAdmin();
 
         assessor.rely(address(poolAdmin));
+        lending.rely(address(poolAdmin));
         seniorMemberlist.rely(address(poolAdmin));
         juniorMemberlist.rely(address(poolAdmin));
+
+        poolAdmin.depend("assessor", address(assessor));
+        poolAdmin.depend("lending", address(lending));
+        poolAdmin.depend("seniorMemberlist", address(seniorMemberlist));
+        poolAdmin.depend("juniorMemberlist", address(juniorMemberlist));
 
         users = new address[](3);
         users[0] = address(1);
         users[1] = address(2);
         users[2] = address(3);
-
-        poolAdmin.depend("assessor", address(assessor));
-        poolAdmin.depend("seniorMemberlist", address(seniorMemberlist));
-        poolAdmin.depend("juniorMemberlist", address(juniorMemberlist));
     }
 
     // Test setting max reserve
@@ -67,7 +72,42 @@ contract PoolAdminTest is DSTest {
         callMaxReserve(); 
     }
 
-    // TODO: test lending adapter
+    // Test lending adapter
+    function callRaiseCreditline() public {
+        assertEq(lending.values_uint("clerk_creditline"), 0);
+
+        uint amount = 100 ether;
+        poolAdmin.raiseCreditline(amount);
+
+        assertEq(lending.values_uint("clerk_creditline"), amount);
+    }
+
+    function testRaiseCreditline() public {
+        poolAdmin.relyAdmin(address(this));
+        callRaiseCreditline();
+    }
+
+    function testFailRaiseCreditlineNotAdmin() public {
+        callRaiseCreditline();
+
+    }
+    function callSinkCreditline() public {
+        assertEq(lending.values_uint("clerk_creditline"), 0);
+
+        poolAdmin.raiseCreditline(100 ether);
+        poolAdmin.sinkCreditline(30 ether);
+
+        assertEq(lending.values_uint("clerk_creditline"), 70 ether);
+    }
+
+    function testSinkCreditline() public {
+        poolAdmin.relyAdmin(address(this));
+        callSinkCreditline();
+    }
+
+    function testFailSinkCreditlineNotAdmin() public {
+        callSinkCreditline();
+    }
 
     // Test senior memberlist
     function updateSeniorMember() public {

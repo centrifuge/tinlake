@@ -12,11 +12,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 pragma solidity >=0.5.15 <0.6.0;
+
 import "ds-test/test.sol";
+import "tinlake-auth/auth.sol";
 
 import "../../../test/mock/mock.sol";
 
-contract ClerkMock is Mock {
+contract ClerkMock is Mock, Auth {
     function remainingCredit() external view returns (uint) {
         return values_return["remainingCredit"];
     }
@@ -42,5 +44,14 @@ contract ClerkMock is Mock {
     function calcOvercollAmount(uint amount) external view returns (uint) {
         return values_return["calcOvercollAmount"];
     }
+
+    function raise(uint amount) public auth {
+      values_uint["clerk_creditline"] = values_uint["clerk_creditline"] + amount;
+    }
+
+    function sink(uint amount) public auth {
+      values_uint["clerk_creditline"] = values_uint["clerk_creditline"] - amount;
+    }
+
 }
 
