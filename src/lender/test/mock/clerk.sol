@@ -19,6 +19,11 @@ import "tinlake-auth/auth.sol";
 import "../../../test/mock/mock.sol";
 
 contract ClerkMock is Mock, Auth {
+    
+    constructor() public {
+        wards[msg.sender] = 1;
+    }
+
     function remainingCredit() external view returns (uint) {
         return values_return["remainingCredit"];
     }
@@ -45,12 +50,14 @@ contract ClerkMock is Mock, Auth {
         return values_return["calcOvercollAmount"];
     }
 
-    function raise(uint amount) public auth {
-      values_uint["clerk_creditline"] = values_uint["clerk_creditline"] + amount;
+    function raise(uint256 amount) public auth {
+        calls["raise"]++;
+        values_uint["clerk_raise_amount"] = amount;
     }
 
-    function sink(uint amount) public auth {
-      values_uint["clerk_creditline"] = values_uint["clerk_creditline"] - amount;
+    function sink(uint256 amount) public auth {
+        calls["sink"]++;
+        values_uint["clerk_sink_amount"] = amount;
     }
 
 }

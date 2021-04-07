@@ -74,12 +74,10 @@ contract PoolAdminTest is DSTest {
 
     // Test lending adapter
     function callRaiseCreditline() public {
-        assertEq(lending.values_uint("clerk_creditline"), 0);
-
         uint amount = 100 ether;
         poolAdmin.raiseCreditline(amount);
 
-        assertEq(lending.values_uint("clerk_creditline"), amount);
+        assertEq(lending.values_uint("clerk_raise_amount"), amount);
     }
 
     function testRaiseCreditline() public {
@@ -92,12 +90,10 @@ contract PoolAdminTest is DSTest {
 
     }
     function callSinkCreditline() public {
-        assertEq(lending.values_uint("clerk_creditline"), 0);
+        uint amount = 100 ether;
+        poolAdmin.sinkCreditline(amount);
 
-        poolAdmin.raiseCreditline(100 ether);
-        poolAdmin.sinkCreditline(30 ether);
-
-        assertEq(lending.values_uint("clerk_creditline"), 70 ether);
+        assertEq(lending.values_uint("clerk_sink_amount"), amount);
     }
 
     function testSinkCreditline() public {
