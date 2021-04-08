@@ -7,3 +7,4 @@ deployments
 config_unknown.json
 .idea
 /out
+.vscode
