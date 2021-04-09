@@ -582,7 +582,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
             calcFulfillment(juniorRedeem, order.juniorRedeem).value,
             epochJuniorTokenPrice.value, order.juniorSupply, order.juniorRedeem);
 
-        // todo only seniorTranche could miss currency, we could add it for junior as well for rounding differences
+        // sends requested currency to senior tranche, if currency was not available before
         seniorTranche.payoutRequestedCurrency();
 
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem
