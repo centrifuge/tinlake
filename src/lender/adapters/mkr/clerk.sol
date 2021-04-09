@@ -40,16 +40,12 @@ interface ManagerLike {
     function urn() external view returns(address);
 }
 
-// MKR contract
+// MKR contracts
 interface VatLike {
     function urns(bytes32, address) external view returns (uint,uint);
     function ilks(bytes32) external view returns(uint, uint, uint, uint, uint);
 }
-// MKR contract
-interface SpotterLike {
-    function ilks(bytes32) external view returns(address, uint256);
-}
-// MKR contract
+
 interface JugLike {
     function ilks(bytes32) external view returns(uint, uint);
 }
@@ -102,25 +98,23 @@ interface ERC20Like {
 
 contract Clerk is Auth, Math {
 
-    // max amount of DAI that can be brawn from MKR
+    // max amount of DAI that can be drawn from MKR
     uint public creditline;
-    // overcollateralization in Maker
+    // overcollateralization in Maker as a RAY
     uint public mat;
 
-    // tinlake contracts
+    // Tinlake contracts
     CoordinatorLike public coordinator;
     AssessorLike public assessor;
     ReserveLike public reserve;
     TrancheLike public tranche;
+    ERC20Like public collateral;
 
-    // MKR contracts
+    // Maker contracts
     ManagerLike public mgr;
     VatLike public vat;
-    SpotterLike public spotter;
     JugLike public jug;
-
     ERC20Like public dai;
-    ERC20Like public collateral;
 
 
     // adapter functions can only be active if the tinlake pool is currently not in epoch closing/submissions/execution state
@@ -149,8 +143,6 @@ contract Clerk is Auth, Math {
             tranche = TrancheLike(addr);
         } else if (contractName == "collateral") {
             collateral = ERC20Like(addr);
-        } else if (contractName == "spotter") {
-            spotter = SpotterLike(addr);
         } else if (contractName == "vat") {
             vat = VatLike(addr);
         } else if (contractName == "jug") {
@@ -307,7 +299,7 @@ contract Clerk is Auth, Math {
         updateSeniorAsset(0, amountDAI);
     }
 
-    // heal the cdp and put in more drop in case the collateral value has fallen below the bufferedmat ratio
+    // heal the cdp and put in more drop in case the collateral value has fallen below the mat ratio
     function heal() public auth active{
         uint collatDeficitDAI = collatDeficit();
         if (collatDeficitDAI > 0) {
@@ -340,15 +332,9 @@ contract Clerk is Auth, Math {
         return ink;
     }
 
-    // returns the required security margin for the DROP tokens
-    function mat() public view returns (uint) {
-        (, uint256 mat) = spotter.ilks(ilk());
-        return safeAdd(mat, matBuffer); //  e.g 150% denominated in RAY
-    }
-
     // helper function that returns the overcollateralized DAI amount considering the current mat value
     function calcOvercollAmount(uint amountDAI) public returns (uint) {
-        return rmul(amountDAI, mat());
+        return rmul(amountDAI, mat);
     }
 
     // In case contract received DAI as a leftover from the cdp liquidation return back to reserve
