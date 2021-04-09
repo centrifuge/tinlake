@@ -104,6 +104,8 @@ contract Clerk is Auth, Math {
 
     // max amount of DAI that can be brawn from MKR
     uint public creditline;
+    // overcollateralization in Maker
+    uint public mat;
 
     // tinlake contracts
     CoordinatorLike public coordinator;
@@ -120,15 +122,9 @@ contract Clerk is Auth, Math {
     ERC20Like public dai;
     ERC20Like public collateral;
 
-    // buffer to add on top of mat to avoid cdp liquidation => default 1%
-    uint matBuffer = 0.01 * 10**27;
 
     // adapter functions can only be active if the tinlake pool is currently not in epoch closing/submissions/execution state
-    modifier active() { require(activated(), "epoch-closing"); _; }
-
-    function activated() public view returns(bool) {
-        return coordinator.submissionPeriod() == false && mkrActive();
-    }
+    modifier active() { require(coordinator.submissionPeriod() == false && mkrActive(), "epoch-closing"); _; }
 
     function mkrActive() public view returns (bool) {
         return mgr.safe() && mgr.glad() && mgr.live();
@@ -163,9 +159,9 @@ contract Clerk is Auth, Math {
     }
 
     function file(bytes32 what, uint value) public auth {
-        if (what == "buffer") {
-            matBuffer = value;
-        }
+        if (what == "mat") {
+            mat = value;
+        } else revert();
     }
 
     function remainingCredit() public returns (uint) {
@@ -256,7 +252,7 @@ contract Clerk is Auth, Math {
 
     // harvest junior profit
     function harvest() public active {
-        require((cdpink() > 0), "nothing profit to harvest");
+        require((cdpink() > 0), "no profit to harvest");
         uint dropPrice = assessor.calcSeniorTokenPrice();
         uint lockedCollateralDAI = rmul(cdpink(), dropPrice);
         // profit => diff between the DAI value of the locked collateral in the cdp & the actual cdp debt including protection buffer
