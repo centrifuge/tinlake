@@ -70,7 +70,6 @@ import {SimpleMkr} from "./../simple/mkr.sol";
 
 import "../../borrower/test/mock/shelf.sol";
 import "../../lender/test/mock/navFeed.sol";
-import "../../lender/adapters/mkr/test/mock/spotter.sol";
 import "./config.sol";
 
 // abstract contract
@@ -292,13 +291,10 @@ contract TestSetup is Config  {
 
         address jug_ = address(mkr.jugMock());
 
-        SpotterMock spotter = new SpotterMock();
-        spotter.setReturn("mat", config.mkrMAT);
-
         mkrLenderDeployer.init(config.minSeniorRatio, config.maxSeniorRatio, config.maxReserve, config.challengeTime, config.seniorInterestRate, config.seniorTokenName,
             config.seniorTokenSymbol, config.juniorTokenName, config.juniorTokenSymbol);
 
-        mkrLenderDeployer.initMKR(address(mkr), address(spotter), address(mkr), jug_);
+        mkrLenderDeployer.initMKR(address(mkr), address(mkr), jug_);
     }
 
     function fetchContractAddr(LenderDeployerLike ld) internal {

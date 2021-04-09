@@ -13,7 +13,7 @@ interface ERC20Like {
 
 // simple mock implementation of relevant MKR contracts
 // contract will mint currency tokens to simulate the mkr behaviour
-// implements mgr, spotter, vat interfaces
+// implements mgr, vat interfaces
 contract JugMock {
       uint public duty;
       function file(bytes32 what, uint value) external {

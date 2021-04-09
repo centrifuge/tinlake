@@ -29,7 +29,6 @@ contract MKRLenderDeployer is LenderDeployer {
 
     address public mkrMgr;
     address public mkrVat;
-    address public mkrSpotter;
     address public mkrJug;
 
     constructor(address root_, address currency_, address trancheFab_, address memberlistFab_,
@@ -49,10 +48,9 @@ contract MKRLenderDeployer is LenderDeployer {
     }
 
 
-    function initMKR(address mkrMgr_, address mkrSpotter_, address mkrVat_, address mkrJug_) public {
+    function initMKR(address mkrMgr_, address mkrVat_, address mkrJug_) public {
         require(mkrDeployer == msg.sender);
         mkrMgr = mkrMgr_;
-        mkrSpotter = mkrSpotter_;
         mkrVat = mkrVat_;
         mkrJug = mkrJug_;
         mkrDeployer = address(1);
@@ -68,7 +66,6 @@ contract MKRLenderDeployer is LenderDeployer {
         DependLike(clerk).depend("reserve", reserve);
         DependLike(clerk).depend("tranche", seniorTranche);
         DependLike(clerk).depend("mgr", mkrMgr);
-        DependLike(clerk).depend("spotter", mkrSpotter);
         DependLike(clerk).depend("vat", mkrVat);
         DependLike(clerk).depend("jug", mkrJug);
 

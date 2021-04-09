@@ -26,7 +26,6 @@ import "../../../test/mock/navFeed.sol";
 import "../../../test/mock/assessor.sol";
 import "../../../test/mock/tranche.sol";
 import "./mock/mgr.sol";
-import "./mock/spotter.sol";
 import "./mock/vat.sol";
 import "../../../definitions.sol";
 
@@ -48,7 +47,6 @@ contract ClerkTest is Math, DSTest {
 
     ManagerMock mgr;
     VatMock vat;
-    SpotterMock spotter;
 
     Clerk clerk;
     address self;
@@ -64,7 +62,6 @@ contract ClerkTest is Math, DSTest {
         mgr = new ManagerMock(address(currency), address(collateral));
         mgr.setIlk("DROP");
         vat = new VatMock();
-        spotter = new SpotterMock();
 
         clerk = new Clerk(address(currency), address(collateral));
         clerk.depend("coordinator", address(coordinator));
@@ -72,7 +69,6 @@ contract ClerkTest is Math, DSTest {
         clerk.depend("reserve", address(reserve));
         clerk.depend("tranche", address(tranche));
         clerk.depend("mgr", address(mgr));
-        clerk.depend("spotter", address(spotter));
         clerk.depend("vat", address(vat));
 
         tranche.depend("token", address(collateral));
@@ -86,8 +82,8 @@ contract ClerkTest is Math, DSTest {
         // set values for the MKR contracts
         // mat = 110% -> 10% extra security margin required for mkr
         uint mat = 1.1 * 10**27;
-        spotter.setReturn("mat", mat);
-        spotter.setReturn("pip", address(0));
+        clerk.file("mat", mat);
+
         // set stability fee to 0
         vat.setReturn("stabilityFee", ONE);
         mgr.setVat(address(vat));
@@ -526,19 +522,6 @@ contract ClerkTest is Math, DSTest {
         assert(clerk.juniorStake() > 0);
         mgr.setReturn("live", false);
         assertEq(clerk.juniorStake(), 0);
-    }
-
-    function testMat() public {
-        // add mat buffer of 1%
-        clerk.file("buffer", 0.01 * 10**27);
-        uint mat = rdiv(rmul(150, ONE), 100); // mat value 150 %
-        spotter.setReturn("mat", mat);
-        // default matBuffer in clerk 1% -> assert cler.mat = 151 %
-        assertEq(clerk.mat(), rdiv(rmul(151, ONE), 100));
-
-        //increase matBuffer to 5%
-        clerk.file("buffer", rdiv(rmul(5, ONE), 100));
-        assertEq(clerk.mat(), rdiv(rmul(155, ONE), 100));
     }
 
     function testCollatDeficit() public {
