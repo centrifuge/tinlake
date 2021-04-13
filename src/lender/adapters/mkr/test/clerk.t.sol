@@ -29,6 +29,8 @@ import "./mock/mgr.sol";
 import "./mock/spotter.sol";
 import "./mock/vat.sol";
 import "../../../definitions.sol";
+import "../../../../test/system/assertions.sol";
+
 
 contract Hevm {
     function warp(uint256) public;
@@ -36,7 +38,7 @@ contract Hevm {
 
 contract AssessorMockWithDef is AssessorMock, Definitions { }
 
-contract ClerkTest is Math, DSTest {
+contract ClerkTest is Assertions {
     Hevm hevm;
 
     SimpleToken currency;
@@ -117,8 +119,6 @@ contract ClerkTest is Math, DSTest {
         assertEq(clerk.creditline(), safeAdd(creditlineInit, amountDAI));
         // assert remainingCreditLine was also increased
         assertEq(clerk.remainingCredit(), safeAdd(remainingCreditInit, amountDAI));
-        // assert call count coordinator & function arguments
-        assertEq(coordinator.values_uint("seniorAsset"), overcollAmount);
     }
 
     function draw(uint amountDAI, uint dropPrice) public {
@@ -223,7 +223,7 @@ contract ClerkTest is Math, DSTest {
         }
         // for testing increase ink value in vat mock
         vat.setInk(safeAdd(clerk.cdpink(), amount));
-        assertEq(collateral.totalSupply(), safeAdd(totalBalanceDropInit, amount));
+        assertEqTol(collateral.totalSupply(), safeAdd(totalBalanceDropInit, amount), "heal#1");
     }
 
     function sink(uint amountDAI) public {
@@ -244,9 +244,6 @@ contract ClerkTest is Math, DSTest {
         assertEq(clerk.creditline(), safeSub(creditlineInit, amountDAI));
         // assert remainingCreditLine was also decreased
         assertEq(clerk.remainingCredit(), safeSub(remainingCreditInit, amountDAI));
-        // assert call count coordinator & function arguments
-
-        assertEq(coordinator.values_uint("seniorAsset"), seniorBalance -overcollAmount);
     }
 
     function testRaise() public {
@@ -541,10 +538,6 @@ contract ClerkTest is Math, DSTest {
         assertEq(clerk.mat(), rdiv(rmul(155, ONE), 100));
     }
 
-    function testCollatDeficit() public {
-
-    }
-
     function testHealPartial() public {
         uint dropPrice = ONE;
         testFullDraw();
@@ -565,6 +558,7 @@ contract ClerkTest is Math, DSTest {
     }
 
     function testHealFull() public {
+        clerk.file("tolerance", 0);
         uint dropPrice = ONE;
         testFullDraw();
         // increase Mat value to additional 5%
@@ -576,7 +570,7 @@ contract ClerkTest is Math, DSTest {
         uint requiredCollateralDAI = clerk.calcOvercollAmount(clerk.cdptab());
 
         assertEq(lockedCollateralDAI, 110 ether);
-        assertEq(requiredCollateralDAI, 115 ether);
+        assertEqTol(requiredCollateralDAI, 115 ether, "testHealFull#1");
         // full healing
         uint healingAmount = safeSub(requiredCollateralDAI, lockedCollateralDAI); // healing amount = 4
         // currency in reserve for validate
@@ -622,5 +616,10 @@ contract ClerkTest is Math, DSTest {
         uint healingAmount = safeDiv(safeSub(requiredCollateralDAI, lockedCollateralDAI), 2); // healing amount = 2
         assessor.setReturn("balance", 200 ether);
         heal(healingAmount, healingAmount, false);
+    }
+
+    function testFile() public {
+        clerk.file("tolerance", 100);
+        assertEq(clerk.collateralTolerance(), 100);
     }
 }

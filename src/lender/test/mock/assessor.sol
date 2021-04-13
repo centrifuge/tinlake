@@ -107,12 +107,12 @@ contract AssessorMock is Mock {
         return (minSeniorRatio, maxSeniorRatio);
     }
 
-    function seniorDebt() external returns (uint) {
-        return call("seniorDebt");
+    function seniorDebt() external view returns (uint) {
+        return values_return["seniorDebt"];
     }
 
-    function seniorBalance() external returns (uint) {
-        return call("seniorBalance");
+    function seniorBalance() external view returns (uint) {
+        return values_return["seniorBalance"];
     }
 
     function effectiveSeniorBalance() external view returns(uint) {
@@ -147,8 +147,8 @@ contract AssessorMock is Mock {
         values_uint["borrowUpdate_currencyAmount"] = currencyAmount;
     }
 
-    function totalBalance() public returns (uint) {
-        return call("balance");
+    function totalBalance() public view returns (uint) {
+        return values_return["balance"];
     }
 
     function changeBorrowAmountEpoch(uint currencyAmount) public {

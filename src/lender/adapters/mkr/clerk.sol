@@ -66,17 +66,17 @@ interface AssessorLike {
     function calcSeniorTokenPrice() external view returns(uint);
     function calcSeniorAssetValue(uint seniorDebt, uint seniorBalance) external view returns(uint);
     function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) external;
-    function seniorDebt() external returns(uint);
-    function seniorBalance() external returns(uint);
+    function seniorDebt() external view returns(uint);
+    function seniorBalance() external view returns(uint);
     function getNAV() external view returns(uint);
-    function totalBalance() external returns(uint);
+    function totalBalance() external view returns(uint);
     function calcExpectedSeniorAsset(uint seniorRedeem, uint seniorSupply, uint seniorBalance_, uint seniorDebt_) external view returns(uint);
     function changeBorrowAmountEpoch(uint currencyAmount) external;
     function borrowAmountEpoch() external view returns(uint);
 }
 
 interface CoordinatorLike {
-    function validateRatioConstraints(uint assets, uint seniorAsset) external returns(int);
+    function validateRatioConstraints(uint assets, uint seniorAsset) external view returns(int);
     function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply, uint currSeniorAsset, uint reserve_, uint nav_) external returns(uint);
     function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) external returns(uint);
     function submissionPeriod() external view returns(bool);
@@ -123,6 +123,9 @@ contract Clerk is Auth, Math {
     // buffer to add on top of mat to avoid cdp liquidation => default 1%
     uint matBuffer = 0.01 * 10**27;
 
+    // collateral tolerance accepted because of potential rounding problems
+    uint public collateralTolerance = 10;
+
     // adapter functions can only be active if the tinlake pool is currently not in epoch closing/submissions/execution state
     modifier active() { require(activated(), "epoch-closing"); _; }
 
@@ -165,7 +168,9 @@ contract Clerk is Auth, Math {
     function file(bytes32 what, uint value) public auth {
         if (what == "buffer") {
             matBuffer = value;
-        }
+        } else if (what == "tolerance") {
+            collateralTolerance = value;
+        } else { revert(); }
     }
 
     function remainingCredit() public returns (uint) {
@@ -178,6 +183,11 @@ contract Clerk is Auth, Math {
     function collatDeficit() public returns (uint) {
         uint lockedCollateralDAI = rmul(cdpink(), assessor.calcSeniorTokenPrice());
         uint requiredCollateralDAI = calcOvercollAmount(cdptab());
+
+        if(requiredCollateralDAI > collateralTolerance){
+            requiredCollateralDAI = safeSub(requiredCollateralDAI, collateralTolerance);
+        }
+
         if (requiredCollateralDAI > lockedCollateralDAI) {
             return safeSub(requiredCollateralDAI, lockedCollateralDAI);
         }
@@ -244,6 +254,9 @@ contract Clerk is Auth, Math {
         if (amountDAI > cdptab()) {
             amountDAI = cdptab();
         }
+
+        uint dropPrice = assessor.calcSeniorTokenPrice();
+
         // get DAI from reserve
         reserve.hardPayout(amountDAI);
         // repay cdp debt
@@ -251,22 +264,27 @@ contract Clerk is Auth, Math {
         mgr.wipe(amountDAI);
 
         // harvest junior interest & burn surplus drop
-        harvest();
+        _harvest(dropPrice);
     }
 
     // harvest junior profit
     function harvest() public active {
+        _harvest(assessor.calcSeniorTokenPrice());
+    }
+
+    function _harvest(uint dropPrice) internal {
         require((cdpink() > 0), "nothing-profit-to-harvest");
-        uint dropPrice = assessor.calcSeniorTokenPrice();
+        
         uint lockedCollateralDAI = rmul(cdpink(), dropPrice);
         // profit => diff between the DAI value of the locked collateral in the cdp & the actual cdp debt including protection buffer
         uint requiredLocked = calcOvercollAmount(cdptab());
+
         if(lockedCollateralDAI < requiredLocked) {
-            // nothing to harvest, currently under-collateralized
+            // nothing to harvest, currently under-collateralized;
             return;
         }
         uint profitDAI = safeSub(lockedCollateralDAI, requiredLocked);
-        uint profitDROP = rdiv(profitDAI, dropPrice);
+        uint profitDROP = safeDiv(safeMul(profitDAI, ONE), dropPrice);
         // remove profitDROP from the vault & brun them
         mgr.exit(profitDROP);
         collateral.burn(address(this), profitDROP);
@@ -320,7 +338,7 @@ contract Clerk is Auth, Math {
     }
 
     // checks if the Maker credit line increase could violate the pool constraints // -> make function pure and call with current pool values approxNav
-    function validate(uint juniorSupplyDAI, uint juniorRedeemDAI, uint seniorSupplyDAI, uint seniorRedeemDAI) internal returns(int) {
+    function validate(uint juniorSupplyDAI, uint juniorRedeemDAI, uint seniorSupplyDAI, uint seniorRedeemDAI) public view returns(int) {
         uint newAssets = safeSub(safeSub(safeAdd(safeAdd(safeAdd(assessor.totalBalance(), assessor.getNAV()), seniorSupplyDAI),
             juniorSupplyDAI), juniorRedeemDAI), seniorRedeemDAI);
         uint expectedSeniorAsset = assessor.calcExpectedSeniorAsset(seniorRedeemDAI, seniorSupplyDAI,

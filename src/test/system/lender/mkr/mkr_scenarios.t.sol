@@ -48,25 +48,56 @@ contract MKRLenderSystemTest is MKRTestBasis {
         assertEq(clerk.debt(), 105 ether, "testStabilityFee#2");
     }
 
-    function testLoanRepayWipe() public {
-        uint fee = 1000000564701133626865910626; // 5% per day
-        setStabilityFee(fee);
+
+    function testMKRWipe() public {
         uint juniorAmount = 200 ether;
         uint mkrAmount = 500 ether;
-        uint borrowAmount = 300 ether;
+        uint borrowAmount = 500 ether;
+        uint repayAmount = 100 ether;
+        mkrWipe(juniorAmount, mkrAmount, borrowAmount, repayAmount, false);
+    }
 
+    function testMKRWipeRepayHigherThanJunior() public {
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 500 ether;
+        uint repayAmount = 300 ether;
+        mkrWipe(juniorAmount, mkrAmount, borrowAmount, repayAmount, true);
+    }
+
+    function mkrWipe(uint juniorAmount, uint mkrAmount, uint borrowAmount, uint repayAmount, bool doPreHarvest) public {
+        setStabilityFee(uint(1000000115165872987700711356));   // 1 % day
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
 
         warp(1 days);
-        uint expectedDebt = 105 ether;
-        assertEq(clerk.debt(), expectedDebt, "testLoanRepayWipe#1");
 
-        uint repayAmount = 50 ether;
+        uint expectedDebt = 303 ether;
+        assertEqTol(clerk.debt(), expectedDebt, "testMKRWipe#1");
+        // profit => diff between the DAI value of the locked collateral in the cdp & the actual cdp debt including protection buffer
+
+        uint preLockedDAIHarvest = rmul(clerk.cdpink(), mkrAssessor.calcSeniorTokenPrice());
+        uint preSeniorAssetHarvest = safeAdd(mkrAssessor.seniorDebt(), mkrAssessor.effectiveSeniorBalance());
+
+        // harvest before wipe call
+        if (doPreHarvest) {
+            clerk.harvest();
+        }
+        uint preRequiredLocked = clerk.calcOvercollAmount(clerk.cdptab());
+        uint preSeniorAsset = safeAdd(mkrAssessor.seniorDebt(), mkrAssessor.effectiveSeniorBalance());
+
+        // wipe is triggered by repay
         repayDefaultLoan(repayAmount);
 
         // reduces clerk debt
-        assertEqTol(clerk.debt(), safeSub(expectedDebt, repayAmount), "testLoanRepayWipe#2");
-        assertEq(reserve.totalBalance(), 0, "testLoanRepayWipe#3");
+        assertEqTol(clerk.debt(), safeSub(expectedDebt, repayAmount), "testMKRWipe#2");
+        assertEq(reserve.totalBalance(), 0, "testMKRWipe#3");
+
+        uint decreaseSeniorAsset = safeSub(preLockedDAIHarvest, rmul(clerk.cdpink(), mkrAssessor.calcSeniorTokenPrice()));
+        assertEqTol(safeSub(preSeniorAssetHarvest, decreaseSeniorAsset),  safeAdd(mkrAssessor.seniorDebt(), mkrAssessor.effectiveSeniorBalance()),"testMKRWipe#4");
+        if (doPreHarvest) {
+            assertEqTol(safeSub(preSeniorAsset, safeSub(preRequiredLocked,clerk.calcOvercollAmount(clerk.cdptab()))),
+                safeAdd(mkrAssessor.seniorDebt(), mkrAssessor.effectiveSeniorBalance()),"testMKRWipe#4");
+        }
     }
 
     function testMKRHarvest() public {
@@ -104,6 +135,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
 
     function testMKRHeal() public {
         // high stability fee: 10% a day
+        clerk.file("tolerance", 0);
         uint fee = uint(1000001103127689513476993126);
         setStabilityFee(fee);
 
