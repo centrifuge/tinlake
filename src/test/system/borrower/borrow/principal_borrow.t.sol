@@ -133,7 +133,7 @@ contract PrincipalBorrowTest is BaseSystemTest {
 
         hevm.warp(now + 365 days); // expected debt after 1 year ~ 123.2 ether
         // assert interest also accrued on fixed fees 110
-        assertEq(pile.debt(loanId), 123200000000000000001);
+        assertEq(pile.debt(loanId)/10, 123200000000000000000/10);
     }
 
     function testPartialBorrow() public {

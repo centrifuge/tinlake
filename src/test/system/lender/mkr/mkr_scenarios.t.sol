@@ -131,6 +131,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
 
     function testMKRHeal() public {
         // high stability fee: 10% a day
+        clerk.file("tolerance", 0);
         uint fee = uint(1000001103127689513476993126);
         setStabilityFee(fee);
 
