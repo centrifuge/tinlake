@@ -65,7 +65,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         mkrWipe(juniorAmount, mkrAmount, borrowAmount, repayAmount, true);
     }
 
-    function mkrWipe(uint juniorAmount, uint mkrAmount, uint borrowAmount, uint repayAmount, bool doHarvest) public {
+    function mkrWipe(uint juniorAmount, uint mkrAmount, uint borrowAmount, uint repayAmount, bool doPreHarvest) public {
         setStabilityFee(uint(1000000115165872987700711356));   // 1 % day
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
 
@@ -79,7 +79,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         uint preSeniorAssetHarvest = safeAdd(mkrAssessor.seniorDebt(), mkrAssessor.effectiveSeniorBalance());
 
         // harvest before wipe call
-        if (doHarvest) {
+        if (doPreHarvest) {
             clerk.harvest();
         }
         uint preRequiredLocked = clerk.calcOvercollAmount(clerk.cdptab());
@@ -94,7 +94,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
 
         uint decreaseSeniorAsset = safeSub(preLockedDAIHarvest, rmul(clerk.cdpink(), mkrAssessor.calcSeniorTokenPrice()));
         assertEqTol(safeSub(preSeniorAssetHarvest, decreaseSeniorAsset),  safeAdd(mkrAssessor.seniorDebt(), mkrAssessor.effectiveSeniorBalance()),"testMKRWipe#4");
-        if (doHarvest) {
+        if (doPreHarvest) {
             assertEqTol(safeSub(preSeniorAsset, safeSub(preRequiredLocked,clerk.calcOvercollAmount(clerk.cdptab()))),
                 safeAdd(mkrAssessor.seniorDebt(), mkrAssessor.effectiveSeniorBalance()),"testMKRWipe#4");
         }
