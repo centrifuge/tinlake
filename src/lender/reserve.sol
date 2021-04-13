@@ -92,6 +92,7 @@ contract Reserve is Math, Auth {
 
     // deposits currency in the the reserve
     function deposit(uint currencyAmount) public auth {
+        if(currencyAmount == 0) return;
         _deposit(msg.sender, currencyAmount);
     }
 
@@ -125,6 +126,7 @@ contract Reserve is Math, Auth {
 
     // remove currency from the reserve
     function payout(uint currencyAmount) public auth {
+        if(currencyAmount == 0) return;
         _payout(msg.sender, currencyAmount);
     }
 

@@ -217,7 +217,7 @@ contract Clerk is Auth, Math {
         // protection value for the creditline increase coming from the junior tranche => amount by that the juniorAssetValue should be decreased
         uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);
         // check if the new creditline would break the pool constraints
-        require((validate(0, protectionDAI, overcollAmountDAI, 0) == 0), "supply not possible, pool constraints violated");
+        require((validate(0, protectionDAI, overcollAmountDAI, 0) == 0), "violates-constraints");
         // increase MKR crediline by amount
         creditline = safeAdd(creditline, amountDAI);
         // make increase in creditline available to new loans
@@ -227,8 +227,8 @@ contract Clerk is Auth, Math {
     // mint DROP, join DROP into cdp, draw DAI and send to reserve
     function draw(uint amountDAI) public auth active {
         //make sure there is no collateral deficit before drawing out new DAI
-        require(collatDeficit() == 0, "please heal cdp first"); // tbd
-        require(amountDAI <= remainingCredit(), "not enough credit left");
+        require(collatDeficit() == 0, "please-heal–cdp-first"); // tbd
+        require(amountDAI <= remainingCredit(), "not-enough-credit-left");
         // collateral value that needs to be locked in vault to draw amountDAI
         uint collateralDAI = calcOvercollAmount(amountDAI);
         uint collateralDROP = rdiv(collateralDAI, assessor.calcSeniorTokenPrice());
@@ -248,7 +248,8 @@ contract Clerk is Auth, Math {
 
     // transfer DAI from reserve, wipe cdp debt, exit DROP from cdp, burn DROP, harvest junior profit
     function wipe(uint amountDAI) public auth active {
-        require((cdptab() > 0), "cdp debt already repaid");
+        require((cdptab() > 0), "cdp-debt-already-repaid");
+        
         // repayment amount should not exceed cdp debt
         if (amountDAI > cdptab()) {
             amountDAI = cdptab();
@@ -272,7 +273,9 @@ contract Clerk is Auth, Math {
     }
 
     function _harvest(uint dropPrice) internal {
-        require((cdpink() > 0), "nothing profit to harvest");
+        require((cdpink() > 0), "nothing-profit-to-harvest");
+        uint dropPrice = assessor.calcSeniorTokenPrice();
+
         uint lockedCollateralDAI = rmul(cdpink(), dropPrice);
         // profit => diff between the DAI value of the locked collateral in the cdp & the actual cdp debt including protection buffer
         uint requiredLocked = calcOvercollAmount(cdptab());
@@ -292,14 +295,14 @@ contract Clerk is Auth, Math {
 
     // decrease MKR creditline
     function sink(uint amountDAI) public auth active {
-        require(remainingCredit() >= amountDAI, "decrease amount too high");
+        require(remainingCredit() >= amountDAI, "decrease-amount-too-high");
 
         // creditline amount including required overcollateralization => amount by that the seniorAssetValue should be decreased
         uint overcollAmountDAI = calcOvercollAmount(amountDAI);
         // protection value for the creditline decrease going to the junior tranche => amount by that the juniorAssetValue should be increased
         uint protectionDAI = safeSub(overcollAmountDAI, amountDAI);
         // check if the new creditline would break the pool constraints
-        require((validate(protectionDAI, 0, 0, overcollAmountDAI) == 0), "pool constraints violated");
+        require((validate(protectionDAI, 0, 0, overcollAmountDAI) == 0), "pool-constraints-violated");
 
         // increase MKR crediline by amount
         creditline = safeSub(creditline, amountDAI);
@@ -309,14 +312,14 @@ contract Clerk is Auth, Math {
 
     function heal(uint amountDAI) public auth active {
         uint collatDeficitDAI = collatDeficit();
-        require(collatDeficitDAI > 0, "no healing required");
+        require(collatDeficitDAI > 0, "no-healing-required");
 
         // heal max up to the required missing collateral amount
         if (collatDeficitDAI < amountDAI) {
             amountDAI = collatDeficitDAI;
         }
 
-        require((validate(0, amountDAI, 0, 0) == 0), "supply not possible, pool constraints violated");
+        require((validate(0, amountDAI, 0, 0) == 0), "violates-constraints");
         //    mint drop and move into vault
         uint priceDROP = assessor.calcSeniorTokenPrice();
         uint collateralDROP = rdiv(amountDAI, priceDROP);
