@@ -239,11 +239,13 @@ contract Clerk is Auth, Math {
     // transfer DAI from reserve, wipe cdp debt, exit DROP from cdp, burn DROP, harvest junior profit
     function wipe(uint amountDAI) public auth active {
         require((cdptab() > 0), "cdp debt already repaid");
-
         // repayment amount should not exceed cdp debt
         if (amountDAI > cdptab()) {
             amountDAI = cdptab();
         }
+
+        uint dropPrice = assessor.calcSeniorTokenPrice();
+
         // get DAI from reserve
         reserve.hardPayout(amountDAI);
         // repay cdp debt
@@ -251,18 +253,22 @@ contract Clerk is Auth, Math {
         mgr.wipe(amountDAI);
 
         // harvest junior interest & burn surplus drop
-        harvest();
+        _harvest(dropPrice);
     }
 
     // harvest junior profit
     function harvest() public active {
+        _harvest(assessor.calcSeniorTokenPrice());
+    }
+
+    function _harvest(uint dropPrice) internal {
         require((cdpink() > 0), "nothing profit to harvest");
-        uint dropPrice = assessor.calcSeniorTokenPrice();
         uint lockedCollateralDAI = rmul(cdpink(), dropPrice);
         // profit => diff between the DAI value of the locked collateral in the cdp & the actual cdp debt including protection buffer
         uint requiredLocked = calcOvercollAmount(cdptab());
+
         if(lockedCollateralDAI < requiredLocked) {
-            // nothing to harvest, currently under-collateralized
+            // nothing to harvest, currently under-collateralized;
             return;
         }
         uint profitDAI = safeSub(lockedCollateralDAI, requiredLocked);
