@@ -79,11 +79,11 @@ contract MKRLenderSystemTest is MKRTestBasis {
             return;
         }
 
-        clerk.harvest();
         uint preSeniorAsset = safeAdd(mkrAssessor.seniorDebt(), mkrAssessor.effectiveSeniorBalance());
 
         // profit => diff between the DAI value of the locked collateral in the cdp & the actual cdp debt including protection buffer
-        uint preRequiredLocked = clerk.calcOvercollAmount(clerk.cdptab());
+
+        uint preLockedDAI = rmul(clerk.cdpink(), mkrAssessor.calcSeniorTokenPrice());
 
         // wipe is triggered by repay
         repayDefaultLoan(repayAmount);
@@ -92,7 +92,8 @@ contract MKRLenderSystemTest is MKRTestBasis {
         assertEqTol(clerk.debt(), safeSub(expectedDebt, repayAmount), "testMKRWipe#2");
         assertEq(reserve.totalBalance(), 0, "testMKRWipe#3");
 
-        assertEqTol(safeSub(preSeniorAsset, safeSub(preRequiredLocked,clerk.calcOvercollAmount(clerk.cdptab()))),  safeAdd(mkrAssessor.seniorDebt(), mkrAssessor.effectiveSeniorBalance()),"testMKRWipe#4");
+        uint decreaseSeniorAsset = safeSub(preLockedDAI, rmul(clerk.cdpink(), mkrAssessor.calcSeniorTokenPrice()));
+        assertEqTol(safeSub(preSeniorAsset, decreaseSeniorAsset),  safeAdd(mkrAssessor.seniorDebt(), mkrAssessor.effectiveSeniorBalance()),"testMKRWipe#4");
     }
 
     function testMKRHarvest() public {

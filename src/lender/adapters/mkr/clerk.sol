@@ -272,7 +272,7 @@ contract Clerk is Auth, Math {
             return;
         }
         uint profitDAI = safeSub(lockedCollateralDAI, requiredLocked);
-        uint profitDROP = rdiv(profitDAI, dropPrice);
+        uint profitDROP = safeDiv(safeMul(profitDAI, ONE), dropPrice);
         // remove profitDROP from the vault & brun them
         mgr.exit(profitDROP);
         collateral.burn(address(this), profitDROP);
