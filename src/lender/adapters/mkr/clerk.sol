@@ -276,7 +276,7 @@ contract Clerk is Auth, Math {
     }
 
     function _harvest(uint dropPrice) internal {
-        require((cdpink() > 0), "nothing-profit-to-harvest");
+        require((cdpink() > 0), "no-profit-to-harvest");
 
         uint lockedCollateralDAI = rmul(cdpink(), dropPrice);
         // profit => diff between the DAI value of the locked collateral in the cdp & the actual cdp debt including protection buffer
