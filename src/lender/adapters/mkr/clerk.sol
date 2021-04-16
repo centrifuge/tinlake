@@ -177,7 +177,7 @@ contract Clerk is Auth, Math {
 
     function remainingCredit() public view returns (uint) {
         uint debt_ = cdptab();
-        if (creditline <= (debt_) || mkrActive() == false) {
+        if (creditline <= debt_ || mkrActive() == false) {
             return 0;
         }
         return safeSub(creditline, debt_);
