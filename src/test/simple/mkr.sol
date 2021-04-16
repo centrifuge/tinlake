@@ -15,17 +15,18 @@ interface ERC20Like {
 // contract will mint currency tokens to simulate the mkr behaviour
 // implements mgr, spotter, vat interfaces
 contract JugMock {
-      uint public duty;
-      function file(bytes32 what, uint value) external {
+    uint public duty;
+    function file(bytes32 what, uint value) external {
+        if(what == "duty") {
+          duty = value;
+        }
+    }
 
-          if(what == "duty") {
-              duty = value;
-          }
-      }
+    function ilks(bytes32 ilk) public view returns (uint ,uint) {
+      return (duty, 0);
+    }
 
-      function ilks(bytes32 ilk) public view returns (uint ,uint) {
-          return (duty, 0);
-      }
+    function drip(bytes32 ilk) public returns(uint) {return 0;}
 }
 
 contract UrnMock {
