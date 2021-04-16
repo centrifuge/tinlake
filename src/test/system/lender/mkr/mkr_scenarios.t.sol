@@ -373,5 +373,4 @@ contract MKRLenderSystemTest is MKRTestBasis {
         // juniorTokenPrice should be still ONE
         assertEq(currency.balanceOf(address(juniorInvestor)), payoutCurrency);
     }
-
 }

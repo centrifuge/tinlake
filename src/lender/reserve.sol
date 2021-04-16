@@ -25,7 +25,7 @@ interface LendingAdapter {
     function remainingCredit() external view returns (uint);
     function draw(uint amount) external;
     function wipe(uint amount) external;
-    function debt() external view returns(uint);
+    function debt() external returns(uint);
     function activated() external view returns(bool);
 }
 

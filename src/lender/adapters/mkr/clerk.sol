@@ -52,6 +52,8 @@ interface SpotterLike {
 // MKR contract
 interface JugLike {
     function ilks(bytes32) external view returns(uint, uint);
+    function drip(bytes32 ilk) external returns (uint rate);
+
 }
 
 interface GemJoinLike {
@@ -274,7 +276,7 @@ contract Clerk is Auth, Math {
 
     function _harvest(uint dropPrice) internal {
         require((cdpink() > 0), "nothing-profit-to-harvest");
-        
+
         uint lockedCollateralDAI = rmul(cdpink(), dropPrice);
         // profit => diff between the DAI value of the locked collateral in the cdp & the actual cdp debt including protection buffer
         uint requiredLocked = calcOvercollAmount(cdptab());
@@ -384,7 +386,13 @@ contract Clerk is Auth, Math {
         mgr.file("owner", usr);
     }
 
-    function debt() public view returns(uint) {
+    // returns the debt and updates to vault debt in Maker if needed
+    function debt() public returns(uint) {
+        bytes32 ilk_ = ilk();
+        (, uint rho) =  jug.ilks(ilk_);
+        if(block.timestamp > rho) {
+            jug.drip(ilk_);
+        }
         return cdptab();
     }
 
