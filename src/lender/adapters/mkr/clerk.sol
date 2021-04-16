@@ -123,7 +123,7 @@ contract Clerk is Auth, Math {
     ERC20Like public collateral;
 
     // buffer to add on top of mat to avoid cdp liquidation => default 1%
-    uint matBuffer = 0.01 * 10**27;
+    uint public matBuffer = 0.01 * 10**27;
 
     // collateral tolerance accepted because of potential rounding problems
     uint public collateralTolerance = 10;
@@ -175,14 +175,15 @@ contract Clerk is Auth, Math {
         } else { revert(); }
     }
 
-    function remainingCredit() public returns (uint) {
-        if (creditline <= (cdptab()) || mkrActive() == false) {
+    function remainingCredit() public view returns (uint) {
+        uint debt_ = cdptab();
+        if (creditline <= (debt_) || mkrActive() == false) {
             return 0;
         }
-        return safeSub(creditline, cdptab());
+        return safeSub(creditline, debt_);
     }
 
-    function collatDeficit() public returns (uint) {
+    function collatDeficit() public view returns (uint) {
         uint lockedCollateralDAI = rmul(cdpink(), assessor.calcSeniorTokenPrice());
         uint requiredCollateralDAI = calcOvercollAmount(cdptab());
 
@@ -196,10 +197,9 @@ contract Clerk is Auth, Math {
         return 0;
     }
 
-    function remainingOvercollCredit() public returns (uint) {
+    function remainingOvercollCredit() public view returns (uint) {
         return calcOvercollAmount(remainingCredit());
     }
-
 
     // junior stake in the cdpink -> value of drop used for cdptab protection
     function juniorStake() public view returns (uint) {
@@ -250,11 +250,12 @@ contract Clerk is Auth, Math {
 
     // transfer DAI from reserve, wipe cdp debt, exit DROP from cdp, burn DROP, harvest junior profit
     function wipe(uint amountDAI) public auth active {
-        require((cdptab() > 0), "cdp-debt-already-repaid");
+        uint debt_ = debt();
+        require((debt_ > 0), "cdp-debt-already-repaid");
 
         // repayment amount should not exceed cdp debt
-        if (amountDAI > cdptab()) {
-            amountDAI = cdptab();
+        if (amountDAI > debt_) {
+            amountDAI = debt_;
         }
 
         uint dropPrice = assessor.calcSeniorTokenPrice();
@@ -279,7 +280,7 @@ contract Clerk is Auth, Math {
 
         uint lockedCollateralDAI = rmul(cdpink(), dropPrice);
         // profit => diff between the DAI value of the locked collateral in the cdp & the actual cdp debt including protection buffer
-        uint requiredLocked = calcOvercollAmount(cdptab());
+        uint requiredLocked = calcOvercollAmount(debt());
 
         if(lockedCollateralDAI < requiredLocked) {
             // nothing to harvest, currently under-collateralized;
@@ -371,7 +372,7 @@ contract Clerk is Auth, Math {
     }
 
     // helper function that returns the overcollateralized DAI amount considering the current mat value
-    function calcOvercollAmount(uint amountDAI) public returns (uint) {
+    function calcOvercollAmount(uint amountDAI) public view returns (uint) {
         return rmul(amountDAI, mat());
     }
 

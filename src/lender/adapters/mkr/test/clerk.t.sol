@@ -28,6 +28,7 @@ import "../../../test/mock/tranche.sol";
 import "./mock/mgr.sol";
 import "./mock/spotter.sol";
 import "./mock/vat.sol";
+import "./mock/jug.sol";
 import "../../../definitions.sol";
 import "../../../../test/system/assertions.sol";
 
@@ -51,6 +52,7 @@ contract ClerkTest is Assertions {
     ManagerMock mgr;
     VatMock vat;
     SpotterMock spotter;
+    JugMock jug;
 
     Clerk clerk;
     address self;
@@ -67,6 +69,7 @@ contract ClerkTest is Assertions {
         mgr.setIlk("DROP");
         vat = new VatMock();
         spotter = new SpotterMock();
+        jug = new JugMock();
 
         clerk = new Clerk(address(currency), address(collateral));
         clerk.depend("coordinator", address(coordinator));
@@ -76,6 +79,7 @@ contract ClerkTest is Assertions {
         clerk.depend("mgr", address(mgr));
         clerk.depend("spotter", address(spotter));
         clerk.depend("vat", address(vat));
+        clerk.depend("jug", address(jug));
 
         tranche.depend("token", address(collateral));
         tranche.rely(address(clerk));
@@ -104,6 +108,20 @@ contract ClerkTest is Assertions {
         mgr.setOperator(address(clerk));
         assertEq(mgr.operator(), address(clerk));
         clerk.file("buffer", 0);
+    }
+
+    function testDebt() public {
+        uint amount = 100 ether;
+        vat.increaseTab(amount);
+        assertEq(clerk.debt(), amount);
+        assertEq(jug.calls("drip"), 1);
+        assertEq(clerk.debt(), amount);
+        assertEq(jug.calls("drip"), 2);
+        jug.setReturn("ilks_rho", block.timestamp);
+
+        // no drip required
+        assertEq(clerk.debt(), amount);
+        assertEq(jug.calls("drip"), 2);
     }
 
     function raise(uint amountDAI) public{
