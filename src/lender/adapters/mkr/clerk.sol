@@ -387,7 +387,7 @@ contract Clerk is Auth, Math {
         mgr.file("owner", usr);
     }
 
-    // returns the debt and updates to vault debt in Maker if needed
+    // returns the debt and updates the vault debt in Maker if needed
     function debt() public returns(uint) {
         bytes32 ilk_ = ilk();
         (, uint rho) =  jug.ilks(ilk_);
