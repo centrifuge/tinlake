@@ -82,7 +82,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         if (doPreHarvest) {
             clerk.harvest();
         }
-        uint preRequiredLocked = clerk.calcOvercollAmount(clerk.cdptab());
+        uint preRequiredLocked = clerk.calcOvercollAmount(clerk.debt());
         uint preSeniorAsset = safeAdd(mkrAssessor.seniorDebt(), mkrAssessor.effectiveSeniorBalance());
 
         // wipe is triggered by repay
@@ -95,7 +95,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         uint decreaseSeniorAsset = safeSub(preLockedDAIHarvest, rmul(clerk.cdpink(), mkrAssessor.calcSeniorTokenPrice()));
         assertEqTol(safeSub(preSeniorAssetHarvest, decreaseSeniorAsset),  safeAdd(mkrAssessor.seniorDebt(), mkrAssessor.effectiveSeniorBalance()),"testMKRWipe#4");
         if (doPreHarvest) {
-            assertEqTol(safeSub(preSeniorAsset, safeSub(preRequiredLocked,clerk.calcOvercollAmount(clerk.cdptab()))),
+            assertEqTol(safeSub(preSeniorAsset, safeSub(preRequiredLocked,clerk.calcOvercollAmount(clerk.debt()))),
                 safeAdd(mkrAssessor.seniorDebt(), mkrAssessor.effectiveSeniorBalance()),"testMKRWipe#4");
         }
     }

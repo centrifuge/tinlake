@@ -35,6 +35,6 @@ contract VatMock is Mock {
     }
 
     function ilks(bytes32) external view returns(uint, uint, uint, uint, uint)  {
-        return(0, values_return["stabilityFee"], 0, 0, 0);
+        return(0, values_return["stabilityFeeIdx"], 0, 0, 0);
     }
 }

@@ -15,7 +15,7 @@
 pragma solidity >=0.5.15 <0.6.0;
 
 import "tinlake-auth/auth.sol";
-import "tinlake-math/math.sol";
+import "tinlake-math/interest.sol";
 
 interface ManagerLike {
     // put collateral into cdp
@@ -53,7 +53,7 @@ interface SpotterLike {
 interface JugLike {
     function ilks(bytes32) external view returns(uint, uint);
     function drip(bytes32 ilk) external returns (uint rate);
-
+    function base() external view returns(uint);
 }
 
 interface GemJoinLike {
@@ -102,7 +102,7 @@ interface ERC20Like {
     function approve(address usr, uint amount) external;
 }
 
-contract Clerk is Auth, Math {
+contract Clerk is Auth, Interest {
 
     // max amount of DAI that can be brawn from MKR
     uint public creditline;
@@ -176,7 +176,7 @@ contract Clerk is Auth, Math {
     }
 
     function remainingCredit() public view returns (uint) {
-        uint debt_ = cdptab();
+        uint debt_ = debt();
         if (creditline <= debt_ || mkrActive() == false) {
             return 0;
         }
@@ -185,7 +185,7 @@ contract Clerk is Auth, Math {
 
     function collatDeficit() public view returns (uint) {
         uint lockedCollateralDAI = rmul(cdpink(), assessor.calcSeniorTokenPrice());
-        uint requiredCollateralDAI = calcOvercollAmount(cdptab());
+        uint requiredCollateralDAI = calcOvercollAmount(debt());
 
         if(requiredCollateralDAI > collateralTolerance){
             requiredCollateralDAI = safeSub(requiredCollateralDAI, collateralTolerance);
@@ -201,11 +201,11 @@ contract Clerk is Auth, Math {
         return calcOvercollAmount(remainingCredit());
     }
 
-    // junior stake in the cdpink -> value of drop used for cdptab protection
+    // junior stake in the cdpink -> value of drop used for debt protection
     function juniorStake() public view returns (uint) {
         // junior looses stake in case vault is in soft/hard liquidation mode
         uint collateralValue = rmul(cdpink(), assessor.calcSeniorTokenPrice());
-        uint mkrDebt = cdptab();
+        uint mkrDebt = debt();
         if (mkrActive() == false || collateralValue < mkrDebt) {
             return 0;
         }
@@ -353,12 +353,6 @@ contract Clerk is Auth, Math {
         assessor.changeSeniorAsset(increaseDAI, decreaseDAI);
     }
 
-    // returns the debt towards mkr
-    function cdptab() public view returns (uint) {
-        (, uint art) = vat.urns(ilk(), mgr.urn());
-        return rmul(art, stabilityFeeIndex());
-    }
-
     // returns the collateral amount in the cdp
     function cdpink() public view returns (uint) {
         uint ink = collateral.balanceOf(address(mgr));
@@ -387,16 +381,26 @@ contract Clerk is Auth, Math {
         mgr.file("owner", usr);
     }
 
-    // returns the debt and updates the vault debt in Maker if needed
-    function debt() public returns(uint) {
+    // returns the current debt from the Maker vault
+    function debt() public view returns(uint) {
         bytes32 ilk_ = ilk();
-        (, uint rho) =  jug.ilks(ilk_);
-        if(block.timestamp > rho) {
-            jug.drip(ilk_);
-        }
-        return cdptab();
-    }
+        // get debt index
+        (, uint art) = vat.urns(ilk_, mgr.urn());
 
+        // get accumulated interest rate index
+        (, uint rateIdx,,,) = vat.ilks(ilk_);
+
+        // get interest rate per second and last interest rate update timestamp
+        (uint duty, uint rho) = jug.ilks(ilk_);
+
+        // interest accumulation up to date
+        if (block.timestamp == rho) {
+            return rmul(art, rateIdx);
+        }
+
+        // calculate current debt (see jug.drip function in MakerDAO)
+        return rmul(art, rmul(rpow(safeAdd(jug.base(), duty), safeSub(block.timestamp, rho), ONE), rateIdx));
+    }
     function stabilityFeeIndex() public view returns(uint) {
         (, uint rate, , ,) = vat.ilks(ilk());
         return rate;
