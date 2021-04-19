@@ -176,7 +176,7 @@ contract Clerk is Auth, Interest {
     }
 
     function remainingCredit() public view returns (uint) {
-        uint debt_ = cdptab();
+        uint debt_ = debt();
         if (creditline <= debt_ || mkrActive() == false) {
             return 0;
         }
@@ -185,7 +185,7 @@ contract Clerk is Auth, Interest {
 
     function collatDeficit() public view returns (uint) {
         uint lockedCollateralDAI = rmul(cdpink(), assessor.calcSeniorTokenPrice());
-        uint requiredCollateralDAI = calcOvercollAmount(cdptab());
+        uint requiredCollateralDAI = calcOvercollAmount(debt());
 
         if(requiredCollateralDAI > collateralTolerance){
             requiredCollateralDAI = safeSub(requiredCollateralDAI, collateralTolerance);
@@ -201,11 +201,11 @@ contract Clerk is Auth, Interest {
         return calcOvercollAmount(remainingCredit());
     }
 
-    // junior stake in the cdpink -> value of drop used for cdptab protection
+    // junior stake in the cdpink -> value of drop used for debt protection
     function juniorStake() public view returns (uint) {
         // junior looses stake in case vault is in soft/hard liquidation mode
         uint collateralValue = rmul(cdpink(), assessor.calcSeniorTokenPrice());
-        uint mkrDebt = cdptab();
+        uint mkrDebt = debt();
         if (mkrActive() == false || collateralValue < mkrDebt) {
             return 0;
         }
@@ -351,12 +351,6 @@ contract Clerk is Auth, Interest {
 
     function updateSeniorAsset(uint decreaseDAI, uint increaseDAI) internal  {
         assessor.changeSeniorAsset(increaseDAI, decreaseDAI);
-    }
-
-    // returns the debt towards mkr
-    function cdptab() public view returns (uint) {
-        (, uint art) = vat.urns(ilk(), mgr.urn());
-        return rmul(art, stabilityFeeIndex());
     }
 
     // returns the collateral amount in the cdp
