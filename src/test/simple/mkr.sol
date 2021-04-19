@@ -16,6 +16,7 @@ interface ERC20Like {
 // implements mgr, spotter, vat interfaces
 contract JugMock {
     uint public duty;
+    uint public base = 10**27;
     function file(bytes32 what, uint value) external {
         if(what == "duty") {
           duty = value;
@@ -23,7 +24,8 @@ contract JugMock {
     }
 
     function ilks(bytes32 ilk) public view returns (uint ,uint) {
-      return (duty, 0);
+        // interest rate up to date in simpleMKR
+      return (duty, block.timestamp);
     }
 
     function drip(bytes32 ilk) public returns(uint) {return 0;}
