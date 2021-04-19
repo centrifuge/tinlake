@@ -17,7 +17,7 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "ds-test/test.sol";
 import "../clerk.sol";
-import "tinlake-math/math.sol";
+import "tinlake-math/interest.sol";
 
 import "../../../../test/simple/token.sol";
 import "../../../test/mock/reserve.sol";
@@ -39,7 +39,7 @@ contract Hevm {
 
 contract AssessorMockWithDef is AssessorMock, Definitions { }
 
-contract ClerkTest is Assertions {
+contract ClerkTest is Assertions, Interest {
     Hevm hevm;
 
     SimpleToken currency;
@@ -95,7 +95,7 @@ contract ClerkTest is Assertions {
         spotter.setReturn("mat", mat);
         spotter.setReturn("pip", address(0));
         // set stability fee to 0
-        vat.setReturn("stabilityFee", ONE);
+        vat.setReturn("stabilityFeeIdx", ONE);
         mgr.setVat(address(vat));
         mgr.setBytes32Return("ilk", "DROP");
         // cdp not in soft liquidation
@@ -114,16 +114,32 @@ contract ClerkTest is Assertions {
     }
 
     function testDebt() public {
+        // 5 % interest
+        // principal: 100
+        // day 1: 105      (100 * 1.05)
+        // day 2: 110.25   (100 * 1.05^2)
+        // day 3: 115.7625 (100 * 1.05^3)
+
         uint amount = 100 ether;
         vat.increaseTab(amount);
         jug.setInterestUpToDate(false);
-        jug.setReturn("ilks_rho", now);
+        uint rho = now;
+        jug.setReturn("ilks_rho", rho);
         uint interestRatePerSecond = uint(1000000564701133626865910626);     // 5 % day
         jug.setReturn("ilks_duty", safeSub(interestRatePerSecond, ONE));
         hevm.warp(now + 1 days);
         assertEq(clerk.debt(), 105 ether);
         hevm.warp(now + 1 days);
         assertEq(clerk.debt(), 110.25 ether);
+
+        //rate idx after two days of 5% interest
+        uint rateIdx = rpow(interestRatePerSecond, safeSub(block.timestamp, rho), ONE);
+        // simulate rate idx update
+        vat.setReturn("stabilityFeeIdx", rateIdx);
+        jug.setReturn("ilks_rho", block.timestamp);
+        assertEq(clerk.debt(), 110.25 ether);
+        hevm.warp(now + 1 days);
+        assertEq(clerk.debt(), 115.7625 ether);
     }
 
     function raise(uint amountDAI) public{
