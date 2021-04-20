@@ -401,6 +401,10 @@ contract ClerkTest is Assertions, Interest {
         // wipe should happen because it is exactly the threshold
         wipeAmountTooLow(clerk.wipeThreshold());
     }
+    function testWipeThresholdFile() public {
+        clerk.file("wipeThreshold", 123);
+        assertEq(clerk.wipeThreshold(), 123);
+    }
 
     function testPartialWipe() public {
         testFullDraw();

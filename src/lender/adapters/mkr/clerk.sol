@@ -177,7 +177,7 @@ contract Clerk is Auth, Interest {
         } else if (what == "tolerance") {
             collateralTolerance = value;
         } else if (what == "wipeThreshold") {
-            collateralTolerance = value;
+            wipeThreshold = value;
         } else { revert(); }
     }
 
