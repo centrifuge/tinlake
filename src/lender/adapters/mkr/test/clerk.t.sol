@@ -386,6 +386,26 @@ contract ClerkTest is Assertions, Interest {
         wipe(tab, dropPrice);
     }
 
+    function wipeAmountTooLow(uint amountDAI) public {
+        testFullDraw();
+        uint preReserve = currency.balanceOf(address(reserve));
+        clerk.wipe(amountDAI);
+        assertEq(currency.balanceOf(address(reserve)), preReserve);
+    }
+
+    function testWipeAmountTooLow() public {
+        wipeAmountTooLow(clerk.wipeThreshold() -1);
+    }
+
+    function testFailWipeAmountTooLow() public {
+        // wipe should happen because it is exactly the threshold
+        wipeAmountTooLow(clerk.wipeThreshold());
+    }
+    function testWipeThresholdFile() public {
+        clerk.file("wipeThreshold", 123);
+        assertEq(clerk.wipeThreshold(), 123);
+    }
+
     function testPartialWipe() public {
         testFullDraw();
         // increase dropPrice
@@ -416,7 +436,7 @@ contract ClerkTest is Assertions, Interest {
         // make sure reserve has enough DAI
         currency.mint(address(reserve), tab);
         // repay full debt
-        wipe(rmul(tab, 2), dropPrice);
+        wipe(tab, dropPrice);
     }
 
     function testFailWipeNoDebt() public {
@@ -513,6 +533,20 @@ contract ClerkTest is Assertions, Interest {
         testFullWipe();
         uint creditline = clerk.creditline();
         sink(creditline);
+    }
+
+    function testSinkLowerBorrowAmountEpoch() public {
+        testFullWipe();
+        uint creditline = clerk.creditline();
+        assessor.setReturn("borrowAmountEpoch", creditline/2);
+
+        uint reserve = 1000 ether;
+        uint seniorBalance = 800 ether;
+        assessor.setReturn("balance", reserve);
+        assessor.setReturn("seniorBalance", seniorBalance);
+        // raise creditLine
+        clerk.sink(creditline);
+        assertEq(assessor.values_uint("changeBorrowAmountEpoch"),0);
     }
 
     function testPartialSink() public {
