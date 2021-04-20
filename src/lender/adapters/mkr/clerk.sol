@@ -122,6 +122,8 @@ contract Clerk is Auth, Interest {
     ERC20Like public dai;
     ERC20Like public collateral;
 
+    uint public constant WAD = 10*18;
+
     // buffer to add on top of mat to avoid cdp liquidation => default 1%
     uint public matBuffer = 0.01 * 10**27;
 
@@ -130,7 +132,7 @@ contract Clerk is Auth, Interest {
 
     // the debt is only repaid if amount is higher than the threshold
     // repaying a lower amount would cause more cost in gas fees than the debt reduction
-    uint public wipeThreshold = 10**18;
+    uint public wipeThreshold = 1 * WAD;
 
     // adapter functions can only be active if the tinlake pool is currently not in epoch closing/submissions/execution state
     modifier active() { require(activated(), "epoch-closing"); _; }
