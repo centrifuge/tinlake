@@ -152,7 +152,7 @@ contract AssessorMock is Mock {
     }
 
     function changeBorrowAmountEpoch(uint currencyAmount) public {
-        values_uint["borrow_amount"] = currencyAmount;
+        values_uint["changeBorrowAmountEpoch"] = currencyAmount;
     }
 
     function borrowAmountEpoch() public view returns(uint) {

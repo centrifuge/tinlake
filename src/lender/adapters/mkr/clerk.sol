@@ -130,7 +130,7 @@ contract Clerk is Auth, Interest {
 
     // the debt is only repaid if amount is higher than the threshold
     // repaying a lower amount would cause more cost in gas fees than the debt reduction
-    uint public wipeThreshold = 1 ether;
+    uint public wipeThreshold = 10**18;
 
     // adapter functions can only be active if the tinlake pool is currently not in epoch closing/submissions/execution state
     modifier active() { require(activated(), "epoch-closing"); _; }
@@ -264,7 +264,7 @@ contract Clerk is Auth, Interest {
 
         uint debt_ = debt();
         require((debt_ > 0), "cdp-debt-already-repaid");
-        
+
         // repayment amount should not exceed cdp debt
         if (amountDAI > debt_) {
             amountDAI = debt_;
@@ -321,7 +321,15 @@ contract Clerk is Auth, Interest {
         // increase MKR crediline by amount
         creditline = safeSub(creditline, amountDAI);
         // decrease in creditline impacts amount available for new loans
-        assessor.changeBorrowAmountEpoch(safeSub(assessor.borrowAmountEpoch(), amountDAI));
+
+        uint borrowAmountEpoch = assessor.borrowAmountEpoch();
+
+        if(borrowAmountEpoch <= amountDAI) {
+            assessor.changeBorrowAmountEpoch(0);
+            return;
+        }
+
+        assessor.changeBorrowAmountEpoch(safeSub(borrowAmountEpoch, amountDAI));
     }
 
     function heal(uint amountDAI) public auth active {
