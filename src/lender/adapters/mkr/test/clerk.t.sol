@@ -386,6 +386,22 @@ contract ClerkTest is Assertions, Interest {
         wipe(tab, dropPrice);
     }
 
+    function wipeAmountTooLow(uint amountDAI) public {
+        testFullDraw();
+        uint preReserve = currency.balanceOf(address(reserve));
+        clerk.wipe(amountDAI);
+        assertEq(currency.balanceOf(address(reserve)), preReserve);
+    }
+
+    function testWipeAmountTooLow() public {
+        wipeAmountTooLow(clerk.wipeThreshold() -1);
+    }
+
+    function testFailWipeAmountTooLow() public {
+        // wipe should happen because it is exactly the threshold
+        wipeAmountTooLow(clerk.wipeThreshold());
+    }
+
     function testPartialWipe() public {
         testFullDraw();
         // increase dropPrice

@@ -128,6 +128,10 @@ contract Clerk is Auth, Interest {
     // collateral tolerance accepted because of potential rounding problems
     uint public collateralTolerance = 10;
 
+    // the debt is only repaid if amount is higher than the threshold
+    // repaying a lower amount would cause more cost in gas fees than the debt reduction
+    uint public wipeThreshold = 1 ether;
+
     // adapter functions can only be active if the tinlake pool is currently not in epoch closing/submissions/execution state
     modifier active() { require(activated(), "epoch-closing"); _; }
 
@@ -171,6 +175,8 @@ contract Clerk is Auth, Interest {
         if (what == "buffer") {
             matBuffer = value;
         } else if (what == "tolerance") {
+            collateralTolerance = value;
+        } else if (what == "wipeThreshold") {
             collateralTolerance = value;
         } else { revert(); }
     }
@@ -252,6 +258,12 @@ contract Clerk is Auth, Interest {
     function wipe(uint amountDAI) public auth active {
         uint debt_ = debt();
         require((debt_ > 0), "cdp-debt-already-repaid");
+
+        // if amountDAI is too low, required transaction fees of wipe would be higher
+        // only continue with wipe if amountDAI is higher than wipeThreshold;
+        if(amountDAI < wipeThreshold) {
+           return;
+        }
 
         // repayment amount should not exceed cdp debt
         if (amountDAI > debt_) {
