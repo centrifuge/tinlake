@@ -256,15 +256,15 @@ contract Clerk is Auth, Interest {
 
     // transfer DAI from reserve, wipe cdp debt, exit DROP from cdp, burn DROP, harvest junior profit
     function wipe(uint amountDAI) public auth active {
-        uint debt_ = debt();
-        require((debt_ > 0), "cdp-debt-already-repaid");
-
         // if amountDAI is too low, required transaction fees of wipe would be higher
         // only continue with wipe if amountDAI is higher than wipeThreshold;
         if(amountDAI < wipeThreshold) {
-           return;
+            return;
         }
 
+        uint debt_ = debt();
+        require((debt_ > 0), "cdp-debt-already-repaid");
+        
         // repayment amount should not exceed cdp debt
         if (amountDAI > debt_) {
             amountDAI = debt_;
