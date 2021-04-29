@@ -54,6 +54,7 @@ contract Reserve is Math, Auth {
         wards[msg.sender] = 1;
         currency = ERC20Like(currency_);
         pot = address(this);
+        currency.approve(pot, uint(-1));
     }
 
     function file(bytes32 what, uint amount) public auth {
