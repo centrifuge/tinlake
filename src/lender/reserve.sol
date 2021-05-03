@@ -68,6 +68,9 @@ contract Reserve is Math, Auth {
             shelf = ShelfLike(addr);
         } else if (contractName == "currency") {
             currency = ERC20Like(addr);
+            if (pot == address(this)) {
+                currency.approve(pot, uint(-1));
+            }
         } else if (contractName == "assessor") {
             assessor = AssessorLike(addr);
         } else if (contractName == "pot") {
