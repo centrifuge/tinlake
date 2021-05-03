@@ -54,6 +54,7 @@ contract Reserve is Math, Auth {
         wards[msg.sender] = 1;
         currency = ERC20Like(currency_);
         pot = address(this);
+        currency.approve(pot, uint(-1));
     }
 
     function file(bytes32 what, uint amount) public auth {
@@ -67,6 +68,9 @@ contract Reserve is Math, Auth {
             shelf = ShelfLike(addr);
         } else if (contractName == "currency") {
             currency = ERC20Like(addr);
+            if (pot == address(this)) {
+                currency.approve(pot, uint(-1));
+            }
         } else if (contractName == "assessor") {
             assessor = AssessorLike(addr);
         } else if (contractName == "pot") {
