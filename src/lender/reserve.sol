@@ -105,12 +105,6 @@ contract Reserve is Math, Auth {
         _depositAction(msg.sender, currencyAmount);
     }
 
-
-    // hard payout guarantees that the currency stays in the reserve
-    function hardPayout(uint currencyAmount) public auth {
-        _payoutAction(msg.sender, currencyAmount);
-    }
-
     function _depositAction(address usr, uint currencyAmount) internal {
         require(currency.transferFrom(usr, pot, currencyAmount), "reserve-deposit-failed");
         balance_ = safeAdd(balance_, currencyAmount);
@@ -139,6 +133,11 @@ contract Reserve is Math, Auth {
         balance_ = safeSub(balance_, currencyAmount);
     }
 
+    // hard payout guarantees that the currency stays in the reserve
+    function hardPayout(uint currencyAmount) public auth {
+        _payoutAction(msg.sender, currencyAmount);
+    }
+
     function _payout(address usr, uint currencyAmount)  internal {
         uint reserveBalance = currency.balanceOf(pot);
         if (currencyAmount > reserveBalance && address(lending) != address(0) && lending.activated()) {
@@ -158,6 +157,9 @@ contract Reserve is Math, Auth {
     // currency is moved between shelf and reserve if needed
     function balance() public {
         (bool requestWant, uint256 currencyAmount) = shelf.balanceRequest();
+        if(currencyAmount == 0) {
+            return;
+        }
         if (requestWant) {
             require(
                 currencyAvailable  >= currencyAmount,
