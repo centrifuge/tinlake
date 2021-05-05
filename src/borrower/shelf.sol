@@ -97,7 +97,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     /// sets the dependency to another contract
     function depend(bytes32 contractName, address addr) external auth {
         if (contractName == "lender") {
-            currency.approve(lender, uint(0));
+            if (lender != address(0)) currency.approve(lender, uint(0));
             currency.approve(addr, uint(-1));
             lender = addr;
         }
