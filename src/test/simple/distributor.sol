@@ -1,13 +1,13 @@
 pragma solidity >=0.5.15 <0.6.0;
 import "tinlake-auth/auth.sol";
 
-contract DistTokenLike {
-    function transferFrom(address, address, uint) public;
-    function mint(address, uint) public;
+interface DistTokenLike {
+    function transferFrom(address, address, uint) external;
+    function mint(address, uint) external;
 }
 
-contract DShelfLike {
-    function balanceRequest() public returns (bool, uint);
+interface DShelfLike {
+    function balanceRequest() external returns (bool, uint);
 }
 
 contract Distributor is Auth {

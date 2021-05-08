@@ -39,21 +39,21 @@ contract AssessorLike is FixedPoint {
         uint currSeniorAsset, uint newReserve, uint nav) public pure returns (uint seniorRatio);
 
     // definitions based on assessor state
-    function calcSeniorTokenPrice(uint NAV, uint reserve) external returns(Fixed27 memory tokenPrice);
-    function calcJuniorTokenPrice(uint NAV, uint reserve) external returns(Fixed27 memory tokenPrice);
+    function calcSeniorTokenPrice(uint NAV, uint reserve) public returns(Fixed27 memory tokenPrice);
+    function calcJuniorTokenPrice(uint NAV, uint reserve) public returns(Fixed27 memory tokenPrice);
 
     // get state
-    function maxReserve() external view returns(uint);
-    function calcUpdateNAV() external returns (uint);
-    function seniorDebt() external returns(uint);
-    function seniorBalance() external returns(uint);
-    function seniorRatioBounds() external view returns(Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio);
+    function maxReserve() public view returns(uint);
+    function calcUpdateNAV() public returns (uint);
+    function seniorDebt() public returns(uint);
+    function seniorBalance() public returns(uint);
+    function seniorRatioBounds() public view returns(Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio);
 
-    function totalBalance() external returns(uint);
+    function totalBalance() public returns(uint);
     // change state
     function changeBorrowAmountEpoch(uint currencyAmount) public;
-    function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) external;
-    function changeSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) external;
+    function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) public;
+    function changeSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) public;
 }
 
 // The EpochCoordinator keeps track of the epochs and execute epochs them.
