@@ -19,8 +19,8 @@ import "tinlake-math/math.sol";
 import "./../buckets.sol";
 
 
-contract Hevm {
-    function warp(uint256) public;
+interface Hevm {
+    function warp(uint256) external;
 }
 
 // Contract for testing the abstract Buckets contract

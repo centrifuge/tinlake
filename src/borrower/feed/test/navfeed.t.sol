@@ -19,8 +19,8 @@ import "./../navfeed.sol";
 import "./../../test/mock/shelf.sol";
 import "./../../test/mock/pile.sol";
 
-contract Hevm {
-    function warp(uint256) public;
+interface Hevm {
+    function warp(uint256) external;
 }
 
 contract NAVTest is DSTest, Math {

@@ -22,8 +22,8 @@ import "./../tranche.sol";
 import "../../test/simple/token.sol";
 import "../test/mock/reserve.sol";
 
-contract Hevm {
-    function warp(uint256) public;
+interface Hevm {
+    function warp(uint256) external;
 }
 
 contract User {

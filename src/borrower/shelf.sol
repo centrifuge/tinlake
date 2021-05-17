@@ -22,15 +22,15 @@ import "tinlake-auth/auth.sol";
 import "ds-test/test.sol";
 import { TitleOwned } from "tinlake-title/title.sol";
 
-contract NFTLike {
-    function ownerOf(uint256 tokenId) public view returns (address owner);
-    function transferFrom(address from, address to, uint256 tokenId) public;
+interface NFTLike {
+    function ownerOf(uint256 tokenId) external view returns (address owner);
+    function transferFrom(address from, address to, uint256 tokenId) external;
 }
 
-contract TitleLike {
-    function issue(address) public returns (uint);
-    function close(uint) public;
-    function ownerOf (uint) public returns (address);
+interface TitleLike {
+    function issue(address) external returns (uint);
+    function close(uint) external;
+    function ownerOf (uint) external returns (address);
 }
 
 contract TokenLike {
@@ -49,18 +49,18 @@ contract PileLike {
     function decDebt(uint, uint) public;
 }
 
-contract CeilingLike {
-    function borrow(uint loan, uint currencyAmount) public;
-    function repay(uint loan, uint currencyAmount) public;
+interface CeilingLike {
+    function borrow(uint loan, uint currencyAmount) external;
+    function repay(uint loan, uint currencyAmount) external;
 }
 
-contract DistributorLike {
-    function balance() public;
+interface DistributorLike {
+    function balance() external;
 }
 
-contract SubscriberLike {
-    function borrowEvent(uint loan) public;
-    function unlockEvent(uint loan) public;
+interface SubscriberLike {
+    function borrowEvent(uint loan) external;
+    function unlockEvent(uint loan) external;
 }
 
 contract Shelf is DSNote, Auth, TitleOwned, Math {
@@ -97,7 +97,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     /// sets the dependency to another contract
     function depend(bytes32 contractName, address addr) external auth {
         if (contractName == "lender") {
-            currency.approve(lender, uint(0));
+            if (lender != address(0)) currency.approve(lender, uint(0));
             currency.approve(addr, uint(-1));
             lender = addr;
         }

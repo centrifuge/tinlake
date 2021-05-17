@@ -17,9 +17,9 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "tinlake-erc20/erc20.sol";
 
-contract MemberlistLike {
-    function hasMember(address) public view returns (bool);
-    function member(address) public;
+interface MemberlistLike {
+    function hasMember(address) external view returns (bool);
+    function member(address) external;
 }
 
 // Only mebmber with a valid (not expired) membership should be allowed to receive tokens

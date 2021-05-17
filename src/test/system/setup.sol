@@ -101,14 +101,14 @@ contract LenderDeployerLike {
 
     address             public deployer;
 
-    function deployJunior() external;
-    function deploySenior() external;
-    function deployReserve() external;
-    function deployAssessor() external;
-    function deployAssessorAdmin() external;
-    function deployCoordinator() external;
+    function deployJunior() public;
+    function deploySenior() public;
+    function deployReserve() public;
+    function deployAssessor() public;
+    function deployAssessorAdmin() public;
+    function deployCoordinator() public;
 
-    function deploy() external;
+    function deploy() public;
 }
 
 contract TestSetup is Config  {

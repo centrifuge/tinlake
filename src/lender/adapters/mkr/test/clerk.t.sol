@@ -33,8 +33,8 @@ import "../../../definitions.sol";
 import "../../../../test/system/assertions.sol";
 
 
-contract Hevm {
-    function warp(uint256) public;
+interface Hevm {
+    function warp(uint256) external;
 }
 
 contract AssessorMockWithDef is AssessorMock, Definitions { }
