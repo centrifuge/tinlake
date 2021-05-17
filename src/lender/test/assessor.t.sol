@@ -24,8 +24,8 @@ import "./mock/navFeed.sol";
 import "./mock/reserve.sol";
 import "../../test/simple/token.sol";
 
-contract Hevm {
-    function warp(uint256) public;
+interface Hevm {
+    function warp(uint256) external;
 }
 
 contract AssessorTest is DSTest, Math {

@@ -23,8 +23,8 @@ import "tinlake-math/math.sol";
 contract TestUser {
 }
 
-contract Hevm {
-    function warp(uint256) public;
+interface Hevm {
+    function warp(uint256) external;
 }
 
 contract RestrictedTokenTest is Math, DSTest {

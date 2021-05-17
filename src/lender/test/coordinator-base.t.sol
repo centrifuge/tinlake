@@ -26,8 +26,8 @@ import "./mock/reserve.sol";
 import "./mock/assessor.sol";
 import "../deployer.sol";
 
-contract Hevm {
-    function warp(uint256) public;
+interface Hevm {
+    function warp(uint256) external;
 }
 
 // abstract

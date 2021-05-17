@@ -18,12 +18,12 @@ pragma solidity >=0.5.15 <0.6.0;
 import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
 
-contract TrancheLike {
-    function supplyOrder(address usr, uint currencyAmount) public;
-    function redeemOrder(address usr, uint tokenAmount) public;
-    function disburse(address usr) public returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
-    function disburse(address usr, uint endEpoch) public returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
-    function currency() public view returns (address);
+interface TrancheLike {
+    function supplyOrder(address usr, uint currencyAmount) external;
+    function redeemOrder(address usr, uint tokenAmount) external;
+    function disburse(address usr) external returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
+    function disburse(address usr, uint endEpoch) external returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
+    function currency() external view returns (address);
 }
 
 interface RestrictedTokenLike {

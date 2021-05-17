@@ -26,8 +26,8 @@ import "./../../../test/mock/clerk.sol";
 import "../../../../test/simple/token.sol";
 
 
-contract Hevm {
-    function warp(uint256) public;
+interface Hevm {
+    function warp(uint256) external;
 }
 
 contract AssessorMKRTest is DSTest, Interest {

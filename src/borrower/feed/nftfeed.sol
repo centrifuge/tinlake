@@ -19,21 +19,21 @@ import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 
-contract ShelfLike {
-    function shelf(uint loan) public view returns (address registry, uint tokenId);
-    function nftlookup(bytes32 nftID) public returns (uint loan);
+interface ShelfLike {
+    function shelf(uint loan) external view returns (address registry, uint tokenId);
+    function nftlookup(bytes32 nftID) external returns (uint loan);
 }
 
-contract PileLike {
-    function setRate(uint loan, uint rate) public;
-    function debt(uint loan) public returns (uint);
-    function pie(uint loan) public returns (uint);
-    function changeRate(uint loan, uint newRate) public;
-    function loanRates(uint loan) public returns (uint);
-    function file(bytes32, uint, uint) public;
-    function rates(uint rate) public view returns (uint, uint, uint ,uint48, uint);
-    function total() public view returns (uint);
-    function rateDebt(uint rate) public view returns (uint);
+interface PileLike {
+    function setRate(uint loan, uint rate) external;
+    function debt(uint loan) external returns (uint);
+    function pie(uint loan) external returns (uint);
+    function changeRate(uint loan, uint newRate) external;
+    function loanRates(uint loan) external returns (uint);
+    function file(bytes32, uint, uint) external;
+    function rates(uint rate) external view returns (uint, uint, uint ,uint48, uint);
+    function total() external view returns (uint);
+    function rateDebt(uint rate) external view returns (uint);
 }
 
 // The NFTFeed stores values and risk group of nfts that are used as collateral in tinlake. A risk group contains: thresholdRatio, ceilingRatio & interstRate.

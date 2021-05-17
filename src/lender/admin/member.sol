@@ -16,9 +16,9 @@ pragma solidity >=0.5.15 <0.6.0;
 
 import "tinlake-auth/auth.sol";
 
-contract MemberlistLike {
-    function updateMember(address usr, uint validUntil) public;
-    function updateMembers(address[] memory users, uint validUntil) public;
+interface MemberlistLike {
+    function updateMember(address usr, uint validUntil) external;
+    function updateMembers(address[] calldata users, uint validUntil) external;
 }
 
 // Wrapper contract for permission restriction on the memberlists.

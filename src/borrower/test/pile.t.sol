@@ -19,8 +19,8 @@ import "ds-test/test.sol";
 import "tinlake-math/math.sol";
 import "../pile.sol";
 
-contract Hevm {
-    function warp(uint256) public;
+interface Hevm {
+    function warp(uint256) external;
 }
 
 contract PileTest is Interest, DSTest {

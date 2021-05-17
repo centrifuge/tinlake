@@ -19,27 +19,27 @@ pragma solidity >=0.5.15 <0.6.0;
 import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
 
-contract NFTLike {
+interface NFTLike {
     function ownerOf(uint256 tokenId) external view returns (address owner);
     function transferFrom(address from, address to, uint256 tokenId) external;
 }
 
-contract DistributorLike {
-    function balance() public;
+interface DistributorLike {
+    function balance() external;
 }
 
-contract ThresholdRegistryLike {
-    function threshold(uint) public view returns (uint);
+interface ThresholdRegistryLike {
+    function threshold(uint) external view returns (uint);
 }
 
-contract PileLike {
-    function debt(uint) public returns (uint);
+interface PileLike {
+    function debt(uint) external returns (uint);
 }
 
-contract ShelfLike {
-    function claim(uint, address) public;
-    function token(uint loan) public returns (address, uint);
-    function recover(uint loan, address usr, uint wad) public;
+interface ShelfLike {
+    function claim(uint, address) external;
+    function token(uint loan) external returns (address, uint);
+    function recover(uint loan, address usr, uint wad) external;
 }
 
 contract Collector is DSNote, Auth {
