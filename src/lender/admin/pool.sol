@@ -20,7 +20,7 @@ interface AssessorLike {
     function file(bytes32 name, uint256 value) external;
 }
 
-interface LendingAdapter {
+interface LendingAdapterLike {
     function raise(uint256 amount) external;
     function sink(uint256 amount) external;
 }
@@ -34,7 +34,7 @@ interface MemberlistLike {
 contract PoolAdmin is Auth {
   
     AssessorLike public assessor;
-    LendingAdapter public lending;
+    LendingAdapterLike public lending;
     MemberlistLike public seniorMemberlist;
     MemberlistLike public juniorMemberlist;
 
@@ -63,7 +63,7 @@ contract PoolAdmin is Auth {
         if (contractName == "assessor") {
             assessor = AssessorLike(addr);
         } else if (contractName == "lending") {
-            lending = LendingAdapter(addr);
+            lending = LendingAdapterLike(addr);
         } else if (contractName == "seniorMemberlist") {
             seniorMemberlist = MemberlistLike(addr);
         } else if (contractName == "juniorMemberlist") {

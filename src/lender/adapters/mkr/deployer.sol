@@ -84,7 +84,7 @@ contract MKRLenderDeployer is LenderDeployer {
         MemberlistLike(seniorMemberlist).updateMember(clerk, uint(-1));
         MemberlistLike(seniorMemberlist).updateMember(mkrMgr, uint(-1));
 
-        DependLike(assessor).depend("clerk", clerk);
+        DependLike(assessor).depend("lending", clerk);
 
     }
 }
