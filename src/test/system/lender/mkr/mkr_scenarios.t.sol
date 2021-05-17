@@ -19,7 +19,6 @@ pragma experimental ABIEncoderV2;
 import "../../test_suite.sol";
 import "tinlake-math/interest.sol";
 import {BaseTypes} from "../../../../lender/test/coordinator-base.t.sol";
-import { MKRAssessor }from "../../../../lender/adapters/mkr/assessor.sol";
 import {MKRTestBasis} from "./mkr_basic.t.sol";
 
 contract MKRLenderSystemTest is MKRTestBasis {

@@ -95,6 +95,7 @@ contract Assessor is Definitions, Auth, Interest {
 
     function file(bytes32 name, uint value) public auth {
         if (name == "seniorInterestRate") {
+            dripSeniorDebt();
             seniorInterestRate = Fixed27(value);
         } else if (name == "maxReserve") {
             maxReserve = value;

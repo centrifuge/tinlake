@@ -19,11 +19,11 @@ pragma experimental ABIEncoderV2;
 import "../../test_suite.sol";
 import "tinlake-math/interest.sol";
 import {BaseTypes} from "../../../../lender/test/coordinator-base.t.sol";
-import { MKRAssessor }from "../../../../lender/adapters/mkr/assessor.sol";
+import { Assessor }from "../../../../lender/assessor.sol";
 
 
 contract MKRTestBasis is TestSuite, Interest {
-    MKRAssessor mkrAssessor;
+    Assessor mkrAssessor;
 
     function setUp() public {
         // setup hevm
@@ -37,7 +37,7 @@ contract MKRTestBasis is TestSuite, Interest {
         nftFeed_ = NFTFeedLike(address(nftFeed));
 
         root.relyContract(address(clerk), address(this));
-        mkrAssessor = MKRAssessor(address(assessor));
+        mkrAssessor = assessor;
         mkr.depend("currency" ,currency_);
         mkr.depend("drop", mkrLenderDeployer.seniorToken());
     }
