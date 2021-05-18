@@ -23,6 +23,7 @@ interface AssessorLike {
 interface LendingAdapterLike {
     function raise(uint256 amount) external;
     function sink(uint256 amount) external;
+    function heal() external;
 }
 
 interface MemberlistLike {
@@ -50,6 +51,7 @@ contract PoolAdmin is Auth {
     event SetMaxReserve(uint256 value);
     event RaiseCreditline(uint256 amount);
     event SinkCreditline(uint256 amount);
+    event HealCreditline();
     event UpdateSeniorMember(address indexed usr, uint256 validUntil);
     event UpdateSeniorMembers(address[] indexed users, uint256 validUntil);
     event UpdateJuniorMember(address indexed usr, uint256 validUntil);
@@ -103,6 +105,11 @@ contract PoolAdmin is Auth {
     function sinkCreditline(uint256 amount) public admin {
         lending.sink(amount);
         emit SinkCreditline(amount);
+    }
+
+    function healCreditline() public admin {
+        lending.heal();
+        emit HealCreditline();
     }
 
     // Manage memberlists

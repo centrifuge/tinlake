@@ -87,8 +87,8 @@ contract PoolAdminTest is DSTest {
 
     function testFailRaiseCreditlineNotAdmin() public {
         callRaiseCreditline();
-
     }
+
     function callSinkCreditline() public {
         uint amount = 100 ether;
         poolAdmin.sinkCreditline(amount);
@@ -103,6 +103,17 @@ contract PoolAdminTest is DSTest {
 
     function testFailSinkCreditlineNotAdmin() public {
         callSinkCreditline();
+    }
+
+    function testHealCreditline() public {
+        poolAdmin.relyAdmin(address(this));
+        poolAdmin.healCreditline();
+
+        assertEq(lending.calls("heal"), 1);
+    }
+
+    function testFailHealCreditline() public {
+        poolAdmin.healCreditline();
     }
 
     // Test senior memberlist

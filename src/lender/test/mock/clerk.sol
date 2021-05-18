@@ -60,5 +60,9 @@ contract ClerkMock is Mock, Auth {
         values_uint["clerk_sink_amount"] = amount;
     }
 
+    function heal() public auth {
+        calls["heal"]++;
+    }
+
 }
 
