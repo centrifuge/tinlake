@@ -340,9 +340,9 @@ abstract contract TestSetup is Config  {
         }
 
         if (mkrAdapter) {
-            ld.deploy();
-        } else {
             ld.deployMkr();
+        } else {
+            ld.deploy();
         }
 
         fetchContractAddr(ld);
