@@ -20,8 +20,6 @@ import "../../base_system.sol";
 
 contract PrincipalBorrowTest is BaseSystemTest {
 
-    Hevm hevm;
-
     function setUp() public {
         baseSetup();
         createTestUsers();

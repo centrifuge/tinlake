@@ -26,7 +26,6 @@ import "tinlake-math/math.sol";
 
 contract OperatorTest is Math, DSTest {
 
-    uint256 constant ONE = 10 ** 27;
     uint memberlistValidity = safeAdd(now, 8 days);
     TrancheMock tranche;
     Operator operator;

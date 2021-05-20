@@ -19,7 +19,6 @@ pragma experimental ABIEncoderV2;
 import "../../base_system.sol";
 
 contract PrincipalRepayTest is BaseSystemTest {
-    Hevm hevm;
 
     function setUp() public {
         baseSetup();

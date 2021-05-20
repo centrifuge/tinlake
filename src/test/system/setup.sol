@@ -109,6 +109,7 @@ abstract contract LenderDeployerLike {
     function deployCoordinator() public virtual;
 
     function deploy() public virtual;
+    function deployMkr() public virtual;
 }
 
 abstract contract TestSetup is Config  {
@@ -338,7 +339,12 @@ abstract contract TestSetup is Config  {
             clerk = Clerk(mkrLenderDeployer.clerk());
         }
 
-        ld.deploy();
+        if (mkrAdapter) {
+            ld.deploy();
+        } else {
+            ld.deployMkr();
+        }
+
         fetchContractAddr(ld);
     }
 }

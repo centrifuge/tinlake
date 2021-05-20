@@ -31,7 +31,6 @@ contract RestrictedTokenTest is Math, DSTest {
 
     Hevm hevm;
     
-    uint256 constant ONE = 10 ** 27;
     uint memberlistValidity = safeAdd(now, 8 days);
     Memberlist memberlist;
     RestrictedToken token;

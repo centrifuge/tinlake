@@ -20,8 +20,6 @@ import "../base_system.sol";
 
 contract UnlockTest is BaseSystemTest {
 
-    Hevm hevm;
-
     function setUp() public {
         baseSetup();
         createTestUsers();

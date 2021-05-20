@@ -66,7 +66,6 @@ interface SubscriberLike {
 contract Shelf is DSNote, Auth, TitleOwned, Math {
 
     // --- Data ---
-    TitleLike public title;
     CeilingLike public ceiling;
     PileLike public pile;
     TokenLike public currency;

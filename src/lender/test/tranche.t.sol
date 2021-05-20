@@ -44,8 +44,6 @@ contract TrancheTest is DSTest, Math, FixedPoint {
     address reserve_;
     address self;
 
-    uint256 constant ONE = 10**27;
-
     uint public currentEpoch;
     uint public lastEpochExecuted;
 

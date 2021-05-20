@@ -20,7 +20,6 @@ import "ds-test/test.sol";
 import "./base_system.sol";
 
 contract TestSuite is BaseSystemTest {
-    Hevm hevm;
 
     uint constant DEFAULT_LOAN_ID = 1;
     uint constant DEFAULT_MATURITY_DATE = 5 days;
