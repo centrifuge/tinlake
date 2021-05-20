@@ -152,7 +152,7 @@ contract LenderDeployer is FixedPoint {
         AuthLike(coordinator).rely(root);
     }
 
-    function deploy() public {
+    function deploy() public virtual {
         require(coordinator != address(0) && assessor != address(0) &&
                 reserve != address(0) && seniorTranche != address(0));
 

@@ -44,7 +44,7 @@ contract MKRLenderDeployer is LenderDeployer {
         mkrDeployer = address(1);
     }
 
-    function deployMkr() public {
+    function deploy() public override {
         super.deploy();
         require(clerk != address(0));
 

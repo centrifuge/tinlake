@@ -323,12 +323,7 @@ abstract contract TestSetup is Config  {
             clerk = Clerk(mkrLenderDeployer.clerk());
         }
 
-        if (mkrAdapter) {
-            ld.deployMkr();
-        } else {
-            ld.deploy();
-        }
-
+        ld.deploy();
         fetchContractAddr(ld);
     }
 }

@@ -12,20 +12,20 @@ interface NFTLike {
     function transferFrom(address from, address to, uint256 tokenId) external;
 }
 
-abstract contract TokenLike {
-    uint public totalSupply;
-    function balanceOf(address) public virtual view returns (uint);
-    function transferFrom(address,address,uint) public virtual returns (bool);
-    function transfer(address, uint) public virtual returns (bool);
-    function approve(address, uint) public virtual;
+interface TokenLike {
+    function totalSupply() external view returns(uint);
+    function balanceOf(address) external view returns (uint);
+    function transferFrom(address,address,uint) external returns (bool);
+    function transfer(address, uint) external returns (bool);
+    function approve(address, uint) external;
 }
 
-abstract contract PileLike {
-    uint public total;
-    function debt(uint) public virtual returns (uint);
-    function accrue(uint) public virtual;
-    function incDebt(uint, uint) public virtual;
-    function decDebt(uint, uint) public virtual;
+interface PileLike {
+    function total() external view returns(uint);
+    function debt(uint) external returns (uint);
+    function accrue(uint) external;
+    function incDebt(uint, uint) external;
+    function decDebt(uint, uint) external;
 }
 
 interface CeilingLike {
