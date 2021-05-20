@@ -592,6 +592,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         assessor.changeSeniorAsset(seniorSupply, seniorRedeem);
         // the new reserve after this epoch can be used for new loans
         assessor.changeBorrowAmountEpoch(newReserve);
+        
         // reset state for next epochs
         lastEpochExecuted = epochID;
         minChallengePeriodEnd = 0;

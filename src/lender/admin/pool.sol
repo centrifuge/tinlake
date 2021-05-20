@@ -20,9 +20,10 @@ interface AssessorLike {
     function file(bytes32 name, uint256 value) external;
 }
 
-interface LendingAdapter {
+interface LendingAdapterLike {
     function raise(uint256 amount) external;
     function sink(uint256 amount) external;
+    function heal() external;
 }
 
 interface MemberlistLike {
@@ -34,7 +35,7 @@ interface MemberlistLike {
 contract PoolAdmin is Auth {
   
     AssessorLike public assessor;
-    LendingAdapter public lending;
+    LendingAdapterLike public lending;
     MemberlistLike public seniorMemberlist;
     MemberlistLike public juniorMemberlist;
 
@@ -50,6 +51,7 @@ contract PoolAdmin is Auth {
     event SetMaxReserve(uint256 value);
     event RaiseCreditline(uint256 amount);
     event SinkCreditline(uint256 amount);
+    event HealCreditline();
     event UpdateSeniorMember(address indexed usr, uint256 validUntil);
     event UpdateSeniorMembers(address[] indexed users, uint256 validUntil);
     event UpdateJuniorMember(address indexed usr, uint256 validUntil);
@@ -63,7 +65,7 @@ contract PoolAdmin is Auth {
         if (contractName == "assessor") {
             assessor = AssessorLike(addr);
         } else if (contractName == "lending") {
-            lending = LendingAdapter(addr);
+            lending = LendingAdapterLike(addr);
         } else if (contractName == "seniorMemberlist") {
             seniorMemberlist = MemberlistLike(addr);
         } else if (contractName == "juniorMemberlist") {
@@ -103,6 +105,11 @@ contract PoolAdmin is Auth {
     function sinkCreditline(uint256 amount) public admin {
         lending.sink(amount);
         emit SinkCreditline(amount);
+    }
+
+    function healCreditline() public admin {
+        lending.heal();
+        emit HealCreditline();
     }
 
     // Manage memberlists

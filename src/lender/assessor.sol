@@ -34,6 +34,14 @@ interface ReserveLike {
     function currencyAvailable() external view returns(uint);
 }
 
+interface LendingAdapter {
+    function remainingCredit() external view returns (uint);
+    function juniorStake() external view returns (uint);
+    function calcOvercollAmount(uint amount) external view returns (uint);
+    function stabilityFee() external view returns(uint);
+    function debt() external view returns(uint);
+}
+
 contract Assessor is Definitions, Auth, Interest {
     // senior ratio from the last epoch executed
     Fixed27        public seniorRatio;
@@ -56,10 +64,13 @@ contract Assessor is Definitions, Auth, Interest {
 
     uint            public maxReserve;
 
+    uint            public creditBufferTime = 1 days;
+
     TrancheLike     public seniorTranche;
     TrancheLike     public juniorTranche;
     NAVFeedLike     public navFeed;
     ReserveLike     public reserve;
+    LendingAdapter  public lending;
 
     constructor() public {
         wards[msg.sender] = 1;
@@ -77,23 +88,28 @@ contract Assessor is Definitions, Auth, Interest {
             juniorTranche = TrancheLike(addr);
         } else if (contractName == "reserve") {
             reserve = ReserveLike(addr);
+        } else if (contractName == "lending") {
+            lending = LendingAdapter(addr);
         } else revert();
     }
 
     function file(bytes32 name, uint value) public auth {
-        if(name == "seniorInterestRate") {
+        if (name == "seniorInterestRate") {
+            dripSeniorDebt();
             seniorInterestRate = Fixed27(value);
-        }
-        else if (name == "maxReserve") {maxReserve = value;}
-        else if (name == "maxSeniorRatio") {
+        } else if (name == "maxReserve") {
+            maxReserve = value;
+        } else if (name == "maxSeniorRatio") {
             require(value > minSeniorRatio.value, "value-too-small");
             maxSeniorRatio = Fixed27(value);
-        }
-        else if (name == "minSeniorRatio") {
+        } else if (name == "minSeniorRatio") {
             require(value < maxSeniorRatio.value, "value-too-big");
             minSeniorRatio = Fixed27(value);
+        } else if (name == "creditBufferTime") {
+            creditBufferTime = value;
+        } else {
+            revert("unknown-variable");
         }
-        else {revert("unknown-variable");}
     }
 
     function reBalance(uint seniorAsset_, uint seniorRatio_) internal {
@@ -133,11 +149,19 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     function calcSeniorTokenPrice() external view returns(uint) {
-        return calcSeniorTokenPrice(navFeed.currentNAV(), reserve.totalBalance());
+        return calcSeniorTokenPrice(navFeed.approximatedNAV(), reserve.totalBalance());
+    }
+
+    function calcSeniorTokenPrice(uint nav_, uint) public view returns(uint) {
+        return _calcSeniorTokenPrice(nav_, reserve.totalBalance());
     }
 
     function calcJuniorTokenPrice() external view returns(uint) {
-        return calcJuniorTokenPrice(navFeed.currentNAV(), reserve.totalBalance());
+        return _calcJuniorTokenPrice(navFeed.currentNAV(), reserve.totalBalance());
+    }
+
+    function calcJuniorTokenPrice(uint nav_, uint) public view returns (uint) {
+        return _calcJuniorTokenPrice(nav_, reserve.totalBalance());
     }
 
     function calcTokenPrices() external view returns (uint, uint) {
@@ -147,15 +171,21 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     function calcTokenPrices(uint epochNAV, uint epochReserve) public view returns (uint, uint) {
-        return (calcJuniorTokenPrice(epochNAV, epochReserve), calcSeniorTokenPrice(epochNAV, epochReserve));
+        return (_calcJuniorTokenPrice(epochNAV, epochReserve), _calcSeniorTokenPrice(epochNAV, epochReserve));
     }
 
-    function calcSeniorTokenPrice(uint epochNAV, uint epochReserve) public view returns(uint) {
-        if ((epochNAV == 0 && epochReserve == 0) || seniorTranche.tokenSupply() == 0) {
+    function _calcSeniorTokenPrice(uint nav_, uint reserve_) internal view returns(uint) {
+        // the coordinator interface will pass the reserveAvailable
+
+        if ((nav_ == 0 && reserve_ == 0) || seniorTranche.tokenSupply() == 0) {
             // initial token price at start 1.00
             return ONE;
         }
-        uint totalAssets = safeAdd(epochNAV, epochReserve);
+
+        // reserve includes creditline from maker
+        uint totalAssets = safeAdd(nav_, reserve_);
+
+        // includes creditline
         uint seniorAssetValue = calcExpectedSeniorAsset(seniorDebt(), seniorBalance_);
 
         if(totalAssets < seniorAssetValue) {
@@ -164,19 +194,30 @@ contract Assessor is Definitions, Auth, Interest {
         return rdiv(seniorAssetValue, seniorTranche.tokenSupply());
     }
 
-    function calcJuniorTokenPrice(uint epochNAV, uint epochReserve) public view returns(uint) {
-        if ((epochNAV == 0 && epochReserve == 0) || juniorTranche.tokenSupply() == 0) {
+    function _calcJuniorTokenPrice(uint nav_, uint reserve_) internal view returns (uint) {
+        if ((nav_ == 0 && reserve_ == 0) || juniorTranche.tokenSupply() == 0) {
             // initial token price at start 1.00
             return ONE;
         }
-        uint totalAssets = safeAdd(epochNAV, epochReserve);
+        // reserve includes creditline from maker
+        uint totalAssets = safeAdd(nav_, reserve_);
+
+        // includes creditline from mkr
         uint seniorAssetValue = calcExpectedSeniorAsset(seniorDebt(), seniorBalance_);
 
         if(totalAssets < seniorAssetValue) {
             return 0;
         }
 
-        return rdiv(safeSub(totalAssets, seniorAssetValue), juniorTranche.tokenSupply());
+        // the junior tranche only needs to pay for the mkr over-collateralization if
+        // the mkr vault is liquidated, if that is true juniorStake=0
+        uint juniorStake = 0;
+        if (address(lending) != address(0)) {
+            juniorStake = lending.juniorStake();
+        }
+
+        return rdiv(safeAdd(safeSub(totalAssets, seniorAssetValue), juniorStake),
+            juniorTranche.tokenSupply());
     }
 
     /// repayment update keeps track of senior bookkeeping for repaid loans
@@ -239,12 +280,30 @@ contract Assessor is Definitions, Auth, Interest {
         return seniorDebt_;
     }
 
-    function seniorBalance() public view returns (uint) {
+    function seniorBalance() public view returns(uint) {
+        return safeAdd(seniorBalance_, remainingOvercollCredit());
+    }
+
+    function effectiveSeniorBalance() public view returns(uint) {
         return seniorBalance_;
     }
 
-    function totalBalance() public view returns (uint) {
+    function effectiveTotalBalance() public view returns(uint) {
         return reserve.totalBalance();
+    }
+
+    function totalBalance() public view returns(uint) {
+        return safeAdd(reserve.totalBalance(), remainingCredit());
+    }
+
+    // returns the current NAV
+    function currentNAV() public view returns(uint) {
+        return navFeed.currentNAV();
+    }
+
+    // returns the approximated NAV for gas-performance reasons
+    function getNAV() public view returns(uint) {
+        return navFeed.approximatedNAV();
     }
 
     // changes the total amount available for borrowing loans
@@ -275,5 +334,32 @@ contract Assessor is Definitions, Auth, Interest {
         }
 
         return safeSub(ONE, rdiv(seniorAsset, assets));
+    }
+
+    // returns the remainingCredit plus a buffer for the interest increase
+    function remainingCredit() public view returns(uint) {
+        if (address(lending) == address(0)) {
+            return 0;
+        }
+
+        // over the time the remainingCredit will decrease because of the accumulated debt interest
+        // therefore a buffer is reduced from the  remainingCredit to prevent the usage of currency which is not available
+        uint debt = lending.debt();
+        uint stabilityBuffer = safeSub(rmul(rpow(lending.stabilityFee(),
+            creditBufferTime, ONE), debt), debt);
+        uint remainingCredit = lending.remainingCredit();
+        if(remainingCredit > stabilityBuffer) {
+            return safeSub(remainingCredit, stabilityBuffer);
+        }
+        
+        return 0;
+    }
+
+    function remainingOvercollCredit() public view returns(uint) {
+        if (address(lending) == address(0)) {
+            return 0;
+        }
+
+        return lending.calcOvercollAmount(remainingCredit());
     }
 }

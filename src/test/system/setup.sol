@@ -49,7 +49,6 @@ import { LenderDeployer } from "../../lender/deployer.sol";
 // MKR
 import { MKRLenderDeployer } from "../../lender/adapters/mkr/deployer.sol";
 import { ClerkFab } from "../../lender/adapters/mkr/fabs/clerk.sol";
-import { MKRAssessorFab }from "../../lender/adapters/mkr/fabs/assessor.sol";
 
 import { Title } from "tinlake-title/title.sol";
 import { Pile } from "../../borrower/pile.sol";
@@ -242,7 +241,7 @@ contract TestSetup is Config  {
 
     function prepareMKRLenderDeployer(address rootAddr, address trancheFab, address memberlistFab, address restrictedTokenFab,
         address reserveFab, address coordinatorFab, address operatorFab, address assessorAdminFab) public {
-        MKRAssessorFab assessorFab = new MKRAssessorFab();
+        AssessorFab assessorFab = new AssessorFab();
         ClerkFab clerkFab = new ClerkFab();
 
         mkrLenderDeployer = new MKRLenderDeployer(rootAddr, currency_, address(trancheFab), address(memberlistFab),
