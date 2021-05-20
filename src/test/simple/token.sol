@@ -16,11 +16,11 @@
 pragma solidity >=0.6.12;
 
 import "tinlake-math/math.sol";
-import "tinlake-erc20/erc20.sol";
+import "../../lender/token/erc20.sol";
 
-contract SimpleToken is Math, ERC20 {
+contract SimpleToken is Math, TinlakeERC20 {
     
-    constructor(string memory symbol_, string memory name_) ERC20(symbol, name) public {}
+    constructor(string memory symbol_, string memory name_) TinlakeERC20(symbol, name) public {}
 
     // --- Token ---
     function mint(address usr, uint wad) public override {
