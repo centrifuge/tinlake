@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.15 <0.6.0;
+pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
 import { TitleFab } from "../../borrower/fabs/title.sol";
@@ -73,7 +73,7 @@ import "../../lender/adapters/mkr/test/mock/spotter.sol";
 import "./config.sol";
 
 // abstract contract
-contract LenderDeployerLike {
+abstract contract LenderDeployerLike {
     address public root;
     address public currency;
 
@@ -101,17 +101,17 @@ contract LenderDeployerLike {
 
     address             public deployer;
 
-    function deployJunior() public;
-    function deploySenior() public;
-    function deployReserve() public;
-    function deployAssessor() public;
-    function deployAssessorAdmin() public;
-    function deployCoordinator() public;
+    function deployJunior() public virtual;
+    function deploySenior() public virtual;
+    function deployReserve() public virtual;
+    function deployAssessor() public virtual;
+    function deployAssessorAdmin() public virtual;
+    function deployCoordinator() public virtual;
 
-    function deploy() public;
+    function deploy() public virtual;
 }
 
-contract TestSetup is Config  {
+abstract contract TestSetup is Config  {
     Title public collateralNFT;
     address      public collateralNFT_;
     SimpleToken  public currency;
@@ -156,20 +156,20 @@ contract TestSetup is Config  {
 
     TinlakeConfig internal deploymentConfig;
 
-    function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
+    function issueNFT(address usr) public virtual returns (uint tokenId, bytes32 lookupId) {
         tokenId = collateralNFT.issue(usr);
         lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
         return (tokenId, lookupId);
     }
 
 
-    function deployContracts() public {
+    function deployContracts() public virtual {
         bool mkrAdapter = false;
         TinlakeConfig memory defaultConfig = defaultConfig();
         deployContracts(mkrAdapter, defaultConfig);
     }
 
-    function deployContracts(bool mkrAdapter, TinlakeConfig memory config) public {
+    function deployContracts(bool mkrAdapter, TinlakeConfig memory config) public virtual {
         deployTestRoot();
         deployCollateralNFT();
         deployCurrency();
@@ -183,17 +183,17 @@ contract TestSetup is Config  {
         deploymentConfig = config;
     }
 
-    function deployTestRoot() public {
+    function deployTestRoot() public virtual {
         root = new TestRoot(address(this));
         root_ = address(root);
     }
 
-    function deployCurrency() public {
+    function deployCurrency() public virtual {
         currency = new SimpleToken("C", "Currency");
         currency_ = address(currency);
     }
 
-    function deployCollateralNFT() public {
+    function deployCollateralNFT() public virtual {
         collateralNFT = new Title("Collateral NFT", "collateralNFT");
         collateralNFT_ = address(collateralNFT);
     }
@@ -223,7 +223,7 @@ contract TestSetup is Config  {
         nftFeed = NAVFeed(borrowerDeployer.feed());
     }
 
-    function deployLenderMockBorrower(address rootAddr) public {
+    function deployLenderMockBorrower(address rootAddr) public virtual {
         currency = new SimpleToken("C", "Currency");
         currency_ = address(currency);
 
@@ -240,7 +240,7 @@ contract TestSetup is Config  {
     }
 
     function prepareMKRLenderDeployer(address rootAddr, address trancheFab, address memberlistFab, address restrictedTokenFab,
-        address reserveFab, address coordinatorFab, address operatorFab, address assessorAdminFab) public {
+        address reserveFab, address coordinatorFab, address operatorFab, address assessorAdminFab) public virtual {
         AssessorFab assessorFab = new AssessorFab();
         ClerkFab clerkFab = new ClerkFab();
 
@@ -253,7 +253,7 @@ contract TestSetup is Config  {
 
     }
 
-    function prepareDeployLender(address rootAddr, bool mkrAdapter) public {
+    function prepareDeployLender(address rootAddr, bool mkrAdapter) public virtual {
         ReserveFab reserveFab = new ReserveFab();
         AssessorFab assessorFab = new AssessorFab();
         AssessorAdminFab assessorAdminFab = new AssessorAdminFab();
@@ -278,14 +278,14 @@ contract TestSetup is Config  {
         lenderDeployerAddr = address(lenderDeployer);
     }
 
-    function deployLender() public {
+    function deployLender() public virtual {
         bool mkrAdapter = false;
         TinlakeConfig memory defaultConfig = defaultConfig();
         deployLender(mkrAdapter, defaultConfig);
         deploymentConfig = defaultConfig;
     }
 
-    function _initMKR(TinlakeConfig memory config) public {
+    function _initMKR(TinlakeConfig memory config) public virtual {
         mkr = new SimpleMkr(config.mkrStabilityFee, config.mkrILK);
         address mkr_ = address(mkr);
 
@@ -315,7 +315,7 @@ contract TestSetup is Config  {
         seniorMemberlist = Memberlist(ld.seniorMemberlist());
     }
 
-    function deployLender(bool mkrAdapter, TinlakeConfig memory config) public {
+    function deployLender(bool mkrAdapter, TinlakeConfig memory config) public virtual {
         LenderDeployerLike ld = LenderDeployerLike(lenderDeployerAddr);
 
         if (mkrAdapter) {

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.15 <0.6.0;
+pragma solidity >=0.6.12;
 
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
@@ -33,20 +33,20 @@ interface TitleLike {
     function ownerOf (uint) external returns (address);
 }
 
-contract TokenLike {
+abstract contract TokenLike {
     uint public totalSupply;
-    function balanceOf(address) public view returns (uint);
-    function transferFrom(address,address,uint) public returns (bool);
-    function transfer(address, uint) public returns (bool);
-    function approve(address, uint) public;
+    function balanceOf(address) public virtual view returns (uint);
+    function transferFrom(address,address,uint) public virtual returns (bool);
+    function transfer(address, uint) public virtual returns (bool);
+    function approve(address, uint) public virtual;
 }
 
-contract PileLike {
+abstract contract PileLike {
     uint public total;
-    function debt(uint) public returns (uint);
-    function accrue(uint) public;
-    function incDebt(uint, uint) public;
-    function decDebt(uint, uint) public;
+    function debt(uint) public virtual returns (uint);
+    function accrue(uint) public virtual;
+    function incDebt(uint, uint) public virtual;
+    function decDebt(uint, uint) public virtual;
 }
 
 interface CeilingLike {

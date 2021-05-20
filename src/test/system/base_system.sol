@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.15 <0.6.0;
+pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "ds-test/test.sol";
@@ -47,7 +47,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
     address  juniorInvestor_;
     NFTFeedLike nftFeed_;
 
-    Hevm public hevm;
+    Hevm hevm;
 
     uint constant public DEFAULT_RISK_GROUP_TEST_LOANS = 3;
     uint constant public DEFAULT_FUND_BORROWER = 1000 ether;
@@ -92,7 +92,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         collateralNFT.transferFrom(sender, recipient, tokenId);
     }
 
-    function issueNFT(address usr) public returns (uint tokenId, bytes32 lookupId) {
+    function issueNFT(address usr) public override returns (uint tokenId, bytes32 lookupId) {
         tokenId = collateralNFT.issue(usr);
         lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
         return (tokenId, lookupId);

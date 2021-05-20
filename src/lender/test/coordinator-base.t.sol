@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.15 <0.6.0;
+pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "ds-test/test.sol";
@@ -66,10 +66,10 @@ contract BaseTypes {
     }
 }
 
-contract CoordinatorLike is BaseTypes {
-    function bestSubmission() public returns (Order memory);
-    function order() public returns (Order memory);
-    function submitSolution(uint,uint,uint,uint) public returns (int);
+abstract contract CoordinatorLike is BaseTypes {
+    function bestSubmission() public virtual returns (Order memory);
+    function order() public virtual returns (Order memory);
+    function submitSolution(uint,uint,uint,uint) public virtual returns (int);
 }
 
 contract AssessorMockWithDef is AssessorMock, Definitions { }
@@ -95,7 +95,7 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         bytes32 name;
     }
 
-    function setUp() public {
+    function setUp() public virtual {
         seniorTranche = new TrancheMock();
         juniorTranche = new TrancheMock();
         reserve = new ReserveMock(address(0));

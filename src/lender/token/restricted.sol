@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.15 <0.6.0;
+pragma solidity >=0.6.12;
 
 import "tinlake-erc20/erc20.sol";
 
@@ -32,14 +32,14 @@ contract RestrictedToken is ERC20 {
         return memberlist.hasMember(usr);
     }
 
-    constructor(string memory symbol_, string memory name_) ERC20(symbol_, name_) public {}
+    constructor(string memory symbol_, string memory name_) ERC20(symbol_, name_) {}
 
     function depend(bytes32 contractName, address addr) public auth {
         if (contractName == "memberlist") { memberlist = MemberlistLike(addr); }
         else revert();
     }
 
-    function transferFrom(address from, address to, uint wad) checkMember(to) public returns (bool) {
+    function transferFrom(address from, address to, uint wad) checkMember(to) public override returns (bool) {
         return super.transferFrom(from, to, wad);
     }
 }

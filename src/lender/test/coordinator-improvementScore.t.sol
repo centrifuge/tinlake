@@ -13,13 +13,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.15 <0.6.0;
+pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "./coordinator-base.t.sol";
 
 contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
-    function setUp() public {
+    function setUp() public override {
         super.setUp();
 
     }

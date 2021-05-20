@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.15 <0.6.0;
+pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "./../fixed_point.sol";
@@ -30,30 +30,30 @@ interface ReserveLike {
     function balance() external;
 }
 
-contract AssessorLike is FixedPoint {
+abstract contract AssessorLike is FixedPoint {
     // definitions
-    function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) public pure returns(uint);
+    function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) public virtual pure returns(uint);
     function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply,
-        uint currSeniorAsset, uint reserve_, uint nav_) public pure returns (uint seniorAsset);
+        uint currSeniorAsset, uint reserve_, uint nav_) public virtual pure returns (uint seniorAsset);
     function calcSeniorRatio(uint seniorRedeem, uint seniorSupply,
-        uint currSeniorAsset, uint newReserve, uint nav) public pure returns (uint seniorRatio);
+        uint currSeniorAsset, uint newReserve, uint nav) public virtual pure returns (uint seniorRatio);
 
     // definitions based on assessor state
-    function calcSeniorTokenPrice(uint NAV, uint reserve) public returns(Fixed27 memory tokenPrice);
-    function calcJuniorTokenPrice(uint NAV, uint reserve) public returns(Fixed27 memory tokenPrice);
+    function calcSeniorTokenPrice(uint NAV, uint reserve) public virtual returns(Fixed27 memory tokenPrice);
+    function calcJuniorTokenPrice(uint NAV, uint reserve) public virtual returns(Fixed27 memory tokenPrice);
 
     // get state
-    function maxReserve() public view returns(uint);
-    function calcUpdateNAV() public returns (uint);
-    function seniorDebt() public returns(uint);
-    function seniorBalance() public returns(uint);
-    function seniorRatioBounds() public view returns(Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio);
+    function maxReserve() public virtual view returns(uint);
+    function calcUpdateNAV() public virtual returns (uint);
+    function seniorDebt() public virtual returns(uint);
+    function seniorBalance() public virtual returns(uint);
+    function seniorRatioBounds() public virtual view returns(Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio);
 
-    function totalBalance() public returns(uint);
+    function totalBalance() public virtual returns(uint);
     // change state
-    function changeBorrowAmountEpoch(uint currencyAmount) public;
-    function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) public;
-    function changeSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) public;
+    function changeBorrowAmountEpoch(uint currencyAmount) public virtual;
+    function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) public virtual;
+    function changeSeniorAsset(uint seniorRatio, uint seniorSupply, uint seniorRedeem) public virtual;
 }
 
 // The EpochCoordinator keeps track of the epochs and execute epochs them.
