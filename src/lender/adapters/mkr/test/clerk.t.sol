@@ -131,9 +131,7 @@ contract ClerkTest is Assertions, Interest {
     function raise(uint amountDAI) public{
         uint creditlineInit = clerk.creditline();
         uint remainingCreditInit = clerk.remainingCredit();
-        uint validateCallsInit = coordinator.calls("validateRatioConstraints");
         uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
-        uint creditProtection = safeSub(overcollAmount, amountDAI);
 
         clerk.raise(amountDAI);
 
@@ -218,7 +216,6 @@ contract ClerkTest is Assertions, Interest {
     }
 
     function harvest(uint dropPrice) public {
-        uint mgrDAIBalanceInit = currency.balanceOf(address(mgr));
         uint collLockedInit = collateral.balanceOf(address(mgr));
         uint collateralTotalBalanceInit = collateral.totalSupply();
         uint mat = clerk.mat();
@@ -236,7 +233,7 @@ contract ClerkTest is Assertions, Interest {
         vat.setInk(collLockedExpected);
     }
 
-    function heal(uint amount, uint expectedHealingAmount, bool full) public {
+    function heal(uint amount, uint, bool full) public {
         uint totalBalanceDropInit = collateral.totalSupply();
         if ( !full ) {
             clerk.heal(amount);
@@ -251,9 +248,7 @@ contract ClerkTest is Assertions, Interest {
     function sink(uint amountDAI) public {
         uint creditlineInit = clerk.creditline();
         uint remainingCreditInit = clerk.remainingCredit();
-        uint validateCallsInit = coordinator.calls("validateRatioConstraints");
         uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
-        uint creditProtection = safeSub(overcollAmount, amountDAI);
 
         uint reserve_ = 1000 ether;
         uint seniorBalance = 800 ether;
@@ -649,7 +644,6 @@ contract ClerkTest is Assertions, Interest {
         assertEq(lockedCollateralDAI, 110 ether);
         assertEq(requiredCollateralDAI, 115 ether);
         // partial healing
-        uint healingAmount = safeDiv(safeSub(requiredCollateralDAI, lockedCollateralDAI), 2); // healing amount = 2
         assessor.setReturn("balance", 200 ether);
         heal(10, 4, false);
 

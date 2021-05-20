@@ -9,7 +9,7 @@ contract JugMock is Mock {
         values_return["base"] = 10**27;
         values_return["ilks_duty"] = 10**27;
     }
-    function ilks(bytes32 ilk) public view returns (uint ,uint) {
+    function ilks(bytes32) public view returns (uint ,uint) {
         uint rho = block.timestamp;
         if(interestUpdated == false) {
             rho = values_return["ilks_rho"];

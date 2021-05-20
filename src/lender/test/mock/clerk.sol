@@ -34,7 +34,7 @@ contract ClerkMock is Mock, Auth {
         return values_bool_return["activated"];
     }
 
-    function calcOvercollAmount(uint amount) external view returns (uint) {
+    function calcOvercollAmount(uint) external view returns (uint) {
         return values_return["calcOvercollAmount"];
     }
 

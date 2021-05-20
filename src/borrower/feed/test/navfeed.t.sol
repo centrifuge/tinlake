@@ -462,7 +462,6 @@ contract NAVTest is DSTest, Math {
         // loan 4 has maturity date in + 1 days
         uint tokenId = 4;
         uint loan = 4;
-        uint maturityDateOffset = 1 days;
         uint amount = 50 ether;
         setupLinkedListBuckets();
 

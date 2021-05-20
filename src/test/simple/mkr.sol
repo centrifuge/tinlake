@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.6.12;
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
@@ -23,12 +24,12 @@ contract JugMock {
         }
     }
 
-    function ilks(bytes32 ilk) public view returns (uint ,uint) {
+    function ilks(bytes32) public view returns (uint ,uint) {
         // interest rate up to date in simpleMKR
       return (duty, block.timestamp);
     }
 
-    function drip(bytes32 ilk) public returns(uint) {return 0;}
+    function drip(bytes32) public returns(uint) {return 0;}
 }
 
 contract UrnMock {
