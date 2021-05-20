@@ -48,7 +48,7 @@ contract Definitions is FixedPoint, Math {
     }
 
     // expected senior return if no losses occur
-    function calcExpectedSeniorAsset(uint seniorRedeem, uint seniorSupply, uint seniorBalance_, uint seniorDebt_) public returns(uint) {
+    function calcExpectedSeniorAsset(uint seniorRedeem, uint seniorSupply, uint seniorBalance_, uint seniorDebt_) public pure returns(uint) {
         return safeSub(safeAdd(safeAdd(seniorDebt_, seniorBalance_),seniorSupply), seniorRedeem);
     }
 }

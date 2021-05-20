@@ -133,7 +133,7 @@ contract NAVTest is DSTest, Math {
 
     }
 
-    function listLen() public returns (uint) {
+    function listLen() public view returns (uint) {
         uint normalizedDay = feed.uniqueDayTimestamp(now);
         uint len = 0;
 

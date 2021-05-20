@@ -5,7 +5,7 @@ import "ds-test/test.sol";
 import "../../../../../test/mock/mock.sol";
 
 contract Urn is Mock {
-    function gemJoin() external returns(address) {
+    function gemJoin() external view returns(address) {
         return values_address_return["gemJoin"];
     }
 }

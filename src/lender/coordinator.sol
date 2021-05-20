@@ -497,7 +497,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
     }
 
     function validate(uint reserve_, uint nav_, uint seniorAsset_, uint seniorRedeem, uint juniorRedeem,
-        uint seniorSupply, uint juniorSupply) public returns (int) {
+        uint seniorSupply, uint juniorSupply) public view returns (int) {
         return validate(reserve_, nav_, seniorAsset_,
             OrderSummary({seniorRedeem: seniorRedeem,
             juniorRedeem: juniorRedeem,

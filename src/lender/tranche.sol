@@ -345,7 +345,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
     // due to rounding in token & currency conversions currency & token balances might be off by 1 wei with the totalSupply/totalRedeem amounts.
     // in order to prevent an underflow error, 0 is returned when amount to be subtracted is bigger then the total value.
-    function safeTotalSub(uint total, uint amount) internal returns (uint) {
+    function safeTotalSub(uint total, uint amount) internal pure returns (uint) {
         if (total < amount) {
             return 0;
         }

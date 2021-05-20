@@ -63,7 +63,7 @@ contract MKRTestBasis is TestSuite, Interest {
         hevm.warp(now + 1 days);
 
         bool closeWithExecute = true;
-        closeEpoch(true);
+        closeEpoch(closeWithExecute);
         assertTrue(coordinator.submissionPeriod() == false);
 
         clerk.raise(mkrAmount);
@@ -105,7 +105,6 @@ contract MKRBasicSystemTest is MKRTestBasis {
     function testMKRRaise() public {
         _setupRunningPool();
         uint preReserve = assessor.totalBalance();
-        uint nav = nftFeed.calcUpdateNAV();
         uint preSeniorBalance = assessor.seniorBalance();
 
         uint amountDAI = 10 ether;
@@ -124,7 +123,6 @@ contract MKRBasicSystemTest is MKRTestBasis {
     function testMKRDraw() public {
         _setupRunningPool();
         uint preReserve = assessor.totalBalance();
-        uint nav = nftFeed.calcUpdateNAV();
         uint preSeniorBalance = assessor.seniorBalance();
 
         uint creditLineAmount = 10 ether;
@@ -195,7 +193,7 @@ contract MKRBasicSystemTest is MKRTestBasis {
         uint mkrAmount = 500 ether;
         uint borrowAmount = 300 ether;
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
-        (,uint payoutTokenAmount,,) = juniorInvestor.disburse();
+        juniorInvestor.disburse();
 
         uint redeemTokenAmount = 20 ether;
         juniorInvestor.redeemOrder(redeemTokenAmount);
@@ -203,7 +201,7 @@ contract MKRBasicSystemTest is MKRTestBasis {
         // currency should come from MKR
         assertEq(reserve.totalBalance(), 0);
         coordinator.closeEpoch();
-        (uint payoutCurrency,,,uint remainingRedeemToken) = juniorInvestor.disburse();
+        (uint payoutCurrency,,,) = juniorInvestor.disburse();
         // juniorTokenPrice should be still ONE
         assertEq(currency.balanceOf(address(juniorInvestor)), payoutCurrency);
     }

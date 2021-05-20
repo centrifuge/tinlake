@@ -31,7 +31,7 @@ contract Config {
     }
 
     // returns a default config for a Tinlake deployment
-    function defaultConfig() public returns(TinlakeConfig memory t) {
+    function defaultConfig() public pure returns(TinlakeConfig memory t) {
         return  TinlakeConfig({
             // 3% per day
             discountRate: uint(1000000342100000000000000000),

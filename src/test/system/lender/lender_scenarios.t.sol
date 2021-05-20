@@ -492,9 +492,7 @@ contract LenderSystemTest is TestSuite, Interest {
 
         uint preBalance = currency.balanceOf(seniorInvestor_);
 
-        (uint seniorRedeem,,,) = coordinator.order();
-
-        (uint payoutCurrencyAmount,  ,  ,  uint remainingRedeemToken) = juniorInvestor.disburse();
+        (uint payoutCurrencyAmount,  ,  , ) = juniorInvestor.disburse();
 
         assertEq(currency.balanceOf(seniorInvestor_), safeAdd(preBalance, payoutCurrencyAmount));
         assertEq(seniorTranche.requestedCurrency(), 0);

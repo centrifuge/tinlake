@@ -71,7 +71,7 @@ contract TrancheMock is Mock, Auth  {
         token.mint(usr, amount);
     }
 
-    function payoutRequestedCurrency() public returns (uint) {
+    function payoutRequestedCurrency() public view returns (uint) {
         return values_return["payoutRequestedCurrency"];
     }
 }

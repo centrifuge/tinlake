@@ -274,8 +274,6 @@ abstract contract TestSetup is Config  {
 
     function _initMKR(TinlakeConfig memory config) public virtual {
         mkr = new SimpleMkr(config.mkrStabilityFee, config.mkrILK);
-        address mkr_ = address(mkr);
-
         address jug_ = address(mkr.jugMock());
 
         SpotterMock spotter = new SpotterMock();

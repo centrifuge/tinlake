@@ -29,7 +29,7 @@ contract JugMock {
       return (duty, block.timestamp);
     }
 
-    function drip(bytes32) public returns(uint) {return 0;}
+    function drip(bytes32) public pure returns(uint) { return 0; }
 }
 
 contract UrnMock {
@@ -134,17 +134,17 @@ contract SimpleMkr is Interest, DSTest{
     }
 
     // indicates if soft-liquidation was activated
-    function safe() external returns(bool) {
+    function safe() external view returns(bool) {
         return safeFlag;
     }
 
     // indicates if soft-liquidation was activated
-    function glad() external returns(bool) {
+    function glad() external view returns(bool) {
         return gladFlag;
     }
 
     // indicates if soft-liquidation was activated
-    function live() external returns(bool) {
+    function live() external view returns(bool) {
         return liveFlag;
     }
 

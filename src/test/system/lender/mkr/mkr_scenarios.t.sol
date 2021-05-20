@@ -110,7 +110,6 @@ contract MKRLenderSystemTest is MKRTestBasis {
         clerk.harvest();
 
         uint newJuniorPrice = mkrAssessor.calcJuniorTokenPrice();
-        uint newSeniorPrice =  mkrAssessor.calcSeniorTokenPrice();
 
         uint fixed27Tolerance = 100000000;
         assertEq(newJuniorPrice, juniorPrice, fixed27Tolerance);
@@ -316,7 +315,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
 
         // second loan same ammount
-        uint secondLoan = setupOngoingDefaultLoan(borrowAmount);
+        setupOngoingDefaultLoan(borrowAmount);
         warp(1 days);
         // repay small amount of loan debt
         uint repayAmount = 5 ether;
@@ -346,7 +345,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         uint mkrAmount = 500 ether;
         uint borrowAmount = 300 ether;
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
-        (,uint payoutTokenAmount,,) = juniorInvestor.disburse();
+        juniorInvestor.disburse();
 
         uint redeemTokenAmount = 20 ether;
         juniorInvestor.redeemOrder(redeemTokenAmount);
@@ -354,7 +353,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         // currency should come from MKR
         assertEq(reserve.totalBalance(), 0);
         coordinator.closeEpoch();
-        (uint payoutCurrency,,,uint remainingRedeemToken) = juniorInvestor.disburse();
+        (uint payoutCurrency,,,) = juniorInvestor.disburse();
         // juniorTokenPrice should be still ONE
         assertEq(currency.balanceOf(address(juniorInvestor)), payoutCurrency);
     }

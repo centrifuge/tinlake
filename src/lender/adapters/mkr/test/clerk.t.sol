@@ -131,7 +131,6 @@ contract ClerkTest is Assertions, Interest {
     function raise(uint amountDAI) public{
         uint creditlineInit = clerk.creditline();
         uint remainingCreditInit = clerk.remainingCredit();
-        uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
 
         clerk.raise(amountDAI);
 
@@ -248,7 +247,6 @@ contract ClerkTest is Assertions, Interest {
     function sink(uint amountDAI) public {
         uint creditlineInit = clerk.creditline();
         uint remainingCreditInit = clerk.remainingCredit();
-        uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
 
         uint reserve_ = 1000 ether;
         uint seniorBalance = 800 ether;

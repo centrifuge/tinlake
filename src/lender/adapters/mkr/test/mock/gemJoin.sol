@@ -5,7 +5,7 @@ import "ds-test/test.sol";
 import "../../../../../test/mock/mock.sol";
 
 contract GemJoin is Mock {
-    function ilk() external returns(bytes32){
+    function ilk() external view returns(bytes32){
         return values_bytes32_return["ilk"];
     }
 }

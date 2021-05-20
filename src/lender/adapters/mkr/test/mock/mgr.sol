@@ -90,7 +90,7 @@ contract ManagerMock is Mock {
         }
     }
 
-    function owner() public returns(address) {
+    function owner() public view returns(address) {
         return values_address_return["owner"];
     }
 }

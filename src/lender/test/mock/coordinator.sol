@@ -29,11 +29,11 @@ contract CoordinatorMock is Mock {
         return values_int_return["validateRatioConstraints"];
     }
 
-    function calcSeniorAssetValue(uint, uint, uint, uint, uint) public returns(uint) {
+    function calcSeniorAssetValue(uint, uint, uint, uint, uint) public view returns(uint) {
         return values_return["calcSeniorAssetValue"];
     }
 
-    function calcSeniorRatio(uint, uint, uint) public returns(uint) {
+    function calcSeniorRatio(uint, uint, uint) public view returns(uint) {
         return values_return["calcSeniorRatio"];
     }
 }
