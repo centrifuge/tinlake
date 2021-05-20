@@ -269,11 +269,11 @@ contract ClerkTest is Assertions, Interest {
         uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
         uint creditProtection = safeSub(overcollAmount, amountDAI);
 
-        uint reserve = 1000 ether;
+        uint reserve_ = 1000 ether;
         uint seniorBalance = 800 ether;
-        assessor.setReturn("balance", reserve);
+        assessor.setReturn("balance", reserve_);
         assessor.setReturn("seniorBalance", seniorBalance);
-        assessor.setReturn("borrowAmountEpoch", reserve);
+        assessor.setReturn("borrowAmountEpoch", reserve_);
         // raise creditLine
         clerk.sink(amountDAI);
         // assert creditLine was decreased
@@ -540,9 +540,9 @@ contract ClerkTest is Assertions, Interest {
         uint creditline = clerk.creditline();
         assessor.setReturn("borrowAmountEpoch", creditline/2);
 
-        uint reserve = 1000 ether;
+        uint reserve_ = 1000 ether;
         uint seniorBalance = 800 ether;
-        assessor.setReturn("balance", reserve);
+        assessor.setReturn("balance", reserve_);
         assessor.setReturn("seniorBalance", seniorBalance);
         // raise creditLine
         clerk.sink(creditline);

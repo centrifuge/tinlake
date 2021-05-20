@@ -20,17 +20,11 @@ import "ds-note/note.sol";
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
 import "ds-test/test.sol";
-import { TitleOwned } from "tinlake-title/title.sol";
+import { TitleOwned, TitleLike } from "tinlake-title/title.sol";
 
 interface NFTLike {
     function ownerOf(uint256 tokenId) external view returns (address owner);
     function transferFrom(address from, address to, uint256 tokenId) external;
-}
-
-interface TitleLike {
-    function issue(address) external returns (uint);
-    function close(uint) external;
-    function ownerOf (uint) external returns (address);
 }
 
 abstract contract TokenLike {
@@ -87,7 +81,6 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     constructor(address currency_, address title_, address pile_, address ceiling_) TitleOwned(title_) public {
         wards[msg.sender] = 1;
         currency = TokenLike(currency_);
-        title = TitleLike(title_);
         pile = PileLike(pile_);
         ceiling = CeilingLike(ceiling_);
     }

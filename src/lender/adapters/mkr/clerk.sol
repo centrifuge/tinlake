@@ -383,8 +383,8 @@ contract Clerk is Auth, Interest {
 
     // returns the required security margin for the DROP tokens
     function mat() public view returns (uint) {
-        (, uint256 mat) = spotter.ilks(ilk());
-        return safeAdd(mat, matBuffer); //  e.g 150% denominated in RAY
+        (, uint256 mat_) = spotter.ilks(ilk());
+        return safeAdd(mat_, matBuffer); //  e.g 150% denominated in RAY
     }
 
     // helper function that returns the overcollateralized DAI amount considering the current mat value

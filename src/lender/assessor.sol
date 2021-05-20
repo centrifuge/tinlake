@@ -347,9 +347,9 @@ contract Assessor is Definitions, Auth, Interest {
         uint debt = lending.debt();
         uint stabilityBuffer = safeSub(rmul(rpow(lending.stabilityFee(),
             creditBufferTime, ONE), debt), debt);
-        uint remainingCredit = lending.remainingCredit();
-        if(remainingCredit > stabilityBuffer) {
-            return safeSub(remainingCredit, stabilityBuffer);
+        uint remainingCredit_ = lending.remainingCredit();
+        if(remainingCredit_ > stabilityBuffer) {
+            return safeSub(remainingCredit_, stabilityBuffer);
         }
         
         return 0;

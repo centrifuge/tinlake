@@ -91,8 +91,8 @@ contract ManagerMock is Mock {
         operator = newOperator;
     }
 
-    function setIlk(bytes32 ilk) external {
-        gemJoin.setBytes32Return("ilk", ilk);
+    function setIlk(bytes32 ilk_) external {
+        gemJoin.setBytes32Return("ilk", ilk_);
     }
     function file(bytes32 what, address addr) external {
         values_bytes32["file"] = what;

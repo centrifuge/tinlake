@@ -470,7 +470,7 @@ contract NAVTest is DSTest, Math {
         assertEq(feed.dateBucket(normalizedDueDate), 49.6125 ether);
     }
 
-    function _repayOnMaturityDate(uint repayTimestamp, uint maturityDateOffset) internal {
+    function _repayOnMaturityDate(uint repayTimestamp, uint) internal {
         // loan 4 has maturity date in + 1 days
         uint tokenId = 4;
         uint loan = 4;
