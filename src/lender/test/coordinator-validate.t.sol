@@ -45,7 +45,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
         int result = coordinator.validate(input.seniorRedeem, input.juniorRedeem, input.seniorSupply, input.juniorSupply);
 
         if (tCase.status != result) {
-            emit log_named_int(tCase.name, result);
+            emit log_named_int(string(abi.encodePacked(tCase.name)), result);
         }
 
         assertTrue(tCase.status == result);

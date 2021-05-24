@@ -16,13 +16,6 @@ contract Assertions is DSTest, Math {
         assertEq(a/precision, b/precision);
     }
 
-    function assertEq(uint a, uint b, bytes32 msg_)  public {
-        if(a != b) {
-            emit log_named_bytes32(msg_, "SystemTest - Assert Equal Failed");
-        }
-        assertEq(a, b);
-    }
-
     // assert equal two variables with a wei tolerance
     function assertEqTol(uint actual, uint expected, bytes32 msg_) public {
         uint diff;
@@ -32,7 +25,7 @@ contract Assertions is DSTest, Math {
             diff = safeSub(expected, actual);
         }
         if (diff > TOLERANCE) {
-            emit log_named_bytes32(msg_, "SystemTest - Assert Equal Failed");
+            emit log_named_bytes32(string(abi.encodePacked(msg_)), "SystemTest - Assert Equal Failed");
             emit log_named_uint("Expected", expected);
             emit log_named_uint("Actual  ", actual);
             emit log_named_uint("Diff    ", diff);
