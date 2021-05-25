@@ -239,7 +239,7 @@ contract MKRBasicSystemTest is MKRTestBasis {
         coordinator.closeEpoch();
         assertEq(currency.balanceOf(address(seniorInvestor)), 0);
          
-        emit log_named_uint("price after test", coordinator.epochSeniorTokenPrice());
+        emit log_named_uint("price after test", assessor.calcSeniorTokenPrice());
     }
 
 
