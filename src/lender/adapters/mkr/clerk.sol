@@ -14,6 +14,7 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
+import "ds-test/test.sol";
 import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
 
@@ -102,7 +103,7 @@ interface ERC20Like {
     function approve(address usr, uint amount) external;
 }
 
-contract Clerk is Auth, Interest {
+contract Clerk is Auth, Interest, DSTest {
 
     // max amount of DAI that can be brawn from MKR
     uint public creditline;
@@ -260,6 +261,7 @@ contract Clerk is Auth, Interest {
     function wipe(uint amountDAI) public auth active {
         // if amountDAI is too low, required transaction fees of wipe would be higher
         // only continue with wipe if amountDAI is higher than wipeThreshold;
+        
         if(amountDAI < wipeThreshold) {
             return;
         }
@@ -273,19 +275,18 @@ contract Clerk is Auth, Interest {
         }
 
         uint dropPrice = assessor.calcSeniorTokenPrice();
-
+        emit log_named_uint("senior_price_clerk", dropPrice);
         // get DAI from reserve
         reserve.hardPayout(amountDAI);
         // repay cdp debt
         dai.approve(address(mgr), amountDAI);
         mgr.wipe(amountDAI);
-
         // harvest junior interest & burn surplus drop
         _harvest(dropPrice);
     }
 
     // harvest junior profit
-    function harvest() public active {
+    function harvest() public active {        
         _harvest(assessor.calcSeniorTokenPrice());
     }
 

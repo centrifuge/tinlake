@@ -222,6 +222,27 @@ contract MKRBasicSystemTest is MKRTestBasis {
         assertEq(currency.balanceOf(address(juniorInvestor)), payoutCurrency);
     }
 
+    function testRepayCurrencyToMKR() public {
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+        (,uint payoutTokenAmount,,) = juniorInvestor.disburse();
+
+        uint currencyAmount = 50 ether;
+        seniorSupply(currencyAmount);
+        // seniorInvestor.supplyOrder(currencyAmount);
+        hevm.warp(now + 1 days);
+        // currency should come from MKR
+        assertEq(reserve.totalBalance(), 1000); // value should be 0 -> 1000 just for logging
+        emit log_named_uint("price before test", assessor.calcSeniorTokenPrice());
+        coordinator.closeEpoch();
+        assertEq(currency.balanceOf(address(seniorInvestor)), 0);
+         
+        emit log_named_uint("price after test", assessor.calcSeniorTokenPrice());
+    }
+
+
     function testTotalBalanceBuffer() public {
         uint fee = 1000000564701133626865910626; // 5% per day
         mkr.file("stabilityFee", fee);
