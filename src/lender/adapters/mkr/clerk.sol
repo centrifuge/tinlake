@@ -260,7 +260,6 @@ contract Clerk is Auth, Interest {
     function wipe(uint amountDAI) public auth active {
         // if amountDAI is too low, required transaction fees of wipe would be higher
         // only continue with wipe if amountDAI is higher than wipeThreshold;
-        
         if(amountDAI < wipeThreshold) {
             return;
         }
@@ -284,7 +283,7 @@ contract Clerk is Auth, Interest {
     }
 
     // harvest junior profit
-    function harvest() public active {        
+    function harvest() public active {
         _harvest(assessor.calcSeniorTokenPrice());
     }
 
