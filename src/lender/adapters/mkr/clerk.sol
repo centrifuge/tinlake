@@ -309,7 +309,7 @@ contract Clerk is Auth, Interest, DSTest {
         collateral.burn(address(this), profitDROP);
         // decrease the seniorAssetValue by profitDAI -> DROP price stays constant
         updateSeniorAsset(profitDAI, 0);
-        emit log_named_uint("price after harvest clerk", coordinator());
+        emit log_named_uint("price after harvest clerk", assessor.calcSeniorTokenPrice());
     }
 
     // decrease MKR creditline
