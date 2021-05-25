@@ -234,12 +234,10 @@ contract MKRBasicSystemTest is MKRTestBasis {
         // seniorInvestor.supplyOrder(currencyAmount);
         hevm.warp(now + 1 days);
         // currency should come from MKR
-        assertEq(reserve.totalBalance(), 1000); // value should be 0 -> 1000 just for logging
-        emit log_named_uint("price before test", assessor.calcSeniorTokenPrice());
+        assertEq(reserve.totalBalance(), 0);
+
         coordinator.closeEpoch();
         assertEq(currency.balanceOf(address(seniorInvestor)), 0);
-         
-        emit log_named_uint("price after test", assessor.calcSeniorTokenPrice());
     }
 
 

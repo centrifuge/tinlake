@@ -14,7 +14,6 @@
 
 pragma solidity >=0.5.15 <0.6.0;
 
-import "ds-test/test.sol";
 import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
 
@@ -103,7 +102,7 @@ interface ERC20Like {
     function approve(address usr, uint amount) external;
 }
 
-contract Clerk is Auth, Interest, DSTest {
+contract Clerk is Auth, Interest {
 
     // max amount of DAI that can be brawn from MKR
     uint public creditline;
@@ -275,7 +274,6 @@ contract Clerk is Auth, Interest, DSTest {
         }
 
         uint dropPrice = assessor.calcSeniorTokenPrice();
-        emit log_named_uint("senior_price_clerk", dropPrice);
         // get DAI from reserve
         reserve.hardPayout(amountDAI);
         // repay cdp debt
@@ -305,11 +303,9 @@ contract Clerk is Auth, Interest, DSTest {
         uint profitDROP = safeDiv(safeMul(profitDAI, ONE), dropPrice);
         // remove profitDROP from the vault & brun them
         mgr.exit(profitDROP);
-        emit log_named_uint("profit", profitDROP);
         collateral.burn(address(this), profitDROP);
         // decrease the seniorAssetValue by profitDAI -> DROP price stays constant
         updateSeniorAsset(profitDAI, 0);
-        emit log_named_uint("price after harvest clerk", assessor.calcSeniorTokenPrice());
     }
 
     // decrease MKR creditline
