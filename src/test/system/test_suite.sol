@@ -31,7 +31,6 @@ contract TestSuite is BaseSystemTest {
 
     function seniorSupply(uint currencyAmount, Investor investor) public {
         admin.makeSeniorTokenMember(address(investor), safeAdd(now, 8 days));
-        emit log_named_uint("minti", currencyAmount);
         currency.mint(address(investor), currencyAmount);
         investor.supplyOrder(currencyAmount);
         (,uint supplyAmount, ) = seniorTranche.users(address(investor));
