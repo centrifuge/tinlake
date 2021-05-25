@@ -305,9 +305,11 @@ contract Clerk is Auth, Interest, DSTest {
         uint profitDROP = safeDiv(safeMul(profitDAI, ONE), dropPrice);
         // remove profitDROP from the vault & brun them
         mgr.exit(profitDROP);
+        emit log_named_uint("profit", profitDROP);
         collateral.burn(address(this), profitDROP);
         // decrease the seniorAssetValue by profitDAI -> DROP price stays constant
         updateSeniorAsset(profitDAI, 0);
+        emit log_named_uint("price after harvest clerk", coordinator());
     }
 
     // decrease MKR creditline
