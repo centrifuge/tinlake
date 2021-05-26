@@ -14,7 +14,7 @@ import "../collector.sol";
 contract CollectorTest is DSTest {
     ShelfMock       shelf;
     PileMock        pile;
-    ReserveMock     resreve;
+    ReserveMock     reserve;
     NFTMock         nft;
 
     Collector    collector;
@@ -23,10 +23,10 @@ contract CollectorTest is DSTest {
         nft = new NFTMock();
         shelf = new ShelfMock();
         pile = new PileMock();
-        resreve = new ReserveMock();
+        reserve = new ReserveMock();
 
         collector = new Collector(address(shelf), address(pile), address(nft));
-        collector.depend("reserve", address(resreve));
+        collector.depend("reserve", address(reserve));
     }
 
     function collect(uint loan, uint tokenId, uint price) internal {
