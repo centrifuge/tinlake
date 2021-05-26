@@ -1,19 +1,5 @@
-// Copyright (C) 2020 Centrifuge
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-pragma solidity >=0.5.15 <0.6.0;
+// SPDX-License-Identifier: AGPL-3.0-only
+pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "tinlake-auth/auth.sol";
@@ -360,7 +346,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
     // due to rounding in token & currency conversions currency & token balances might be off by 1 wei with the totalSupply/totalRedeem amounts.
     // in order to prevent an underflow error, 0 is returned when amount to be subtracted is bigger then the total value.
-    function safeTotalSub(uint total, uint amount) internal returns (uint) {
+    function safeTotalSub(uint total, uint amount) internal pure returns (uint) {
         if (total < amount) {
             return 0;
         }

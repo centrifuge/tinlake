@@ -1,19 +1,5 @@
-// Copyright (C) 2020 Centrifuge
-
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-pragma solidity >=0.5.15 <0.6.0;
+// SPDX-License-Identifier: AGPL-3.0-only
+pragma solidity >=0.6.12;
 
 import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
@@ -69,7 +55,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
     }
 
      // part of Feed interface
-    function file(bytes32 name, uint value) public auth {}
+    function file(bytes32 name, uint value) public virtual auth {}
 
     /// sets the dependency to another contract
     function depend(bytes32 contractName, address addr) external auth {
@@ -90,7 +76,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
         return nftID(registry, tokenId);
     }
 
-    function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) public auth {
+    function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) public virtual auth {
         if(name == "riskGroupNFT") {
             require(ceilingRatio[risk_] == 0, "risk-group-in-usage");
             thresholdRatio[risk_] = thresholdRatio_;
@@ -109,7 +95,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
     }
 
      // The nft value & risk group is to be updated by authenticated oracles
-    function update(bytes32 nftID_, uint value, uint risk_) public auth {
+    function update(bytes32 nftID_, uint value, uint risk_) public virtual auth {
         // the risk group has to exist
         require(thresholdRatio[risk_] != 0, "threshold for risk group not defined");
 
@@ -124,7 +110,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
     }
 
     // function checks if the borrow amount does not exceed the max allowed borrow amount (=ceiling)
-    function borrow(uint loan, uint amount) external auth returns (uint) {
+    function borrow(uint loan, uint amount) external virtual auth returns (uint) {
         // increase borrowed amount -> note: max allowed borrow amount does not include accrued interest
         borrowed[loan] = safeAdd(borrowed[loan], amount);
 
@@ -133,7 +119,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
     }
 
     // part of Feed interface
-    function repay(uint, uint amount) external auth returns (uint) {
+    function repay(uint, uint amount) external virtual auth returns (uint) {
         // note: borrowed amount is not decreased as the feed implements the principal and not credit line method
         return amount;
     }
@@ -176,7 +162,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
     }
 
     /// implements feed interface and returns poolValue as the total debt of all loans
-    function totalValue() public view returns (uint) {
+    function totalValue() public virtual view returns (uint) {
         return pile.total();
     }
 }

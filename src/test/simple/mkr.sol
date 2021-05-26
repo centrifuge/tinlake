@@ -1,4 +1,5 @@
-pragma solidity >=0.5.15 <0.6.0;
+// SPDX-License-Identifier: AGPL-3.0-only
+pragma solidity >=0.6.12;
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 import "../../../lib/tinlake-math/src/interest.sol";
@@ -23,12 +24,12 @@ contract JugMock {
         }
     }
 
-    function ilks(bytes32 ilk) public view returns (uint ,uint) {
+    function ilks(bytes32) public view returns (uint ,uint) {
         // interest rate up to date in simpleMKR
       return (duty, block.timestamp);
     }
 
-    function drip(bytes32 ilk) public returns(uint) {return 0;}
+    function drip(bytes32) public pure returns(uint) { return 0; }
 }
 
 contract UrnMock {
@@ -133,17 +134,17 @@ contract SimpleMkr is Interest, DSTest{
     }
 
     // indicates if soft-liquidation was activated
-    function safe() external returns(bool) {
+    function safe() external view returns(bool) {
         return safeFlag;
     }
 
     // indicates if soft-liquidation was activated
-    function glad() external returns(bool) {
+    function glad() external view returns(bool) {
         return gladFlag;
     }
 
     // indicates if soft-liquidation was activated
-    function live() external returns(bool) {
+    function live() external view returns(bool) {
         return liveFlag;
     }
 

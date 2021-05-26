@@ -1,17 +1,5 @@
-// Copyright (C) 2020 Centrifuge
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-pragma solidity >=0.5.15 <0.6.0;
+// SPDX-License-Identifier: AGPL-3.0-only
+pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "ds-note/note.sol";
@@ -152,14 +140,14 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         } else { revert("unknown config parameter");}
     }
 
-    function file(bytes32 name, uint value) public auth {
+    function file(bytes32 name, uint value) public override auth {
         if (name == "discountRate") {
             discountRate = Fixed27(value);
         } else { revert("unknown config parameter");}
     }
 
     // In case of successful borrow the approximatedNAV is increased by the borrowed amount
-    function borrow(uint loan, uint amount) external auth returns(uint navIncrease) {
+    function borrow(uint loan, uint amount) external override auth returns(uint navIncrease) {
         navIncrease = _borrow(loan, amount);
         approximatedNAV = safeAdd(approximatedNAV, navIncrease);
         return navIncrease;
@@ -204,7 +192,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     /// update the nft value and change the risk group
-    function update(bytes32 nftID_, uint value, uint risk_) public auth {
+    function update(bytes32 nftID_, uint value, uint risk_) public override auth {
         nftValues[nftID_] = value;
 
         // no change in risk group
@@ -234,7 +222,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     // In case of successful repayment the approximatedNAV is decreased by the repaid amount
-    function repay(uint loan, uint amount) external auth returns (uint navDecrease) {
+    function repay(uint loan, uint amount) external override auth returns (uint navDecrease) {
         navDecrease = _repay(loan, amount);
         if (navDecrease > approximatedNAV) {
             approximatedNAV = 0;
@@ -336,7 +324,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     /// workaround for transition phase between V2 & V3
-    function totalValue() public view returns(uint) {
+    function totalValue() public override view returns(uint) {
         return currentNAV();
     }
 

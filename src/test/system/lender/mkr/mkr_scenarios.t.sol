@@ -1,19 +1,5 @@
-// Copyright (C) 2020 Centrifuge
-
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-pragma solidity >=0.5.15 <0.6.0;
+// SPDX-License-Identifier: AGPL-3.0-only
+pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "../../test_suite.sol";
@@ -124,7 +110,6 @@ contract MKRLenderSystemTest is MKRTestBasis {
         clerk.harvest();
 
         uint newJuniorPrice = mkrAssessor.calcJuniorTokenPrice();
-        uint newSeniorPrice =  mkrAssessor.calcSeniorTokenPrice();
 
         uint fixed27Tolerance = 100000000;
         assertEq(newJuniorPrice, juniorPrice, fixed27Tolerance);
@@ -330,7 +315,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
 
         // second loan same ammount
-        uint secondLoan = setupOngoingDefaultLoan(borrowAmount);
+        setupOngoingDefaultLoan(borrowAmount);
         warp(1 days);
         // repay small amount of loan debt
         uint repayAmount = 5 ether;
@@ -360,7 +345,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         uint mkrAmount = 500 ether;
         uint borrowAmount = 300 ether;
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
-        (,uint payoutTokenAmount,,) = juniorInvestor.disburse();
+        juniorInvestor.disburse();
 
         uint redeemTokenAmount = 20 ether;
         juniorInvestor.redeemOrder(redeemTokenAmount);
@@ -368,7 +353,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         // currency should come from MKR
         assertEq(reserve.totalBalance(), 0);
         coordinator.closeEpoch();
-        (uint payoutCurrency,,,uint remainingRedeemToken) = juniorInvestor.disburse();
+        (uint payoutCurrency,,,) = juniorInvestor.disburse();
         // juniorTokenPrice should be still ONE
         assertEq(currency.balanceOf(address(juniorInvestor)), payoutCurrency);
     }

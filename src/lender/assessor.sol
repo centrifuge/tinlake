@@ -1,18 +1,5 @@
-// Copyright (C) 2020 Centrifuge
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-pragma solidity >=0.5.15 <0.6.0;
+// SPDX-License-Identifier: AGPL-3.0-only
+pragma solidity >=0.6.12;
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
@@ -347,9 +334,9 @@ contract Assessor is Definitions, Auth, Interest {
         uint debt = lending.debt();
         uint stabilityBuffer = safeSub(rmul(rpow(lending.stabilityFee(),
             creditBufferTime, ONE), debt), debt);
-        uint remainingCredit = lending.remainingCredit();
-        if(remainingCredit > stabilityBuffer) {
-            return safeSub(remainingCredit, stabilityBuffer);
+        uint remainingCredit_ = lending.remainingCredit();
+        if(remainingCredit_ > stabilityBuffer) {
+            return safeSub(remainingCredit_, stabilityBuffer);
         }
         
         return 0;

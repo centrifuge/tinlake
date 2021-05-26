@@ -1,17 +1,5 @@
-// Copyright (C) 2020 Centrifuge
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-pragma solidity >=0.5.15 <0.6.0;
+// SPDX-License-Identifier: AGPL-3.0-only
+pragma solidity >=0.6.12;
 
 import "../../../test/mock/mock.sol";
 
@@ -35,17 +23,17 @@ contract CoordinatorMock is Mock {
         return values_int_return["validatePoolConstraints"];
     }
 
-    function validateRatioConstraints(uint assets_, uint seniorAsset_) external view returns(int) {
+    function validateRatioConstraints(uint, uint) external view returns(int) {
 //        values_uint["assets"] = assets_;
 //        values_uint["seniorAsset"] = seniorAsset_;
         return values_int_return["validateRatioConstraints"];
     }
 
-    function calcSeniorAssetValue(uint, uint, uint, uint, uint) public returns(uint) {
+    function calcSeniorAssetValue(uint, uint, uint, uint, uint) public view returns(uint) {
         return values_return["calcSeniorAssetValue"];
     }
 
-    function calcSeniorRatio(uint, uint, uint) public returns(uint) {
+    function calcSeniorRatio(uint, uint, uint) public view returns(uint) {
         return values_return["calcSeniorRatio"];
     }
 }

@@ -1,52 +1,31 @@
-// shelf.sol -- keeps track and owns NFTs
-// Copyright (C) 2019 lucasvo
-
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-pragma solidity >=0.5.15 <0.6.0;
+// SPDX-License-Identifier: AGPL-3.0-only
+pragma solidity >=0.6.12;
 
 import "ds-note/note.sol";
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
 import "ds-test/test.sol";
-import { TitleOwned } from "tinlake-title/title.sol";
+import { TitleOwned, TitleLike } from "tinlake-title/title.sol";
 
 interface NFTLike {
     function ownerOf(uint256 tokenId) external view returns (address owner);
     function transferFrom(address from, address to, uint256 tokenId) external;
 }
 
-interface TitleLike {
-    function issue(address) external returns (uint);
-    function close(uint) external;
-    function ownerOf (uint) external returns (address);
+interface TokenLike {
+    function totalSupply() external view returns(uint);
+    function balanceOf(address) external view returns (uint);
+    function transferFrom(address,address,uint) external returns (bool);
+    function transfer(address, uint) external returns (bool);
+    function approve(address, uint) external;
 }
 
-contract TokenLike {
-    uint public totalSupply;
-    function balanceOf(address) public view returns (uint);
-    function transferFrom(address,address,uint) public returns (bool);
-    function transfer(address, uint) public returns (bool);
-    function approve(address, uint) public;
-}
-
-contract PileLike {
-    uint public total;
-    function debt(uint) public returns (uint);
-    function accrue(uint) public;
-    function incDebt(uint, uint) public;
-    function decDebt(uint, uint) public;
+interface PileLike {
+    function total() external view returns(uint);
+    function debt(uint) external returns (uint);
+    function accrue(uint) external;
+    function incDebt(uint, uint) external;
+    function decDebt(uint, uint) external;
 }
 
 interface CeilingLike {
@@ -66,7 +45,6 @@ interface SubscriberLike {
 contract Shelf is DSNote, Auth, TitleOwned, Math {
 
     // --- Data ---
-    TitleLike public title;
     CeilingLike public ceiling;
     PileLike public pile;
     TokenLike public currency;
@@ -88,7 +66,6 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     constructor(address currency_, address title_, address pile_, address ceiling_) TitleOwned(title_) public {
         wards[msg.sender] = 1;
         currency = TokenLike(currency_);
-        title = TitleLike(title_);
         pile = PileLike(pile_);
         ceiling = CeilingLike(ceiling_);
     }

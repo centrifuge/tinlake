@@ -1,19 +1,5 @@
-// Copyright (C) 2020 Centrifuge
-
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-pragma solidity >=0.5.15 <0.6.0;
+// SPDX-License-Identifier: AGPL-3.0-only
+pragma solidity >=0.6.12;
 
 import "ds-test/test.sol";
 import "../clerk.sol";
@@ -145,9 +131,6 @@ contract ClerkTest is Assertions, Interest {
     function raise(uint amountDAI) public{
         uint creditlineInit = clerk.creditline();
         uint remainingCreditInit = clerk.remainingCredit();
-        uint validateCallsInit = coordinator.calls("validateRatioConstraints");
-        uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
-        uint creditProtection = safeSub(overcollAmount, amountDAI);
 
         clerk.raise(amountDAI);
 
@@ -232,7 +215,6 @@ contract ClerkTest is Assertions, Interest {
     }
 
     function harvest(uint dropPrice) public {
-        uint mgrDAIBalanceInit = currency.balanceOf(address(mgr));
         uint collLockedInit = collateral.balanceOf(address(mgr));
         uint collateralTotalBalanceInit = collateral.totalSupply();
         uint mat = clerk.mat();
@@ -250,7 +232,7 @@ contract ClerkTest is Assertions, Interest {
         vat.setInk(collLockedExpected);
     }
 
-    function heal(uint amount, uint expectedHealingAmount, bool full) public {
+    function heal(uint amount, uint, bool full) public {
         uint totalBalanceDropInit = collateral.totalSupply();
         if ( !full ) {
             clerk.heal(amount);
@@ -265,15 +247,12 @@ contract ClerkTest is Assertions, Interest {
     function sink(uint amountDAI) public {
         uint creditlineInit = clerk.creditline();
         uint remainingCreditInit = clerk.remainingCredit();
-        uint validateCallsInit = coordinator.calls("validateRatioConstraints");
-        uint overcollAmount = clerk.calcOvercollAmount(amountDAI);
-        uint creditProtection = safeSub(overcollAmount, amountDAI);
 
-        uint reserve = 1000 ether;
+        uint reserve_ = 1000 ether;
         uint seniorBalance = 800 ether;
-        assessor.setReturn("balance", reserve);
+        assessor.setReturn("balance", reserve_);
         assessor.setReturn("seniorBalance", seniorBalance);
-        assessor.setReturn("borrowAmountEpoch", reserve);
+        assessor.setReturn("borrowAmountEpoch", reserve_);
         // raise creditLine
         clerk.sink(amountDAI);
         // assert creditLine was decreased
@@ -540,9 +519,9 @@ contract ClerkTest is Assertions, Interest {
         uint creditline = clerk.creditline();
         assessor.setReturn("borrowAmountEpoch", creditline/2);
 
-        uint reserve = 1000 ether;
+        uint reserve_ = 1000 ether;
         uint seniorBalance = 800 ether;
-        assessor.setReturn("balance", reserve);
+        assessor.setReturn("balance", reserve_);
         assessor.setReturn("seniorBalance", seniorBalance);
         // raise creditLine
         clerk.sink(creditline);
@@ -663,7 +642,6 @@ contract ClerkTest is Assertions, Interest {
         assertEq(lockedCollateralDAI, 110 ether);
         assertEq(requiredCollateralDAI, 115 ether);
         // partial healing
-        uint healingAmount = safeDiv(safeSub(requiredCollateralDAI, lockedCollateralDAI), 2); // healing amount = 2
         assessor.setReturn("balance", 200 ether);
         heal(10, 4, false);
 

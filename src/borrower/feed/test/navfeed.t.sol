@@ -1,17 +1,5 @@
-// Copyright (C) 2020 Centrifuge
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-pragma solidity >=0.5.15 <0.6.0;
+// SPDX-License-Identifier: AGPL-3.0-only
+pragma solidity >=0.6.12;
 
 import "ds-test/test.sol";
 import "tinlake-math/math.sol";
@@ -145,7 +133,7 @@ contract NAVTest is DSTest, Math {
 
     }
 
-    function listLen() public returns (uint) {
+    function listLen() public view returns (uint) {
         uint normalizedDay = feed.uniqueDayTimestamp(now);
         uint len = 0;
 
@@ -470,11 +458,10 @@ contract NAVTest is DSTest, Math {
         assertEq(feed.dateBucket(normalizedDueDate), 49.6125 ether);
     }
 
-    function _repayOnMaturityDate(uint repayTimestamp, uint maturityDateOffset) internal {
+    function _repayOnMaturityDate(uint repayTimestamp, uint) internal {
         // loan 4 has maturity date in + 1 days
         uint tokenId = 4;
         uint loan = 4;
-        uint maturityDateOffset = 1 days;
         uint amount = 50 ether;
         setupLinkedListBuckets();
 

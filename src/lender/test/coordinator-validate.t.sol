@@ -1,19 +1,5 @@
-// Copyright (C) 2020 Centrifuge
-
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-pragma solidity >=0.5.15 <0.6.0;
+// SPDX-License-Identifier: AGPL-3.0-only
+pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "./coordinator-base.t.sol";
@@ -30,7 +16,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
     ValidateErr public validateErr;
     int public successful;
 
-    function setUp() public {
+    function setUp() public override {
         super.setUp();
         validateErr = ValidateErr({
             CURRENCY_AVAILABLE: -1,
@@ -59,7 +45,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
         int result = coordinator.validate(input.seniorRedeem, input.juniorRedeem, input.seniorSupply, input.juniorSupply);
 
         if (tCase.status != result) {
-            emit log_named_int(tCase.name, result);
+            emit log_named_int(string(abi.encodePacked(tCase.name)), result);
         }
 
         assertTrue(tCase.status == result);
