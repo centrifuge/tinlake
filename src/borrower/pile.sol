@@ -42,6 +42,7 @@ contract Pile is Auth, Interest {
     event DecreaseDebt(uint indexed loan, uint currencyAmount);
     event SetRate(uint indexed loan, uint rate);
     event ChangeRate(uint indexed loan, uint newRate);
+    event File(bytes32 indexed what, uint rate, uint value);
 
     constructor() public {
         wards[msg.sender] = 1;
@@ -134,7 +135,7 @@ contract Pile is Auth, Interest {
     }
 
     // set/change the interest rate of a rate category
-    function file(bytes32 what, uint rate, uint value) external auth note {
+    function file(bytes32 what, uint rate, uint value) external auth {
         if (what == "rate") {
             require(value != 0, "rate-per-second-can-not-be-0");
             if (rates[rate].chi == 0) {
@@ -147,6 +148,8 @@ contract Pile is Auth, Interest {
         } else if (what == "fixedRate") {
             rates[rate].fixedRate = value;
         } else revert("unknown parameter");
+
+        emit File(what, rate, value);
     }
 
     // accrue needs to be called before any debt amounts are modified by an external component

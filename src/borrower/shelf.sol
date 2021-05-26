@@ -64,6 +64,7 @@ contract Shelf is Auth, TitleOwned, Math {
 
     // Events
     event Close(uint indexed loan);
+    event Issue(address indexed registry_, uint indexed token_);
     event Borrow(uint indexed loan, uint currencyAmount);
     event Withdraw(uint indexed loan, uint currencyAmount, address usr);
     event Repay(uint indexed loan, uint currencyAmount);
@@ -102,7 +103,7 @@ contract Shelf is Auth, TitleOwned, Math {
 
     /// issues a new loan in Tinlake - it requires the ownership of an nft
     /// first step in the loan process - everyone could add an nft
-    function issue(address registry_, uint token_) external note returns (uint) {
+    function issue(address registry_, uint token_) external returns (uint) {
         require(NFTLike(registry_).ownerOf(token_) == msg.sender, "nft-not-owned");
         bytes32 nft = keccak256(abi.encodePacked(registry_, token_));
         require(nftlookup[nft] == 0, "nft-in-use");
@@ -111,6 +112,7 @@ contract Shelf is Auth, TitleOwned, Math {
         shelf[loan].registry = registry_;
         shelf[loan].tokenId = token_;
 
+        emit Issue(registry_, token_);
         return loan;
     }
 
