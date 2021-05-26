@@ -34,7 +34,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
     uint public lastEpochExecuted;
 
     function setUp() public {
-        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm = Hevm(HEVM_ADDRESS);
         hevm.warp(1595247588);
         self = address(this);
 

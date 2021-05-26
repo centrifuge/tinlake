@@ -12,7 +12,7 @@ contract LenderSystemTest is TestSuite, Interest {
 
     function setUp() public {
         // setup hevm
-        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm = Hevm(HEVM_ADDRESS);
 
         baseSetup();
         createTestUsers();

@@ -92,7 +92,7 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         reserve_ = address(reserve);
         assessor_ = address(assessor);
 
-        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm = Hevm(HEVM_ADDRESS);
         hevm.warp(1234567);
 
         uint challengeTime = 1 hours;
