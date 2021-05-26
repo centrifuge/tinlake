@@ -26,7 +26,7 @@ contract CollectorTest is DSTest {
         resreve = new ReserveMock();
 
         collector = new Collector(address(shelf), address(pile), address(nft));
-        collector.depend("resreve", address(resreve));
+        collector.depend("reserve", address(resreve));
     }
 
     function collect(uint loan, uint tokenId, uint price) internal {
