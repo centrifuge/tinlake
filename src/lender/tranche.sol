@@ -257,15 +257,16 @@ contract Tranche is Math, Auth, FixedPoint {
             redeemInToken = safeDiv(safeMul(epochRedeemOrderCurrency, ONE), tokenPrice_);
         }
 
-        // calculates the delta between supply and redeem for tokens and burn or mint them
-        adjustTokenBalance(epochID, supplyInToken, redeemInToken);
         // calculates the delta between supply and redeem for currency and deposit or get them from the reserve
         adjustCurrencyBalance(epochID, epochSupplyOrderCurrency, epochRedeemOrderCurrency);
+        // calculates the delta between supply and redeem for tokens and burn or mint them
+        adjustTokenBalance(epochID, supplyInToken, redeemInToken);
 
         // the unfulfilled orders (1-fulfillment) is automatically ordered
         totalSupply = safeAdd(safeTotalSub(totalSupply, epochSupplyOrderCurrency), rmul(epochSupplyOrderCurrency, safeSub(ONE, epochs[epochID].supplyFulfillment.value)));
         totalRedeem = safeAdd(safeTotalSub(totalRedeem, redeemInToken), rmul(redeemInToken, safeSub(ONE, epochs[epochID].redeemFulfillment.value)));
     }
+    
     function closeEpoch() public auth returns (uint totalSupplyCurrency_, uint totalRedeemToken_) {
         require(waitingForUpdate == false);
         waitingForUpdate = true;

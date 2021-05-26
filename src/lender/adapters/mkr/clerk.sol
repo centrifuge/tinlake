@@ -273,13 +273,11 @@ contract Clerk is Auth, Interest {
         }
 
         uint dropPrice = assessor.calcSeniorTokenPrice();
-
         // get DAI from reserve
         reserve.hardPayout(amountDAI);
         // repay cdp debt
         dai.approve(address(mgr), amountDAI);
         mgr.wipe(amountDAI);
-
         // harvest junior interest & burn surplus drop
         _harvest(dropPrice);
     }
