@@ -174,8 +174,8 @@ contract LenderDeployer is FixedPoint {
         AuthLike(juniorTranche).rely(juniorOperator);
 
         // coordinator implements epoch ticker interface
-        DependLike(seniorTranche).depend("epochTicker", coordinator);
-        DependLike(juniorTranche).depend("epochTicker", coordinator);
+        DependLike(seniorTranche).depend("coordinator", coordinator);
+        DependLike(juniorTranche).depend("coordinator", coordinator);
 
         //restricted token
         DependLike(seniorToken).depend("memberlist", seniorMemberlist);

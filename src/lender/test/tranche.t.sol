@@ -50,7 +50,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         lastEpochExecuted = 0;
 
         // epoch ticker is implemented in test suite
-        tranche.depend("epochTicker", address(this));
+        tranche.depend("coordinator", address(this));
 
         tranche_ = address(tranche);
 
