@@ -235,8 +235,11 @@ contract MKRBasicSystemTest is MKRTestBasis {
         hevm.warp(now + 1 days);
         // currency should come from MKR
         assertEq(reserve.totalBalance(), 0);
-
+        uint preDebt = clerk.debt();
         coordinator.closeEpoch();
+        uint debt = clerk.debt();
+        assertEq(debt, preDebt - currencyAmount);
+
         assertEq(currency.balanceOf(address(seniorInvestor)), 0);
     }
 
