@@ -28,7 +28,7 @@ contract Definitions is FixedPoint, Math {
             currSeniorAsset, newReserve, nav), nav, newReserve);
     }
 
-/// calculates the net wealth in the system
+    /// calculates the net wealth in the system
     /// NAV for ongoing loans and currency in reserve
     function calcAssets(uint NAV, uint reserve_) public pure returns(uint) {
         return safeAdd(NAV, reserve_);

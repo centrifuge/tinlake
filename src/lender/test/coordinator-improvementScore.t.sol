@@ -254,7 +254,7 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         assertTrue(coordinator.scoreReserveImprovement(201 ether) > coordinator.scoreReserveImprovement(202 ether));
         assertEq(coordinator.scoreReserveImprovement(0), coordinator.BIG_NUMBER());
 
-        uint lowestScore = coordinator.scoreReserveImprovement(uint(-1));
+        uint lowestScore = coordinator.scoreReserveImprovement(type(uint256).max);
         uint lowScore = coordinator.scoreReserveImprovement(10*18 * 1 ether);
 
         assertTrue(lowScore > lowestScore);

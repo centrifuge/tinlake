@@ -182,8 +182,8 @@ contract LenderDeployer is FixedPoint {
         DependLike(juniorToken).depend("memberlist", juniorMemberlist);
 
         //allow tinlake contracts to hold drop/tin tokens
-        MemberlistLike(juniorMemberlist).updateMember(juniorTranche, uint(-1));
-        MemberlistLike(seniorMemberlist).updateMember(seniorTranche, uint(-1));
+        MemberlistLike(juniorMemberlist).updateMember(juniorTranche, type(uint256).max);
+        MemberlistLike(seniorMemberlist).updateMember(seniorTranche, type(uint256).max);
 
         // operator
         DependLike(seniorOperator).depend("tranche", seniorTranche);

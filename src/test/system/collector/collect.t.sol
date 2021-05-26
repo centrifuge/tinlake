@@ -80,7 +80,7 @@ contract CollectTest is BaseSystemTest {
         // topup keeper
         if (doTopup) { topUp(keeper_); }
         // keeper approves shelf to take currency
-        if (doApprove) { keeper.approveCurrency(address(shelf), uint(-1)); }
+        if (doApprove) { keeper.approveCurrency(address(shelf), type(uint256).max); }
     }
 
     function testCollectAssignedKeeper() public {

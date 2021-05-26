@@ -115,7 +115,7 @@ contract ScenarioTest is BaseSystemTest {
         uint tTotal = currency.totalSupply();
 
         // allow pile full control over borrower tokens
-        borrower.doApproveCurrency(address(shelf), uint(-1));
+        borrower.doApproveCurrency(address(shelf), type(uint256).max);
 
         uint reserveBalance = currency.balanceOf(address(reserve));
         for (uint i = 1; i <= 10; i++) {

@@ -81,7 +81,7 @@ contract UnlockTest is BaseSystemTest {
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
 
         // borrower allows shelf full control over borrower tokens
-        borrower.doApproveCurrency(address(shelf), uint(-1));
+        borrower.doApproveCurrency(address(shelf), type(uint256).max);
 
         hevm.warp(now + 365 days);
         // borrower does not repay

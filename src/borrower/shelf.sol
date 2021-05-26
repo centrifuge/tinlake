@@ -85,7 +85,7 @@ contract Shelf is Auth, TitleOwned, Math {
     function depend(bytes32 contractName, address addr) external auth {
         if (contractName == "lender") {
             if (lender != address(0)) currency.approve(lender, uint(0));
-            currency.approve(addr, uint(-1));
+            currency.approve(addr, type(uint256).max);
             lender = addr;
         }
         else if (contractName == "token") { currency = TokenLike(addr); }

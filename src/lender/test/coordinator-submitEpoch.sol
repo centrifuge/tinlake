@@ -14,7 +14,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
         uint maxOrder = 10 ** 18 * 10 ** 18;
         uint score = coordinator.scoreSolution(maxOrder, maxOrder, maxOrder, maxOrder);
         // should not produce integer overflow
-        assertTrue(score <= uint(-1));
+        assertTrue(score <= type(uint256).max);
 
         uint maxDistancePoints = rmul(coordinator.IMPROVEMENT_WEIGHT(), rdiv(ONE, 1));
         assertTrue(coordinator.BIG_NUMBER() > maxDistancePoints);

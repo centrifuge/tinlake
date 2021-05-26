@@ -142,7 +142,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         // transfer extra funds, so that usr can pay for interest
         topUp(usr);
         // borrower allows shelf full control over borrower tokens
-        Borrower(usr).doApproveCurrency(address(shelf), uint(-1));
+        Borrower(usr).doApproveCurrency(address(shelf), type(uint256).max);
         // repay loan
         borrower.repay(loanId, currencyAmount);
     }
@@ -172,7 +172,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         seize(loanId);
         admin.addKeeper(loanId, usr, recoveryPrice);
         topUp(usr);
-        Borrower(usr).doApproveCurrency(address(shelf), uint(-1));
+        Borrower(usr).doApproveCurrency(address(shelf), type(uint256).max);
         admin.collect(loanId, usr);
     }
 
@@ -305,7 +305,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         // borrower needs some currency to pay rate
         currency.mint(borrower_, DEFAULT_HIGH_FUND_BORROWER);
         // allow pile full control over borrower tokens
-        borrower.doApproveCurrency(address(shelf), uint(-1));
+        borrower.doApproveCurrency(address(shelf), type(uint256).max);
         return DEFAULT_HIGH_FUND_BORROWER;
     }
 }

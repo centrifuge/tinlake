@@ -39,7 +39,7 @@ contract Config {
             titleSymbol: "TLNT",
             // 2% per day
             seniorInterestRate: uint(1000000229200000000000000000),
-            maxReserve: uint(-1),
+            maxReserve: type(uint256).max,
             maxSeniorRatio: 0.85 *10**27,
             minSeniorRatio: 0.75 *10**27,
             challengeTime: 1 hours,
