@@ -3,7 +3,6 @@ pragma solidity >=0.6.12;
 
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
-import "ds-test/test.sol";
 import { TitleOwned, TitleLike } from "tinlake-title/title.sol";
 
 interface NFTLike {
