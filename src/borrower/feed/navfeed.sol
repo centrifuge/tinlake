@@ -2,7 +2,6 @@
 pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
 import "./nftfeed.sol";

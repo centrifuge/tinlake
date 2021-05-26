@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.6.12;
 
-import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 
@@ -25,7 +24,7 @@ interface PileLike {
 // The NFTFeed stores values and risk group of nfts that are used as collateral in tinlake. A risk group contains: thresholdRatio, ceilingRatio & interstRate.
 // The risk groups for a tinlake deployment are defined on contract creation and can not be changed afterwards.
 // Loan parameters like interstRate, max borrow amount and liquidation threshold are determined based on the value and risk group of the underlying collateral nft.
-contract BaseNFTFeed is DSNote, Auth, Math {
+contract BaseNFTFeed is Auth, Math {
 
     // nftID => nftValues
     mapping (bytes32 => uint) public nftValues;

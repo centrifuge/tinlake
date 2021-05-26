@@ -2,7 +2,6 @@
 // Copyright (C) 2018  Rain <rainbreak@riseup.net>, Centrifuge
 pragma solidity >=0.6.12;
 
-import "ds-note/note.sol";
 import "tinlake-math/interest.sol";
 import "tinlake-auth/auth.sol";
 
@@ -10,7 +9,8 @@ import "tinlake-auth/auth.sol";
 // The following is one implementation of a debt module. It keeps track of different buckets of interest rates and is optimized for many loans per interest bucket. It keeps track of interest
 // rate accumulators (chi values) for all interest rate categories. It calculates debt each
 // loan according to its interest rate category and pie value.
-contract Pile is DSNote, Auth, Interest {
+contract Pile is Auth, Interest {
+    
     // --- Data ---
 
     /// stores all needed information of an interest rate group
@@ -37,6 +37,12 @@ contract Pile is DSNote, Auth, Interest {
     /// total debt of all ongoing loans
     uint public total;
 
+    // Events
+    event IncreaseDebt(uint indexed loan, uint currencyAmount);
+    event DecreaseDebt(uint indexed loan, uint currencyAmount);
+    event SetRate(uint indexed loan, uint rate);
+    event ChangeRate(uint indexed loan, uint newRate);
+
     constructor() public {
         wards[msg.sender] = 1;
         /// pre-definition for loans without interest rates
@@ -47,7 +53,7 @@ contract Pile is DSNote, Auth, Interest {
      // --- Public Debt Methods  ---
     /// increases the debt of a loan by a currencyAmount
     /// a change of the loan debt updates the rate debt and total debt
-    function incDebt(uint loan, uint currencyAmount) external auth note { 
+    function incDebt(uint loan, uint currencyAmount) external auth { 
         uint rate = loanRates[loan];
         require(now == rates[rate].lastUpdated, "rate-group-not-updated");
         currencyAmount = safeAdd(currencyAmount, rmul(currencyAmount, rates[rate].fixedRate));
@@ -56,11 +62,13 @@ contract Pile is DSNote, Auth, Interest {
         pie[loan] = safeAdd(pie[loan], pieAmount);
         rates[rate].pie = safeAdd(rates[rate].pie, pieAmount);
         total = safeAdd(total, currencyAmount);
+
+        emit IncreaseDebt(loan, currencyAmount);
     }
 
     /// decrease the loan's debt by a currencyAmount
     /// a change of the loan debt updates the rate debt and total debt
-    function decDebt(uint loan, uint currencyAmount) external auth note {
+    function decDebt(uint loan, uint currencyAmount) external auth {
         uint rate = loanRates[loan];
         require(now == rates[rate].lastUpdated, "rate-group-not-updated");
         uint pieAmount = toPie(rates[rate].chi, currencyAmount);
@@ -74,6 +82,8 @@ contract Pile is DSNote, Auth, Interest {
         }
 
         total = safeSub(total, currencyAmount);
+
+        emit DecreaseDebt(loan, currencyAmount);
     }
 
     /// returns the current debt based on actual block.timestamp (now)
@@ -100,15 +110,16 @@ contract Pile is DSNote, Auth, Interest {
     // --- Interest Rate Group Implementation ---
 
     // set rate loanRates for a loan
-    function setRate(uint loan, uint rate) external auth note {
+    function setRate(uint loan, uint rate) external auth {
         require(pie[loan] == 0, "non-zero-debt");
         // rate category has to be initiated
         require(rates[rate].chi != 0, "rate-group-not-set");
         loanRates[loan] = rate;
+        emit SetRate(loan, rate);
     }
 
     // change rate loanRates for a loan
-    function changeRate(uint loan, uint newRate) external auth note {
+    function changeRate(uint loan, uint newRate) external auth {
         require(rates[newRate].chi != 0, "rate-group-not-set");
         uint currentRate = loanRates[loan];
         drip(currentRate);
@@ -119,6 +130,7 @@ contract Pile is DSNote, Auth, Interest {
         pie[loan] = toPie(rates[newRate].chi, debt_);
         rates[newRate].pie = safeAdd(rates[newRate].pie, pie[loan]);
         loanRates[loan] = newRate;
+        emit ChangeRate(loan, newRate);
     }
 
     // set/change the interest rate of a rate category

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.6.12;
 
-import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
 
 interface TrancheLike {
@@ -28,6 +27,10 @@ contract Operator is DSNote, Auth {
     TrancheLike public tranche;
     RestrictedTokenLike public token;
 
+    // Events
+    event SupplyOrder(uint indexed amount);
+    event RedeemOrder(uint indexed amount);
+
     constructor(address tranche_) public {
         wards[msg.sender] = 1;
         tranche = TrancheLike(tranche_);
@@ -41,15 +44,17 @@ contract Operator is DSNote, Auth {
     }
 
     /// only investors that are on the memberlist can submit supplyOrders
-    function supplyOrder(uint amount) public note {
+    function supplyOrder(uint amount) public {
         require((token.hasMember(msg.sender) == true), "user-not-allowed-to-hold-token");
         tranche.supplyOrder(msg.sender, amount);
+        emit SupplyOrder(amount);
     }
 
     /// only investors that are on the memberlist can submit redeemOrders
-    function redeemOrder(uint amount) public note {
+    function redeemOrder(uint amount) public {
         require((token.hasMember(msg.sender) == true), "user-not-allowed-to-hold-token");
         tranche.redeemOrder(msg.sender, amount);
+        emit RedeemOrder(amount);
     }
 
     /// only investors that are on the memberlist can disburse

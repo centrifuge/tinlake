@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.6.12;
 
-import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
 
 interface NFTLike {
@@ -27,12 +26,12 @@ interface ShelfLike {
     function recover(uint loan, address usr, uint wad) external;
 }
 
-contract Collector is DSNote, Auth {
+contract Collector is Auth {
 
      // -- Collectors --
     mapping (address => uint) public collectors;
-    function relyCollector(address usr) public auth note { collectors[usr] = 1; }
-    function denyCollector(address usr) public auth note { collectors[usr] = 0; }
+    function relyCollector(address usr) public auth { collectors[usr] = 1; emit RelyCollector(usr); }
+    function denyCollector(address usr) public auth { collectors[usr] = 0; emit DenyCollector(usr); }
     modifier auth_collector { require(collectors[msg.sender] == 1); _; }
 
     // --- Data ---
@@ -48,6 +47,10 @@ contract Collector is DSNote, Auth {
     ReserveLike reserve;
     ShelfLike shelf;
     PileLike pile;
+
+    event Collect(uint indexed loan, address indexed buyer);
+    event RelyCollector(address indexed usr);
+    event DenyCollector(address indexed usr);
 
     constructor (address shelf_, address pile_, address threshold_) public {
         shelf = ShelfLike(shelf_);
@@ -88,11 +91,11 @@ contract Collector is DSNote, Auth {
     /// a nft can be collected if the collector is the nft- owner
     /// The NFT needs to be `seized` first to transfer ownership to the collector.
     /// and then seized by the collector
-    function collect(uint loan) external auth_collector note {
+    function collect(uint loan) external auth_collector {
         _collect(loan, msg.sender);
     }
 
-    function collect(uint loan, address buyer) external auth note {
+    function collect(uint loan, address buyer) external auth {
         _collect(loan, buyer);
     }
 
@@ -103,5 +106,6 @@ contract Collector is DSNote, Auth {
         shelf.recover(loan, buyer, options[loan].nftPrice);
         NFTLike(registry).transferFrom(address(this), buyer, nft);
         reserve.balance();
+        emit Collect(loan, buyer);
     }
 }
