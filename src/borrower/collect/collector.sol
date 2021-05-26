@@ -9,7 +9,7 @@ interface NFTLike {
     function transferFrom(address from, address to, uint256 tokenId) external;
 }
 
-interface DistributorLike {
+interface ReserveLike {
     function balance() external;
 }
 
@@ -45,7 +45,7 @@ contract Collector is DSNote, Auth {
 
     mapping (uint => Option) public options;
 
-    DistributorLike distributor;
+    ReserveLike reserve;
     ShelfLike shelf;
     PileLike pile;
 
@@ -58,7 +58,7 @@ contract Collector is DSNote, Auth {
 
     /// sets the dependency to another contract
     function depend(bytes32 contractName, address addr) external auth {
-        if (contractName == "distributor") distributor = DistributorLike(addr);
+        if (contractName == "reserve") reserve = ReserveLike(addr);
         else if (contractName == "shelf") shelf = ShelfLike(addr);
         else if (contractName == "pile") pile = PileLike(addr);
         else if (contractName == "threshold") threshold = ThresholdRegistryLike(addr);
@@ -102,6 +102,6 @@ contract Collector is DSNote, Auth {
         require(options[loan].nftPrice > 0, "no-nft-price-defined");
         shelf.recover(loan, buyer, options[loan].nftPrice);
         NFTLike(registry).transferFrom(address(this), buyer, nft);
-        distributor.balance();
+        reserve.balance();
     }
 }

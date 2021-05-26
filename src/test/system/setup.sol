@@ -45,7 +45,6 @@ import { NAVFeed } from "../../borrower/feed/navfeed.sol";
 import { TestRoot } from "./root.sol";
 
 import "../simple/token.sol";
-import "../simple/distributor.sol";
 import "tinlake-erc20/erc20.sol";
 
 import { TokenLike, NFTFeedLike } from "./interfaces.sol";

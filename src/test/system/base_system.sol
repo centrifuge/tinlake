@@ -257,8 +257,8 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         return (DEFAULT_NFT_PRICE, DEFAULT_RISK_GROUP_TEST_LOANS);
     }
 
-    // note: this method will be refactored with the new lender side contracts, as the distributor should not hold any currency
-    function currdistributorBal() public view returns(uint) {
+    // note: this method will be refactored with the new lender side contracts, as the reserve should not hold any currency
+    function currReserveBalance() public view returns(uint) {
         return currency.balanceOf(address(reserve));
     }
 
@@ -289,11 +289,11 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
 
         // borrower needs some currency to pay rate
         setupRepayReq();
-        uint distributorShould = pile.debt(loan) + currdistributorBal();
+        uint reserveShould = pile.debt(loan) + currReserveBalance();
         // close without defined amount
         borrower.doClose(loan);
         uint totalT = uint(currency.totalSupply());
-        checkAfterRepay(loan, tokenId, totalT, distributorShould);
+        checkAfterRepay(loan, tokenId, totalT, reserveShould);
     }
 
     function fixed18To27(uint valPower18) public pure returns(uint) {

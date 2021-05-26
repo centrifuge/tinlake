@@ -23,8 +23,8 @@ contract WithdrawTest is BaseSystemTest {
 
     function withdraw(uint loanId, uint tokenId, uint amount, address usr) public {
         uint shelfBalance = currency.balanceOf(address(shelf));
-        uint distributorBalance = currency.balanceOf(address(reserve));
-        uint initialAvailable = safeAdd(shelfBalance, distributorBalance);
+        uint reserveBalance = currency.balanceOf(address(reserve));
+        uint initialAvailable = safeAdd(shelfBalance, reserveBalance);
         uint initialRecipientBalance = currency.balanceOf(usr);
         uint initialLoanBalance = shelf.balances(loanId);
         uint initialTotalBalance = shelf.balance();
@@ -41,8 +41,8 @@ contract WithdrawTest is BaseSystemTest {
         assert(shelf.balances(loanId) >= amount);
         // assert: enough funds available
         uint shelfBalance = currency.balanceOf(address(shelf));
-        uint distributorBalance = currency.balanceOf(address(reserve));
-        assert(safeAdd(shelfBalance, distributorBalance) >= amount);
+        uint reserveBalance = currency.balanceOf(address(reserve));
+        assert(safeAdd(shelfBalance, reserveBalance) >= amount);
     }
 
     function assertPostCondition(uint loanId, uint tokenId, uint withdrawAmount, address recipient, uint initialAvailable, uint initialRecipientBalance, uint initialLoanBalance, uint initialTotalBalance) public {
@@ -50,8 +50,8 @@ contract WithdrawTest is BaseSystemTest {
         assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
         // assert: available balance decreased
         uint shelfBalance = currency.balanceOf(address(shelf));
-        uint distributorBalance = currency.balanceOf(address(reserve));
-        assertEq(safeAdd(shelfBalance, distributorBalance), safeSub(initialAvailable, withdrawAmount));
+        uint reserveBalance = currency.balanceOf(address(reserve));
+        assertEq(safeAdd(shelfBalance, reserveBalance), safeSub(initialAvailable, withdrawAmount));
         // assert: borrower balance increased
         assertEq(currency.balanceOf(recipient), safeAdd(initialRecipientBalance, withdrawAmount));
         // assert: loan balance reduced

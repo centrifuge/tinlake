@@ -33,7 +33,7 @@ interface CeilingLike {
     function repay(uint loan, uint currencyAmount) external;
 }
 
-interface DistributorLike {
+interface ReserveLike {
     function balance() external;
 }
 
@@ -48,7 +48,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
     CeilingLike public ceiling;
     PileLike public pile;
     TokenLike public currency;
-    DistributorLike public distributor;
+    ReserveLike public reserve;
     SubscriberLike public subscriber;
 
     struct Loan {
@@ -82,7 +82,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         else if (contractName == "title") { title = TitleLike(addr); }
         else if (contractName == "pile") { pile = PileLike(addr); }
         else if (contractName == "ceiling") { ceiling = CeilingLike(addr); }
-        else if (contractName == "distributor") { distributor = DistributorLike(addr);}
+        else if (contractName == "reserve") { reserve = ReserveLike(addr);}
         else if (contractName == "subscriber") { subscriber = SubscriberLike(addr);}
         else revert();
     }
@@ -146,12 +146,12 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
 
 
     /// transfers the requested currencyAmount to the address of the loan owner
-    /// the method triggers the distributor to ensure the shelf has enough currency
+    /// the method triggers the reserve to ensure the shelf has enough currency
     function withdraw(uint loan, uint currencyAmount, address usr) external owner(loan) note {
         require(nftLocked(loan), "nft-not-locked");
         require(currencyAmount <= balances[loan], "withdraw-amount-too-high");
 
-        distributor.balance();
+        reserve.balance();
         balances[loan] = safeSub(balances[loan], currencyAmount);
         balance = safeSub(balance, currencyAmount);
         require(currency.transfer(usr, currencyAmount), "currency-transfer-failed");
@@ -177,7 +177,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         // sets loan debt to 0
         pile.decDebt(loan, loanDebt);
         resetLoanBalance(loan);
-        distributor.balance();
+        reserve.balance();
     }
 
     function _repay(uint loan, address usr, uint currencyAmount) internal {
@@ -191,7 +191,7 @@ contract Shelf is DSNote, Auth, TitleOwned, Math {
         require(currency.transferFrom(usr, address(this), currencyAmount), "currency-transfer-failed");
         ceiling.repay(loan, currencyAmount);
         pile.decDebt(loan, currencyAmount);
-        distributor.balance();
+        reserve.balance();
     }
 
     /// locks an nft in the shelf

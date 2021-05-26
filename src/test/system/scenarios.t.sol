@@ -60,11 +60,11 @@ contract ScenarioTest is BaseSystemTest {
 
         // borrower needs some currency to pay rate
         setupRepayReq();
-        uint distributorShould = pile.debt(loan) + currdistributorBal();
+        uint reserveShould = pile.debt(loan) + currReserveBalance();
         // close without defined amount
         borrower.doClose(loan);
         uint totalT = uint(currency.totalSupply());
-        checkAfterRepay(loan, tokenId, totalT, distributorShould);
+        checkAfterRepay(loan, tokenId, totalT, reserveShould);
     }
 
     function testLongOngoing() public {
@@ -76,13 +76,13 @@ contract ScenarioTest is BaseSystemTest {
         // borrower needs some currency to pay rate
         setupRepayReq();
 
-        uint distributorShould = pile.debt(loan) + currdistributorBal();
+        uint reserveShould = pile.debt(loan) + currReserveBalance();
 
         // close without defined amount
         borrower.doClose(loan);
 
         uint totalT = uint(currency.totalSupply());
-        checkAfterRepay(loan, tokenId, totalT, distributorShould);
+        checkAfterRepay(loan, tokenId, totalT, reserveShould);
     }
 
     function testMultipleBorrowAndRepay() public {
@@ -117,15 +117,15 @@ contract ScenarioTest is BaseSystemTest {
         // allow pile full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), uint(-1));
 
-        uint distributorBalance = currency.balanceOf(address(reserve));
+        uint reserveBalance = currency.balanceOf(address(reserve));
         for (uint i = 1; i <= 10; i++) {
             nftPrice = i * 100;
             uint ceiling = computeCeiling(riskGroup, nftPrice);
             // repay transaction
             borrower.repayAction(i, ceiling);
 
-            distributorBalance += ceiling;
-            checkAfterRepay(i, i, tTotal, distributorBalance);
+            reserveBalance += ceiling;
+            checkAfterRepay(i, i, tTotal, reserveBalance);
         }
     }
 
