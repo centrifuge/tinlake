@@ -17,7 +17,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
 
     function prepareExecute(LenderModel memory model_, ModelInput memory input) public {
         initTestConfig(model_);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         assertTrue(coordinator.submissionPeriod() == false);
         coordinator.closeEpoch();
         assertTrue(coordinator.submissionPeriod() == true);
@@ -28,7 +28,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
         // new best solution
         assertEq(result, coordinator.SUCCESS());
 
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
     }
 
     function checkTrancheUpdates(LenderModel memory model_, ModelInput memory input) public {
@@ -91,7 +91,7 @@ contract CoordinatorExecuteEpochTest is CoordinatorTest {
     function testCalcSeniorState() public {
         LenderModel memory model = getDefaultModel();
         initTestConfig(model);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
 
         uint currSeniorAsset = 0;

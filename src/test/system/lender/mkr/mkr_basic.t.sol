@@ -60,7 +60,7 @@ contract MKRTestBasis is TestSuite, Interest {
 
         juniorSupply(juniorAmount);
 
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         bool closeWithExecute = true;
         closeEpoch(closeWithExecute);
@@ -197,7 +197,7 @@ contract MKRBasicSystemTest is MKRTestBasis {
 
         uint redeemTokenAmount = 20 ether;
         juniorInvestor.redeemOrder(redeemTokenAmount);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         // currency should come from MKR
         assertEq(reserve.totalBalance(), 0);
         coordinator.closeEpoch();
@@ -216,7 +216,7 @@ contract MKRBasicSystemTest is MKRTestBasis {
         uint currencyAmount = 50 ether;
         seniorSupply(currencyAmount);
         // seniorInvestor.supplyOrder(currencyAmount);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         // currency should come from MKR
         assertEq(reserve.totalBalance(), 0);
         uint preDebt = clerk.debt();
@@ -235,7 +235,7 @@ contract MKRBasicSystemTest is MKRTestBasis {
         uint mkrAmount = 500 ether;
         uint borrowAmount = 300 ether;
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         uint debt = clerk.debt();
         uint buffer = safeSub(rmul(rpow(clerk.stabilityFee(),

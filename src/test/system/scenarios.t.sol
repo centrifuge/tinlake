@@ -56,7 +56,7 @@ contract ScenarioTest is BaseSystemTest {
     function testRepayFullAmount() public {
         (uint loan, uint tokenId,) = setupOngoingLoan();
 
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         // borrower needs some currency to pay rate
         setupRepayReq();
@@ -71,7 +71,7 @@ contract ScenarioTest is BaseSystemTest {
         (uint loan, uint tokenId, ) = setupOngoingLoan();
 
         // interest 5% per day 1.05^300 ~ 2273996.1286 chi
-        hevm.warp(now + 300 days);
+        hevm.warp(block.timestamp + 300 days);
 
         // borrower needs some currency to pay rate
         setupRepayReq();

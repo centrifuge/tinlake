@@ -109,13 +109,13 @@ contract ClerkTest is Assertions, Interest {
         uint amount = 100 ether;
         vat.increaseTab(amount);
         jug.setInterestUpToDate(false);
-        uint rho = now;
+        uint rho = block.timestamp;
         jug.setReturn("ilks_rho", rho);
         uint interestRatePerSecond = uint(1000000564701133626865910626);     // 5 % day
         jug.setReturn("ilks_duty", safeSub(interestRatePerSecond, ONE));
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         assertEq(clerk.debt(), 105 ether);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         assertEq(clerk.debt(), 110.25 ether);
 
         //rate idx after two days of 5% interest
@@ -124,7 +124,7 @@ contract ClerkTest is Assertions, Interest {
         vat.setReturn("stabilityFeeIdx", rateIdx);
         jug.setReturn("ilks_rho", block.timestamp);
         assertEq(clerk.debt(), 110.25 ether);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         assertEq(clerk.debt(), 115.7625 ether);
     }
 

@@ -31,7 +31,7 @@ contract PileTest is Interest, DSTest {
         _setUpLoan(loan, 1000000003593629043335673583);
         _increaseDebt(loan, amount);
 
-        hevm.warp(now + 365 days);
+        hevm.warp(block.timestamp + 365 days);
         pile.accrue(loan);
 
         assertDebt(loan, 73.92 ether);
@@ -107,7 +107,7 @@ contract PileTest is Interest, DSTest {
         uint initRatePerSecond = rate;
         _initRateGroup(rate, initRatePerSecond);
 
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         uint newRatePerSecond = 1000000564701133626865910626;
         pile.file("rate", rate, newRatePerSecond);
@@ -123,7 +123,7 @@ contract PileTest is Interest, DSTest {
         // 12 % per year compound in seconds
         _setUpLoan(loan, 1000000003593629043335673583);
 
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         _increaseDebt(loan, amount);
     }
@@ -144,7 +144,7 @@ contract PileTest is Interest, DSTest {
         _setUpLoan(loan, 1000000003593629043335673583);
         _increaseDebt(loan, amount);
 
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         _decreaseDebt(loan, amount);
     }
@@ -161,7 +161,7 @@ contract PileTest is Interest, DSTest {
         pile.setRate(loan, lowRate);
         pile.incDebt(loan, principal);
         assertDebt(loan, 100 ether);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         pile.drip(lowRate);
         pile.drip(highRate);
         assertDebt(loan, 105 ether);
@@ -177,7 +177,7 @@ contract PileTest is Interest, DSTest {
         assertEq(pile.rateDebt(highRate), 105 ether);
         assertEq(pile.total(), 105 ether);
 
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         //105 * 1.12 =117.6
         pile.drip(highRate);
@@ -196,7 +196,7 @@ contract PileTest is Interest, DSTest {
         // set to 5%
         pile.setRate(loan, lowRate);
         assertDebt(loan, 0);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         pile.drip(lowRate);
         pile.drip(highRate);
 
@@ -206,7 +206,7 @@ contract PileTest is Interest, DSTest {
 
         // check if rate is 12%
         pile.incDebt(loan, 100 ether);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         pile.drip(highRate);
         assertDebt(loan, 112 ether);
 
@@ -261,7 +261,7 @@ contract PileTest is Interest, DSTest {
         pile.incDebt(loan, principal);
 
         // one day later
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         pile.drip(rate);
         uint should = _calculateDebt(rate, principal, uint(3600*24));
         assertDebt(loan, should);
@@ -302,7 +302,7 @@ contract PileTest is Interest, DSTest {
         assertDebt(loan, 66 ether);
 
         // two days later
-        hevm.warp(now + 2 days);
+        hevm.warp(block.timestamp + 2 days);
         assertEq(pile.debt(loan), 72.765 ether); // 66 ether * 1,05**2
         pile.drip(rate);
         assertDebt(loan, 72.765 ether);
@@ -330,7 +330,7 @@ contract PileTest is Interest, DSTest {
         assertDebt(loan, 66 ether);
 
         // on year later
-        hevm.warp(now + 365 days);
+        hevm.warp(block.timestamp + 365 days);
         pile.drip(rate);
         assertDebt(loan, 73.92 ether); // 66 ether * 1,12
     }
@@ -340,22 +340,22 @@ contract PileTest is Interest, DSTest {
         pile.file("rate", rate, rate);
         (uint debt1, uint rateIndex1, uint ratePerSecond1, uint lastUpdated1, ) = pile.rates(rate);
         assertEq(ratePerSecond1, rate);
-        assertEq(lastUpdated1, now);
+        assertEq(lastUpdated1, block.timestamp);
         assertEq(debt1, 0);
 
         // on day later
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         (debt1,  rateIndex1,  ratePerSecond1, lastUpdated1, ) = pile.rates(rate);
         assertEq(ratePerSecond1, rate);
         assertEq(debt1, 0);
-        assertTrue(lastUpdated1 != now);
+        assertTrue(lastUpdated1 != block.timestamp);
 
         pile.drip(rate);
 
         (uint debt2, uint rateIndex2, uint ratePerSecond2, uint lastUpdated2, ) = pile.rates(rate);
         assertEq(ratePerSecond2, rate);
-        assertEq(lastUpdated2, now);
+        assertEq(lastUpdated2, block.timestamp);
         assertEq(debt2, 0);
         assertTrue(rateIndex1 != rateIndex2);
     }
@@ -365,7 +365,7 @@ contract PileTest is Interest, DSTest {
         // rateIndex initial 10^27
         uint rate = uint(1000000564701133626865910626); // 5 % / daily
         pile.file("rate", rate, rate);
-        hevm.warp(now + 1050 days); // 1,05 ^1050 = 1.7732257e+22
+        hevm.warp(block.timestamp + 1050 days); // 1,05 ^1050 = 1.7732257e+22
 
         // init rateIndex 10^27 *  1.7732257 * 10^22  ~ rateIndex 10^49
         // rdiv operation needs to mul rateIndex with ONE (10^27)
@@ -378,7 +378,7 @@ contract PileTest is Interest, DSTest {
         // rateIndex initial 10^27
         uint rate = uint(1000000564701133626865910626); // 5 % / daily
         pile.file("rate", rate, rate);
-        hevm.warp(now + 1100 days); // 1,05 ^1100 = 2.0334288e+23
+        hevm.warp(block.timestamp + 1100 days); // 1,05 ^1100 = 2.0334288e+23
 
         // init rateIndex 10^27 *  2.0334288 * 10^23  ~ rateIndex 10^50
         // rdiv operation needs to mul rateIndex with ONE (10^27)
@@ -396,7 +396,7 @@ contract PileTest is Interest, DSTest {
         pile.incDebt(loan, principal);
 
         // 150 days later
-        hevm.warp(now + 1050 days); // produces max ~ rateIndex 10^49
+        hevm.warp(block.timestamp + 1050 days); // produces max ~ rateIndex 10^49
         // debt ~ 10^27 * 10^49 =  10^76 (max uint is 10^77)
         pile.drip(rate);
     }

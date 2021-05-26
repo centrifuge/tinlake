@@ -149,7 +149,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
 
     // helpers lenders
     function defaultInvest(uint currencyAmount) public {
-        uint validUntil = safeAdd(now, 8 days);
+        uint validUntil = safeAdd(block.timestamp, 8 days);
         admin.makeJuniorTokenMember(juniorInvestor_, validUntil);
         admin.makeSeniorTokenMember(seniorInvestor_, validUntil);
 
@@ -221,7 +221,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
     }
 
     function setupLoan(uint tokenId, address collateralNFT_, uint nftPrice, uint riskGroup) public returns (uint) {
-        uint maturityDate = now + 600 days;
+        uint maturityDate = block.timestamp + 600 days;
         return setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup, maturityDate);
     }
 
@@ -235,7 +235,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
 
     function fundLender(uint amount) public {
         defaultInvest(amount);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
     }
 
@@ -285,7 +285,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         borrow(loan, tokenId, ceiling);
         assertEq(nftFeed_.ceiling(loan), 0);
 
-        hevm.warp(now + 10 days);
+        hevm.warp(block.timestamp + 10 days);
 
         // borrower needs some currency to pay rate
         setupRepayReq();

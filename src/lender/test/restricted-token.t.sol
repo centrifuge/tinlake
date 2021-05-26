@@ -17,7 +17,7 @@ contract RestrictedTokenTest is Math, DSTest {
 
     Hevm hevm;
     
-    uint memberlistValidity = safeAdd(now, 8 days);
+    uint memberlistValidity = safeAdd(block.timestamp, 8 days);
     Memberlist memberlist;
     RestrictedToken token;
 

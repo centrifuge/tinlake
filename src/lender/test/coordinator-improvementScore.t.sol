@@ -61,7 +61,7 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         model.seniorBalance = 500 ether;
 
         initTestConfig(model);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
 
         //  0.75 >= seniorRatio <= 0.85
@@ -161,7 +161,7 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         model.juniorRedeemOrder = 300 ether;
 
         initTestConfig(model);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
 
         uint currentRatio = assessor.calcSeniorRatio(assessor.calcSeniorAssetValue(0,0,safeAdd(model.seniorDebt, model.seniorBalance), model.reserve, model.NAV),

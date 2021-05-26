@@ -95,7 +95,7 @@ contract CollectTest is BaseSystemTest {
 
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
         // after 10 days debt higher than threshold 168 ether
-        hevm.warp(now + 10 days); // -> 100 * ((1.05)^10) ~ loanSize 162.88 ether
+        hevm.warp(block.timestamp + 10 days); // -> 100 * ((1.05)^10) ~ loanSize 162.88 ether
 
         uint recoveryPrice = pile.debt(loanId);
         setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
@@ -115,7 +115,7 @@ contract CollectTest is BaseSystemTest {
         bool doApprove = true;
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
         // after 10 days debt higher than threshold 168 ether
-        hevm.warp(now + 10 days);
+        hevm.warp(block.timestamp + 10 days);
         uint recoveryPrice = pile.debt(loanId);
         setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
 
@@ -138,7 +138,7 @@ contract CollectTest is BaseSystemTest {
         setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
 
         // after 10 days debt higher than threshold 168 ether
-        hevm.warp(now + 10 days);
+        hevm.warp(block.timestamp + 10 days);
         // seize loan
         collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
@@ -156,7 +156,7 @@ contract CollectTest is BaseSystemTest {
 
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
         // after 10 days debt higher than threshold 168 ether
-        hevm.warp(now + 10 days);
+        hevm.warp(block.timestamp + 10 days);
         // price twice as high as debt
         uint recoveryPrice = safeMul(pile.debt(loanId), 2);
 
@@ -174,7 +174,7 @@ contract CollectTest is BaseSystemTest {
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
         uint recoveryPrice = pile.debt(loanId);
 
-        hevm.warp(now + 10 days);
+        hevm.warp(block.timestamp + 10 days);
 
         // borrower is added as keeper and collects loan
         addKeeperAndCollect(loanId, borrower_, recoveryPrice);
@@ -191,7 +191,7 @@ contract CollectTest is BaseSystemTest {
         uint recoveryPrice = pile.debt(loanId);
 
         // after 10 days debt higher than threshold 168 ether
-        hevm.warp(now + 10 days);
+        hevm.warp(block.timestamp + 10 days);
         // borrower is added as keeper and collects loan
         addKeeperAndCollect(loanId, borrower_, recoveryPrice);
 
@@ -214,7 +214,7 @@ contract CollectTest is BaseSystemTest {
         setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
 
         // after 10 days debt higher than threshold 168 ether
-        hevm.warp(now + 10 days);
+        hevm.warp(block.timestamp + 10 days);
         // seize loan
         collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
@@ -237,7 +237,7 @@ contract CollectTest is BaseSystemTest {
         // assign random keeper to loan
         admin.addKeeper(loanId, randomUser_, recoveryPrice);
         // after 10 days debt higher than threshold 168 ether
-        hevm.warp(now + 10 days);
+        hevm.warp(block.timestamp + 10 days);
         // seize loan
         collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
@@ -259,7 +259,7 @@ contract CollectTest is BaseSystemTest {
         setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
 
         // after 1 year debt has not reached threshold
-        hevm.warp(now + 10 days);
+        hevm.warp(block.timestamp + 10 days);
         // seize loan
         // collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
@@ -282,7 +282,7 @@ contract CollectTest is BaseSystemTest {
         setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
 
         // after 1 year threshold reached
-        hevm.warp(now + 10 days);
+        hevm.warp(block.timestamp + 10 days);
         // seize loan
         collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
@@ -302,7 +302,7 @@ contract CollectTest is BaseSystemTest {
         uint recoveryPrice = pile.debt(loanId);
         setupCollect(loanId, recoveryPrice, keeper_, whitelisted, assigned, doTopup, doApprove);
 
-        hevm.warp(now + 10 days);
+        hevm.warp(block.timestamp + 10 days);
         collector.seize(loanId);
         assertPreCondition(loanId, tokenId);
         collect(loanId, tokenId, false);

@@ -59,26 +59,26 @@ contract BucketTest is DSTest, Math {
         uint amount = 100 ether;
 
         // add first element
-        buckets.add(now + 5 days, amount);
+        buckets.add(block.timestamp + 5 days, amount);
         assertEq(buckets.calcSum(), 100 ether);
-        assertEq(buckets.firstBucket(), buckets.uniqueDayTimestamp(now +  5 days));
-        assertEq(buckets.lastBucket(), buckets.uniqueDayTimestamp(now +  5 days));
+        assertEq(buckets.firstBucket(), buckets.uniqueDayTimestamp(block.timestamp +  5 days));
+        assertEq(buckets.lastBucket(), buckets.uniqueDayTimestamp(block.timestamp +  5 days));
 
         // add second bucket after first
-        buckets.add(now + 10 days, amount);
+        buckets.add(block.timestamp + 10 days, amount);
         assertEq(buckets.calcSum(), 200 ether);
         // still same first bucket
-        assertEq(buckets.firstBucket(), buckets.uniqueDayTimestamp(now +  5 days));
+        assertEq(buckets.firstBucket(), buckets.uniqueDayTimestamp(block.timestamp +  5 days));
         // new last bucket
-        assertEq(buckets.lastBucket(), buckets.uniqueDayTimestamp(now +  10 days));
+        assertEq(buckets.lastBucket(), buckets.uniqueDayTimestamp(block.timestamp +  10 days));
 
         // add before first bucket
-        buckets.add(now + 3 days, amount);
+        buckets.add(block.timestamp + 3 days, amount);
         assertEq(buckets.calcSum(), 300 ether);
         // new first bucket
-        assertEq(buckets.firstBucket(), buckets.uniqueDayTimestamp(now +  3 days));
+        assertEq(buckets.firstBucket(), buckets.uniqueDayTimestamp(block.timestamp +  3 days));
         // same bucket
-        assertEq(buckets.lastBucket(), buckets.uniqueDayTimestamp(now +  10 days));
+        assertEq(buckets.lastBucket(), buckets.uniqueDayTimestamp(block.timestamp +  10 days));
     }
 
     function testAddBuckets() public {
@@ -88,51 +88,51 @@ contract BucketTest is DSTest, Math {
     function testRemoveMiddleBucket() public {
         addBuckets();
         // remove bucket in the middle
-        buckets.remove(now + 5 days);
+        buckets.remove(block.timestamp + 5 days);
         assertEq(buckets.calcSum(), 200 ether);
-        assertEq(buckets.firstBucket(), buckets.uniqueDayTimestamp(now +  3 days));
+        assertEq(buckets.firstBucket(), buckets.uniqueDayTimestamp(block.timestamp +  3 days));
         // same bucket
-        assertEq(buckets.lastBucket(), buckets.uniqueDayTimestamp(now +  10 days));
+        assertEq(buckets.lastBucket(), buckets.uniqueDayTimestamp(block.timestamp +  10 days));
     }
 
     function testRemoveLastBucket() public {
         addBuckets();
         // remove bucket in the middle
-        buckets.remove(now + 10 days);
+        buckets.remove(block.timestamp + 10 days);
         assertEq(buckets.calcSum(), 200 ether);
-        assertEq(buckets.firstBucket(), buckets.uniqueDayTimestamp(now +  3 days));
+        assertEq(buckets.firstBucket(), buckets.uniqueDayTimestamp(block.timestamp +  3 days));
         // same bucket
-        assertEq(buckets.lastBucket(), buckets.uniqueDayTimestamp(now +  5 days));
+        assertEq(buckets.lastBucket(), buckets.uniqueDayTimestamp(block.timestamp +  5 days));
     }
 
     function testRemoveFirstBucket() public {
         addBuckets();
         // remove bucket in the middle
-        buckets.remove(now + 3 days);
+        buckets.remove(block.timestamp + 3 days);
         assertEq(buckets.calcSum(), 200 ether);
-        assertEq(buckets.firstBucket(), buckets.uniqueDayTimestamp(now +  5 days));
+        assertEq(buckets.firstBucket(), buckets.uniqueDayTimestamp(block.timestamp +  5 days));
         // same bucket
-        assertEq(buckets.lastBucket(), buckets.uniqueDayTimestamp(now +  10 days));
+        assertEq(buckets.lastBucket(), buckets.uniqueDayTimestamp(block.timestamp +  10 days));
     }
 
     function testRemoveAllBuckets() public {
         addBuckets();
-        buckets.remove(now + 5 days);
-        buckets.remove(now + 10 days);
+        buckets.remove(block.timestamp + 5 days);
+        buckets.remove(block.timestamp + 10 days);
         assertEq(buckets.calcSum(), 100 ether);
-        assertEq(buckets.firstBucket(), buckets.uniqueDayTimestamp(now +  3 days));
-        assertEq(buckets.lastBucket(), buckets.uniqueDayTimestamp(now +  3 days));
+        assertEq(buckets.firstBucket(), buckets.uniqueDayTimestamp(block.timestamp +  3 days));
+        assertEq(buckets.lastBucket(), buckets.uniqueDayTimestamp(block.timestamp +  3 days));
 
         // remove last one
-        buckets.remove(now + 3 days);
+        buckets.remove(block.timestamp + 3 days);
         assertEq(buckets.firstBucket(), 0);
         assertEq(buckets.lastBucket(), 0);
 
         assertEq(buckets.calcSum(), 0);
 
         // add some buckets again to see if everything is still correct
-        buckets.add(now + 21 days, 3 ether);
-        buckets.add(now + 24 days, 3 ether);
+        buckets.add(block.timestamp + 21 days, 3 ether);
+        buckets.add(block.timestamp + 24 days, 3 ether);
         assertEq(buckets.calcSum(), 6 ether);
     }
 }

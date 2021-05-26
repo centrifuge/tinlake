@@ -16,7 +16,7 @@ contract WithdrawTest is BaseSystemTest {
     function fundTranches() public {
         uint defaultAmount = 1000 ether;
         defaultInvest(defaultAmount);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
         emit log_named_uint("reserve", reserve.totalBalance());
     }

@@ -25,7 +25,7 @@ contract MemberAdminTest is DSTest {
 
     function updateMember() public {
         address usr = address(1);
-        uint validUntil = now + 365 days;
+        uint validUntil = block.timestamp + 365 days;
         memberAdmin.updateMember(address(memberlist), usr, validUntil);
 
         assertEq(memberlist.calls("updateMember"), 1);
@@ -44,7 +44,7 @@ contract MemberAdminTest is DSTest {
     }
 
     function updateMembers() public {
-        uint validUntil = now + 365 days;
+        uint validUntil = block.timestamp + 365 days;
         memberAdmin.updateMembers(address(memberlist), users, validUntil);
 
         assertEq(memberlist.calls("updateMembers"), 1);

@@ -56,7 +56,7 @@ contract Pile is Auth, Interest {
     /// a change of the loan debt updates the rate debt and total debt
     function incDebt(uint loan, uint currencyAmount) external auth { 
         uint rate = loanRates[loan];
-        require(now == rates[rate].lastUpdated, "rate-group-not-updated");
+        require(block.timestamp == rates[rate].lastUpdated, "rate-group-not-updated");
         currencyAmount = safeAdd(currencyAmount, rmul(currencyAmount, rates[rate].fixedRate));
         uint pieAmount = toPie(rates[rate].chi, currencyAmount);
 
@@ -71,7 +71,7 @@ contract Pile is Auth, Interest {
     /// a change of the loan debt updates the rate debt and total debt
     function decDebt(uint loan, uint currencyAmount) external auth {
         uint rate = loanRates[loan];
-        require(now == rates[rate].lastUpdated, "rate-group-not-updated");
+        require(block.timestamp == rates[rate].lastUpdated, "rate-group-not-updated");
         uint pieAmount = toPie(rates[rate].chi, currencyAmount);
 
         pie[loan] = safeSub(pie[loan], pieAmount);
@@ -91,7 +91,7 @@ contract Pile is Auth, Interest {
     function debt(uint loan) external view returns (uint) {
         uint rate_ = loanRates[loan];
         uint chi_ = rates[rate_].chi;
-        if (now >= rates[rate_].lastUpdated) {
+        if (block.timestamp >= rates[rate_].lastUpdated) {
             chi_ = chargeInterest(rates[rate_].chi, rates[rate_].ratePerSecond, rates[rate_].lastUpdated);
         }
         return toAmount(chi_, pie[loan]);
@@ -102,7 +102,7 @@ contract Pile is Auth, Interest {
         uint chi_ = rates[rate].chi;
         uint pie_ = rates[rate].pie;
 
-        if (now >= rates[rate].lastUpdated) {
+        if (block.timestamp >= rates[rate].lastUpdated) {
             chi_ = chargeInterest(rates[rate].chi, rates[rate].ratePerSecond, rates[rate].lastUpdated);
         }
         return toAmount(chi_, pie_);
@@ -140,7 +140,7 @@ contract Pile is Auth, Interest {
             require(value != 0, "rate-per-second-can-not-be-0");
             if (rates[rate].chi == 0) {
                 rates[rate].chi = ONE;
-                rates[rate].lastUpdated = uint48(now);
+                rates[rate].lastUpdated = uint48(block.timestamp);
             } else {
                 drip(rate);
             } 
@@ -160,10 +160,10 @@ contract Pile is Auth, Interest {
     // drip updates the chi of the rate category by compounding the interest and
     // updates the total debt
     function drip(uint rate) public {        
-        if (now >= rates[rate].lastUpdated) {
+        if (block.timestamp >= rates[rate].lastUpdated) {
             (uint chi, uint deltaInterest) = compounding(rates[rate].chi, rates[rate].ratePerSecond, rates[rate].lastUpdated, rates[rate].pie);
             rates[rate].chi = chi;
-            rates[rate].lastUpdated = uint48(now);
+            rates[rate].lastUpdated = uint48(block.timestamp);
             total = safeAdd(total, deltaInterest);
         }
     }

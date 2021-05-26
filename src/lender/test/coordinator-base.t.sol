@@ -156,7 +156,7 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
     }
 
     function calcNextEpochIn() public view returns(uint) {
-        return (coordinator.minimumEpochTime()) - (now - coordinator.lastEpochClosed());
+        return (coordinator.minimumEpochTime()) - (block.timestamp - coordinator.lastEpochClosed());
     }
 
     function compareWithBest(ModelInput memory model_) internal {

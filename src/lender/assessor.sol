@@ -261,7 +261,7 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     function seniorDebt() public view returns (uint) {
-        if (now >= lastUpdateSeniorInterest) {
+        if (block.timestamp >= lastUpdateSeniorInterest) {
             return chargeInterest(seniorDebt_, seniorInterestRate.value, lastUpdateSeniorInterest);
         }
         return seniorDebt_;

@@ -187,7 +187,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     function calcFutureValue(uint loan, uint amount, uint maturityDate_, uint recoveryRatePD_) public returns(uint) {
         // retrieve interest rate from the pile
         (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
-        return rmul(rmul(rpow(loanInterestRate, safeSub(maturityDate_, uniqueDayTimestamp(now)), ONE), amount), recoveryRatePD_);
+        return rmul(rmul(rpow(loanInterestRate, safeSub(maturityDate_, uniqueDayTimestamp(block.timestamp)), ONE), amount), recoveryRatePD_);
     }
 
     /// update the nft value and change the risk group

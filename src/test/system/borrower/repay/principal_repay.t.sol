@@ -76,7 +76,7 @@ contract PrincipalRepayTest is BaseSystemTest {
         // borrower allows shelf full control over borrower tokens
         Borrower(usr).doApproveCurrency(address(shelf), type(uint256).max);
         //repay after 1 year
-        hevm.warp(now + 365 days);
+        hevm.warp(block.timestamp + 365 days);
         assertPreCondition(loanId, tokenId, repayAmount, expectedDebt);
       //  repay(loanId, tokenId, repayAmount, expectedDebt);
     }
@@ -124,7 +124,7 @@ contract PrincipalRepayTest is BaseSystemTest {
         // borrower allows shelf full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), type(uint256).max);
         //repay after 1 year
-        hevm.warp(now + 365 days);
+        hevm.warp(block.timestamp + 365 days);
         assertPreCondition(loanId, tokenId, repayAmount, expectedDebt);
         repay(loanId, tokenId, repayAmount, expectedDebt);
     }
@@ -151,7 +151,7 @@ contract PrincipalRepayTest is BaseSystemTest {
         uint repayAmount = expectedDebt;
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
 
-        hevm.warp(now + 365 days);
+        hevm.warp(block.timestamp + 365 days);
 
         // do not supply borrower with additional funds to repay interest
 
@@ -179,7 +179,7 @@ contract PrincipalRepayTest is BaseSystemTest {
         borrower.borrow(loanId, borrowAmount);
         // borrower just withdraws half of ceiling -> loanBalance remains
         borrower.withdraw(loanId, withdrawAmount, borrower_);
-        hevm.warp(now + 365 days);
+        hevm.warp(block.timestamp + 365 days);
 
         // supply borrower with additional funds to pay for accrued interest
         topUp(borrower_);
@@ -220,7 +220,7 @@ contract PrincipalRepayTest is BaseSystemTest {
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
 
         //repay after 1 year
-        hevm.warp(now + 365 days);
+        hevm.warp(block.timestamp + 365 days);
 
          // supply borrower with additional funds to pay for accrued interest
         topUp(borrower_);
@@ -243,7 +243,7 @@ contract PrincipalRepayTest is BaseSystemTest {
         // borrower allows shelf full control over borrower tokens
         borrower.doApproveCurrency(address(shelf), type(uint256).max);
         //repay after 1 year
-        hevm.warp(now + 365 days);
+        hevm.warp(block.timestamp + 365 days);
         assertPreCondition(loanId, tokenId, repayAmount, expectedDebt);
         repay(loanId, tokenId, repayAmount, expectedDebt);
 

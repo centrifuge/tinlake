@@ -15,7 +15,7 @@ contract TestSuite is BaseSystemTest {
     }
 
     function seniorSupply(uint currencyAmount, Investor investor) public {
-        admin.makeSeniorTokenMember(address(investor), safeAdd(now, 8 days));
+        admin.makeSeniorTokenMember(address(investor), safeAdd(block.timestamp, 8 days));
         currency.mint(address(investor), currencyAmount);
         investor.supplyOrder(currencyAmount);
         (,uint supplyAmount, ) = seniorTranche.users(address(investor));
@@ -24,7 +24,7 @@ contract TestSuite is BaseSystemTest {
 
     function juniorSupply(uint currencyAmount) public {
         currency.mint(address(juniorInvestor), currencyAmount);
-        admin.makeJuniorTokenMember(juniorInvestor_, safeAdd(now, 8 days));
+        admin.makeJuniorTokenMember(juniorInvestor_, safeAdd(block.timestamp, 8 days));
         juniorInvestor.supplyOrder(currencyAmount);
         (,uint supplyAmount, ) = juniorTranche.users(juniorInvestor_);
         assertEq(supplyAmount, currencyAmount);
@@ -46,7 +46,7 @@ contract TestSuite is BaseSystemTest {
         // borrow loans with default maturity date 5 days from now
         uint maturityDate = DEFAULT_MATURITY_DATE;
         uint nftPrice = borrowAmount*3;
-        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, nftFeed.uniqueDayTimestamp(now) +maturityDate);
+        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, nftFeed.uniqueDayTimestamp(block.timestamp) +maturityDate);
         return loan;
 
     }
@@ -66,7 +66,7 @@ contract TestSuite is BaseSystemTest {
         seniorSupply(seniorSupplyAmount);
         juniorSupply(juniorSupplyAmount);
 
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         closeEpoch(false);
         assertTrue(coordinator.submissionPeriod() == true);
@@ -74,7 +74,7 @@ contract TestSuite is BaseSystemTest {
         int valid = submitSolution(address(coordinator), submission);
         assertEq(valid, coordinator.NEW_BEST());
 
-        hevm.warp(now + 2 hours);
+        hevm.warp(block.timestamp + 2 hours);
 
         coordinator.executeEpoch();
         assertEqTol(reserve.totalBalance(), submission.seniorSupply + submission.juniorSupply, " firstLoan#1");
@@ -95,7 +95,7 @@ contract TestSuite is BaseSystemTest {
 
 
         // borrow loans maturity date 5 days from now
-        (loan, tokenId) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(now) +maturityDate);
+        (loan, tokenId) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(block.timestamp) +maturityDate);
 
         assertEqTol(currency.balanceOf(address(borrower)), borrowAmount, " firstLoan#8");
         uint nav = nftFeed.calcUpdateNAV();

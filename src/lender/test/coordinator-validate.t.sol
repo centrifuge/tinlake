@@ -32,14 +32,14 @@ contract CoordinatorValidateTest is CoordinatorTest {
         if(coordinator.submissionPeriod() == true) {
             int status = coordinator.submitSolution(0,0,0,0);
             assertEq(status, coordinator.SUCCESS());
-            hevm.warp(now + 1 days);
+            hevm.warp(block.timestamp + 1 days);
             coordinator.executeEpoch();
         }
     }
 
     function executeTestCase(LenderModel memory model, ModelInput memory input, TestCaseDesc memory tCase) public {
         initTestConfig(model);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
 
         int result = coordinator.validate(input.seniorRedeem, input.juniorRedeem, input.seniorSupply, input.juniorSupply);
@@ -281,7 +281,7 @@ contract CoordinatorValidateTest is CoordinatorTest {
         initTestConfig(model);
         assessor.setReturn("calcJuniorTokenPrice", 0);
 
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
         assertTrue(coordinator.submissionPeriod() == true);
 
