@@ -183,6 +183,20 @@ contract NAVTest is DSTest, Math {
         assertEq(feed.totalValue(), 55.125 ether);
     }
 
+    function testMultipleBorrow() public {
+        uint nftValue = 100 ether;
+        uint tokenId = 1;
+        uint dueDate = block.timestamp + 2 days;
+
+        uint firstBorrowAmount = 30 ether;
+        (, uint loan,uint firstNavIncrease) = borrow(tokenId, nftValue, firstBorrowAmount, dueDate);
+        assertEq(feed.currentNAV(), firstNavIncrease);
+
+        uint secondBorrowAmount = 20 ether;
+        uint secondNavIncrease = feed.borrow(loan, secondBorrowAmount);
+        assertEq(feed.currentNAV(), firstNavIncrease + secondNavIncrease);
+    }
+
     function testBorrowWithFixedFee() public {
         uint nftValue = 100 ether;
         uint tokenId = 1;
