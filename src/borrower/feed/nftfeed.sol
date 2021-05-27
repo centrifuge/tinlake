@@ -56,7 +56,7 @@ contract BaseNFTFeed is Auth, Math {
      // part of Feed interface
     function file(bytes32 name, uint value) public virtual auth {}
 
-    /// sets the dependency to another contract
+    // sets the dependency to another contract
     function depend(bytes32 contractName, address addr) external auth {
         if (contractName == "pile") {pile = PileLike(addr);}
         else if (contractName == "shelf") { shelf = ShelfLike(addr); }
@@ -85,7 +85,7 @@ contract BaseNFTFeed is Auth, Math {
         } else {revert ("unkown name");}
     }
 
-    ///  -- Oracle Updates --
+    //  -- Oracle Updates --
 
     // The nft value is to be updated by authenticated oracles
     function update(bytes32 nftID_,  uint value) public auth {
@@ -138,7 +138,7 @@ contract BaseNFTFeed is Auth, Math {
     // part of Feed interface
     function unlockEvent(uint loan) public auth {}
 
-    ///  -- Getter methods --
+    //  -- Getter methods --
     // returns the ceiling of a loan
     // the ceiling defines the maximum amount which can be borrowed
     function ceiling(uint loan) public view returns (uint) {
@@ -160,7 +160,7 @@ contract BaseNFTFeed is Auth, Math {
         return rmul(nftValues[nftID_], thresholdRatio[risk[nftID_]]);
     }
 
-    /// implements feed interface and returns poolValue as the total debt of all loans
+    // implements feed interface and returns poolValue as the total debt of all loans
     function totalValue() public virtual view returns (uint) {
         return pile.total();
     }

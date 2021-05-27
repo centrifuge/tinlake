@@ -36,28 +36,28 @@ contract Operator is Auth {
         tranche = TrancheLike(tranche_);
     }
 
-    /// sets the dependency to another contract
+    // sets the dependency to another contract
     function depend(bytes32 contractName, address addr) public auth {
         if (contractName == "tranche") { tranche = TrancheLike(addr); }
         else if (contractName == "token") { token = RestrictedTokenLike(addr); }
         else revert();
     }
 
-    /// only investors that are on the memberlist can submit supplyOrders
+    // only investors that are on the memberlist can submit supplyOrders
     function supplyOrder(uint amount) public {
         require((token.hasMember(msg.sender) == true), "user-not-allowed-to-hold-token");
         tranche.supplyOrder(msg.sender, amount);
         emit SupplyOrder(amount);
     }
 
-    /// only investors that are on the memberlist can submit redeemOrders
+    // only investors that are on the memberlist can submit redeemOrders
     function redeemOrder(uint amount) public {
         require((token.hasMember(msg.sender) == true), "user-not-allowed-to-hold-token");
         tranche.redeemOrder(msg.sender, amount);
         emit RedeemOrder(amount);
     }
 
-    /// only investors that are on the memberlist can disburse
+    // only investors that are on the memberlist can disburse
     function disburse() external
         returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken)
     {

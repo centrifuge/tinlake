@@ -162,7 +162,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         } else { revert("unkown-name"); }
      }
 
-    /// sets the dependency to another contract
+    // sets the dependency to another contract
     function depend (bytes32 contractName, address addr) public auth {
         if (contractName == "juniorTranche") { juniorTranche = EpochTrancheLike(addr); }
         else if (contractName == "seniorTranche") { seniorTranche = EpochTrancheLike(addr); }
@@ -171,10 +171,10 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         else revert();
     }
 
-    /// an epoch can be closed after a minimum epoch time has passed
-    /// closeEpoch creates a snapshot of the current lender state
-    /// if all orders can be fulfilled epoch is executed otherwise
-    /// submission period starts
+    // an epoch can be closed after a minimum epoch time has passed
+    // closeEpoch creates a snapshot of the current lender state
+    // if all orders can be fulfilled epoch is executed otherwise
+    // submission period starts
     function closeEpoch() external minimumEpochTimePassed {
         require(submissionPeriod == false);
         lastEpochClosed = block.timestamp;
@@ -232,9 +232,9 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
     }
 
 
-    //// internal method to save new optimum
-    //// orders are expressed as currency
-    //// all parameter are 10^18
+    /// internal method to save new optimum
+    /// orders are expressed as currency
+    /// all parameter are 10^18
     function _saveNewOptimum(uint seniorRedeem, uint juniorRedeem, uint juniorSupply,
         uint seniorSupply, uint score) internal {
 
@@ -247,10 +247,10 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
     }
 
 
-    /// method to submit a solution for submission period
-    /// anybody can submit a solution for the current execution epoch
-    /// if solution satisfies all constraints (or at least improves an unhealthy state)
-    /// and has the highest score
+    // method to submit a solution for submission period
+    // anybody can submit a solution for the current execution epoch
+    // if solution satisfies all constraints (or at least improves an unhealthy state)
+    // and has the highest score
     function submitSolution(uint seniorRedeem, uint juniorRedeem,
         uint juniorSupply, uint seniorSupply) public returns(int) {
         require(submissionPeriod == true, "submission-period-not-active");
@@ -330,7 +330,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return false;
     }
 
-    /// calculates the improvement score of a solution
+    // calculates the improvement score of a solution
     function _improveScore(uint seniorRedeem, uint juniorRedeem,
         uint juniorSupply, uint seniorSupply) internal returns(int) {
         Fixed27 memory currSeniorRatio = Fixed27(assessor.calcSeniorRatio(epochSeniorAsset,
@@ -400,7 +400,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         bestReserveImprovement = impScoreReserve;
     }
 
-    /// calculates improvement score for reserve and ratio pool constraints
+    // calculates improvement score for reserve and ratio pool constraints
     function scoreImprovement(Fixed27 memory newSeniorRatio_, uint newReserve_) public view returns(int, uint, uint) {
         uint impScoreRatio = scoreRatioImprovement(newSeniorRatio_);
         uint impScoreReserve = scoreReserveImprovement(newReserve_);
@@ -422,9 +422,9 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return (ERR_NOT_NEW_BEST, impScoreRatio, impScoreReserve);
     }
 
-    /// scores a solution in the submission period
-    /// the scoring function is a linear function with high weights as coefficient to determine
-    /// the priorities. (non-preemptive goal programming)
+    // scores a solution in the submission period
+    // the scoring function is a linear function with high weights as coefficient to determine
+    // the priorities. (non-preemptive goal programming)
     function scoreSolution(uint seniorRedeem, uint juniorRedeem,
         uint juniorSupply, uint seniorSupply) public view returns(uint) {
         // the default priority order
@@ -436,8 +436,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
             safeAdd(safeMul(juniorSupply, weightJuniorSupply), safeMul(seniorSupply, weightSeniorSupply)));
     }
 
-    /// validates if a solution satisfy the core constraints
-    /// returns: first constraint which is not satisfied or success
+    // validates if a solution satisfy the core constraints
+    // returns: first constraint which is not satisfied or success
     function validateCoreConstraints(uint currencyAvailable, uint currencyOut, uint seniorRedeem, uint juniorRedeem,
         uint seniorSupply, uint juniorSupply) public view returns (int err) {
         // constraint 1: currency available
@@ -459,8 +459,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return SUCCESS;
     }
 
-    /// validates if a solution satisfies the ratio constraints
-    /// returns: first constraint which is not satisfied or success
+    // validates if a solution satisfies the ratio constraints
+    // returns: first constraint which is not satisfied or success
     function validateRatioConstraints(uint assets, uint seniorAsset) public view returns(int) {
         (Fixed27 memory minSeniorRatio, Fixed27 memory maxSeniorRatio) = assessor.seniorRatioBounds();
 
@@ -478,8 +478,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return SUCCESS;
     }
 
-    /// validates if a solution satisfies the pool constraints
-    /// returns: first constraint which is not satisfied or success
+    // validates if a solution satisfies the pool constraints
+    // returns: first constraint which is not satisfied or success
     function validatePoolConstraints(uint reserve_, uint seniorAsset, uint nav_) public view returns (int err) {
         // constraint 3: max reserve
         if (reserve_ > assessor.maxReserve()) {
@@ -491,8 +491,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return validateRatioConstraints(assets, seniorAsset);
     }
 
-    /// validates if a solution satisfies core and pool constraints
-    /// returns: first constraint which is not satisfied or success
+    // validates if a solution satisfies core and pool constraints
+    // returns: first constraint which is not satisfied or success
     function validate(uint seniorRedeem, uint juniorRedeem,
         uint seniorSupply, uint juniorSupply) public view returns (int) {
         return validate(epochReserve, epochNAV, epochSeniorAsset,
@@ -534,7 +534,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
             seniorAsset_, newReserve, nav_), nav_);
     }
 
-    /// public method to execute an epoch which required a submission period and the challenge period is over
+    // public method to execute an epoch which required a submission period and the challenge period is over
     function executeEpoch() public {
         require(block.timestamp >= minChallengePeriodEnd && minChallengePeriodEnd != 0);
 
@@ -542,7 +542,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
             bestSubmission.seniorSupply, bestSubmission.juniorSupply);
     }
 
-    /// calculates the percentage of an order type which can be fulfilled for an epoch
+    // calculates the percentage of an order type which can be fulfilled for an epoch
     function calcFulfillment(uint amount, uint totalOrder) public pure returns(Fixed27 memory percent) {
         if(amount == 0 || totalOrder == 0) {
             return Fixed27(0);
@@ -550,7 +550,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return Fixed27(rdiv(amount, totalOrder));
     }
 
-    /// calculates the new reserve after a solution would be executed
+    // calculates the new reserve after a solution would be executed
     function calcNewReserve(uint seniorRedeem, uint juniorRedeem,
         uint seniorSupply, uint juniorSupply) public view returns(uint) {
 
@@ -558,7 +558,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
             safeAdd(seniorRedeem, juniorRedeem));
     }
 
-    /// internal execute epoch communicates the order fulfillment of the best solution to the tranches
+    // internal execute epoch communicates the order fulfillment of the best solution to the tranches
     function _executeEpoch(uint seniorRedeem, uint juniorRedeem,
         uint seniorSupply, uint juniorSupply) internal {
 

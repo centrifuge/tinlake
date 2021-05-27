@@ -59,7 +59,7 @@ contract Collector is Auth {
         wards[msg.sender] = 1;
     }
 
-    /// sets the dependency to another contract
+    // sets the dependency to another contract
     function depend(bytes32 contractName, address addr) external auth {
         if (contractName == "reserve") reserve = ReserveLike(addr);
         else if (contractName == "shelf") shelf = ShelfLike(addr);
@@ -68,7 +68,7 @@ contract Collector is Auth {
         else revert();
     }
 
-    /// sets the liquidation-price of an NFT
+    // sets the liquidation-price of an NFT
     function file(bytes32 what, uint loan, address buyer, uint nftPrice) external auth {
         if (what == "loan") {
             require(nftPrice > 0, "no-nft-price-defined");
@@ -78,9 +78,9 @@ contract Collector is Auth {
     }
 
 
-    /// if the loan debt is above the loan threshold the NFT should be seized,
-    /// i.e. taken away from the borrower to be sold off at a later stage.
-    /// therefore the ownership of the nft is transferred to the collector
+    // if the loan debt is above the loan threshold the NFT should be seized,
+    // i.e. taken away from the borrower to be sold off at a later stage.
+    // therefore the ownership of the nft is transferred to the collector
     function seize(uint loan) external {
         uint debt = pile.debt(loan);
         require((threshold.threshold(loan) <= debt), "threshold-not-reached");
@@ -88,9 +88,9 @@ contract Collector is Auth {
     }
 
 
-    /// a nft can be collected if the collector is the nft- owner
-    /// The NFT needs to be `seized` first to transfer ownership to the collector.
-    /// and then seized by the collector
+    // a nft can be collected if the collector is the nft- owner
+    // The NFT needs to be `seized` first to transfer ownership to the collector.
+    // and then seized by the collector
     function collect(uint loan) external auth_collector {
         _collect(loan, msg.sender);
     }

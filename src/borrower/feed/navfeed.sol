@@ -106,7 +106,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
             ONE                                     // recoveryRatePD:  1.0
         );
 
-        /// Overdue loans (= loans that were not repaid by the maturityDate) are moved to write Offs
+        // Overdue loans (= loans that were not repaid by the maturityDate) are moved to write Offs
         // 6% interest rate & 60% write off
         setWriteOff(0, WRITE_OFF_PHASE_A, uint(1000000674400000000000000000), 6 * 10**26);
         // 6% interest rate & 80% write off
@@ -130,7 +130,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         return (1 days) * (timestamp/(1 days));
     }
 
-    /// maturityDate is a unix timestamp
+    // maturityDate is a unix timestamp
     function file(bytes32 name, bytes32 nftID_, uint maturityDate_) public auth {
         // maturity date only can be changed when there is no debt on the collateral -> futureValue == 0
         if (name == "maturityDate") {
@@ -190,7 +190,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         return rmul(rmul(rpow(loanInterestRate, safeSub(maturityDate_, uniqueDayTimestamp(block.timestamp)), ONE), amount), recoveryRatePD_);
     }
 
-    /// update the nft value and change the risk group
+    // update the nft value and change the risk group
     function update(bytes32 nftID_, uint value, uint risk_) public override auth {
         nftValues[nftID_] = value;
 
@@ -280,7 +280,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
 
-    /// calculates the total discount of all buckets with a timestamp > block.timestamp
+    // calculates the total discount of all buckets with a timestamp > block.timestamp
     function calcTotalDiscount() public view returns(uint) {
         uint normalizedBlockTimestamp = uniqueDayTimestamp(block.timestamp);
         uint sum = 0;
@@ -304,7 +304,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         return sum;
     }
 
-    /// returns the NAV (net asset value) of the pool
+    // returns the NAV (net asset value) of the pool
     function currentNAV() public view returns(uint) {
         // calculates the NAV for ongoing loans with a maturityDate date in the future
         uint nav_ = calcTotalDiscount();
@@ -322,7 +322,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         return approximatedNAV;
     }
 
-    /// workaround for transition phase between V2 & V3
+    // workaround for transition phase between V2 & V3
     function totalValue() public override view returns(uint) {
         return currentNAV();
     }

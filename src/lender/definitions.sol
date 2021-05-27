@@ -10,7 +10,7 @@ contract Definitions is FixedPoint, Math {
         return safeAdd(_seniorDebt, _seniorBalance);
     }
 
-    /// calculates the senior ratio
+    // calculates the senior ratio
     function calcSeniorRatio(uint seniorAsset, uint nav, uint reserve_) public pure returns(uint) {
         // note: NAV + reserve == seniorAsset + juniorAsset (loop invariant: always true)
         // if expectedSeniorAsset is passed ratio can be greater than ONE
@@ -28,13 +28,13 @@ contract Definitions is FixedPoint, Math {
             currSeniorAsset, newReserve, nav), nav, newReserve);
     }
 
-    /// calculates the net wealth in the system
-    /// NAV for ongoing loans and currency in reserve
+    // calculates the net wealth in the system
+    // NAV for ongoing loans and currency in reserve
     function calcAssets(uint NAV, uint reserve_) public pure returns(uint) {
         return safeAdd(NAV, reserve_);
     }
 
-    /// calculates a new senior asset value based on senior redeem and senior supply
+    // calculates a new senior asset value based on senior redeem and senior supply
     function calcSeniorAssetValue(uint seniorRedeem, uint seniorSupply,
         uint currSeniorAsset, uint reserve_, uint nav_) public pure returns (uint seniorAsset) {
 

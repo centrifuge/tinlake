@@ -207,8 +207,8 @@ contract Assessor is Definitions, Auth, Interest {
             juniorTranche.tokenSupply());
     }
 
-    /// repayment update keeps track of senior bookkeeping for repaid loans
-    /// the seniorDebt needs to be decreased
+    // repayment update keeps track of senior bookkeeping for repaid loans
+    // the seniorDebt needs to be decreased
     function repaymentUpdate(uint currencyAmount) public auth {
         dripSeniorDebt();
 
@@ -226,8 +226,8 @@ contract Assessor is Definitions, Auth, Interest {
         lastUpdateSeniorInterest = block.timestamp;
 
     }
-    /// borrow update keeps track of the senior bookkeeping for new borrowed loans
-    /// the seniorDebt needs to be increased to accumulate interest
+    // borrow update keeps track of the senior bookkeeping for new borrowed loans
+    // the seniorDebt needs to be increased to accumulate interest
     function borrowUpdate(uint currencyAmount) public auth {
         dripSeniorDebt();
 

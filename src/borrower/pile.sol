@@ -13,7 +13,7 @@ contract Pile is Auth, Interest {
     
     // --- Data ---
 
-    /// stores all needed information of an interest rate group
+    // stores all needed information of an interest rate group
     struct Rate {
         uint   pie;                 // Total debt of all loans with this rate
         uint   chi;                 // Accumulated rates
@@ -22,19 +22,19 @@ contract Pile is Auth, Interest {
         uint   fixedRate;           // fixed rate applied to each loan of the group
     }
 
-    /// Interest Rate Groups are identified by a `uint` and stored in a mapping
+    // Interest Rate Groups are identified by a `uint` and stored in a mapping
     mapping (uint => Rate) public rates;
 
-    /// mapping of all loan debts
-    /// the debt is stored as pie
-    /// pie is defined as pie = debt/chi therefore debt = pie * chi
-    /// where chi is the accumulated interest rate index over time
+    // mapping of all loan debts
+    // the debt is stored as pie
+    // pie is defined as pie = debt/chi therefore debt = pie * chi
+    // where chi is the accumulated interest rate index over time
     mapping (uint => uint) public pie;
-    /// loan => rate
+    // loan => rate
     mapping (uint => uint) public loanRates;
 
 
-    /// total debt of all ongoing loans
+    // total debt of all ongoing loans
     uint public total;
 
     // Events
@@ -46,14 +46,14 @@ contract Pile is Auth, Interest {
 
     constructor() public {
         wards[msg.sender] = 1;
-        /// pre-definition for loans without interest rates
+        // pre-definition for loans without interest rates
         rates[0].chi = ONE;
         rates[0].ratePerSecond = ONE;
     }
 
      // --- Public Debt Methods  ---
-    /// increases the debt of a loan by a currencyAmount
-    /// a change of the loan debt updates the rate debt and total debt
+    // increases the debt of a loan by a currencyAmount
+    // a change of the loan debt updates the rate debt and total debt
     function incDebt(uint loan, uint currencyAmount) external auth { 
         uint rate = loanRates[loan];
         require(block.timestamp == rates[rate].lastUpdated, "rate-group-not-updated");
@@ -67,8 +67,8 @@ contract Pile is Auth, Interest {
         emit IncreaseDebt(loan, currencyAmount);
     }
 
-    /// decrease the loan's debt by a currencyAmount
-    /// a change of the loan debt updates the rate debt and total debt
+    // decrease the loan's debt by a currencyAmount
+    // a change of the loan debt updates the rate debt and total debt
     function decDebt(uint loan, uint currencyAmount) external auth {
         uint rate = loanRates[loan];
         require(block.timestamp == rates[rate].lastUpdated, "rate-group-not-updated");
@@ -87,7 +87,7 @@ contract Pile is Auth, Interest {
         emit DecreaseDebt(loan, currencyAmount);
     }
 
-    /// returns the current debt based on actual block.timestamp (now)
+    // returns the current debt based on actual block.timestamp (now)
     function debt(uint loan) external view returns (uint) {
         uint rate_ = loanRates[loan];
         uint chi_ = rates[rate_].chi;
@@ -97,7 +97,7 @@ contract Pile is Auth, Interest {
         return toAmount(chi_, pie[loan]);
     }
 
-    /// returns the total debt of a interest rate group
+    // returns the total debt of a interest rate group
     function rateDebt(uint rate) external view returns (uint) {
         uint chi_ = rates[rate].chi;
         uint pie_ = rates[rate].pie;
