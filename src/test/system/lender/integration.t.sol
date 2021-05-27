@@ -14,10 +14,10 @@ contract LenderIntegrationTest is BaseSystemTest {
     }
 
     function testAdminPermissions() public {
-        assertEq(assessor.wards(address(assessorAdmin)), 1);
+        assertEq(assessor.wards(address(poolAdmin)), 1);
         uint newReserve = 200 ether;
-        assertEq(assessorAdmin.wards(address(this)), 1);
-        assessorAdmin.setMaxReserve(newReserve);
+        assertEq(poolAdmin.wards(address(this)), 1);
+        poolAdmin.setMaxReserve(newReserve);
         assertEq(assessor.maxReserve(), newReserve);
     }
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.6.12;
 
-import { ReserveFabLike, AssessorFabLike, TrancheFabLike, CoordinatorFabLike, OperatorFabLike, MemberlistFabLike, RestrictedTokenFabLike, AssessorAdminFabLike } from "./fabs/interfaces.sol";
+import { ReserveFabLike, AssessorFabLike, TrancheFabLike, CoordinatorFabLike, OperatorFabLike, MemberlistFabLike, RestrictedTokenFabLike, PoolAdminFabLike } from "./fabs/interfaces.sol";
 
 import {FixedPoint}      from "./../fixed_point.sol";
 
@@ -35,7 +35,7 @@ contract LenderDeployer is FixedPoint {
     OperatorFabLike         public operatorFab;
     MemberlistFabLike       public memberlistFab;
     RestrictedTokenFabLike  public restrictedTokenFab;
-    AssessorAdminFabLike    public assessorAdminFab;
+    PoolAdminFabLike        public poolAdminFab;
 
     // lender state variables
     Fixed27             public minSeniorRatio;
@@ -47,7 +47,7 @@ contract LenderDeployer is FixedPoint {
 
     // contract addresses
     address             public assessor;
-    address             public assessorAdmin;
+    address             public poolAdmin;
     address             public seniorTranche;
     address             public juniorTranche;
     address             public seniorOperator;
@@ -69,7 +69,7 @@ contract LenderDeployer is FixedPoint {
 
     address             public deployer;
 
-    constructor(address root_, address currency_, address trancheFab_, address memberlistFab_, address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_, address operatorFab_, address assessorAdminFab_) public {
+    constructor(address root_, address currency_, address trancheFab_, address memberlistFab_, address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_, address operatorFab_, address poolAdminFab_) public {
         deployer = msg.sender;
         root = root_;
         currency = currency_;
@@ -79,7 +79,7 @@ contract LenderDeployer is FixedPoint {
         restrictedTokenFab = RestrictedTokenFabLike(restrictedtokenFab_);
         reserveFab = ReserveFabLike(reserveFab_);
         assessorFab = AssessorFabLike(assessorFab_);
-        assessorAdminFab = AssessorAdminFabLike(assessorAdminFab_);
+        poolAdminFab = PoolAdminFabLike(poolAdminFab_);
         coordinatorFab = CoordinatorFabLike(coordinatorFab_);
         operatorFab = OperatorFabLike(operatorFab_);
     }
@@ -140,10 +140,10 @@ contract LenderDeployer is FixedPoint {
         AuthLike(assessor).rely(root);
     }
 
-    function deployAssessorAdmin() public {
-        require(assessorAdmin == address(0) && deployer == address(1));
-        assessorAdmin = assessorAdminFab.newAssessorAdmin();
-        AuthLike(assessorAdmin).rely(root);
+    function deployPoolAdmin() public {
+        require(poolAdmin == address(0) && deployer == address(1));
+        poolAdmin = poolAdminFab.newPoolAdmin();
+        AuthLike(poolAdmin).rely(root);
     }
 
     function deployCoordinator() public {
@@ -205,10 +205,10 @@ contract LenderDeployer is FixedPoint {
 
         AuthLike(assessor).rely(coordinator);
         AuthLike(assessor).rely(reserve);
-        AuthLike(assessor).rely(assessorAdmin);
+        AuthLike(assessor).rely(poolAdmin);
 
-        // assessorAdmin
-        DependLike(assessorAdmin).depend("assessor", assessor);
+        // poolAdmin
+        DependLike(poolAdmin).depend("assessor", assessor);
 
 
 
