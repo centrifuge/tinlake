@@ -212,6 +212,7 @@ contract LenderDeployer is FixedPoint {
         DependLike(poolAdmin).depend("juniorMemberlist", juniorMemberlist);
         DependLike(poolAdmin).depend("seniorMemberlist", seniorMemberlist);
 
+        AuthLike(poolAdmin).rely(root);
         AuthLike(juniorMemberlist).rely(poolAdmin);
         AuthLike(seniorMemberlist).rely(poolAdmin);
 

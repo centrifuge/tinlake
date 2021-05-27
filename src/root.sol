@@ -18,11 +18,11 @@ interface BorrowerDeployerLike {
     function shelf() external returns (address);
     function title() external returns (address);
 }
+
 interface LenderDeployerLike {
     function assessor() external returns (address);
     function reserve() external returns (address);
 }
-
 
 contract TinlakeRoot is Auth {
     BorrowerDeployerLike public borrowerDeployer;
