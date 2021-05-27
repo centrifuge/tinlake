@@ -145,15 +145,21 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
     }
 
     function file(bytes32 name, uint value) public auth {
-        if(name == "challengeTime") {
+        if (name == "challengeTime") {
             challengeTime = value;
         } else if (name == "minimumEpochTime") {
             minimumEpochTime = value;
-        } else if (name == "weightSeniorRedeem") { weightSeniorRedeem = value;}
-          else if (name == "weightJuniorRedeem") { weightJuniorRedeem = value;}
-          else if (name == "weightJuniorSupply") { weightJuniorSupply = value;}
-          else if (name == "weightSeniorSupply") { weightSeniorSupply = value;}
+        } else if (name == "weightSeniorRedeem") { weightSeniorRedeem = value; }
+          else if (name == "weightJuniorRedeem") { weightJuniorRedeem = value; }
+          else if (name == "weightJuniorSupply") { weightJuniorSupply = value; }
+          else if (name == "weightSeniorSupply") { weightSeniorSupply = value; }
           else { revert("unkown-name");}
+     }
+
+    function file(bytes32 name, bool value) public auth {
+        if (name == "poolClosing") {
+            poolClosing = value;
+        } else { revert("unkown-name"); }
      }
 
     /// sets the dependency to another contract
