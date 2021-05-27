@@ -37,4 +37,4 @@ dapp test -m ':ContractName\.'
 For deploying the Tinlake contracts to mainnet or a testnet, view our deploy scripts in [Tinlake Deploy](https://github.com/centrifuge/tinlake-deploy).
 
 ## Community
-Join our public Slack channel: [Centrifuge Slack](http://centrifuge.io/slack).
+Join our public Discord: [Centrifuge Discord](https://centrifuge.io/discord/).
