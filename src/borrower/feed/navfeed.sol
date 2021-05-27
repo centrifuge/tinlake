@@ -155,7 +155,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     // On borrow: the discounted future value of the asset is computed based on the loan amount and addeed to the bucket with the according maturity Date
     function _borrow(uint loan, uint amount) internal returns(uint navIncrease) {
         // ceiling check uses existing loan debt
-        require(ceiling(loan) >= amount, "borrow-amount-too-high");
+        require(ceiling(loan) >= safeAdd(borrowed[loan], amount), "borrow-amount-too-high");
 
         bytes32 nftID_ = nftID(loan);
         uint maturityDate_ = maturityDate[nftID_];
