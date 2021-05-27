@@ -209,8 +209,11 @@ contract LenderDeployer is FixedPoint {
 
         // poolAdmin
         DependLike(poolAdmin).depend("assessor", assessor);
+        DependLike(poolAdmin).depend("juniorMemberlist", juniorMemberlist);
+        DependLike(poolAdmin).depend("seniorMemberlist", seniorMemberlist);
 
-
+        AuthLike(juniorMemberlist).rely(poolAdmin);
+        AuthLike(seniorMemberlist).rely(poolAdmin);
 
         FileLike(assessor).file("seniorInterestRate", seniorInterestRate.value);
         FileLike(assessor).file("maxReserve", maxReserve);
