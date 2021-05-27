@@ -9,14 +9,14 @@ contract PrincipalBorrowTest is BaseSystemTest {
     function setUp() public {
         baseSetup();
         createTestUsers();
-        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm = Hevm(HEVM_ADDRESS);
         hevm.warp(1234567);
     }
 
     function fundTranches() public {
         uint defaultAmount = 1000 ether;
         defaultInvest(defaultAmount);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
     }
 
@@ -115,7 +115,7 @@ contract PrincipalBorrowTest is BaseSystemTest {
         assertPreCondition(loanId, tokenId, borrowAmount);
         borrow(loanId, tokenId, borrowAmount, fixedFee);
 
-        hevm.warp(now + 365 days); // expected debt after 1 year ~ 123.2 ether
+        hevm.warp(block.timestamp + 365 days); // expected debt after 1 year ~ 123.2 ether
         // assert interest also accrued on fixed fees 110
         assertEq(pile.debt(loanId)/10, 123200000000000000000/10);
     }
@@ -155,7 +155,7 @@ contract PrincipalBorrowTest is BaseSystemTest {
         // borrower borrows a chunk of the ceiling
         borrow(loanId, tokenId, borrowAmount, 0);
 
-        hevm.warp(now + 365 days); // expected debt after 1 year 19.2 ether
+        hevm.warp(block.timestamp + 365 days); // expected debt after 1 year 19.2 ether
 
         // borrowing the amount left should fail because the accrued debt lowered the ceiling
         borrow(loanId, tokenId, rest, 0);

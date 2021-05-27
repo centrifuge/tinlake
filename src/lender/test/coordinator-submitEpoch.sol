@@ -14,7 +14,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
         uint maxOrder = 10 ** 18 * 10 ** 18;
         uint score = coordinator.scoreSolution(maxOrder, maxOrder, maxOrder, maxOrder);
         // should not produce integer overflow
-        assertTrue(score <= uint(-1));
+        assertTrue(score <= type(uint256).max);
 
         uint maxDistancePoints = rmul(coordinator.IMPROVEMENT_WEIGHT(), rdiv(ONE, 1));
         assertTrue(coordinator.BIG_NUMBER() > maxDistancePoints);
@@ -27,7 +27,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
     }
 
     function testFailNoSubmissionLongTime() public {
-        hevm.warp(now + 20 days);
+        hevm.warp(block.timestamp + 20 days);
         coordinator.submitSolution(10 ether, 10 ether, 10 ether, 10 ether);
     }
 
@@ -35,7 +35,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
     function testFailNoSubmissionRequired() public {
         LenderModel memory model = getDefaultModel();
         initTestConfig(model);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
         coordinator.submitSolution(10 ether, 10 ether, 10 ether, 10 ether);
     }
@@ -45,7 +45,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
         model.seniorSupplyOrder = 10000 ether;
 
         initTestConfig(model);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
 
         ModelInput memory solution = ModelInput({
@@ -59,11 +59,11 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
         compareWithBest(solution);
 
         // challenge period started
-        uint challengeEnd = now + 1 hours;
+        uint challengeEnd = block.timestamp + 1 hours;
         assertEq(coordinator.minChallengePeriodEnd(), challengeEnd);
 
 
-        hevm.warp(now + 2 hours);
+        hevm.warp(block.timestamp + 2 hours);
 
         ModelInput memory betterSolution = ModelInput({
         seniorSupply : 2 ether,
@@ -81,7 +81,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
         // no new challenge end
         assertEq(coordinator.minChallengePeriodEnd(), challengeEnd);
 
-        hevm.warp(now + 2 hours);
+        hevm.warp(block.timestamp + 2 hours);
 
         // re submit solution with lower score
         assertEq(submitSolution(solution), coordinator.ERR_NOT_NEW_BEST());
@@ -123,7 +123,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
 
 
         initTestConfig(model);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
 
         bool currSeniorRatioInRange = true;
@@ -149,7 +149,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
         model.reserve = 1150 ether;
 
         initTestConfig(model);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
 
         bool currSeniorRatioInRange = false;
@@ -232,7 +232,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
         model.reserve = 1150 ether;
 
         initTestConfig(model);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
 
         bool currSeniorRatioInRange = false;
@@ -260,7 +260,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
         model.seniorRedeemOrder = 0;
 
         initTestConfig(model);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
 
         // no improvement possible only zero submission
@@ -303,7 +303,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
 
 
         initTestConfig(model);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
 
         // no improvement possible only zero submission

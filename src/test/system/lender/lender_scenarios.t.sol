@@ -12,7 +12,7 @@ contract LenderSystemTest is TestSuite, Interest {
 
     function setUp() public {
         // setup hevm
-        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm = Hevm(HEVM_ADDRESS);
 
         baseSetup();
         createTestUsers();
@@ -26,7 +26,7 @@ contract LenderSystemTest is TestSuite, Interest {
         seniorSupply(seniorSupplyAmount);
         juniorSupply(juniorSupplyAmount);
 
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         closeEpoch(true);
     }
@@ -81,7 +81,7 @@ contract LenderSystemTest is TestSuite, Interest {
         supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate, submission);
 
         // time impact on token senior token price
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         // additional senior debt increase for one day
         // 82 * 1.02 ~ 83.64
@@ -155,7 +155,7 @@ contract LenderSystemTest is TestSuite, Interest {
 
         supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate,  submission);
 
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         juniorSupplyAmount = 180 ether;
 
         juniorSupply(juniorSupplyAmount);
@@ -206,7 +206,7 @@ contract LenderSystemTest is TestSuite, Interest {
         // remove existing order
         seniorSupply(0);
 
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         uint nav = nftFeed.calcUpdateNAV();
 
@@ -263,7 +263,7 @@ contract LenderSystemTest is TestSuite, Interest {
         // remove existing order
         seniorSupply(0);
 
-        hevm.warp(now + 3 days);
+        hevm.warp(block.timestamp + 3 days);
 
         assessor.calcSeniorTokenPrice();
 
@@ -274,7 +274,7 @@ contract LenderSystemTest is TestSuite, Interest {
         // token price should be below ONE
         assertTrue(juniorTokenPrice < ONE);
 
-        hevm.warp(now + 3 days);
+        hevm.warp(block.timestamp + 3 days);
 
         uint nav = nftFeed.currentNAV();
 
@@ -356,7 +356,7 @@ contract LenderSystemTest is TestSuite, Interest {
 
         // one junior investor
         juniorSupply(20 ether);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
         assertTrue(coordinator.submissionPeriod() == false);
 
@@ -364,14 +364,14 @@ contract LenderSystemTest is TestSuite, Interest {
         uint borrowAmount = 100 ether;
         uint nftPrice = 200 ether;
         uint maturityDate = 5 days;
-        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(now) +maturityDate);
+        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(block.timestamp) +maturityDate);
         uint highRate = uint(1000001103100000000000000000);
         root.relyContract(address(assessor), address(this));
         assessor.file("seniorInterestRate", highRate);
 
 
         // loan not repaid and not moved to penalty rate
-        hevm.warp(now + 6 days);
+        hevm.warp(block.timestamp + 6 days);
 
         // junior should lost everything
         assertTrue(assessor.seniorDebt() > nftFeed.currentNAV());
@@ -403,7 +403,7 @@ contract LenderSystemTest is TestSuite, Interest {
         seniorSupply(80 ether, seniorInvestor);
         // one junior investor
         juniorSupply(20 ether);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
         assertTrue(coordinator.submissionPeriod() == false);
 
@@ -411,9 +411,9 @@ contract LenderSystemTest is TestSuite, Interest {
         uint borrowAmount = 100 ether;
         uint nftPrice = 200 ether;
         uint maturityDate = 5 days;
-        setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(now) +maturityDate);
+        setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(block.timestamp) +maturityDate);
 
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         // no orders - close epoch
         coordinator.closeEpoch();
@@ -427,16 +427,16 @@ contract LenderSystemTest is TestSuite, Interest {
         // supply currency
         seniorSupply(80 ether, seniorInvestor);
         juniorSupply(20 ether);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
 
         // borrow loans maturity date 5 days from now
         uint borrowAmount = 100 ether;
         uint nftPrice = 200 ether;
         uint maturityDate = 5 days;
-        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(now) +maturityDate);
+        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(block.timestamp) + maturityDate);
 
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         uint repayAmount = 60 ether;
         repayLoan(address(borrower), loan, repayAmount);
@@ -472,7 +472,7 @@ contract LenderSystemTest is TestSuite, Interest {
         juniorSupply(1 ether);
         seniorInvestor.redeemOrder(1.5 ether);
 
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         coordinator.closeEpoch();
         submission = ModelInput({
@@ -486,7 +486,7 @@ contract LenderSystemTest is TestSuite, Interest {
         int valid = submitSolution(address(coordinator), submission);
         assertEq(valid, coordinator.NEW_BEST());
 
-        hevm.warp(now + 2 hours);
+        hevm.warp(block.timestamp + 2 hours);
 
         coordinator.executeEpoch();
 

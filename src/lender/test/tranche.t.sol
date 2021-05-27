@@ -34,7 +34,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
     uint public lastEpochExecuted;
 
     function setUp() public {
-        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm = Hevm(HEVM_ADDRESS);
         hevm.warp(1595247588);
         self = address(this);
 
@@ -50,7 +50,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         lastEpochExecuted = 0;
 
         // epoch ticker is implemented in test suite
-        tranche.depend("epochTicker", address(this));
+        tranche.depend("coordinator", address(this));
 
         tranche_ = address(tranche);
 
@@ -170,7 +170,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         uint tokenAmount = 100 ether;
         redeemOrder(tokenAmount);
 
-        reserve.setReturn("totalBalanceAvailable", uint(-1));
+        reserve.setReturn("totalBalanceAvailable", type(uint256).max);
 
         uint supplyFulfillment_ = 0;
 
@@ -207,7 +207,7 @@ contract TrancheTest is DSTest, Math, FixedPoint {
         // increase to 100 ether
         uint tokenAmount = 100 ether;
         redeemOrder(tokenAmount);
-        reserve.setReturn("totalBalanceAvailable", uint(-1));
+        reserve.setReturn("totalBalanceAvailable", type(uint256).max);
 
 
         // 75 % for redeem Fulfillment

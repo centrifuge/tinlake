@@ -224,7 +224,7 @@ contract Clerk is Auth, Interest {
     // mint DROP, join DROP into cdp, draw DAI and send to reserve
     function draw(uint amountDAI) public auth active {
         //make sure there is no collateral deficit before drawing out new DAI
-        require(collatDeficit() == 0, "please-heal–cdp-first"); // tbd
+        require(collatDeficit() == 0, "please-heal-cdp-first"); // tbd
         require(amountDAI <= remainingCredit(), "not-enough-credit-left");
         // collateral value that needs to be locked in vault to draw amountDAI
         uint collateralDAI = calcOvercollAmount(amountDAI);

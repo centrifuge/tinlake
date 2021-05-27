@@ -9,7 +9,7 @@ import "./users/admin.sol";
 contract ScenarioTest is BaseSystemTest {
 
     function setUp() public {
-        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm = Hevm(HEVM_ADDRESS);
         hevm.warp(1234567);
         baseSetup();
         createTestUsers();
@@ -56,33 +56,33 @@ contract ScenarioTest is BaseSystemTest {
     function testRepayFullAmount() public {
         (uint loan, uint tokenId,) = setupOngoingLoan();
 
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         // borrower needs some currency to pay rate
         setupRepayReq();
-        uint distributorShould = pile.debt(loan) + currdistributorBal();
+        uint reserveShould = pile.debt(loan) + currReserveBalance();
         // close without defined amount
         borrower.doClose(loan);
         uint totalT = uint(currency.totalSupply());
-        checkAfterRepay(loan, tokenId, totalT, distributorShould);
+        checkAfterRepay(loan, tokenId, totalT, reserveShould);
     }
 
     function testLongOngoing() public {
         (uint loan, uint tokenId, ) = setupOngoingLoan();
 
         // interest 5% per day 1.05^300 ~ 2273996.1286 chi
-        hevm.warp(now + 300 days);
+        hevm.warp(block.timestamp + 300 days);
 
         // borrower needs some currency to pay rate
         setupRepayReq();
 
-        uint distributorShould = pile.debt(loan) + currdistributorBal();
+        uint reserveShould = pile.debt(loan) + currReserveBalance();
 
         // close without defined amount
         borrower.doClose(loan);
 
         uint totalT = uint(currency.totalSupply());
-        checkAfterRepay(loan, tokenId, totalT, distributorShould);
+        checkAfterRepay(loan, tokenId, totalT, reserveShould);
     }
 
     function testMultipleBorrowAndRepay() public {
@@ -115,17 +115,17 @@ contract ScenarioTest is BaseSystemTest {
         uint tTotal = currency.totalSupply();
 
         // allow pile full control over borrower tokens
-        borrower.doApproveCurrency(address(shelf), uint(-1));
+        borrower.doApproveCurrency(address(shelf), type(uint256).max);
 
-        uint distributorBalance = currency.balanceOf(address(reserve));
+        uint reserveBalance = currency.balanceOf(address(reserve));
         for (uint i = 1; i <= 10; i++) {
             nftPrice = i * 100;
             uint ceiling = computeCeiling(riskGroup, nftPrice);
             // repay transaction
             borrower.repayAction(i, ceiling);
 
-            distributorBalance += ceiling;
-            checkAfterRepay(i, i, tTotal, distributorBalance);
+            reserveBalance += ceiling;
+            checkAfterRepay(i, i, tTotal, reserveBalance);
         }
     }
 

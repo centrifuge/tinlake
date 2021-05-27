@@ -105,7 +105,7 @@ contract PoolAdminTest is DSTest {
     // Test senior memberlist
     function updateSeniorMember() public {
         address usr = address(1);
-        uint validUntil = now + 365 days;
+        uint validUntil = block.timestamp + 365 days;
         poolAdmin.updateSeniorMember(usr, validUntil);
 
         assertEq(seniorMemberlist.calls("updateMember"), 1);
@@ -124,7 +124,7 @@ contract PoolAdminTest is DSTest {
     }
 
     function updateSeniorMembers() public {
-        uint validUntil = now + 365 days;
+        uint validUntil = block.timestamp + 365 days;
         poolAdmin.updateSeniorMembers(users, validUntil);
 
         assertEq(seniorMemberlist.calls("updateMembers"), 1);
@@ -145,7 +145,7 @@ contract PoolAdminTest is DSTest {
     // Test junior memberlist
     function updateJuniorMember() public {
         address usr = address(1);
-        uint validUntil = now + 365 days;
+        uint validUntil = block.timestamp + 365 days;
         poolAdmin.updateJuniorMember(usr, validUntil);
 
         assertEq(juniorMemberlist.calls("updateMember"), 1);
@@ -164,7 +164,7 @@ contract PoolAdminTest is DSTest {
     }
 
     function updateJuniorMembers() public {
-        uint validUntil = now + 365 days;
+        uint validUntil = block.timestamp + 365 days;
         poolAdmin.updateJuniorMembers(users, validUntil);
 
         assertEq(juniorMemberlist.calls("updateMembers"), 1);

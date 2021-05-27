@@ -7,7 +7,7 @@ import "../base_system.sol";
 contract WithdrawTest is BaseSystemTest {
 
     function setUp() public {
-        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm = Hevm(HEVM_ADDRESS);
         hevm.warp(1234567);
         baseSetup();
         createTestUsers();
@@ -16,15 +16,15 @@ contract WithdrawTest is BaseSystemTest {
     function fundTranches() public {
         uint defaultAmount = 1000 ether;
         defaultInvest(defaultAmount);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
         emit log_named_uint("reserve", reserve.totalBalance());
     }
 
     function withdraw(uint loanId, uint tokenId, uint amount, address usr) public {
         uint shelfBalance = currency.balanceOf(address(shelf));
-        uint distributorBalance = currency.balanceOf(address(reserve));
-        uint initialAvailable = safeAdd(shelfBalance, distributorBalance);
+        uint reserveBalance = currency.balanceOf(address(reserve));
+        uint initialAvailable = safeAdd(shelfBalance, reserveBalance);
         uint initialRecipientBalance = currency.balanceOf(usr);
         uint initialLoanBalance = shelf.balances(loanId);
         uint initialTotalBalance = shelf.balance();
@@ -41,8 +41,8 @@ contract WithdrawTest is BaseSystemTest {
         assert(shelf.balances(loanId) >= amount);
         // assert: enough funds available
         uint shelfBalance = currency.balanceOf(address(shelf));
-        uint distributorBalance = currency.balanceOf(address(reserve));
-        assert(safeAdd(shelfBalance, distributorBalance) >= amount);
+        uint reserveBalance = currency.balanceOf(address(reserve));
+        assert(safeAdd(shelfBalance, reserveBalance) >= amount);
     }
 
     function assertPostCondition(uint loanId, uint tokenId, uint withdrawAmount, address recipient, uint initialAvailable, uint initialRecipientBalance, uint initialLoanBalance, uint initialTotalBalance) public {
@@ -50,8 +50,8 @@ contract WithdrawTest is BaseSystemTest {
         assertEq(collateralNFT.ownerOf(tokenId), address(shelf));
         // assert: available balance decreased
         uint shelfBalance = currency.balanceOf(address(shelf));
-        uint distributorBalance = currency.balanceOf(address(reserve));
-        assertEq(safeAdd(shelfBalance, distributorBalance), safeSub(initialAvailable, withdrawAmount));
+        uint reserveBalance = currency.balanceOf(address(reserve));
+        assertEq(safeAdd(shelfBalance, reserveBalance), safeSub(initialAvailable, withdrawAmount));
         // assert: borrower balance increased
         assertEq(currency.balanceOf(recipient), safeAdd(initialRecipientBalance, withdrawAmount));
         // assert: loan balance reduced

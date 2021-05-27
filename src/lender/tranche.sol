@@ -22,7 +22,7 @@ interface ReserveLike {
     function totalBalanceAvailable() external returns (uint);
 }
 
-interface EpochTickerLike {
+interface CoordinatorLike {
     function currentEpoch() external view returns (uint);
     function lastEpochExecuted() external view returns(uint);
 }
@@ -55,7 +55,7 @@ contract Tranche is Math, Auth, FixedPoint {
     ERC20Like public currency;
     ERC20Like public token;
     ReserveLike public reserve;
-    EpochTickerLike public epochTicker;
+    CoordinatorLike public coordinator;
 
     // additional requested currency if the reserve could not fulfill a tranche request
     uint public requestedCurrency;
@@ -65,7 +65,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
     modifier orderAllowed(address usr) {
         require((users[usr].supplyCurrencyAmount == 0 && users[usr].redeemTokenAmount == 0)
-        || users[usr].orderedInEpoch == epochTicker.currentEpoch(), "disburse required");
+        || users[usr].orderedInEpoch == coordinator.currentEpoch(), "disburse required");
         _;
     }
 
@@ -88,13 +88,13 @@ contract Tranche is Math, Auth, FixedPoint {
         if (contractName == "token") {token = ERC20Like(addr);}
         else if (contractName == "currency") {currency = ERC20Like(addr);}
         else if (contractName == "reserve") {reserve = ReserveLike(addr);}
-        else if (contractName == "epochTicker") {epochTicker = EpochTickerLike(addr);}
+        else if (contractName == "coordinator") {coordinator = CoordinatorLike(addr);}
         else revert();
     }
 
     // supplyOrder function can be used to place or revoke an supply
     function supplyOrder(address usr, uint newSupplyAmount) public auth orderAllowed(usr) {
-        users[usr].orderedInEpoch = epochTicker.currentEpoch();
+        users[usr].orderedInEpoch = coordinator.currentEpoch();
 
         uint currentSupplyAmount = users[usr].supplyCurrencyAmount;
 
@@ -115,7 +115,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
     // redeemOrder function can be used to place or revoke a redeem
     function redeemOrder(address usr, uint newRedeemAmount) public auth orderAllowed(usr) {
-        users[usr].orderedInEpoch = epochTicker.currentEpoch();
+        users[usr].orderedInEpoch = coordinator.currentEpoch();
 
         uint currentRedeemAmount = users[usr].redeemTokenAmount;
         users[usr].redeemTokenAmount = newRedeemAmount;
@@ -134,16 +134,16 @@ contract Tranche is Math, Auth, FixedPoint {
     }
 
     function calcDisburse(address usr) public view returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
-        return calcDisburse(usr, epochTicker.lastEpochExecuted());
+        return calcDisburse(usr, coordinator.lastEpochExecuted());
     }
 
-    ///  calculates the current disburse of a user starting from the ordered epoch until endEpoch
+    //  calculates the current disburse of a user starting from the ordered epoch until endEpoch
     function calcDisburse(address usr, uint endEpoch) public view returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         uint epochIdx = users[usr].orderedInEpoch;
-        uint lastEpochExecuted = epochTicker.lastEpochExecuted();
+        uint lastEpochExecuted = coordinator.lastEpochExecuted();
 
         // no disburse possible in this epoch
-        if (users[usr].orderedInEpoch == epochTicker.currentEpoch()) {
+        if (users[usr].orderedInEpoch == coordinator.currentEpoch()) {
             return (payoutCurrencyAmount, payoutTokenAmount, users[usr].supplyCurrencyAmount, users[usr].redeemTokenAmount);
         }
 
@@ -183,7 +183,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
     function disburse(address usr) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
-        return disburse(usr, epochTicker.lastEpochExecuted());
+        return disburse(usr, coordinator.lastEpochExecuted());
     }
 
     function _safeTransfer(ERC20Like erc20, address usr, uint amount) internal returns(uint) {
@@ -197,9 +197,9 @@ contract Tranche is Math, Auth, FixedPoint {
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
     function disburse(address usr,  uint endEpoch) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
-        require(users[usr].orderedInEpoch <= epochTicker.lastEpochExecuted(), "epoch-not-executed-yet");
+        require(users[usr].orderedInEpoch <= coordinator.lastEpochExecuted(), "epoch-not-executed-yet");
 
-        uint lastEpochExecuted = epochTicker.lastEpochExecuted();
+        uint lastEpochExecuted = coordinator.lastEpochExecuted();
 
         if (endEpoch > lastEpochExecuted) {
             // it is only possible to disburse epochs which are already over

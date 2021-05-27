@@ -4,9 +4,7 @@ pragma solidity >=0.6.12;
 import "../../../test/mock/mock.sol";
 
 contract TitleMock is Mock {
-    function ownerOf(uint loan) public returns (address) {
-        values_uint["ownerOf_loan"] = loan;
-        calls["ownerOf"]++;
+    function ownerOf(uint) public view returns (address) {
         return values_address_return["ownerOf"];
     }
 

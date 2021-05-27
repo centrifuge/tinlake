@@ -7,7 +7,7 @@ import "./../base_system.sol";
 contract LenderIntegrationTest is BaseSystemTest {
 
     function setUp() public {
-        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm = Hevm(HEVM_ADDRESS);
         hevm.warp(1234567);
         deployLenderMockBorrower(address(this));
         createInvestorUser();
@@ -25,7 +25,7 @@ contract LenderIntegrationTest is BaseSystemTest {
         uint amount = 100 ether;
         currency.mint(address(seniorInvestor), amount);
         // allow senior to hold senior tokens
-        seniorMemberlist.updateMember(seniorInvestor_, safeAdd(now, 8 days));
+        seniorMemberlist.updateMember(seniorInvestor_, safeAdd(block.timestamp, 8 days));
         seniorInvestor.supplyOrder(amount);
         (,uint supplyAmount, ) = seniorTranche.users(seniorInvestor_);
         assertEq(supplyAmount, amount);
@@ -40,7 +40,7 @@ contract LenderIntegrationTest is BaseSystemTest {
     }
 
     function seniorSupply(uint currencyAmount, Investor investor) public {
-        seniorMemberlist.updateMember(seniorInvestor_, safeAdd(now, 8 days));
+        seniorMemberlist.updateMember(seniorInvestor_, safeAdd(block.timestamp, 8 days));
         currency.mint(address(seniorInvestor), currencyAmount);
         investor.supplyOrder(currencyAmount);
         (,uint supplyAmount, ) = seniorTranche.users(address(investor));
@@ -48,7 +48,7 @@ contract LenderIntegrationTest is BaseSystemTest {
     }
 
     function juniorSupply(uint currencyAmount) public {
-        juniorMemberlist.updateMember(juniorInvestor_, safeAdd(now, 8 days));
+        juniorMemberlist.updateMember(juniorInvestor_, safeAdd(block.timestamp, 8 days));
         currency.mint(address(juniorInvestor), currencyAmount);
         juniorInvestor.supplyOrder(currencyAmount);
         (,uint supplyAmount, ) = juniorTranche.users(juniorInvestor_);
@@ -60,7 +60,7 @@ contract LenderIntegrationTest is BaseSystemTest {
         uint juniorAmount = 18 ether;
         seniorSupply(seniorAmount);
         juniorSupply(juniorAmount);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         coordinator.closeEpoch();
         // no submission required

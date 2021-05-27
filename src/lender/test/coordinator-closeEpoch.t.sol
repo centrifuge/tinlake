@@ -14,7 +14,7 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
     function testMinimumEpochTime() public {
         assertEq(coordinator.lastEpochExecuted(), 0);
         assertEq(coordinator.currentEpoch(), 1);
-        hevm.warp(now + coordinator.minimumEpochTime());
+        hevm.warp(block.timestamp + coordinator.minimumEpochTime());
         // close and execute because no submissions
         coordinator.closeEpoch();
         assertEq(coordinator.currentEpoch(), 2);
@@ -23,13 +23,13 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
 
    // close epoch unit tests
     function testFailCloseEpochTooEarly() public {
-        hevm.warp(now + 25 seconds);
+        hevm.warp(block.timestamp + 25 seconds);
         uint secsForNextDay = calcNextEpochIn();
         assertEq(coordinator.currentEpoch(), 1);
         assertEq(coordinator.lastEpochExecuted(), 0);
 
         // should fail one sec too early
-        hevm.warp(now + secsForNextDay-1);
+        hevm.warp(block.timestamp + secsForNextDay-1);
         coordinator.closeEpoch();
     }
 
@@ -37,7 +37,7 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
         uint secsForNextDay = calcNextEpochIn();
         assertEq(coordinator.currentEpoch(), 1);
         // exact 00:00 time
-        hevm.warp(now + secsForNextDay);
+        hevm.warp(block.timestamp + secsForNextDay);
 
         coordinator.closeEpoch();
         assertEq(coordinator.currentEpoch(), 2);
@@ -46,7 +46,7 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
     function testCloseEpochAfterLongerTime() public {
         assertEq(coordinator.currentEpoch(), 1);
         // exact 00:00 time
-        hevm.warp(now + 300 days);
+        hevm.warp(block.timestamp + 300 days);
 
         assertEq(coordinator.currentEpoch(), 1);
         coordinator.closeEpoch();
@@ -57,19 +57,19 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
     function testCloseEpochTime() public {
         assertEq(coordinator.currentEpoch(), 1);
         assertEq(coordinator.lastEpochExecuted(), 0);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         assertEq(coordinator.currentEpoch(), 1);
         coordinator.closeEpoch();
         assertEq(coordinator.lastEpochExecuted(), 1);
 
-        hevm.warp(now + 20 days);
+        hevm.warp(block.timestamp + 20 days);
 
         assertEq(coordinator.currentEpoch(), 2);
 
         for (uint i =1; i<=400; i++) {
             coordinator.closeEpoch();
-            hevm.warp(now + 1 days);
+            hevm.warp(block.timestamp + 1 days);
             assertEq(coordinator.lastEpochExecuted(), i+1);
         }
     }
@@ -78,7 +78,7 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
         assertEq(assessor.values_uint("changeSeniorAsset_seniorRatio"), 0);
         assertEq(coordinator.currentEpoch(), 1);
         assertEq(coordinator.lastEpochExecuted(), 0);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         coordinator.closeEpoch();
         assertEq(coordinator.lastEpochExecuted(), 1);
@@ -90,7 +90,7 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
         juniorTranche.setEpochReturn(1000000000000 ether, 0);
         assertEq(coordinator.currentEpoch(), 1);
         assertEq(coordinator.lastEpochExecuted(), 0);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
 
         // only close not executed
         coordinator.closeEpoch();

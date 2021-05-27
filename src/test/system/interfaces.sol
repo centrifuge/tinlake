@@ -43,7 +43,7 @@ interface PileLike {
     function setRate(uint loan, uint rate) external;
 }
 
-interface TDistributorLike {
+interface TReserveLike {
     function balance() external;
     function file(bytes32 what, bool flag) external;
 }

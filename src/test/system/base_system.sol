@@ -142,14 +142,14 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         // transfer extra funds, so that usr can pay for interest
         topUp(usr);
         // borrower allows shelf full control over borrower tokens
-        Borrower(usr).doApproveCurrency(address(shelf), uint(-1));
+        Borrower(usr).doApproveCurrency(address(shelf), type(uint256).max);
         // repay loan
         borrower.repay(loanId, currencyAmount);
     }
 
     // helpers lenders
     function defaultInvest(uint currencyAmount) public {
-        uint validUntil = safeAdd(now, 8 days);
+        uint validUntil = safeAdd(block.timestamp, 8 days);
         admin.makeJuniorTokenMember(juniorInvestor_, validUntil);
         admin.makeSeniorTokenMember(seniorInvestor_, validUntil);
 
@@ -172,7 +172,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         seize(loanId);
         admin.addKeeper(loanId, usr, recoveryPrice);
         topUp(usr);
-        Borrower(usr).doApproveCurrency(address(shelf), uint(-1));
+        Borrower(usr).doApproveCurrency(address(shelf), type(uint256).max);
         admin.collect(loanId, usr);
     }
 
@@ -221,7 +221,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
     }
 
     function setupLoan(uint tokenId, address collateralNFT_, uint nftPrice, uint riskGroup) public returns (uint) {
-        uint maturityDate = now + 600 days;
+        uint maturityDate = block.timestamp + 600 days;
         return setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup, maturityDate);
     }
 
@@ -235,7 +235,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
 
     function fundLender(uint amount) public {
         defaultInvest(amount);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
     }
 
@@ -257,8 +257,8 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         return (DEFAULT_NFT_PRICE, DEFAULT_RISK_GROUP_TEST_LOANS);
     }
 
-    // note: this method will be refactored with the new lender side contracts, as the distributor should not hold any currency
-    function currdistributorBal() public view returns(uint) {
+    // note: this method will be refactored with the new lender side contracts, as the reserve should not hold any currency
+    function currReserveBalance() public view returns(uint) {
         return currency.balanceOf(address(reserve));
     }
 
@@ -285,15 +285,15 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         borrow(loan, tokenId, ceiling);
         assertEq(nftFeed_.ceiling(loan), 0);
 
-        hevm.warp(now + 10 days);
+        hevm.warp(block.timestamp + 10 days);
 
         // borrower needs some currency to pay rate
         setupRepayReq();
-        uint distributorShould = pile.debt(loan) + currdistributorBal();
+        uint reserveShould = pile.debt(loan) + currReserveBalance();
         // close without defined amount
         borrower.doClose(loan);
         uint totalT = uint(currency.totalSupply());
-        checkAfterRepay(loan, tokenId, totalT, distributorShould);
+        checkAfterRepay(loan, tokenId, totalT, reserveShould);
     }
 
     function fixed18To27(uint valPower18) public pure returns(uint) {
@@ -305,7 +305,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         // borrower needs some currency to pay rate
         currency.mint(borrower_, DEFAULT_HIGH_FUND_BORROWER);
         // allow pile full control over borrower tokens
-        borrower.doApproveCurrency(address(shelf), uint(-1));
+        borrower.doApproveCurrency(address(shelf), type(uint256).max);
         return DEFAULT_HIGH_FUND_BORROWER;
     }
 }

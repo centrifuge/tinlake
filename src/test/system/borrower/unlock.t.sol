@@ -11,7 +11,7 @@ contract UnlockTest is BaseSystemTest {
         createTestUsers();
 
         // setup hevm
-        hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        hevm = Hevm(HEVM_ADDRESS);
         hevm.warp(1234567);
         fundTranches();
 
@@ -20,7 +20,7 @@ contract UnlockTest is BaseSystemTest {
     function fundTranches() public {
         uint defaultAmount = 1000 ether;
         defaultInvest(defaultAmount);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
         emit log_named_uint("reserve", reserve.totalBalance());
     }
@@ -59,7 +59,7 @@ contract UnlockTest is BaseSystemTest {
         uint ceiling = computeCeiling(riskGroup, nftPrice);
         (uint loanId, ) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
 
-        hevm.warp(now + 365 days);
+        hevm.warp(block.timestamp + 365 days);
 
 //        // repay after 1 year  (no accrued interest, since loan per default in 0 rate group)
         repayLoan(borrower_, loanId, ceiling);
@@ -81,9 +81,9 @@ contract UnlockTest is BaseSystemTest {
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
 
         // borrower allows shelf full control over borrower tokens
-        borrower.doApproveCurrency(address(shelf), uint(-1));
+        borrower.doApproveCurrency(address(shelf), type(uint256).max);
 
-        hevm.warp(now + 365 days);
+        hevm.warp(block.timestamp + 365 days);
         // borrower does not repay
         unlockNFT(loanId, tokenId);
     }
@@ -95,7 +95,7 @@ contract UnlockTest is BaseSystemTest {
         (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
 
         // threshold reached after 10 years
-        hevm.warp(now + 3650 days);
+        hevm.warp(block.timestamp + 3650 days);
         seize(loanId);
         unlockNFT(loanId, tokenId);
     }

@@ -13,6 +13,3 @@
 [submodule "lib/tinlake-erc20"]
 	path = lib/tinlake-erc20
 	url = https://github.com/centrifuge/tinlake-erc20
-[submodule "lib/ds-note"]
-	path = lib/ds-note
-	url = https://github.com/dapphub/ds-note

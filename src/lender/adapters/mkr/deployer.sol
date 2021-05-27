@@ -67,8 +67,8 @@ contract MKRLenderDeployer is LenderDeployer {
         AuthLike(clerk).rely(reserve);
 
         // allow clerk to hold seniorToken
-        MemberlistLike(seniorMemberlist).updateMember(clerk, uint(-1));
-        MemberlistLike(seniorMemberlist).updateMember(mkrMgr, uint(-1));
+        MemberlistLike(seniorMemberlist).updateMember(clerk, type(uint256).max);
+        MemberlistLike(seniorMemberlist).updateMember(mkrMgr, type(uint256).max);
 
         DependLike(assessor).depend("lending", clerk);
 

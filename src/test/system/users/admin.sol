@@ -13,17 +13,17 @@ contract AdminUser {
     ShelfLike shelf;
     PileLike pile;
     Title title;
-    TDistributorLike distributor;
+    TReserveLike reserve;
     CollectorLike collector;
     NFTFeedLike nftFeed;
     MemberlistLike juniorMemberlist;
     MemberlistLike seniorMemberlist;
 
-    constructor(address shelf_, address pile_, address nftFeed_, address title_, address distributor_, address collector_, address juniorMemberlist_, address seniorMemberlist_) public {
+    constructor(address shelf_, address pile_, address nftFeed_, address title_, address reserve_, address collector_, address juniorMemberlist_, address seniorMemberlist_) public {
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
         title = Title(title_);
-        distributor = TDistributorLike(distributor_);
+        reserve = TReserveLike(reserve_);
         collector = CollectorLike(collector_);
         nftFeed = NFTFeedLike(nftFeed_);
         juniorMemberlist = MemberlistLike(juniorMemberlist_);

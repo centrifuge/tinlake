@@ -15,7 +15,7 @@ dapp update
 ## Testing
 The tests for Tinlake are written in Solidity. To set up your environment, you should add these variables:
 ```bash
-export DAPP_SOLC_VERSION=0.5.15
+export DAPP_SOLC_VERSION=0.6.12
 export DAPP_TEST_TIMESTAMP=1234567
 ```
 
@@ -37,4 +37,4 @@ dapp test -m ':ContractName\.'
 For deploying the Tinlake contracts to mainnet or a testnet, view our deploy scripts in [Tinlake Deploy](https://github.com/centrifuge/tinlake-deploy).
 
 ## Community
-Join our public Slack channel: [Centrifuge Slack](http://centrifuge.io/slack).
+Join our public Discord: [Centrifuge Discord](https://centrifuge.io/discord/).

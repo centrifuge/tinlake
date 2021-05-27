@@ -7,12 +7,12 @@ import "../interfaces.sol";
 contract Borrower {
     ERC20Like tkn;
     ShelfLike shelf;
-    TDistributorLike distributor;
+    TReserveLike reserve;
     PileLike pile;
 
-    constructor (address shelf_, address distributor_, address tkn_, address pile_) public {
+    constructor (address shelf_, address reserve_, address tkn_, address pile_) public {
         shelf = ShelfLike(shelf_);
-        distributor = TDistributorLike(distributor_);
+        reserve = TReserveLike(reserve_);
         tkn = ERC20Like(tkn_);
         pile = PileLike(pile_);
     }
@@ -38,7 +38,7 @@ contract Borrower {
     }
 
     function balance() public {
-        distributor.balance();
+        reserve.balance();
     }
 
     function repay(uint loan, uint currencyAmount) public {
@@ -62,7 +62,7 @@ contract Borrower {
     function repayAction(uint loan, uint currencyAmount) public {
         shelf.repay(loan, currencyAmount);
         shelf.unlock(loan);
-        distributor.balance();
+        reserve.balance();
     }
 
     function doClose(uint loan) public {

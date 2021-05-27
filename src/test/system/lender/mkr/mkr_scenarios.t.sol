@@ -19,7 +19,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
     }
 
     function warp(uint plusTime) public {
-        hevm.warp(now + plusTime);
+        hevm.warp(block.timestamp + plusTime);
     }
 
     function testOnDemandDrawWithStabilityFee() public {
@@ -349,7 +349,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
 
         uint redeemTokenAmount = 20 ether;
         juniorInvestor.redeemOrder(redeemTokenAmount);
-        hevm.warp(now + 1 days);
+        hevm.warp(block.timestamp + 1 days);
         // currency should come from MKR
         assertEq(reserve.totalBalance(), 0);
         coordinator.closeEpoch();

@@ -8,7 +8,7 @@ import "tinlake-math/math.sol";
 
 contract MemberlistTest is Math, DSTest {
 
-    uint memberlistValidity = safeAdd(now, 8 days);
+    uint memberlistValidity = safeAdd(block.timestamp, 8 days);
     Memberlist memberlist;
     Memberlist testMemberlist;
     Memberlist testMemberlist1;
@@ -40,13 +40,13 @@ contract MemberlistTest is Math, DSTest {
     }
 
     function testFailAddMemberPeriodTooShort() public {
-        uint memberlistValidity_ = safeAdd(now, 7 days);
+        uint memberlistValidity_ = safeAdd(block.timestamp, 7 days);
         memberlist.updateMember(self, memberlistValidity_);
     }
 
     function testUpdateMember() public {
         memberlist.updateMember(self, memberlistValidity);
-        uint newMemberlistValidity_ = safeAdd(now, 9 days);
+        uint newMemberlistValidity_ = safeAdd(block.timestamp, 9 days);
         memberlist.updateMember(self, newMemberlistValidity_);
         assertEq(memberlist.members(self), newMemberlistValidity_);
     }
