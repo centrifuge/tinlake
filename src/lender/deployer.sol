@@ -15,10 +15,6 @@ interface AuthLike {
     function deny(address) external;
 }
 
-interface PoolAdminLike {
-    function relyAdmin(address) external;
-}
-
 interface MemberlistLike {
     function updateMember(address, uint) external;
 }
@@ -151,20 +147,10 @@ contract LenderDeployer is FixedPoint {
         AuthLike(assessor).rely(root);
     }
 
-    function deployPoolAdmin(address admin1, address admin2, address admin3, address admin4, address admin5, address admin6) public {
+    function deployPoolAdmin() public {
         require(poolAdmin == address(0) && deployer == address(1));
         poolAdmin = poolAdminFab.newPoolAdmin();
-
         AuthLike(poolAdmin).rely(root);
-        // directly relying governance so it can be used to directly add/remove pool admins without going through the root
-        AuthLike(poolAdmin).rely(RootLike(root).governance());
-
-        if (admin1 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin1);
-        if (admin2 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin2);
-        if (admin3 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin3);
-        if (admin4 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin4);
-        if (admin5 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin5);
-        if (admin6 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin6);
     }
 
     function deployCoordinator() public {

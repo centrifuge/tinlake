@@ -22,6 +22,12 @@ interface BorrowerDeployerLike {
 interface LenderDeployerLike {
     function assessor() external returns (address);
     function reserve() external returns (address);
+    function poolAdmin() external returns (address);
+}
+
+interface PoolAdminLike {
+    function rely(address) external;
+    function relyAdmin(address) external;
 }
 
 contract TinlakeRoot is Auth {
@@ -50,7 +56,7 @@ contract TinlakeRoot is Auth {
     // --- Deploy ---
     // After going through the deploy process on the lender and borrower method, this method is called to connect
     // lender and borrower contracts.
-    function deploy() public {
+    function deploy(address oracle, address admin1, address admin2, address admin3, address admin4, address admin5, address admin6) public {
         require(address(borrowerDeployer) != address(0) && address(lenderDeployer) != address(0) && deployed == false);
         deployed = true;
 
@@ -62,13 +68,29 @@ contract TinlakeRoot is Auth {
         DependLike(borrowerDeployer.shelf()).depend("lender", reserve_);
         DependLike(borrowerDeployer.shelf()).depend("reserve", reserve_);
 
-        //AuthLike(reserve).rely(shelf_);
-
-        //  Lender depends
+        // Lender depends
         address navFeed = borrowerDeployer.feed();
 
         DependLike(reserve_).depend("shelf", shelf_);
         DependLike(lenderDeployer.assessor()).depend("navFeed", navFeed);
+
+        // Lender wards
+        AuthLike(navFeed).rely(oracle);
+
+        // directly relying governance so it can be used to directly add/remove pool admins without going through the root
+        PoolAdminLike poolAdmin = PoolAdminLike(lenderDeployer.poolAdmin());
+        PoolAdminLike(poolAdmin).rely(governance);
+
+        if (admin1 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin1);
+        if (admin2 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin2);
+        if (admin3 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin3);
+        if (admin4 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin4);
+        if (admin5 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin5);
+        if (admin6 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin6);
+    }
+    
+    function deploy() public {
+        deploy(address(0), address(0), address(0), address(0), address(0), address(0), address(0));
     }
 
     // --- Governance Functions ---
