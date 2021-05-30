@@ -102,6 +102,28 @@ contract PoolAdminTest is DSTest {
         poolAdmin.healCreditline();
     }
 
+    function testSetMaxReserveAndRaiseCreditline() public {
+        poolAdmin.relyAdmin(address(this));
+
+        uint maxReserve = 150 ether;
+        uint amount = 100 ether;
+        poolAdmin.setMaxReserveAndRaiseCreditline(maxReserve, amount);
+
+        assertEq(assessor.maxReserve(), maxReserve);
+        assertEq(lending.values_uint("clerk_raise_amount"), amount);
+    }
+
+    function testSetMaxReserveAndSinkCreditline() public {
+        poolAdmin.relyAdmin(address(this));
+
+        uint maxReserve = 150 ether;
+        uint amount = 100 ether;
+        poolAdmin.setMaxReserveAndRaiseCreditline(maxReserve, amount);
+
+        assertEq(assessor.maxReserve(), maxReserve);
+        assertEq(lending.values_uint("clerk_sink_amount"), amount);
+    }
+
     // Test senior memberlist
     function updateSeniorMember() public {
         address usr = address(1);

@@ -99,6 +99,16 @@ contract PoolAdmin is Auth {
         emit HealCreditline();
     }
 
+    function setMaxReserveAndRaiseCreditline(uint256 newMaxReserve, uint256 creditlineRaise) public admin {
+        setMaxReserve(newMaxReserve);
+        raiseCreditline(creditlineRaise);
+    }
+
+    function setMaxReserveAndSinkCreditline(uint256 newMaxReserve, uint256 creditlineSink) public admin {
+        setMaxReserve(newMaxReserve);
+        sinkCreditline(creditlineSink);
+    }
+
     // Manage memberlists
     function updateSeniorMember(address usr, uint256 validUntil) public admin {
         seniorMemberlist.updateMember(usr, validUntil);

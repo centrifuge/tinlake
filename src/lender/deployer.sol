@@ -15,6 +15,10 @@ interface AuthLike {
     function deny(address) external;
 }
 
+interface PoolAdminLike {
+    function relyAdmin(address) external;
+}
+
 interface MemberlistLike {
     function updateMember(address, uint) external;
 }
@@ -26,6 +30,8 @@ interface FileLike {
 contract LenderDeployer is FixedPoint {
     address public root;
     address public currency;
+    address public governance;
+    address public memberAdmin;
 
     // factory contracts
     TrancheFabLike          public trancheFab;
@@ -69,10 +75,12 @@ contract LenderDeployer is FixedPoint {
 
     address             public deployer;
 
-    constructor(address root_, address currency_, address trancheFab_, address memberlistFab_, address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_, address operatorFab_, address poolAdminFab_) public {
+    constructor(address root_, address currency_, address trancheFab_, address memberlistFab_, address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_, address operatorFab_, address poolAdminFab_, address governance_, address memberAdmin_) public {
         deployer = msg.sender;
         root = root_;
         currency = currency_;
+        governance = governance_;
+        memberAdmin = memberAdmin_;
 
         trancheFab = TrancheFabLike(trancheFab_);
         memberlistFab = MemberlistFabLike(memberlistFab_);
@@ -140,10 +148,19 @@ contract LenderDeployer is FixedPoint {
         AuthLike(assessor).rely(root);
     }
 
-    function deployPoolAdmin() public {
+    function deployPoolAdmin(address admin1, address admin2, address admin3, address admin4, address admin5, address admin6) public {
         require(poolAdmin == address(0) && deployer == address(1));
         poolAdmin = poolAdminFab.newPoolAdmin();
+
         AuthLike(poolAdmin).rely(root);
+        AuthLike(poolAdmin).rely(governance);
+
+        PoolAdminLike(poolAdmin).relyAdmin(admin1);
+        PoolAdminLike(poolAdmin).relyAdmin(admin2);
+        PoolAdminLike(poolAdmin).relyAdmin(admin3);
+        PoolAdminLike(poolAdmin).relyAdmin(admin4);
+        PoolAdminLike(poolAdmin).relyAdmin(admin5);
+        PoolAdminLike(poolAdmin).relyAdmin(admin6);
     }
 
     function deployCoordinator() public {
@@ -151,6 +168,7 @@ contract LenderDeployer is FixedPoint {
         coordinator = coordinatorFab.newCoordinator(challengeTime);
         AuthLike(coordinator).rely(root);
     }
+
 
     function deploy() public virtual {
         require(coordinator != address(0) && assessor != address(0) &&
@@ -212,9 +230,10 @@ contract LenderDeployer is FixedPoint {
         DependLike(poolAdmin).depend("juniorMemberlist", juniorMemberlist);
         DependLike(poolAdmin).depend("seniorMemberlist", seniorMemberlist);
 
-        AuthLike(poolAdmin).rely(root);
         AuthLike(juniorMemberlist).rely(poolAdmin);
         AuthLike(seniorMemberlist).rely(poolAdmin);
+        AuthLike(juniorMemberlist).rely(memberAdmin);
+        AuthLike(seniorMemberlist).rely(memberAdmin);
 
         FileLike(assessor).file("seniorInterestRate", seniorInterestRate.value);
         FileLike(assessor).file("maxReserve", maxReserve);
