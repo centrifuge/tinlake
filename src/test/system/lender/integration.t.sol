@@ -6,6 +6,8 @@ import "./../base_system.sol";
 
 contract LenderIntegrationTest is BaseSystemTest {
 
+    address governance = address(this);
+
     function setUp() public {
         hevm = Hevm(HEVM_ADDRESS);
         hevm.warp(1234567);

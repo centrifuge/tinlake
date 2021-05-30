@@ -30,18 +30,20 @@ contract TinlakeRoot is Auth {
 
     bool public             deployed;
     address public          deployUsr;
+    address public          governance;
 
-    constructor (address deployUsr_) public {
+    constructor (address deployUsr_, address governance_) public {
         deployUsr = deployUsr_;
+        governance = governance_;
     }
 
     // --- Prepare ---
     // Sets the two deployer dependencies. This needs to be called by the deployUsr
-    function prepare(address lender_, address borrower_, address ward_) public {
+    function prepare(address lender_, address borrower_) public {
         require(deployUsr == msg.sender);
         borrowerDeployer = BorrowerDeployerLike(borrower_);
         lenderDeployer = LenderDeployerLike(lender_);
-        wards[ward_] = 1;
+        wards[governance] = 1;
         deployUsr = address(0); // disallow the deploy user to call this more than once.
     }
 

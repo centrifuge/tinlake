@@ -27,6 +27,10 @@ interface FileLike {
     function file(bytes32 name, uint value) external;
 }
 
+interface RootLike {
+    function governance() external returns (address);
+}
+
 contract LenderDeployer is FixedPoint {
     address public root;
     address public currency;
@@ -75,11 +79,10 @@ contract LenderDeployer is FixedPoint {
 
     address             public deployer;
 
-    constructor(address root_, address currency_, address trancheFab_, address memberlistFab_, address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_, address operatorFab_, address poolAdminFab_, address governance_, address memberAdmin_) public {
+    constructor(address root_, address currency_, address trancheFab_, address memberlistFab_, address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_, address operatorFab_, address poolAdminFab_, address memberAdmin_) public {
         deployer = msg.sender;
         root = root_;
         currency = currency_;
-        governance = governance_;
         memberAdmin = memberAdmin_;
 
         trancheFab = TrancheFabLike(trancheFab_);
@@ -153,14 +156,15 @@ contract LenderDeployer is FixedPoint {
         poolAdmin = poolAdminFab.newPoolAdmin();
 
         AuthLike(poolAdmin).rely(root);
-        AuthLike(poolAdmin).rely(governance);
+        // directly relying governance so it can be used to directly add/remove pool admins without going through the root
+        AuthLike(poolAdmin).rely(RootLike(root).governance());
 
-        PoolAdminLike(poolAdmin).relyAdmin(admin1);
-        PoolAdminLike(poolAdmin).relyAdmin(admin2);
-        PoolAdminLike(poolAdmin).relyAdmin(admin3);
-        PoolAdminLike(poolAdmin).relyAdmin(admin4);
-        PoolAdminLike(poolAdmin).relyAdmin(admin5);
-        PoolAdminLike(poolAdmin).relyAdmin(admin6);
+        if (admin1 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin1);
+        if (admin2 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin2);
+        if (admin3 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin3);
+        if (admin4 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin4);
+        if (admin5 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin5);
+        if (admin6 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin6);
     }
 
     function deployCoordinator() public {
@@ -232,8 +236,8 @@ contract LenderDeployer is FixedPoint {
 
         AuthLike(juniorMemberlist).rely(poolAdmin);
         AuthLike(seniorMemberlist).rely(poolAdmin);
-        AuthLike(juniorMemberlist).rely(memberAdmin);
-        AuthLike(seniorMemberlist).rely(memberAdmin);
+        if (memberAdmin != address(0)) AuthLike(juniorMemberlist).rely(memberAdmin);
+        if (memberAdmin != address(0)) AuthLike(seniorMemberlist).rely(memberAdmin);
 
         FileLike(assessor).file("seniorInterestRate", seniorInterestRate.value);
         FileLike(assessor).file("maxReserve", maxReserve);

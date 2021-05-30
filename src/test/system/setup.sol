@@ -90,7 +90,7 @@ abstract contract LenderDeployerLike {
     function deploySenior() public virtual;
     function deployReserve() public virtual;
     function deployAssessor() public virtual;
-    function deployPoolAdmin() public virtual;
+    function deployPoolAdmin(address, address, address, address, address, address) public virtual;
     function deployCoordinator() public virtual;
 
     function deploy() public virtual;
@@ -164,13 +164,13 @@ abstract contract TestSetup is Config  {
         prepareDeployLender(root_, mkrAdapter);
         deployLender(mkrAdapter, config);
 
-        root.prepare(lenderDeployerAddr, address(borrowerDeployer), address(this));
+        root.prepare(lenderDeployerAddr, address(borrowerDeployer));
         root.deploy();
         deploymentConfig = config;
     }
 
     function deployTestRoot() public virtual {
-        root = new TestRoot(address(this));
+        root = new TestRoot(address(this), address(this));
         root_ = address(root);
     }
 
@@ -232,7 +232,7 @@ abstract contract TestSetup is Config  {
 
         mkrLenderDeployer = new MKRLenderDeployer(rootAddr, currency_, address(trancheFab), address(memberlistFab),
             address(restrictedTokenFab), address(reserveFab), address(assessorFab), address(coordinatorFab),
-            address(operatorFab), address(poolAdminFab), address(clerkFab));
+            address(operatorFab), address(poolAdminFab), address(clerkFab), address(0));
         lenderDeployerAddr = address(mkrLenderDeployer);
         lenderDeployer = LenderDeployer(address(mkrLenderDeployer));
         return;
@@ -260,7 +260,7 @@ abstract contract TestSetup is Config  {
         // root is testcase
         lenderDeployer = new LenderDeployer(rootAddr, currency_, address(trancheFab),
             address(memberlistFab), address(restrictedTokenFab), address(reserveFab),
-            address(assessorFab), address(coordinatorFab), address(operatorFab), address(poolAdminFab));
+            address(assessorFab), address(coordinatorFab), address(operatorFab), address(poolAdminFab), address(0));
         lenderDeployerAddr = address(lenderDeployer);
     }
 
@@ -314,7 +314,7 @@ abstract contract TestSetup is Config  {
         ld.deploySenior();
         ld.deployReserve();
         ld.deployAssessor();
-        ld.deployPoolAdmin();
+        ld.deployPoolAdmin(address(0), address(0), address(0), address(0), address(0), address(0));
         ld.deployCoordinator();
 
         if(mkrAdapter) {

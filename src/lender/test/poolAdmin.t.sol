@@ -118,7 +118,7 @@ contract PoolAdminTest is DSTest {
 
         uint maxReserve = 150 ether;
         uint amount = 100 ether;
-        poolAdmin.setMaxReserveAndRaiseCreditline(maxReserve, amount);
+        poolAdmin.setMaxReserveAndSinkCreditline(maxReserve, amount);
 
         assertEq(assessor.maxReserve(), maxReserve);
         assertEq(lending.values_uint("clerk_sink_amount"), amount);
