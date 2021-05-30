@@ -6,13 +6,14 @@ import "./../base_system.sol";
 
 contract LenderIntegrationTest is BaseSystemTest {
 
-    address governance = address(this);
+    address public governance;
 
     function setUp() public {
         hevm = Hevm(HEVM_ADDRESS);
         hevm.warp(1234567);
         deployLenderMockBorrower(address(this));
         createInvestorUser();
+        governance = address(this);
     }
 
     function testAdminPermissions() public {
