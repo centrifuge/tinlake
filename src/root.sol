@@ -39,12 +39,7 @@ contract TinlakeRoot is Auth {
     address public          governance;
 
     address public          oracle;
-    address public          admin1;
-    address public          admin2;
-    address public          admin3;
-    address public          admin4;
-    address public          admin5;
-    address public          admin6;
+    address[] public        poolAdmins;
 
     constructor (address deployUsr_, address governance_) public {
         deployUsr = deployUsr_;
@@ -54,24 +49,19 @@ contract TinlakeRoot is Auth {
 
     // --- Prepare ---
     // Sets the two deployer dependencies. This needs to be called by the deployUsr
-    function prepare(address lender_, address borrower_, address oracle_, address admin1_, address admin2_, address admin3_, address admin4_, address admin5_, address admin6_) public {
+    function prepare(address lender_, address borrower_, address oracle_, address[] memory poolAdmins_) public {
         require(deployUsr == msg.sender);
         
         borrowerDeployer = BorrowerDeployerLike(borrower_);
         lenderDeployer = LenderDeployerLike(lender_);
         oracle = oracle_;
-        admin1 = admin1_;
-        admin2 = admin2_;
-        admin3 = admin3_;
-        admin4 = admin4_;
-        admin5 = admin5_;
-        admin6 = admin6_;
+        poolAdmins = poolAdmins_;
 
         deployUsr = address(0); // disallow the deploy user to call this more than once.
     }
 
     function prepare(address lender_, address borrower_) public {
-        prepare(lender_, borrower_, address(0), address(0), address(0), address(0), address(0), address(0), address(0));
+        prepare(lender_, borrower_, address(0), new address[](0));
     }
 
     // --- Deploy ---
@@ -102,12 +92,9 @@ contract TinlakeRoot is Auth {
         PoolAdminLike poolAdmin = PoolAdminLike(lenderDeployer.poolAdmin());
         PoolAdminLike(poolAdmin).rely(governance);
 
-        if (admin1 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin1);
-        if (admin2 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin2);
-        if (admin3 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin3);
-        if (admin4 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin4);
-        if (admin5 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin5);
-        if (admin6 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin6);
+        for (uint i = 0; i < poolAdmins.length; i++) {
+            PoolAdminLike(poolAdmin).relyAdmin(poolAdmins[i]);
+        }
     }
     
     // --- Governance Functions ---
