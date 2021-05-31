@@ -38,7 +38,7 @@ contract TinlakeRoot is Auth {
     address public          deployUsr;
     address public          governance;
 
-    constructor (address deployUsr_, address governance_) public {
+    constructor (address deployUsr_, address governance_) {
         deployUsr = deployUsr_;
         governance = governance_;
     }

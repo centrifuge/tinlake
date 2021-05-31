@@ -69,7 +69,7 @@ contract Tranche is Math, Auth, FixedPoint {
         _;
     }
 
-    constructor(address currency_, address token_) public {
+    constructor(address currency_, address token_) {
         wards[msg.sender] = 1;
         token = ERC20Like(token_);
         currency = ERC20Like(currency_);

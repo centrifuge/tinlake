@@ -17,7 +17,7 @@ contract Investor is DSTest {
     InvestorOperator operator;
     address tranche;
 
-    constructor(address operator_, address tranche_,  address currency_, address token_) public {
+    constructor(address operator_, address tranche_,  address currency_, address token_) {
         currency = ERC20Like(currency_);
         token = ERC20Like(token_);
         operator = InvestorOperator(operator_);

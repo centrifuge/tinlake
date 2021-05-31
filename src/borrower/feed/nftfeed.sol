@@ -49,7 +49,7 @@ contract BaseNFTFeed is Auth, Math {
     PileLike pile;
     ShelfLike shelf;
 
-    constructor () public {
+    constructor () {
         wards[msg.sender] = 1;
     }
 

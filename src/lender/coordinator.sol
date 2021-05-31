@@ -136,7 +136,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
     uint                public constant IMPROVEMENT_WEIGHT =  10000;
 
 
-    constructor(uint challengeTime_) public {
+    constructor(uint challengeTime_) {
         wards[msg.sender] = 1;
         challengeTime = challengeTime_;
 

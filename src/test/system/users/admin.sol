@@ -19,7 +19,7 @@ contract AdminUser {
     MemberlistLike juniorMemberlist;
     MemberlistLike seniorMemberlist;
 
-    constructor(address shelf_, address pile_, address nftFeed_, address title_, address reserve_, address collector_, address juniorMemberlist_, address seniorMemberlist_) public {
+    constructor(address shelf_, address pile_, address nftFeed_, address title_, address reserve_, address collector_, address juniorMemberlist_, address seniorMemberlist_) {
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
         title = Title(title_);

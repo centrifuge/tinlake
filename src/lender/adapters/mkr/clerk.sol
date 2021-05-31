@@ -132,7 +132,7 @@ contract Clerk is Auth, Interest {
         return mgr.safe() && mgr.glad() && mgr.live();
     }
 
-    constructor(address dai_, address collateral_) public {
+    constructor(address dai_, address collateral_) {
         wards[msg.sender] = 1;
         dai =  ERC20Like(dai_);
         collateral =  ERC20Like(collateral_);

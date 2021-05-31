@@ -72,7 +72,7 @@ contract Shelf is Auth, TitleOwned, Math {
     event Unlock(uint indexed loan);
     event Claim(uint indexed loan, address usr);
 
-    constructor(address currency_, address title_, address pile_, address ceiling_) TitleOwned(title_) public {
+    constructor(address currency_, address title_, address pile_, address ceiling_) TitleOwned(title_) {
         wards[msg.sender] = 1;
         currency = TokenLike(currency_);
         pile = PileLike(pile_);

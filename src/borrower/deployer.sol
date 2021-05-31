@@ -58,7 +58,7 @@ contract BorrowerDeployer is FixedPoint {
       string memory titleName_,
       string memory titleSymbol_,
       uint discountRate_
-    ) public {
+    ) {
         root = root_;
 
         titlefab = TitleFabLike(titlefab_);
