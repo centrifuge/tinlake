@@ -20,9 +20,9 @@ contract MKRLenderDeployer is LenderDeployer {
 
     constructor(address root_, address currency_, address trancheFab_, address memberlistFab_,
         address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_,
-        address operatorFab_, address assessorAdminFab_, address clerkFabLike_)
+        address operatorFab_, address poolAdminFab_, address clerkFabLike_, address memberAdmin_)
             public LenderDeployer(root_, currency_, trancheFab_, memberlistFab_,
-        restrictedtokenFab_, reserveFab_, assessorFab_, coordinatorFab_, operatorFab_, assessorAdminFab_) {
+        restrictedtokenFab_, reserveFab_, assessorFab_, coordinatorFab_, operatorFab_, poolAdminFab_, memberAdmin_) {
 
         clerkFab = ClerkFabLike(clerkFabLike_);
         mkrDeployer = msg.sender;
