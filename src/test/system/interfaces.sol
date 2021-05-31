@@ -80,10 +80,6 @@ interface CollectorLike {
     function relyCollector(address user) external;
 }
 
-interface ThresholdLike {
-    function set(uint, uint) external;
-}
-
 interface MemberlistLike {
     function updateMember(address usr, uint validUntil) external;
     function removeMember(address usr, uint validUntil) external;

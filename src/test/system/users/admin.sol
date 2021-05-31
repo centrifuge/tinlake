@@ -4,10 +4,6 @@ pragma solidity >=0.6.12;
 import { Title } from "tinlake-title/title.sol";
 import "../interfaces.sol";
 
-interface AdminOperatorLike {
-    function relyInvestor(address usr) external;
-}
-
 contract AdminUser {
     // --- Data ---
     ShelfLike shelf;
