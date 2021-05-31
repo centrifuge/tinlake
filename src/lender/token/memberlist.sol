@@ -21,7 +21,7 @@ contract Memberlist is Math, Auth {
         }
     }
 
-    constructor() public {
+    constructor() {
         wards[msg.sender] = 1;
     }
 

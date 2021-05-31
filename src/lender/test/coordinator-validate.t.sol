@@ -306,5 +306,26 @@ contract CoordinatorValidateTest is CoordinatorTest {
         result = coordinator.validate(input.seniorRedeem, input.juniorRedeem, input.seniorSupply, input.juniorSupply);
         assertEq(result, coordinator.ERR_MAX_ORDER());
     }
-}
 
+    function testPoolClosingWithSupply() public {
+        LenderModel memory model = getDefaultModel();
+        ModelInput memory input =  ModelInput({
+            seniorSupply : 10 ether,
+            juniorSupply : 10 ether,
+            seniorRedeem : 10 ether,
+            juniorRedeem : 0 ether
+
+            });
+        model.seniorDebt = 10000 ether;
+
+        initTestConfig(model);
+        assessor.setReturn("calcJuniorTokenPrice", 0);
+
+        hevm.warp(block.timestamp + 1 days);
+        coordinator.closeEpoch();
+        assertTrue(coordinator.submissionPeriod() == true);
+
+        int result = coordinator.submitSolution(input.seniorRedeem, input.juniorRedeem, input.seniorSupply, input.juniorSupply);
+        assertEq(result, coordinator.ERR_POOL_CLOSING());
+    }
+}

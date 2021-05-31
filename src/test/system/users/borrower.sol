@@ -10,7 +10,7 @@ contract Borrower {
     TReserveLike reserve;
     PileLike pile;
 
-    constructor (address shelf_, address reserve_, address tkn_, address pile_) public {
+    constructor (address shelf_, address reserve_, address tkn_, address pile_) {
         shelf = ShelfLike(shelf_);
         reserve = TReserveLike(reserve_);
         tkn = ERC20Like(tkn_);

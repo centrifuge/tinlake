@@ -13,7 +13,7 @@ interface AuthLike {
     function deny(address) external;
 }
 
-interface NFTFeedLike {
+interface NAVFeedLike {
     function init() external;
 }
 
@@ -58,7 +58,7 @@ contract BorrowerDeployer is FixedPoint {
       string memory titleName_,
       string memory titleSymbol_,
       uint discountRate_
-    ) public {
+    ) {
         root = root_;
 
         titlefab = TitleFabLike(titlefab_);
@@ -116,7 +116,7 @@ contract BorrowerDeployer is FixedPoint {
 
         // allow nftFeed to update rate groups
         AuthLike(pile).rely(feed);
-        NFTFeedLike(feed).init();
+        NAVFeedLike(feed).init();
 
         DependLike(shelf).depend("subscriber", address(feed));
 

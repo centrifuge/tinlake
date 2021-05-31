@@ -47,7 +47,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     uint constant public  WRITE_OFF_PHASE_A = 1001;
     uint constant public  WRITE_OFF_PHASE_B = 1002;
 
-    constructor () public {
+    constructor () {
         wards[msg.sender] = 1;
     }
 

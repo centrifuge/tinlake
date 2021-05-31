@@ -6,18 +6,23 @@ import "./../base_system.sol";
 
 contract LenderIntegrationTest is BaseSystemTest {
 
+    address public governance;
+
     function setUp() public {
         hevm = Hevm(HEVM_ADDRESS);
         hevm.warp(1234567);
         deployLenderMockBorrower(address(this));
         createInvestorUser();
+        governance = address(this);
     }
 
     function testAdminPermissions() public {
-        assertEq(assessor.wards(address(assessorAdmin)), 1);
+        assertEq(assessor.wards(address(poolAdmin)), 1);
         uint newReserve = 200 ether;
-        assertEq(assessorAdmin.wards(address(this)), 1);
-        assessorAdmin.setMaxReserve(newReserve);
+        assertEq(poolAdmin.wards(address(this)), 1);
+        poolAdmin.relyAdmin(address(this));
+        assertEq(poolAdmin.admins(address(this)), 1);
+        poolAdmin.setMaxReserve(newReserve);
         assertEq(assessor.maxReserve(), newReserve);
     }
 

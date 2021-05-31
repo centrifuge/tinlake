@@ -5,10 +5,12 @@ import "../../../../../test/mock/mock.sol";
 
 contract JugMock is Mock {
     bool interestUpdated = false;
-    constructor() public {
+
+    constructor() {
         values_return["base"] = 10**27;
         values_return["ilks_duty"] = 10**27;
     }
+    
     function ilks(bytes32) public view returns (uint ,uint) {
         uint rho = block.timestamp;
         if(interestUpdated == false) {

@@ -10,7 +10,7 @@ interface MemberlistLike {
 
 // Wrapper contract for permission restriction on the memberlists.
 contract MemberAdmin is Auth {
-    constructor() public {
+    constructor() {
         wards[msg.sender] = 1;
     }
 

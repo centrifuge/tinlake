@@ -34,14 +34,14 @@ contract JugMock {
 
 contract UrnMock {
     address public gemJoin;
-    constructor(address gemJoin_) public {
+    constructor(address gemJoin_) {
         gemJoin = gemJoin_;
     }
 }
 
 contract GemJoinMock {
     bytes32 public ilk;
-    constructor(bytes32 ilk_) public {
+    constructor(bytes32 ilk_) {
         ilk = ilk_;
     }
 }
@@ -63,7 +63,7 @@ contract SimpleMkr is Interest, DSTest{
     JugMock public jugMock;
     UrnMock public urn;
 
-    constructor(uint ratePerSecond_, bytes32 ilk_) public {
+    constructor(uint ratePerSecond_, bytes32 ilk_) {
         ratePerSecond = ratePerSecond_;
         ilk = ilk_;
         safeFlag = true;

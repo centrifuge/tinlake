@@ -53,7 +53,7 @@ interface UrnLike {
 
 interface AssessorLike {
     function calcSeniorTokenPrice() external view returns(uint);
-    function calcSeniorAssetValue(uint seniorDebt, uint seniorBalance) external view returns(uint);
+    function calcSeniorAssetValue(uint seniorDebt_, uint seniorBalance_) external view returns(uint);
     function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) external;
     function seniorDebt() external view returns(uint);
     function seniorBalance() external view returns(uint);
@@ -132,7 +132,7 @@ contract Clerk is Auth, Interest {
         return mgr.safe() && mgr.glad() && mgr.live();
     }
 
-    constructor(address dai_, address collateral_) public {
+    constructor(address dai_, address collateral_) {
         wards[msg.sender] = 1;
         dai =  ERC20Like(dai_);
         collateral =  ERC20Like(collateral_);

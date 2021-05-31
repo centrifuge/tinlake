@@ -52,7 +52,7 @@ contract Collector is Auth {
     event RelyCollector(address indexed usr);
     event DenyCollector(address indexed usr);
 
-    constructor (address shelf_, address pile_, address threshold_) public {
+    constructor (address shelf_, address pile_, address threshold_) {
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
         threshold = ThresholdRegistryLike(threshold_);

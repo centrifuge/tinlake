@@ -16,7 +16,7 @@ import { Reserve } from "../../lender/reserve.sol";
 import { Tranche } from "../../lender/tranche.sol";
 import { Operator } from "../../lender/operator.sol";
 import { Assessor } from "../../lender/assessor.sol";
-import { AssessorAdmin } from "../../lender/admin/assessor.sol";
+import { PoolAdmin } from "../../lender/admin/pool.sol";
 import { RestrictedToken } from "../../lender/token/restricted.sol";
 import { Memberlist } from "../../lender/token/memberlist.sol";
 import { Clerk } from "../../lender/adapters/mkr/clerk.sol";
@@ -26,7 +26,7 @@ import { TrancheFab } from "../../lender/fabs/tranche.sol";
 import { RestrictedTokenFab } from "../../lender/fabs/restrictedtoken.sol";
 import { MemberlistFab } from "../../lender/fabs/memberlist.sol";
 import { AssessorFab } from "../../lender/fabs/assessor.sol";
-import { AssessorAdminFab } from "../../lender/fabs/assessoradmin.sol";
+import { PoolAdminFab } from "../../lender/fabs/pooladmin.sol";
 import { ReserveFab } from "../../lender/fabs/reserve.sol";
 import { CoordinatorFab } from "../../lender/fabs/coordinator.sol";
 import { OperatorFab } from "../../lender/fabs/operator.sol";
@@ -64,7 +64,7 @@ abstract contract LenderDeployerLike {
 
     // contract addresses
     address             public assessor;
-    address             public assessorAdmin;
+    address             public poolAdmin;
     address             public seniorTranche;
     address             public juniorTranche;
     address             public seniorOperator;
@@ -90,7 +90,7 @@ abstract contract LenderDeployerLike {
     function deploySenior() public virtual;
     function deployReserve() public virtual;
     function deployAssessor() public virtual;
-    function deployAssessorAdmin() public virtual;
+    function deployPoolAdmin() public virtual;
     function deployCoordinator() public virtual;
 
     function deploy() public virtual;
@@ -120,7 +120,7 @@ abstract contract TestSetup is Config  {
     Operator juniorOperator;
     Operator seniorOperator;
     Assessor assessor;
-    AssessorAdmin assessorAdmin;
+    PoolAdmin poolAdmin;
     RestrictedToken seniorToken;
     RestrictedToken juniorToken;
     Memberlist seniorMemberlist;
@@ -164,13 +164,13 @@ abstract contract TestSetup is Config  {
         prepareDeployLender(root_, mkrAdapter);
         deployLender(mkrAdapter, config);
 
-        root.prepare(lenderDeployerAddr, address(borrowerDeployer), address(this));
+        root.prepare(lenderDeployerAddr, address(borrowerDeployer));
         root.deploy();
         deploymentConfig = config;
     }
 
     function deployTestRoot() public virtual {
-        root = new TestRoot(address(this));
+        root = new TestRoot(address(this), address(this));
         root_ = address(root);
     }
 
@@ -226,13 +226,13 @@ abstract contract TestSetup is Config  {
     }
 
     function prepareMKRLenderDeployer(address rootAddr, address trancheFab, address memberlistFab, address restrictedTokenFab,
-        address reserveFab, address coordinatorFab, address operatorFab, address assessorAdminFab) public virtual {
+        address reserveFab, address coordinatorFab, address operatorFab, address poolAdminFab) public virtual {
         AssessorFab assessorFab = new AssessorFab();
         ClerkFab clerkFab = new ClerkFab();
 
         mkrLenderDeployer = new MKRLenderDeployer(rootAddr, currency_, address(trancheFab), address(memberlistFab),
             address(restrictedTokenFab), address(reserveFab), address(assessorFab), address(coordinatorFab),
-            address(operatorFab), address(assessorAdminFab), address(clerkFab));
+            address(operatorFab), address(poolAdminFab), address(clerkFab), address(0));
         lenderDeployerAddr = address(mkrLenderDeployer);
         lenderDeployer = LenderDeployer(address(mkrLenderDeployer));
         return;
@@ -242,7 +242,7 @@ abstract contract TestSetup is Config  {
     function prepareDeployLender(address rootAddr, bool mkrAdapter) public virtual {
         ReserveFab reserveFab = new ReserveFab();
         AssessorFab assessorFab = new AssessorFab();
-        AssessorAdminFab assessorAdminFab = new AssessorAdminFab();
+        PoolAdminFab poolAdminFab = new PoolAdminFab();
         TrancheFab  trancheFab = new TrancheFab();
         MemberlistFab memberlistFab = new MemberlistFab();
         RestrictedTokenFab restrictedTokenFab = new RestrictedTokenFab();
@@ -253,14 +253,14 @@ abstract contract TestSetup is Config  {
         if(mkrAdapter) {
             prepareMKRLenderDeployer(rootAddr, address(trancheFab), address(memberlistFab), address(restrictedTokenFab),
                 address(reserveFab), address(coordinatorFab),
-                address(operatorFab), address(assessorAdminFab));
+                address(operatorFab), address(poolAdminFab));
             return;
         }
 
         // root is testcase
         lenderDeployer = new LenderDeployer(rootAddr, currency_, address(trancheFab),
             address(memberlistFab), address(restrictedTokenFab), address(reserveFab),
-            address(assessorFab), address(coordinatorFab), address(operatorFab), address(assessorAdminFab));
+            address(assessorFab), address(coordinatorFab), address(operatorFab), address(poolAdminFab), address(0));
         lenderDeployerAddr = address(lenderDeployer);
     }
 
@@ -286,7 +286,7 @@ abstract contract TestSetup is Config  {
 
     function fetchContractAddr(LenderDeployerLike ld) internal {
         assessor = Assessor(ld.assessor());
-        assessorAdmin = AssessorAdmin(ld.assessorAdmin());
+        poolAdmin = PoolAdmin(ld.poolAdmin());
         reserve = Reserve(ld.reserve());
         coordinator = EpochCoordinator(ld.coordinator());
         seniorTranche = Tranche(ld.seniorTranche());
@@ -314,7 +314,7 @@ abstract contract TestSetup is Config  {
         ld.deploySenior();
         ld.deployReserve();
         ld.deployAssessor();
-        ld.deployAssessorAdmin();
+        ld.deployPoolAdmin();
         ld.deployCoordinator();
 
         if(mkrAdapter) {

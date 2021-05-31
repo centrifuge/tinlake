@@ -44,7 +44,7 @@ contract PoolAdmin is Auth {
     event UpdateJuniorMember(address indexed usr, uint256 validUntil);
     event UpdateJuniorMembers(address[] indexed users, uint256 validUntil);
 
-    constructor() public {
+    constructor() {
         wards[msg.sender] = 1;
     }
 
@@ -97,6 +97,16 @@ contract PoolAdmin is Auth {
     function healCreditline() public admin {
         lending.heal();
         emit HealCreditline();
+    }
+
+    function setMaxReserveAndRaiseCreditline(uint256 newMaxReserve, uint256 creditlineRaise) public admin {
+        setMaxReserve(newMaxReserve);
+        raiseCreditline(creditlineRaise);
+    }
+
+    function setMaxReserveAndSinkCreditline(uint256 newMaxReserve, uint256 creditlineSink) public admin {
+        setMaxReserve(newMaxReserve);
+        sinkCreditline(creditlineSink);
     }
 
     // Manage memberlists

@@ -8,7 +8,7 @@ contract Keeper {
     ERC20Like currency;
     CollectorLike collector;
 
-    constructor (address collector_, address currency_) public {
+    constructor (address collector_, address currency_) {
         collector = CollectorLike(collector_);
         currency = ERC20Like(currency_);
     }
