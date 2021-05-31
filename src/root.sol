@@ -38,25 +38,36 @@ contract TinlakeRoot is Auth {
     address public          deployUsr;
     address public          governance;
 
+    address public          oracle;
+    address[] public        poolAdmins;
+
     constructor (address deployUsr_, address governance_) {
         deployUsr = deployUsr_;
         governance = governance_;
+        wards[governance] = 1;
     }
 
     // --- Prepare ---
     // Sets the two deployer dependencies. This needs to be called by the deployUsr
-    function prepare(address lender_, address borrower_) public {
+    function prepare(address lender_, address borrower_, address oracle_, address[] memory poolAdmins_) public {
         require(deployUsr == msg.sender);
+        
         borrowerDeployer = BorrowerDeployerLike(borrower_);
         lenderDeployer = LenderDeployerLike(lender_);
-        wards[governance] = 1;
+        oracle = oracle_;
+        poolAdmins = poolAdmins_;
+
         deployUsr = address(0); // disallow the deploy user to call this more than once.
+    }
+
+    function prepare(address lender_, address borrower_) public {
+        prepare(lender_, borrower_, address(0), new address[](0));
     }
 
     // --- Deploy ---
     // After going through the deploy process on the lender and borrower method, this method is called to connect
     // lender and borrower contracts.
-    function deploy(address oracle, address admin1, address admin2, address admin3, address admin4, address admin5, address admin6) public {
+    function deploy() public {
         require(address(borrowerDeployer) != address(0) && address(lenderDeployer) != address(0) && deployed == false);
         deployed = true;
 
@@ -75,24 +86,17 @@ contract TinlakeRoot is Auth {
         DependLike(lenderDeployer.assessor()).depend("navFeed", navFeed);
 
         // Lender wards
-        AuthLike(navFeed).rely(oracle);
+        if (oracle != address(0)) AuthLike(navFeed).rely(oracle);
 
         // directly relying governance so it can be used to directly add/remove pool admins without going through the root
         PoolAdminLike poolAdmin = PoolAdminLike(lenderDeployer.poolAdmin());
         PoolAdminLike(poolAdmin).rely(governance);
 
-        if (admin1 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin1);
-        if (admin2 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin2);
-        if (admin3 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin3);
-        if (admin4 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin4);
-        if (admin5 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin5);
-        if (admin6 != address(0)) PoolAdminLike(poolAdmin).relyAdmin(admin6);
+        for (uint i = 0; i < poolAdmins.length; i++) {
+            PoolAdminLike(poolAdmin).relyAdmin(poolAdmins[i]);
+        }
     }
     
-    function deploy() public {
-        deploy(address(0), address(0), address(0), address(0), address(0), address(0), address(0));
-    }
-
     // --- Governance Functions ---
     // `relyContract` & `denyContract` can be called by any ward on the TinlakeRoot
     // contract to make an arbitrary address a ward on any contract the TinlakeRoot
