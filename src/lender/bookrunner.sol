@@ -5,12 +5,17 @@ import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 import "./../fixed_point.sol";
 
+interface NAVFeedLike {
+    function update(bytes32 nftID_, uint value, uint risk_) external;
+}
+
 interface ERC20Like {
     function balanceOf(address) external view returns (uint);
 }
 
 contract Bookrunner is Auth, Math, FixedPoint {
 
+    NAVFeedLike navFeed;
     ERC20Like juniorToken;
 
     // Absolute min TIN required to propose a new asset
@@ -53,11 +58,12 @@ contract Bookrunner is Auth, Math, FixedPoint {
 
     function depend(bytes32 contractName, address addr) public auth {
         if (contractName == "juniorToken") { juniorToken = ERC20Like(addr); }
+        if (contractName == "navFeed") { navFeed = NAVFeedLike(addr); }
         else revert();
     }
 
     function assetWasAccepted(bytes32 nftId) public view returns (bool) {
-      return acceptedProposals[nftID].length != 0
+      return acceptedProposals[nftId].length != 0;
     }
 
     function propose(bytes32 nftId, uint risk, uint value, uint deposit) public {
@@ -82,8 +88,7 @@ contract Bookrunner is Auth, Math, FixedPoint {
       require(rmul(minimumStakeThreshold.value, proposals[nftId][proposal]) >= value, "stake-threshold-not-reached");
       
       acceptedProposals[nftId] = proposal;
-
-      // TODO: feed.update(nftId, risk, value);
+      navFeed.update(nftId, risk, value);
     }
 
     function stake(bytes32 nftId, uint risk, uint value, uint stakeAmount) public {

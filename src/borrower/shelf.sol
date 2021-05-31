@@ -40,6 +40,9 @@ interface SubscriberLike {
     function unlockEvent(uint loan) external;
 }
 
+interface BookrunnerLike {
+}
+
 contract Shelf is Auth, TitleOwned, Math {
 
     // --- Data ---
@@ -48,6 +51,7 @@ contract Shelf is Auth, TitleOwned, Math {
     TokenLike public currency;
     ReserveLike public reserve;
     SubscriberLike public subscriber;
+    BookrunnerLike bookrunner;
 
     struct Loan {
         address registry;
@@ -93,6 +97,7 @@ contract Shelf is Auth, TitleOwned, Math {
         else if (contractName == "ceiling") { ceiling = NAVFeedLike(addr); }
         else if (contractName == "reserve") { reserve = ReserveLike(addr);}
         else if (contractName == "subscriber") { subscriber = SubscriberLike(addr);}
+        else if (contractName == "bookrunner") { bookrunner = BookrunnerLike(addr); }
         else revert();
     }
 

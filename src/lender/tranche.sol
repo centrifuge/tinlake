@@ -188,6 +188,8 @@ contract Tranche is Math, Auth, FixedPoint {
             epochIdx = safeAdd(epochIdx, 1);
         }
 
+        // TODO: remainingMintedTokens, remainingBurnedTokens
+
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
     }
 
@@ -232,6 +234,9 @@ contract Tranche is Math, Auth, FixedPoint {
         if (payoutTokenAmount > 0) {
             payoutTokenAmount = _safeTransfer(token, usr, payoutTokenAmount);
         }
+
+        // TODO: mint new TIN and burn TIN from underwriting, if applicable
+
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
     }
 
