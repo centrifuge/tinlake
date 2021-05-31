@@ -8,3 +8,4 @@ config_unknown.json
 .idea
 /out
 .vscode
+hevm.libs.*
