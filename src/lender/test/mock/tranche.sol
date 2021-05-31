@@ -10,7 +10,7 @@ contract TrancheMock is Mock, Auth  {
 
     SimpleTokenLike public token;
 
-    constructor() public {
+    constructor() {
         wards[msg.sender] = 1;
     }
 

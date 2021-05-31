@@ -7,7 +7,7 @@ import { LenderDeployer } from "../../lender/deployer.sol";
 
 import "ds-test/test.sol";
 contract TestRoot is TinlakeRoot {
-    constructor (address deployUsr, address governance) public TinlakeRoot(deployUsr, governance) {
+    constructor (address deployUsr, address governance) TinlakeRoot(deployUsr, governance) {
     }
     // Permissions
     // To simplify testing, we add helpers to authorize contracts on any component.

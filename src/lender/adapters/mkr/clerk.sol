@@ -53,7 +53,7 @@ interface UrnLike {
 
 interface AssessorLike {
     function calcSeniorTokenPrice() external view returns(uint);
-    function calcSeniorAssetValue(uint seniorDebt, uint seniorBalance) external view returns(uint);
+    function calcSeniorAssetValue(uint seniorDebt_, uint seniorBalance_) external view returns(uint);
     function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) external;
     function seniorDebt() external view returns(uint);
     function seniorBalance() external view returns(uint);

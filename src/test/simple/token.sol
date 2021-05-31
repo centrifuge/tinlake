@@ -7,7 +7,7 @@ import "tinlake-erc20/erc20.sol";
 
 contract SimpleToken is Math, ERC20 {
     
-    constructor(string memory symbol_, string memory name_) ERC20(symbol, name) public {}
+    constructor(string memory symbol_, string memory name_) ERC20(symbol, name) {}
 
     // --- Token ---
     function mint(address usr, uint wad) public override {

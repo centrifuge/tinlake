@@ -12,7 +12,7 @@ interface CurrencyLike {
 
 contract ReserveMock is Mock, Auth {
     CurrencyLike public currency;
-    constructor(address currency_) public {
+    constructor(address currency_) {
         wards[msg.sender] = 1;
         currency = CurrencyLike(currency_);
     }
