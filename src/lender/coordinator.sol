@@ -272,7 +272,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
 
         // every solution needs to satisfy all core constraints
         // there is no exception
-        if(valid  == ERR_CURRENCY_AVAILABLE || valid == ERR_MAX_ORDER) {
+        if (valid == ERR_CURRENCY_AVAILABLE || valid == ERR_MAX_ORDER || valid == ERR_POOL_CLOSING) {
             // core constraint violated
             return valid;
         }
