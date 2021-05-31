@@ -21,6 +21,10 @@ interface PileLike {
     function rateDebt(uint rate) external view returns (uint);
 }
 
+interface BookrunnerLike {
+    function assetWasAccepted(bytes32) external view returns (bool);
+}
+
 // The NFTFeed stores values and risk group of nfts that are used as collateral in tinlake. A risk group contains: thresholdRatio, ceilingRatio & interstRate.
 // The risk groups for a tinlake deployment are defined on contract creation and can not be changed afterwards.
 // Loan parameters like interstRate, max borrow amount and liquidation threshold are determined based on the value and risk group of the underlying collateral nft.
@@ -48,6 +52,7 @@ contract BaseNFTFeed is Auth, Math {
 
     PileLike pile;
     ShelfLike shelf;
+    BookrunnerLike bookrunner;
 
     constructor () public {
         wards[msg.sender] = 1;
@@ -60,6 +65,7 @@ contract BaseNFTFeed is Auth, Math {
     function depend(bytes32 contractName, address addr) external auth {
         if (contractName == "pile") {pile = PileLike(addr);}
         else if (contractName == "shelf") { shelf = ShelfLike(addr); }
+        else if (contractName == "bookrunner") { bookrunner = BookrunnerLike(addr); }
         else revert();
     }
 
@@ -150,6 +156,7 @@ contract BaseNFTFeed is Auth, Math {
 
     function currentCeiling(uint loan) public view returns(uint) {
         bytes32 nftID_ = nftID(loan);
+        require(address(bookrunner) == address(0) || bookrunner.assetWasAccepted(nftID_), "asset-requires-underwriting");
         return rmul(nftValues[nftID_], ceilingRatio[risk[nftID_]]);
     }
 

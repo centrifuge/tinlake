@@ -27,6 +27,10 @@ interface CoordinatorLike {
     function lastEpochExecuted() external view returns(uint);
 }
 
+interface BookrunnerLike {
+    function staked(address) external view returns (uint);
+}
+
 contract Tranche is Math, Auth, FixedPoint {
     mapping(uint => Epoch) public epochs;
 
@@ -56,6 +60,7 @@ contract Tranche is Math, Auth, FixedPoint {
     ERC20Like public token;
     ReserveLike public reserve;
     CoordinatorLike public coordinator;
+    BookrunnerLike public bookrunner;
 
     // additional requested currency if the reserve could not fulfill a tranche request
     uint public requestedCurrency;
@@ -89,6 +94,7 @@ contract Tranche is Math, Auth, FixedPoint {
         else if (contractName == "currency") {currency = ERC20Like(addr);}
         else if (contractName == "reserve") {reserve = ReserveLike(addr);}
         else if (contractName == "coordinator") {coordinator = CoordinatorLike(addr);}
+        else if (contractName == "bookrunner") {bookrunner = BookrunnerLike(addr);}
         else revert();
     }
 
@@ -115,6 +121,8 @@ contract Tranche is Math, Auth, FixedPoint {
 
     // redeemOrder function can be used to place or revoke a redeem
     function redeemOrder(address usr, uint newRedeemAmount) public auth orderAllowed(usr) {
+        require(address(bookrunner) == address(0) || safeSub(token.balanceOf(msg.sender), bookrunner.staked(msg.sender)) >= newRedeemAmount, "redeem-amount-too-high");
+
         users[usr].orderedInEpoch = coordinator.currentEpoch();
 
         uint currentRedeemAmount = users[usr].redeemTokenAmount;
