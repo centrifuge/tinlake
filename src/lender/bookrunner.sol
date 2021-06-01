@@ -42,6 +42,10 @@ contract Bookrunner is Auth, Math, FixedPoint {
     // (risk, value) pair for each nftId that was accepted
     mapping (bytes32 => bytes) public acceptedProposals;
 
+    // % repaid and % written off per nftId
+    mapping (bytes32 => Fixed27) public repaid;
+    mapping (bytes32 => Fixed27) public writtenOff;
+
     constructor() public {
         wards[msg.sender] = 1;
     }

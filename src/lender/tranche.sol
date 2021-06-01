@@ -27,8 +27,10 @@ interface CoordinatorLike {
     function lastEpochExecuted() external view returns(uint);
 }
 
-interface BookrunnerLike {
+abstract contract BookrunnerLike is FixedPoint
     function staked(address) external view returns (uint);
+    function repaid(bytes32) external view returns (Fixed27 memory);
+    function writtenOff(bytes32) external view returns (Fixed27 memory);
 }
 
 contract Tranche is Math, Auth, FixedPoint {
@@ -148,7 +150,7 @@ contract Tranche is Math, Auth, FixedPoint {
     }
 
     //  calculates the current disburse of a user starting from the ordered epoch until endEpoch
-    function calcDisburse(address usr, uint endEpoch) public view returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
+    function calcDisburse(address usr, uint endEpoch) public view returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken, uint tokensToBeMinted, uint tokensToBeBurned) {
         uint epochIdx = users[usr].orderedInEpoch;
         uint lastEpochExecuted = coordinator.lastEpochExecuted();
 
@@ -188,9 +190,17 @@ contract Tranche is Math, Auth, FixedPoint {
             epochIdx = safeAdd(epochIdx, 1);
         }
 
-        // TODO: remainingMintedTokens, remainingBurnedTokens
+        uint tokensToBeMinted;
+        uint tokensToBeBurned;
+        if (address(bookrunner) != address(0)) {
+            tokensToBeMinted = 0;
+            tokensToBeBurned = 0;
+        } else {
+            tokensToBeMinted = 0;
+            tokensToBeBurned = 0;
+        }
 
-        return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
+        return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken, tokensToBeMinted, tokensToBeBurned);
     }
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
