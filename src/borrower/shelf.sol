@@ -26,7 +26,7 @@ interface PileLike {
     function decDebt(uint, uint) external;
 }
 
-interface CeilingLike {
+interface NAVFeedLike {
     function borrow(uint loan, uint currencyAmount) external;
     function repay(uint loan, uint currencyAmount) external;
 }
@@ -43,7 +43,7 @@ interface SubscriberLike {
 contract Shelf is Auth, TitleOwned, Math {
 
     // --- Data ---
-    CeilingLike public ceiling;
+    NAVFeedLike public ceiling;
     PileLike public pile;
     TokenLike public currency;
     ReserveLike public reserve;
@@ -72,11 +72,11 @@ contract Shelf is Auth, TitleOwned, Math {
     event Unlock(uint indexed loan);
     event Claim(uint indexed loan, address usr);
 
-    constructor(address currency_, address title_, address pile_, address ceiling_) TitleOwned(title_) public {
+    constructor(address currency_, address title_, address pile_, address ceiling_) TitleOwned(title_) {
         wards[msg.sender] = 1;
         currency = TokenLike(currency_);
         pile = PileLike(pile_);
-        ceiling = CeilingLike(ceiling_);
+        ceiling = NAVFeedLike(ceiling_);
     }
 
 
@@ -90,7 +90,7 @@ contract Shelf is Auth, TitleOwned, Math {
         else if (contractName == "token") { currency = TokenLike(addr); }
         else if (contractName == "title") { title = TitleLike(addr); }
         else if (contractName == "pile") { pile = PileLike(addr); }
-        else if (contractName == "ceiling") { ceiling = CeilingLike(addr); }
+        else if (contractName == "ceiling") { ceiling = NAVFeedLike(addr); }
         else if (contractName == "reserve") { reserve = ReserveLike(addr);}
         else if (contractName == "subscriber") { subscriber = SubscriberLike(addr);}
         else revert();

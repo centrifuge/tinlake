@@ -31,7 +31,7 @@ contract Operator is Auth {
     event SupplyOrder(uint indexed amount);
     event RedeemOrder(uint indexed amount);
 
-    constructor(address tranche_) public {
+    constructor(address tranche_) {
         wards[msg.sender] = 1;
         tranche = TrancheLike(tranche_);
     }

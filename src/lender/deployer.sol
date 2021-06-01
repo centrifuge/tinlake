@@ -75,7 +75,7 @@ contract LenderDeployer is FixedPoint {
 
     address             public deployer;
 
-    constructor(address root_, address currency_, address trancheFab_, address memberlistFab_, address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_, address operatorFab_, address poolAdminFab_, address memberAdmin_) public {
+    constructor(address root_, address currency_, address trancheFab_, address memberlistFab_, address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_, address operatorFab_, address poolAdminFab_, address memberAdmin_) {
         deployer = msg.sender;
         root = root_;
         currency = currency_;

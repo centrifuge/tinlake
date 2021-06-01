@@ -41,7 +41,7 @@ contract TinlakeRoot is Auth {
     address public          oracle;
     address[] public        poolAdmins;
 
-    constructor (address deployUsr_, address governance_) public {
+    constructor (address deployUsr_, address governance_) {
         deployUsr = deployUsr_;
         governance = governance_;
         wards[governance] = 1;

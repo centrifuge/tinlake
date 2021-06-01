@@ -23,7 +23,7 @@ contract ManagerMock is Mock {
         _;
     }
 
-    constructor(address currency_, address collateral_) public {
+    constructor(address currency_, address collateral_) {
         operator = msg.sender;
         currency = SimpleTokenLike(currency_);
         collateral = SimpleTokenLike(collateral_);

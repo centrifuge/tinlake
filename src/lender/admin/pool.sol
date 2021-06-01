@@ -44,7 +44,7 @@ contract PoolAdmin is Auth {
     event UpdateJuniorMember(address indexed usr, uint256 validUntil);
     event UpdateJuniorMembers(address[] indexed users, uint256 validUntil);
 
-    constructor() public {
+    constructor() {
         wards[msg.sender] = 1;
     }
 

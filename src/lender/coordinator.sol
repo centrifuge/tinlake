@@ -6,7 +6,7 @@ import "./../fixed_point.sol";
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 
-interface EpochTrancheLike {
+interface TrancheLike {
     function epochUpdate(uint epochID, uint supplyFulfillment_,
         uint redeemFulfillment_, uint tokenPrice_, uint epochSupplyCurrency, uint epochRedeemCurrency) external;
     function closeEpoch() external returns(uint totalSupply, uint totalRedeem);
@@ -70,8 +70,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
                         // (1 day, with 10 min buffer, so we can close the epochs automatically on a daily basis at the same time)
     uint                public minimumEpochTime = 1 days - 10 minutes;
 
-    EpochTrancheLike    public juniorTranche;
-    EpochTrancheLike    public seniorTranche;
+    TrancheLike         public juniorTranche;
+    TrancheLike         public seniorTranche;
 
     ReserveLike         public reserve;
     AssessorLike        public assessor;
@@ -136,7 +136,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
     uint                public constant IMPROVEMENT_WEIGHT =  10000;
 
 
-    constructor(uint challengeTime_) public {
+    constructor(uint challengeTime_) {
         wards[msg.sender] = 1;
         challengeTime = challengeTime_;
 
@@ -164,8 +164,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
 
     // sets the dependency to another contract
     function depend (bytes32 contractName, address addr) public auth {
-        if (contractName == "juniorTranche") { juniorTranche = EpochTrancheLike(addr); }
-        else if (contractName == "seniorTranche") { seniorTranche = EpochTrancheLike(addr); }
+        if (contractName == "juniorTranche") { juniorTranche = TrancheLike(addr); }
+        else if (contractName == "seniorTranche") { seniorTranche = TrancheLike(addr); }
         else if (contractName == "reserve") { reserve = ReserveLike(addr); }
         else if (contractName == "assessor") { assessor = AssessorLike(addr); }
         else revert();
@@ -272,7 +272,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
 
         // every solution needs to satisfy all core constraints
         // there is no exception
-        if(valid  == ERR_CURRENCY_AVAILABLE || valid == ERR_MAX_ORDER) {
+        if (valid == ERR_CURRENCY_AVAILABLE || valid == ERR_MAX_ORDER || valid == ERR_POOL_CLOSING) {
             // core constraint violated
             return valid;
         }

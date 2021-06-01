@@ -51,7 +51,7 @@ contract Reserve is Math, Auth {
     // total currency in the reserve
     uint public balance_;
 
-    constructor(address currency_) public {
+    constructor(address currency_) {
         wards[msg.sender] = 1;
         currency = ERC20Like(currency_);
         pot = address(this);

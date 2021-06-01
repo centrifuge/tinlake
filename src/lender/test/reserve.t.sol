@@ -19,7 +19,7 @@ contract LendingAdapterMock is ClerkMock {
     ReserveLike reserve;
     ERC20Like currency;
 
-    constructor(address currency_, address reserve_) public    {
+    constructor(address currency_, address reserve_) {
         reserve = ReserveLike(reserve_);
         currency = ERC20Like(currency_);
     }

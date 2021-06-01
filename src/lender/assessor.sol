@@ -59,7 +59,7 @@ contract Assessor is Definitions, Auth, Interest {
     ReserveLike     public reserve;
     LendingAdapter  public lending;
 
-    constructor() public {
+    constructor() {
         wards[msg.sender] = 1;
         seniorInterestRate.value = ONE;
         lastUpdateSeniorInterest = block.timestamp;

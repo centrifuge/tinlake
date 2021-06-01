@@ -7,7 +7,7 @@ import "../../../test/mock/mock.sol";
 
 contract MemberlistMock is Mock, Auth {
 
-    constructor() public {
+    constructor() {
         wards[msg.sender] = 1;
     }
 

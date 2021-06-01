@@ -4,9 +4,7 @@ pragma solidity >=0.5.15;
 // the buckets contract stores values in a map using a timestamp as a key
 // each value store a pointer the next value in a linked list
 // to improve performance/gas efficiency while iterating over all values in a timespan
-contract Buckets {
-    // abstract contract
-    constructor() internal {}
+abstract contract Buckets {
 
     struct Bucket {
         uint value;

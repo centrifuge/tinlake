@@ -211,7 +211,7 @@ contract MKRBasicSystemTest is MKRTestBasis {
         uint mkrAmount = 500 ether;
         uint borrowAmount = 300 ether;
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
-        (,uint payoutTokenAmount,,) = juniorInvestor.disburse();
+        juniorInvestor.disburse();
 
         uint currencyAmount = 50 ether;
         seniorSupply(currencyAmount);

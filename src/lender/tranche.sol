@@ -69,7 +69,7 @@ contract Tranche is Math, Auth, FixedPoint {
         _;
     }
 
-    constructor(address currency_, address token_) public {
+    constructor(address currency_, address token_) {
         wards[msg.sender] = 1;
         token = ERC20Like(token_);
         currency = ERC20Like(currency_);
@@ -102,12 +102,13 @@ contract Tranche is Math, Auth, FixedPoint {
 
         totalSupply = safeAdd(safeTotalSub(totalSupply, currentSupplyAmount), newSupplyAmount);
 
+        uint delta;
         if (newSupplyAmount > currentSupplyAmount) {
-            uint delta = safeSub(newSupplyAmount, currentSupplyAmount);
+            delta = safeSub(newSupplyAmount, currentSupplyAmount);
             require(currency.transferFrom(usr, self, delta), "currency-transfer-failed");
             return;
         }
-        uint delta = safeSub(currentSupplyAmount, newSupplyAmount);
+        delta = safeSub(currentSupplyAmount, newSupplyAmount);
         if (delta > 0) {
             _safeTransfer(currency, usr, delta);
         }
@@ -121,13 +122,14 @@ contract Tranche is Math, Auth, FixedPoint {
         users[usr].redeemTokenAmount = newRedeemAmount;
         totalRedeem = safeAdd(safeTotalSub(totalRedeem, currentRedeemAmount), newRedeemAmount);
 
+        uint delta;
         if (newRedeemAmount > currentRedeemAmount) {
-            uint delta = safeSub(newRedeemAmount, currentRedeemAmount);
+            delta = safeSub(newRedeemAmount, currentRedeemAmount);
             require(token.transferFrom(usr, self, delta), "token-transfer-failed");
             return;
         }
 
-        uint delta = safeSub(currentRedeemAmount, newRedeemAmount);
+        delta = safeSub(currentRedeemAmount, newRedeemAmount);
         if (delta > 0) {
             _safeTransfer(token, usr, delta);
         }
@@ -296,13 +298,14 @@ contract Tranche is Math, Auth, FixedPoint {
         // burn token amount for redeem
         uint burnAmount = rmul(epochRedeemToken, epochs[epochID].redeemFulfillment.value);
         // burn tokens that are not needed for disbursement
+        uint diff;
         if (burnAmount > mintAmount) {
-            uint diff = safeSub(burnAmount, mintAmount);
+            diff = safeSub(burnAmount, mintAmount);
             safeBurn(diff);
             return;
         }
         // mint tokens that are required for disbursement
-        uint diff = safeSub(mintAmount, burnAmount);
+        diff = safeSub(mintAmount, burnAmount);
         if (diff > 0) {
             token.mint(self, diff);
         }
@@ -321,14 +324,15 @@ contract Tranche is Math, Auth, FixedPoint {
         // currency required for redemption
         uint currencyRequired = rmul(epochRedeem, epochs[epochID].redeemFulfillment.value);
 
+        uint diff;
         if (currencySupplied > currencyRequired) {
             // send surplus currency to reserve
-            uint diff = safeSub(currencySupplied, currencyRequired);
+            diff = safeSub(currencySupplied, currencyRequired);
             currency.approve(address(reserve), diff);
             reserve.deposit(diff);
             return;
         }
-        uint diff = safeSub(currencyRequired, currencySupplied);
+        diff = safeSub(currencyRequired, currencySupplied);
         if (diff > 0) {
             // get missing currency from reserve
             uint payoutAmount = safePayout(diff);

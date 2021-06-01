@@ -4,10 +4,6 @@ pragma solidity >=0.6.12;
 import { Title } from "tinlake-title/title.sol";
 import "../interfaces.sol";
 
-interface AdminOperatorLike {
-    function relyInvestor(address usr) external;
-}
-
 contract AdminUser {
     // --- Data ---
     ShelfLike shelf;
@@ -19,7 +15,7 @@ contract AdminUser {
     MemberlistLike juniorMemberlist;
     MemberlistLike seniorMemberlist;
 
-    constructor(address shelf_, address pile_, address nftFeed_, address title_, address reserve_, address collector_, address juniorMemberlist_, address seniorMemberlist_) public {
+    constructor(address shelf_, address pile_, address nftFeed_, address title_, address reserve_, address collector_, address juniorMemberlist_, address seniorMemberlist_) {
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
         title = Title(title_);

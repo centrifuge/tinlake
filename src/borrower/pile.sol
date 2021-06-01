@@ -44,7 +44,7 @@ contract Pile is Auth, Interest {
     event ChangeRate(uint indexed loan, uint newRate);
     event File(bytes32 indexed what, uint rate, uint value);
 
-    constructor() public {
+    constructor() {
         wards[msg.sender] = 1;
         // pre-definition for loans without interest rates
         rates[0].chi = ONE;
