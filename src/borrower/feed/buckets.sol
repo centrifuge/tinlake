@@ -6,7 +6,7 @@ pragma solidity >=0.5.15;
 // to improve performance/gas efficiency while iterating over all values in a timespan
 contract Buckets {
     // abstract contract
-    constructor() internal {}
+    constructor() {}
 
     struct Bucket {
         uint value;

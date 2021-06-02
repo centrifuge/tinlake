@@ -105,6 +105,7 @@ contract LenderSystemTest is TestSuite, Interest {
         // first investors need to disburse
         seniorSupplyAmount = 80 ether;
         juniorSupplyAmount = 20 ether;
+
         seniorSupply(seniorSupplyAmount);
         juniorSupply(juniorSupplyAmount);
 
@@ -496,5 +497,50 @@ contract LenderSystemTest is TestSuite, Interest {
 
         assertEq(currency.balanceOf(seniorInvestor_), safeAdd(preBalance, payoutCurrencyAmount));
         assertEq(seniorTranche.requestedCurrency(), 0);
+    }
+
+    function testFullRedeemDrop() public {
+        //pool setup
+        root.relyContract(address(assessor), address(this));
+        assessor.file("minSeniorRatio", 0); // 0%
+        assessor.file("maxSeniorRatio", 850000000000000000000000000); // 85%
+        assessor.file("seniorInterestRate", 1000000003170979198376458650); // 10%
+        assessor.file("maxReserve", 10000 ether); // 10k
+    
+        uint juniorSupplyAmount = 2000 ether;
+        uint seniorSupplyAmount = 1000 ether;
+       
+        juniorSupply(juniorSupplyAmount);
+        seniorSupply(seniorSupplyAmount);
+
+        hevm.warp(block.timestamp + 1 days);
+        coordinator.closeEpoch();
+
+        seniorInvestor.disburse(); // disburse tokens
+
+        // setup & borrow loan 
+        uint borrowAmount = 1000 ether;
+        uint nftPrice = 2000 ether;
+        uint maturityDate = 10 days;
+        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(block.timestamp) + maturityDate);
+
+        hevm.warp(block.timestamp + maturityDate);
+
+        admin.makeSeniorTokenMember(seniorInvestor_, safeAdd(block.timestamp, 30 days)); // extend memberlist period
+        seniorInvestor.redeemOrder(seniorToken.balanceOf(seniorInvestor_)); // redeeem all drop
+        emit log_named_uint("senior price", assessor.calcSeniorTokenPrice(nftFeed.approximatedNAV(), reserve.totalBalance()));
+        coordinator.closeEpoch();
+
+        emit log_named_uint("senior price", assessor.calcSeniorTokenPrice(nftFeed.approximatedNAV(), reserve.totalBalance()));
+        emit log_named_uint("senior token supply", seniorToken.totalSupply());
+        
+        // make loan repayment
+        uint loanDebt = pile.debt(loan); 
+        repayLoan(address(borrower), loan, loanDebt);
+
+        hevm.warp(block.timestamp + 1 days);
+        coordinator.closeEpoch();
+
+        assertEq( assessor.calcSeniorTokenPrice(nftFeed.approximatedNAV(), reserve.totalBalance()), 0); // false assertion to see the logs
     }
  }
