@@ -49,8 +49,9 @@ contract Bookrunner is Auth, Math, FixedPoint {
     mapping (bytes32 => Fixed27) public repaid;
     mapping (bytes32 => Fixed27) public writtenOff;
 
-    constructor() public {
+    constructor() {
         wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     function file(bytes32 name, uint value) public auth {
@@ -60,7 +61,7 @@ contract Bookrunner is Auth, Math, FixedPoint {
             minimumDeposit = value;
         } else if (name == "minimumStakeThreshold") {
             minimumStakeThreshold = Fixed27(value);
-          } else { revert("unkown-name");}
+        } else { revert("unkown-name");}
     }
 
     function depend(bytes32 contractName, address addr) public auth {
@@ -85,6 +86,8 @@ contract Bookrunner is Auth, Math, FixedPoint {
         tokensToBeMinted = safeAdd(tokensToBeMinted, rmul(relativeStake, repaid[nftID].value));
         tokensToBeMinted = safeAdd(tokensToBeMinted, rmul(relativeStake, writtenOff[nftID].value));
       }
+
+      // TODO: how to store that tokens were already minted/burned
 
       return (tokensToBeMinted, tokensToBeBurned);
     }
@@ -131,12 +134,15 @@ contract Bookrunner is Auth, Math, FixedPoint {
       staked[msg.sender] = safeAdd(senderStake, stakeAmount);
     }
 
-    // For gas efficiency, stake isn't automatically removed from an asset when another proposal is accepted. Instead,
-    // the underwriter can move their stake to a new asset
-    function moveStake(uint fromNftId, uint fromRisk, uint fromValue, uint toNftId, uint toRisk, uint toValue, uint stakeAmount) public {
-      // require proposal wasnt already accepted
+    // For gas efficiency, stake isn't automatically removed from an asset when another proposal is accepted.
+    // Instead, the underwriter can move their stake to a new asset.
+    function moveStake(uint fromNftId, uint fromRisk, uint fromValue, bytes32 toNftId, uint toRisk, uint toValue, uint stakeAmount) public {
+      require(acceptedProposals[toNftId].length == 0, "asset-already-accepted");
+      // TODO: how to handle stake that was supposed to be burned? Maybe not allow move if writtenOff[formNftID] > 0?
+
       // remove staked from old proposal
       // add staked to new proposal 
+      
     }
 
     // TODO: function cancelStake()
