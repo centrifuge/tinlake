@@ -29,8 +29,7 @@ interface CoordinatorLike {
 
 abstract contract BookrunnerLike is FixedPoint
     function staked(address) external view returns (uint);
-    function repaid(bytes32) external view returns (Fixed27 memory);
-    function writtenOff(bytes32) external view returns (Fixed27 memory);
+    function stakerCalcDisburse(address) external view returns (uint, uint);
 }
 
 contract Tranche is Math, Auth, FixedPoint {
@@ -193,8 +192,7 @@ contract Tranche is Math, Auth, FixedPoint {
         uint tokensToBeMinted;
         uint tokensToBeBurned;
         if (address(bookrunner) != address(0)) {
-            tokensToBeMinted = 0;
-            tokensToBeBurned = 0;
+            tokensToBeMinted, tokensToBeBurned = bookrunner.stakerCalcDisburse(msg.sender);
         } else {
             tokensToBeMinted = 0;
             tokensToBeBurned = 0;

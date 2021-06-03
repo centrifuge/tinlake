@@ -27,22 +27,25 @@ contract Bookrunner is Auth, Math, FixedPoint {
     // Time from proposal until it can be accepted
     uint challengeTime = 12 hours;
 
-    // Total amount that is staked for each (nftId, (risk, value)) tuple
+    // Total amount that is staked for each (nftID, (risk, value)) tuple
     mapping (bytes32 => mapping (bytes => uint)) public proposals;
 
-    // Amount that is staked for each (nftId, (risk, value), underwriter) tuple
+    // Amount that is staked for each (nftID, (risk, value), underwriter) tuple
     mapping (bytes32 => mapping (bytes => mapping (address => uint))) public perUnderwriterStake;
 
-    // Time at which the asset can be accepted for each nftId
+    // nftIDs which an underwriter has staked towards
+    mapping (address => bytes32[]) public underwriterStakes;
+
+    // Time at which the asset can be accepted for each nftID
     mapping (bytes32 => uint) public minChallengePeriodEnd;
 
     // Total amount that an underwriter has staked in all assets
     mapping (address => uint) public staked;
 
-    // (risk, value) pair for each nftId that was accepted
+    // (risk, value) pair for each nftID that was accepted
     mapping (bytes32 => bytes) public acceptedProposals;
 
-    // % repaid and % written off per nftId
+    // % repaid and % written off per nftID
     mapping (bytes32 => Fixed27) public repaid;
     mapping (bytes32 => Fixed27) public writtenOff;
 
@@ -66,47 +69,65 @@ contract Bookrunner is Auth, Math, FixedPoint {
         else revert();
     }
 
-    function assetWasAccepted(bytes32 nftId) public view returns (bool) {
-      return acceptedProposals[nftId].length != 0;
+    function assetWasAccepted(bytes32 nftID) public view returns (bool) {
+      return acceptedProposals[nftID].length != 0;
     }
 
-    function propose(bytes32 nftId, uint risk, uint value, uint deposit) public {
+    function stakerCalcDisburse(address staker) public view returns (uint, uint) {
+      bytes32[] memory nftIDs = underwriterStakes[staker];
+      uint tokensToBeMinted = 0;
+      uint tokensToBeBurned = 0;
+
+      for (uint i = 0; i < nftIDs.length; i++) {
+        bytes32 nftID = nftIDs[i];
+        bytes memory acceptedProposal = acceptedProposals[nftID];
+        uint256 relativeStake = rdiv(perUnderwriterStake[nftID][acceptedProposal][msg.sender], proposals[nftID][acceptedProposal]);
+        tokensToBeMinted = safeAdd(tokensToBeMinted, rmul(relativeStake, repaid[nftID].value));
+        tokensToBeMinted = safeAdd(tokensToBeMinted, rmul(relativeStake, writtenOff[nftID].value));
+      }
+
+      return (tokensToBeMinted, tokensToBeBurned);
+    }
+
+    function propose(bytes32 nftID, uint risk, uint value, uint deposit) public {
       require(deposit >= minimumDeposit, "min-deposit-required");
-      require(acceptedProposals[nftId].length == 0, "asset-already-accepted");
+      require(acceptedProposals[nftID].length == 0, "asset-already-accepted");
 
       uint senderStake = staked[msg.sender];
       require(safeSub(juniorToken.balanceOf(msg.sender), senderStake) >= deposit);
 
       bytes memory proposal = abi.encodePacked(risk, value);
-      require(proposals[nftId][proposal] == 0, "proposal-already-exists");
+      require(proposals[nftID][proposal] == 0, "proposal-already-exists");
 
-      proposals[nftId][proposal] = deposit;
-      perUnderwriterStake[nftId][proposal][msg.sender] = deposit;
-      minChallengePeriodEnd[nftId] = block.timestamp + challengeTime;
+      proposals[nftID][proposal] = deposit;
+      perUnderwriterStake[nftID][proposal][msg.sender] = deposit;
+      underwriterStakes[msg.sender].push(nftID);
+      minChallengePeriodEnd[nftID] = block.timestamp + challengeTime;
       staked[msg.sender] = safeAdd(senderStake, deposit);
     }
 
-    function accept(bytes32 nftId, uint risk, uint value) public {
+    function accept(bytes32 nftID, uint risk, uint value) public {
       bytes memory proposal = abi.encodePacked(risk, value);
-      require(minChallengePeriodEnd[nftId] >= block.timestamp, "challenge-period-not-ended");
-      require(rmul(minimumStakeThreshold.value, proposals[nftId][proposal]) >= value, "stake-threshold-not-reached");
+      require(minChallengePeriodEnd[nftID] >= block.timestamp, "challenge-period-not-ended");
+      require(rmul(minimumStakeThreshold.value, proposals[nftID][proposal]) >= value, "stake-threshold-not-reached");
       
-      acceptedProposals[nftId] = proposal;
-      navFeed.update(nftId, risk, value);
+      acceptedProposals[nftID] = proposal;
+      navFeed.update(nftID, risk, value);
     }
 
-    function stake(bytes32 nftId, uint risk, uint value, uint stakeAmount) public {
-      require(acceptedProposals[nftId].length == 0, "asset-already-accepted");
+    function stake(bytes32 nftID, uint risk, uint value, uint stakeAmount) public {
+      require(acceptedProposals[nftID].length == 0, "asset-already-accepted");
       
       uint senderStake = staked[msg.sender];
       require(safeSub(juniorToken.balanceOf(msg.sender), senderStake) >= stakeAmount);
 
       bytes memory proposal = abi.encodePacked(risk, value);
-      uint prevStake = perUnderwriterStake[nftId][proposal][msg.sender];
+      uint prevStake = perUnderwriterStake[nftID][proposal][msg.sender];
       uint newStake = safeAdd(prevStake, stakeAmount);
 
-      proposals[nftId][proposal] = newStake;
-      perUnderwriterStake[nftId][proposal][msg.sender] = newStake;
+      proposals[nftID][proposal] = newStake;
+      perUnderwriterStake[nftID][proposal][msg.sender] = newStake;
+      underwriterStakes[msg.sender].push(nftID);
       staked[msg.sender] = safeAdd(senderStake, stakeAmount);
     }
 
