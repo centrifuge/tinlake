@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.6.12;
 
-import { ReserveFabLike, AssessorFabLike, TrancheFabLike, CoordinatorFabLike, OperatorFabLike, MemberlistFabLike, RestrictedTokenFabLike, PoolAdminFabLike } from "./fabs/interfaces.sol";
+import { ReserveFabLike, AssessorFabLike, TrancheFabLike, CoordinatorFabLike, OperatorFabLike, MemberlistFabLike, RestrictedTokenFabLike, PoolAdminFabLike, ClerkFabLike } from "./fabs/interfaces.sol";
 
 import {FixedPoint}      from "./../fixed_point.sol";
 
@@ -42,12 +42,14 @@ contract LenderDeployer is FixedPoint {
     MemberlistFabLike       public memberlistFab;
     RestrictedTokenFabLike  public restrictedTokenFab;
     PoolAdminFabLike        public poolAdminFab;
+    ClerkFabLike            public clerkFab;
 
     // lender state variables
     Fixed27             public minSeniorRatio;
     Fixed27             public maxSeniorRatio;
     uint                public maxReserve;
     uint                public challengeTime;
+    uint                public matBuffer;
     Fixed27             public seniorInterestRate;
 
 
@@ -73,9 +75,12 @@ contract LenderDeployer is FixedPoint {
     address             public seniorMemberlist;
     address             public juniorMemberlist;
 
+    // mkr adapter
+    address             public clerk;
+
     address             public deployer;
 
-    constructor(address root_, address currency_, address trancheFab_, address memberlistFab_, address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_, address operatorFab_, address poolAdminFab_, address memberAdmin_) {
+    constructor(address root_, address currency_, address trancheFab_, address memberlistFab_, address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_, address operatorFab_, address poolAdminFab_, address memberAdmin_, address clerkFab_) {
         deployer = msg.sender;
         root = root_;
         currency = currency_;
@@ -89,9 +94,10 @@ contract LenderDeployer is FixedPoint {
         poolAdminFab = PoolAdminFabLike(poolAdminFab_);
         coordinatorFab = CoordinatorFabLike(coordinatorFab_);
         operatorFab = OperatorFabLike(operatorFab_);
+        clerkFab = ClerkFabLike( clerkFab_);
     }
 
-    function init(uint minSeniorRatio_, uint maxSeniorRatio_, uint maxReserve_, uint challengeTime_, uint seniorInterestRate_, string memory seniorName_, string memory seniorSymbol_, string memory juniorName_, string memory juniorSymbol_) public {
+    function init(uint minSeniorRatio_, uint maxSeniorRatio_, uint maxReserve_, uint challengeTime_, uint seniorInterestRate_, string memory seniorName_, string memory seniorSymbol_, string memory juniorName_, string memory juniorSymbol_, uint matBuffer_) public {
         require(msg.sender == deployer);
         challengeTime = challengeTime_;
         minSeniorRatio = Fixed27(minSeniorRatio_);
@@ -104,6 +110,9 @@ contract LenderDeployer is FixedPoint {
         seniorSymbol = seniorSymbol_;
         juniorName = juniorName_;
         juniorSymbol = juniorSymbol_;
+
+        // mkr
+        matBuffer = matBuffer_;
 
         deployer = address(1);
     }
@@ -159,6 +168,12 @@ contract LenderDeployer is FixedPoint {
         AuthLike(coordinator).rely(root);
     }
 
+    function deployClerk() public {
+         require(clerk == address(0) && deployer == address(1) && 
+         seniorToken != address(0) && currency != address(0));
+         clerk = clerkFab.newClerk(currency, seniorToken);
+         AuthLike(clerk).rely(root);
+    }
 
     function deploy() public virtual {
         require(coordinator != address(0) && assessor != address(0) &&
@@ -199,7 +214,6 @@ contract LenderDeployer is FixedPoint {
         DependLike(seniorOperator).depend("token", seniorToken);
         DependLike(juniorOperator).depend("token", juniorToken);
 
-
         // coordinator
         DependLike(coordinator).depend("reserve", reserve);
         DependLike(coordinator).depend("seniorTranche", seniorTranche);
@@ -214,14 +228,45 @@ contract LenderDeployer is FixedPoint {
         AuthLike(assessor).rely(coordinator);
         AuthLike(assessor).rely(reserve);
         AuthLike(assessor).rely(poolAdmin);
+        
+        // maker contracts
+        if (clerk != address(0)) {
+            DependLike(clerk).depend("assessor", assessor);
+            DependLike(clerk).depend("coordinator", coordinator);
+            DependLike(clerk).depend("reserve", reserve); 
+            DependLike(clerk).depend("tranche", seniorTranche);
+            DependLike(clerk).depend("collateral", seniorToken);
+            DependLike(assessor).depend("clerk", clerk); 
+            DependLike(reserve).depend("lending", clerk);
+            // !!! mkr contracts & mgr dependencies missing 
+            // DependLike(clerk).depend("mgr", mgr);
+            // DependLike(clerk).depend("spotter", spotter);
+            // DependLike(clerk).depend("vat", vat);
+            // DependLike(clerk).depend("jug", jug);
 
+            FileLike(clerk).file("buffer", matBuffer);
+
+            AuthLike(clerk).rely(coordinator);
+            AuthLike(clerk).rely(reserve);
+            AuthLike(seniorTranche).rely(clerk);
+            AuthLike(reserve).rely(clerk);
+            AuthLike(assessor).rely(clerk);
+            MemberlistLike(seniorMemberlist).updateMember(clerk, uint(-1));
+        
+            // poolAdmin setup
+            DependLike(poolAdmin).depend("clerk", clerk);
+            AuthLike(clerk).rely(poolAdmin);
+        }
+     
         // poolAdmin
         DependLike(poolAdmin).depend("assessor", assessor);
         DependLike(poolAdmin).depend("juniorMemberlist", juniorMemberlist);
         DependLike(poolAdmin).depend("seniorMemberlist", seniorMemberlist);
+        
 
         AuthLike(juniorMemberlist).rely(poolAdmin);
         AuthLike(seniorMemberlist).rely(poolAdmin);
+
         if (memberAdmin != address(0)) AuthLike(juniorMemberlist).rely(memberAdmin);
         if (memberAdmin != address(0)) AuthLike(seniorMemberlist).rely(memberAdmin);
 
