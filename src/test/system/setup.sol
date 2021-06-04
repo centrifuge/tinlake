@@ -165,7 +165,7 @@ abstract contract TestSetup is Config  {
         deployLender(mkrAdapter, config);
 
         root.prepare(lenderDeployerAddr, address(borrowerDeployer));
-        root.deploy();
+        root.deploy(mkrAdapter, false);
         deploymentConfig = config;
     }
 

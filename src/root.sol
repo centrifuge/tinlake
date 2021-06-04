@@ -96,7 +96,7 @@ contract TinlakeRoot is Auth {
     // --- Deploy ---
     // After going through the deploy process on the lender and borrower method, this method is called to connect
     // lender and borrower contracts.
-    function deploy() public {
+    function deploy(bool mkrAdapter, bool wireMgr) public {
         require(address(borrowerDeployer) != address(0) && address(lenderDeployer) != address(0) && deployed == false);
         deployed = true;
 
@@ -125,12 +125,16 @@ contract TinlakeRoot is Auth {
             PoolAdminLike(poolAdmin).relyAdmin(poolAdmins[i]);
         }
 
-        if (lenderDeployer.clerk() != address(0)) {
-            setupMkr();
+        if (mkrAdapter) {
+            setupMkrAdapter(wireMgr);
         }
     }
 
-    function setupMkr() internal {
+    function deploy() public {
+        deploy(false, false);
+    }
+
+    function setupMkrAdapter(bool wireMgr) internal {
         address clerk = lenderDeployer.clerk();
         address assessor = lenderDeployer.assessor();
         address reserve = lenderDeployer.reserve();
@@ -171,18 +175,20 @@ contract TinlakeRoot is Auth {
         DependLike(poolAdmin).depend("lending", clerk);
         AuthLike(clerk).rely(poolAdmin);
 
-        // setup mgr
-        MgrLike mgr = MgrLike(lenderDeployer.mkrMgr());
-        mgr.rely(clerk);
-        mgr.file("urn", lenderDeployer.mkrUrn());
-        mgr.file("liq", lenderDeployer.mkrLiq());
-        mgr.file("end", lenderDeployer.mkrEnd());
-        mgr.file("owner", lenderDeployer.clerk());
-        mgr.file("pool", lenderDeployer.seniorOperator());
-        mgr.file("tranche", lenderDeployer.seniorTranche());
+        if (wireMgr) {
+            // setup mgr
+            MgrLike mgr = MgrLike(lenderDeployer.mkrMgr());
+            mgr.rely(clerk);
+            mgr.file("urn", lenderDeployer.mkrUrn());
+            mgr.file("liq", lenderDeployer.mkrLiq());
+            mgr.file("end", lenderDeployer.mkrEnd());
+            mgr.file("owner", lenderDeployer.clerk());
+            mgr.file("pool", lenderDeployer.seniorOperator());
+            mgr.file("tranche", lenderDeployer.seniorTranche());
 
-        // lock token
-        mgr.lock(1 ether);
+            // lock token
+            mgr.lock(1 ether);
+        }
     }
     
     // --- Governance Functions ---
