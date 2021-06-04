@@ -52,6 +52,7 @@ contract LenderDeployer is FixedPoint {
 
 
     // contract addresses
+    address             public adapterDeployer;
     address             public assessor;
     address             public poolAdmin;
     address             public seniorTranche;
@@ -75,11 +76,12 @@ contract LenderDeployer is FixedPoint {
 
     address             public deployer;
 
-    constructor(address root_, address currency_, address trancheFab_, address memberlistFab_, address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_, address operatorFab_, address poolAdminFab_, address memberAdmin_) {
+    constructor(address root_, address currency_, address trancheFab_, address memberlistFab_, address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_, address operatorFab_, address poolAdminFab_, address memberAdmin_, address adapterDeployer_) {
         deployer = msg.sender;
         root = root_;
         currency = currency_;
         memberAdmin = memberAdmin_;
+        adapterDeployer = adapterDeployer_;
 
         trancheFab = TrancheFabLike(trancheFab_);
         memberlistFab = MemberlistFabLike(memberlistFab_);
@@ -133,24 +135,31 @@ contract LenderDeployer is FixedPoint {
         AuthLike(seniorOperator).rely(root);
         AuthLike(seniorTranche).rely(root);
 
+        if (adapterDeployer != address(0)) {
+            AuthLike(seniorTranche).rely(adapterDeployer);
+            AuthLike(seniorMemberlist).rely(adapterDeployer);
+        }
     }
 
     function deployReserve() public {
         require(reserve == address(0) && deployer == address(1));
         reserve = reserveFab.newReserve(currency);
         AuthLike(reserve).rely(root);
+        if (adapterDeployer != address(0)) AuthLike(reserve).rely(adapterDeployer);
     }
 
     function deployAssessor() public {
         require(assessor == address(0) && deployer == address(1));
         assessor = assessorFab.newAssessor();
         AuthLike(assessor).rely(root);
+        if (adapterDeployer != address(0)) AuthLike(assessor).rely(adapterDeployer);
     }
 
     function deployPoolAdmin() public {
         require(poolAdmin == address(0) && deployer == address(1));
         poolAdmin = poolAdminFab.newPoolAdmin();
         AuthLike(poolAdmin).rely(root);
+        if (adapterDeployer != address(0)) AuthLike(poolAdmin).rely(adapterDeployer);
     }
 
     function deployCoordinator() public {

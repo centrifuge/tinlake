@@ -33,7 +33,7 @@ import { OperatorFab } from "../../lender/fabs/operator.sol";
 import { LenderDeployer } from "../../lender/deployer.sol";
 
 // MKR
-import { MKRLenderDeployer } from "../../lender/adapters/mkr/deployer.sol";
+import { AdapterDeployer } from "../../lender/adapters/deployer.sol";
 import { ClerkFab } from "../../lender/adapters/mkr/fabs/clerk.sol";
 
 import { Title } from "tinlake-title/title.sol";
@@ -94,7 +94,11 @@ abstract contract LenderDeployerLike {
     function deployCoordinator() public virtual;
 
     function deploy() public virtual;
-    function deployMkr() public virtual;
+}
+
+interface AdapterDeployerLike {
+    function deployClerk() external;
+    function deploy(bool) external;
 }
 
 abstract contract TestSetup is Config  {
@@ -132,7 +136,7 @@ abstract contract TestSetup is Config  {
 
     //mkr adapter
     SimpleMkr mkr;
-    MKRLenderDeployer public  mkrLenderDeployer;
+    AdapterDeployer public adapterDeployer;
     Clerk public clerk;
 
     address public lenderDeployerAddr;
@@ -164,8 +168,8 @@ abstract contract TestSetup is Config  {
         prepareDeployLender(root_, mkrAdapter);
         deployLender(mkrAdapter, config);
 
-        root.prepare(lenderDeployerAddr, address(borrowerDeployer));
-        root.deploy(mkrAdapter, false);
+        root.prepare(lenderDeployerAddr, address(borrowerDeployer), address(adapterDeployer));
+        root.deploy();
         deploymentConfig = config;
     }
 
@@ -230,11 +234,13 @@ abstract contract TestSetup is Config  {
         AssessorFab assessorFab = new AssessorFab();
         ClerkFab clerkFab = new ClerkFab();
 
-        mkrLenderDeployer = new MKRLenderDeployer(rootAddr, currency_, address(trancheFab), address(memberlistFab),
+        adapterDeployer = new AdapterDeployer(rootAddr, address(clerkFab));
+
+        lenderDeployer = new LenderDeployer(rootAddr, currency_, address(trancheFab), address(memberlistFab),
             address(restrictedTokenFab), address(reserveFab), address(assessorFab), address(coordinatorFab),
-            address(operatorFab), address(poolAdminFab), address(clerkFab), address(0));
-        lenderDeployerAddr = address(mkrLenderDeployer);
-        lenderDeployer = LenderDeployer(address(mkrLenderDeployer));
+            address(operatorFab), address(poolAdminFab), address(0), address(adapterDeployer));
+        lenderDeployerAddr = address(lenderDeployer);
+
         return;
 
     }
@@ -260,7 +266,7 @@ abstract contract TestSetup is Config  {
         // root is testcase
         lenderDeployer = new LenderDeployer(rootAddr, currency_, address(trancheFab),
             address(memberlistFab), address(restrictedTokenFab), address(reserveFab),
-            address(assessorFab), address(coordinatorFab), address(operatorFab), address(poolAdminFab), address(0));
+            address(assessorFab), address(coordinatorFab), address(operatorFab), address(poolAdminFab), address(0), address(0));
         lenderDeployerAddr = address(lenderDeployer);
     }
 
@@ -278,10 +284,10 @@ abstract contract TestSetup is Config  {
         SpotterMock spotter = new SpotterMock();
         spotter.setReturn("mat", config.mkrMAT);
 
-        mkrLenderDeployer.init(config.minSeniorRatio, config.maxSeniorRatio, config.maxReserve, config.challengeTime, config.seniorInterestRate, config.seniorTokenName,
+        lenderDeployer.init(config.minSeniorRatio, config.maxSeniorRatio, config.maxReserve, config.challengeTime, config.seniorInterestRate, config.seniorTokenName,
             config.seniorTokenSymbol, config.juniorTokenName, config.juniorTokenSymbol);
 
-        mkrLenderDeployer.initMKR(address(mkr), address(spotter), address(mkr), jug_, address(0), address(0), address(0), 0.01 * 10**27);
+        adapterDeployer.initMKR(address(lenderDeployer), address(mkr), address(spotter), address(mkr), jug_, address(0), address(0), address(0), 0.01 * 10**27);
     }
 
     function fetchContractAddr(LenderDeployerLike ld) internal {
@@ -317,12 +323,16 @@ abstract contract TestSetup is Config  {
         ld.deployPoolAdmin();
         ld.deployCoordinator();
 
-        if(mkrAdapter) {
-            mkrLenderDeployer.deployClerk();
-            clerk = Clerk(mkrLenderDeployer.clerk());
+        if (mkrAdapter) {
+            adapterDeployer.deployClerk(root_, currency_);
+            clerk = Clerk(adapterDeployer.clerk());
         }
 
         ld.deploy();
         fetchContractAddr(ld);
+
+        if (mkrAdapter) {
+            adapterDeployer.deploy();
+        }
     }
 }

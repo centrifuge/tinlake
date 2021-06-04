@@ -20,24 +20,12 @@ interface BorrowerDeployerLike {
 }
 
 interface LenderDeployerLike {
-    function coordinator() external returns (address);
     function assessor() external returns (address);
     function reserve() external returns (address);
-    function seniorOperator() external returns (address);
-    function seniorTranche() external returns (address);
-    function seniorToken() external returns (address);
-    function clerk() external returns (address);
-    function matBuffer() external returns (uint);
     function poolAdmin() external returns (address);
-    function seniorMemberlist() external returns (address);
-    function mkrMgr() external returns (address);
-    function mkrSpotter() external returns (address);
-    function mkrVat() external returns (address);
-    function mkrJug() external returns (address);
-    function mkrUrn() external returns (address);
-    function mkrLiq() external returns (address);
-    function mkrEnd() external returns (address);
+}
 
+interface AdapterDeployerLike {
 }
 
 interface PoolAdminLike {
@@ -45,23 +33,10 @@ interface PoolAdminLike {
     function relyAdmin(address) external;
 }
 
-interface FileLike {
-    function file(bytes32 name, uint value) external;
-}
-
-interface MemberlistLike {
-    function updateMember(address, uint) external;
-}
-
-interface MgrLike {
-    function rely(address) external;
-    function file(bytes32 name, address value) external;
-    function lock(uint) external;
-}
-
 contract TinlakeRoot is Auth {
     BorrowerDeployerLike public borrowerDeployer;
     LenderDeployerLike public  lenderDeployer;
+    AdapterDeployerLike public  adapterDeployer;
 
     bool public             deployed;
     address public          deployUsr;
@@ -78,25 +53,30 @@ contract TinlakeRoot is Auth {
 
     // --- Prepare ---
     // Sets the two deployer dependencies. This needs to be called by the deployUsr
-    function prepare(address lender_, address borrower_, address oracle_, address[] memory poolAdmins_) public {
+    function prepare(address lender_, address borrower_, address adapter_, address oracle_, address[] memory poolAdmins_) public {
         require(deployUsr == msg.sender);
         
         borrowerDeployer = BorrowerDeployerLike(borrower_);
         lenderDeployer = LenderDeployerLike(lender_);
+        if (adapter_ != address(0)) adapterDeployer = AdapterDeployerLike(adapter_);
         oracle = oracle_;
         poolAdmins = poolAdmins_;
 
         deployUsr = address(0); // disallow the deploy user to call this more than once.
     }
 
+    function prepare(address lender_, address borrower_, address adapter_) public {
+        prepare(lender_, borrower_, adapter_, address(0), new address[](0));
+    }
+
     function prepare(address lender_, address borrower_) public {
-        prepare(lender_, borrower_, address(0), new address[](0));
+        prepare(lender_, borrower_, address(0), address(0), new address[](0));
     }
 
     // --- Deploy ---
     // After going through the deploy process on the lender and borrower method, this method is called to connect
     // lender and borrower contracts.
-    function deploy(bool mkrAdapter, bool wireMgr) public {
+    function deploy() public {
         require(address(borrowerDeployer) != address(0) && address(lenderDeployer) != address(0) && deployed == false);
         deployed = true;
 
@@ -123,71 +103,6 @@ contract TinlakeRoot is Auth {
 
         for (uint i = 0; i < poolAdmins.length; i++) {
             PoolAdminLike(poolAdmin).relyAdmin(poolAdmins[i]);
-        }
-
-        if (mkrAdapter) {
-            setupMkrAdapter(wireMgr);
-        }
-    }
-
-    function deploy() public {
-        deploy(false, false);
-    }
-
-    function setupMkrAdapter(bool wireMgr) internal {
-        address clerk = lenderDeployer.clerk();
-        address assessor = lenderDeployer.assessor();
-        address reserve = lenderDeployer.reserve();
-        address seniorTranche = lenderDeployer.seniorTranche();
-        address seniorMemberlist = lenderDeployer.seniorMemberlist();
-        address poolAdmin = lenderDeployer.poolAdmin();
-
-        // clerk dependencies
-        DependLike(clerk).depend("coordinator", lenderDeployer.coordinator());
-        DependLike(clerk).depend("assessor", assessor);
-        DependLike(clerk).depend("reserve", reserve);
-        DependLike(clerk).depend("tranche", seniorTranche);
-        DependLike(clerk).depend("collateral", lenderDeployer.seniorToken());
-        DependLike(clerk).depend("mgr", lenderDeployer.mkrMgr());
-        DependLike(clerk).depend("spotter", lenderDeployer.mkrSpotter());
-        DependLike(clerk).depend("vat", lenderDeployer.mkrVat());
-        DependLike(clerk).depend("jug", lenderDeployer.mkrJug());
-
-        // clerk as ward
-        AuthLike(seniorTranche).rely(clerk);
-        AuthLike(reserve).rely(clerk);
-        AuthLike(assessor).rely(clerk);
-
-        // reserve can draw and wipe on clerk
-        DependLike(reserve).depend("lending", clerk);
-        AuthLike(clerk).rely(reserve);
-
-        // set the mat buffer
-        FileLike(clerk).file("buffer", lenderDeployer.matBuffer());
-
-        // allow clerk to hold seniorToken
-        MemberlistLike(seniorMemberlist).updateMember(clerk, type(uint256).max);
-        MemberlistLike(seniorMemberlist).updateMember(lenderDeployer.mkrMgr(), type(uint256).max);
-
-        DependLike(assessor).depend("lending", clerk);
-
-        // poolAdmin setup
-        DependLike(poolAdmin).depend("lending", clerk);
-        AuthLike(clerk).rely(poolAdmin);
-
-        if (wireMgr) {
-            // setup mgr
-            MgrLike mgr = MgrLike(lenderDeployer.mkrMgr());
-            mgr.rely(clerk);
-            mgr.file("urn", lenderDeployer.mkrUrn());
-            mgr.file("liq", lenderDeployer.mkrLiq());
-            mgr.file("end", lenderDeployer.mkrEnd());
-            mgr.file("owner", lenderDeployer.clerk());
-            mgr.file("pool", lenderDeployer.seniorOperator());
-            mgr.file("tranche", lenderDeployer.seniorTranche());
-
-            // lock token
-            mgr.lock(1 ether);
         }
     }
     

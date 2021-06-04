@@ -25,7 +25,7 @@ contract MKRTestBasis is TestSuite, Interest {
         root.relyContract(address(clerk), address(this));
         mkrAssessor = assessor;
         mkr.depend("currency" ,currency_);
-        mkr.depend("drop", mkrLenderDeployer.seniorToken());
+        mkr.depend("drop", lenderDeployer.seniorToken());
     }
 
 
