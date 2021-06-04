@@ -52,60 +52,8 @@ contract MKRLenderDeployer is LenderDeployer {
         mkrDeployer = address(1);
     }
 
-    function deploy(bool setupMgr) public {
-        super.deploy();
-        require(clerk != address(0));
-
-        // clerk dependencies
-        DependLike(clerk).depend("coordinator", coordinator);
-        DependLike(clerk).depend("assessor", assessor);
-        DependLike(clerk).depend("reserve", reserve);
-        DependLike(clerk).depend("tranche", seniorTranche);
-        DependLike(clerk).depend("collateral", seniorToken);
-        DependLike(clerk).depend("mgr", mkrMgr);
-        DependLike(clerk).depend("spotter", mkrSpotter);
-        DependLike(clerk).depend("vat", mkrVat);
-        DependLike(clerk).depend("jug", mkrJug);
-
-        // clerk as ward
-        AuthLike(seniorTranche).rely(clerk);
-        AuthLike(reserve).rely(clerk);
-        AuthLike(assessor).rely(clerk);
-
-        // reserve can draw and wipe on clerk
-        DependLike(reserve).depend("lending", clerk);
-        AuthLike(clerk).rely(reserve);
-
-        // set the mat buffer
-        FileLike(clerk).file("buffer", matBuffer);
-
-        // allow clerk to hold seniorToken
-        MemberlistLike(seniorMemberlist).updateMember(clerk, type(uint256).max);
-        MemberlistLike(seniorMemberlist).updateMember(mkrMgr, type(uint256).max);
-
-        DependLike(assessor).depend("lending", clerk);
-
-        // poolAdmin setup
-        DependLike(poolAdmin).depend("lending", clerk);
-        AuthLike(clerk).rely(poolAdmin);
-
-        if (setupMgr) {
-            // setup mgr
-            AuthLike(mkrMgr).rely(clerk);
-            MgrLike(mkrMgr).file("urn", mkrUrn);
-            MgrLike(mkrMgr).file("liq", mkrLiq);
-            MgrLike(mkrMgr).file("end", mkrEnd);
-            MgrLike(mkrMgr).file("owner", clerk);
-            MgrLike(mkrMgr).file("pool", seniorOperator);
-            MgrLike(mkrMgr).file("tranche", seniorTranche);
-
-            // lock token
-            MgrLike(mkrMgr).lock(1 ether);
-        }
-    }
-    
     function deploy() public override {
-        deploy(false);
+        super.deploy();
     }
 
 }
