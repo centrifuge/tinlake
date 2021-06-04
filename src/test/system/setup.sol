@@ -281,7 +281,7 @@ abstract contract TestSetup is Config  {
         mkrLenderDeployer.init(config.minSeniorRatio, config.maxSeniorRatio, config.maxReserve, config.challengeTime, config.seniorInterestRate, config.seniorTokenName,
             config.seniorTokenSymbol, config.juniorTokenName, config.juniorTokenSymbol);
 
-        mkrLenderDeployer.initMKR(address(mkr), address(spotter), address(mkr), jug_);
+        mkrLenderDeployer.initMKR(address(mkr), address(spotter), address(mkr), jug_, address(0), address(0), address(0), 0.01 * 10**27);
     }
 
     function fetchContractAddr(LenderDeployerLike ld) internal {

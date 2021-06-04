@@ -36,5 +36,3 @@ interface PoolAdminFabLike {
 interface ClerkFabLike {
     function newClerk(address, address) external returns (address);
 }
-
-
