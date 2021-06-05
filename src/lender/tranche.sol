@@ -27,9 +27,9 @@ interface CoordinatorLike {
     function lastEpochExecuted() external view returns(uint);
 }
 
-abstract contract BookrunnerLike is FixedPoint
-    function staked(address) external view returns (uint);
-    function stakerCalcDisburse(address) external view returns (uint, uint);
+abstract contract BookrunnerLike is FixedPoint {
+    function staked(address) public virtual view returns (uint);
+    function stakerCalcDisburse(address) public virtual view returns (uint, uint);
 }
 
 contract Tranche is Math, Auth, FixedPoint {
@@ -149,7 +149,7 @@ contract Tranche is Math, Auth, FixedPoint {
     }
 
     //  calculates the current disburse of a user starting from the ordered epoch until endEpoch
-    function calcDisburse(address usr, uint endEpoch) public view returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken, uint tokensToBeMinted, uint tokensToBeBurned) {
+    function calcDisburse(address usr, uint endEpoch) public view returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         uint epochIdx = users[usr].orderedInEpoch;
         uint lastEpochExecuted = coordinator.lastEpochExecuted();
 
@@ -189,16 +189,20 @@ contract Tranche is Math, Auth, FixedPoint {
             epochIdx = safeAdd(epochIdx, 1);
         }
 
+        return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
+    }
+
+    function calcStakeDisburse(address usr) public view returns(uint tokensToBeMinted, uint tokensToBeBurned) {
         uint tokensToBeMinted;
         uint tokensToBeBurned;
         if (address(bookrunner) != address(0)) {
-            tokensToBeMinted, tokensToBeBurned = bookrunner.stakerCalcDisburse(msg.sender);
+            (tokensToBeMinted, tokensToBeBurned) = bookrunner.stakerCalcDisburse(usr);
         } else {
             tokensToBeMinted = 0;
             tokensToBeBurned = 0;
         }
 
-        return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken, tokensToBeMinted, tokensToBeBurned);
+        return (tokensToBeMinted, tokensToBeBurned);
     }
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
