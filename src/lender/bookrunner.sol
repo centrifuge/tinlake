@@ -22,7 +22,13 @@ contract Bookrunner is Auth, Math, FixedPoint {
 	uint minimumDeposit = 10 ether;
 
 	// Stake threshold required relative to the NFT value
-	Fixed27 minimumStakeThreshold = Fixed27(0.05 * 10**27);
+	Fixed27 minimumStakeThreshold = Fixed27(0.02 * 10**27);
+
+	// % of the repaid amount that is minted in new TIN tokens for the underwriters
+	Fixed27 mintProportion = Fixed27(0.01 * 10**27); 
+
+	// % of the written off amount that is burned in TIN tokens for the underwriters
+	Fixed27 slashProportion = Fixed27(0.01 * 10**27); 
 
 	// Time from proposal until it can be accepted
 	uint challengeTime = 12 hours;
@@ -49,6 +55,10 @@ contract Bookrunner is Auth, Math, FixedPoint {
 	mapping (bytes32 => Fixed27) public repaid;
 	mapping (bytes32 => Fixed27) public writtenOff;
 
+	// minted/burned amount per (nftID, underwriter) tuple
+	mapping (bytes32 => mapping (address => Fixed27)) public minted;
+	mapping (bytes32 => mapping (address => Fixed27)) public burned;
+
 	constructor() {
 		wards[msg.sender] = 1;
 		emit Rely(msg.sender);
@@ -61,6 +71,10 @@ contract Bookrunner is Auth, Math, FixedPoint {
 			minimumDeposit = value;
 		} else if (name == "minimumStakeThreshold") {
 			minimumStakeThreshold = Fixed27(value);
+		} else if (name == "mintProportion") {
+			mintProportion = Fixed27(value);
+		} else if (name == "slashProportion") {
+			slashProportion = Fixed27(value);
 		} else { revert("unkown-name");}
 	}
 
@@ -74,8 +88,8 @@ contract Bookrunner is Auth, Math, FixedPoint {
 		return acceptedProposals[nftID].length != 0;
 	}
 
-	function stakerCalcDisburse(address staker) public view returns (uint, uint) {
-		bytes32[] memory nftIDs = underwriterStakes[staker];
+	function calcStakedDisburse(address underwriter) public view returns (uint, uint) {
+		bytes32[] memory nftIDs = underwriterStakes[underwriter];
 		uint tokensToBeMinted = 0;
 		uint tokensToBeBurned = 0;
 

@@ -29,7 +29,7 @@ interface CoordinatorLike {
 
 abstract contract BookrunnerLike is FixedPoint {
     function staked(address) public virtual view returns (uint);
-    function stakerCalcDisburse(address) public virtual view returns (uint, uint);
+    function calcStakedDisburse(address) public virtual view returns (uint, uint);
 }
 
 contract Tranche is Math, Auth, FixedPoint {
@@ -192,11 +192,11 @@ contract Tranche is Math, Auth, FixedPoint {
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
     }
 
-    function calcStakeDisburse(address usr) public view returns(uint tokensToBeMinted, uint tokensToBeBurned) {
+    function calcStakedDisburse(address usr) public view returns(uint tokensToBeMinted, uint tokensToBeBurned) {
         uint tokensToBeMinted;
         uint tokensToBeBurned;
         if (address(bookrunner) != address(0)) {
-            (tokensToBeMinted, tokensToBeBurned) = bookrunner.stakerCalcDisburse(usr);
+            (tokensToBeMinted, tokensToBeBurned) = bookrunner.calcStakedDisburse(usr);
         } else {
             tokensToBeMinted = 0;
             tokensToBeBurned = 0;
