@@ -106,6 +106,10 @@ contract Bookrunner is Auth, Math, FixedPoint {
 		return (tokensToBeMinted, tokensToBeBurned);
 	}
 
+	function disburse(address underwriter, uint minted, uint burned) public auth {
+
+	}
+
 	function propose(bytes32 nftID, uint risk, uint value, uint deposit) public {
 		require(deposit >= minimumDeposit, "min-deposit-required");
 		require(acceptedProposals[nftID].length == 0, "asset-already-accepted");

@@ -192,9 +192,8 @@ contract Tranche is Math, Auth, FixedPoint {
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
     }
 
-    function calcStakedDisburse(address usr) public view returns(uint tokensToBeMinted, uint tokensToBeBurned) {
-        uint tokensToBeMinted;
-        uint tokensToBeBurned;
+    // TODO: calcDisburse and calcStakedDisburse should be merged
+    function calcStakedDisburse(address usr) public view returns (uint tokensToBeMinted, uint tokensToBeBurned) {
         if (address(bookrunner) != address(0)) {
             (tokensToBeMinted, tokensToBeBurned) = bookrunner.calcStakedDisburse(usr);
         } else {
@@ -203,6 +202,14 @@ contract Tranche is Math, Auth, FixedPoint {
         }
 
         return (tokensToBeMinted, tokensToBeBurned);
+    }
+
+    // TODO: disburse and disburseStaked should be merged
+    function disburseStaked(address usr) public auth {
+        (uint tokensToBeMinted, uint tokensToBeBurned) = calcStakedDisburse(usr);
+
+        if (tokensToBeMinted > 0) mint(usr, tokensToBeMinted);
+        if (tokensToBeBurned > 0) burn(usr, tokensToBeBurned);
     }
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
@@ -311,6 +318,7 @@ contract Tranche is Math, Auth, FixedPoint {
             requestedCurrency = safeSub(requestedCurrency, payoutAmount);
         }
     }
+
     // adjust token balance after epoch execution -> min/burn tokens
     function adjustTokenBalance(uint epochID, uint epochSupplyToken, uint epochRedeemToken) internal {
         // mint token amount for supply
@@ -340,6 +348,10 @@ contract Tranche is Math, Auth, FixedPoint {
     // interface is required for adapters
     function mint(address usr, uint amount) public auth {
         token.mint(usr, amount);
+    }
+
+    function burn(address usr, uint amount) public auth {
+        token.burn(usr, amount);
     }
 
     // adjust currency balance after epoch execution -> receive/send currency from/to reserve
