@@ -115,7 +115,7 @@ contract Reserve is Math, Auth {
         _depositAction(usr, currencyAmount);
         if(address(lending) != address(0) && lending.debt() > 0 && lending.activated()) {
             uint wipeAmount = lending.debt();
-            uint available = currency.balanceOf(pot);
+            uint available = balance_;
             if(available < wipeAmount) {
                 wipeAmount = available;
             }
@@ -140,7 +140,7 @@ contract Reserve is Math, Auth {
     }
 
     function _payout(address usr, uint currencyAmount)  internal {
-        uint reserveBalance = currency.balanceOf(pot);
+        uint reserveBalance = balance_;
         if (currencyAmount > reserveBalance && address(lending) != address(0) && lending.activated()) {
             uint drawAmount = safeSub(currencyAmount, reserveBalance);
             uint left = lending.remainingCredit();
