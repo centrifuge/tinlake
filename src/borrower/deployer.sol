@@ -125,7 +125,7 @@ contract BorrowerDeployer is FixedPoint {
 
         // collector allowed to call
         AuthLike(shelf).rely(collector);
-
+        
         FileLike(feed).file("discountRate", discountRate.value);
     }
 }
