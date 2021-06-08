@@ -36,7 +36,7 @@ contract TinlakeRoot is Auth {
 
     bool public             deployed;
     address public          deployUsr;
-    address public          governance;
+    address public immutable governance;
 
     address public          oracle;
     address[] public        poolAdmins;
@@ -44,7 +44,8 @@ contract TinlakeRoot is Auth {
     constructor (address deployUsr_, address governance_) {
         deployUsr = deployUsr_;
         governance = governance_;
-        wards[governance] = 1;
+        wards[governance_] = 1;
+        emit Rely(governance_);
     }
 
     // --- Prepare ---

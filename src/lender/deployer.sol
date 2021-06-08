@@ -23,25 +23,20 @@ interface FileLike {
     function file(bytes32 name, uint value) external;
 }
 
-interface RootLike {
-    function governance() external returns (address);
-}
-
 contract LenderDeployer is FixedPoint {
-    address public root;
-    address public currency;
-    address public governance;
-    address public memberAdmin;
+    address public immutable root;
+    address public immutable currency;
+    address public immutable memberAdmin;
 
     // factory contracts
-    TrancheFabLike          public trancheFab;
-    ReserveFabLike          public reserveFab;
-    AssessorFabLike         public assessorFab;
-    CoordinatorFabLike      public coordinatorFab;
-    OperatorFabLike         public operatorFab;
-    MemberlistFabLike       public memberlistFab;
-    RestrictedTokenFabLike  public restrictedTokenFab;
-    PoolAdminFabLike        public poolAdminFab;
+    TrancheFabLike          public immutable trancheFab;
+    ReserveFabLike          public immutable reserveFab;
+    AssessorFabLike         public immutable assessorFab;
+    CoordinatorFabLike      public immutable coordinatorFab;
+    OperatorFabLike         public immutable operatorFab;
+    MemberlistFabLike       public immutable memberlistFab;
+    RestrictedTokenFabLike  public immutable restrictedTokenFab;
+    PoolAdminFabLike        public immutable poolAdminFab;
 
     // lender state variables
     Fixed27             public minSeniorRatio;
