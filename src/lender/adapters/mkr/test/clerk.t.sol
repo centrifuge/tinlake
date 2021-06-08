@@ -138,8 +138,6 @@ contract ClerkTest is Assertions, Interest {
         uint base = ONE;
         jug.setReturn("base", base);
         assertEq(clerk.stabilityFee(), safeAdd(interestRatePerSecond, base));
-
-        // jug.setReturn("base", 0);
     }
 
     function raise(uint amountDAI) public{
