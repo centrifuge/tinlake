@@ -212,9 +212,8 @@ contract MKRBasicSystemTest is MKRTestBasis {
         uint borrowAmount = 300 ether;
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
 
-        // transfer currency to the reserve, so balanceOf(pot) becomes larger than the balance_ value
+        // mint currency to the reserve, so balanceOf(pot) becomes larger than the balance_ value
         currency.mint(address(this), 1);
-        currency.transfer(address(reserve), 1);
 
         juniorInvestor.disburse();
 
@@ -255,9 +254,8 @@ contract MKRBasicSystemTest is MKRTestBasis {
 
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
 
-        // transfer currency to the reserve, so balanceOf(pot) becomes larger than the balance_ value
+        // mint currency to the reserve, so balanceOf(pot) becomes larger than the balance_ value
         currency.mint(address(this), 1);
-        currency.transfer(address(reserve), 1);
 
         juniorInvestor.disburse();
 
