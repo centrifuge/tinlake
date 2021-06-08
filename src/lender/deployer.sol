@@ -105,7 +105,7 @@ contract LenderDeployer is FixedPoint {
 
     function deployJunior() public {
         require(juniorTranche == address(0) && deployer == address(1));
-        juniorToken = restrictedTokenFab.newRestrictedToken(juniorName, juniorSymbol);
+        juniorToken = restrictedTokenFab.newRestrictedToken(juniorSymbol, juniorName);
         juniorTranche = trancheFab.newTranche(currency, juniorToken);
         juniorMemberlist = memberlistFab.newMemberlist();
         juniorOperator = operatorFab.newOperator(juniorTranche);
@@ -118,7 +118,7 @@ contract LenderDeployer is FixedPoint {
 
     function deploySenior() public {
         require(seniorTranche == address(0) && deployer == address(1));
-        seniorToken = restrictedTokenFab.newRestrictedToken(seniorName, seniorSymbol);
+        seniorToken = restrictedTokenFab.newRestrictedToken(seniorSymbol, seniorName);
         seniorTranche = trancheFab.newTranche(currency, seniorToken);
         seniorMemberlist = memberlistFab.newMemberlist();
         seniorOperator = operatorFab.newOperator(seniorTranche);
