@@ -137,11 +137,12 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
 
 
     constructor(uint challengeTime_) {
-        wards[msg.sender] = 1;
         challengeTime = challengeTime_;
-
         lastEpochClosed = block.timestamp;
         currentEpoch = 1;
+
+        wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     function file(bytes32 name, uint value) public auth {

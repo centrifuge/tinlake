@@ -60,10 +60,11 @@ contract Assessor is Definitions, Auth, Interest {
     LendingAdapter  public lending;
 
     constructor() {
-        wards[msg.sender] = 1;
         seniorInterestRate.value = ONE;
         lastUpdateSeniorInterest = block.timestamp;
         seniorRatio.value = 0;
+        wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     function depend(bytes32 contractName, address addr) public auth {

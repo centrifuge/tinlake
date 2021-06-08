@@ -106,7 +106,7 @@ contract Clerk is Auth, Interest {
     SpotterLike public spotter;
     JugLike public jug;
 
-    ERC20Like public dai;
+    ERC20Like public immutable dai;
     ERC20Like public collateral;
 
     uint public constant WAD = 10*18;
@@ -133,9 +133,10 @@ contract Clerk is Auth, Interest {
     }
 
     constructor(address dai_, address collateral_) {
-        wards[msg.sender] = 1;
-        dai =  ERC20Like(dai_);
+        dai = ERC20Like(dai_);
         collateral =  ERC20Like(collateral_);
+        wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     function depend(bytes32 contractName, address addr) public auth {

@@ -54,11 +54,11 @@ contract MemberAdminTest is DSTest {
 
     function testUpdateMembersAsAdmin() public {
         memberAdmin.relyAdmin(address(this));
-        updateMember();
+        updateMembers();
     }
 
     function testFailUpdateMembersAsNonAdmin() public {
         memberAdmin.denyAdmin(address(this));
-        updateMember();
+        updateMembers();
     }
 }
