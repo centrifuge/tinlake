@@ -128,6 +128,17 @@ contract ClerkTest is Assertions, Interest {
         assertEq(clerk.debt(), 115.7625 ether);
     }
 
+    function testStabilityFeeWithJug() public {
+        uint interestRatePerSecond = uint(1000000564701133626865910626);     // 5 % day
+        jug.setReturn("ilks_duty", safeSub(interestRatePerSecond, ONE));
+
+        jug.setReturn("base", 0);
+        assertEq(clerk.stabilityFee(), safeSub(interestRatePerSecond, ONE));
+        
+        jug.setReturn("base", ONE);
+        assertEq(clerk.stabilityFee(), interestRatePerSecond);
+    }
+
     function raise(uint amountDAI) public{
         uint creditlineInit = clerk.creditline();
         uint remainingCreditInit = clerk.remainingCredit();
