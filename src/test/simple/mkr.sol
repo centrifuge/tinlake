@@ -17,7 +17,7 @@ interface ERC20Like {
 // implements mgr, spotter, vat interfaces
 contract JugMock {
     uint public duty;
-    uint public base = 10**27;
+    uint public base = 0;
     function file(bytes32 what, uint value) external {
         if(what == "duty") {
           duty = value;
