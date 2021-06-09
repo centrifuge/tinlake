@@ -69,7 +69,7 @@ contract AdapterDeployer {
     }
 
     function deployClerk() public {
-        require(lenderDeployer.seniorToken() != address(0));
+        require(address(clerk) == address(0) && lenderDeployer.seniorToken() != address(0) && mkrDeployer == address(1));
         clerk = clerkFab.newClerk(lenderDeployer.currency(), lenderDeployer.seniorToken());
 
         address assessor = lenderDeployer.assessor();

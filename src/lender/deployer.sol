@@ -75,6 +75,7 @@ contract LenderDeployer is FixedPoint {
     address             public juniorMemberlist;
 
     address             public deployer;
+    bool public wired;
 
     constructor(address root_, address currency_, address trancheFab_, address memberlistFab_, address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_, address operatorFab_, address poolAdminFab_, address memberAdmin_, address adapterDeployer_) {
         deployer = msg.sender;
@@ -171,6 +172,9 @@ contract LenderDeployer is FixedPoint {
     function deploy() public virtual {
         require(coordinator != address(0) && assessor != address(0) &&
                 reserve != address(0) && seniorTranche != address(0));
+    
+        require(!wired, "lender contracts already wired"); // make sure lender contracts only wired once
+        wired = true;
 
         // required depends
         // reserve

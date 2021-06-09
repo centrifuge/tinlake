@@ -46,6 +46,7 @@ contract BorrowerDeployer is FixedPoint {
     Fixed27 public discountRate;
 
     address constant ZERO = address(0);
+    bool public wired;
 
     constructor (
       address root_,
@@ -100,6 +101,7 @@ contract BorrowerDeployer is FixedPoint {
     }
 
     function deployFeed() public {
+        require(feed == ZERO);
         feed = feedFab.newFeed();
         AuthLike(feed).rely(root);
     }
@@ -107,6 +109,8 @@ contract BorrowerDeployer is FixedPoint {
     function deploy() public {
         // ensures all required deploy methods were called
         require(shelf != ZERO && collector != ZERO);
+        require(!wired, "borrower contracts already wired"); // make sure borrower contracts only wired once
+        wired = true;
 
         // shelf allowed to call
         AuthLike(pile).rely(shelf);
