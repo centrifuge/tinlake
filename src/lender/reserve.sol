@@ -49,7 +49,7 @@ contract Reserve is Math, Auth {
     address pot;
 
     // total currency in the reserve
-    uint public totalBalance;
+    uint public balance_;
 
     constructor(address currency_) {
         currency = ERC20Like(currency_);
@@ -82,13 +82,18 @@ contract Reserve is Math, Auth {
         } else revert();
     }
 
+    // returns the amount of currency currently in the reserve
+    function totalBalance() public view returns (uint) {
+        return balance_;
+    }
+
     // return the amount of currency and the available currency from the lending adapter
     function totalBalanceAvailable() public view returns (uint) {
         if(address(lending) == address(0)) {
-            return totalBalance;
+            return balance_;
         }
 
-        return safeAdd(totalBalance, lending.remainingCredit());
+        return safeAdd(balance_, lending.remainingCredit());
     }
 
     // deposits currency in the the reserve
@@ -104,14 +109,14 @@ contract Reserve is Math, Auth {
 
     function _depositAction(address usr, uint currencyAmount) internal {
         require(currency.transferFrom(usr, pot, currencyAmount), "reserve-deposit-failed");
-        totalBalance = safeAdd(totalBalance, currencyAmount);
+        balance_ = safeAdd(balance_, currencyAmount);
     }
 
     function _deposit(address usr, uint currencyAmount) internal {
         _depositAction(usr, currencyAmount);
         if(address(lending) != address(0) && lending.debt() > 0 && lending.activated()) {
             uint wipeAmount = lending.debt();
-            uint available = totalBalance;
+            uint available = balance_;
             if(available < wipeAmount) {
                 wipeAmount = available;
             }
@@ -127,7 +132,7 @@ contract Reserve is Math, Auth {
 
     function _payoutAction(address usr, uint currencyAmount) internal {
         require(currency.transferFrom(pot, usr, currencyAmount), "reserve-payout-failed");
-        totalBalance = safeSub(totalBalance, currencyAmount);
+        balance_ = safeSub(balance_, currencyAmount);
     }
 
     // hard payout guarantees that the currency stays in the reserve
@@ -136,7 +141,7 @@ contract Reserve is Math, Auth {
     }
 
     function _payout(address usr, uint currencyAmount)  internal {
-        uint reserveBalance = totalBalance;
+        uint reserveBalance = balance_;
         if (currencyAmount > reserveBalance && address(lending) != address(0) && lending.activated()) {
             uint drawAmount = safeSub(currencyAmount, reserveBalance);
             uint left = lending.remainingCredit();
