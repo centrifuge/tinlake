@@ -17,7 +17,10 @@ interface MemberlistLike {
     function hasMember(address) external view returns (bool);
     function member(address) external;
 }
-
+/**
+TODO:
+- do we need a max stake threshold, to ensure there's sufficient returns?
+ */
 contract Bookrunner is Auth, Math, FixedPoint {
 
 	NAVFeedLike navFeed;
@@ -59,8 +62,8 @@ contract Bookrunner is Auth, Math, FixedPoint {
 	mapping (bytes32 => Fixed27) public writtenOff;
 
 	// minted/burned amount per (nftID, underwriter) tuple
-	mapping (bytes32 => mapping (address => Fixed27)) public minted;
-	mapping (bytes32 => mapping (address => Fixed27)) public burned;
+	mapping (bytes32 => mapping (address => uint)) public minted;
+	mapping (bytes32 => mapping (address => uint)) public burned;
 
 	MemberlistLike public memberlist; 
 	
@@ -121,11 +124,13 @@ contract Bookrunner is Auth, Math, FixedPoint {
 		navFeed.update(nftID, risk, value);
 	}
 
-	function stake(bytes32 nftID, uint risk, uint value, uint stakeAmount) public memberOnly {
+	function addStake(bytes32 nftID, uint risk, uint value, uint stakeAmount) public memberOnly {
 		require(acceptedProposals[nftID].length == 0, "asset-already-accepted");
 		
 		uint senderStake = staked[msg.sender];
 		require(safeSub(juniorToken.balanceOf(msg.sender), senderStake) >= stakeAmount, "insufficient-balance");
+
+		// TODO: check burned[nftID][underwriter]
 
 		bytes memory proposal = abi.encodePacked(risk, value);
 		uint prevStake = perUnderwriterStake[nftID][proposal][msg.sender];
@@ -141,6 +146,7 @@ contract Bookrunner is Auth, Math, FixedPoint {
 	// Instead, the underwriter can move their stake to a new asset.
 	function moveStake(uint fromNftId, uint fromRisk, uint fromValue, bytes32 toNftId, uint toRisk, uint toValue, uint stakeAmount) public memberOnly {
 		require(acceptedProposals[toNftId].length == 0, "asset-already-accepted");
+		// TODO: check burned[nftID][underwriter]
 		// TODO: how to handle stake that was supposed to be burned? Maybe not allow move if writtenOff[formNftID] > 0?
 
 		// remove staked from old proposal
@@ -164,17 +170,34 @@ contract Bookrunner is Auth, Math, FixedPoint {
 			bytes memory acceptedProposal = acceptedProposals[nftID];
 			uint256 relativeStake = rdiv(perUnderwriterStake[nftID][acceptedProposal][msg.sender], proposals[nftID][acceptedProposal]);
 			tokensToBeMinted = safeAdd(tokensToBeMinted, rmul(relativeStake, repaid[nftID].value));
-			tokensToBeMinted = safeAdd(tokensToBeMinted, rmul(relativeStake, writtenOff[nftID].value));
+			tokensToBeBurned = safeAdd(tokensToBeBurned, rmul(relativeStake, writtenOff[nftID].value));
 		}
-
-		// TODO: how to store that tokens were already minted/burned
 
 		return (tokensToBeMinted, tokensToBeBurned);
 	}
 
 	// Called from tranche, not directly, hence the auth modifier
-	function disburse(address underwriter, uint minted, uint burned) public auth {
+	// TODO: this is duplicating calcStakedDisburse partially
+	function disburse(address underwriter) public auth returns (uint, uint) {
+		bytes32[] memory nftIDs = underwriterStakes[underwriter];
 
+		uint tokensToBeMinted = 0;
+		uint tokensToBeBurned = 0;
+		for (uint i = 0; i < nftIDs.length; i++) {
+			bytes32 nftID = nftIDs[i];
+			bytes memory acceptedProposal = acceptedProposals[nftID];
+			uint256 relativeStake = rdiv(perUnderwriterStake[nftID][acceptedProposal][msg.sender], proposals[nftID][acceptedProposal]);
+
+			uint newlyMinted = rmul(relativeStake, repaid[nftID].value);
+			uint newlyBurned = rmul(relativeStake, writtenOff[nftID].value);
+			minted[nftID][underwriter] = newlyMinted;
+			burned[nftID][underwriter] = newlyBurned;
+
+			tokensToBeMinted = safeAdd(tokensToBeMinted, newlyMinted);
+			tokensToBeBurned = safeAdd(tokensToBeMinted, newlyBurned);
+		}
+
+		return (tokensToBeMinted, tokensToBeBurned);
 	}
 
 }

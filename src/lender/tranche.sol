@@ -30,6 +30,7 @@ interface CoordinatorLike {
 abstract contract BookrunnerLike is FixedPoint {
     function staked(address) public virtual view returns (uint);
     function calcStakedDisburse(address) public virtual view returns (uint, uint);
+    function disburse(address) public virtual returns (uint, uint);
 }
 
 contract Tranche is Math, Auth, FixedPoint {
@@ -192,7 +193,6 @@ contract Tranche is Math, Auth, FixedPoint {
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
     }
 
-    // TODO: calcDisburse and calcStakedDisburse should be merged
     function calcStakedDisburse(address usr) public view returns (uint tokensToBeMinted, uint tokensToBeBurned) {
         if (address(bookrunner) != address(0)) {
             (tokensToBeMinted, tokensToBeBurned) = bookrunner.calcStakedDisburse(usr);
@@ -204,12 +204,15 @@ contract Tranche is Math, Auth, FixedPoint {
         return (tokensToBeMinted, tokensToBeBurned);
     }
 
-    // TODO: disburse and disburseStaked should be merged
-    function disburseStaked(address usr) public auth {
-        (uint tokensToBeMinted, uint tokensToBeBurned) = calcStakedDisburse(usr);
+    function disburseStaked(address usr) public auth returns (uint tokensToBeMinted, uint tokensToBeBurned) {
+        require(address(bookrunner) != address(0));
+
+        (tokensToBeMinted, tokensToBeBurned) = bookrunner.disburse(usr);
 
         if (tokensToBeMinted > 0) mint(usr, tokensToBeMinted);
         if (tokensToBeBurned > 0) burn(usr, tokensToBeBurned);
+
+        return (tokensToBeMinted, tokensToBeBurned);
     }
 
     // the disburse function can be used after an epoch is over to receive currency and tokens
