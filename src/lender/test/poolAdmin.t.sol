@@ -150,18 +150,18 @@ contract PoolAdminTest is DSTest {
         poolAdmin.updateSeniorMembers(users, validUntil);
 
         assertEq(seniorMemberlist.calls("updateMembers"), 1);
-        assertEq(seniorMemberlist.values_address("updateMember_usr"), users[users.length]);
-        assertEq(seniorMemberlist.values_uint("updateMember_validUntil"), validUntil);
+        assertEq(seniorMemberlist.values_address("updateMembers_usr"), address(3));
+        assertEq(seniorMemberlist.values_uint("updateMembers_validUntil"), validUntil);
     }
 
     function testUpdateSeniorMembersAsAdmin() public {
         poolAdmin.relyAdmin(address(this));
-        updateSeniorMember();
+        updateSeniorMembers();
     }
 
     function testFailUpdateSeniorMembersAsNonAdmin() public {
         poolAdmin.denyAdmin(address(this));
-        updateSeniorMember();
+        updateSeniorMembers();
     }
 
     // Test junior memberlist
@@ -190,18 +190,18 @@ contract PoolAdminTest is DSTest {
         poolAdmin.updateJuniorMembers(users, validUntil);
 
         assertEq(juniorMemberlist.calls("updateMembers"), 1);
-        assertEq(juniorMemberlist.values_address("updateMember_usr"), users[users.length]);
-        assertEq(juniorMemberlist.values_uint("updateMember_validUntil"), validUntil);
+        assertEq(juniorMemberlist.values_address("updateMembers_usr"), address(3));
+        assertEq(juniorMemberlist.values_uint("updateMembers_validUntil"), validUntil);
     }
 
     function testUpdateJuniorMembersAsAdmin() public {
         poolAdmin.relyAdmin(address(this));
-        updateJuniorMember();
+        updateJuniorMembers();
     }
 
     function testFailUpdateJuniorMembersAsNonAdmin() public {
         poolAdmin.denyAdmin(address(this));
-        updateJuniorMember();
+        updateJuniorMembers();
     }
 
 }
