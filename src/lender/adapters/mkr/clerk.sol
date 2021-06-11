@@ -416,7 +416,7 @@ contract Clerk is Auth, Interest {
     function stabilityFee() public view returns(uint) {
         // mkr.duty is the stability fee in the mkr system
         (uint duty, ) =  jug.ilks(ilk());
-        return duty;
+        return safeAdd(jug.base(), duty);
     }
 
     function ilk() public view returns (bytes32) {
