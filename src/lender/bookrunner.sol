@@ -13,6 +13,11 @@ interface ERC20Like {
 	function balanceOf(address) external view returns (uint);
 }
 
+interface MemberlistLike {
+    function hasMember(address) external view returns (bool);
+    function member(address) external;
+}
+
 contract Bookrunner is Auth, Math, FixedPoint {
 
 	NAVFeedLike navFeed;
@@ -22,16 +27,14 @@ contract Bookrunner is Auth, Math, FixedPoint {
 	uint minimumDeposit = 10 ether;
 
 	// Stake threshold required relative to the NFT value
-	Fixed27 minimumStakeThreshold = Fixed27(0.02 * 10**27);
+	Fixed27 minimumStakeThreshold = Fixed27(0.10 * 10**27);
 
-	// % of the repaid amount that is minted in new TIN tokens for the underwriters
-	Fixed27 mintProportion = Fixed27(0.01 * 10**27); 
-
-	// % of the written off amount that is burned in TIN tokens for the underwriters
+	// % of the repaid/written off amount that is minted/burned in TIN tokens for the underwriters
+	Fixed27 mintProportion = Fixed27(0.01 * 10**27);
 	Fixed27 slashProportion = Fixed27(0.01 * 10**27); 
 
 	// Time from proposal until it can be accepted
-	uint challengeTime = 12 hours;
+	uint challengeTime = 30 minutes;
 
 	// Total amount that is staked for each (nftID, (risk, value)) tuple
 	mapping (bytes32 => mapping (bytes => uint)) public proposals;
@@ -59,6 +62,13 @@ contract Bookrunner is Auth, Math, FixedPoint {
 	mapping (bytes32 => mapping (address => Fixed27)) public minted;
 	mapping (bytes32 => mapping (address => Fixed27)) public burned;
 
+	MemberlistLike public memberlist; 
+	
+	modifier memberOnly {
+			require(memberlist.hasMember(msg.sender), "not-allowed-to-underwrite");
+			_;
+	}
+
 	constructor() {
 		wards[msg.sender] = 1;
 		emit Rely(msg.sender);
@@ -75,14 +85,70 @@ contract Bookrunner is Auth, Math, FixedPoint {
 			mintProportion = Fixed27(value);
 		} else if (name == "slashProportion") {
 			slashProportion = Fixed27(value);
-		} else { revert("unkown-name");}
+		} else { revert("unknown-name");}
 	}
 
 	function depend(bytes32 contractName, address addr) public auth {
 		if (contractName == "juniorToken") { juniorToken = ERC20Like(addr); }
 		else if (contractName == "navFeed") { navFeed = NAVFeedLike(addr); }
+  	else if (contractName == "memberlist") { memberlist = MemberlistLike(addr); }
 		else revert();
 	}
+
+	function propose(bytes32 nftID, uint risk, uint value, uint deposit) public {
+		require(deposit >= minimumDeposit, "min-deposit-required");
+		require(acceptedProposals[nftID].length == 0, "asset-already-accepted");
+
+		uint senderStake = staked[msg.sender];
+		require(safeSub(juniorToken.balanceOf(msg.sender), senderStake) >= deposit, "insufficient-balance");
+
+		bytes memory proposal = abi.encodePacked(risk, value); // TODO: this is a bit of trick, can probably be done more efficiently
+		require(proposals[nftID][proposal] == 0, "proposal-already-exists");
+
+		proposals[nftID][proposal] = deposit;
+		perUnderwriterStake[nftID][proposal][msg.sender] = deposit;
+		underwriterStakes[msg.sender].push(nftID);
+		minChallengePeriodEnd[nftID] = block.timestamp + challengeTime;
+		staked[msg.sender] = safeAdd(senderStake, deposit);
+	}
+
+	function accept(bytes32 nftID, uint risk, uint value) public memberOnly {
+		bytes memory proposal = abi.encodePacked(risk, value);
+		require(minChallengePeriodEnd[nftID] >= block.timestamp, "challenge-period-not-ended");
+		require(rmul(minimumStakeThreshold.value, proposals[nftID][proposal]) >= value, "stake-threshold-not-reached");
+		
+		acceptedProposals[nftID] = proposal;
+		navFeed.update(nftID, risk, value);
+	}
+
+	function stake(bytes32 nftID, uint risk, uint value, uint stakeAmount) public memberOnly {
+		require(acceptedProposals[nftID].length == 0, "asset-already-accepted");
+		
+		uint senderStake = staked[msg.sender];
+		require(safeSub(juniorToken.balanceOf(msg.sender), senderStake) >= stakeAmount, "insufficient-balance");
+
+		bytes memory proposal = abi.encodePacked(risk, value);
+		uint prevStake = perUnderwriterStake[nftID][proposal][msg.sender];
+		uint newStake = safeAdd(prevStake, stakeAmount);
+
+		proposals[nftID][proposal] = newStake;
+		perUnderwriterStake[nftID][proposal][msg.sender] = newStake;
+		underwriterStakes[msg.sender].push(nftID);
+		staked[msg.sender] = safeAdd(senderStake, stakeAmount);
+	}
+
+	// For gas efficiency, stake isn't automatically removed from an asset when another proposal is accepted.
+	// Instead, the underwriter can move their stake to a new asset.
+	function moveStake(uint fromNftId, uint fromRisk, uint fromValue, bytes32 toNftId, uint toRisk, uint toValue, uint stakeAmount) public memberOnly {
+		require(acceptedProposals[toNftId].length == 0, "asset-already-accepted");
+		// TODO: how to handle stake that was supposed to be burned? Maybe not allow move if writtenOff[formNftID] > 0?
+
+		// remove staked from old proposal
+		// add staked to new proposal 
+		
+	}
+
+	// TODO: function cancelStake()
 
 	function assetWasAccepted(bytes32 nftID) public view returns (bool) {
 		return acceptedProposals[nftID].length != 0;
@@ -106,63 +172,9 @@ contract Bookrunner is Auth, Math, FixedPoint {
 		return (tokensToBeMinted, tokensToBeBurned);
 	}
 
+	// Called from tranche, not directly, hence the auth modifier
 	function disburse(address underwriter, uint minted, uint burned) public auth {
 
 	}
-
-	function propose(bytes32 nftID, uint risk, uint value, uint deposit) public {
-		require(deposit >= minimumDeposit, "min-deposit-required");
-		require(acceptedProposals[nftID].length == 0, "asset-already-accepted");
-
-		uint senderStake = staked[msg.sender];
-		require(safeSub(juniorToken.balanceOf(msg.sender), senderStake) >= deposit, "insufficient-balance");
-
-		bytes memory proposal = abi.encodePacked(risk, value);
-		require(proposals[nftID][proposal] == 0, "proposal-already-exists");
-
-		proposals[nftID][proposal] = deposit;
-		perUnderwriterStake[nftID][proposal][msg.sender] = deposit;
-		underwriterStakes[msg.sender].push(nftID);
-		minChallengePeriodEnd[nftID] = block.timestamp + challengeTime;
-		staked[msg.sender] = safeAdd(senderStake, deposit);
-	}
-
-	function accept(bytes32 nftID, uint risk, uint value) public {
-		bytes memory proposal = abi.encodePacked(risk, value);
-		require(minChallengePeriodEnd[nftID] >= block.timestamp, "challenge-period-not-ended");
-		require(rmul(minimumStakeThreshold.value, proposals[nftID][proposal]) >= value, "stake-threshold-not-reached");
-		
-		acceptedProposals[nftID] = proposal;
-		navFeed.update(nftID, risk, value);
-	}
-
-	function stake(bytes32 nftID, uint risk, uint value, uint stakeAmount) public {
-		require(acceptedProposals[nftID].length == 0, "asset-already-accepted");
-		
-		uint senderStake = staked[msg.sender];
-		require(safeSub(juniorToken.balanceOf(msg.sender), senderStake) >= stakeAmount, "insufficient-balance");
-
-		bytes memory proposal = abi.encodePacked(risk, value);
-		uint prevStake = perUnderwriterStake[nftID][proposal][msg.sender];
-		uint newStake = safeAdd(prevStake, stakeAmount);
-
-		proposals[nftID][proposal] = newStake;
-		perUnderwriterStake[nftID][proposal][msg.sender] = newStake;
-		underwriterStakes[msg.sender].push(nftID);
-		staked[msg.sender] = safeAdd(senderStake, stakeAmount);
-	}
-
-	// For gas efficiency, stake isn't automatically removed from an asset when another proposal is accepted.
-	// Instead, the underwriter can move their stake to a new asset.
-	function moveStake(uint fromNftId, uint fromRisk, uint fromValue, bytes32 toNftId, uint toRisk, uint toValue, uint stakeAmount) public {
-		require(acceptedProposals[toNftId].length == 0, "asset-already-accepted");
-		// TODO: how to handle stake that was supposed to be burned? Maybe not allow move if writtenOff[formNftID] > 0?
-
-		// remove staked from old proposal
-		// add staked to new proposal 
-		
-	}
-
-	// TODO: function cancelStake()
 
 }
