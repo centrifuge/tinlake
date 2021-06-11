@@ -32,8 +32,9 @@ contract Operator is Auth {
     event RedeemOrder(uint indexed amount);
 
     constructor(address tranche_) {
-        wards[msg.sender] = 1;
         tranche = TrancheLike(tranche_);
+        wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     // sets the dependency to another contract

@@ -46,6 +46,7 @@ contract PoolAdmin is Auth {
 
     constructor() {
         wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     function depend(bytes32 contractName, address addr) public auth {

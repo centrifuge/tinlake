@@ -57,6 +57,7 @@ contract Collector is Auth {
         pile = PileLike(pile_);
         threshold = ThresholdRegistryLike(threshold_);
         wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     // sets the dependency to another contract

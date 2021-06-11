@@ -49,6 +49,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
     constructor () {
         wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     function init() public {

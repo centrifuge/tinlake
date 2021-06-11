@@ -52,10 +52,11 @@ contract Reserve is Math, Auth {
     uint public balance_;
 
     constructor(address currency_) {
-        wards[msg.sender] = 1;
         currency = ERC20Like(currency_);
         pot = address(this);
         currency.approve(pot, type(uint256).max);
+        wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     function file(bytes32 what, uint amount) public auth {
