@@ -23,8 +23,9 @@ TODO:
  */
 contract Bookrunner is Auth, Math, FixedPoint {
 
-	NAVFeedLike navFeed;
-	ERC20Like juniorToken;
+	NAVFeedLike public navFeed;
+	ERC20Like public juniorToken;
+	MemberlistLike public memberlist; 
 
 	// Absolute min TIN required to propose a new asset
 	uint minimumDeposit = 10 ether;
@@ -57,7 +58,8 @@ contract Bookrunner is Auth, Math, FixedPoint {
 	// (risk, value) pair for each nftID that was accepted
 	mapping (bytes32 => bytes) public acceptedProposals;
 
-	// % repaid and % written off per nftID
+	// Amount repaid and written off per nftID
+	// TODO: can't we just retrieve these from the navFeed directly?
 	mapping (bytes32 => Fixed27) public repaid;
 	mapping (bytes32 => Fixed27) public writtenOff;
 
@@ -65,12 +67,7 @@ contract Bookrunner is Auth, Math, FixedPoint {
 	mapping (bytes32 => mapping (address => uint)) public minted;
 	mapping (bytes32 => mapping (address => uint)) public burned;
 
-	MemberlistLike public memberlist; 
-	
-	modifier memberOnly {
-			require(memberlist.hasMember(msg.sender), "not-allowed-to-underwrite");
-			_;
-	}
+	modifier memberOnly { require(memberlist.hasMember(msg.sender), "not-allowed-to-underwrite"); _; }
 
 	constructor() {
 		wards[msg.sender] = 1;
@@ -98,14 +95,14 @@ contract Bookrunner is Auth, Math, FixedPoint {
 		else revert();
 	}
 
-	function propose(bytes32 nftID, uint risk, uint value, uint deposit) public {
+	function propose(bytes32 nftID, uint risk, uint value, uint deposit) public memberOnly {
 		require(deposit >= minimumDeposit, "min-deposit-required");
 		require(acceptedProposals[nftID].length == 0, "asset-already-accepted");
 
 		uint senderStake = staked[msg.sender];
 		require(safeSub(juniorToken.balanceOf(msg.sender), senderStake) >= deposit, "insufficient-balance");
 
-		bytes memory proposal = abi.encodePacked(risk, value); // TODO: this is a bit of trick, can probably be done more efficiently
+		bytes memory proposal = abi.encodePacked(risk, value); // TODO: this is a bit of trick, can probably be done more efficiently, or maybe even off-chain
 		require(proposals[nftID][proposal] == 0, "proposal-already-exists");
 
 		proposals[nftID][proposal] = deposit;
@@ -151,10 +148,14 @@ contract Bookrunner is Auth, Math, FixedPoint {
 
 		// remove staked from old proposal
 		// add staked to new proposal 
+
+		// if full stake is moved, underwriterStakes[msg.sender].remove(nftID) (only if fully minted/burned)
 		
 	}
 
-	// TODO: function cancelStake()
+	// TODO: function cancelStake() public memberOnly
+	// TODO: check burned[nftID][underwriter]
+	// if full stake is cancelled, underwriterStakes[msg.sender].remove(nftID)(only if fully minted/burned)
 
 	function assetWasAccepted(bytes32 nftID) public view returns (bool) {
 		return acceptedProposals[nftID].length != 0;
@@ -169,8 +170,8 @@ contract Bookrunner is Auth, Math, FixedPoint {
 			bytes32 nftID = nftIDs[i];
 			bytes memory acceptedProposal = acceptedProposals[nftID];
 			uint256 relativeStake = rdiv(perUnderwriterStake[nftID][acceptedProposal][msg.sender], proposals[nftID][acceptedProposal]);
-			tokensToBeMinted = safeAdd(tokensToBeMinted, rmul(relativeStake, repaid[nftID].value));
-			tokensToBeBurned = safeAdd(tokensToBeBurned, rmul(relativeStake, writtenOff[nftID].value));
+			tokensToBeMinted = safeAdd(tokensToBeMinted, rmul(mintProportion.value, rmul(relativeStake, repaid[nftID].value)));
+			tokensToBeBurned = safeAdd(tokensToBeBurned, rmul(slashProportion.value, rmul(relativeStake, writtenOff[nftID].value)));
 		}
 
 		return (tokensToBeMinted, tokensToBeBurned);
@@ -188,8 +189,8 @@ contract Bookrunner is Auth, Math, FixedPoint {
 			bytes memory acceptedProposal = acceptedProposals[nftID];
 			uint256 relativeStake = rdiv(perUnderwriterStake[nftID][acceptedProposal][msg.sender], proposals[nftID][acceptedProposal]);
 
-			uint newlyMinted = rmul(relativeStake, repaid[nftID].value);
-			uint newlyBurned = rmul(relativeStake, writtenOff[nftID].value);
+			uint newlyMinted = rmul(mintProportion.value, rmul(relativeStake, repaid[nftID].value));
+			uint newlyBurned = rmul(slashProportion.value, rmul(relativeStake, writtenOff[nftID].value));
 			minted[nftID][underwriter] = newlyMinted;
 			burned[nftID][underwriter] = newlyBurned;
 
