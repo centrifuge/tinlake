@@ -251,14 +251,9 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     function dripSeniorDebt() public returns (uint) {
-        uint newSeniorDebt = seniorDebt();
-
-        if (newSeniorDebt > seniorDebt_) {
-            seniorDebt_ = newSeniorDebt;
-            lastUpdateSeniorInterest = block.timestamp;
-        }
-
-        return seniorDebt_;
+        uint newSeniorDebt_ = seniorDebt();
+        lastUpdateSeniorInterest = block.timestamp;
+        return newSeniorDebt_;
     }
 
     function seniorDebt() public view returns (uint) {
