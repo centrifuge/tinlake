@@ -282,16 +282,20 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         return rdiv(amount, rpow(discountRate.value, safeSub(maturityDate_, normalizedBlockTimestamp), ONE));
     }
 
+    function calcTotalDiscount() public view returns(uint) {
+        (uint sum, ) = _calcTotalDiscount();
+        return sum;
+    }
 
     // calculates the total discount of all buckets with a timestamp > block.timestamp
-    function calcTotalDiscount() public view returns(uint) {
+    function _calcTotalDiscount() internal view returns(uint, uint) {
         uint normalizedBlockTimestamp = uniqueDayTimestamp(block.timestamp);
         uint sum = 0;
 
         uint currDate = discountStartPointer;
 
         if (currDate > lastBucket  || discountStartPointer == 0) {
-            return 0;
+            return (0, discountStartPointer);
         }
 
         while(currDate != NullDate && currDate < normalizedBlockTimestamp) {
@@ -299,31 +303,38 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         }
 
         // next time we can start here to find the next first bucket in the future
-       // discountStartPointer = currDate;
+        uint nextStartPointer = currDate;
 
         while(currDate != NullDate)
         {
             sum = safeAdd(sum, calcDiscount(buckets[currDate].value, normalizedBlockTimestamp, currDate));
             currDate = buckets[currDate].next;
         }
-        return sum;
+        return (sum, nextStartPointer);
+    }
+
+    function currentNAV() public view returns(uint) {
+        (uint nav, ) = _currentNAV();
+        return nav;
     }
 
     // returns the NAV (net asset value) of the pool
-    function currentNAV() public view returns(uint) {
+    function _currentNAV() internal view returns(uint, uint) {
         // calculates the NAV for ongoing loans with a maturityDate date in the future
-        uint nav_ = calcTotalDiscount();
+        (uint nav_, uint nextStartPointer) = _calcTotalDiscount();
         // include ovedue assets to the current NAV calculation
         for (uint i = 0; i < writeOffs.length; i++) {
             // multiply writeOffGroupDebt with the writeOff rate
             nav_ = safeAdd(nav_, rmul(pile.rateDebt(writeOffs[i].rateGroup), writeOffs[i].percentage.value));
         }
-        return nav_;
+        return (nav_, nextStartPointer);
     }
 
     function calcUpdateNAV() public returns(uint) {
         // approximated NAV is updated and at this point in time 100% correct
-        approximatedNAV = currentNAV();
+        (uint nav, uint nextStartPointer) = _currentNAV();
+        approximatedNAV = nav;
+        discountStartPointer = nextStartPointer;
         return approximatedNAV;
     }
 
