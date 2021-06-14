@@ -299,7 +299,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         }
 
         // next time we can start here to find the next first bucket in the future
-        discountStartPointer = currDate;
+       // discountStartPointer = currDate;
 
         while(currDate != NullDate)
         {
@@ -336,10 +336,22 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         return buckets[timestamp].value;
     }
 
-    function addBucket(uint timestamp, uint value) public {
+    function addBucket(uint timestamp, uint value) public override {
         if (timestamp < discountStartPointer || discountStartPointer == 0) {
             discountStartPointer = timestamp;
         }
+        super.addBucket(timestamp, value);
     }
 
+    function removeBucket(uint timestamp) public override {
+        if(timestamp == discountStartPointer) {
+            if(buckets[timestamp].next != NullDate) {
+                discountStartPointer = buckets[timestamp].next;
+            } else {
+                discountStartPointer = 0;
+            }
+
+        }
+        super.removeBucket(timestamp);
+    }
 }
