@@ -47,6 +47,9 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     uint constant public  WRITE_OFF_PHASE_A = 1001;
     uint constant public  WRITE_OFF_PHASE_B = 1002;
 
+    // first bucket in the future since last update
+    uint public discountStartPointer;
+
     constructor () {
         wards[msg.sender] = 1;
     }
@@ -285,16 +288,18 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         uint normalizedBlockTimestamp = uniqueDayTimestamp(block.timestamp);
         uint sum = 0;
 
-        uint currDate = normalizedBlockTimestamp;
+        uint currDate = discountStartPointer;
 
-        if (currDate > lastBucket) {
+        if (currDate > lastBucket  || discountStartPointer == 0) {
             return 0;
         }
 
-        // only buckets after the block.timestamp are relevant for the discount
-        // assuming its more gas efficient to iterate over time to find the first one instead of iterating the list from the beginning
-        // not true if buckets are only sparsely populated over long periods of time
-        while(buckets[currDate].next == 0) { currDate = currDate + 1 days; }
+        while(currDate != NullDate && currDate < normalizedBlockTimestamp) {
+            currDate = buckets[currDate].next;
+        }
+
+        // next time we can start here to find the next first bucket in the future
+        discountStartPointer = currDate;
 
         while(currDate != NullDate)
         {
@@ -330,4 +335,11 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     function dateBucket(uint timestamp) public view returns (uint) {
         return buckets[timestamp].value;
     }
+
+    function addBucket(uint timestamp, uint value) public {
+        if (timestamp < discountStartPointer || discountStartPointer == 0) {
+            discountStartPointer = timestamp;
+        }
+    }
+
 }
