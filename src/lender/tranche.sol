@@ -62,6 +62,11 @@ contract Tranche is Math, Auth, FixedPoint {
 
     bool public waitingForUpdate = false;
 
+    event Depend(bytes32 indexed contractName, address addr);
+    event Mint(address indexed usr, uint amount);
+    event Burn(address indexed usr, uint amount);
+    event AuthTransfer(address indexed erc20, address usr, uint amount);
+
     modifier orderAllowed(address usr) {
         require((users[usr].supplyCurrencyAmount == 0 && users[usr].redeemTokenAmount == 0)
         || users[usr].orderedInEpoch == coordinator.currentEpoch(), "disburse required");
@@ -89,6 +94,7 @@ contract Tranche is Math, Auth, FixedPoint {
         else if (contractName == "reserve") {reserve = ReserveLike(addr);}
         else if (contractName == "coordinator") {coordinator = CoordinatorLike(addr);}
         else revert();
+        emit Depend(contractName, addr);
     }
 
     // supplyOrder function can be used to place or revoke an supply
@@ -266,6 +272,7 @@ contract Tranche is Math, Auth, FixedPoint {
             tokenAmount = max;
         }
         token.burn(address(this), tokenAmount);
+        emit Burn(address(this), tokenAmount);
     }
 
     function safePayout(uint currencyAmount) internal returns(uint payoutAmount) {
@@ -314,6 +321,7 @@ contract Tranche is Math, Auth, FixedPoint {
     // interface is required for adapters
     function mint(address usr, uint amount) public auth {
         token.mint(usr, amount);
+        emit Mint(usr, amount);
     }
 
     // adjust currency balance after epoch execution -> receive/send currency from/to reserve
@@ -345,6 +353,7 @@ contract Tranche is Math, Auth, FixedPoint {
     // recovery transfer can be used by governance to recover funds if tokens are stuck
     function authTransfer(address erc20, address usr, uint amount) public auth {
         ERC20Like(erc20).transfer(usr, amount);
+        emit AuthTransfer(erc20, usr, amount);
     }
 
     // due to rounding in token & currency conversions currency & token balances might be off by 1 wei with the totalSupply/totalRedeem amounts.

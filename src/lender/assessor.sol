@@ -59,6 +59,9 @@ contract Assessor is Definitions, Auth, Interest {
     ReserveLike     public reserve;
     LendingAdapter  public lending;
 
+    event Depend(bytes32 indexed contractName, address addr);
+    event File(bytes32 indexed name, uint value);
+
     constructor() {
         seniorInterestRate.value = ONE;
         lastUpdateSeniorInterest = block.timestamp;
@@ -79,6 +82,7 @@ contract Assessor is Definitions, Auth, Interest {
         } else if (contractName == "lending") {
             lending = LendingAdapter(addr);
         } else revert();
+        emit Depend(contractName, addr);
     }
 
     function file(bytes32 name, uint value) public auth {
@@ -98,6 +102,7 @@ contract Assessor is Definitions, Auth, Interest {
         } else {
             revert("unknown-variable");
         }
+        emit File(name, value);
     }
 
     function reBalance(uint seniorAsset_, uint seniorRatio_) internal {

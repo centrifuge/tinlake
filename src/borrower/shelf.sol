@@ -71,6 +71,7 @@ contract Shelf is Auth, TitleOwned, Math {
     event Lock(uint indexed loan);
     event Unlock(uint indexed loan);
     event Claim(uint indexed loan, address usr);
+    event Depend(bytes32 indexed contractName, address addr);
 
     constructor(address currency_, address title_, address pile_, address ceiling_) TitleOwned(title_) {
         currency = TokenLike(currency_);
@@ -96,6 +97,7 @@ contract Shelf is Auth, TitleOwned, Math {
         else if (contractName == "reserve") { reserve = ReserveLike(addr);}
         else if (contractName == "subscriber") { subscriber = SubscriberLike(addr);}
         else revert();
+        emit Depend(contractName, addr);
     }
 
     function token(uint loan) public view returns (address registry, uint nft) {
