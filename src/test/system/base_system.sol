@@ -2,14 +2,12 @@
 pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "ds-test/test.sol";
 import "./setup.sol";
 
 import "./users/admin.sol";
 import "./users/investor.sol";
 import "./users/borrower.sol";
 import "./users/keeper.sol";
-import "tinlake-math/math.sol";
 import {BaseTypes} from "../../lender/test/coordinator-base.t.sol";
 import "./assertions.sol";
 
@@ -200,7 +198,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         tokenId = collateralNFT.issue(borrower_);
         loan = setupLoan(tokenId, collateralNFT_, nftPrice, DEFAULT_RISK_GROUP_TEST_LOANS, maturityDate);
         borrower.approveNFT(collateralNFT, address(shelf));
-
+        
         uint preBalance = currency.balanceOf(borrower_);
         borrower.borrowAction(loan, borrowAmount);
 

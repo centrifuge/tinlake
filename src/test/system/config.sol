@@ -49,7 +49,7 @@ contract Config {
             juniorTokenSymbol: "TIN",
             mkrMAT: 1.10 * 10**27,
             mkrStabilityFee: 10**27,
-            mkrILK: "drop"
+            mkrILK: "drop"  
         });
     }
 }

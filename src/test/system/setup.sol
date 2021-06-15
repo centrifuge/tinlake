@@ -47,6 +47,7 @@ import { TestRoot } from "./root.sol";
 import "../simple/token.sol";
 import "tinlake-erc20/erc20.sol";
 
+
 import { TokenLike, NFTFeedLike } from "./interfaces.sol";
 
 import {SimpleMkr} from "./../simple/mkr.sol";
@@ -56,6 +57,7 @@ import "../../borrower/test/mock/shelf.sol";
 import "../../lender/test/mock/navFeed.sol";
 import "../../lender/adapters/mkr/test/mock/spotter.sol";
 import "./config.sol";
+
 
 // abstract contract
 abstract contract LenderDeployerLike {
@@ -101,7 +103,7 @@ interface AdapterDeployerLike {
     function deploy(bool) external;
 }
 
-abstract contract TestSetup is Config  {
+abstract contract TestSetup is Config {
     Title public collateralNFT;
     address      public collateralNFT_;
     SimpleToken  public currency;
@@ -155,11 +157,12 @@ abstract contract TestSetup is Config  {
 
     function deployContracts() public virtual {
         bool mkrAdapter = false;
+        bool wireMgr = false;
         TinlakeConfig memory defaultConfig = defaultConfig();
-        deployContracts(mkrAdapter, defaultConfig);
+        deployContracts(mkrAdapter, wireMgr, defaultConfig);
     }
 
-    function deployContracts(bool mkrAdapter, TinlakeConfig memory config) public virtual {
+    function deployContracts(bool mkrAdapter, bool wireMgr, TinlakeConfig memory config) public virtual {
         deployTestRoot();
         deployCollateralNFT();
         deployCurrency();
@@ -168,7 +171,7 @@ abstract contract TestSetup is Config  {
         prepareDeployLender(root_, mkrAdapter);
         deployLender(mkrAdapter, config);
 
-        root.prepare(lenderDeployerAddr, address(borrowerDeployer), address(adapterDeployer));
+        root.prepare(lenderDeployerAddr, address(borrowerDeployer), address(adapterDeployer), wireMgr);
         root.deploy();
         deploymentConfig = config;
     }
@@ -272,6 +275,7 @@ abstract contract TestSetup is Config  {
 
     function deployLender() public virtual {
         bool mkrAdapter = false;
+        bool wireMgr = false;
         TinlakeConfig memory defaultConfig = defaultConfig();
         deployLender(mkrAdapter, defaultConfig);
         deploymentConfig = defaultConfig;
@@ -286,7 +290,6 @@ abstract contract TestSetup is Config  {
 
         lenderDeployer.init(config.minSeniorRatio, config.maxSeniorRatio, config.maxReserve, config.challengeTime, config.seniorInterestRate, config.seniorTokenName,
             config.seniorTokenSymbol, config.juniorTokenName, config.juniorTokenSymbol);
-
         adapterDeployer.initMKR(address(lenderDeployer), address(mkr), address(spotter), address(mkr), jug_, address(0), address(0), address(0), 0.01 * 10**27);
     }
 
@@ -307,7 +310,6 @@ abstract contract TestSetup is Config  {
 
     function deployLender(bool mkrAdapter, TinlakeConfig memory config) public virtual {
         LenderDeployerLike ld = LenderDeployerLike(lenderDeployerAddr);
-
         if (mkrAdapter) {
             _initMKR(config);
         } else {
@@ -322,17 +324,14 @@ abstract contract TestSetup is Config  {
         ld.deployAssessor();
         ld.deployPoolAdmin();
         ld.deployCoordinator();
-
-        if (mkrAdapter) {
-            adapterDeployer.deployClerk(root_, currency_);
-            clerk = Clerk(adapterDeployer.clerk());
-        }
+       
 
         ld.deploy();
         fetchContractAddr(ld);
-
+        
         if (mkrAdapter) {
-            adapterDeployer.deploy();
+            adapterDeployer.deployClerk();
+            clerk = Clerk(adapterDeployer.clerk());
         }
     }
 }
