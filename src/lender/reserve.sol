@@ -51,6 +51,9 @@ contract Reserve is Math, Auth {
     // total currency in the reserve
     uint public balance_;
 
+    event File(bytes32 indexed what, uint amount);
+    event Depend(bytes32 contractName, address addr);
+
     constructor(address currency_) {
         currency = ERC20Like(currency_);
         pot = address(this);
@@ -63,6 +66,7 @@ contract Reserve is Math, Auth {
         if (what == "currencyAvailable") {
             currencyAvailable = amount;
         } else revert();
+        emit File(what, amount);
     }
 
     function depend(bytes32 contractName, address addr) public auth {
@@ -80,6 +84,7 @@ contract Reserve is Math, Auth {
         } else if (contractName == "lending") {
             lending = LendingAdapter(addr);
         } else revert();
+        emit Depend(contractName, addr);
     }
 
     // returns the amount of currency currently in the reserve
