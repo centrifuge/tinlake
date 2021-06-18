@@ -145,7 +145,7 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     function calcJuniorTokenPrice() external view returns(uint) {
-        return _calcJuniorTokenPrice(navFeed.currentNAV(), reserve.totalBalance());
+        return _calcJuniorTokenPrice(navFeed.approximatedNAV(), reserve.totalBalance());
     }
 
     function calcJuniorTokenPrice(uint nav_, uint) public view returns (uint) {
@@ -153,7 +153,7 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     function calcTokenPrices() external view returns (uint, uint) {
-        uint epochNAV = navFeed.currentNAV();
+        uint epochNAV = navFeed.approximatedNAV();
         uint epochReserve = reserve.totalBalance();
         return calcTokenPrices(epochNAV, epochReserve);
     }
@@ -251,13 +251,8 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     function dripSeniorDebt() public returns (uint) {
-        uint newSeniorDebt = seniorDebt();
-
-        if (newSeniorDebt > seniorDebt_) {
-            seniorDebt_ = newSeniorDebt;
-            lastUpdateSeniorInterest = block.timestamp;
-        }
-
+        seniorDebt_ = seniorDebt();
+        lastUpdateSeniorInterest = block.timestamp;
         return seniorDebt_;
     }
 

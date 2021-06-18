@@ -327,6 +327,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         root.relyContract(address(pile), address(this));
         pile.changeRate(firstLoan, nftFeed.WRITE_OFF_PHASE_A());
 
+        nftFeed_.calcUpdateNAV();
         assertTrue(mkrAssessor.calcSeniorTokenPrice() > 0);
         assertEq(mkrAssessor.calcJuniorTokenPrice(), 0);
         assertTrue(clerk.debt() > clerk.cdpink());

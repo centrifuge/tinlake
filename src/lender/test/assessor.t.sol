@@ -250,6 +250,18 @@ contract AssessorTest is DSTest, Math {
         assertEq(assessor.seniorDebt(), 110.25 ether);
     }
 
+    function testFirstDrip() public {
+        uint interestRate = uint(1000000564701133626865910626);
+        assessor.file("seniorInterestRate", interestRate);
+        
+        hevm.warp(block.timestamp + 1 days);
+        assessor.dripSeniorDebt();
+
+        // first drip should already update lastUpdateSeniorInterest, even if seniorDebt_ is unset,
+        // to prevent it being applied twice.
+        assertEq(assessor.lastUpdateSeniorInterest(), block.timestamp);
+    }
+    
     function testCalcSeniorTokenPrice() public {
         uint nav = 10 ether;
         navFeed.setReturn("approximatedNAV", nav);
