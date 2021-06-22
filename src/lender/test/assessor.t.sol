@@ -151,6 +151,20 @@ contract AssessorTest is DSTest, Math {
         assertEq(assessor.seniorBalance(), seniorSupply - 8 ether);
     }
 
+    function testChangeSeniorAssetRatioExceedsONE() public {  
+        uint seniorSupply =  300 ether;
+        uint seniorRedeem = 0;
+
+        navFeed.setReturn("approximatedNAV", 200 ether);
+        reserveMock.setReturn("balance", 0 ether);
+
+        assessor.changeSeniorAsset(seniorSupply, seniorRedeem);
+    
+        // assert seniorRatio does not exceed ONE
+        assertEq(assessor.seniorRatio(), ONE);
+    }
+
+
     function testChangeSeniorAssetOnlySenior() public {
         uint seniorSupply =  100 ether;
         uint seniorRedeem = 0;
@@ -260,6 +274,18 @@ contract AssessorTest is DSTest, Math {
         // first drip should already update lastUpdateSeniorInterest, even if seniorDebt_ is unset,
         // to prevent it being applied twice.
         assertEq(assessor.lastUpdateSeniorInterest(), block.timestamp);
+    }
+
+    function testCalcSeniorTokenPriceWithSupplyRoundingError() public {
+        uint nav = 10 ether;
+        navFeed.setReturn("approximatedNAV", nav);
+        uint seniorTokenSupply = 2; // set value in range of supply rounding tolearnce
+        reserveMock.setReturn("balance", 100 ether);
+        seniorTranche.setReturn("tokenSupply", seniorTokenSupply);
+
+        uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, 123123 ether);
+        // assert senior token price is ONE
+        assertEq(seniorTokenPrice, ONE);
     }
     
     function testCalcSeniorTokenPrice() public {

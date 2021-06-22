@@ -109,9 +109,6 @@ contract Assessor is Definitions, Auth, Interest {
         // re-balancing according to new ratio
         // we use the approximated NAV here because during the submission period
         // new loans might have been repaid in the meanwhile which are not considered in the epochNAV
-        if(seniorRatio_ > ONE) {
-            seniorRatio_ = ONE;
-        }
 
         seniorDebt_ = rmul(navFeed.approximatedNAV(), seniorRatio_);
         if(seniorDebt_ > seniorAsset_) {
@@ -129,6 +126,12 @@ contract Assessor is Definitions, Auth, Interest {
         uint seniorAsset_ = calcExpectedSeniorAsset(seniorRedeem, seniorSupply, seniorBalance_, dripSeniorDebt());
 
         uint seniorRatio_ = calcSeniorRatio(seniorAsset_, nav_, reserve_);
+        
+        // make sure senior Ratio never exceeds ONE
+        if(seniorRatio_ > ONE) {
+            seniorRatio_ = ONE;
+        }
+
         reBalance(seniorAsset_, seniorRatio_);
         seniorRatio = Fixed27(seniorRatio_);
     }
@@ -170,7 +173,7 @@ contract Assessor is Definitions, Auth, Interest {
     function _calcSeniorTokenPrice(uint nav_, uint reserve_) internal view returns(uint) {
         // the coordinator interface will pass the reserveAvailable
 
-        if ((nav_ == 0 && reserve_ == 0) || seniorTranche.tokenSupply() == 0) {
+        if ((nav_ == 0 && reserve_ == 0) || seniorTranche.tokenSupply() <= 2) { // we are using a tolerance of 2 here, as there can be minimal supply leftovers after all redemptions due to rounding
             // initial token price at start 1.00
             return ONE;
         }
@@ -188,7 +191,7 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     function _calcJuniorTokenPrice(uint nav_, uint reserve_) internal view returns (uint) {
-        if ((nav_ == 0 && reserve_ == 0) || juniorTranche.tokenSupply() == 0) {
+        if ((nav_ == 0 && reserve_ == 0) || juniorTranche.tokenSupply() <= 2) { // we are using a tolerance of 2 here, as there can be minimal supply leftovers after all redemptions due to rounding
             // initial token price at start 1.00
             return ONE;
         }
