@@ -157,12 +157,11 @@ abstract contract TestSetup is Config {
 
     function deployContracts() public virtual {
         bool mkrAdapter = false;
-        bool wireMgr = false;
         TinlakeConfig memory defaultConfig = defaultConfig();
-        deployContracts(mkrAdapter, wireMgr, defaultConfig);
+        deployContracts(mkrAdapter, defaultConfig);
     }
 
-    function deployContracts(bool mkrAdapter, bool wireMgr, TinlakeConfig memory config) public virtual {
+    function deployContracts(bool mkrAdapter, TinlakeConfig memory config) public virtual {
         deployTestRoot();
         deployCollateralNFT();
         deployCurrency();
@@ -171,7 +170,7 @@ abstract contract TestSetup is Config {
         prepareDeployLender(root_, mkrAdapter);
         deployLender(mkrAdapter, config);
 
-        root.prepare(lenderDeployerAddr, address(borrowerDeployer), address(adapterDeployer), wireMgr);
+        root.prepare(lenderDeployerAddr, address(borrowerDeployer), address(adapterDeployer));
         root.deploy();
         deploymentConfig = config;
     }
@@ -275,7 +274,6 @@ abstract contract TestSetup is Config {
 
     function deployLender() public virtual {
         bool mkrAdapter = false;
-        bool wireMgr = false;
         TinlakeConfig memory defaultConfig = defaultConfig();
         deployLender(mkrAdapter, defaultConfig);
         deploymentConfig = defaultConfig;
@@ -290,7 +288,7 @@ abstract contract TestSetup is Config {
 
         lenderDeployer.init(config.minSeniorRatio, config.maxSeniorRatio, config.maxReserve, config.challengeTime, config.seniorInterestRate, config.seniorTokenName,
             config.seniorTokenSymbol, config.juniorTokenName, config.juniorTokenSymbol);
-        adapterDeployer.initMKR(address(lenderDeployer), address(mkr), address(spotter), address(mkr), jug_, address(0), address(0), address(0), 0.01 * 10**27);
+        adapterDeployer.initMKR(address(lenderDeployer), address(mkr), address(spotter), address(mkr), jug_, address(0), 0.01 * 10**27);
     }
 
     function fetchContractAddr(LenderDeployerLike ld) internal {

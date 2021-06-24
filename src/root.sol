@@ -47,8 +47,6 @@ contract TinlakeRoot is Auth {
     address public          oracle;
     address[] public        poolAdmins;
 
-    bool public wireAdapter;
-
     constructor (address deployUsr_, address governance_) {
         deployUsr = deployUsr_;
         governance = governance_;
@@ -57,7 +55,7 @@ contract TinlakeRoot is Auth {
 
     // --- Prepare ---
     // Sets the two deployer dependencies. This needs to be called by the deployUsr
-    function prepare(address lender_, address borrower_, address adapter_, address oracle_, address[] memory poolAdmins_, bool wireAdapter_) public {
+    function prepare(address lender_, address borrower_, address adapter_, address oracle_, address[] memory poolAdmins_) public {
         require(deployUsr == msg.sender);
         
         borrowerDeployer = BorrowerDeployerLike(borrower_);
@@ -65,17 +63,12 @@ contract TinlakeRoot is Auth {
         if (adapter_ != address(0)) adapterDeployer = AdapterDeployerLike(adapter_);
         oracle = oracle_;
         poolAdmins = poolAdmins_;
-        wireAdapter = wireAdapter_;
 
         deployUsr = address(0); // disallow the deploy user to call this more than once.
     }
 
-    function prepare(address lender_, address borrower_, address adapter_, bool wireAdapter_) public {
-        prepare(lender_, borrower_, adapter_, address(0), new address[](0), wireAdapter_);
-    }
-
     function prepare(address lender_, address borrower_) public {
-        prepare(lender_, borrower_, address(0), address(0), new address[](0), false);
+        prepare(lender_, borrower_, address(0), address(0), new address[](0));
     }
 
     // --- Deploy ---
@@ -107,11 +100,6 @@ contract TinlakeRoot is Auth {
 
         for (uint i = 0; i < poolAdmins.length; i++) {
             PoolAdminLike(poolAdmin).relyAdmin(poolAdmins[i]);
-        }
-        if (wireAdapter) {
-            AuthLike(adapterDeployer.mgr()).rely(address(adapterDeployer));
-            adapterDeployer.wireAdapter();
-            AuthLike(adapterDeployer.mgr()).deny(address(adapterDeployer));   
         }
     }
     

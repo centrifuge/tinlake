@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.6.12;
 
-import { ClerkFabLike } from "../fabs/interfaces.sol";
+import { ClerkFabLike, TinlakeManagerFabLike } from "../fabs/interfaces.sol";
+
 interface LenderDeployerLike {
     function coordinator() external returns (address);
     function assessor() external returns (address);
@@ -44,14 +45,13 @@ interface DependLike {
 
 contract AdapterDeployer {
     ClerkFabLike public clerkFab;
+    TinlakeManagerFabLike public mgrFab;
     address public clerk;
-
-    address mkrDeployer;
+    address public mgr;
 
     address public root;
     LenderDeployerLike public lenderDeployer;
 
-    address public mgr;
     address public mkrVat;
     address public mkrSpotter;
     address public mkrJug;
@@ -62,14 +62,14 @@ contract AdapterDeployer {
     uint public matBuffer;
     bool public wired;
 
-    constructor(address root_, address clerkFabLike_) {
+    constructor(address root_, address clerkFabLike_, address mgrFabLike_) {
       root = root_;
       clerkFab = ClerkFabLike(clerkFabLike_);
-      mkrDeployer = msg.sender;
+      mgrFab = TinlakeManagerFabLike(mgrFabLike_);
     }
 
     function deployClerk() public {
-        require(address(clerk) == address(0) && lenderDeployer.seniorToken() != address(0) && mkrDeployer == address(1));
+        require(address(clerk) == address(0) && lenderDeployer.seniorToken() != address(0));
         clerk = clerkFab.newClerk(lenderDeployer.currency(), lenderDeployer.seniorToken());
 
         address assessor = lenderDeployer.assessor();
@@ -83,7 +83,6 @@ contract AdapterDeployer {
         DependLike(clerk).depend("reserve", reserve);
         DependLike(clerk).depend("tranche", seniorTranche);
         DependLike(clerk).depend("collateral", lenderDeployer.seniorToken());
-        DependLike(clerk).depend("mgr", mgr);
         DependLike(clerk).depend("spotter", mkrSpotter);
         DependLike(clerk).depend("vat", mkrVat);
         DependLike(clerk).depend("jug", mkrJug);
@@ -101,7 +100,6 @@ contract AdapterDeployer {
 
         // allow clerk to hold seniorToken
         MemberlistLike(seniorMemberlist).updateMember(clerk, type(uint256).max);
-        MemberlistLike(seniorMemberlist).updateMember(mgr, type(uint256).max);
 
         DependLike(assessor).depend("lending", clerk);
 
@@ -113,34 +111,31 @@ contract AdapterDeployer {
         AuthLike(clerk).deny(address(this));
     }
 
-    function initMKR(address lenderDeployer_, address mgr_, address mkrSpotter_, address mkrVat_, address mkrJug_, address mkrUrn_, address mkrLiq_, address mkrEnd_, uint matBuffer_) public {
-        require(mkrDeployer == msg.sender);
+    function deployMgr(address lenderDeployer_, address dai_, address daiJoin_, address end_, address vat_, address vow_, address urn_, address liq_) public {
+        require(address(mgr) == address(0) && lenderDeployer.seniorToken() != address(0));
         lenderDeployer = LenderDeployerLike(lenderDeployer_);
-        mgr = mgr_;
-        mkrSpotter = mkrSpotter_;
-        mkrVat = mkrVat_;
-        mkrJug = mkrJug_;
-        mkrUrn = mkrUrn_;
-        mkrLiq = mkrLiq_;
-        mkrEnd = mkrEnd_;
-        matBuffer = matBuffer_;
-        mkrDeployer = address(1);
-    }
 
-    function wireAdapter() public {
-        require(!wired, "adapter already wired"); // make sure adapter only wired once
-        wired = true;
+        // deploy mgr
+        mgr = mgrFab.newTinlakeManager(dai_, daiJoin_, lenderDeployer.seniorToken(), lenderDeployer.seniorOperator(), lenderDeployer.seniorTranche(), end_, vat_, vow_);
+
         // setup mgr
         MgrLike mkrMgr = MgrLike(mgr);
         mkrMgr.rely(clerk);
-        mkrMgr.file("urn", mkrUrn);
-        mkrMgr.file("liq", mkrLiq);
-        mkrMgr.file("end", mkrEnd);
+        mkrMgr.file("urn", urn_);
+        mkrMgr.file("liq", liq_);
+        mkrMgr.file("end", end_);
         mkrMgr.file("owner", clerk);
-        mkrMgr.file("pool", lenderDeployer.seniorOperator());
-        mkrMgr.file("tranche", lenderDeployer.seniorTranche());
+
+        // wire mgr
+        MemberlistLike(lenderDeployer.seniorMemberlist()).updateMember(mgr, type(uint256).max);
+        DependLike(clerk).depend("mgr", mgr);
+
         // lock token
         mkrMgr.lock(1 ether);
+
+        // rely root, deny adapter deployer
+        AuthLike(mgr).rely(root);
+        AuthLike(mgr).deny(address(this));
     }
 }
 
