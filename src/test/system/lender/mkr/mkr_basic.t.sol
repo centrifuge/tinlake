@@ -15,9 +15,8 @@ contract MKRTestBasis is TestSuite, Interest {
         hevm = Hevm(HEVM_ADDRESS);
 
         bool mkrAdapter = true;
-        bool wireMgr = false;
         TinlakeConfig memory defaultConfig = defaultConfig();
-        deployContracts(mkrAdapter, wireMgr, defaultConfig);
+        deployContracts(mkrAdapter, defaultConfig);
         createTestUsers(); 
 
         nftFeed_ = NFTFeedLike(address(nftFeed));

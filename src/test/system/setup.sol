@@ -170,7 +170,7 @@ abstract contract TestSetup is Config {
         prepareDeployLender(root_, mkrAdapter);
         deployLender(mkrAdapter, config);
 
-        root.prepare(lenderDeployerAddr, address(borrowerDeployer), address(adapterDeployer));
+        root.prepare(lenderDeployerAddr, address(borrowerDeployer));
         root.deploy();
         deploymentConfig = config;
     }
@@ -236,7 +236,7 @@ abstract contract TestSetup is Config {
         AssessorFab assessorFab = new AssessorFab();
         ClerkFab clerkFab = new ClerkFab();
 
-        adapterDeployer = new AdapterDeployer(rootAddr, address(clerkFab));
+        adapterDeployer = new AdapterDeployer(rootAddr, address(clerkFab), address(0));
 
         lenderDeployer = new LenderDeployer(rootAddr, currency_, address(trancheFab), address(memberlistFab),
             address(restrictedTokenFab), address(reserveFab), address(assessorFab), address(coordinatorFab),
@@ -288,7 +288,7 @@ abstract contract TestSetup is Config {
 
         lenderDeployer.init(config.minSeniorRatio, config.maxSeniorRatio, config.maxReserve, config.challengeTime, config.seniorInterestRate, config.seniorTokenName,
             config.seniorTokenSymbol, config.juniorTokenName, config.juniorTokenSymbol);
-        adapterDeployer.initMKR(address(lenderDeployer), address(mkr), address(spotter), address(mkr), jug_, address(0), 0.01 * 10**27);
+        // adapterDeployer.initMKR(address(lenderDeployer), address(mkr), address(spotter), address(mkr), jug_, address(0), 0.01 * 10**27);
     }
 
     function fetchContractAddr(LenderDeployerLike ld) internal {
@@ -328,7 +328,7 @@ abstract contract TestSetup is Config {
         fetchContractAddr(ld);
         
         if (mkrAdapter) {
-            adapterDeployer.deployClerk();
+            adapterDeployer.deployClerk(address(ld));
             clerk = Clerk(adapterDeployer.clerk());
         }
     }

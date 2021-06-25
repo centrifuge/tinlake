@@ -67,6 +67,10 @@ contract TinlakeRoot is Auth {
         deployUsr = address(0); // disallow the deploy user to call this more than once.
     }
 
+    function prepare(address lender_, address borrower_, address adapter_) public {
+        prepare(lender_, borrower_, adapter_, address(0), new address[](0));
+    }
+
     function prepare(address lender_, address borrower_) public {
         prepare(lender_, borrower_, address(0), address(0), new address[](0));
     }
