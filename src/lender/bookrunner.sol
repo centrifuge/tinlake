@@ -28,17 +28,17 @@ contract Bookrunner is Auth, Math, FixedPoint {
 	MemberlistLike public memberlist; 
 
 	// Absolute min TIN required to propose a new asset
-	uint minimumDeposit = 10 ether;
+	uint public minimumDeposit = 10 ether;
 
 	// Stake threshold required relative to the NFT value
-	Fixed27 minimumStakeThreshold = Fixed27(0.10 * 10**27);
+	Fixed27 public minimumStakeThreshold = Fixed27(0.10 * 10**27);
 
 	// % of the repaid/written off amount that is minted/burned in TIN tokens for the underwriters
-	Fixed27 mintProportion = Fixed27(0.01 * 10**27);
-	Fixed27 slashProportion = Fixed27(0.01 * 10**27); 
+	Fixed27 public mintProportion = Fixed27(0.01 * 10**27);
+	Fixed27 public slashProportion = Fixed27(0.01 * 10**27); 
 
 	// Time from proposal until it can be accepted
-	uint challengeTime = 30 minutes;
+	uint public challengeTime = 30 minutes;
 
 	// Total amount that is staked for each (nftID, (risk, value)) tuple
 	mapping (bytes32 => mapping (bytes => uint)) public proposals;
@@ -112,15 +112,6 @@ contract Bookrunner is Auth, Math, FixedPoint {
 		staked[msg.sender] = safeAdd(senderStake, deposit);
 	}
 
-	function accept(bytes32 nftID, uint risk, uint value) public memberOnly {
-		bytes memory proposal = abi.encodePacked(risk, value);
-		require(minChallengePeriodEnd[nftID] >= block.timestamp, "challenge-period-not-ended");
-		require(rmul(minimumStakeThreshold.value, proposals[nftID][proposal]) >= value, "stake-threshold-not-reached");
-		
-		acceptedProposals[nftID] = proposal;
-		navFeed.update(nftID, risk, value);
-	}
-
 	// Staking against can be done by staking with a value of 0.
 	function addStake(bytes32 nftID, uint risk, uint value, uint stakeAmount) public memberOnly {
 		require(acceptedProposals[nftID].length == 0, "asset-already-accepted");
@@ -131,13 +122,26 @@ contract Bookrunner is Auth, Math, FixedPoint {
 		// TODO: check burned[nftID][underwriter]
 
 		bytes memory proposal = abi.encodePacked(risk, value);
-		uint prevStake = perUnderwriterStake[nftID][proposal][msg.sender];
+		uint prevStake = proposals[nftID][proposal];
 		uint newStake = safeAdd(prevStake, stakeAmount);
-
 		proposals[nftID][proposal] = newStake;
-		perUnderwriterStake[nftID][proposal][msg.sender] = newStake;
+
+		uint prevPerUnderwriterStake = perUnderwriterStake[nftID][proposal][msg.sender];
+		uint newPerUnderwriterStake = safeAdd(prevPerUnderwriterStake, stakeAmount);
+		perUnderwriterStake[nftID][proposal][msg.sender] = newPerUnderwriterStake;
+
 		underwriterStakes[msg.sender].push(nftID);
 		staked[msg.sender] = safeAdd(senderStake, stakeAmount);
+	}
+
+	// TODO: this could be permissionless?
+	function accept(bytes32 nftID, uint risk, uint value) public memberOnly {
+		require(block.timestamp >= minChallengePeriodEnd[nftID], "challenge-period-not-ended");
+		bytes memory proposal = abi.encodePacked(risk, value);
+		require(proposals[nftID][proposal] >= rmul(minimumStakeThreshold.value, value), "stake-threshold-not-reached");
+		
+		acceptedProposals[nftID] = proposal;
+		navFeed.update(nftID, value, risk);
 	}
 
 	// For gas efficiency, stake isn't automatically removed from an asset when another proposal is accepted.
@@ -202,6 +206,11 @@ contract Bookrunner is Auth, Math, FixedPoint {
 		}
 
 		return (tokensToBeMinted, tokensToBeBurned);
+	}
+
+	function currentStake(bytes32 nftID, uint risk, uint value) public view returns (uint) {
+		bytes memory proposal = abi.encodePacked(risk, value);
+		return proposals[nftID][proposal];
 	}
 
 }

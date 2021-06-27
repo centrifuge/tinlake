@@ -85,3 +85,10 @@ interface MemberlistLike {
     function updateMember(address usr, uint validUntil) external;
     function removeMember(address usr, uint validUntil) external;
 }
+
+interface BookrunnerLike {
+    function memberlist() external view returns (address);
+    function propose(bytes32 nftID, uint risk, uint value, uint deposit) external;
+    function addStake(bytes32 nftID, uint risk, uint value, uint stakeAmount) external;
+    function accept(bytes32 nftID, uint risk, uint value) external;
+}
