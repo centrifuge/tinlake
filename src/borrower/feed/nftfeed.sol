@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.6.12;
+pragma experimental ABIEncoderV2;
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
+import "../../fixed_point.sol";
 
 interface ShelfLike {
     function shelf(uint loan) external view returns (address registry, uint tokenId);
@@ -21,8 +23,9 @@ interface PileLike {
     function rateDebt(uint rate) external view returns (uint);
 }
 
-interface BookrunnerLike {
-    function assetWasAccepted(bytes32) external view returns (bool);
+abstract contract BookrunnerLike is FixedPoint {
+    function assetWasAccepted(bytes32) public virtual view returns (bool);
+    function setRepaid(bytes32 nftID, Fixed27 memory percentage) public virtual;
 }
 
 // The NFTFeed stores values and risk group of nfts that are used as collateral in tinlake. A risk group contains: thresholdRatio, ceilingRatio & interstRate.

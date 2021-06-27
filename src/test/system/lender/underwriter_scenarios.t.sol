@@ -113,6 +113,30 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         borrower.borrowAction(loan, nftPrice);
     }
 
+    function testDisburseMintedTokens() public {
+        invest(700 ether, 300 ether);
+        (uint nftPrice, uint risk, uint value) = (200 ether, DEFAULT_RISK_GROUP_TEST_LOANS, 200 ether);
+        (bytes32 nftID, uint loan) = prepLoan(nftPrice);
+        wireBookrunner();
+
+        proposeAndStake(nftID, risk, value, 10 ether, 50 ether);
+        hevm.warp(block.timestamp + 1 hours);
+        issuer.accept(nftID, risk, value);
+
+        borrower.approveNFT(collateralNFT, address(shelf));
+        borrower.borrowAction(loan, nftPrice);
+
+        hevm.warp(block.timestamp + 4 days);
+        repayLoan(borrower_, loan, nftPrice);
+
+        (uint minted,) = juniorTranche.calcStakedDisburse(address(underwriter));
+        assertEq(minted, 20 ether);
+
+        // save pre juniorToken.totalSupply(), save juniorToken.balanceOf(address(underwriter))
+        // disburse()
+        // compare juniorToken.totalSupply(), compare juniorToken.balanceOf(address(underwriter))
+    }
+
     // --- Utils ---
     function invest(uint seniorSupplyAmount, uint juniorSupplyAmount) internal {
         seniorSupply(seniorSupplyAmount);
@@ -142,7 +166,6 @@ contract UnderwriterSystemTest is TestSuite, Interest {
 
         uint tokenId = collateralNFT.issue(borrower_);
         uint loan = setupLoan(tokenId, collateralNFT_, nftPrice, DEFAULT_RISK_GROUP_TEST_LOANS, block.timestamp + maturity);
-        // borrow(loan, tokenId, nftPrice, false);
 
         bytes32 nftID = nftFeed.nftID(loan);
         return (nftID, loan);
@@ -150,8 +173,13 @@ contract UnderwriterSystemTest is TestSuite, Interest {
 
     function wireBookrunner() internal {
         admin.relyNftFeed(address(this));
+        admin.relyJuniorTranche(address(this));
+
         nftFeed.depend("bookrunner", address(bookrunner));
         nftFeed.rely(address(bookrunner));
+
+        bookrunner.rely(address(nftFeed));
+        juniorTranche.depend("bookrunner", address(bookrunner));
     }
 
     function proposeAndStake(bytes32 nftID, uint risk, uint value, uint proposeAmount, uint stakeAmount) internal {
@@ -164,5 +192,4 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         assertEqTol(bookrunner.currentStake(nftID, risk, value), proposeAmount + stakeAmount, " postAddStake");
     }
 
-
- }
+}

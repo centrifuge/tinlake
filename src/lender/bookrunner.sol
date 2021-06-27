@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.6.12;
+pragma experimental ABIEncoderV2;
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 import "./../fixed_point.sol";
+import "ds-test/test.sol";
 
 interface NAVFeedLike {
 	function update(bytes32 nftID_, uint value, uint risk_) external;
@@ -21,7 +23,7 @@ interface MemberlistLike {
 TODO:
 - do we need a max stake threshold, to ensure there's sufficient returns?
  */
-contract Bookrunner is Auth, Math, FixedPoint {
+contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 
 	NAVFeedLike public navFeed;
 	ERC20Like public juniorToken;
@@ -166,16 +168,24 @@ contract Bookrunner is Auth, Math, FixedPoint {
 		return acceptedProposals[nftID].length != 0;
 	}
 
-	function calcStakedDisburse(address underwriter) public view returns (uint, uint) {
+	function calcStakedDisburse(address underwriter) public returns (uint, uint) {
 		bytes32[] memory nftIDs = underwriterStakes[underwriter];
 		uint tokensToBeMinted = 0;
 		uint tokensToBeBurned = 0;
 
 		for (uint i = 0; i < nftIDs.length; i++) {
 			bytes32 nftID = nftIDs[i];
+			emit log_named_bytes32("nftID", nftID);
 			bytes memory acceptedProposal = acceptedProposals[nftID];
-			uint256 relativeStake = rdiv(perUnderwriterStake[nftID][acceptedProposal][msg.sender], proposals[nftID][acceptedProposal]);
+			emit log_named_bytes("acceptedProposal", acceptedProposal);
+			uint256 relativeStake = rdiv(perUnderwriterStake[nftID][acceptedProposal][underwriter], proposals[nftID][acceptedProposal]);
+			emit log_named_uint("perUnderwriterStake[nftID][acceptedProposal][underwriter]", perUnderwriterStake[nftID][acceptedProposal][underwriter]);
+			emit log_named_uint("proposals[nftID][acceptedProposal]", proposals[nftID][acceptedProposal]);
+			emit log_named_uint("relativeStake", relativeStake);
 			tokensToBeMinted = safeAdd(tokensToBeMinted, rmul(mintProportion.value, rmul(relativeStake, repaid[nftID].value)));
+			emit log_named_uint("repaid[nftID].value", repaid[nftID].value);
+			emit log_named_uint("relativeStake", relativeStake);
+			emit log_named_uint("mintProportion.value", mintProportion.value);
 			tokensToBeBurned = safeAdd(tokensToBeBurned, rmul(slashProportion.value, rmul(relativeStake, writtenOff[nftID].value)));
 
 			// TODO: if an asset is defaulting and there was a vote against, part of the slash is going to this vote
@@ -206,6 +216,10 @@ contract Bookrunner is Auth, Math, FixedPoint {
 		}
 
 		return (tokensToBeMinted, tokensToBeBurned);
+	}
+
+	function setRepaid(bytes32 nftID, Fixed27 memory percentage) public auth {
+		repaid[nftID] = percentage;
 	}
 
 	function currentStake(bytes32 nftID, uint risk, uint value) public view returns (uint) {

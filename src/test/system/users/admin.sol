@@ -14,8 +14,9 @@ contract AdminUser {
     NFTFeedLike nftFeed;
     MemberlistLike juniorMemberlist;
     MemberlistLike seniorMemberlist;
+    TrancheLike juniorTranche;
 
-    constructor(address shelf_, address pile_, address nftFeed_, address title_, address reserve_, address collector_, address juniorMemberlist_, address seniorMemberlist_) {
+    constructor(address shelf_, address pile_, address nftFeed_, address title_, address reserve_, address collector_, address juniorMemberlist_, address seniorMemberlist_, address juniorTranche_) {
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
         title = Title(title_);
@@ -24,6 +25,7 @@ contract AdminUser {
         nftFeed = NFTFeedLike(nftFeed_);
         juniorMemberlist = MemberlistLike(juniorMemberlist_);
         seniorMemberlist = MemberlistLike(seniorMemberlist_);
+        juniorTranche = TrancheLike(juniorTranche_);
     }
 
     function priceNFT(bytes32 lookupId, uint nftPrice) public {
@@ -66,5 +68,9 @@ contract AdminUser {
 
     function relyNftFeed(address addr) public {
         nftFeed.rely(addr);
+    }
+
+    function relyJuniorTranche(address addr) public {
+        juniorTranche.rely(addr);
     }
 }

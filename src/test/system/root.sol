@@ -27,6 +27,7 @@ contract TestRoot is TinlakeRoot {
         LenderDeployer lD = LenderDeployer(address(lenderDeployer));
         relyContract(lD.juniorMemberlist(), usr);
         relyContract(lD.seniorMemberlist(), usr);
+        relyContract(lD.juniorTranche(), usr);
     }
 
     function denyBorrowerAdmin(address usr) public auth {

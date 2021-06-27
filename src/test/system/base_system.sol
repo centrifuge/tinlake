@@ -54,7 +54,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         randomUser_ = address(randomUser);
         keeper = new Keeper(address(collector), currency_);
         keeper_ = address(keeper);
-        admin = new AdminUser(address(shelf), address(pile), address(nftFeed), address(title), address(reserve), address(collector), address(juniorMemberlist), address(seniorMemberlist));
+        admin = new AdminUser(address(shelf), address(pile), address(nftFeed), address(title), address(reserve), address(collector), address(juniorMemberlist), address(seniorMemberlist), address(juniorTranche));
         admin_ = address(admin);
         root.relyBorrowerAdmin(admin_);
         root.relyLenderAdmin(admin_);

@@ -212,9 +212,6 @@ contract Shelf is Auth, TitleOwned, Math {
         ceiling.repay(loan, currencyAmount);
         pile.decDebt(loan, currencyAmount);
         reserve.balance();
-
-       //  Mint and transfer new + staked TIN to underwriters; underwriter.unstake(nftId)
-       
     }
 
     // locks an nft in the shelf

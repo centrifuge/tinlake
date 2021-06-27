@@ -70,6 +70,7 @@ interface ERC20Like {
 }
 
 interface TrancheLike {
+    function rely(address addr) external;
     function balance() external returns(uint);
     function tokenSupply() external returns(uint);
 }

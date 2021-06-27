@@ -6,7 +6,6 @@ import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
 import "./nftfeed.sol";
 import "./buckets.sol";
-import "../../fixed_point.sol";
 
 // The Nav Feed contract extends the functionality of the NFT Feed by the Net Asset Value (NAV) computation of a Tinlake pool.
 // NAV is computed as the sum of all discounted future values (fv) of ongoing loans (debt > 0) in the pool.
@@ -270,6 +269,10 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         if (buckets[maturityDate_].value == 0 && firstBucket != 0) {
             removeBucket(maturityDate_);
         }
+
+        //  Mint and transfer new + staked TIN to underwriters; underwriter.unstake(nftId)
+        // TODO: calculate actual repaid percentage
+        bookrunner.setRepaid(nftID_, Fixed27(100 * 10**25));
 
         // return decrease NAV amount
         return calcDiscount(safeSub(preFutureValue, fv), uniqueDayTimestamp(block.timestamp), maturityDate_);
