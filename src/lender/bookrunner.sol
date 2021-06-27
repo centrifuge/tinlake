@@ -121,6 +121,7 @@ contract Bookrunner is Auth, Math, FixedPoint {
 		navFeed.update(nftID, risk, value);
 	}
 
+	// Staking against can be done by staking with a value of 0.
 	function addStake(bytes32 nftID, uint risk, uint value, uint stakeAmount) public memberOnly {
 		require(acceptedProposals[nftID].length == 0, "asset-already-accepted");
 		
@@ -172,6 +173,8 @@ contract Bookrunner is Auth, Math, FixedPoint {
 			uint256 relativeStake = rdiv(perUnderwriterStake[nftID][acceptedProposal][msg.sender], proposals[nftID][acceptedProposal]);
 			tokensToBeMinted = safeAdd(tokensToBeMinted, rmul(mintProportion.value, rmul(relativeStake, repaid[nftID].value)));
 			tokensToBeBurned = safeAdd(tokensToBeBurned, rmul(slashProportion.value, rmul(relativeStake, writtenOff[nftID].value)));
+
+			// TODO: if an asset is defaulting and there was a vote against, part of the slash is going to this vote
 		}
 
 		return (tokensToBeMinted, tokensToBeBurned);

@@ -63,4 +63,8 @@ contract AdminUser {
     function fileFixedRate(uint rateGroup, uint rate) public {
         pile.file("fixedRate", rateGroup, rate);
     }
+
+    function relyNftFeed(address addr) public {
+        nftFeed.rely(addr);
+    }
 }

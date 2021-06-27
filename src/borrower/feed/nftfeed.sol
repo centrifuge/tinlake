@@ -156,7 +156,9 @@ contract BaseNFTFeed is Auth, Math {
 
     function currentCeiling(uint loan) public view returns(uint) {
         bytes32 nftID_ = nftID(loan);
-        require(address(bookrunner) == address(0) || bookrunner.assetWasAccepted(nftID_), "asset-requires-underwriting");
+
+        if (address(bookrunner) != address(0) && bookrunner.assetWasAccepted(nftID_) == false) return 0;
+        
         return rmul(nftValues[nftID_], ceilingRatio[risk[nftID_]]);
     }
 

@@ -21,6 +21,7 @@ interface TokenLike{
 }
 
 interface NFTFeedLike {
+    function rely(address addr) external;
     function update(bytes32 nftID, uint value) external;
     function update(bytes32 nftID, uint value, uint risk) external;
     function ceiling(uint loan) external view returns(uint);
