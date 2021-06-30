@@ -56,6 +56,7 @@ import {SimpleMkr} from "./../simple/mkr.sol";
 import "../../borrower/test/mock/shelf.sol";
 import "../../lender/test/mock/navFeed.sol";
 import "../../lender/adapters/mkr/test/mock/spotter.sol";
+import "../../lender/adapters/mkr/test/mock/vat.sol";
 import "./config.sol";
 
 
@@ -281,14 +282,9 @@ abstract contract TestSetup is Config {
 
     function _initMKR(TinlakeConfig memory config) public virtual {
         mkr = new SimpleMkr(config.mkrStabilityFee, config.mkrILK);
-        address jug_ = address(mkr.jugMock());
-
-        SpotterMock spotter = new SpotterMock();
-        spotter.setReturn("mat", config.mkrMAT);
 
         lenderDeployer.init(config.minSeniorRatio, config.maxSeniorRatio, config.maxReserve, config.challengeTime, config.seniorInterestRate, config.seniorTokenName,
             config.seniorTokenSymbol, config.juniorTokenName, config.juniorTokenSymbol);
-        // adapterDeployer.initMKR(address(lenderDeployer), address(mkr), address(spotter), address(mkr), jug_, address(0), 0.01 * 10**27);
     }
 
     function fetchContractAddr(LenderDeployerLike ld) internal {
@@ -330,6 +326,12 @@ abstract contract TestSetup is Config {
         if (mkrAdapter) {
             adapterDeployer.deployClerk(address(ld));
             clerk = Clerk(adapterDeployer.clerk());
+
+            VatMock vat = new VatMock();
+            SpotterMock spotter = new SpotterMock();
+            spotter.setReturn("mat", config.mkrMAT);
+
+            adapterDeployer.wireClerk(address(mkr), address(mkr), address(spotter), address(mkr.jugMock()), 0.01 * 10**27);
         }
     }
 }

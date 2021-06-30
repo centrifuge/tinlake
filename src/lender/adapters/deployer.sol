@@ -47,7 +47,7 @@ contract AdapterDeployer {
     ClerkFabLike public clerkFab;
     TinlakeManagerFabLike public mgrFab;
     address public clerk;
-    address public mgr;
+    MgrLike public mgr;
 
     address public root;
     LenderDeployerLike public lenderDeployer;
@@ -94,33 +94,40 @@ contract AdapterDeployer {
 
         DependLike(assessor).depend("lending", clerk);
 
-        // poolAdmin setup
-        DependLike(poolAdmin).depend("lending", clerk);
         AuthLike(clerk).rely(poolAdmin);
 
         AuthLike(clerk).rely(root);
-        AuthLike(clerk).deny(address(this));
     }
 
     function deployMgr(address dai, address daiJoin, address end, address vat, address vow, address urn, address liq, address spotter, address jug, uint matBuffer) public {
         require(deployUsr == msg.sender && address(clerk) != address(0) && address(mgr) == address(0) && lenderDeployer.seniorToken() != address(0));
 
         // deploy mgr
-        mgr = mgrFab.newTinlakeManager(dai, daiJoin, lenderDeployer.seniorToken(), lenderDeployer.seniorOperator(), lenderDeployer.seniorTranche(), end, vat, vow);
+        address mgr_ = mgrFab.newTinlakeManager(dai, daiJoin, lenderDeployer.seniorToken(), lenderDeployer.seniorOperator(), lenderDeployer.seniorTranche(), end, vat, vow);
+        wireClerk(mgr_, vat, spotter, jug, matBuffer);
 
         // setup mgr
-        MgrLike mkrMgr = MgrLike(mgr);
-        mkrMgr.rely(clerk);
-        mkrMgr.file("urn", urn);
-        mkrMgr.file("liq", liq);
-        mkrMgr.file("end", end);
-        mkrMgr.file("owner", clerk);
+        mgr = MgrLike(mgr_);
+        mgr.rely(clerk);
+        mgr.file("urn", urn);
+        mgr.file("liq", liq);
+        mgr.file("end", end);
+        mgr.file("owner", clerk);
 
-        // wire mgr
-        MemberlistLike(lenderDeployer.seniorMemberlist()).updateMember(mgr, type(uint256).max);
+        // lock token
+        mgr.lock(1 ether);
+
+        // rely root, deny adapter deployer
+        AuthLike(mgr_).rely(root);
+        AuthLike(mgr_).deny(address(this));
+    }
+
+    // This is separated as the system tests don't use deployMgr, but do need the clerk wiring
+    function wireClerk(address mgr_, address vat, address spotter, address jug, uint matBuffer) public {
+        require(deployUsr == msg.sender && address(clerk) != address(0));
 
         // wire clerk
-        DependLike(clerk).depend("mgr", mgr);
+        DependLike(clerk).depend("mgr", mgr_);
         DependLike(clerk).depend("spotter", spotter);
         DependLike(clerk).depend("vat", vat);
         DependLike(clerk).depend("jug", jug);
@@ -128,12 +135,10 @@ contract AdapterDeployer {
         // set the mat buffer
         FileLike(clerk).file("buffer", matBuffer);
 
-        // lock token
-        mkrMgr.lock(1 ether);
-
         // rely root, deny adapter deployer
-        AuthLike(mgr).rely(root);
-        AuthLike(mgr).deny(address(this));
+        AuthLike(clerk).deny(address(this));
+
+        MemberlistLike(lenderDeployer.seniorMemberlist()).updateMember(mgr_, type(uint256).max);
     }
 }
 
