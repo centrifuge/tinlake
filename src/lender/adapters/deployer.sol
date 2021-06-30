@@ -114,9 +114,6 @@ contract AdapterDeployer {
         mkrMgr.file("end", end);
         mkrMgr.file("owner", clerk);
 
-        // lock token
-        mkrMgr.lock(1 ether);
-
         // rely root, deny adapter deployer
         AuthLike(mgr).rely(root);
         AuthLike(mgr).deny(address(this));
