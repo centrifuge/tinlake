@@ -47,7 +47,7 @@ contract AdapterDeployer {
     ClerkFabLike public clerkFab;
     TinlakeManagerFabLike public mgrFab;
     address public clerk;
-    MgrLike public mgr;
+    address public mgr;
 
     address public root;
     LenderDeployerLike public lenderDeployer;
@@ -103,23 +103,23 @@ contract AdapterDeployer {
         require(deployUsr == msg.sender && address(clerk) != address(0) && address(mgr) == address(0) && lenderDeployer.seniorToken() != address(0));
 
         // deploy mgr
-        address mgr_ = mgrFab.newTinlakeManager(dai, daiJoin, lenderDeployer.seniorToken(), lenderDeployer.seniorOperator(), lenderDeployer.seniorTranche(), end, vat, vow);
-        wireClerk(mgr_, vat, spotter, jug, matBuffer);
+        mgr = mgrFab.newTinlakeManager(dai, daiJoin, lenderDeployer.seniorToken(), lenderDeployer.seniorOperator(), lenderDeployer.seniorTranche(), end, vat, vow);
+        wireClerk(mgr, vat, spotter, jug, matBuffer);
 
         // setup mgr
-        mgr = MgrLike(mgr_);
-        mgr.rely(clerk);
-        mgr.file("urn", urn);
-        mgr.file("liq", liq);
-        mgr.file("end", end);
-        mgr.file("owner", clerk);
+        MgrLike mkrMgr = MgrLike(mgr);
+        mkrMgr.rely(clerk);
+        mkrMgr.file("urn", urn);
+        mkrMgr.file("liq", liq);
+        mkrMgr.file("end", end);
+        mkrMgr.file("owner", clerk);
 
         // lock token
-        mgr.lock(1 ether);
+        mkrMgr.lock(1 ether);
 
         // rely root, deny adapter deployer
-        AuthLike(mgr_).rely(root);
-        AuthLike(mgr_).deny(address(this));
+        AuthLike(mgr).rely(root);
+        AuthLike(mgr).deny(address(this));
     }
 
     // This is separated as the system tests don't use deployMgr, but do need the clerk wiring
