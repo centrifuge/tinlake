@@ -33,7 +33,7 @@ import { OperatorFab } from "../../lender/fabs/operator.sol";
 import { LenderDeployer } from "../../lender/deployer.sol";
 
 // MKR
-import { MKRLenderDeployer } from "../../lender/adapters/mkr/deployer.sol";
+import { AdapterDeployer } from "../../lender/adapters/deployer.sol";
 import { ClerkFab } from "../../lender/adapters/mkr/fabs/clerk.sol";
 
 import { Title } from "tinlake-title/title.sol";
@@ -47,6 +47,7 @@ import { TestRoot } from "./root.sol";
 import "../simple/token.sol";
 import "tinlake-erc20/erc20.sol";
 
+
 import { TokenLike, NFTFeedLike } from "./interfaces.sol";
 
 import {SimpleMkr} from "./../simple/mkr.sol";
@@ -55,7 +56,9 @@ import {SimpleMkr} from "./../simple/mkr.sol";
 import "../../borrower/test/mock/shelf.sol";
 import "../../lender/test/mock/navFeed.sol";
 import "../../lender/adapters/mkr/test/mock/spotter.sol";
+import "../../lender/adapters/mkr/test/mock/vat.sol";
 import "./config.sol";
+
 
 // abstract contract
 abstract contract LenderDeployerLike {
@@ -94,10 +97,14 @@ abstract contract LenderDeployerLike {
     function deployCoordinator() public virtual;
 
     function deploy() public virtual;
-    function deployMkr() public virtual;
 }
 
-abstract contract TestSetup is Config  {
+interface AdapterDeployerLike {
+    function deployClerk() external;
+    function deploy(bool) external;
+}
+
+abstract contract TestSetup is Config {
     Title public collateralNFT;
     address      public collateralNFT_;
     SimpleToken  public currency;
@@ -132,7 +139,7 @@ abstract contract TestSetup is Config  {
 
     //mkr adapter
     SimpleMkr mkr;
-    MKRLenderDeployer public  mkrLenderDeployer;
+    AdapterDeployer public adapterDeployer;
     Clerk public clerk;
 
     address public lenderDeployerAddr;
@@ -230,11 +237,13 @@ abstract contract TestSetup is Config  {
         AssessorFab assessorFab = new AssessorFab();
         ClerkFab clerkFab = new ClerkFab();
 
-        mkrLenderDeployer = new MKRLenderDeployer(rootAddr, currency_, address(trancheFab), address(memberlistFab),
+        adapterDeployer = new AdapterDeployer(rootAddr, address(clerkFab), address(0));
+
+        lenderDeployer = new LenderDeployer(rootAddr, currency_, address(trancheFab), address(memberlistFab),
             address(restrictedTokenFab), address(reserveFab), address(assessorFab), address(coordinatorFab),
-            address(operatorFab), address(poolAdminFab), address(clerkFab), address(0));
-        lenderDeployerAddr = address(mkrLenderDeployer);
-        lenderDeployer = LenderDeployer(address(mkrLenderDeployer));
+            address(operatorFab), address(poolAdminFab), address(0), address(adapterDeployer));
+        lenderDeployerAddr = address(lenderDeployer);
+
         return;
 
     }
@@ -260,7 +269,7 @@ abstract contract TestSetup is Config  {
         // root is testcase
         lenderDeployer = new LenderDeployer(rootAddr, currency_, address(trancheFab),
             address(memberlistFab), address(restrictedTokenFab), address(reserveFab),
-            address(assessorFab), address(coordinatorFab), address(operatorFab), address(poolAdminFab), address(0));
+            address(assessorFab), address(coordinatorFab), address(operatorFab), address(poolAdminFab), address(0), address(0));
         lenderDeployerAddr = address(lenderDeployer);
     }
 
@@ -273,15 +282,9 @@ abstract contract TestSetup is Config  {
 
     function _initMKR(TinlakeConfig memory config) public virtual {
         mkr = new SimpleMkr(config.mkrStabilityFee, config.mkrILK);
-        address jug_ = address(mkr.jugMock());
 
-        SpotterMock spotter = new SpotterMock();
-        spotter.setReturn("mat", config.mkrMAT);
-
-        mkrLenderDeployer.init(config.minSeniorRatio, config.maxSeniorRatio, config.maxReserve, config.challengeTime, config.seniorInterestRate, config.seniorTokenName,
+        lenderDeployer.init(config.minSeniorRatio, config.maxSeniorRatio, config.maxReserve, config.challengeTime, config.seniorInterestRate, config.seniorTokenName,
             config.seniorTokenSymbol, config.juniorTokenName, config.juniorTokenSymbol);
-
-        mkrLenderDeployer.initMKR(address(mkr), address(spotter), address(mkr), jug_);
     }
 
     function fetchContractAddr(LenderDeployerLike ld) internal {
@@ -301,7 +304,6 @@ abstract contract TestSetup is Config  {
 
     function deployLender(bool mkrAdapter, TinlakeConfig memory config) public virtual {
         LenderDeployerLike ld = LenderDeployerLike(lenderDeployerAddr);
-
         if (mkrAdapter) {
             _initMKR(config);
         } else {
@@ -316,13 +318,20 @@ abstract contract TestSetup is Config  {
         ld.deployAssessor();
         ld.deployPoolAdmin();
         ld.deployCoordinator();
-
-        if(mkrAdapter) {
-            mkrLenderDeployer.deployClerk();
-            clerk = Clerk(mkrLenderDeployer.clerk());
-        }
+       
 
         ld.deploy();
         fetchContractAddr(ld);
+        
+        if (mkrAdapter) {
+            adapterDeployer.deployClerk(address(ld));
+            clerk = Clerk(adapterDeployer.clerk());
+
+            VatMock vat = new VatMock();
+            SpotterMock spotter = new SpotterMock();
+            spotter.setReturn("mat", config.mkrMAT);
+
+            adapterDeployer.wireClerk(address(mkr), address(mkr), address(spotter), address(mkr.jugMock()), 0.01 * 10**27);
+        }
     }
 }

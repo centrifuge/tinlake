@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.6.12;
 
-import { ReserveFabLike, AssessorFabLike, TrancheFabLike, CoordinatorFabLike, OperatorFabLike, MemberlistFabLike, RestrictedTokenFabLike, PoolAdminFabLike } from "./fabs/interfaces.sol";
+import { ReserveFabLike, AssessorFabLike, TrancheFabLike, CoordinatorFabLike, OperatorFabLike, MemberlistFabLike, RestrictedTokenFabLike, PoolAdminFabLike, ClerkFabLike } from "./fabs/interfaces.sol";
 
 import {FixedPoint}      from "./../fixed_point.sol";
 
@@ -52,6 +52,7 @@ contract LenderDeployer is FixedPoint {
 
 
     // contract addresses
+    address             public adapterDeployer;
     address             public assessor;
     address             public poolAdmin;
     address             public seniorTranche;
@@ -74,12 +75,14 @@ contract LenderDeployer is FixedPoint {
     address             public juniorMemberlist;
 
     address             public deployer;
+    bool public wired;
 
-    constructor(address root_, address currency_, address trancheFab_, address memberlistFab_, address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_, address operatorFab_, address poolAdminFab_, address memberAdmin_) {
+    constructor(address root_, address currency_, address trancheFab_, address memberlistFab_, address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_, address operatorFab_, address poolAdminFab_, address memberAdmin_, address adapterDeployer_) {
         deployer = msg.sender;
         root = root_;
         currency = currency_;
         memberAdmin = memberAdmin_;
+        adapterDeployer = adapterDeployer_;
 
         trancheFab = TrancheFabLike(trancheFab_);
         memberlistFab = MemberlistFabLike(memberlistFab_);
@@ -133,24 +136,31 @@ contract LenderDeployer is FixedPoint {
         AuthLike(seniorOperator).rely(root);
         AuthLike(seniorTranche).rely(root);
 
+        if (adapterDeployer != address(0)) {
+            AuthLike(seniorTranche).rely(adapterDeployer);
+            AuthLike(seniorMemberlist).rely(adapterDeployer);
+        }
     }
 
     function deployReserve() public {
         require(reserve == address(0) && deployer == address(1));
         reserve = reserveFab.newReserve(currency);
         AuthLike(reserve).rely(root);
+        if (adapterDeployer != address(0)) AuthLike(reserve).rely(adapterDeployer);
     }
 
     function deployAssessor() public {
         require(assessor == address(0) && deployer == address(1));
         assessor = assessorFab.newAssessor();
         AuthLike(assessor).rely(root);
+        if (adapterDeployer != address(0)) AuthLike(assessor).rely(adapterDeployer);
     }
 
     function deployPoolAdmin() public {
         require(poolAdmin == address(0) && deployer == address(1));
         poolAdmin = poolAdminFab.newPoolAdmin();
         AuthLike(poolAdmin).rely(root);
+        if (adapterDeployer != address(0)) AuthLike(poolAdmin).rely(adapterDeployer);
     }
 
     function deployCoordinator() public {
@@ -159,10 +169,12 @@ contract LenderDeployer is FixedPoint {
         AuthLike(coordinator).rely(root);
     }
 
-
     function deploy() public virtual {
         require(coordinator != address(0) && assessor != address(0) &&
                 reserve != address(0) && seniorTranche != address(0));
+    
+        require(!wired, "lender contracts already wired"); // make sure lender contracts only wired once
+        wired = true;
 
         // required depends
         // reserve
@@ -199,7 +211,6 @@ contract LenderDeployer is FixedPoint {
         DependLike(seniorOperator).depend("token", seniorToken);
         DependLike(juniorOperator).depend("token", juniorToken);
 
-
         // coordinator
         DependLike(coordinator).depend("reserve", reserve);
         DependLike(coordinator).depend("seniorTranche", seniorTranche);
@@ -214,14 +225,15 @@ contract LenderDeployer is FixedPoint {
         AuthLike(assessor).rely(coordinator);
         AuthLike(assessor).rely(reserve);
         AuthLike(assessor).rely(poolAdmin);
-
+        
         // poolAdmin
         DependLike(poolAdmin).depend("assessor", assessor);
         DependLike(poolAdmin).depend("juniorMemberlist", juniorMemberlist);
         DependLike(poolAdmin).depend("seniorMemberlist", seniorMemberlist);
-
+        
         AuthLike(juniorMemberlist).rely(poolAdmin);
         AuthLike(seniorMemberlist).rely(poolAdmin);
+
         if (memberAdmin != address(0)) AuthLike(juniorMemberlist).rely(memberAdmin);
         if (memberAdmin != address(0)) AuthLike(seniorMemberlist).rely(memberAdmin);
 

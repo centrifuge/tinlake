@@ -25,6 +25,11 @@ interface LenderDeployerLike {
     function poolAdmin() external returns (address);
 }
 
+interface AdapterDeployerLike {
+    function mgr() external returns (address);
+    function wireAdapter() external;
+}
+
 interface PoolAdminLike {
     function rely(address) external;
     function relyAdmin(address) external;
@@ -33,6 +38,7 @@ interface PoolAdminLike {
 contract TinlakeRoot is Auth {
     BorrowerDeployerLike public borrowerDeployer;
     LenderDeployerLike public  lenderDeployer;
+    AdapterDeployerLike public  adapterDeployer;
 
     bool public             deployed;
     address public          deployUsr;
@@ -49,19 +55,24 @@ contract TinlakeRoot is Auth {
 
     // --- Prepare ---
     // Sets the two deployer dependencies. This needs to be called by the deployUsr
-    function prepare(address lender_, address borrower_, address oracle_, address[] memory poolAdmins_) public {
+    function prepare(address lender_, address borrower_, address adapter_, address oracle_, address[] memory poolAdmins_) public {
         require(deployUsr == msg.sender);
         
         borrowerDeployer = BorrowerDeployerLike(borrower_);
         lenderDeployer = LenderDeployerLike(lender_);
+        if (adapter_ != address(0)) adapterDeployer = AdapterDeployerLike(adapter_);
         oracle = oracle_;
         poolAdmins = poolAdmins_;
 
         deployUsr = address(0); // disallow the deploy user to call this more than once.
     }
 
+    function prepare(address lender_, address borrower_, address adapter_) public {
+        prepare(lender_, borrower_, adapter_, address(0), new address[](0));
+    }
+
     function prepare(address lender_, address borrower_) public {
-        prepare(lender_, borrower_, address(0), new address[](0));
+        prepare(lender_, borrower_, address(0), address(0), new address[](0));
     }
 
     // --- Deploy ---
@@ -70,7 +81,6 @@ contract TinlakeRoot is Auth {
     function deploy() public {
         require(address(borrowerDeployer) != address(0) && address(lenderDeployer) != address(0) && deployed == false);
         deployed = true;
-
         address reserve_ = lenderDeployer.reserve();
         address shelf_ = borrowerDeployer.shelf();
 
