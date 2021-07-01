@@ -32,6 +32,7 @@ contract PoolAdmin is Auth {
     mapping(address => uint256) public admins;
 
     // Events
+    event Depend(bytes32 indexed contractname, address addr);
     event File(bytes32 indexed what, bool indexed data);
     event RelyAdmin(address indexed usr);
     event DenyAdmin(address indexed usr);
@@ -46,6 +47,7 @@ contract PoolAdmin is Auth {
 
     constructor() {
         wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     function depend(bytes32 contractName, address addr) public auth {
@@ -58,6 +60,7 @@ contract PoolAdmin is Auth {
         } else if (contractName == "juniorMemberlist") {
             juniorMemberlist = MemberlistLike(addr);
         } else revert();
+        emit Depend(contractName, addr);
     }
 
     function file(bytes32 what, bool data) public auth {

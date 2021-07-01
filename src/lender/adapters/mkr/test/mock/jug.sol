@@ -7,7 +7,7 @@ contract JugMock is Mock {
     bool interestUpdated = false;
 
     constructor() {
-        values_return["base"] = 10**27;
+        values_return["base"] = 0;
         values_return["ilks_duty"] = 10**27;
     }
     

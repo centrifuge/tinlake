@@ -10,7 +10,9 @@ import "./mock/token.sol";
 import "./mock/pile.sol";
 import "./mock/ceiling.sol";
 import "./mock/subscriber.sol";
+import "./mock/assessor.sol";
 import "../../lender/test/mock/reserve.sol";
+
 
 contract ShelfTest is DSTest {
     Shelf shelf;
@@ -20,6 +22,7 @@ contract ShelfTest is DSTest {
     PileMock pile;
     CeilingMock ceiling;
     ReserveMock reserve;
+    AssessorMock assessor;
 
     function setUp() public {
         nft = new NFTMock();
@@ -27,9 +30,12 @@ contract ShelfTest is DSTest {
         currency = new TokenMock();
         pile = new PileMock();
         ceiling = new CeilingMock();
+        assessor = new AssessorMock();
         reserve = new ReserveMock(address(currency));
         shelf = new Shelf(address(currency), address(title), address(pile), address(ceiling));
         shelf.depend("reserve", address(reserve));
+        shelf.depend("assessor", address(assessor));
+
     }
 
     function _issue(uint256 tokenId_, uint loan_) internal {

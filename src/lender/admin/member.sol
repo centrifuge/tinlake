@@ -12,6 +12,7 @@ interface MemberlistLike {
 contract MemberAdmin is Auth {
     constructor() {
         wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     // Admins can manipulate memberlists, but have to be added and can be removed by any ward on the MemberAdmin contract

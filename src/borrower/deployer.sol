@@ -26,19 +26,19 @@ interface FileLike {
 }
 
 contract BorrowerDeployer is FixedPoint {
-    address      public root;
+    address      public immutable root;
 
-    TitleFabLike     public titlefab;
-    ShelfFabLike     public shelffab;
-    PileFabLike      public pilefab;
-    CollectorFabLike public collectorFab;
-    FeedFabLike      public feedFab;
+    TitleFabLike     public immutable titlefab;
+    ShelfFabLike     public immutable shelffab;
+    PileFabLike      public immutable pilefab;
+    CollectorFabLike public immutable collectorFab;
+    FeedFabLike      public immutable feedFab;
 
     address public title;
     address public shelf;
     address public pile;
     address public collector;
-    address public currency;
+    address public immutable currency;
     address public feed;
 
     string  public titleName;

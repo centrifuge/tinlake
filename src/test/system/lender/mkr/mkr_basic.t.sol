@@ -77,6 +77,14 @@ contract MKRTestBasis is TestSuite, Interest {
             debt = safeSub(borrowAmount, juniorAmount);
         }
         assertEq(clerk.debt(), debt);
+
+        uint drawAmount = safeSub(borrowAmount, juniorAmount);
+
+        // seniorDebt should equal to seniorRatio from the current NAV
+        assertEq(assessor.seniorDebt(), rmul(nftFeed.currentNAV(), assessor.seniorRatio()));
+        // check if seniorRatio is correct
+        assertEq(assessor.seniorRatio(), rdiv(safeAdd(assessor.seniorDebt(), assessor.effectiveSeniorBalance()),
+            safeAdd(nftFeed.currentNAV(), reserve.totalBalance())));
     }
 
     function _setUpOngoingMKR() public {
@@ -132,6 +140,7 @@ contract MKRBasicSystemTest is MKRTestBasis {
         assertEq(assessor.totalBalance(), safeAdd(preReserve, creditLineAmount));
 
         uint preSeniorDebt = assessor.seniorDebt();
+        uint preNAV = nftFeed.currentNAV();
         clerk.draw(drawAmount);
 
         // seniorBalance and reserve should have changed
@@ -141,10 +150,16 @@ contract MKRBasicSystemTest is MKRTestBasis {
             safeAdd(safeAdd(preSeniorBalance, rmul(drawAmount, clerk.mat())), preSeniorDebt));
 
         //raise reserves a spot for drop and locks the tin. no impact from the draw function
-        assertEq(safeAdd(assessor.seniorBalance(),assessor.seniorDebt()),
+        assertEq(safeAdd(assessor.seniorBalance(), assessor.seniorDebt()),
             safeAdd(safeAdd(preSeniorBalance, rmul(creditLineAmount, clerk.mat())), preSeniorDebt));
 
         assertEq(assessor.totalBalance(), safeAdd(preReserve, creditLineAmount));
+
+        // seniorDebt should equal to seniorRatio from the current NAV
+        assertEq(assessor.seniorDebt(), rmul(nftFeed.currentNAV(), assessor.seniorRatio()));
+        // check if seniorRatio is correct after maker draw
+        assertEq(assessor.seniorRatio(), rdiv(safeAdd(assessor.seniorDebt(), assessor.effectiveSeniorBalance()),
+                        safeAdd(safeAdd(preNAV, preReserve), drawAmount)));
     }
 
     function testOnDemandDraw() public {
@@ -203,6 +218,26 @@ contract MKRBasicSystemTest is MKRTestBasis {
         assertEq(currency.balanceOf(address(juniorInvestor)), payoutCurrency);
     }
 
+    function testRedeemWhenExtraCurrencyWasTransferred() public {
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+
+        // mint currency to the reserve, so balanceOf(pot) becomes larger than the balance_ value
+        currency.mint(address(this), 1);
+
+        juniorInvestor.disburse();
+
+        uint redeemTokenAmount = 20 ether;
+        juniorInvestor.redeemOrder(redeemTokenAmount);
+        hevm.warp(block.timestamp + 1 days);
+
+        // the redemption order should cause a payout in the reserve, which should work even if
+        // additional currency was transferred into the reserve
+        coordinator.closeEpoch();
+    }
+
     function testRepayCurrencyToMKR() public {
         uint juniorAmount = 200 ether;
         uint mkrAmount = 500 ether;
@@ -224,6 +259,26 @@ contract MKRBasicSystemTest is MKRTestBasis {
         assertEq(currency.balanceOf(address(seniorInvestor)), 0);
     }
 
+    function testRepayWhenExtraCurrencyWasTransferred() public {
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+
+        // mint currency to the reserve, so balanceOf(pot) becomes larger than the balance_ value
+        currency.mint(address(this), 1);
+
+        juniorInvestor.disburse();
+
+        uint currencyAmount = 50 ether;
+        seniorSupply(currencyAmount);
+        hevm.warp(block.timestamp + 1 days);
+
+        // the supply order should cause a deposit in the reserve, which should work even if
+        // additional currency was transferred into the reserve
+        coordinator.closeEpoch();
+    }
 
     function testTotalBalanceBuffer() public {
         uint fee = 1000000564701133626865910626; // 5% per day
