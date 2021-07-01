@@ -79,6 +79,14 @@ contract MKRTestBasis is TestSuite, Interest {
             debt = safeSub(borrowAmount, juniorAmount);
         }
         assertEq(clerk.debt(), debt);
+
+        uint drawAmount = safeSub(borrowAmount, juniorAmount);
+
+        // seniorDebt should equal to seniorRatio from the current NAV
+        assertEq(assessor.seniorDebt(), rmul(nftFeed.currentNAV(), assessor.seniorRatio()));
+        // check if seniorRatio is correct
+        assertEq(assessor.seniorRatio(), rdiv(safeAdd(assessor.seniorDebt(), assessor.effectiveSeniorBalance()),
+            safeAdd(nftFeed.currentNAV(), reserve.totalBalance())));
     }
 
     function _setUpOngoingMKR() public {
@@ -134,6 +142,7 @@ contract MKRBasicSystemTest is MKRTestBasis {
         assertEq(assessor.totalBalance(), safeAdd(preReserve, creditLineAmount));
 
         uint preSeniorDebt = assessor.seniorDebt();
+        uint preNAV = nftFeed.currentNAV();
         clerk.draw(drawAmount);
 
         // seniorBalance and reserve should have changed
@@ -143,10 +152,16 @@ contract MKRBasicSystemTest is MKRTestBasis {
             safeAdd(safeAdd(preSeniorBalance, rmul(drawAmount, clerk.mat())), preSeniorDebt));
 
         //raise reserves a spot for drop and locks the tin. no impact from the draw function
-        assertEq(safeAdd(assessor.seniorBalance(),assessor.seniorDebt()),
+        assertEq(safeAdd(assessor.seniorBalance(), assessor.seniorDebt()),
             safeAdd(safeAdd(preSeniorBalance, rmul(creditLineAmount, clerk.mat())), preSeniorDebt));
 
         assertEq(assessor.totalBalance(), safeAdd(preReserve, creditLineAmount));
+
+        // seniorDebt should equal to seniorRatio from the current NAV
+        assertEq(assessor.seniorDebt(), rmul(nftFeed.currentNAV(), assessor.seniorRatio()));
+        // check if seniorRatio is correct after maker draw
+        assertEq(assessor.seniorRatio(), rdiv(safeAdd(assessor.seniorDebt(), assessor.effectiveSeniorBalance()),
+                        safeAdd(safeAdd(preNAV, preReserve), drawAmount)));
     }
 
     function testOnDemandDraw() public {

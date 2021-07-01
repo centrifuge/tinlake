@@ -13,9 +13,8 @@ contract PrincipalBorrowTest is BaseSystemTest {
         hevm.warp(1234567);
     }
 
-    function fundTranches() public {
-        uint defaultAmount = 1000 ether;
-        defaultInvest(defaultAmount);
+    function fundTranches(uint amount) public {
+        defaultInvest(amount);
         hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
     }
@@ -26,6 +25,7 @@ contract PrincipalBorrowTest is BaseSystemTest {
         uint initialLoanDebt = pile.debt(loanId);
         uint initialCeiling = nftFeed.ceiling(loanId);
 
+        fundTranches(amount);
         borrower.borrow(loanId, amount);
         assertPostCondition(loanId, tokenId, amount, fixedFee, initialTotalBalance, initialLoanBalance, initialLoanDebt, initialCeiling);
     }

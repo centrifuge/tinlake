@@ -105,38 +105,6 @@ contract AssessorTest is DSTest, Math {
         assessor.file("maxSeniorRatio", minSeniorRatio-1);
     }
 
-    function testBorrowUpdate() public {
-        uint currencyAmount = 100 ether;
-        assessor.borrowUpdate(currencyAmount);
-        // current senior ratio 0 no change
-        assertEq(assessor.seniorBalance(), 0);
-        assertEq(assessor.seniorDebt(), 0);
-
-
-        navFeed.setReturn("approximatedNAV", 0 ether);
-        reserveMock.setReturn("balance", 1000 ether);
-
-
-        uint seniorSupply = 800 ether;
-        uint seniorRatio = 0.8 * 10**27;
-        assessor.changeSeniorAsset(seniorSupply, 0);
-        assertEq(assessor.seniorRatio(), seniorRatio);
-
-        assessor.borrowUpdate(currencyAmount);
-        // current senior ratio 0 no change
-
-        uint increase = rmul(currencyAmount, seniorRatio);
-        assertEq(assessor.seniorDebt(), increase);
-        assertEq(assessor.seniorBalance(), seniorSupply-increase);
-
-
-        // very high increase very rare case
-        currencyAmount = 10000 ether;
-        assessor.borrowUpdate(currencyAmount);
-
-        assertEq(assessor.seniorDebt(), seniorSupply);
-        assertEq(assessor.seniorBalance(), 0);
-    }
 
     function testChangeSeniorAsset() public {
         uint seniorSupply =  80 ether;
@@ -202,41 +170,6 @@ contract AssessorTest is DSTest, Math {
         assessor.changeSeniorAsset(seniorSupply, seniorRedeem);
         assertEq(assessor.seniorDebt(), 10 ether);
         assertEq(assessor.seniorBalance(), 90 ether);
-    }
-
-    function testRepayUpdate() public {
-        uint repayAmount = 100 ether;
-        assessor.repaymentUpdate(repayAmount);
-        // current senior ratio 0 no change
-        assertEq(assessor.seniorBalance(), 0);
-        assertEq(assessor.seniorDebt(), 0);
-
-        navFeed.setReturn("approximatedNAV", 0 ether);
-        reserveMock.setReturn("balance", 1000 ether);
-
-        uint seniorSupply = 800 ether;
-        uint seniorRatio = 0.8 * 10**27;
-
-        assessor.changeSeniorAsset(seniorSupply, 0);
-        assertEq(assessor.seniorRatio(), seniorRatio);
-        // NAV = 0
-        assertEq(assessor.seniorBalance(), 800 ether);
-
-        // required to borrow first
-        uint borrowAmount = 100 ether;
-        assessor.borrowUpdate(borrowAmount);
-        // 100 * 0.6 = 60 ether
-        assertEq(assessor.seniorDebt(), 80 ether);
-        assertEq(assessor.seniorBalance(), 720 ether);
-
-        // 80 ether
-        assertEq(assessor.seniorDebt(), rmul(borrowAmount, seniorRatio));
-        repayAmount = 50 ether;
-
-        assessor.repaymentUpdate(repayAmount);
-        // 50 * 0.8 = 30 ether
-        assertEq(assessor.seniorDebt(), 40 ether);
-        assertEq(assessor.seniorBalance(), 760 ether);
     }
 
     function testSeniorInterest() public {

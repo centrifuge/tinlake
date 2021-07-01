@@ -17,11 +17,6 @@ interface ShelfLike {
     function balanceRequest() external returns (bool requestWant, uint256 amount);
 }
 
-interface AssessorLike {
-    function repaymentUpdate(uint amount) external;
-    function borrowUpdate(uint amount) external;
-}
-
 interface LendingAdapter {
     function remainingCredit() external view returns (uint);
     function draw(uint amount) external;
@@ -35,7 +30,6 @@ interface LendingAdapter {
 contract Reserve is Math, Auth {
     ERC20Like public currency;
     ShelfLike public shelf;
-    AssessorLike public assessor;
 
     // additional currency from lending adapters
     // for deactivating set to address(0)
@@ -77,8 +71,6 @@ contract Reserve is Math, Auth {
             if (pot == address(this)) {
                 currency.approve(pot, type(uint256).max);
             }
-        } else if (contractName == "assessor") {
-            assessor = AssessorLike(addr);
         } else if (contractName == "pot") {
             pot = addr;
         } else if (contractName == "lending") {
@@ -175,10 +167,8 @@ contract Reserve is Math, Auth {
 
             currencyAvailable = safeSub(currencyAvailable, currencyAmount);
             _payout(address(shelf), currencyAmount);
-            assessor.borrowUpdate(currencyAmount);
             return;
         }
         _deposit(address(shelf), currencyAmount);
-        assessor.repaymentUpdate(currencyAmount);
     }
 }

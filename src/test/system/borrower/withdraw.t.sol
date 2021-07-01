@@ -21,6 +21,7 @@ contract WithdrawTest is BaseSystemTest {
         emit log_named_uint("reserve", reserve.totalBalance());
     }
 
+
     function withdraw(uint loanId, uint tokenId, uint amount, address usr) public {
         uint shelfBalance = currency.balanceOf(address(shelf));
         uint reserveBalance = currency.balanceOf(address(reserve));

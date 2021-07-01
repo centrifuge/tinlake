@@ -52,7 +52,7 @@ contract TinlakeRoot is Auth {
     // Sets the two deployer dependencies. This needs to be called by the deployUsr
     function prepare(address lender_, address borrower_, address oracle_, address[] memory poolAdmins_) public {
         require(deployUsr == msg.sender);
-        
+
         borrowerDeployer = BorrowerDeployerLike(borrower_);
         lenderDeployer = LenderDeployerLike(lender_);
         oracle = oracle_;
@@ -74,17 +74,20 @@ contract TinlakeRoot is Auth {
 
         address reserve_ = lenderDeployer.reserve();
         address shelf_ = borrowerDeployer.shelf();
+        address assessor_ = lenderDeployer.assessor();
 
         // Borrower depends
         DependLike(borrowerDeployer.collector()).depend("reserve", reserve_);
         DependLike(borrowerDeployer.shelf()).depend("lender", reserve_);
         DependLike(borrowerDeployer.shelf()).depend("reserve", reserve_);
 
+        DependLike(borrowerDeployer.shelf()).depend("assessor", assessor_);
+
         // Lender depends
         address navFeed = borrowerDeployer.feed();
 
         DependLike(reserve_).depend("shelf", shelf_);
-        DependLike(lenderDeployer.assessor()).depend("navFeed", navFeed);
+        DependLike(assessor_).depend("navFeed", navFeed);
 
         // Lender wards
         if (oracle != address(0)) AuthLike(navFeed).rely(oracle);
@@ -97,7 +100,7 @@ contract TinlakeRoot is Auth {
             PoolAdminLike(poolAdmin).relyAdmin(poolAdmins[i]);
         }
     }
-    
+
     // --- Governance Functions ---
     // `relyContract` & `denyContract` can be called by any ward on the TinlakeRoot
     // contract to make an arbitrary address a ward on any contract the TinlakeRoot

@@ -59,7 +59,7 @@ contract Assessor is Definitions, Auth, Interest {
     ReserveLike     public reserve;
     LendingAdapter  public lending;
 
-    uint public constant supplyTolerance = 2;
+    uint public constant supplyTolerance = 5;
 
     event Depend(bytes32 indexed contractName, address addr);
     event File(bytes32 indexed name, uint value);
@@ -107,35 +107,37 @@ contract Assessor is Definitions, Auth, Interest {
         emit File(name, value);
     }
 
-    function reBalance(uint seniorAsset_, uint seniorRatio_) internal {
+    function reBalance() public {
+        reBalance(calcExpectedSeniorAsset(seniorBalance_, dripSeniorDebt()));
+    }
+
+    function reBalance(uint seniorAsset_) internal {
         // re-balancing according to new ratio
         // we use the approximated NAV here because during the submission period
         // new loans might have been repaid in the meanwhile which are not considered in the epochNAV
+        uint nav_ = navFeed.approximatedNAV();
+        uint reserve_ = reserve.totalBalance();
 
-        seniorDebt_ = rmul(navFeed.approximatedNAV(), seniorRatio_);
+        uint seniorRatio_ = calcSeniorRatio(seniorAsset_, nav_, reserve_);
+
+        // in that case the entire juniorAsset is lost
+        // the senior would own everything that' left
+        if(seniorRatio_ > ONE) {
+            seniorRatio_ = ONE;
+        }
+
+        seniorDebt_ = rmul(nav_, seniorRatio_);
         if(seniorDebt_ > seniorAsset_) {
             seniorDebt_ = seniorAsset_;
             seniorBalance_ = 0;
             return;
         }
         seniorBalance_ = safeSub(seniorAsset_, seniorDebt_);
+        seniorRatio = Fixed27(seniorRatio_);
     }
 
     function changeSeniorAsset(uint seniorSupply, uint seniorRedeem) external auth {
-        uint nav_ = navFeed.approximatedNAV();
-        uint reserve_ = reserve.totalBalance();
-
-        uint seniorAsset_ = calcExpectedSeniorAsset(seniorRedeem, seniorSupply, seniorBalance_, dripSeniorDebt());
-
-        uint seniorRatio_ = calcSeniorRatio(seniorAsset_, nav_, reserve_);
-        
-        // make sure senior Ratio never exceeds ONE
-        if(seniorRatio_ > ONE) {
-            seniorRatio_ = ONE;
-        }
-
-        reBalance(seniorAsset_, seniorRatio_);
-        seniorRatio = Fixed27(seniorRatio_);
+        reBalance(calcExpectedSeniorAsset(seniorRedeem, seniorSupply, seniorBalance_, dripSeniorDebt()));
     }
 
     function seniorRatioBounds() public view returns (uint minSeniorRatio_, uint maxSeniorRatio_) {
@@ -216,48 +218,6 @@ contract Assessor is Definitions, Auth, Interest {
 
         return rdiv(safeAdd(safeSub(totalAssets, seniorAssetValue), juniorStake),
             juniorTranche.tokenSupply());
-    }
-
-    // repayment update keeps track of senior bookkeeping for repaid loans
-    // the seniorDebt needs to be decreased
-    function repaymentUpdate(uint currencyAmount) public auth {
-        dripSeniorDebt();
-
-        uint decAmount = rmul(currencyAmount, seniorRatio.value);
-
-        if (decAmount > seniorDebt_) {
-            seniorBalance_ = calcExpectedSeniorAsset(seniorDebt_, seniorBalance_);
-            seniorDebt_ = 0;
-            return;
-        }
-
-        seniorBalance_ = safeAdd(seniorBalance_, decAmount);
-        // seniorDebt needs to be decreased for loan repayments
-        seniorDebt_ = safeSub(seniorDebt_, decAmount);
-        lastUpdateSeniorInterest = block.timestamp;
-
-    }
-    // borrow update keeps track of the senior bookkeeping for new borrowed loans
-    // the seniorDebt needs to be increased to accumulate interest
-    function borrowUpdate(uint currencyAmount) public auth {
-        dripSeniorDebt();
-
-        // the current senior ratio defines
-        // interest bearing amount (seniorDebt) increase
-        uint incAmount = rmul(currencyAmount, seniorRatio.value);
-
-        // this case should most likely never happen
-        if (incAmount > seniorBalance_) {
-            // all the currency of senior is used as interest bearing currencyAmount
-            seniorDebt_ = calcExpectedSeniorAsset(seniorDebt_, seniorBalance_);
-            seniorBalance_ = 0;
-            return;
-        }
-
-        // seniorDebt needs to be increased for loan borrows
-        seniorDebt_ = safeAdd(seniorDebt_, incAmount);
-        seniorBalance_ = safeSub(seniorBalance_, incAmount);
-        lastUpdateSeniorInterest = block.timestamp;
     }
 
     function dripSeniorDebt() public returns (uint) {
@@ -344,7 +304,7 @@ contract Assessor is Definitions, Auth, Interest {
         if(remainingCredit_ > stabilityBuffer) {
             return safeSub(remainingCredit_, stabilityBuffer);
         }
-        
+
         return 0;
     }
 
