@@ -578,6 +578,9 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
             calcFulfillment(seniorRedeem, order.seniorRedeem).value,
             epochSeniorTokenPrice.value,order.seniorSupply, order.seniorRedeem);
 
+        // assessor performs senior debt reBalancing according to new ratio
+        // assessor.changeSeniorAsset(seniorSupply, seniorRedeem);
+        
         juniorTranche.epochUpdate(epochID, calcFulfillment(juniorSupply, order.juniorSupply).value,
             calcFulfillment(juniorRedeem, order.juniorRedeem).value,
             epochJuniorTokenPrice.value, order.juniorSupply, order.juniorRedeem);
