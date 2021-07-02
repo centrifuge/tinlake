@@ -20,7 +20,7 @@ abstract contract Buckets {
 
     uint constant public NullDate = 1;
 
-    function addBucket(uint timestamp, uint value) public virtual {
+    function _addBucket(uint timestamp, uint value) internal virtual {
         buckets[timestamp].value = value;
 
         if (firstBucket == 0) {
@@ -51,13 +51,13 @@ abstract contract Buckets {
         buckets[prev].next = timestamp;
     }
 
-    function removeBucket(uint timestamp) public virtual {
+    function _removeBucket(uint timestamp) internal virtual {
         buckets[timestamp].value = 0;
-        _removeBucket(timestamp);
+        _unlinkBucket(timestamp);
         buckets[timestamp].next = 0;
     }
 
-    function _removeBucket(uint timestamp) internal {
+    function _unlinkBucket(uint timestamp) internal {
         if(firstBucket == lastBucket) {
             lastBucket = 0;
             firstBucket = 0;

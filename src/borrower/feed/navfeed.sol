@@ -174,7 +174,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
         // add future value to the bucket of assets with the same maturity date
         if (buckets[maturityDate_].value == 0) {
-            addBucket(maturityDate_, fv);
+            _addBucket(maturityDate_, fv);
         } else {
             buckets[maturityDate_].value = safeAdd(buckets[maturityDate_].value, fv);
         }
@@ -271,7 +271,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
         // remove buckets if no remaining assets
         if (buckets[maturityDate_].value == 0 && firstBucket != 0) {
-            removeBucket(maturityDate_);
+            _removeBucket(maturityDate_);
         }
 
         // return decrease NAV amount
@@ -347,14 +347,14 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         return buckets[timestamp].value;
     }
 
-    function addBucket(uint timestamp, uint value) public override {
+    function _addBucket(uint timestamp, uint value) internal override {
         if (timestamp < discountStartPointer || discountStartPointer == 0) {
             discountStartPointer = timestamp;
         }
-        super.addBucket(timestamp, value);
+        super._addBucket(timestamp, value);
     }
 
-    function removeBucket(uint timestamp) public override {
+    function _removeBucket(uint timestamp) internal override {
         if(timestamp == discountStartPointer) {
             if(buckets[timestamp].next != NullDate) {
                 discountStartPointer = buckets[timestamp].next;
@@ -363,6 +363,6 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
             }
 
         }
-        super.removeBucket(timestamp);
+        super._removeBucket(timestamp);
     }
 }
