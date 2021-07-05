@@ -18,11 +18,11 @@ contract BucketList is Buckets, Math {
     }
 
     function add(uint timestamp, uint value) public {
-        addBucket(uniqueDayTimestamp(timestamp), value);
+        _addBucket(uniqueDayTimestamp(timestamp), value);
     }
 
     function remove(uint timestamp) public {
-        removeBucket(uniqueDayTimestamp(timestamp));
+        _removeBucket(uniqueDayTimestamp(timestamp));
     }
 
     function calcSum() public view returns (uint) {
