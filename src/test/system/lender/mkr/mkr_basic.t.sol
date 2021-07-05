@@ -297,4 +297,27 @@ contract MKRBasicSystemTest is MKRTestBasis {
         assertEq(assessor.totalBalance(), safeSub(remainingCredit, buffer));
     }
 
+
+    function testRebalancingInbetweenTrancheEpochUpdates() public {
+        // make sure there's some maker debt
+        uint juniorAmount = 200 ether;
+        uint mkrAmount = 500 ether;
+        uint borrowAmount = 300 ether;
+        _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
+        juniorInvestor.disburse();
+        hevm.warp(block.timestamp + 1 days);
+
+        assertEq(clerk.debt(), 100 ether);
+
+        // submit drop invest and tin redeem
+        seniorSupply(30 ether);
+        juniorInvestor.redeemOrder(5 ether);
+
+        // atempt to close epoch. the drop invest should wipe some of the maker debt, but this causes the senior ratio to become incorrect
+        // if there's no rebalancing, the tin redeem will then trigger a draw(), which will notice a collateral deficit
+        bool closeWithExecute = true;
+        closeEpoch(closeWithExecute);
+    }
+
+
 }
