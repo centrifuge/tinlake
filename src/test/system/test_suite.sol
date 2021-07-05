@@ -100,8 +100,8 @@ contract TestSuite is BaseSystemTest {
         assertEqTol(currency.balanceOf(address(borrower)), borrowAmount, " firstLoan#8");
         uint nav = nftFeed.calcUpdateNAV();
 
-        // seniorDebt doesn't reflect the NAV increase from the first loan
-        assertEqTol(assessor.seniorDebt(), rmul(borrowAmount, assessor.seniorRatio()), " firstLoan#9");
+        // seniorDebt is equal to the nav multiplied with the seniorRatio for the first loan
+        assertEqTol(assessor.seniorDebt(), rmul(nav, assessor.seniorRatio()), " firstLoan#9");
 
         uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, reserve.totalBalance());
         assertEqTol(seniorTokenPrice, rdiv(safeAdd(assessor.seniorDebt(), assessor.seniorBalance_()),  seniorToken.totalSupply()), " firstLoan#10");

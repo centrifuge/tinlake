@@ -8,7 +8,7 @@ interface RestrictedTokenFabLike {
 }
 
 contract RestrictedTokenFab {
-    function newRestrictedToken(string memory name, string memory symbol) public returns (address token) {
+    function newRestrictedToken(string memory symbol, string memory name) public returns (address token) {
         RestrictedToken restrictedToken = new RestrictedToken(symbol, name);
 
         restrictedToken.rely(msg.sender);

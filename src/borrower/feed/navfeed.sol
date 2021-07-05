@@ -4,6 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
+
 import "./nftfeed.sol";
 import "./buckets.sol";
 import "../../fixed_point.sol";
@@ -50,8 +51,13 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     // first bucket in the future since last update
     uint public discountStartPointer;
 
+    event File(bytes32 indexed name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_);
+    event File(bytes32 indexed name, bytes32 nftID_, uint maturityDate_);
+    event File(bytes32 indexed name, uint value);
+    
     constructor () {
         wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     function init() public {
@@ -120,7 +126,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         if(name == "riskGroup") {
             file("riskGroupNFT", risk_, thresholdRatio_, ceilingRatio_, rate_);
             recoveryRatePD[risk_] = Fixed27(recoveryRatePD_);
-
+            emit File(name, risk_, thresholdRatio_, ceilingRatio_, rate_, recoveryRatePD_);
         } else {revert ("unknown name");}
     }
 
@@ -139,12 +145,14 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         if (name == "maturityDate") {
             require((futureValue[nftID_] == 0), "can-not-change-maturityDate-outstanding-debt");
             maturityDate[nftID_] = uniqueDayTimestamp(maturityDate_);
+            emit File(name, nftID_, maturityDate_);
         } else { revert("unknown config parameter");}
     }
 
     function file(bytes32 name, uint value) public override auth {
         if (name == "discountRate") {
             discountRate = Fixed27(value);
+            emit File(name, value);
         } else { revert("unknown config parameter");}
     }
 
@@ -221,6 +229,8 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
         futureValue[nftID_] = calcFutureValue(loan, pile.debt(loan), maturityDate[nftID_], recoveryRatePD[risk[nftID_]].value);
         buckets[maturityDate_].value = safeAdd(buckets[maturityDate_].value, futureValue[nftID_]);
+
+        emit Update(nftID_, value, risk_);
     }
 
     // In case of successful repayment the approximatedNAV is decreased by the repaid amount

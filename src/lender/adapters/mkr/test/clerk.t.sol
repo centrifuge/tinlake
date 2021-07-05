@@ -112,7 +112,7 @@ contract ClerkTest is Assertions, Interest {
         uint rho = block.timestamp;
         jug.setReturn("ilks_rho", rho);
         uint interestRatePerSecond = uint(1000000564701133626865910626);     // 5 % day
-        jug.setReturn("ilks_duty", safeSub(interestRatePerSecond, ONE));
+        jug.setReturn("ilks_duty", interestRatePerSecond);
         hevm.warp(block.timestamp + 1 days);
         assertEq(clerk.debt(), 105 ether);
         hevm.warp(block.timestamp + 1 days);
@@ -126,6 +126,18 @@ contract ClerkTest is Assertions, Interest {
         assertEq(clerk.debt(), 110.25 ether);
         hevm.warp(block.timestamp + 1 days);
         assertEq(clerk.debt(), 115.7625 ether);
+    }
+
+    function testStabilityFeeWithJug() public {
+        uint interestRatePerSecond = uint(1000000564701133626865910626);     // 5 % day
+        jug.setReturn("ilks_duty", interestRatePerSecond);
+
+        jug.setReturn("base", 0);
+        assertEq(clerk.stabilityFee(), interestRatePerSecond);
+        
+        uint base = ONE;
+        jug.setReturn("base", base);
+        assertEq(clerk.stabilityFee(), safeAdd(interestRatePerSecond, base));
     }
 
     function raise(uint amountDAI) public{

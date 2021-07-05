@@ -51,12 +51,15 @@ contract Collector is Auth {
     event Collect(uint indexed loan, address indexed buyer);
     event RelyCollector(address indexed usr);
     event DenyCollector(address indexed usr);
+    event Depend(bytes32 indexed contractName, address addr);
+    event File(bytes32 indexed what, uint indexed loan, address buyer, uint nftPrice);
 
     constructor (address shelf_, address pile_, address threshold_) {
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
         threshold = ThresholdRegistryLike(threshold_);
         wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     // sets the dependency to another contract
@@ -66,6 +69,7 @@ contract Collector is Auth {
         else if (contractName == "pile") pile = PileLike(addr);
         else if (contractName == "threshold") threshold = ThresholdRegistryLike(addr);
         else revert();
+        emit Depend(contractName, addr);
     }
 
     // sets the liquidation-price of an NFT
@@ -74,7 +78,7 @@ contract Collector is Auth {
             require(nftPrice > 0, "no-nft-price-defined");
             options[loan] = Option(buyer, nftPrice);
         } else revert("unknown parameter");
-
+        emit File(what, loan, buyer, nftPrice);
     }
 
 

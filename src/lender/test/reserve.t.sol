@@ -56,7 +56,6 @@ contract ReserveTest is DSTest, Math {
         assessor = new AssessorMock();
 
         reserve = new Reserve(address(currency));
-
         shelf_ = address(shelf);
         reserve_ = address(reserve);
         currency_ = address(currency);
@@ -64,7 +63,6 @@ contract ReserveTest is DSTest, Math {
         self = address(this);
 
         reserve.depend("shelf", shelf_);
-        reserve.depend("assessor", assessor_);
     }
 
     function setUpLendingAdapter() public {
@@ -101,7 +99,6 @@ contract ReserveTest is DSTest, Math {
         assertEq(currency.balanceOf(reserve_), safeSub(reserveBalance, borrowAmount));
         assertEq(currency.balanceOf(shelf_), safeAdd(shelfBalance, borrowAmount));
         assertEq(reserve.currencyAvailable(), safeSub(currencyAvailable, borrowAmount));
-        assertEq(assessor.values_uint("borrowUpdate_currencyAmount"), borrowAmount);
     }
 
     function testReserveBalanceBorrowPartialReserve() public {
@@ -125,7 +122,6 @@ contract ReserveTest is DSTest, Math {
         assertEq(currency.balanceOf(reserve_), safeSub(reserveBalance, borrowAmount));
         assertEq(currency.balanceOf(shelf_), safeAdd(shelfBalance, borrowAmount));
         assertEq(reserve.currencyAvailable(), safeSub(currencyAvailable, borrowAmount));
-        assertEq(assessor.values_uint("borrowUpdate_currencyAmount"), borrowAmount);
     }
 
     function testReserveBalanceRepay() public {
@@ -147,7 +143,6 @@ contract ReserveTest is DSTest, Math {
         assertEq(currency.balanceOf(reserve_), safeAdd(reserveBalance, repayAmount));
         assertEq(currency.balanceOf(shelf_), safeSub(shelfBalance, repayAmount));
         assertEq(reserve.currencyAvailable(), currencyAvailable);
-        assertEq(assessor.values_uint("repaymentUpdate_currencyAmount"), repayAmount);
     }
 
     function testFailBalancePoolInactive() public {

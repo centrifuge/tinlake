@@ -42,7 +42,7 @@ contract TinlakeRoot is Auth {
 
     bool public             deployed;
     address public          deployUsr;
-    address public          governance;
+    address public immutable governance;
 
     address public          oracle;
     address[] public        poolAdmins;
@@ -50,14 +50,15 @@ contract TinlakeRoot is Auth {
     constructor (address deployUsr_, address governance_) {
         deployUsr = deployUsr_;
         governance = governance_;
-        wards[governance] = 1;
+        wards[governance_] = 1;
+        emit Rely(governance_);
     }
 
     // --- Prepare ---
     // Sets the two deployer dependencies. This needs to be called by the deployUsr
     function prepare(address lender_, address borrower_, address adapter_, address oracle_, address[] memory poolAdmins_) public {
         require(deployUsr == msg.sender);
-        
+
         borrowerDeployer = BorrowerDeployerLike(borrower_);
         lenderDeployer = LenderDeployerLike(lender_);
         if (adapter_ != address(0)) adapterDeployer = AdapterDeployerLike(adapter_);
@@ -83,17 +84,20 @@ contract TinlakeRoot is Auth {
         deployed = true;
         address reserve_ = lenderDeployer.reserve();
         address shelf_ = borrowerDeployer.shelf();
+        address assessor_ = lenderDeployer.assessor();
 
         // Borrower depends
         DependLike(borrowerDeployer.collector()).depend("reserve", reserve_);
         DependLike(borrowerDeployer.shelf()).depend("lender", reserve_);
         DependLike(borrowerDeployer.shelf()).depend("reserve", reserve_);
 
+        DependLike(borrowerDeployer.shelf()).depend("assessor", assessor_);
+
         // Lender depends
         address navFeed = borrowerDeployer.feed();
 
         DependLike(reserve_).depend("shelf", shelf_);
-        DependLike(lenderDeployer.assessor()).depend("navFeed", navFeed);
+        DependLike(assessor_).depend("navFeed", navFeed);
 
         // Lender wards
         if (oracle != address(0)) AuthLike(navFeed).rely(oracle);
@@ -106,7 +110,7 @@ contract TinlakeRoot is Auth {
             PoolAdminLike(poolAdmin).relyAdmin(poolAdmins[i]);
         }
     }
-    
+
     // --- Governance Functions ---
     // `relyContract` & `denyContract` can be called by any ward on the TinlakeRoot
     // contract to make an arbitrary address a ward on any contract the TinlakeRoot

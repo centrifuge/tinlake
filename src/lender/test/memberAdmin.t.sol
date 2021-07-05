@@ -48,17 +48,17 @@ contract MemberAdminTest is DSTest {
         memberAdmin.updateMembers(address(memberlist), users, validUntil);
 
         assertEq(memberlist.calls("updateMembers"), 1);
-        assertEq(memberlist.values_address("updateMember_usr"), users[users.length]);
-        assertEq(memberlist.values_uint("updateMember_validUntil"), validUntil);
+        assertEq(memberlist.values_address("updateMembers_usr"), address(3));
+        assertEq(memberlist.values_uint("updateMembers_validUntil"), validUntil);
     }
 
     function testUpdateMembersAsAdmin() public {
         memberAdmin.relyAdmin(address(this));
-        updateMember();
+        updateMembers();
     }
 
     function testFailUpdateMembersAsNonAdmin() public {
         memberAdmin.denyAdmin(address(this));
-        updateMember();
+        updateMembers();
     }
 }

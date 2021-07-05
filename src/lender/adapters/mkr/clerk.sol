@@ -106,7 +106,7 @@ contract Clerk is Auth, Interest {
     SpotterLike public spotter;
     JugLike public jug;
 
-    ERC20Like public dai;
+    ERC20Like public immutable dai;
     ERC20Like public collateral;
 
     uint public constant WAD = 10*18;
@@ -132,10 +132,14 @@ contract Clerk is Auth, Interest {
         return mgr.safe() && mgr.glad() && mgr.live();
     }
 
+    event Depend(bytes32 indexed contractName, address addr);
+    event File(bytes32 indexed what, uint value);
+
     constructor(address dai_, address collateral_) {
-        wards[msg.sender] = 1;
-        dai =  ERC20Like(dai_);
+        dai = ERC20Like(dai_);
         collateral =  ERC20Like(collateral_);
+        wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     function depend(bytes32 contractName, address addr) public auth {
@@ -158,6 +162,7 @@ contract Clerk is Auth, Interest {
         } else if (contractName == "jug") {
             jug = JugLike(addr);
         } else revert();
+        emit Depend(contractName, addr);
     }
 
     function file(bytes32 what, uint value) public auth {
@@ -168,6 +173,7 @@ contract Clerk is Auth, Interest {
         } else if (what == "wipeThreshold") {
             wipeThreshold = value;
         } else { revert(); }
+        emit File(what, value);
     }
 
     function remainingCredit() public view returns (uint) {
@@ -416,7 +422,7 @@ contract Clerk is Auth, Interest {
     function stabilityFee() public view returns(uint) {
         // mkr.duty is the stability fee in the mkr system
         (uint duty, ) =  jug.ilks(ilk());
-        return duty;
+        return safeAdd(jug.base(), duty);
     }
 
     function ilk() public view returns (bytes32) {
