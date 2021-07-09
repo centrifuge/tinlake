@@ -7,7 +7,6 @@ import "tinlake-math/interest.sol";
 import {BaseTypes} from "../../../../lender/test/coordinator-base.t.sol";
 import { Assessor }from "../../../../lender/assessor.sol";
 
-
 contract MKRTestBasis is TestSuite, Interest {
     Assessor mkrAssessor;
 
@@ -18,14 +17,13 @@ contract MKRTestBasis is TestSuite, Interest {
         bool mkrAdapter = true;
         TinlakeConfig memory defaultConfig = defaultConfig();
         deployContracts(mkrAdapter, defaultConfig);
-        createTestUsers();
+        createTestUsers(); 
 
         nftFeed_ = NFTFeedLike(address(nftFeed));
-
         root.relyContract(address(clerk), address(this));
         mkrAssessor = assessor;
         mkr.depend("currency" ,currency_);
-        mkr.depend("drop", mkrLenderDeployer.seniorToken());
+        mkr.depend("drop", lenderDeployer.seniorToken());
     }
 
 
@@ -161,7 +159,6 @@ contract MKRBasicSystemTest is MKRTestBasis {
         uint mkrAmount = 500 ether;
         uint borrowAmount = 300 ether;
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
-
         uint sinkAmount = 50 ether;
         uint totalBalance = mkrAssessor.totalBalance();
         uint seniorBalance = mkrAssessor.seniorBalance();

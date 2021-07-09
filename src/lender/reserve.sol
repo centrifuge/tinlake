@@ -147,7 +147,7 @@ contract Reserve is Math, Auth {
             if(drawAmount > left) {
                 drawAmount = left;
             }
-
+            
             lending.draw(drawAmount);
         }
 

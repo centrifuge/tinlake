@@ -3,6 +3,7 @@ pragma solidity >=0.6.12;
 
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
+
 import { TitleOwned, TitleLike } from "tinlake-title/title.sol";
 
 interface NFTLike {
@@ -167,7 +168,7 @@ contract Shelf is Auth, TitleOwned, Math {
     function withdraw(uint loan, uint currencyAmount, address usr) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
         require(currencyAmount <= balances[loan], "withdraw-amount-too-high");
-
+    
         reserve.balance();
         balances[loan] = safeSub(balances[loan], currencyAmount);
         balance = safeSub(balance, currencyAmount);

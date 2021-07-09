@@ -46,7 +46,7 @@ contract GemJoinMock {
     }
 }
 
-contract SimpleMkr is Interest, DSTest{
+contract SimpleMkr is Interest, DSTest, Auth {
     ERC20Like public currency;
     ERC20Like public drop;
     uint public ratePerSecond;
@@ -75,6 +75,8 @@ contract SimpleMkr is Interest, DSTest{
 
         GemJoinMock gemJoin = new GemJoinMock(ilk);
         urn = new UrnMock(address(gemJoin));
+
+        wards[msg.sender] = 1;
     }
 
     function file(bytes32 what, uint value) public {
@@ -103,8 +105,21 @@ contract SimpleMkr is Interest, DSTest{
         }
     }
 
+    function file(bytes32 what, address addr) public {
+        // enable file(bytes32, address) calls to make it compatible with the TinlakeManager interface
+        emit log_named_bytes32("file_what", what);
+        emit log_named_address("file_addr", addr);
+        return;
+    }
+
+    function lock(uint amt) public {
+        // enable lock(uint) calls to make it compatible with the TinlakeManager interface
+        emit log_named_uint("lock_amt", amt);
+        return;
+    }
+
     function depend(bytes32 name, address addr) public {
-        if(name == "currency") {
+        if (name == "currency") {
             currency = ERC20Like(addr);
         } else if (name == "drop") {
             drop = ERC20Like(addr);
