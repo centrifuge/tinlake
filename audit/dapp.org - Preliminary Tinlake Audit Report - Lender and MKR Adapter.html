@@ -1,0 +1,1222 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!-- saved from url=(0051)https://dapp.org.uk/reports/tinlake.html#org2e4ae04 -->
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!-- 2021-07-09 Fri 11:51 -->
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preliminary Tinlake Audit Report:</title>
+<meta name="generator" content="Org mode">
+<meta name="author" content="dapp.org">
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<style> body { line-height: 1.6; font-size: 18px; padding: 0 10px;text-align: justify;text-justify: inter-word; margin: 60px auto; max-width: 800px; } h2,h2,h3{line-height:1.2} a:link { color: #0466c8; } a:visited { color: #0466c8; } code, .code { font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace; font-size: 1.125rem; line-height: 1.6; padding: 0; padding-top: 0; padding-bottom: 0; margin: 0; font-size: 85%; background-color: rgba(0,0,0,0.04); border-radius: 3px; } h2 { border-bottom: 3px solid #444; } h3 { text-decoration: underline; } h4 { font-style: italic } table { width: 100% } .src,.example {background: #292929; color: #fafafa; font-size: 16px; padding: 0; padding: 10px;} img { width: 100% } blockquote {margin: 20px; padding: 20px; border-left: 2px solid; font-style: italic }</style>
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2020 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="preamble" class="status">
+<h1 class="title">Preliminary Tinlake Audit Report:</h1>
+	  <h1 class="subtitle">Lender and MKR Adapter</h1>
+	  <p class="subtitle"><i>dapp.org</i></p>
+	  <p class="subtitle"><a href="mailto:fv@dapp.org">fv@dapp.org</a></p>
+	  <p class="subtitle">last updated: 21.06.2021 </p><br><br>
+</div>
+<div id="content">
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org73cf276">Summary</a>
+<ul>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#orgce395c9">Team</a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org6b8fe8a">Tests</a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#orgacb3689">Changelog</a></li>
+</ul>
+</li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org2c59b44">System Overview</a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org8012e44">Findings</a>
+<ul>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#orgcda29ca">Bugs</a>
+<ul>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#orga1a7de3">B01. <code>reserve.sol</code> accounting can be manipulated by dai transfers</a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org9381d35">B02. <code>clerk.stabilityFee</code> does not take <code>jug.base</code> into account</a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org6eeabf7">B03. <code>clerk.sol</code> rounding error can lead to DROP price of 0</a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#orga13d88a">B04. <code>assessor.sol</code> senior ratio can exceed ONE</a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#orgfd05f9e">B05. Double counting assets of loans between <code>shelf.borrow</code> and <code>shelf.withdraw</code></a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org847477e">B06. Senior interest for the first loan in a pool can be applied twice</a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org33ea0d4">B07. Mixed usage of <code>approximatedNAV</code> and <code>currentNAV</code> in <code>assessor.sol</code></a></li>
+</ul>
+</li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org5552ccb">Improvements</a>
+<ul>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#orgb9ca9f8">I01. General lack of events</a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org738c4b8">I02. Return submissionsPeriod and error code in <code>closeEpoch()</code></a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#orgd21eb52">I03. Use <code>immutable</code> wherever possible</a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org39a5886">I04. <code>tranche.sol</code>: use address(this) instead of <code>self</code> state variable</a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#orgb875f32">I05. Argument order of newRestrictedToken in RestrictedTokenFab</a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org4cb2a5c">I06. Missing tests for <code>updateMembers()</code> in <code>memberAdmin.t.sol</code> and <code>poolAdmin.t.sol</code></a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org38a2307">I07. Redundant checks / updates in <code>assessor.sol</code></a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#orge31af41">I08. Misleading comments in <code>assessor.sol</code></a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org548660e">I09. <code>reserve.sol</code>: Rename <code>balance_</code> to <code>totalBalance</code></a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org23b3cd5">I10. Use enums for error codes in coordinator.</a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org23d2256">I11. Unused parameters in <code>Assessor.calcJuniorTokenPrice</code> / <code>Assessor.calcSeniorTokenPrice</code></a></li>
+</ul>
+</li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org2e4ae04">Notes and Miscellanea</a>
+<ul>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org1e52916">N01. Misleading naming in deployer code</a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org71a11d3">N02. Accounting in <code>Reserve</code> makes potentially unsafe assumptions regarding token semantics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#orgc12b352">Design Analysis</a>
+<ul>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#orga88eed3">Rounding Error</a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#orga865cd0">Epochs and Transaction Ordering</a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org38c7452">Collusion resistance</a>
+<ul>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org03fb433">DROP &amp; borrower collusion</a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org05e0b48">TIN &amp; borrower collusion</a></li>
+</ul>
+</li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org4e2ee4d">Governance Powers</a></li>
+</ul>
+</li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org2fc7339">Contract Map</a></li>
+<li><a href="https://dapp.org.uk/reports/tinlake.html#org7f659bf">Appendix A. Bug Classifications</a></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org73cf276" class="outline-2">
+<h2 id="org73cf276">Summary</h2>
+<div class="outline-text-2" id="text-org73cf276">
+<p>
+From May 31st to June 6 2021, a team of four engineers spent a total of 8 person weeks reviewing the lender modules and the MakerDAO integration for Centrifuge's Tinlake system.
+</p>
+
+<p>
+The phase 1 review was carried out against the following git commits:
+</p>
+
+<ul class="org-ul">
+<li><a href="https://github.com/centrifuge/tinlake/tree/35bccfbc209562095bff3f601541aa2b6ae664fb">centrifuge/tinlake</a> at <code>35bccfbc209562095bff3f601541aa2b6ae664fb</code></li>
+<li><a href="https://github.com/centrifuge/tinlake-maker-lib/tree/ccd49b6def03537483dfe8695d94ee0652884ff7">centrifuge/tinlake-maker-lib</a> at <code>ccd49b6def03537483dfe8695d94ee0652884ff7</code></li>
+</ul>
+
+<p>
+The audit engagement is split into two phases. The next phase will cover the borrower modules over an additional 8 person week period.
+</p>
+</div>
+
+<div id="outline-container-orgce395c9" class="outline-3">
+<h3 id="orgce395c9">Team</h3>
+<div class="outline-text-3" id="text-orgce395c9">
+<p>
+The review was carried out by the following members of the <a href="http://dapp.org/">dapp.org</a> collective:
+</p>
+
+<ul class="org-ul">
+<li>David Terry</li>
+<li>Denis Erfurt</li>
+<li>Jenny Pollack</li>
+<li>Martin Lundfall</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org6b8fe8a" class="outline-3">
+<h3 id="org6b8fe8a">Tests</h3>
+<div class="outline-text-3" id="text-org6b8fe8a">
+<p>
+To facilitate the analysis, the team implemented a suite of integration,
+property tests and invariant tests using the <a href="https://github.com/dapphub/dapptools">dapptools</a> toolbox, which can be found at
+<a href="https://github.com/dapp-org/tinlake-tests/">https://github.com/dapp-org/tinlake-tests/</a>.
+This includes demonstrations of most of the vulnerabilities described in this document.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgacb3689" class="outline-3">
+<h3 id="orgacb3689">Changelog</h3>
+<div class="outline-text-3" id="text-orgacb3689">
+<p>
+A revision history for this document can be found <a href="https://github.com/dapp-org/tinlake-report">here</a>
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org2c59b44" class="outline-2">
+<h2 id="org2c59b44">System Overview</h2>
+<div class="outline-text-2" id="text-org2c59b44">
+<p>
+Tinlake is a system that allows lenders to provide credit to holders of non
+fungible assets. The assets are represented on chain as ERC-721
+tokens. Borrowers lock these assets in tinlake, and can borrow currency up to
+some configurable percentage of the assessed value of their asset.
+</p>
+
+<p>
+Different classes of assets are held in different pools, with "asset
+originators" having the power to approve individual assets for borrowing in a
+pool, and to assess their value. Each pool is a complete new deployment of the
+contracts.
+</p>
+
+<p>
+Lenders must undergo KYC, and once approved by Tinlake governance, can invest in
+either the junior or senior tranche. If loans default and losses occur, they
+will be taken from the junior tranche before the senior tranche. The senior
+tranche has a fixed interest rate, whereas the junior tranche receives a
+variable (and potentially higher) rate of return.  In return for providing
+currency to borrowers, lenders receive a fungible token (<code>DROP</code> for the senior
+tranche, and <code>TIN</code> for the junior tranche), this token can be exchanged for
+currency at a price determined by the pool contracts.
+</p>
+
+<p>
+In order to provide some resistance against transaction reordering attacks and to
+prevent races, the lending side of the system makes use of an epoch mechanism.
+Lenders supply currency, or redeem their DROP / TIN for currency by first
+submitting an order to the pool, and then waiting for the epoch to close. Once
+the epoch is closed, the orders are executed in full if possible, or partially
+if a full execution would violate certain pool constraints (e.g. the ratio of
+junior to senior investors). Due to the computational complexity of calculating
+the partial order fulfillment, the calculation is made off chain and the smart
+contracts validate the results.
+</p>
+
+<p>
+The system can additionally integrate with external credit providers
+(e.g. MakerDAO), allowing holders of NFTs to access credit from existing DeFi
+lending institutions (that are generally designed with fungible assets in mind).
+</p>
+
+<p>
+In pools that are integrated with MakerDAO, Maker acts essentially as a large
+senior investor, holding a DROP position as collateral to enable dai minting to
+fund loans in the tinlake system. However, the net result of the DROP position
+and the dai loan of the Maker CDP is redirected to flow to TIN holders, as they
+bear the risk in this setting. The Maker integration can be seen as a way to
+leverage the performance of the Tinlake system, allowing for increased capital
+efficiency, while increasing TIN risk.
+</p>
+
+<p>
+More in depth documentation of the intended functioning of the tinlake system
+can be found at <a href="https://developer.centrifuge.io/">https://developer.centrifuge.io/</a>. More information about the
+maker adapter can be found in the assessment by the maker developers:
+<a href="https://forum.makerdao.com/t/ns2drp-ns-drop-mip22-token-smart-contract-domain-team-assessment/5517">https://forum.makerdao.com/t/ns2drp-ns-drop-mip22-token-smart-contract-domain-team-assessment/5517</a>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org8012e44" class="outline-2">
+<h2 id="org8012e44">Findings</h2>
+<div class="outline-text-2" id="text-org8012e44">
+<p>
+Our findings are separated into three sections:
+</p>
+
+<ul class="org-ul">
+<li><b><a href="https://dapp.org.uk/reports/tinlake.html#orgcda29ca">Bugs</a></b>: issues that impact the security or correctness of the system</li>
+<li><b><a href="https://dapp.org.uk/reports/tinlake.html#org5552ccb">Improvements</a></b>: changes that could improve the clarity, functionality, or efficiency of the system, but that do not impact security or correctness</li>
+<li><b><a href="https://dapp.org.uk/reports/tinlake.html#org2e4ae04">Notes and Miscellanea</a></b>: points of interest that do not merit an explicit recommendation for change</li>
+</ul>
+</div>
+
+<div id="outline-container-orgcda29ca" class="outline-3">
+<h3 id="orgcda29ca">Bugs</h3>
+<div class="outline-text-3" id="text-orgcda29ca">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col class="org-left">
+
+<col class="org-left">
+
+<col class="org-left">
+
+<col class="org-left">
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><b>Finding</b></th>
+<th scope="col" class="org-left"><b>Severity</b></th>
+<th scope="col" class="org-left"><b>Likelihood</b></th>
+<th scope="col" class="org-left"><b>Addressed</b></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">B01. <code>reserve.sol</code> accounting can be manipulated by dai transfers</td>
+<td class="org-left">High</td>
+<td class="org-left">High</td>
+<td class="org-left"><a href="https://github.com/centrifuge/tinlake/pull/579/commits/3c8db8ebaa12f5c0471f1aa3a8be6c5c88791d72"><code>3c8db8e</code></a></td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left">B02. <code>clerk.stabilityFee</code> does not take <code>jug.base</code> into account</td>
+<td class="org-left">High</td>
+<td class="org-left">Low</td>
+<td class="org-left"><a href="https://github.com/centrifuge/tinlake/pull/579/commits/1c91385ee79eebdfd138cd69307722420b0b2f98"><code>1c91385</code></a></td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left">B03. <code>clerk.sol</code> rounding error can lead to DROP price of 0</td>
+<td class="org-left">High</td>
+<td class="org-left">Low</td>
+<td class="org-left"><a href="https://github.com/centrifuge/tinlake/pull/579/commits/1d54213f06baa373258a5a0bc69be04c8aa442e8"><code>1d54213</code></a></td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left">B04. <code>assessor.sol</code> senior ratio can exceed ONE</td>
+<td class="org-left">Medium</td>
+<td class="org-left">Low</td>
+<td class="org-left"><a href="https://github.com/centrifuge/tinlake/pull/579/commits/1d54213f06baa373258a5a0bc69be04c8aa442e8"><code>1d54213</code></a></td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left">B05. Double counting assets between <code>shelf.borrow</code> and <code>shelf.withdraw</code></td>
+<td class="org-left">Medium</td>
+<td class="org-left">High</td>
+<td class="org-left"><a href="https://github.com/centrifuge/tinlake/pull/579/commits/c633f7e72e122f39fcdb047a50295ddc931906d1"><code>c633f7e</code></a></td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left">B06. Senior interest for the first loan in a pool can be applied twice</td>
+<td class="org-left">Medium</td>
+<td class="org-left">High</td>
+<td class="org-left"><a href="https://github.com/centrifuge/tinlake/pull/579/commits/ddee95f71d191d9173c6f11950d00437999ee053"><code>ddee95f</code></a> <a href="https://github.com/centrifuge/tinlake/pull/579/commits/695fc127aa3a7474b3ed9aea70ea6c0b77899c6a"><code>695fc12</code></a></td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left">B07. Mixed usage of <code>approximatedNAV</code> and <code>currentNAV</code> in <code>assessor.sol</code></td>
+<td class="org-left">Low</td>
+<td class="org-left">High</td>
+<td class="org-left"><a href="https://github.com/centrifuge/tinlake/pull/579/commits/7cac561ff3242448165368d2bc0d15c2c23c2a8d"><code>7cac561</code></a></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div id="outline-container-orga1a7de3" class="outline-4">
+<h4 id="orga1a7de3">B01. <code>reserve.sol</code> accounting can be manipulated by dai transfers</h4>
+<div class="outline-text-4" id="text-orga1a7de3">
+<p>
+In <code>reserve.sol</code>, both a local <code>balance_</code> variable which is incremented and subtracted
+at deposits and payouts, and the direct <code>balanceOf(pot)</code> value are being used in calculations
+involving the maker adapter integration: <a href="https://github.com/centrifuge/tinlake/blob/35bccfbc209562095bff3f601541aa2b6ae664fb/src/lender/reserve.sol#L118">L118</a>, <a href="https://github.com/centrifuge/tinlake/blob/35bccfbc209562095bff3f601541aa2b6ae664fb/src/lender/reserve.sol#L143">L143</a>.
+If someone were to send at least 1 wei dai to the reserve, <code>balanceOf(pot)</code> will be larger than <code>balance_</code>,
+which can lead to blocking payouts or deposits from a failing <code>safeSub</code> in <a href="https://github.com/centrifuge/tinlake/blob/35bccfbc209562095bff3f601541aa2b6ae664fb/src/lender/reserve.sol#L134">_payoutAction</a>, causing a system deadlock.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org9381d35" class="outline-4">
+<h4 id="org9381d35">B02. <code>clerk.stabilityFee</code> does not take <code>jug.base</code> into account</h4>
+<div class="outline-text-4" id="text-org9381d35">
+<p>
+While the maker stability fee is correctly calculated by the following
+expression in <code>clerk.debt()</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-solidity">rmul(art, rmul(rpow(safeAdd(jug.base(), duty), safeSub(block.timestamp, rho), ONE), rateIdx));
+</pre>
+</div>
+
+<p>
+the function <code>clerk.stabilityFee</code> fails to take <code>jug.base()</code> into account, which can lead
+to an incorrect calculation of the cdp debt in <code>assessor.remainingCredit</code>, in the worst case
+reverting a <code>safeSub</code>, blocking calls to <code>assessor.seniorBalance()</code> and subsequently deadlocks
+epoch execution.
+</p>
+
+<p>
+n.b. that in practice, the <code>jug.base()</code> variable has always been zero since the deployment of
+multicollateral dai and stability fees have been adjusted on a per ilk basis.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org6eeabf7" class="outline-4">
+<h4 id="org6eeabf7">B03. <code>clerk.sol</code> rounding error can lead to DROP price of 0</h4>
+<div class="outline-text-4" id="text-org6eeabf7">
+<p>
+When due some rounding error seniorTranche.tokenSupply() is left with dust (e.g. 1 instead of 0),
+the check in <code>assessor.sol#L167</code> during <code>_calcSeniorTokenPrice</code> is missed and the seniorTokenPrice
+can end up being <code>0</code> (in case the pool only has junior investors). This can lead to multiple issues,
+</p>
+<ul class="org-ul">
+<li>a division by `0` at `clerk.sol#L231` where the seniorTokenPrice ends up being <code>0</code></li>
+<li>when a senior investor tries to redeem they will be stuck calling disburse due to another division by zero in `tranche.sol#L167`.</li>
+</ul>
+<p>
+This scenario only occurs when seniorTokenRatio is allowed to be `0` and the pool only consists out of junior investors.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orga13d88a" class="outline-4">
+<h4 id="orga13d88a">B04. <code>assessor.sol</code> senior ratio can exceed ONE</h4>
+<div class="outline-text-4" id="text-orga13d88a">
+<p>
+It's taken to account in <code>reBalance</code> but the `seniorRatio` is not updated in
+<code>repaymentUpdate</code> and so it would be wrong adjusting the senior balance and
+debt. Needs more analysis on the borrower side.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgfd05f9e" class="outline-4">
+<h4 id="orgfd05f9e">B05. Double counting assets of loans between <code>shelf.borrow</code> and <code>shelf.withdraw</code></h4>
+<div class="outline-text-4" id="text-orgfd05f9e">
+<p>
+The total assets held by the tinlake system at any point in time is given by
+<code>reserves + NAV</code>; idle deposits kept in the reserve and the net asset value of
+all outstanding loans (see <a href="https://developer.centrifuge.io/learn/understanding-tinlake/#nav">https://developer.centrifuge.io/learn/understanding-tinlake/#nav</a> for details).
+</p>
+
+<p>
+However, in between the two stages of borrowing, <code>shelf.borrow</code> and <code>shelf.withdraw</code>, a loan is considered active
+and counted towards the NAV, while the borrowed amount still sits in the <code>reserve</code>, effectively being counted twice.
+</p>
+
+<p>
+This poses a particular problem for pools with Maker integration, as when additional DROP are minted to provide
+collateral for the CDP, the seniorRatio is adjusted too far down, as assets are overvalued, leaving senior investors
+with too little interest accruing stake in the loan (<code>seniorBalance</code> becomes too low).
+</p>
+
+<p>
+Luckily, this inaccuracy in the <code>seniorRatio</code> only remains until <code>reserve.balance()</code> is called,
+which happens at every epoch, so senior investors only miss out on a portion of one epochs interest.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org847477e" class="outline-4">
+<h4 id="org847477e">B06. Senior interest for the first loan in a pool can be applied twice</h4>
+<div class="outline-text-4" id="text-org847477e">
+<p>
+The method <code>assessor.dripSeniorDebt()</code> applies interest on the <code>seniorDebt</code>, i.e. the value of
+of current outstanding loans that are generating interest for DROP holders.
+</p>
+
+<p>
+However, the storage variable <code>lastUpdateSeniorInterest</code> is only updated
+when <code>seniorDebt</code> actually has increased:
+</p>
+<div class="org-src-container">
+<pre class="src src-solidity">if (newSeniorDebt &gt; seniorDebt_) {
+    seniorDebt_ = newSeniorDebt;
+    lastUpdateSeniorInterest = block.timestamp;
+}
+</pre>
+</div>
+<p>
+which means that the initialization of <code>seniorDebt</code> does not update this variable,
+and a retroactive, instantaneous interest is applied since the opening of the pool.
+</p>
+
+<p>
+In pools without maker integration, this scenario does not occur since the
+<code>lastUpdateSeniorInterest</code> variable is updated in <code>borrowUpdate</code> (of which <code>dripSeniorDebt()</code>
+is a subcall), but changes to <code>seniorBalance</code> as a result of <code>changeSeniorAsset</code> will lead
+to too much interest being applied.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org33ea0d4" class="outline-4">
+<h4 id="org33ea0d4">B07. Mixed usage of <code>approximatedNAV</code> and <code>currentNAV</code> in <code>assessor.sol</code></h4>
+<div class="outline-text-4" id="text-org33ea0d4">
+<p>
+The <code>calcSeniorTokenPrice()</code> and <code>calcSeniorTokenPrice()</code> methods on the
+<code>Assessor</code> use different values for the NAV calculation. In
+<code>calcSeniorTokenPrice()</code> the approximated NAV is used, in <code>calcJuniorTokenPrice()</code>
+the current NAV is used. Callers of these methods in the <code>Assessor</code> may receive
+inconsistent results.
+</p>
+
+<p>
+<code>calcJuniorTokenPrice()</code> is not used within tinlake. <code>calcSeniorTokenPrice</code> is
+used by the <code>Clerk</code>. The <code>currentNAV</code> in the current version of the <code>navfeed</code> is
+too expensive to use in this context, so <code>calcJuniorTokenPrice</code> should be
+modified to use the approximated NAV.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org5552ccb" class="outline-3">
+<h3 id="org5552ccb">Improvements</h3>
+<div class="outline-text-3" id="text-org5552ccb">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col class="org-left">
+
+<col class="org-left">
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><b>Recommendation</b></th>
+<th scope="col" class="org-left"><b>Implemented</b></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">I01. General lack of events</td>
+<td class="org-left"><a href="https://github.com/centrifuge/tinlake/pull/579/commits/a8b57d5215eb5efb39ceaa8be454538db1bbaac3"><code>a8b57d5</code></a> <a href="https://github.com/centrifuge/tinlake/pull/579/commits/1706aef04b50c8daa4441c5d27945a463bea7b81"><code>1706aef</code></a></td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left">I02. Return submissionsPeriod and error code in <code>closeEpoch()</code></td>
+<td class="org-left">&nbsp;</td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left">I03. Use <code>immutable</code> wherever possible</td>
+<td class="org-left"><a href="https://github.com/centrifuge/tinlake/pull/579/commits/6d2b21c5d26f041b99db4af57164bcca7d764d69"><code>6d2b21c</code></a></td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left">I04. <code>tranche.sol</code>: use address(this) instead of <code>self</code> state variable</td>
+<td class="org-left"><a href="https://github.com/centrifuge/tinlake/pull/579/commits/1fb4cf2546c5047e9e3f30c543fc09785b7b680e"><code>1fb4cf2</code></a></td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left">I05. <code>tranche.sol</code>: calcDisburse reverse nesting in while and two if statements</td>
+<td class="org-left">&nbsp;</td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left">I06. Argument order of newRestrictedToken in RestrictedTokenFab</td>
+<td class="org-left"><a href="https://github.com/centrifuge/tinlake/pull/579/commits/1c65cc40a98a8cf46b8edacb41ab2893be9dcfc9"><code>1c65cc4</code></a></td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left">I07. Missing tests for <code>updateMembers()</code> in <code>memberAdmin.t.sol</code> and <code>poolAdmin.t.sol</code></td>
+<td class="org-left"><a href="https://github.com/centrifuge/tinlake/pull/579/commits/607227714aa0160a6d45e6a344fdf8ab5a82f905"><code>6072277</code></a></td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left">I08. Misleading comments in <code>assessor.sol</code></td>
+<td class="org-left">&nbsp;</td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left">I09. <code>reserve.sol</code>: Rename <code>balance_</code> to <code>totalBalance</code></td>
+<td class="org-left"><a href="https://github.com/centrifuge/tinlake/pull/579/commits/6d2b21c5d26f041b99db4af57164bcca7d764d69"><code>6d2b21c</code></a></td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left">I10. Use enums for error codes in <code>coordinator()</code></td>
+<td class="org-left">&nbsp;</td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left">I11. Unused parameters in <code>Assessor.calcJuniorTokenPrice</code> / <code>Assessor.calcSeniorTokenPrice</code></td>
+<td class="org-left">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+<div id="outline-container-orgb9ca9f8" class="outline-4">
+<h4 id="orgb9ca9f8">I01. General lack of events</h4>
+<div class="outline-text-4" id="text-orgb9ca9f8">
+<p>
+Events should be used in places where a general state-change takes place, (e.g. such as
+<code>file</code> or <code>rely</code> calls) in order to monitor state-changes and make the history queryable.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org738c4b8" class="outline-4">
+<h4 id="org738c4b8">I02. Return submissionsPeriod and error code in <code>closeEpoch()</code></h4>
+<div class="outline-text-4" id="text-org738c4b8">
+<p>
+When calling <code>closeEpoch()</code> there is no indication of whether the epoch successfully
+executed or went into a submission period. Currently a caller will always need to
+call <code>submissionsPeriod</code> afterward. It would be more convenient if this was simply
+returned by the <code>closeEpoch()</code> method. In case the epoch cannot be closed immediately,
+it would be good to return the error code to inform the caller what constraint cannot
+be fulfilled.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgd21eb52" class="outline-4">
+<h4 id="orgd21eb52">I03. Use <code>immutable</code> wherever possible</h4>
+<div class="outline-text-4" id="text-orgd21eb52">
+<p>
+All state variables which are assigned in the constructor and never changed should be
+marked as <code>immutable</code>. This will save gas by putting them directly in the contract code
+instead of in the storage and make the code more readable.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org39a5886" class="outline-4">
+<h4 id="org39a5886">I04. <code>tranche.sol</code>: use address(this) instead of <code>self</code> state variable</h4>
+<div class="outline-text-4" id="text-org39a5886">
+<p>
+The global variable <code>address self</code> which is set to <code>address(this)</code> in the constructor
+and never changed is redundant and more expensive then a simple <code>address(this)</code> statement.
+It should be replaced.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgb875f32" class="outline-4">
+<h4 id="orgb875f32">I05. Argument order of newRestrictedToken in RestrictedTokenFab</h4>
+<div class="outline-text-4" id="text-orgb875f32">
+<p>
+The argument order for <code>RestrictedTokenFab.newRestrictedToken(string name, string symbol)</code>
+is reversed from the underlying call. It should be reversed in order to prevent confusion
+and comply with the order defined by the ETC20 interface.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org4cb2a5c" class="outline-4">
+<h4 id="org4cb2a5c">I06. Missing tests for <code>updateMembers()</code> in <code>memberAdmin.t.sol</code> and <code>poolAdmin.t.sol</code></h4>
+<div class="outline-text-4" id="text-org4cb2a5c">
+<p>
+<a href="https://github.com/centrifuge/tinlake/blob/35bccfbc209562095bff3f601541aa2b6ae664fb/src/lender/test/memberAdmin.t.sol#L57">memberAdmin</a>
+</p>
+
+<p>
+<a href="https://github.com/centrifuge/tinlake/blob/35bccfbc209562095bff3f601541aa2b6ae664fb/src/lender/test/poolAdmin.t.sol#L159">poolAdmin</a>
+</p>
+
+<p>
+Both files have <code>updateMembers()</code> functions for testing and test names which
+indicate they are being used, but the pluralized version of the tests are in
+fact calling the singular <code>updateMember()</code> helpers.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org38a2307" class="outline-4">
+<h4 id="org38a2307">I07. Redundant checks / updates in <code>assessor.sol</code></h4>
+<div class="outline-text-4" id="text-org38a2307">
+<ul class="org-ul">
+<li>setting <code>lastUpdateSeniorInterest</code> at the end of <code>repaymentUpdate</code> / <code>borrowUpdate</code></li>
+<li>repeated checks in <code>dripSeniorDebt</code> / <code>chargeInterest</code> / <code>seniorDebt()</code></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orge31af41" class="outline-4">
+<h4 id="orge31af41">I08. Misleading comments in <code>assessor.sol</code></h4>
+<div class="outline-text-4" id="text-orge31af41">
+<p>
+Both <code>_calcSeniorTokenPrice</code> and <code>_calcJuniorTokenPrice</code> have comments stating
+that the maker creditline is included in the token price calculations, however
+this is not the case for either method.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org548660e" class="outline-4">
+<h4 id="org548660e">I09. <code>reserve.sol</code>: Rename <code>balance_</code> to <code>totalBalance</code></h4>
+<div class="outline-text-4" id="text-org548660e">
+<p>
+The <code>totalBalance</code> method of the <code>Reserve</code> simply returns the value stored in the
+(public) <code>balance_</code> storage variable. This method could be auto-generated by
+solidity if <code>balance_</code> was renamed to <code>totalBalance</code>, resulting in a minor code
+simplification.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org23b3cd5" class="outline-4">
+<h4 id="org23b3cd5">I10. Use enums for error codes in coordinator.</h4>
+<div class="outline-text-4" id="text-org23b3cd5">
+<p>
+Using enums instead of just constants improves compile time guarantees and
+readability of the code.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org23d2256" class="outline-4">
+<h4 id="org23d2256">I11. Unused parameters in <code>Assessor.calcJuniorTokenPrice</code> / <code>Assessor.calcSeniorTokenPrice</code></h4>
+<div class="outline-text-4" id="text-org23d2256">
+<p>
+If either function is being called with two parameters, the second parameter is
+ignored and defaults to <code>reserve.totalBalance()</code>. To prevent confusion, this parameter
+could be removed entirely from the function.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org2e4ae04" class="outline-3">
+<h3 id="org2e4ae04">Notes and Miscellanea</h3>
+<div class="outline-text-3" id="text-org2e4ae04">
+</div>
+<div id="outline-container-org1e52916" class="outline-4">
+<h4 id="org1e52916">N01. Misleading naming in deployer code</h4>
+<div class="outline-text-4" id="text-org1e52916">
+<p>
+The deployer for the borrower module has an interface named <a href="https://github.com/centrifuge/tinlake/blob/a9af91efba44024ab54d3c776c17590ddfc58fe4/src/borrower/deployer.sol#L16"><code>NFTFeedLike</code></a>, this
+expects an <code>init()</code> method to be available. However the actual <code>NFTFeed</code> has no such
+method, and the interface should instead be renamed to <code>NAVFeedLike</code> to reflect
+the true intention.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org71a11d3" class="outline-4">
+<h4 id="org71a11d3">N02. Accounting in <code>Reserve</code> makes potentially unsafe assumptions regarding token semantics</h4>
+<div class="outline-text-4" id="text-org71a11d3">
+<p>
+The <code>Reserve</code> contract is responsible for securing and tracking the amount of
+loanable currency in the system. The reserve's current balance is tracked in a
+cached storage variable (<code>balance_</code>) which is updated on each call to <code>deposit</code> or
+<code>hardDeposit</code>. This approach is more gas efficient that checking the balance on
+the token directly (with a call to <code>balanceOf</code>), but does make some assumptions
+about token semantics that may not always hold. As an example, if the <code>currency</code>
+token takes a transfer fee the <code>balance_</code> variable will be incorrect with respect
+to the actual balance of the reserve.
+</p>
+
+<p>
+New <code>currency</code> tokens should be carefully audited to make sure that they do not
+violate the expectations of the <code>Reserve</code>.
+</p>
+</div>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-orgc12b352" class="outline-2">
+<h2 id="orgc12b352">Design Analysis</h2>
+<div class="outline-text-2" id="text-orgc12b352">
+</div>
+<div id="outline-container-orga88eed3" class="outline-3">
+<h3 id="orga88eed3">Rounding Error</h3>
+<div class="outline-text-3" id="text-orga88eed3">
+<p>
+Tinlake contains many locations that can introduce precision loss or numerical
+error into the calculations: any usage of native EVM division, or of the fixed
+point multiplication (<code>rmul</code>) and division (<code>rdiv</code>) operations. It is the
+opinion of the audit team that insufficient attention has been given to the
+potential for the precision loss introduced by these operations to negatively
+impact the pool.
+</p>
+
+<p>
+Instead of a hard failure in cases where numeric errors result in an arithmetic
+underflow (e.g. when attempting to transfer away more tokens than the pool has
+available), tinlake modifies the values in question so that they no longer
+underflow (e.g. via the <code>safeTotalSub</code> and <code>_safeTransfer</code> methods). Although their
+usage may allow execution to continue in the face of precision loss, they also
+hide the presence of such errors, and allow them to propagate (and potentially
+accumulate or compound), potentially resulting in unexpected or dangerous
+behaviour as the system continues to operate with erroneous information.
+</p>
+
+<p>
+Although several issues relating to rounding error were uncovered during the
+course of the audit, time constraints meant that a full analysis of all possible
+sources of numeric error and their potential impact has not been carried out.
+</p>
+
+<p>
+The audit teams recommended approach to rounding analysis would be to first
+decide on a set of desirable system properties relating to rounding error
+(e.g. "When executing a redeem order, numerical error should always be in favour
+of the investors remaining in the pool"). Once a comprehensive set of properties
+has been defined, each source of numerical error can be analysed in turn to
+ensure that these properties have been upheld. For an example of such an
+analysis, you can refer to the section on numerical error in the <a href="https://dapp.org.uk/reports/uniswapv2.html#org662af64">uniswap-v2
+audit report</a>.
+</p>
+
+<p>
+As a final note, the direction of rounding in <code>rdiv</code> changes depending on the
+size of the remainder, rounding up for cases where the remainder &gt;= 0.5, and
+down otherwise. While this makes intuitive sense, it may complicate the analysis
+described above, and the development team may wish to consider replacing it with
+a fixed point division routine that has a fixed direction of rounding.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orga865cd0" class="outline-3">
+<h3 id="orga865cd0">Epochs and Transaction Ordering</h3>
+<div class="outline-text-3" id="text-orga865cd0">
+<p>
+Tinlake makes use of an epoch mechanism to provide resistance against some forms
+of strategic transaction ordering. Without the epoch mechanism, a user with DROP
+in the pool could for example redeem their DROP directly after another user has
+supplied currency to the pool, or submit a supply order to an oversubscribed
+pool directly after another participant has redeemed. This would give
+sophisticated users an advantage, and would likely result in a marketplace for
+the right to sequence supply / redeem transactions in the most advantageous
+positions (e.g. via flashbots), inflating the cost of successful interaction with
+the pool. The epoch mechanism additionally attempts to fairly allocate a portion
+of the desired funds to all participants for epochs where it is impossible to
+fully execute all orders.
+</p>
+
+<p>
+As the epoch mechanism is applied to lenders only, borrowers can still gain an
+advantage by sequencing their borrows directly after epoch close in cases where
+there is more demand for loans than available credit.
+</p>
+
+<p>
+The fair distribution property can also be gamed for epochs where only a partial
+order fulfillment is possible:
+</p>
+
+<ol class="org-ol">
+<li>In the case that all redeem orders cannot be fulfilled in a given
+epoch, lenders who wish to redeem only a portion of their position can
+gain an advantage over "honest" pool participants by submitting a redeem order
+for a larger amount than that which they actually wish to receive. For pools
+where lenders have a high confidence in being able to reenter the pool, it is
+probably a strictly better strategy to simply always submit a redeem order
+for the full amount, and then resupply in the next epoch.</li>
+<li>In the case that all supply orders cannot be fulfilled in a given epoch,
+lenders who wish to enter a pool can gain an advantage by submitting a supply
+order with a larger amount that they actually wish to supply.</li>
+</ol>
+
+<p>
+It is also worth noting that since all participants will have an increasingly
+certain expectation of the results of epoch execution as the epoch proceeds, it
+is always generally advantageous to submit orders as close to epoch close as
+possible.
+</p>
+
+<p>
+The above issues could be eliminated by:
+</p>
+
+<ul class="org-ul">
+<li>introducing a two stage commit/reveal scheme to the epoch process</li>
+<li>enforcing commit / reveal &amp; epochs for the borrower interactions</li>
+</ul>
+
+<p>
+Both of these measures would introduce significant additional overhead to system
+interactions, and the costs may outweigh the benefits.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org38c7452" class="outline-3">
+<h3 id="org38c7452">Collusion resistance</h3>
+<div class="outline-text-3" id="text-org38c7452">
+<p>
+Being a platform for real world assets, loans in tinlake differ from traditional defi
+platforms in that they do not require on chain collateral but are rather legally
+enforced.
+</p>
+
+<p>
+However, in some scenarios it is still possible borrowers to extract value from
+the system while repaying their loans by colluding with investors.
+</p>
+</div>
+
+<div id="outline-container-org03fb433" class="outline-4">
+<h4 id="org03fb433">DROP &amp; borrower collusion</h4>
+<div class="outline-text-4" id="text-org03fb433">
+<p>
+As there can be multiple asset classes with different risk profiles in a Tinlake
+pool, it is possible to have loans whose interest rates are lower than DROP
+returns. In such settings, asset originators can use this in their favor and
+borrow money and provide senior investments with borrowed funds. As long as the
+system can sustain their DROP yields (from other, higher interest loans), this
+provides a net yield for these actors, in effect extracted from TIN holders in
+the system.
+</p>
+</div>
+</div>
+
+
+<div id="outline-container-org05e0b48" class="outline-4">
+<h4 id="org05e0b48">TIN &amp; borrower collusion</h4>
+<div class="outline-text-4" id="text-org05e0b48">
+<p>
+Borrowers can also collude with a portion of the TIN investors to extract value
+from other TIN holders by performing the following scenario:
+</p>
+
+<ol class="org-ol">
+<li>Before borrowing, acquire TIN by supplying an order and wait for the epoch to settle.</li>
+<li>Take out a large loan, increasing the NAV of the system, and therefore TIN value.</li>
+<li>Cash out TIN position at higher price (requires sufficient funds in the reserve).</li>
+<li>Repay loan prematurely, before too much interest has accrued.</li>
+</ol>
+
+<p>
+This attack is essentially possible since NAV calculations assumes loans
+will be paid back with interest in the future, and not be paid back prematurely.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org4e2ee4d" class="outline-3">
+<h3 id="org4e2ee4d">Governance Powers</h3>
+<div class="outline-text-3" id="text-org4e2ee4d">
+<p>
+The Tinlake system as currently deployed is operated in a centralized manner,
+with a multisig having the power to make or break arbitrary auth connections
+throughout the system. This gives the multisig significant powers over the
+system, including the ability to take all reserves from the system (either via
+<code>Tranche.authTransfer</code>, or via a call to <code>tranche.mint</code>, followed by the
+submission of a redeem order).
+</p>
+
+<p>
+For pools that have been integrated with MakerDAO, the governance multisig can
+draw dai up to the Maker debt ceiling for that pool by creating and approving a
+fake NFT with a very high value, and then borrowing against this NFT.
+</p>
+
+<p>
+It should be noted that there is currently no time delay imposed on governance actions.
+</p>
+
+<p>
+Users of and integrators with tinlake should be aware of the risk of and
+potential catastrophic impact of a multisig compromise. The address of the root
+multisig is: <a href="https://etherscan.io/address/0xf3BceA7494D8f3ac21585CA4b0E52aa175c24C25">0xf3BceA7494D8f3ac21585CA4b0E52aa175c24C25</a>.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org2fc7339" class="outline-2">
+<h2 id="org2fc7339">Contract Map</h2>
+<div class="outline-text-2" id="text-org2fc7339">
+<img src="./dapphub_files/tinlake_contract_diagram.svg">
+</div>
+</div>
+
+<div id="outline-container-org7f659bf" class="outline-2">
+<h2 id="org7f659bf">Appendix A. Bug Classifications</h2>
+<div class="outline-text-2" id="text-org7f659bf">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col class="org-left">
+
+<col class="org-left">
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><b>Severity</b></th>
+<th scope="col" class="org-left">&nbsp;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><i>informational</i></td>
+<td class="org-left">The issue does not have direct implications for functionality, but could be relevant for understanding.</td>
+</tr>
+
+<tr>
+<td class="org-left"><i>low</i></td>
+<td class="org-left">The issue has no security implications, but could affect some behaviour in an unexpected way.</td>
+</tr>
+
+<tr>
+<td class="org-left"><i>medium</i></td>
+<td class="org-left">The issue affects some functionality, but does not result in economically significant loss of user funds.</td>
+</tr>
+
+<tr>
+<td class="org-left"><i>high</i></td>
+<td class="org-left">The issue can cause loss of user funds.</td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left"><b>Likelihood</b></td>
+<td class="org-left">&nbsp;</td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left"><i>low</i></td>
+<td class="org-left">The system is unlikely to be in a state where the bug would occur or could be made to occur by any party.</td>
+</tr>
+
+<tr>
+<td class="org-left"><i>medium</i></td>
+<td class="org-left">It is fairly likely that the issue could occur or be made to occur by some party.</td>
+</tr>
+
+<tr>
+<td class="org-left"><i>high</i></td>
+<td class="org-left">It is very likely that the issue could occur or could be exploited by some parties.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+
+</body></html>
