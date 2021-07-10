@@ -146,7 +146,8 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
         uint loan = shelf.nftlookup(nftID_);
         WriteOff memory writeOff_ = writeOffs[phase_];
-        bookrunner.setWrittenOff(nftID_, writeOff_.percentage);
+        uint amount = rmul(nftValues[nftID_], writeOff_.percentage.value);
+        bookrunner.setWrittenOff(nftID_, amount);
 
         pile.changeRate(loan, writeOff_.rateGroup);
     }
@@ -301,9 +302,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         }
 
         // Mint and transfer new + staked TIN to underwriters
-        // TODO: check if this works correctly
-        uint repaid = safeDiv(amount, nftValues[nftID_]);
-        bookrunner.setRepaid(nftID_, Fixed27(repaid));
+        bookrunner.setRepaid(nftID_, amount);
 
         // return decrease NAV amount
         return calcDiscount(safeSub(preFutureValue, fv), uniqueDayTimestamp(block.timestamp), maturityDate_);

@@ -32,10 +32,10 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         Memberlist memberlist = new Memberlist();
         bookrunner.depend("memberlist", address(memberlist));
 
-        issuer = new Underwriter(address(bookrunner));
+        issuer = new Underwriter(address(bookrunner), address(juniorToken));
         memberlist.updateMember(address(issuer), type(uint256).max);
 
-        underwriter = new Underwriter(address(bookrunner));
+        underwriter = new Underwriter(address(bookrunner), address(juniorToken));
         memberlist.updateMember(address(underwriter), type(uint256).max);
 
         root.relyContract(address(juniorToken), address(this));
@@ -119,7 +119,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         (bytes32 nftID, uint loan) = prepLoan(nftPrice);
         wireBookrunner();
 
-        proposeAndStake(nftID, risk, value, 10 ether, 50 ether);
+        proposeAndStake(nftID, risk, value, 10 ether, 90 ether);
         hevm.warp(block.timestamp + 1 hours);
         issuer.accept(nftID, risk, value);
 
@@ -130,8 +130,8 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         repayLoan(borrower_, loan, nftPrice);
 
         (uint minted, uint burned) = juniorTranche.calcStakedDisburse(address(underwriter));
-        assertEq(minted, 20 ether);
-        assertEq(burned, 0 ether);
+        assertEqTol(minted, 1.8 ether, " minted"); // 90% of 1% of 200 ether
+        assertEqTol(burned, 0 ether, " burned");
 
         uint preJuniorSupply = juniorToken.totalSupply();
         uint preUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
@@ -140,9 +140,11 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         uint postJuniorSupply = juniorToken.totalSupply();
         uint postUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
         
-        assertEq(postJuniorSupply - preJuniorSupply, minted);
-        assertEq(postUnderwriterBalance - preUnderwriterBalance, minted);
+        assertEqTol(postJuniorSupply - preJuniorSupply, minted, " supply increase");
+        assertEqTol(postUnderwriterBalance - preUnderwriterBalance, minted, " balance increase");
     }
+
+    // TODO: repay partially, disburse and get partial minted tokens, repay remainder, disburse and get remainder minted tokens - already minted tokens
 
     function testDisburseBurnedTokens() public {
         invest(700 ether, 300 ether);
@@ -150,7 +152,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         (bytes32 nftID, uint loan) = prepLoan(nftPrice);
         wireBookrunner();
 
-        proposeAndStake(nftID, risk, value, 10 ether, 50 ether);
+        proposeAndStake(nftID, risk, value, 10 ether, 90 ether);
         hevm.warp(block.timestamp + 1 hours);
         issuer.accept(nftID, risk, value);
 
@@ -162,25 +164,28 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         nftFeed.writeOff(nftID, 0); // 60% writeoff
 
         (uint minted, uint burned) = juniorTranche.calcStakedDisburse(address(underwriter));
-        assertEq(minted, 0 ether);
-        assertEq(burned, 20 ether);
+        assertEqTol(minted, 0 ether, " minted 1");
+        assertEqTol(burned, 1.08 ether, " burned 1"); // 90% of 1% of 60% of 200 ether
 
         uint preJuniorSupply = juniorToken.totalSupply();
         uint preUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
+        underwriter.approve(address(juniorTranche), burned);
         juniorTranche.disburseStaked(address(underwriter));
 
         uint postJuniorSupply = juniorToken.totalSupply();
         uint postUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
         
-        assertEq(postJuniorSupply - preJuniorSupply, -burned);
-        assertEq(postUnderwriterBalance - preUnderwriterBalance, -burned);
+        assertEqTol(postJuniorSupply - preJuniorSupply, -burned, " supply decrease");
+        assertEqTol(postUnderwriterBalance - preUnderwriterBalance, -burned, " balance decrease");
 
         hevm.warp(block.timestamp + 3 days); // 6 days overdue
         nftFeed.writeOff(nftID, 1); // 80% writeoff
 
         (minted, burned) = juniorTranche.calcStakedDisburse(address(underwriter));
-        assertEq(minted, 0 ether);
-        assertEq(burned, 40 ether);
+        assertEqTol(minted, 0 ether, " minted 2");
+        assertEqTol(burned, 1.44 ether, " burned 2"); // 90% of 1% of 80% of 200 ether
+
+        // TODO: if we call disburseStaked again, it should burn 1.44 - 1.08 ether rather than 1.44 ether
     }
 
     // --- Utils ---
@@ -225,6 +230,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         nftFeed.rely(address(bookrunner));
 
         bookrunner.rely(address(nftFeed));
+        bookrunner.rely(address(juniorTranche));
         juniorTranche.depend("bookrunner", address(bookrunner));
     }
 

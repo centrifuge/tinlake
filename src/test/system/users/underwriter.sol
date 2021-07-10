@@ -7,9 +7,11 @@ import "../interfaces.sol";
 contract Underwriter {
 
     BookrunnerLike bookrunner;
+    ERC20Like juniorToken;
 
-    constructor(address bookrunner_) {
+    constructor(address bookrunner_, address juniorToken_) {
         bookrunner = BookrunnerLike(bookrunner_);
+        juniorToken = ERC20Like(juniorToken_);
     }
 
     function propose(bytes32 nftID, uint risk, uint value, uint deposit) public {
@@ -22,6 +24,10 @@ contract Underwriter {
 
     function accept(bytes32 nftID, uint risk, uint value) public {
         bookrunner.accept(nftID, risk, value);
+    }
+
+    function approve(address usr, uint wad) public {
+        juniorToken.approve(usr, wad);
     }
     
 }

@@ -62,8 +62,8 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 
 	// Amount repaid and written off per nftID
 	// TODO: look into retrieving these from the navFeed directly
-	mapping (bytes32 => Fixed27) public repaid;
-	mapping (bytes32 => Fixed27) public writtenOff;
+	mapping (bytes32 => uint) public repaid;
+	mapping (bytes32 => uint) public writtenOff;
 
 	// minted/burned amount per (nftID, underwriter) tuple
 	mapping (bytes32 => mapping (address => uint)) public minted;
@@ -174,18 +174,23 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 
 		for (uint i = 0; i < nftIDs.length; i++) {
 			bytes32 nftID = nftIDs[i];
-			emit log_named_bytes32("nftID", nftID);
+			// emit log_named_bytes32("nftID", nftID);
 			bytes memory acceptedProposal = acceptedProposals[nftID];
-			emit log_named_bytes("acceptedProposal", acceptedProposal);
+			// emit log_named_bytes("acceptedProposal", acceptedProposal);
 			uint256 relativeStake = rdiv(perUnderwriterStake[nftID][acceptedProposal][underwriter], proposals[nftID][acceptedProposal]);
-			emit log_named_uint("perUnderwriterStake[nftID][acceptedProposal][underwriter]", perUnderwriterStake[nftID][acceptedProposal][underwriter]);
-			emit log_named_uint("proposals[nftID][acceptedProposal]", proposals[nftID][acceptedProposal]);
-			emit log_named_uint("relativeStake", relativeStake);
-			tokensToBeMinted = safeAdd(tokensToBeMinted, rmul(mintProportion.value, rmul(relativeStake, repaid[nftID].value)));
-			emit log_named_uint("repaid[nftID].value", repaid[nftID].value);
-			emit log_named_uint("relativeStake", relativeStake);
-			emit log_named_uint("mintProportion.value", mintProportion.value);
-			tokensToBeBurned = safeAdd(tokensToBeBurned, rmul(slashProportion.value, rmul(relativeStake, writtenOff[nftID].value)));
+			// emit log_named_uint("perUnderwriterStake[nftID][acceptedProposal][underwriter]", perUnderwriterStake[nftID][acceptedProposal][underwriter]);
+			// emit log_named_uint("proposals[nftID][acceptedProposal]", proposals[nftID][acceptedProposal]);
+			// emit log_named_uint("relativeStake", relativeStake);
+			tokensToBeMinted = safeAdd(tokensToBeMinted, rmul(mintProportion.value, rmul(relativeStake, repaid[nftID])));
+			// emit log_named_uint("tokensToBeMinted", tokensToBeMinted);
+			// emit log_named_uint("repaid[nftID].value", repaid[nftID]);
+			// emit log_named_uint("relativeStake", relativeStake);
+			// emit log_named_uint("mintProportion.value", mintProportion.value);
+			tokensToBeBurned = safeAdd(tokensToBeBurned, rmul(slashProportion.value, rmul(relativeStake, writtenOff[nftID])));
+			// emit log_named_uint("tokensToBeBurned", tokensToBeBurned);
+
+			// TODO: subtract minted[nftID][underwriter] / burned[nftID][underwriter] from tokensToBeMinted/tokensToBeBurned
+
 
 			// TODO: if an asset is defaulting and there was a vote against, part of the slash is going to this vote
 		}
@@ -203,26 +208,32 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 		for (uint i = 0; i < nftIDs.length; i++) {
 			bytes32 nftID = nftIDs[i];
 			bytes memory acceptedProposal = acceptedProposals[nftID];
-			uint256 relativeStake = rdiv(perUnderwriterStake[nftID][acceptedProposal][msg.sender], proposals[nftID][acceptedProposal]);
+			uint256 relativeStake = rdiv(perUnderwriterStake[nftID][acceptedProposal][underwriter], proposals[nftID][acceptedProposal]);
 
-			uint newlyMinted = rmul(mintProportion.value, rmul(relativeStake, repaid[nftID].value));
-			uint newlyBurned = rmul(slashProportion.value, rmul(relativeStake, writtenOff[nftID].value));
-			minted[nftID][underwriter] = newlyMinted;
-			burned[nftID][underwriter] = newlyBurned;
+			uint totalMinted = rmul(mintProportion.value, rmul(relativeStake, repaid[nftID]));
+			uint totalBurned = rmul(slashProportion.value, rmul(relativeStake, writtenOff[nftID]));
 
-			tokensToBeMinted = safeAdd(tokensToBeMinted, newlyMinted);
-			tokensToBeBurned = safeAdd(tokensToBeMinted, newlyBurned);
+			// TODO: subtract already minted/burned from totalMinted/totalBurned
+
+			minted[nftID][underwriter] = totalMinted;
+			burned[nftID][underwriter] = totalBurned;
+
+			tokensToBeMinted = safeAdd(tokensToBeMinted, totalMinted);
+			tokensToBeBurned = safeAdd(tokensToBeBurned, totalBurned);
 		}
+		
+		emit log_named_uint("tokensToBeMinted", tokensToBeMinted);
+		emit log_named_uint("tokensToBeBurned", tokensToBeBurned);
 
 		return (tokensToBeMinted, tokensToBeBurned);
 	}
 
-	function setRepaid(bytes32 nftID, Fixed27 memory percentage) public auth {
-		repaid[nftID] = percentage;
+	function setRepaid(bytes32 nftID, uint amount) public auth {
+		repaid[nftID] = amount;
 	}
 
-	function setWrittenOff(bytes32 nftID, Fixed27 memory percentage) public auth {
-		writtenOff[nftID] = percentage;
+	function setWrittenOff(bytes32 nftID, uint amount) public auth {
+		writtenOff[nftID] = amount;
 	}
 
 	function currentStake(bytes32 nftID, uint risk, uint value) public view returns (uint) {
