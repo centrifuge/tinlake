@@ -185,9 +185,11 @@ contract UnderwriterSystemTest is TestSuite, Interest {
 
         (minted, burned) = juniorTranche.calcStakedDisburse(address(underwriter));
         assertEqTol(minted, 0 ether, " minted 2");
-        assertEqTol(burned, 1.44 ether, " burned 2"); // 90% of 1% of 80% of 200 ether
+        assertEqTol(burned, 1.44 ether - 1.08 ether, " burned 2"); // (90% of 1% of 80% of 200 ether) - 1.08 ether
 
-        // TODO: if we call disburseStaked again, it should burn 1.44 - 1.08 ether rather than 1.44 ether
+        underwriter.approve(address(juniorTranche), 1.44 ether - 1.08 ether);
+        (, uint secondBurn) = underwriter.disburseStaked();
+        assertEqTol(burned, 1.44 ether - 1.08 ether, " secondBurn");
     }
 
     // --- Utils ---

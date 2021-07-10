@@ -181,15 +181,18 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 			// emit log_named_uint("perUnderwriterStake[nftID][acceptedProposal][underwriter]", perUnderwriterStake[nftID][acceptedProposal][underwriter]);
 			// emit log_named_uint("proposals[nftID][acceptedProposal]", proposals[nftID][acceptedProposal]);
 			// emit log_named_uint("relativeStake", relativeStake);
-			tokensToBeMinted = safeAdd(tokensToBeMinted, rmul(mintProportion.value, rmul(relativeStake, repaid[nftID])));
+
+			// (mint proportion * (relative stake * repaid amount)) - already minted
+			tokensToBeMinted = safeAdd(tokensToBeMinted, safeSub(rmul(mintProportion.value, rmul(relativeStake, repaid[nftID])), minted[nftID][underwriter]));
+
 			// emit log_named_uint("tokensToBeMinted", tokensToBeMinted);
 			// emit log_named_uint("repaid[nftID].value", repaid[nftID]);
 			// emit log_named_uint("relativeStake", relativeStake);
 			// emit log_named_uint("mintProportion.value", mintProportion.value);
-			tokensToBeBurned = safeAdd(tokensToBeBurned, rmul(slashProportion.value, rmul(relativeStake, writtenOff[nftID])));
-			// emit log_named_uint("tokensToBeBurned", tokensToBeBurned);
 
-			// TODO: subtract minted[nftID][underwriter] / burned[nftID][underwriter] from tokensToBeMinted/tokensToBeBurned
+			// (burn proportion * (relative stake * written off amount)) - already burned
+			tokensToBeBurned = safeAdd(tokensToBeBurned, safeSub(rmul(slashProportion.value, rmul(relativeStake, writtenOff[nftID])), burned[nftID][underwriter]));
+			// emit log_named_uint("tokensToBeBurned", tokensToBeBurned);
 
 
 			// TODO: if an asset is defaulting and there was a vote against, part of the slash is going to this vote
@@ -201,32 +204,34 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 
 	// Called from tranche, not directly, hence the auth modifier
 	// TODO: this is duplicating calcStakedDisburse partially
-	function disburse(address underwriter) public auth returns (uint, uint) {
+	function disburse(address underwriter) public auth returns (uint tokensNewlyMinted, uint tokensNewlyBurned) {
 		bytes32[] memory nftIDs = underwriterStakes[underwriter];
 
-		uint tokensToBeMinted = 0;
-		uint tokensToBeBurned = 0;
 		for (uint i = 0; i < nftIDs.length; i++) {
 			bytes32 nftID = nftIDs[i];
 			bytes memory acceptedProposal = acceptedProposals[nftID];
 			uint256 relativeStake = rdiv(perUnderwriterStake[nftID][acceptedProposal][underwriter], proposals[nftID][acceptedProposal]);
 
-			uint totalMinted = rmul(mintProportion.value, rmul(relativeStake, repaid[nftID]));
-			uint totalBurned = rmul(slashProportion.value, rmul(relativeStake, writtenOff[nftID]));
+			uint previouslyMinted = minted[nftID][underwriter];
+			uint previouslyBurned = burned[nftID][underwriter];
 
-			// TODO: subtract already minted/burned from totalMinted/totalBurned
+			// (mint proportion * (relative stake * repaid amount)) - already minted
+			uint totalMinted = rmul(mintProportion.value, rmul(relativeStake, repaid[nftID]));
+
+			// (burn proportion * (relative stake * written off amount)) - already burned
+			uint totalBurned = rmul(slashProportion.value, rmul(relativeStake, writtenOff[nftID]));
 
 			minted[nftID][underwriter] = totalMinted;
 			burned[nftID][underwriter] = totalBurned;
 
-			tokensToBeMinted = safeAdd(tokensToBeMinted, totalMinted);
-			tokensToBeBurned = safeAdd(tokensToBeBurned, totalBurned);
+			tokensNewlyMinted = safeAdd(tokensNewlyMinted, safeSub(totalMinted, previouslyMinted));
+			tokensNewlyBurned = safeAdd(tokensNewlyBurned, safeSub(totalBurned, previouslyBurned));
 		}
 		
-		emit log_named_uint("tokensToBeMinted", tokensToBeMinted);
-		emit log_named_uint("tokensToBeBurned", tokensToBeBurned);
+		emit log_named_uint("tokensNewlyMinted", tokensNewlyMinted);
+		emit log_named_uint("tokensNewlyBurned", tokensNewlyBurned);
 
-		return (tokensToBeMinted, tokensToBeBurned);
+		return (tokensNewlyMinted, tokensNewlyBurned);
 	}
 
 	function setRepaid(bytes32 nftID, uint amount) public auth {
