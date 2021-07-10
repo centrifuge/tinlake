@@ -129,12 +129,58 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         hevm.warp(block.timestamp + 4 days);
         repayLoan(borrower_, loan, nftPrice);
 
-        (uint minted,) = juniorTranche.calcStakedDisburse(address(underwriter));
+        (uint minted, uint burned) = juniorTranche.calcStakedDisburse(address(underwriter));
         assertEq(minted, 20 ether);
+        assertEq(burned, 0 ether);
 
-        // save pre juniorToken.totalSupply(), save juniorToken.balanceOf(address(underwriter))
-        // disburse()
-        // compare juniorToken.totalSupply(), compare juniorToken.balanceOf(address(underwriter))
+        uint preJuniorSupply = juniorToken.totalSupply();
+        uint preUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
+        juniorTranche.disburseStaked(address(underwriter));
+
+        uint postJuniorSupply = juniorToken.totalSupply();
+        uint postUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
+        
+        assertEq(postJuniorSupply - preJuniorSupply, minted);
+        assertEq(postUnderwriterBalance - preUnderwriterBalance, minted);
+    }
+
+    function testDisburseBurnedTokens() public {
+        invest(700 ether, 300 ether);
+        (uint nftPrice, uint risk, uint value) = (200 ether, DEFAULT_RISK_GROUP_TEST_LOANS, 200 ether);
+        (bytes32 nftID, uint loan) = prepLoan(nftPrice);
+        wireBookrunner();
+
+        proposeAndStake(nftID, risk, value, 10 ether, 50 ether);
+        hevm.warp(block.timestamp + 1 hours);
+        issuer.accept(nftID, risk, value);
+
+        borrower.approveNFT(collateralNFT, address(shelf));
+        borrower.borrowAction(loan, nftPrice);
+
+        uint maturity = 5 days;
+        hevm.warp(block.timestamp + maturity + 3 days); // 3 days overdue
+        nftFeed.writeOff(nftID, 0); // 60% writeoff
+
+        (uint minted, uint burned) = juniorTranche.calcStakedDisburse(address(underwriter));
+        assertEq(minted, 0 ether);
+        assertEq(burned, 20 ether);
+
+        uint preJuniorSupply = juniorToken.totalSupply();
+        uint preUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
+        juniorTranche.disburseStaked(address(underwriter));
+
+        uint postJuniorSupply = juniorToken.totalSupply();
+        uint postUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
+        
+        assertEq(postJuniorSupply - preJuniorSupply, -burned);
+        assertEq(postUnderwriterBalance - preUnderwriterBalance, -burned);
+
+        hevm.warp(block.timestamp + 3 days); // 6 days overdue
+        nftFeed.writeOff(nftID, 1); // 80% writeoff
+
+        (minted, burned) = juniorTranche.calcStakedDisburse(address(underwriter));
+        assertEq(minted, 0 ether);
+        assertEq(burned, 40 ether);
     }
 
     // --- Utils ---

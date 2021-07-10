@@ -45,10 +45,12 @@ contract Pile is Auth, Interest {
     event File(bytes32 indexed what, uint rate, uint value);
 
     constructor() {
-        wards[msg.sender] = 1;
         // pre-definition for loans without interest rates
         rates[0].chi = ONE;
         rates[0].ratePerSecond = ONE;
+        
+        wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
      // --- Public Debt Methods  ---

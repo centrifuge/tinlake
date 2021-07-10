@@ -17,11 +17,6 @@ interface ShelfLike {
     function balanceRequest() external returns (bool requestWant, uint256 amount);
 }
 
-interface AssessorLike {
-    function repaymentUpdate(uint amount) external;
-    function borrowUpdate(uint amount) external;
-}
-
 interface LendingAdapter {
     function remainingCredit() external view returns (uint);
     function draw(uint amount) external;
@@ -35,7 +30,6 @@ interface LendingAdapter {
 contract Reserve is Math, Auth {
     ERC20Like public currency;
     ShelfLike public shelf;
-    AssessorLike public assessor;
 
     // additional currency from lending adapters
     // for deactivating set to address(0)
@@ -51,17 +45,22 @@ contract Reserve is Math, Auth {
     // total currency in the reserve
     uint public balance_;
 
+    event File(bytes32 indexed what, uint amount);
+    event Depend(bytes32 contractName, address addr);
+
     constructor(address currency_) {
-        wards[msg.sender] = 1;
         currency = ERC20Like(currency_);
         pot = address(this);
         currency.approve(pot, type(uint256).max);
+        wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     function file(bytes32 what, uint amount) public auth {
         if (what == "currencyAvailable") {
             currencyAvailable = amount;
         } else revert();
+        emit File(what, amount);
     }
 
     function depend(bytes32 contractName, address addr) public auth {
@@ -72,13 +71,12 @@ contract Reserve is Math, Auth {
             if (pot == address(this)) {
                 currency.approve(pot, type(uint256).max);
             }
-        } else if (contractName == "assessor") {
-            assessor = AssessorLike(addr);
         } else if (contractName == "pot") {
             pot = addr;
         } else if (contractName == "lending") {
             lending = LendingAdapter(addr);
         } else revert();
+        emit Depend(contractName, addr);
     }
 
     // returns the amount of currency currently in the reserve
@@ -115,7 +113,7 @@ contract Reserve is Math, Auth {
         _depositAction(usr, currencyAmount);
         if(address(lending) != address(0) && lending.debt() > 0 && lending.activated()) {
             uint wipeAmount = lending.debt();
-            uint available = currency.balanceOf(pot);
+            uint available = balance_;
             if(available < wipeAmount) {
                 wipeAmount = available;
             }
@@ -140,7 +138,7 @@ contract Reserve is Math, Auth {
     }
 
     function _payout(address usr, uint currencyAmount)  internal {
-        uint reserveBalance = currency.balanceOf(pot);
+        uint reserveBalance = balance_;
         if (currencyAmount > reserveBalance && address(lending) != address(0) && lending.activated()) {
             uint drawAmount = safeSub(currencyAmount, reserveBalance);
             uint left = lending.remainingCredit();
@@ -169,10 +167,8 @@ contract Reserve is Math, Auth {
 
             currencyAvailable = safeSub(currencyAvailable, currencyAmount);
             _payout(address(shelf), currencyAmount);
-            assessor.borrowUpdate(currencyAmount);
             return;
         }
         _deposit(address(shelf), currencyAmount);
-        assessor.repaymentUpdate(currencyAmount);
     }
 }

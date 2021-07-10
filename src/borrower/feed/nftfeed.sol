@@ -26,6 +26,7 @@ interface PileLike {
 abstract contract BookrunnerLike is FixedPoint {
     function assetWasAccepted(bytes32) public virtual view returns (bool);
     function setRepaid(bytes32 nftID, Fixed27 memory percentage) public virtual;
+    function setWrittenOff(bytes32 nftID, Fixed27 memory percentage) public virtual;
 }
 
 // The NFTFeed stores values and risk group of nfts that are used as collateral in tinlake. A risk group contains: thresholdRatio, ceilingRatio & interstRate.
@@ -57,6 +58,11 @@ contract BaseNFTFeed is Auth, Math {
     ShelfLike shelf;
     BookrunnerLike bookrunner;
 
+    event Depend(bytes32 indexed name, address addr);
+    event File(bytes32 indexed name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_);
+    event Update(bytes32 indexed nftID, uint value);
+    event Update(bytes32 indexed nftID, uint value, uint risk);
+
     constructor () {
         wards[msg.sender] = 1;
     }
@@ -70,6 +76,7 @@ contract BaseNFTFeed is Auth, Math {
         else if (contractName == "shelf") { shelf = ShelfLike(addr); }
         else if (contractName == "bookrunner") { bookrunner = BookrunnerLike(addr); }
         else revert();
+        emit Depend(contractName, addr);
     }
 
     // returns a unique id based on the nft registry and tokenId
@@ -91,6 +98,7 @@ contract BaseNFTFeed is Auth, Math {
             ceilingRatio[risk_] = ceilingRatio_;
             // set interestRate for risk group
             pile.file("rate", risk_, rate_);
+            emit File(name, risk_, thresholdRatio_, ceilingRatio_, rate_);
         } else {revert ("unkown name");}
     }
 
@@ -100,6 +108,7 @@ contract BaseNFTFeed is Auth, Math {
     function update(bytes32 nftID_,  uint value) public auth {
         // switch of collateral risk group results in new: ceiling, threshold for existing loan
         nftValues[nftID_] = value;
+        emit Update(nftID_, value);
     }
 
      // The nft value & risk group is to be updated by authenticated oracles
@@ -115,6 +124,7 @@ contract BaseNFTFeed is Auth, Math {
         }
         risk[nftID_] = risk_;
         nftValues[nftID_] = value;
+        emit Update(nftID_, value, risk_);
     }
 
     // function checks if the borrow amount does not exceed the max allowed borrow amount (=ceiling)

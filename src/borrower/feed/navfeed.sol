@@ -4,6 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
+
 import "./nftfeed.sol";
 import "./buckets.sol";
 
@@ -32,6 +33,8 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         uint rateGroup;
         // denominated in (10^27)
         Fixed27 percentage;
+        // amount of days after the maturity days that the writeoff group can be applied by default
+        uint overdueDays;
     }
 
     // discount rate applied on every asset's fv depending on its maturityDate. The discount decreases with the maturityDate approaching.
@@ -46,8 +49,16 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     uint constant public  WRITE_OFF_PHASE_A = 1001;
     uint constant public  WRITE_OFF_PHASE_B = 1002;
 
+    // first bucket in the future since last update
+    uint public discountStartPointer;
+
+    event File(bytes32 indexed name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_);
+    event File(bytes32 indexed name, bytes32 nftID_, uint maturityDate_);
+    event File(bytes32 indexed name, uint value);
+    
     constructor () {
         wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     function init() public {
@@ -107,22 +118,37 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
         // Overdue loans (= loans that were not repaid by the maturityDate) are moved to write Offs
         // 6% interest rate & 60% write off
-        setWriteOff(0, WRITE_OFF_PHASE_A, uint(1000000674400000000000000000), 6 * 10**26);
+        setWriteOff(0, WRITE_OFF_PHASE_A, uint(1000000674400000000000000000), 6 * 10**26, 3);
         // 6% interest rate & 80% write off
-        setWriteOff(1, WRITE_OFF_PHASE_B, uint(1000000674400000000000000000), 8 * 10**26);
+        setWriteOff(1, WRITE_OFF_PHASE_B, uint(1000000674400000000000000000), 8 * 10**26, 6);
     }
 
     function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_) public auth  {
         if(name == "riskGroup") {
             file("riskGroupNFT", risk_, thresholdRatio_, ceilingRatio_, rate_);
             recoveryRatePD[risk_] = Fixed27(recoveryRatePD_);
-
+            emit File(name, risk_, thresholdRatio_, ceilingRatio_, rate_, recoveryRatePD_);
         } else {revert ("unknown name");}
     }
 
     function setWriteOff(uint phase_, uint group_, uint rate_, uint writeOffPercentage_) internal {
-        writeOffs[phase_] = WriteOff(group_, Fixed27(writeOffPercentage_));
+        writeOffs[phase_] = WriteOff(group_, Fixed27(writeOffPercentage_), type(uint256).max);
         pile.file("rate", group_, rate_);
+    }
+
+    function setWriteOff(uint phase_, uint group_, uint rate_, uint writeOffPercentage_, uint overdueDays_) internal {
+        writeOffs[phase_] = WriteOff(group_, Fixed27(writeOffPercentage_), overdueDays_);
+        pile.file("rate", group_, rate_);
+    }
+
+    function writeOff(bytes32 nftID_, uint phase_) public {
+        require(block.timestamp >= maturityDate[nftID_] + writeOffs[phase_].overdueDays, "too-early");
+
+        uint loan = shelf.nftlookup(nftID_);
+        WriteOff memory writeOff_ = writeOffs[phase_];
+        bookrunner.setWrittenOff(nftID_, writeOff_.percentage);
+
+        pile.changeRate(loan, writeOff_.rateGroup);
     }
 
     function uniqueDayTimestamp(uint timestamp) public pure returns (uint) {
@@ -135,12 +161,14 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         if (name == "maturityDate") {
             require((futureValue[nftID_] == 0), "can-not-change-maturityDate-outstanding-debt");
             maturityDate[nftID_] = uniqueDayTimestamp(maturityDate_);
+            emit File(name, nftID_, maturityDate_);
         } else { revert("unknown config parameter");}
     }
 
     function file(bytes32 name, uint value) public override auth {
         if (name == "discountRate") {
             discountRate = Fixed27(value);
+            emit File(name, value);
         } else { revert("unknown config parameter");}
     }
 
@@ -170,7 +198,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
         // add future value to the bucket of assets with the same maturity date
         if (buckets[maturityDate_].value == 0) {
-            addBucket(maturityDate_, fv);
+            _addBucket(maturityDate_, fv);
         } else {
             buckets[maturityDate_].value = safeAdd(buckets[maturityDate_].value, fv);
         }
@@ -217,6 +245,8 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
         futureValue[nftID_] = calcFutureValue(loan, pile.debt(loan), maturityDate[nftID_], recoveryRatePD[risk[nftID_]].value);
         buckets[maturityDate_].value = safeAdd(buckets[maturityDate_].value, futureValue[nftID_]);
+
+        emit Update(nftID_, value, risk_);
     }
 
     // In case of successful repayment the approximatedNAV is decreased by the repaid amount
@@ -267,12 +297,13 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
         // remove buckets if no remaining assets
         if (buckets[maturityDate_].value == 0 && firstBucket != 0) {
-            removeBucket(maturityDate_);
+            _removeBucket(maturityDate_);
         }
 
-        //  Mint and transfer new + staked TIN to underwriters; underwriter.unstake(nftId)
-        // TODO: calculate actual repaid percentage
-        bookrunner.setRepaid(nftID_, Fixed27(100 * 10**25));
+        // Mint and transfer new + staked TIN to underwriters
+        // TODO: check if this works correctly
+        uint repaid = safeDiv(amount, nftValues[nftID_]);
+        bookrunner.setRepaid(nftID_, Fixed27(repaid));
 
         // return decrease NAV amount
         return calcDiscount(safeSub(preFutureValue, fv), uniqueDayTimestamp(block.timestamp), maturityDate_);
@@ -282,46 +313,59 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         return rdiv(amount, rpow(discountRate.value, safeSub(maturityDate_, normalizedBlockTimestamp), ONE));
     }
 
+    function calcTotalDiscount() public view returns(uint) {
+        (uint sum, ) = _calcTotalDiscount();
+        return sum;
+    }
 
     // calculates the total discount of all buckets with a timestamp > block.timestamp
-    function calcTotalDiscount() public view returns(uint) {
+    function _calcTotalDiscount() internal view returns(uint, uint) {
         uint normalizedBlockTimestamp = uniqueDayTimestamp(block.timestamp);
         uint sum = 0;
 
-        uint currDate = normalizedBlockTimestamp;
+        uint currDate = discountStartPointer;
 
-        if (currDate > lastBucket) {
-            return 0;
+        if (currDate > lastBucket  || discountStartPointer == 0) {
+            return (0, discountStartPointer);
         }
 
-        // only buckets after the block.timestamp are relevant for the discount
-        // assuming its more gas efficient to iterate over time to find the first one instead of iterating the list from the beginning
-        // not true if buckets are only sparsely populated over long periods of time
-        while(buckets[currDate].next == 0) { currDate = currDate + 1 days; }
+        while(currDate != NullDate && currDate < normalizedBlockTimestamp) {
+            currDate = buckets[currDate].next;
+        }
+
+        // next time we can start here to find the next first bucket in the future
+        uint nextStartPointer = currDate;
 
         while(currDate != NullDate)
         {
             sum = safeAdd(sum, calcDiscount(buckets[currDate].value, normalizedBlockTimestamp, currDate));
             currDate = buckets[currDate].next;
         }
-        return sum;
+        return (sum, nextStartPointer);
+    }
+
+    function currentNAV() public view returns(uint) {
+        (uint nav, ) = _currentNAV();
+        return nav;
     }
 
     // returns the NAV (net asset value) of the pool
-    function currentNAV() public view returns(uint) {
+    function _currentNAV() internal view returns(uint, uint) {
         // calculates the NAV for ongoing loans with a maturityDate date in the future
-        uint nav_ = calcTotalDiscount();
+        (uint nav_, uint nextStartPointer) = _calcTotalDiscount();
         // include ovedue assets to the current NAV calculation
         for (uint i = 0; i < writeOffs.length; i++) {
             // multiply writeOffGroupDebt with the writeOff rate
             nav_ = safeAdd(nav_, rmul(pile.rateDebt(writeOffs[i].rateGroup), writeOffs[i].percentage.value));
         }
-        return nav_;
+        return (nav_, nextStartPointer);
     }
 
     function calcUpdateNAV() public returns(uint) {
         // approximated NAV is updated and at this point in time 100% correct
-        approximatedNAV = currentNAV();
+        (uint nav, uint nextStartPointer) = _currentNAV();
+        approximatedNAV = nav;
+        discountStartPointer = nextStartPointer;
         return approximatedNAV;
     }
 
@@ -332,5 +376,24 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
     function dateBucket(uint timestamp) public view returns (uint) {
         return buckets[timestamp].value;
+    }
+
+    function _addBucket(uint timestamp, uint value) internal override {
+        if (timestamp < discountStartPointer || discountStartPointer == 0) {
+            discountStartPointer = timestamp;
+        }
+        super._addBucket(timestamp, value);
+    }
+
+    function _removeBucket(uint timestamp) internal override {
+        if(timestamp == discountStartPointer) {
+            if(buckets[timestamp].next != NullDate) {
+                discountStartPointer = buckets[timestamp].next;
+            } else {
+                discountStartPointer = 0;
+            }
+
+        }
+        super._removeBucket(timestamp);
     }
 }

@@ -61,7 +61,7 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 	mapping (bytes32 => bytes) public acceptedProposals;
 
 	// Amount repaid and written off per nftID
-	// TODO: can't we just retrieve these from the navFeed directly?
+	// TODO: look into retrieving these from the navFeed directly
 	mapping (bytes32 => Fixed27) public repaid;
 	mapping (bytes32 => Fixed27) public writtenOff;
 
@@ -114,7 +114,7 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 		staked[msg.sender] = safeAdd(senderStake, deposit);
 	}
 
-	// Staking against can be done by staking with a value of 0.
+	// Staking in opposition of an asset can be done by staking with a value of 0.
 	function addStake(bytes32 nftID, uint risk, uint value, uint stakeAmount) public memberOnly {
 		require(acceptedProposals[nftID].length == 0, "asset-already-accepted");
 		
@@ -142,14 +142,14 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 		bytes memory proposal = abi.encodePacked(risk, value);
 		require(proposals[nftID][proposal] >= rmul(minimumStakeThreshold.value, value), "stake-threshold-not-reached");
 		
-		acceptedProposals[nftID] = proposal;
 		navFeed.update(nftID, value, risk);
+		acceptedProposals[nftID] = proposal;
 	}
 
 	// For gas efficiency, stake isn't automatically removed from an asset when another proposal is accepted.
 	// Instead, the underwriter can move their stake to a new asset.
-	function moveStake(uint fromNftId, uint fromRisk, uint fromValue, bytes32 toNftId, uint toRisk, uint toValue, uint stakeAmount) public memberOnly {
-		require(acceptedProposals[toNftId].length == 0, "asset-already-accepted");
+	// function moveStake(uint fromNftId, uint fromRisk, uint fromValue, bytes32 toNftId, uint toRisk, uint toValue, uint stakeAmount) public memberOnly {
+	// 	require(acceptedProposals[toNftId].length == 0, "asset-already-accepted");
 		// TODO: check burned[nftID][underwriter]
 		// TODO: how to handle stake that was supposed to be burned? Maybe not allow move if writtenOff[formNftID] > 0?
 
@@ -157,8 +157,7 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 		// add staked to new proposal 
 
 		// if full stake is moved, underwriterStakes[msg.sender].remove(nftID) (only if fully minted/burned)
-		
-	}
+	// }
 
 	// TODO: function cancelStake() public memberOnly
 	// TODO: check burned[nftID][underwriter]
@@ -220,6 +219,10 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 
 	function setRepaid(bytes32 nftID, Fixed27 memory percentage) public auth {
 		repaid[nftID] = percentage;
+	}
+
+	function setWrittenOff(bytes32 nftID, Fixed27 memory percentage) public auth {
+		writtenOff[nftID] = percentage;
 	}
 
 	function currentStake(bytes32 nftID, uint risk, uint value) public view returns (uint) {

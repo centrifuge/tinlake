@@ -135,13 +135,17 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
 
     uint                public constant IMPROVEMENT_WEIGHT =  10000;
 
+    event File(bytes32 indexed name, uint value);
+    event File(bytes32 indexed name, bool value);
+    event Depend(bytes32 indexed contractName, address addr);
 
     constructor(uint challengeTime_) {
-        wards[msg.sender] = 1;
         challengeTime = challengeTime_;
-
         lastEpochClosed = block.timestamp;
         currentEpoch = 1;
+
+        wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     function file(bytes32 name, uint value) public auth {
@@ -154,12 +158,14 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
           else if (name == "weightJuniorSupply") { weightJuniorSupply = value; }
           else if (name == "weightSeniorSupply") { weightSeniorSupply = value; }
           else { revert("unkown-name");}
+        emit File(name, value);
      }
 
     function file(bytes32 name, bool value) public auth {
         if (name == "poolClosing") {
             poolClosing = value;
         } else { revert("unkown-name"); }
+        emit File(name, value);
      }
 
     // sets the dependency to another contract
@@ -169,6 +175,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         else if (contractName == "reserve") { reserve = ReserveLike(addr); }
         else if (contractName == "assessor") { assessor = AssessorLike(addr); }
         else revert();
+        emit Depend(contractName, addr);
     }
 
     // an epoch can be closed after a minimum epoch time has passed
@@ -571,6 +578,9 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
             calcFulfillment(seniorRedeem, order.seniorRedeem).value,
             epochSeniorTokenPrice.value,order.seniorSupply, order.seniorRedeem);
 
+        // assessor performs senior debt reBalancing according to new ratio
+        assessor.changeSeniorAsset(seniorSupply, seniorRedeem);
+        
         juniorTranche.epochUpdate(epochID, calcFulfillment(juniorSupply, order.juniorSupply).value,
             calcFulfillment(juniorRedeem, order.juniorRedeem).value,
             epochJuniorTokenPrice.value, order.juniorSupply, order.juniorRedeem);
@@ -581,8 +591,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         uint newReserve = calcNewReserve(seniorRedeem, juniorRedeem
         , seniorSupply, juniorSupply);
 
-        // assessor performs senior debt reBalancing according to new ratio
-        assessor.changeSeniorAsset(seniorSupply, seniorRedeem);
+        // reBalancing again because the reserve has updated after the junior epochUpdate
+        assessor.changeSeniorAsset(0, 0);
         // the new reserve after this epoch can be used for new loans
         assessor.changeBorrowAmountEpoch(newReserve);
         

@@ -66,9 +66,13 @@ contract Tranche is Math, Auth, FixedPoint {
 
     // additional requested currency if the reserve could not fulfill a tranche request
     uint public requestedCurrency;
-    address self;
 
     bool public waitingForUpdate = false;
+
+    event Depend(bytes32 indexed contractName, address addr);
+    event Mint(address indexed usr, uint amount);
+    event Burn(address indexed usr, uint amount);
+    event AuthTransfer(address indexed erc20, address usr, uint amount);
 
     modifier orderAllowed(address usr) {
         require((users[usr].supplyCurrencyAmount == 0 && users[usr].redeemTokenAmount == 0)
@@ -77,14 +81,14 @@ contract Tranche is Math, Auth, FixedPoint {
     }
 
     constructor(address currency_, address token_) {
-        wards[msg.sender] = 1;
         token = ERC20Like(token_);
         currency = ERC20Like(currency_);
-        self = address(this);
+        wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     function balance() external view returns (uint) {
-        return currency.balanceOf(self);
+        return currency.balanceOf(address(this));
     }
 
     function tokenSupply() external view returns (uint) {
@@ -98,6 +102,7 @@ contract Tranche is Math, Auth, FixedPoint {
         else if (contractName == "coordinator") {coordinator = CoordinatorLike(addr);}
         else if (contractName == "bookrunner") {bookrunner = BookrunnerLike(addr);}
         else revert();
+        emit Depend(contractName, addr);
     }
 
     // supplyOrder function can be used to place or revoke an supply
@@ -113,7 +118,7 @@ contract Tranche is Math, Auth, FixedPoint {
         uint delta;
         if (newSupplyAmount > currentSupplyAmount) {
             delta = safeSub(newSupplyAmount, currentSupplyAmount);
-            require(currency.transferFrom(usr, self, delta), "currency-transfer-failed");
+            require(currency.transferFrom(usr, address(this), delta), "currency-transfer-failed");
             return;
         }
         delta = safeSub(currentSupplyAmount, newSupplyAmount);
@@ -124,7 +129,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
     // redeemOrder function can be used to place or revoke a redeem
     function redeemOrder(address usr, uint newRedeemAmount) public auth orderAllowed(usr) {
-        require(address(bookrunner) == address(0) || safeSub(token.balanceOf(msg.sender), bookrunner.staked(msg.sender)) >= newRedeemAmount, "redeem-amount-too-high");
+        require(address(bookrunner) == address(0) || safeSub(token.balanceOf(msg.sender), bookrunner.staked(msg.sender)) >= newRedeemAmount, "cannot-redeem-staked-tokens");
 
         users[usr].orderedInEpoch = coordinator.currentEpoch();
 
@@ -135,7 +140,7 @@ contract Tranche is Math, Auth, FixedPoint {
         uint delta;
         if (newRedeemAmount > currentRedeemAmount) {
             delta = safeSub(newRedeemAmount, currentRedeemAmount);
-            require(token.transferFrom(usr, self, delta), "token-transfer-failed");
+            require(token.transferFrom(usr, address(this), delta), "token-transfer-failed");
             return;
         }
 
@@ -204,7 +209,11 @@ contract Tranche is Math, Auth, FixedPoint {
         return (tokensToBeMinted, tokensToBeBurned);
     }
 
-    function disburseStaked(address usr) public auth returns (uint tokensToBeMinted, uint tokensToBeBurned) {
+    // Since minting & burning doesn't happen immediately on repayment/writeoff (for gas efficiency reasons),
+    // this method is public such that anyone can disburse the underwriters stakes. Underwriters themselves
+    // will be incentivized to disburse if there are minted tokens, and non-staking TIN holders will be incentivized
+    // to disburse other underwriters if there are burned tokens.
+    function disburseStaked(address usr) public returns (uint tokensToBeMinted, uint tokensToBeBurned) {
         require(address(bookrunner) != address(0));
 
         (tokensToBeMinted, tokensToBeBurned) = bookrunner.disburse(usr);
@@ -221,7 +230,7 @@ contract Tranche is Math, Auth, FixedPoint {
     }
 
     function _safeTransfer(ERC20Like erc20, address usr, uint amount) internal returns(uint) {
-        uint max = erc20.balanceOf(self);
+        uint max = erc20.balanceOf(address(this));
         if(amount > max) {
             amount = max;
         }
@@ -297,11 +306,12 @@ contract Tranche is Math, Auth, FixedPoint {
     }
 
     function safeBurn(uint tokenAmount) internal {
-        uint max = token.balanceOf(self);
+        uint max = token.balanceOf(address(this));
         if(tokenAmount > max) {
             tokenAmount = max;
         }
-        token.burn(self, tokenAmount);
+        token.burn(address(this), tokenAmount);
+        emit Burn(address(this), tokenAmount);
     }
 
     function safePayout(uint currencyAmount) internal returns(uint payoutAmount) {
@@ -343,7 +353,7 @@ contract Tranche is Math, Auth, FixedPoint {
         // mint tokens that are required for disbursement
         diff = safeSub(mintAmount, burnAmount);
         if (diff > 0) {
-            token.mint(self, diff);
+            token.mint(address(this), diff);
         }
     }
 
@@ -351,6 +361,7 @@ contract Tranche is Math, Auth, FixedPoint {
     // interface is required for adapters
     function mint(address usr, uint amount) public auth {
         token.mint(usr, amount);
+        emit Mint(usr, amount);
     }
 
     function burn(address usr, uint amount) public auth {
@@ -386,6 +397,7 @@ contract Tranche is Math, Auth, FixedPoint {
     // recovery transfer can be used by governance to recover funds if tokens are stuck
     function authTransfer(address erc20, address usr, uint amount) public auth {
         ERC20Like(erc20).transfer(usr, amount);
+        emit AuthTransfer(erc20, usr, amount);
     }
 
     // due to rounding in token & currency conversions currency & token balances might be off by 1 wei with the totalSupply/totalRedeem amounts.

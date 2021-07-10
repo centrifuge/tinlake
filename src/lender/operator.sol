@@ -31,10 +31,12 @@ contract Operator is Auth {
     // Events
     event SupplyOrder(uint indexed amount);
     event RedeemOrder(uint indexed amount);
+    event Depend(bytes32 indexed contractName, address addr);
 
     constructor(address tranche_) {
-        wards[msg.sender] = 1;
         tranche = TrancheLike(tranche_);
+        wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
     // sets the dependency to another contract
@@ -42,6 +44,7 @@ contract Operator is Auth {
         if (contractName == "tranche") { tranche = TrancheLike(addr); }
         else if (contractName == "token") { token = RestrictedTokenLike(addr); }
         else revert();
+        emit Depend(contractName, addr);
     }
 
     // only investors that are on the memberlist can submit supplyOrders

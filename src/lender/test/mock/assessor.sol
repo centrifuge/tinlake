@@ -124,15 +124,6 @@ contract AssessorMock is Mock {
     }
 
 
-    function repaymentUpdate(uint currencyAmount) public  {
-        values_uint["repaymentUpdate_currencyAmount"] = currencyAmount;
-
-    }
-
-    function borrowUpdate(uint currencyAmount) public  {
-        values_uint["borrowUpdate_currencyAmount"] = currencyAmount;
-    }
-
     function totalBalance() public view returns (uint) {
         return values_return["balance"];
     }

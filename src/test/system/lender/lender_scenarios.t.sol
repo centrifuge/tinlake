@@ -58,7 +58,7 @@ contract LenderSystemTest is TestSuite, Interest {
 
     }
 
-    function calcInterest(uint amount, uint time, uint ratePerSecond) public pure returns(uint) {
+    function calcInterest(uint amount, uint time, uint ratePerSecond)   public pure returns(uint) {
         return rmul(rpow(ratePerSecond, time, ONE), amount);
     }
 
@@ -80,15 +80,22 @@ contract LenderSystemTest is TestSuite, Interest {
 
         supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate, submission);
 
+        uint preNAV = nftFeed.calcUpdateNAV();
+
+        assertEq(assessor.seniorRatio(), rdiv(safeAdd(assessor.seniorBalance_(), assessor.seniorDebt())
+        , safeAdd(preNAV, reserve.totalBalance())));
+
+        assertEq(assessor.seniorRatio(), rdiv(safeAdd(assessor.seniorBalance_(), assessor.seniorDebt())
+        , safeAdd(preNAV, reserve.totalBalance())));
+
         // time impact on token senior token price
         hevm.warp(block.timestamp + 1 days);
 
-        // additional senior debt increase for one day
-        // 82 * 1.02 ~ 83.64
-        assertEq(assessor.seniorDebt(), calcInterest(submission.seniorSupply, 24 hours, assessor.seniorInterestRate()));
-
-
         uint nav = nftFeed.calcUpdateNAV();
+
+        // additional senior debt increase for one day
+        assertEq(assessor.seniorDebt(), calcInterest(rmul(preNAV, assessor.seniorRatio()), 24 hours, assessor.seniorInterestRate()));
+
 
         //(FV/1.03^4) = 127.62815625 /(1.03^4) = 113.395963777
         assertEq(nav, 113.39 ether, TWO_DECIMAL_PRECISION);
@@ -97,9 +104,6 @@ contract LenderSystemTest is TestSuite, Interest {
         uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, 0);
         assertEq(seniorTokenPrice, fixed18To27(1.02 ether), FIXED27_TWO_DECIMAL_PRECISION);
 
-
-        // seniorRatio should be still the old one
-        assertEq(assessor.seniorRatio(), fixed18To27(0.82 ether));
 
         // new orders
         // first investors need to disburse
@@ -117,7 +121,7 @@ contract LenderSystemTest is TestSuite, Interest {
         assertEq(reserve.totalBalance(), 100 ether);
 
         // nav should be still the same
-        uint preNAV = nftFeed.calcUpdateNAV();
+         preNAV = nftFeed.calcUpdateNAV();
          nav = nftFeed.calcUpdateNAV();
 
         // nav= 113.39 ether
