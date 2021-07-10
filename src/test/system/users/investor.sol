@@ -4,12 +4,6 @@ pragma solidity >=0.6.12;
 import "../interfaces.sol";
 import "ds-test/test.sol";
 
-interface OperatorLike {
-    function supplyOrder(uint currencyAmount) external;
-    function redeemOrder(uint redeemAmount) external;
-    function disburse() external returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
-}
-
 contract Investor is DSTest {
     ERC20Like currency;
     ERC20Like token;

@@ -209,11 +209,7 @@ contract Tranche is Math, Auth, FixedPoint {
         return (tokensToBeMinted, tokensToBeBurned);
     }
 
-    // Since minting & burning doesn't happen immediately on repayment/writeoff (for gas efficiency reasons),
-    // this method is public such that anyone can disburse the underwriters stakes. Underwriters themselves
-    // will be incentivized to disburse if there are minted tokens, and non-staking TIN holders will be incentivized
-    // to disburse other underwriters if there are burned tokens.
-    function disburseStaked(address usr) public returns (uint tokensToBeMinted, uint tokensToBeBurned) {
+    function disburseStaked(address usr) public auth returns (uint tokensToBeMinted, uint tokensToBeBurned) {
         require(address(bookrunner) != address(0));
 
         (tokensToBeMinted, tokensToBeBurned) = bookrunner.disburse(usr);
@@ -265,8 +261,6 @@ contract Tranche is Math, Auth, FixedPoint {
         if (payoutTokenAmount > 0) {
             payoutTokenAmount = _safeTransfer(token, usr, payoutTokenAmount);
         }
-
-        // TODO: mint new TIN and burn TIN from underwriting, if applicable
 
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
     }

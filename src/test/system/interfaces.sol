@@ -87,6 +87,13 @@ interface MemberlistLike {
     function removeMember(address usr, uint validUntil) external;
 }
 
+interface OperatorLike {
+    function supplyOrder(uint currencyAmount) external;
+    function redeemOrder(uint redeemAmount) external;
+    function disburse() external returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
+    function disburseStaked() external;
+}
+
 interface BookrunnerLike {
     function memberlist() external view returns (address);
     function propose(bytes32 nftID, uint risk, uint value, uint deposit) external;

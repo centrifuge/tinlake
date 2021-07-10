@@ -8,10 +8,12 @@ contract Underwriter {
 
     BookrunnerLike bookrunner;
     ERC20Like juniorToken;
+    OperatorLike juniorOperator;
 
-    constructor(address bookrunner_, address juniorToken_) {
+    constructor(address bookrunner_, address juniorToken_, address juniorOperator_) {
         bookrunner = BookrunnerLike(bookrunner_);
         juniorToken = ERC20Like(juniorToken_);
+        juniorOperator = OperatorLike(juniorOperator_);
     }
 
     function propose(bytes32 nftID, uint risk, uint value, uint deposit) public {
@@ -28,6 +30,10 @@ contract Underwriter {
 
     function approve(address usr, uint wad) public {
         juniorToken.approve(usr, wad);
+    }
+
+    function disburseStaked() public {
+        juniorOperator.disburseStaked();
     }
     
 }

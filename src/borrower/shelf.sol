@@ -41,9 +41,6 @@ interface SubscriberLike {
     function unlockEvent(uint loan) external;
 }
 
-interface BookrunnerLike {
-}
-
 interface AssessorLike {
     function reBalance() external;
 }
@@ -57,7 +54,6 @@ contract Shelf is Auth, TitleOwned, Math {
     ReserveLike         public reserve;
     AssessorLike        public assessor;
     SubscriberLike      public subscriber;
-    BookrunnerLike      public bookrunner;
 
     uint                public balance;
     address             public lender;
@@ -107,7 +103,6 @@ contract Shelf is Auth, TitleOwned, Math {
         else if (contractName == "reserve") { reserve = ReserveLike(addr); }
         else if (contractName == "assessor") { assessor = AssessorLike(addr);}
         else if (contractName == "subscriber") { subscriber = SubscriberLike(addr); }
-        else if (contractName == "bookrunner") { bookrunner = BookrunnerLike(addr); }
         else revert();
         emit Depend(contractName, addr);
     }

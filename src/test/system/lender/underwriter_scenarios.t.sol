@@ -32,10 +32,10 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         Memberlist memberlist = new Memberlist();
         bookrunner.depend("memberlist", address(memberlist));
 
-        issuer = new Underwriter(address(bookrunner), address(juniorToken));
+        issuer = new Underwriter(address(bookrunner), address(juniorToken), address(juniorOperator));
         memberlist.updateMember(address(issuer), type(uint256).max);
 
-        underwriter = new Underwriter(address(bookrunner), address(juniorToken));
+        underwriter = new Underwriter(address(bookrunner), address(juniorToken), address(juniorOperator));
         memberlist.updateMember(address(underwriter), type(uint256).max);
 
         root.relyContract(address(juniorToken), address(this));
@@ -169,8 +169,10 @@ contract UnderwriterSystemTest is TestSuite, Interest {
 
         uint preJuniorSupply = juniorToken.totalSupply();
         uint preUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
+        // TODO: the fact that approve() is required means that external disburse() for burning doesn't work.
+        // Maybe we can solve this by blocking any staking and redemptions in the pool until disburseStaked was called?
         underwriter.approve(address(juniorTranche), burned);
-        juniorTranche.disburseStaked(address(underwriter));
+        underwriter.disburseStaked();
 
         uint postJuniorSupply = juniorToken.totalSupply();
         uint postUnderwriterBalance = juniorToken.balanceOf(address(underwriter));

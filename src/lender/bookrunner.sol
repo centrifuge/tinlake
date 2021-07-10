@@ -195,6 +195,7 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 			// TODO: if an asset is defaulting and there was a vote against, part of the slash is going to this vote
 		}
 
+		// TODO: add tokensToBeUnstaked
 		return (tokensToBeMinted, tokensToBeBurned);
 	}
 
