@@ -62,6 +62,7 @@ interface ShelfLike {
 }
 
 interface ERC20Like {
+    function rely(address addr) external;
     function transferFrom(address, address, uint) external;
     function mint(address, uint) external;
     function approve(address usr, uint wad) external returns (bool);

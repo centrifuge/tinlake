@@ -127,21 +127,22 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         borrower.borrowAction(loan, nftPrice);
 
         hevm.warp(block.timestamp + 4 days);
-        repayLoan(borrower_, loan, nftPrice);
-
-        (uint minted, uint burned) = juniorTranche.calcStakedDisburse(address(underwriter));
-        assertEqTol(minted, 1.8 ether, " minted"); // 90% of 1% of 200 ether
-        assertEqTol(burned, 0 ether, " burned");
 
         uint preJuniorSupply = juniorToken.totalSupply();
+        repayLoan(borrower_, loan, nftPrice);
+        uint postJuniorSupply = juniorToken.totalSupply();
+
+        assertEqTol(postJuniorSupply - preJuniorSupply, 2 ether, " supply increase"); // 1% of 200 ether
+
+        (uint minted, uint slashed, uint tokenPayout) = juniorTranche.calcStakedDisburse(address(underwriter));
+        assertEqTol(minted, 1.8 ether, " minted");
+        assertEqTol(slashed, 0 ether, " slashed");
+        assertEqTol(tokenPayout, 91.8 ether, " tokenPayout"); // 90 ether stake + 90% of 1% of 200 ether minted
+
         uint preUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
         juniorTranche.disburseStaked(address(underwriter));
-
-        uint postJuniorSupply = juniorToken.totalSupply();
         uint postUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
-        
-        assertEqTol(postJuniorSupply - preJuniorSupply, minted, " supply increase");
-        assertEqTol(postUnderwriterBalance - preUnderwriterBalance, minted, " balance increase");
+        assertEqTol(postUnderwriterBalance - preUnderwriterBalance, tokenPayout, " balance increase");
     }
 
     // TODO: repay partially, disburse and get partial minted tokens, repay remainder, disburse and get remainder minted tokens - already minted tokens
@@ -161,29 +162,30 @@ contract UnderwriterSystemTest is TestSuite, Interest {
 
         uint maturity = 5 days;
         hevm.warp(block.timestamp + maturity + 3 days); // 3 days overdue
-        nftFeed.writeOff(nftID, 0); // 60% writeoff
 
-        (uint minted, uint burned) = juniorTranche.calcStakedDisburse(address(underwriter));
+        uint preJuniorSupply = juniorToken.totalSupply();
+        nftFeed.writeOff(nftID, 0); // 60% writeoff
+        uint postJuniorSupply = juniorToken.totalSupply();
+
+        assertEqTol(postJuniorSupply - preJuniorSupply, 1.08 ether, " supply decrease"); // 90% of 1% of 60% of 200 ether
+
+        (uint minted, uint burned, ) = juniorTranche.calcStakedDisburse(address(underwriter));
         assertEqTol(minted, 0 ether, " minted 1");
         assertEqTol(burned, 1.08 ether, " burned 1"); // 90% of 1% of 60% of 200 ether
 
-        uint preJuniorSupply = juniorToken.totalSupply();
         uint preUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
         // TODO: the fact that approve() is required means that external disburse() for burning doesn't work.
         // Maybe we can solve this by blocking any staking and redemptions in the pool until disburseStaked was called?
-        underwriter.approve(address(juniorTranche), burned);
         underwriter.disburseStaked();
 
-        uint postJuniorSupply = juniorToken.totalSupply();
         uint postUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
         
-        assertEqTol(postJuniorSupply - preJuniorSupply, -burned, " supply decrease");
         assertEqTol(postUnderwriterBalance - preUnderwriterBalance, -burned, " balance decrease");
 
         hevm.warp(block.timestamp + 3 days); // 6 days overdue
         nftFeed.writeOff(nftID, 1); // 80% writeoff
 
-        (minted, burned) = juniorTranche.calcStakedDisburse(address(underwriter));
+        (minted, burned, ) = juniorTranche.calcStakedDisburse(address(underwriter));
         assertEqTol(minted, 0 ether, " minted 2");
         assertEqTol(burned, 1.44 ether - 1.08 ether, " burned 2"); // (90% of 1% of 80% of 200 ether) - 1.08 ether
 
@@ -230,6 +232,10 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         admin.relyNftFeed(address(this));
         admin.relyJuniorTranche(address(this));
 
+        // TODO: below should be moved into a deployer contract
+        admin.relyJuniorToken(address(bookrunner));
+        admin.makeJuniorTokenMember(address(bookrunner), type(uint256).max);
+
         nftFeed.depend("bookrunner", address(bookrunner));
         nftFeed.rely(address(bookrunner));
 
@@ -240,10 +246,12 @@ contract UnderwriterSystemTest is TestSuite, Interest {
 
     function proposeAndStake(bytes32 nftID, uint risk, uint value, uint proposeAmount, uint stakeAmount) internal {
         juniorToken.mint(address(issuer), proposeAmount);
+        issuer.approve(address(bookrunner), proposeAmount);
         issuer.propose(nftID, risk, value, proposeAmount);
         assertEqTol(bookrunner.currentStake(nftID, risk, value), proposeAmount, " postProposeStake");
 
         juniorToken.mint(address(underwriter), stakeAmount);
+        underwriter.approve(address(bookrunner), stakeAmount);
         underwriter.addStake(nftID, risk, value, stakeAmount);
         assertEqTol(bookrunner.currentStake(nftID, risk, value), proposeAmount + stakeAmount, " postAddStake");
     }

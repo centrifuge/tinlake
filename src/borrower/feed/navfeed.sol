@@ -305,7 +305,12 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         }
 
         // Mint and transfer new + staked TIN to underwriters
-        if (address(bookrunner) != address(0)) bookrunner.setRepaid(nftID_, amount);
+        if (address(bookrunner) != address(0)) {
+            bookrunner.setRepaid(nftID_, amount);
+            if (debt == 0) {
+                bookrunner.setClosed(nftID_);
+            }
+        }
 
         // return decrease NAV amount
         return calcDiscount(safeSub(preFutureValue, fv), uniqueDayTimestamp(block.timestamp), maturityDate_);
