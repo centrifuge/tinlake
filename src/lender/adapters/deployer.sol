@@ -99,7 +99,7 @@ contract AdapterDeployer {
         AuthLike(clerk).rely(root);
     }
 
-    function deployMgr(address dai, address daiJoin, address end, address vat, address vow, address urn, address liq, address spotter, address jug, uint matBuffer) public {
+    function deployMgr(address dai, address daiJoin, address end, address vat, address vow, address liq, address spotter, address jug, uint matBuffer) public {
         require(deployUsr == msg.sender && address(clerk) != address(0) && address(mgr) == address(0) && lenderDeployer.seniorToken() != address(0));
 
         // deploy mgr
@@ -109,7 +109,6 @@ contract AdapterDeployer {
         // setup mgr
         MgrLike mkrMgr = MgrLike(mgr);
         mkrMgr.rely(clerk);
-        mkrMgr.file("urn", urn);
         mkrMgr.file("liq", liq);
         mkrMgr.file("end", end);
         mkrMgr.file("owner", clerk);
