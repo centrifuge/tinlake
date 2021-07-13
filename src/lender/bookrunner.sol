@@ -227,7 +227,7 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 		totalStaked = safeSub(totalStaked, tokenPayout);
 		staked[underwriter] = safeSub(staked[underwriter], tokenPayout);
 
-		return (tokenPayout);
+		return tokenPayout;
 	}
 
 	function setRepaid(bytes32 nftID, uint amount) public auth {

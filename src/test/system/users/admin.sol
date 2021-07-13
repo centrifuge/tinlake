@@ -34,6 +34,11 @@ contract AdminUser {
         nftFeed.update(lookupId, nftPrice);
     }
 
+    function setMaturityDate(address collateralNFT_, uint tokenId, uint maturityDate) public {
+        bytes32 lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
+        nftFeed.file("maturityDate", lookupId , maturityDate);
+    }
+
     function priceNFTAndSetRiskGroup(bytes32 lookupId, uint nftPrice, uint riskGroup, uint maturityDate) public {
         nftFeed.update(lookupId, nftPrice, riskGroup);
         // add default maturity date

@@ -45,7 +45,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
     function testCeilingOfUnstakedLoan() public {
         invest(700 ether, 300 ether);
         uint nftPrice = 200 ether;
-        (, uint loan) = prepLoan(nftPrice);
+        (, uint loan) = prepLoan(5 days);
 
         // nftFeed isnt linked to the bookrunner, so the ceiling is still > 0
         assertEqTol(nftFeed.currentCeiling(loan), nftPrice, "ceilingPreDepend");
@@ -57,7 +57,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
     function testFailWithdrawUnstakedLoan() public {
         invest(700 ether, 300 ether);
         uint nftPrice = 200 ether;
-        (, uint loan) = prepLoan(nftPrice);
+        (, uint loan) = prepLoan(5 days);
         wireBookrunner();
 
         borrower.approveNFT(collateralNFT, address(shelf));
@@ -67,7 +67,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
     function testFailWithdrawInsufficientlyStakedLoan() public {
         invest(700 ether, 300 ether);
         (uint nftPrice, uint risk, uint value) = (200 ether, DEFAULT_RISK_GROUP_TEST_LOANS, 200 ether);
-        (bytes32 nftID, uint loan) = prepLoan(nftPrice);
+        (bytes32 nftID, uint loan) = prepLoan(5 days);
         wireBookrunner();
 
         proposeAndStake(nftID, risk, value, 10 ether, 0 ether);
@@ -78,7 +78,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
     function testFailWithdrawNonAcceptedLoan() public {
         invest(700 ether, 300 ether);
         (uint nftPrice, uint risk, uint value) = (200 ether, DEFAULT_RISK_GROUP_TEST_LOANS, 200 ether);
-        (bytes32 nftID, uint loan) = prepLoan(nftPrice);
+        (bytes32 nftID, uint loan) = prepLoan(5 days);
         wireBookrunner();
 
         proposeAndStake(nftID, risk, value, 10 ether, 50 ether);
@@ -89,7 +89,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
     function testFailAcceptLoanBeforeChallengePeriodEnded() public {
         invest(700 ether, 300 ether);
         (uint nftPrice, uint risk, uint value) = (200 ether, DEFAULT_RISK_GROUP_TEST_LOANS, 200 ether);
-        (bytes32 nftID, uint loan) = prepLoan(nftPrice);
+        (bytes32 nftID, uint loan) = prepLoan(5 days);
         wireBookrunner();
 
         proposeAndStake(nftID, risk, value, 10 ether, 50 ether);
@@ -99,7 +99,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
     function testWithdrawAcceptedLoan() public {
         invest(700 ether, 300 ether);
         (uint nftPrice, uint risk, uint value) = (200 ether, DEFAULT_RISK_GROUP_TEST_LOANS, 200 ether);
-        (bytes32 nftID, uint loan) = prepLoan(nftPrice);
+        (bytes32 nftID, uint loan) = prepLoan(5 days);
         wireBookrunner();
 
         proposeAndStake(nftID, risk, value, 10 ether, 50 ether);
@@ -116,7 +116,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
     function testDisburseMintedTokens() public {
         invest(700 ether, 300 ether);
         (uint nftPrice, uint risk, uint value) = (200 ether, DEFAULT_RISK_GROUP_TEST_LOANS, 200 ether);
-        (bytes32 nftID, uint loan) = prepLoan(nftPrice);
+        (bytes32 nftID, uint loan) = prepLoan(5 days);
         wireBookrunner();
 
         proposeAndStake(nftID, risk, value, 10 ether, 90 ether);
@@ -150,7 +150,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
     function testDisburseBurnedTokens() public {
         invest(700 ether, 300 ether);
         (uint nftPrice, uint risk, uint value) = (200 ether, DEFAULT_RISK_GROUP_TEST_LOANS, 200 ether);
-        (bytes32 nftID, uint loan) = prepLoan(nftPrice);
+        (bytes32 nftID, uint loan) = prepLoan(5 days);
         wireBookrunner();
 
         proposeAndStake(nftID, risk, value, 10 ether, 90 ether);
@@ -167,15 +167,16 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         nftFeed.writeOff(nftID, 0); // 60% writeoff
         uint postJuniorSupply = juniorToken.totalSupply();
 
-        assertEqTol(postJuniorSupply - preJuniorSupply, 1.08 ether, " supply decrease"); // 90% of 1% of 60% of 200 ether
+        emit log_named_uint("preJuniorSupply", preJuniorSupply);
+        emit log_named_uint("postJuniorSupply", postJuniorSupply);
+
+        assertEqTol(preJuniorSupply - postJuniorSupply, 1.2 ether, " supply decrease"); // 1% of 60% of 200 ether
 
         (uint minted, uint burned, ) = juniorTranche.calcStakedDisburse(address(underwriter));
         assertEqTol(minted, 0 ether, " minted 1");
-        assertEqTol(burned, 1.08 ether, " burned 1"); // 90% of 1% of 60% of 200 ether
+        assertEqTol(burned, 1.08 ether, " burned 1"); // 90% of 1.2 ether
 
         uint preUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
-        // TODO: the fact that approve() is required means that external disburse() for burning doesn't work.
-        // Maybe we can solve this by blocking any staking and redemptions in the pool until disburseStaked was called?
         underwriter.disburseStaked();
 
         uint postUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
@@ -218,11 +219,10 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         assertEqTol(reserve.totalBalance(), seniorSupplyAmount + juniorSupplyAmount, " reserveAfterInvest");
     }
 
-    function prepLoan(uint nftPrice) internal returns (bytes32, uint) {
-        uint maturity = 5 days;
-
+    function prepLoan(uint maturity) internal returns (bytes32, uint) {
         uint tokenId = collateralNFT.issue(borrower_);
-        uint loan = setupLoan(tokenId, collateralNFT_, nftPrice, DEFAULT_RISK_GROUP_TEST_LOANS, block.timestamp + maturity);
+        uint loan = borrower.issue(collateralNFT_, tokenId);
+        admin.setMaturityDate(collateralNFT_, tokenId, block.timestamp + maturity);
 
         bytes32 nftID = nftFeed.nftID(loan);
         return (nftID, loan);
@@ -235,6 +235,9 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         // TODO: below should be moved into a deployer contract
         admin.relyJuniorToken(address(bookrunner));
         admin.makeJuniorTokenMember(address(bookrunner), type(uint256).max);
+
+        admin.makeJuniorTokenMember(address(issuer), type(uint256).max);
+        admin.makeJuniorTokenMember(address(underwriter), type(uint256).max);
 
         nftFeed.depend("bookrunner", address(bookrunner));
         nftFeed.rely(address(bookrunner));
