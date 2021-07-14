@@ -42,18 +42,6 @@ contract UnderwriterSystemTest is TestSuite, Interest {
     }
 
     // --- Tests ---
-    function testCeilingOfUnstakedLoan() public {
-        invest(700 ether, 300 ether);
-        uint nftPrice = 200 ether;
-        uint loan = prepLoan(5 days);
-
-        // nftFeed isnt linked to the bookrunner, so the ceiling is still > 0
-        assertEqTol(nftFeed.currentCeiling(loan), nftPrice, "ceilingPreDepend");
-
-        wireBookrunner();
-        assertEqTol(nftFeed.currentCeiling(loan), 0, " ceilingPostDepend");
-    }
-
     function testFailWithdrawUnstakedLoan() public {
         invest(700 ether, 300 ether);
         uint nftPrice = 200 ether;
@@ -126,8 +114,9 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         borrower.approveNFT(collateralNFT, address(shelf));
         borrower.borrowAction(loan, nftPrice);
 
-        hevm.warp(block.timestamp + 4 days);
+        // hevm.warp(block.timestamp + 4 days);
 
+        setupRepayReq();
         uint preJuniorSupply = juniorToken.totalSupply();
         borrower.repayFullDebt(loan);
         uint postJuniorSupply = juniorToken.totalSupply();

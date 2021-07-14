@@ -21,13 +21,12 @@ interface ERC20Like {
 }
 
 interface MemberlistLike {
-    function hasMember(address) external view returns (bool);
-    function member(address) external;
+	function hasMember(address) external view returns (bool);
+	function member(address) external;
 }
 /**
 TODO:
 - do we need a max stake threshold, to ensure there's sufficient returns?
-- on shelf.close(), should we reset the risk & value in the navfeed such that a new loan against this nftID requires new staking?
  */
 contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 
@@ -67,14 +66,13 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 	mapping (uint => bytes) public acceptedProposals;
 
 	// Amount repaid and written off per loan
-	// TODO: look into retrieving these from the navFeed directly
 	mapping (uint => uint) public repaid;
 	mapping (uint => uint) public writtenOff;
 
 	// Whether the loan has been closed
 	mapping (uint => bool) public closed;
 
-	// total amount staked (tokens held by this contract)
+	// Total amount staked (tokens held by this contract)
 	uint public totalStaked;
 
 	event Propose(uint indexed loan, uint risk, uint value, uint deposit);
@@ -136,8 +134,6 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 	function stake(uint loan, uint risk, uint value, uint stakeAmount) public memberOnly {
 		require(acceptedProposals[loan].length == 0, "asset-already-accepted");
 		require(juniorToken.balanceOf(msg.sender) >= stakeAmount, "insufficient-balance");
-
-		// TODO: check burned[loan][underwriter]
 
 		// require(juniorToken.transferFrom(msg.sender, address(this), stakeAmount), "token-transfer-failed");
 		juniorToken.transferFrom(msg.sender, address(this), stakeAmount);
@@ -222,13 +218,15 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 	}
 
 	// Called from tranche, not directly, hence the auth modifier
-	// TODO: consider rewriting to disburse(address underwriter, uint loan), to avoid the for loop? same for calcStakedDisburse()
-	function disburse(address underwriter) public auth returns (uint tokenPayout) {
-		(,, tokenPayout) = calcStakedDisburse(underwriter, true);
+	function disburse(address underwriter) public auth returns (uint) {
+		(,, uint tokenPayout) = calcStakedDisburse(underwriter, true);
 
 		safeTransfer(underwriter, tokenPayout);
+		emit log_named_uint("totalStaked", totalStaked);
+		emit log_named_uint("tokenPayout", tokenPayout);
 		totalStaked = safeSub(totalStaked, tokenPayout);
-		staked[underwriter] = safeSub(staked[underwriter], tokenPayout);
+		emit log_named_uint("staked[underwriter]", staked[underwriter]);
+		staked[underwriter] = safeSub(staked[underwriter], min(tokenPayout, staked[underwriter]));
 		// TODO: perUnderwriterStake[loan][proposal][msg.sender] = 0;
 
 		return tokenPayout;
@@ -245,7 +243,9 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 		writtenOff[loan] = amount;
 		safeBurn(rmul(slashProportion.value, amount));
 
-		// if writeoff = 100%, setClosed()
+		if (amount == 10**27) {
+			setClosed(loan);
+		}
 	}
 
 	function setClosed(uint loan) public auth {
@@ -259,28 +259,25 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 		return proposals[loan][proposal];
 	}
 
-	function mint(uint tokenAmount) internal {
-		juniorToken.mint(address(this), tokenAmount);
-		emit Mint(address(this), tokenAmount);
+	function mint(uint amount) internal {
+		juniorToken.mint(address(this), amount);
+		emit Mint(address(this), amount);
 	}
 
-	function safeBurn(uint tokenAmount) internal {
-		uint max = juniorToken.balanceOf(address(this));
-		if (tokenAmount > max) {
-			tokenAmount = max;
-		}
-		juniorToken.burn(address(this), tokenAmount);
-		emit Burn(address(this), tokenAmount);
+	function safeBurn(uint amount) internal {
+		juniorToken.burn(address(this), min(amount, juniorToken.balanceOf(address(this))));
+		emit Burn(address(this), amount);
 	}
 
 	function safeTransfer(address usr, uint amount) internal returns(uint) {
-		uint max = juniorToken.balanceOf(address(this));
-		if (amount > max) {
-			amount = max;
-		}
 		// require(juniorToken.transfer(usr, amount), "token-transfer-failed");
-		juniorToken.transfer(usr, amount);
+		juniorToken.transfer(usr, min(amount, juniorToken.balanceOf(address(this))));
 		return amount;
 	}
+
+	function min(uint256 a, uint256 b) internal pure returns (uint256) {
+		return a < b ? a : b;
+	}
+
 
 }

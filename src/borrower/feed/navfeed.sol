@@ -27,7 +27,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     // nftID => futureValue
     mapping (bytes32 => uint) public futureValue;
 
-    WriteOff [2] public writeOffs;
+    WriteOff [3] public writeOffs;
 
     struct WriteOff {
         uint rateGroup;
@@ -48,6 +48,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     // rate group for write-offs in pile contract
     uint constant public  WRITE_OFF_PHASE_A = 1001;
     uint constant public  WRITE_OFF_PHASE_B = 1002;
+    uint constant public  WRITE_OFF_PHASE_C = 1003;
 
     // first bucket in the future since last update
     uint public discountStartPointer;
@@ -121,6 +122,8 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         setWriteOff(0, WRITE_OFF_PHASE_A, uint(1000000674400000000000000000), 6 * 10**26, 3);
         // 6% interest rate & 80% write off
         setWriteOff(1, WRITE_OFF_PHASE_B, uint(1000000674400000000000000000), 8 * 10**26, 6);
+        // 6% interest rate & 100% write off
+        setWriteOff(2, WRITE_OFF_PHASE_C, uint(1000000674400000000000000000), 10 * 10**26, 9);
     }
 
     function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_) public auth  {
@@ -306,9 +309,6 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         // Mint and transfer new + staked TIN to underwriters
         if (address(bookrunner) != address(0)) {
             bookrunner.setRepaid(loan, amount);
-            if (debt == 0) {
-                bookrunner.setClosed(loan);
-            }
         }
 
         // return decrease NAV amount
