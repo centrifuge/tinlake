@@ -26,7 +26,7 @@ interface PileLike {
 abstract contract BookrunnerLike is FixedPoint {
     function assetWasAccepted(bytes32) public virtual view returns (bool);
     function setRepaid(uint loan, uint amount) public virtual;
-    function setWrittenOff(uint loan, uint amount) public virtual;
+    function setWrittenOff(uint loan, uint writeoffPercentage, uint amount) public virtual;
     function setClosed(uint loan) public virtual;
 }
 

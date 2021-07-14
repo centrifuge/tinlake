@@ -151,7 +151,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         WriteOff memory writeOff_ = writeOffs[phase_];
         if (address(bookrunner) != address(0)) {
             uint amount = rmul(nftValues[nftID_], writeOff_.percentage.value);
-            bookrunner.setWrittenOff(loan, amount);
+            bookrunner.setWrittenOff(loan, writeOff_.percentage.value, amount);
         }
 
         pile.changeRate(loan, writeOff_.rateGroup);

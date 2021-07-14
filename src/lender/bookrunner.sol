@@ -238,20 +238,20 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 		mint(rmul(mintProportion.value, amount));
 	}
 
-	function setWrittenOff(uint loan, uint amount) public auth {
+	function setWrittenOff(uint loan, uint writeoffPercentage, uint amount) public auth {
 		require(!closed[loan], "already-closed");
 		writtenOff[loan] = amount;
 		safeBurn(rmul(slashProportion.value, amount));
 
-		if (amount == 10**27) {
+		if (writeoffPercentage == 10**27) {
 			setClosed(loan);
 		}
 	}
 
 	function setClosed(uint loan) public auth {
 		closed[loan] = true;
-		bytes32 nftID_ = navFeed.nftID(loan);
-		navFeed.update(nftID_, 0, 0);
+		// bytes32 nftID_ = navFeed.nftID(loan);
+		// TODO: navFeed.update(nftID_, 0, 0);
 	}
 
 	function currentStake(uint loan, uint risk, uint value) public view returns (uint) {

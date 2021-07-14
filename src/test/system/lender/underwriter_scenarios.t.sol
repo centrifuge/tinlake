@@ -114,8 +114,6 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         borrower.approveNFT(collateralNFT, address(shelf));
         borrower.borrowAction(loan, nftPrice);
 
-        // hevm.warp(block.timestamp + 4 days);
-
         setupRepayReq();
         uint preJuniorSupply = juniorToken.totalSupply();
         borrower.repayFullDebt(loan);
@@ -161,27 +159,29 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         assertEqTol(preJuniorSupply - postJuniorSupply, 1.2 ether, " supply decrease"); // 1% of 60% of 200 ether
 
         (uint minted, uint burned, uint tokenPayout) = juniorTranche.calcStakedDisburse(address(underwriter));
-        assertEqTol(minted, 0 ether, " minted 1");
-        assertEqTol(burned, 1.08 ether, " burned 1"); // 90% of 1.2 ether
-        assertEqTol(tokenPayout, 0, " tokenPayout 1"); // not yet closed
-
-        // uint preUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
-        // underwriter.disburseStaked();
-
-        // uint postUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
-        
-        // assertEqTol(preUnderwriterBalance - postUnderwriterBalance, burned, " balance decrease");
+        assertEqTol(minted, 0 ether, " minted 60%");
+        assertEqTol(burned, 1.08 ether, " burned 60%"); // 90% of 1.2 ether
+        assertEqTol(tokenPayout, 0, " tokenPayout 60%"); // not yet closed
 
         hevm.warp(block.timestamp + 3 days); // 6 days overdue
         nftFeed.writeOff(loan, 1); // 80% writeoff
 
         (minted, burned, ) = juniorTranche.calcStakedDisburse(address(underwriter));
-        assertEqTol(minted, 0 ether, " minted 2");
-        assertEqTol(burned, 1.44 ether, " burned 2"); // (90% of 1% of 80% of 200 ether)
+        assertEqTol(minted, 0 ether, " minted 80%");
+        assertEqTol(burned, 1.44 ether, " burned 80%"); // (90% of 1% of 80% of 200 ether)
 
-        // underwriter.approve(address(juniorTranche), 1.44 ether - 1.08 ether);
-        // tokenPayout = underwriter.disburseStaked();
-        // assertEqTol(t, 1.44 ether - 1.08 ether, " secondBurn");
+        hevm.warp(block.timestamp + 3 days); // 9 days overdue
+        nftFeed.writeOff(loan, 2); // 100% writeoff
+
+        (minted, burned, tokenPayout) = juniorTranche.calcStakedDisburse(address(underwriter));
+        assertEqTol(minted, 0 ether, " minted 100%");
+        assertEqTol(burned, 1.8 ether, " burned 100%"); // (90% of 1% of 200 ether slash)
+        assertEqTol(tokenPayout, 90 ether - 1.8 ether, " minted 100%"); // 90 ether stake - 90% of 1% of 200 ether slashed
+
+        uint preUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
+        underwriter.disburseStaked();
+        uint postUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
+        assertEqTol(postUnderwriterBalance - preUnderwriterBalance, tokenPayout, " balance increase after writeoff");
     }
 
     // --- Utils ---
