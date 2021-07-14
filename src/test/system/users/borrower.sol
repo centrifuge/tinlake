@@ -65,7 +65,7 @@ contract Borrower {
         reserve.balance();
     }
 
-    function doClose(uint loan) public {
+    function repayFullDebt(uint loan) public {
         uint debt = pile.debt(loan);
         repayAction(loan, debt);
     }

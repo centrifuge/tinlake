@@ -129,7 +129,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         hevm.warp(block.timestamp + 4 days);
 
         uint preJuniorSupply = juniorToken.totalSupply();
-        repayLoan(borrower_, loan, nftPrice);
+        borrower.repayFullDebt(loan);
         uint postJuniorSupply = juniorToken.totalSupply();
 
         assertEqTol(postJuniorSupply - preJuniorSupply, 2 ether, " supply increase"); // 1% of 200 ether
@@ -137,15 +137,17 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         (uint minted, uint slashed, uint tokenPayout) = juniorTranche.calcStakedDisburse(address(underwriter));
         assertEqTol(minted, 1.8 ether, " minted");
         assertEqTol(slashed, 0 ether, " slashed");
-        assertEqTol(tokenPayout, 91.8 ether, " tokenPayout"); // 90 ether stake + 90% of 1% of 200 ether minted
+        assertEqTol(tokenPayout, 0 ether, " tokenPayout pre close");
+        
+        borrower.close(loan);
+        (,, uint tokenPayoutAfterClose) = juniorTranche.calcStakedDisburse(address(underwriter));
+        assertEqTol(tokenPayoutAfterClose, 91.8 ether, " tokenPayout post close"); // 90 ether stake + 90% of 1% of 200 ether minted
 
         uint preUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
         juniorTranche.disburseStaked(address(underwriter));
         uint postUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
-        assertEqTol(postUnderwriterBalance - preUnderwriterBalance, tokenPayout, " balance increase");
+        assertEqTol(postUnderwriterBalance - preUnderwriterBalance, tokenPayoutAfterClose, " balance increase");
     }
-
-    // TODO: repay partially, disburse and get partial minted tokens, repay remainder, disburse and get remainder minted tokens - already minted tokens
 
     function testDisburseBurnedTokens() public {
         invest(700 ether, 300 ether);

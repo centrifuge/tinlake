@@ -8,7 +8,7 @@ import "./../fixed_point.sol";
 import "ds-test/test.sol";
 
 interface NAVFeedLike {
-	function update(bytes32 nftID, uint value, uint risk_) external;
+	function update(bytes32 nftID_, uint value, uint risk_) external;
 	function nftID(uint loan) external view returns (bytes32);
 }
 
@@ -235,13 +235,17 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 	}
 
 	function setRepaid(uint loan, uint amount) public auth {
+		require(!closed[loan], "already-closed");
 		repaid[loan] = amount;
 		mint(rmul(mintProportion.value, amount));
 	}
 
 	function setWrittenOff(uint loan, uint amount) public auth {
+		require(!closed[loan], "already-closed");
 		writtenOff[loan] = amount;
 		safeBurn(rmul(slashProportion.value, amount));
+
+		// if writeoff = 100%, setClosed()
 	}
 
 	function setClosed(uint loan) public auth {

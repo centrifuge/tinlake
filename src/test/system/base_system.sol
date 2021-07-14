@@ -289,7 +289,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         setupRepayReq();
         uint reserveShould = pile.debt(loan) + currReserveBalance();
         // close without defined amount
-        borrower.doClose(loan);
+        borrower.repayFullDebt(loan);
         uint totalT = uint(currency.totalSupply());
         checkAfterRepay(loan, tokenId, totalT, reserveShould);
     }

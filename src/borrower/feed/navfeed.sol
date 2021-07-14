@@ -315,6 +315,12 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         return calcDiscount(safeSub(preFutureValue, fv), uniqueDayTimestamp(block.timestamp), maturityDate_);
     }
 
+    function close(uint loan) external auth {
+        if (address(bookrunner) != address(0)) {
+            bookrunner.setClosed(loan);
+        }
+    }
+
     function calcDiscount(uint amount, uint normalizedBlockTimestamp, uint maturityDate_) public view returns (uint result) {
         return rdiv(amount, rpow(discountRate.value, safeSub(maturityDate_, normalizedBlockTimestamp), ONE));
     }

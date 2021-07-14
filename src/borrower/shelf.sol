@@ -30,6 +30,7 @@ interface PileLike {
 interface NAVFeedLike {
     function borrow(uint loan, uint currencyAmount) external;
     function repay(uint loan, uint currencyAmount) external;
+    function close(uint loan) external;
 }
 
 interface ReserveLike {
@@ -132,6 +133,7 @@ contract Shelf is Auth, TitleOwned, Math {
         (address registry, uint tokenId) = token(loan);
         require(title.ownerOf(loan) == msg.sender || NFTLike(registry).ownerOf(tokenId) == msg.sender, "not-loan-or-nft-owner");
         title.close(loan);
+        ceiling.close(loan);
         bytes32 nft = keccak256(abi.encodePacked(shelf[loan].registry, shelf[loan].tokenId));
         nftlookup[nft] = 0;
         resetLoanBalance(loan);
