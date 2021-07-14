@@ -129,8 +129,6 @@ contract Tranche is Math, Auth, FixedPoint {
 
     // redeemOrder function can be used to place or revoke a redeem
     function redeemOrder(address usr, uint newRedeemAmount) public auth orderAllowed(usr) {
-        require(address(bookrunner) == address(0) || safeSub(token.balanceOf(msg.sender), bookrunner.staked(msg.sender)) >= newRedeemAmount, "cannot-redeem-staked-tokens");
-
         users[usr].orderedInEpoch = coordinator.currentEpoch();
 
         uint currentRedeemAmount = users[usr].redeemTokenAmount;
@@ -347,10 +345,6 @@ contract Tranche is Math, Auth, FixedPoint {
     function mint(address usr, uint amount) public auth {
         token.mint(usr, amount);
         emit Mint(usr, amount);
-    }
-
-    function burn(address usr, uint amount) public auth {
-        token.burn(usr, amount);
     }
 
     // adjust currency balance after epoch execution -> receive/send currency from/to reserve
