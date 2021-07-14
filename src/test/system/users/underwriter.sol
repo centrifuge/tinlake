@@ -16,16 +16,16 @@ contract Underwriter {
         juniorOperator = OperatorLike(juniorOperator_);
     }
 
-    function propose(bytes32 nftID, uint risk, uint value, uint deposit) public {
-        bookrunner.propose(nftID, risk, value, deposit);
+    function propose(uint loan, uint risk, uint value, uint deposit) public {
+        bookrunner.propose(loan, risk, value, deposit);
     }
 
-    function addStake(bytes32 nftID, uint risk, uint value, uint stakeAmount) public {
-        bookrunner.addStake(nftID, risk, value, stakeAmount);
+    function stake(uint loan, uint risk, uint value, uint stakeAmount) public {
+        bookrunner.stake(loan, risk, value, stakeAmount);
     }
 
-    function accept(bytes32 nftID, uint risk, uint value) public {
-        bookrunner.accept(nftID, risk, value);
+    function accept(uint loan, uint risk, uint value) public {
+        bookrunner.accept(loan, risk, value);
     }
 
     function approve(address usr, uint wad) public {

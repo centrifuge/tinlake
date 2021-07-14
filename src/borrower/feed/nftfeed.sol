@@ -25,9 +25,9 @@ interface PileLike {
 
 abstract contract BookrunnerLike is FixedPoint {
     function assetWasAccepted(bytes32) public virtual view returns (bool);
-    function setClosed(bytes32 nftID) public virtual;
-    function setRepaid(bytes32 nftID, uint amount) public virtual;
-    function setWrittenOff(bytes32 nftID, uint amount) public virtual;
+    function setRepaid(uint loan, uint amount) public virtual;
+    function setWrittenOff(uint loan, uint amount) public virtual;
+    function setClosed(uint loan) public virtual;
 }
 
 // The NFTFeed stores values and risk group of nfts that are used as collateral in tinlake. A risk group contains: thresholdRatio, ceilingRatio & interstRate.
@@ -170,9 +170,6 @@ contract BaseNFTFeed is Auth, Math {
 
     function currentCeiling(uint loan) public view returns(uint) {
         bytes32 nftID_ = nftID(loan);
-
-        // if (address(bookrunner) != address(0) && bookrunner.assetWasAccepted(nftID_) == false) return 0;
-        
         return rmul(nftValues[nftID_], ceilingRatio[risk[nftID_]]);
     }
 

@@ -97,7 +97,7 @@ interface OperatorLike {
 
 interface BookrunnerLike {
     function memberlist() external view returns (address);
-    function propose(bytes32 nftID, uint risk, uint value, uint deposit) external;
-    function addStake(bytes32 nftID, uint risk, uint value, uint stakeAmount) external;
-    function accept(bytes32 nftID, uint risk, uint value) external;
+    function propose(uint loan, uint risk, uint value, uint deposit) external;
+    function stake(uint loan, uint risk, uint value, uint stakeAmount) external;
+    function accept(uint loan, uint risk, uint value) external;
 }

@@ -141,15 +141,14 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
         pile.file("rate", group_, rate_);
     }
 
-    function writeOff(bytes32 nftID_, uint phase_) public {
+    function writeOff(uint loan, uint phase_) public {
+        bytes32 nftID_ = nftID(loan);
         require(block.timestamp >= maturityDate[nftID_] + writeOffs[phase_].overdueDays, "too-early");
 
-        uint loan = shelf.nftlookup(nftID_);
         WriteOff memory writeOff_ = writeOffs[phase_];
-
         if (address(bookrunner) != address(0)) {
             uint amount = rmul(nftValues[nftID_], writeOff_.percentage.value);
-            bookrunner.setWrittenOff(nftID_, amount);
+            bookrunner.setWrittenOff(loan, amount);
         }
 
         pile.changeRate(loan, writeOff_.rateGroup);
@@ -306,9 +305,9 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
 
         // Mint and transfer new + staked TIN to underwriters
         if (address(bookrunner) != address(0)) {
-            bookrunner.setRepaid(nftID_, amount);
+            bookrunner.setRepaid(loan, amount);
             if (debt == 0) {
-                bookrunner.setClosed(nftID_);
+                bookrunner.setClosed(loan);
             }
         }
 

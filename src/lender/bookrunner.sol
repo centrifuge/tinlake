@@ -8,7 +8,8 @@ import "./../fixed_point.sol";
 import "ds-test/test.sol";
 
 interface NAVFeedLike {
-	function update(bytes32 nftID_, uint value, uint risk_) external;
+	function update(bytes32 nftID, uint value, uint risk_) external;
+	function nftID(uint loan) external view returns (bytes32);
 }
 
 interface ERC20Like {
@@ -26,6 +27,7 @@ interface MemberlistLike {
 /**
 TODO:
 - do we need a max stake threshold, to ensure there's sufficient returns?
+- on shelf.close(), should we reset the risk & value in the navfeed such that a new loan against this nftID requires new staking?
  */
 contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 
@@ -46,37 +48,37 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 	// Time from proposal until it can be accepted
 	uint public challengeTime = 30 minutes;
 
-	// Total amount that is staked for each (nftID, (risk, value)) tuple
-	mapping (bytes32 => mapping (bytes => uint)) public proposals;
+	// Total amount that is staked for each (loan, (risk, value)) tuple
+	mapping (uint => mapping (bytes => uint)) public proposals;
 
-	// Amount that is staked for each (nftID, (risk, value), underwriter) tuple
-	mapping (bytes32 => mapping (bytes => mapping (address => uint))) public perUnderwriterStake;
+	// Amount that is staked for each (loan, (risk, value), underwriter) tuple
+	mapping (uint => mapping (bytes => mapping (address => uint))) public perUnderwriterStake;
 
-	// nftIDs which an underwriter has staked towards
-	mapping (address => bytes32[]) public underwriterStakes;
+	// loans which an underwriter has staked towards
+	mapping (address => uint[]) public underwriterStakes;
 
-	// Time at which the asset can be accepted for each nftID
-	mapping (bytes32 => uint) public minChallengePeriodEnd;
+	// Time at which the asset can be accepted for each loan
+	mapping (uint => uint) public minChallengePeriodEnd;
 
 	// Total amount that an underwriter has staked in all assets
 	mapping (address => uint) public staked;
 
-	// (risk, value) pair for each nftID that was accepted
-	mapping (bytes32 => bytes) public acceptedProposals;
+	// (risk, value) pair for each loan that was accepted
+	mapping (uint => bytes) public acceptedProposals;
 
-	// Amount repaid and written off per nftID
+	// Amount repaid and written off per loan
 	// TODO: look into retrieving these from the navFeed directly
-	mapping (bytes32 => uint) public repaid;
-	mapping (bytes32 => uint) public writtenOff;
+	mapping (uint => uint) public repaid;
+	mapping (uint => uint) public writtenOff;
 
 	// Whether the loan has been closed
-	mapping (bytes32 => bool) public closed;
+	mapping (uint => bool) public closed;
 
 	// total amount staked (tokens held by this contract)
 	uint public totalStaked;
 
-	event Propose(bytes32 indexed nftID, uint risk, uint value, uint deposit);
-	event Accept(bytes32 indexed nftID, uint risk, uint value);
+	event Propose(uint indexed loan, uint risk, uint value, uint deposit);
+	event Accept(uint indexed loan, uint risk, uint value);
 	event Mint(address indexed usr, uint amount);
 	event Burn(address indexed usr, uint amount);
 
@@ -108,104 +110,105 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 		else revert();
 	}
 
-	function propose(bytes32 nftID, uint risk, uint value, uint deposit) public memberOnly {
+	function propose(uint loan, uint risk, uint value, uint deposit) public memberOnly {
 		require(deposit >= minimumDeposit, "min-deposit-required");
-		require(acceptedProposals[nftID].length == 0, "asset-already-accepted");
+		require(acceptedProposals[loan].length == 0, "asset-already-accepted");
 		require(juniorToken.balanceOf(msg.sender) >= deposit, "insufficient-balance");
 
 		bytes memory proposal = abi.encodePacked(risk, value); // TODO: this is a bit of trick, can probably be done more efficiently, or maybe even off-chain
-		require(proposals[nftID][proposal] == 0, "proposal-already-exists");
+		require(proposals[loan][proposal] == 0, "proposal-already-exists");
 
 		// require(juniorToken.transferFrom(msg.sender, address(this), deposit), "token-transfer-failed");
 		juniorToken.transferFrom(msg.sender, address(this), deposit);
 		totalStaked = safeAdd(totalStaked, deposit);
 
-		proposals[nftID][proposal] = deposit;
-		perUnderwriterStake[nftID][proposal][msg.sender] = deposit;
-		underwriterStakes[msg.sender].push(nftID);
-		minChallengePeriodEnd[nftID] = block.timestamp + challengeTime;
+		proposals[loan][proposal] = deposit;
+		perUnderwriterStake[loan][proposal][msg.sender] = deposit;
+		underwriterStakes[msg.sender].push(loan);
+		minChallengePeriodEnd[loan] = block.timestamp + challengeTime;
 		staked[msg.sender] = safeAdd(staked[msg.sender], deposit);
 
-		emit Propose(nftID, risk, value, deposit);
+		emit Propose(loan, risk, value, deposit);
 	}
 
 	// Staking in opposition of an asset can be done by staking with a value of 0.
-	function addStake(bytes32 nftID, uint risk, uint value, uint stakeAmount) public memberOnly {
-		require(acceptedProposals[nftID].length == 0, "asset-already-accepted");
+	// TODO: rewrite to stakeAmount as new value rather than diff, to allow easy updating of stake?
+	function stake(uint loan, uint risk, uint value, uint stakeAmount) public memberOnly {
+		require(acceptedProposals[loan].length == 0, "asset-already-accepted");
 		require(juniorToken.balanceOf(msg.sender) >= stakeAmount, "insufficient-balance");
 
-		// TODO: check burned[nftID][underwriter]
+		// TODO: check burned[loan][underwriter]
 
 		// require(juniorToken.transferFrom(msg.sender, address(this), stakeAmount), "token-transfer-failed");
 		juniorToken.transferFrom(msg.sender, address(this), stakeAmount);
 		totalStaked = safeAdd(totalStaked, stakeAmount);
 
 		bytes memory proposal = abi.encodePacked(risk, value);
-		uint prevStake = proposals[nftID][proposal];
-		uint newStake = safeAdd(prevStake, stakeAmount);
-		proposals[nftID][proposal] = newStake;
+		proposals[loan][proposal] = safeAdd(proposals[loan][proposal], stakeAmount);
 
-		uint prevPerUnderwriterStake = perUnderwriterStake[nftID][proposal][msg.sender];
+		uint prevPerUnderwriterStake = perUnderwriterStake[loan][proposal][msg.sender];
 		uint newPerUnderwriterStake = safeAdd(prevPerUnderwriterStake, stakeAmount);
-		perUnderwriterStake[nftID][proposal][msg.sender] = newPerUnderwriterStake;
+		perUnderwriterStake[loan][proposal][msg.sender] = newPerUnderwriterStake;
 
-		underwriterStakes[msg.sender].push(nftID);
+		underwriterStakes[msg.sender].push(loan);
 		staked[msg.sender] = safeAdd(staked[msg.sender], stakeAmount);
 	}
 
 	// TODO: this could be permissionless?
-	function accept(bytes32 nftID, uint risk, uint value) public memberOnly {
-		require(block.timestamp >= minChallengePeriodEnd[nftID], "challenge-period-not-ended");
+	function accept(uint loan, uint risk, uint value) public memberOnly {
+		require(block.timestamp >= minChallengePeriodEnd[loan], "challenge-period-not-ended");
 		bytes memory proposal = abi.encodePacked(risk, value);
-		require(proposals[nftID][proposal] >= rmul(minimumStakeThreshold.value, value), "stake-threshold-not-reached");
+		require(proposals[loan][proposal] >= rmul(minimumStakeThreshold.value, value), "stake-threshold-not-reached");
 		
-		navFeed.update(nftID, value, risk);
-		acceptedProposals[nftID] = proposal;
+		bytes32 nftID_ = navFeed.nftID(loan);
+		navFeed.update(nftID_, value, risk);
+		acceptedProposals[loan] = proposal;
 		
-		emit Accept(nftID, risk, value);
+		emit Accept(loan, risk, value);
 	}
 
-	// For gas efficiency, stake isn't automatically removed from an asset when another proposal is accepted.
-	// Instead, the underwriter can move their stake to a new asset.
-	// function moveStake(uint fromNftId, uint fromRisk, uint fromValue, bytes32 toNftId, uint toRisk, uint toValue, uint stakeAmount) public memberOnly {
-	// 	require(acceptedProposals[toNftId].length == 0, "asset-already-accepted");
-		// TODO: check burned[nftID][underwriter]
-		// TODO: how to handle stake that was supposed to be burned? Maybe not allow move if writtenOff[formNftID] > 0?
+	function unstake(uint loan, uint risk, uint value) public memberOnly {
+		bytes memory proposal = abi.encodePacked(risk, value);
+		// TODO: require(acceptedProposals[loan] != proposal, "cannot-unstake-accepted-proposal");
 
-		// remove staked from old proposal
-		// add staked to new proposal 
+		uint stakeAmount = perUnderwriterStake[loan][proposal][msg.sender];
+		proposals[loan][proposal] = safeSub(proposals[loan][proposal], stakeAmount);
+		
+		safeTransfer(msg.sender, stakeAmount);
+		totalStaked = safeSub(totalStaked, stakeAmount);
+		staked[msg.sender] = safeSub(staked[msg.sender], stakeAmount);
 
-		// if full stake is moved, underwriterStakes[msg.sender].remove(nftID) (only if fully minted/burned)
-	// }
+		uint i = 0;
+		while (underwriterStakes[msg.sender][i] != loan) { i++; }
+		delete underwriterStakes[msg.sender][i];
 
-	// TODO: function cancelStake() public memberOnly
-	// TODO: check burned[nftID][underwriter]
-	// if full stake is cancelled, underwriterStakes[msg.sender].remove(nftID)(only if fully minted/burned)
+		perUnderwriterStake[loan][proposal][msg.sender] = 0;
+	}
 
-	function assetWasAccepted(bytes32 nftID) public view returns (bool) {
-		return acceptedProposals[nftID].length != 0;
+	function assetWasAccepted(uint loan) public view returns (bool) {
+		return acceptedProposals[loan].length != 0;
 	}
 
 	function calcStakedDisburse(address underwriter, bool disbursing) public returns (uint minted, uint slashed, uint tokenPayout) {
-		bytes32[] memory nftIDs = underwriterStakes[underwriter];
+		uint[] memory loans = underwriterStakes[underwriter];
 
-		for (uint i = 0; i < nftIDs.length; i++) {
-			bytes32 nftID = nftIDs[i];
-			bytes memory acceptedProposal = acceptedProposals[nftID];
-			uint underwriterStake = perUnderwriterStake[nftID][acceptedProposal][underwriter];
-			uint256 relativeStake = rdiv(underwriterStake, proposals[nftID][acceptedProposal]);
+		for (uint i = 0; i < loans.length; i++) {
+			uint loan = loans[i];
+			bytes memory acceptedProposal = acceptedProposals[loan];
+			uint underwriterStake = perUnderwriterStake[loan][acceptedProposal][underwriter];
+			uint256 relativeStake = rdiv(underwriterStake, proposals[loan][acceptedProposal]);
 
 			// (mint proportion * (relative stake * repaid amount))
-			uint newlyMinted = rmul(mintProportion.value, rmul(relativeStake, repaid[nftID]));
+			uint newlyMinted = rmul(mintProportion.value, rmul(relativeStake, repaid[loan]));
 			minted = safeAdd(minted, newlyMinted);
 
 			// (slash proportion * (relative stake * written off amount))
-			uint newlySlashed = rmul(slashProportion.value, rmul(relativeStake, writtenOff[nftID]));
+			uint newlySlashed = rmul(slashProportion.value, rmul(relativeStake, writtenOff[loan]));
 			slashed = safeAdd(slashed, newlySlashed);
 
 			// TODO: if an asset is defaulting and there was a vote against, part of the slash is going to this vote
 
-			if (closed[nftID]) {
+			if (closed[loan]) {
 				uint newPayout = safeSub(safeAdd(underwriterStake, newlyMinted), newlySlashed);
 				tokenPayout = safeAdd(tokenPayout, newPayout);
 
@@ -219,36 +222,37 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 	}
 
 	// Called from tranche, not directly, hence the auth modifier
-	// TODO: consider rewriting to disburse(address underwriter, bytes32 nftID), to avoid the for loop? same for calcStakedDisburse()
+	// TODO: consider rewriting to disburse(address underwriter, uint loan), to avoid the for loop? same for calcStakedDisburse()
 	function disburse(address underwriter) public auth returns (uint tokenPayout) {
 		(,, tokenPayout) = calcStakedDisburse(underwriter, true);
 
 		safeTransfer(underwriter, tokenPayout);
 		totalStaked = safeSub(totalStaked, tokenPayout);
 		staked[underwriter] = safeSub(staked[underwriter], tokenPayout);
+		// TODO: perUnderwriterStake[loan][proposal][msg.sender] = 0;
 
 		return tokenPayout;
 	}
 
-	function setRepaid(bytes32 nftID, uint amount) public auth {
-		repaid[nftID] = amount;
+	function setRepaid(uint loan, uint amount) public auth {
+		repaid[loan] = amount;
 		mint(rmul(mintProportion.value, amount));
 	}
 
-	function setWrittenOff(bytes32 nftID, uint amount) public auth {
-		writtenOff[nftID] = amount;
+	function setWrittenOff(uint loan, uint amount) public auth {
+		writtenOff[loan] = amount;
 		safeBurn(rmul(slashProportion.value, amount));
 	}
 
-	function setClosed(bytes32 nftID) public auth {
-		closed[nftID] = true;
-
-		// TODO; switch to uint loan instead of nftID
+	function setClosed(uint loan) public auth {
+		closed[loan] = true;
+		bytes32 nftID_ = navFeed.nftID(loan);
+		navFeed.update(nftID_, 0, 0);
 	}
 
-	function currentStake(bytes32 nftID, uint risk, uint value) public view returns (uint) {
+	function currentStake(uint loan, uint risk, uint value) public view returns (uint) {
 		bytes memory proposal = abi.encodePacked(risk, value);
-		return proposals[nftID][proposal];
+		return proposals[loan][proposal];
 	}
 
 	function mint(uint tokenAmount) internal {
