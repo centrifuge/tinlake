@@ -32,7 +32,7 @@ contract Underwriter {
         juniorToken.approve(usr, wad);
     }
 
-    function disburseStaked() public returns (uint minted, uint burned) {
+    function disburseStaked() public returns (uint tokenPayout) {
         return juniorOperator.disburseStaked();
     }
     

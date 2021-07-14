@@ -92,7 +92,7 @@ interface OperatorLike {
     function supplyOrder(uint currencyAmount) external;
     function redeemOrder(uint redeemAmount) external;
     function disburse() external returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
-    function disburseStaked() external returns (uint minted, uint burned);
+    function disburseStaked() external returns (uint tokenPayout);
 }
 
 interface BookrunnerLike {

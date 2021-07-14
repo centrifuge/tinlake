@@ -8,7 +8,7 @@ interface TrancheLike {
     function redeemOrder(address usr, uint tokenAmount) external;
     function disburse(address usr) external returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
     function disburse(address usr, uint endEpoch) external returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
-    function disburseStaked(address usr) external returns (uint tokensToBeMinted, uint tokensToBeBurned);
+    function disburseStaked(address usr) external returns (uint tokenPayout);
     function currency() external view returns (address);
 }
 
@@ -76,7 +76,7 @@ contract Operator is Auth {
         return tranche.disburse(msg.sender, endEpoch);
     }
 
-    function disburseStaked() external returns (uint tokensToBeMinted, uint tokensToBeBurned) {
+    function disburseStaked() external returns (uint tokenPayout) {
         return tranche.disburseStaked(msg.sender);
     }
 
