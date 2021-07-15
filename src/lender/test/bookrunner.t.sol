@@ -60,7 +60,7 @@ contract BookrunnerTest is DSTest, Math {
     // }
 
     function testStake(uint stakeAmount) public {
-        if (stakeAmount > 10**(9+18)) return; // not more than 1 billion tokens
+        if (stakeAmount == 0 || stakeAmount > 10**(9+18)) return; // not more than 1 billion tokens
 
         uint loan = 1;
         uint risk = 0;

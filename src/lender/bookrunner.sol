@@ -7,6 +7,7 @@ import "tinlake-math/math.sol";
 import "./../fixed_point.sol";
 
 interface NAVFeedLike {
+    function update(bytes32 nftID_, uint value) external;
     function update(bytes32 nftID_, uint value, uint risk_) external;
     function nftID(uint loan) external view returns (bytes32);
 }
@@ -111,7 +112,7 @@ contract Bookrunner is Auth, Math, FixedPoint {
         require(acceptedProposals[loan].length == 0, "asset-already-accepted");
         require(juniorToken.balanceOf(msg.sender) >= deposit, "insufficient-balance");
 
-        bytes memory proposal = abi.encodePacked(risk, value); // TODO: this is a bit of trick, can probably be done more efficiently, or maybe even off-chain
+        bytes memory proposal = abi.encodePacked(risk, value);
         require(proposals[loan][proposal] == 0, "proposal-already-exists");
 
         juniorToken.transferFrom(msg.sender, address(this), deposit);
@@ -168,11 +169,12 @@ contract Bookrunner is Auth, Math, FixedPoint {
 
         // TODO: If there are more assets that qualify than liquidity to finance them, only those with the largest stake get financed in that time period.
         // + preference to finance assets with highest stake without no votes
-        
+
+        // Set the risk group and value in the NAV feed
         bytes32 nftID_ = navFeed.nftID(loan);
         navFeed.update(nftID_, value, risk);
+
         acceptedProposals[loan] = proposal;
-        
         emit Accept(loan, risk, value);
     }
 
@@ -253,6 +255,7 @@ contract Bookrunner is Auth, Math, FixedPoint {
         writtenOff[loan] = amount;
         safeBurn(rmul(slashProportion.value, amount));
 
+        // Close if 100% written off
         if (writeoffPercentage == 10**27) {
             setClosed(loan);
         }
@@ -260,8 +263,10 @@ contract Bookrunner is Auth, Math, FixedPoint {
 
     function setClosed(uint loan) public auth {
         closed[loan] = true;
-        // bytes32 nftID_ = navFeed.nftID(loan);
-        // TODO: navFeed.update(nftID_, 0, 0);
+
+        // Set value to 0 so no new loan can be opened against this NFT until it has gone through underwriting again
+        bytes32 nftID_ = navFeed.nftID(loan);
+        navFeed.update(nftID_, 0);
     }
 
     function currentStake(uint loan, uint risk, uint value) public view returns (uint) {

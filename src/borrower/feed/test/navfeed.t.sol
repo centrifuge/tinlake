@@ -410,11 +410,9 @@ contract NAVTest is DSTest, Math {
 
     function testWriteOffs() public {
         pile.setReturn("rate_debt", 100 ether);
-        // default is two different write off groups both with 100 ether in debt
-        // 60% -> 40% write off
-        // 80% -> 20% write off
-        // 100 ether * 0.6 + 100 ether * 0.8 = 140 ether
-        assertEq(feed.currentNAV(), 140 ether);
+        // default is three different write off groups all with 100 ether in debt
+        // 100 ether * 0.6 + 100 ether * 0.8 + 100 ether * 1.0 = 240 ether
+        assertEq(feed.currentNAV(), 240 ether);
     }
 
     function testRecoveryRatePD() public {
