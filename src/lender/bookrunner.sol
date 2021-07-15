@@ -5,7 +5,6 @@ pragma experimental ABIEncoderV2;
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 import "./../fixed_point.sol";
-import "ds-test/test.sol";
 
 interface NAVFeedLike {
 	function update(bytes32 nftID_, uint value, uint risk_) external;
@@ -24,11 +23,8 @@ interface MemberlistLike {
 	function hasMember(address) external view returns (bool);
 	function member(address) external;
 }
-/**
-TODO:
-- do we need a max stake threshold, to ensure there's sufficient returns?
- */
-contract Bookrunner is Auth, Math, FixedPoint, DSTest {
+
+contract Bookrunner is Auth, Math, FixedPoint {
 
 	NAVFeedLike public navFeed;
 	ERC20Like public juniorToken;
@@ -51,9 +47,11 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 	mapping (uint => mapping (bytes => uint)) public proposals;
 
 	// Amount that is staked for each (loan, (risk, value), underwriter) tuple
+	// This isn't unset if a proposal is unstaked or paid out after being closed,
+	// as this keeps the history of which proposal which underwriter staked towards
 	mapping (uint => mapping (bytes => mapping (address => uint))) public perUnderwriterStake;
 
-	// loans which an underwriter has staked towards
+	// Loans which an underwriter has staked towards
 	mapping (address => uint[]) public underwriterStakes;
 
 	// Time at which the asset can be accepted for each loan
@@ -108,7 +106,7 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 		else revert();
 	}
 
-	function propose(uint loan, uint risk, uint value, uint deposit) public memberOnly {
+	function propose(uint loan, uint risk, uint value, uint deposit) public {
 		require(deposit >= minimumDeposit, "min-deposit-required");
 		require(acceptedProposals[loan].length == 0, "asset-already-accepted");
 		require(juniorToken.balanceOf(msg.sender) >= deposit, "insufficient-balance");
@@ -116,7 +114,6 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 		bytes memory proposal = abi.encodePacked(risk, value); // TODO: this is a bit of trick, can probably be done more efficiently, or maybe even off-chain
 		require(proposals[loan][proposal] == 0, "proposal-already-exists");
 
-		// require(juniorToken.transferFrom(msg.sender, address(this), deposit), "token-transfer-failed");
 		juniorToken.transferFrom(msg.sender, address(this), deposit);
 		totalStaked = safeAdd(totalStaked, deposit);
 
@@ -130,31 +127,47 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 	}
 
 	// Staking in opposition of an asset can be done by staking with a value of 0.
-	// TODO: rewrite to stakeAmount as new value rather than diff, to allow easy updating of stake?
 	function stake(uint loan, uint risk, uint value, uint stakeAmount) public memberOnly {
 		require(acceptedProposals[loan].length == 0, "asset-already-accepted");
-		require(juniorToken.balanceOf(msg.sender) >= stakeAmount, "insufficient-balance");
-
-		// require(juniorToken.transferFrom(msg.sender, address(this), stakeAmount), "token-transfer-failed");
-		juniorToken.transferFrom(msg.sender, address(this), stakeAmount);
-		totalStaked = safeAdd(totalStaked, stakeAmount);
 
 		bytes memory proposal = abi.encodePacked(risk, value);
-		proposals[loan][proposal] = safeAdd(proposals[loan][proposal], stakeAmount);
-
 		uint prevPerUnderwriterStake = perUnderwriterStake[loan][proposal][msg.sender];
-		uint newPerUnderwriterStake = safeAdd(prevPerUnderwriterStake, stakeAmount);
-		perUnderwriterStake[loan][proposal][msg.sender] = newPerUnderwriterStake;
+		require(stakeAmount <= prevPerUnderwriterStake || juniorToken.balanceOf(msg.sender) >= safeSub(stakeAmount, prevPerUnderwriterStake), "insufficient-balance");
+		require(stakeAmount > 0, "requires-unstaking"); // unstake() should be called for setting the stake to 0
 
-		underwriterStakes[msg.sender].push(loan);
-		staked[msg.sender] = safeAdd(staked[msg.sender], stakeAmount);
+		if (stakeAmount > prevPerUnderwriterStake) {
+			uint increase = safeSub(stakeAmount, prevPerUnderwriterStake);
+			juniorToken.transferFrom(msg.sender, address(this), increase);
+
+			totalStaked = safeAdd(totalStaked, increase);
+			proposals[loan][proposal] = safeAdd(proposals[loan][proposal], increase);
+			perUnderwriterStake[loan][proposal][msg.sender] = safeAdd(prevPerUnderwriterStake, increase);
+			staked[msg.sender] = safeAdd(staked[msg.sender], increase);
+		} else if (stakeAmount < prevPerUnderwriterStake) {
+			uint decrease = safeSub(prevPerUnderwriterStake, stakeAmount);
+			juniorToken.transfer(msg.sender, decrease);
+
+			totalStaked = safeSub(totalStaked, decrease);
+			proposals[loan][proposal] = safeSub(proposals[loan][proposal], decrease);
+			perUnderwriterStake[loan][proposal][msg.sender] = safeSub(prevPerUnderwriterStake, decrease);
+			staked[msg.sender] = safeSub(staked[msg.sender], decrease);
+		}
+
+		if (prevPerUnderwriterStake == 0) {
+			underwriterStakes[msg.sender].push(loan);
+		}
 	}
 
-	// TODO: this could be permissionless?
-	function accept(uint loan, uint risk, uint value) public memberOnly {
+	function accept(uint loan, uint risk, uint value) public {
 		require(block.timestamp >= minChallengePeriodEnd[loan], "challenge-period-not-ended");
 		bytes memory proposal = abi.encodePacked(risk, value);
 		require(proposals[loan][proposal] >= rmul(minimumStakeThreshold.value, value), "stake-threshold-not-reached");
+
+		// TODO: if there are multiple proposals which pass the minimumStakeThreshold, only accept the one with the largest stake
+		// store proposalWithLargestStake[loan], update on stake(), check here if proposals[loan][proposal] == proposalWithLargestStake[loan]
+
+		// TODO: If there are more assets that qualify than liquidity to finance them, only those with the largest stake get financed in that time period.
+		// + preference to finance assets with highest stake without no votes
 		
 		bytes32 nftID_ = navFeed.nftID(loan);
 		navFeed.update(nftID_, value, risk);
@@ -165,7 +178,7 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 
 	function unstake(uint loan, uint risk, uint value) public memberOnly {
 		bytes memory proposal = abi.encodePacked(risk, value);
-		// TODO: require(acceptedProposals[loan] != proposal, "cannot-unstake-accepted-proposal");
+		require(keccak256(acceptedProposals[loan]) != keccak256(proposal), "cannot-unstake-accepted-proposal");
 
 		uint stakeAmount = perUnderwriterStake[loan][proposal][msg.sender];
 		proposals[loan][proposal] = safeSub(proposals[loan][proposal], stakeAmount);
@@ -177,8 +190,6 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 		uint i = 0;
 		while (underwriterStakes[msg.sender][i] != loan) { i++; }
 		delete underwriterStakes[msg.sender][i];
-
-		perUnderwriterStake[loan][proposal][msg.sender] = 0;
 	}
 
 	function assetWasAccepted(uint loan) public view returns (bool) {
@@ -203,11 +214,13 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 			slashed = safeAdd(slashed, newlySlashed);
 
 			// TODO: if an asset is defaulting and there was a vote against, part of the slash is going to this vote
+			// => store votesAgainst[loan] for any stakes with value = 0
 
 			if (closed[loan]) {
 				uint newPayout = safeSub(safeAdd(underwriterStake, newlyMinted), newlySlashed);
 				tokenPayout = safeAdd(tokenPayout, newPayout);
 
+				// TODO: rewrite s.t. this can be in disburse, then make calcStakedDisburse a view method
 				if (disbursing) {
 					delete underwriterStakes[underwriter][i];
 				}
@@ -222,12 +235,8 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 		(,, uint tokenPayout) = calcStakedDisburse(underwriter, true);
 
 		safeTransfer(underwriter, tokenPayout);
-		emit log_named_uint("totalStaked", totalStaked);
-		emit log_named_uint("tokenPayout", tokenPayout);
 		totalStaked = safeSub(totalStaked, tokenPayout);
-		emit log_named_uint("staked[underwriter]", staked[underwriter]);
 		staked[underwriter] = safeSub(staked[underwriter], min(tokenPayout, staked[underwriter]));
-		// TODO: perUnderwriterStake[loan][proposal][msg.sender] = 0;
 
 		return tokenPayout;
 	}
@@ -238,6 +247,7 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 		mint(rmul(mintProportion.value, amount));
 	}
 
+	// TODO: if loss exceeds the amount staked, all of TIN takes a hit
 	function setWrittenOff(uint loan, uint writeoffPercentage, uint amount) public auth {
 		require(!closed[loan], "already-closed");
 		writtenOff[loan] = amount;
@@ -270,7 +280,6 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 	}
 
 	function safeTransfer(address usr, uint amount) internal returns(uint) {
-		// require(juniorToken.transfer(usr, amount), "token-transfer-failed");
 		juniorToken.transfer(usr, min(amount, juniorToken.balanceOf(address(this))));
 		return amount;
 	}

@@ -22,7 +22,11 @@ contract CeilingMock is Mock {
         calls["repay"]++;
         values_uint["repay_loan"] = loan;
         values_uint["repay_amount"] = amount;
+    }
 
+    function close(uint loan) public {
+        calls["close"]++;
+        values_uint["close_loan"] = loan;
     }
 
     function file(uint loan, uint amount) public {
