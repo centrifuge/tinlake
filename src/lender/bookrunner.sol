@@ -37,9 +37,8 @@ contract Bookrunner is Auth, Math, FixedPoint {
     // Stake threshold required relative to the NFT value
     Fixed27 public minimumStakeThreshold = Fixed27(0.10 * 10**27);
 
-    // % of the repaid/written off amount that is minted/burned in TIN tokens for the underwriters
+    // % of the repaid amount that is minted in TIN tokens for the underwriters
     Fixed27 public mintProportion = Fixed27(0.01 * 10**27);
-    Fixed27 public slashProportion = Fixed27(0.01 * 10**27); 
 
     // Time from proposal until it can be accepted
     uint public challengeTime = 30 minutes;
@@ -95,8 +94,6 @@ contract Bookrunner is Auth, Math, FixedPoint {
             minimumStakeThreshold = Fixed27(value);
         } else if (name == "mintProportion") {
             mintProportion = Fixed27(value);
-        } else if (name == "slashProportion") {
-            slashProportion = Fixed27(value);
         } else { revert("unknown-name");}
     }
 
@@ -162,6 +159,8 @@ contract Bookrunner is Auth, Math, FixedPoint {
     function accept(uint loan, uint risk, uint value) public {
         require(block.timestamp >= minChallengePeriodEnd[loan], "challenge-period-not-ended");
         bytes memory proposal = abi.encodePacked(risk, value);
+
+        // TODO: proposals[loan][proposal] should be multiplied by the TIN token price
         require(proposals[loan][proposal] >= rmul(minimumStakeThreshold.value, value), "stake-threshold-not-reached");
 
         // TODO: if there are multiple proposals which pass the minimumStakeThreshold, only accept the one with the largest stake
@@ -198,21 +197,22 @@ contract Bookrunner is Auth, Math, FixedPoint {
         return acceptedProposals[loan].length != 0;
     }
 
-    function calcStakedDisburse(address underwriter, bool disbursing) public returns (uint minted, uint slashed, uint tokenPayout) {
+    function calcStakedDisburse(address underwriter, bool disbursing) public view returns (uint minted, uint slashed, uint tokenPayout) {
         uint[] memory loans = underwriterStakes[underwriter];
 
         for (uint i = 0; i < loans.length; i++) {
             uint loan = loans[i];
             bytes memory acceptedProposal = acceptedProposals[loan];
             uint underwriterStake = perUnderwriterStake[loan][acceptedProposal][underwriter];
-            uint256 relativeStake = rdiv(underwriterStake, proposals[loan][acceptedProposal]);
+            uint proposalStake = proposals[loan][acceptedProposal];
+            uint256 relativeStake = rdiv(underwriterStake, proposalStake);
 
             // (mint proportion * (relative stake * repaid amount))
             uint newlyMinted = rmul(mintProportion.value, rmul(relativeStake, repaid[loan]));
             minted = safeAdd(minted, newlyMinted);
 
-            // (slash proportion * (relative stake * written off amount))
-            uint newlySlashed = rmul(slashProportion.value, rmul(relativeStake, writtenOff[loan]));
+            // relative stake * written off amount
+            uint newlySlashed = rmul(relativeStake, min(writtenOff[loan], proposalStake));
             slashed = safeAdd(slashed, newlySlashed);
 
             // TODO: if an asset is defaulting and there was a vote against, part of the slash is going to this vote
@@ -223,9 +223,9 @@ contract Bookrunner is Auth, Math, FixedPoint {
                 tokenPayout = safeAdd(tokenPayout, newPayout);
 
                 // TODO: rewrite s.t. this can be in disburse, then make calcStakedDisburse a view method
-                if (disbursing) {
-                    delete underwriterStakes[underwriter][i];
-                }
+                // if (disbursing) {
+                //     delete underwriterStakes[underwriter][i];
+                // }
             }
         }
 
@@ -249,11 +249,23 @@ contract Bookrunner is Auth, Math, FixedPoint {
         mint(rmul(mintProportion.value, amount));
     }
 
-    // TODO: if loss exceeds the amount staked, all of TIN takes a hit
+    // Write-off the loan, and burn the associated stake. If the writeoff amount is less than the stake,
+    // then the TIN price will stay constant (as NAV drop == TIN supply decrease). If the writeoff amount
+    // is more than the stake, then the TIN price will start going down.
     function setWrittenOff(uint loan, uint writeoffPercentage, uint amount) public auth {
         require(!closed[loan], "already-closed");
+
+        bytes memory acceptedProposal = acceptedProposals[loan];
+        uint alreadyWrittenOff = writtenOff[loan];
+        uint newlyWrittenOff = safeSub(amount, alreadyWrittenOff);
+
+        uint stakeToBurn = 0;
+        if (proposals[loan][acceptedProposal] > alreadyWrittenOff) {
+            stakeToBurn = safeSub(proposals[loan][acceptedProposal], alreadyWrittenOff); 
+        }
+        
+        safeBurn(min(newlyWrittenOff, stakeToBurn));
         writtenOff[loan] = amount;
-        safeBurn(rmul(slashProportion.value, amount));
 
         // Close if 100% written off
         if (writeoffPercentage == 10**27) {
