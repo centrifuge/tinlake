@@ -5,6 +5,7 @@ pragma experimental ABIEncoderV2;
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 import "./../fixed_point.sol";
+import "ds-test/test.sol";
 
 interface NAVFeedLike {
     function update(bytes32 nftID_, uint value) external;
@@ -25,49 +26,42 @@ interface MemberlistLike {
     function member(address) external;
 }
 
-contract Bookrunner is Auth, Math, FixedPoint {
+abstract contract AssessorLike is FixedPoint {
+    function calcJuniorTokenPrice() public virtual returns(Fixed27 memory tokenPrice);
+}
+
+contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 
     NAVFeedLike public navFeed;
     ERC20Like public juniorToken;
     MemberlistLike public memberlist; 
+    AssessorLike public assessor; 
 
-    // Absolute min TIN required to propose a new asset
+    // Absolute min TIN required to propose a new asset, and the stake threshold required relative to the NFT value
     uint public minimumDeposit = 10 ether;
-
-    // Stake threshold required relative to the NFT value
-    Fixed27 public minimumStakeThreshold = Fixed27(0.10 * 10**27);
+    Fixed27 public minimumStake = Fixed27(0.10 * 10**27);
 
     // % of the repaid amount that is minted in TIN tokens for the underwriters
-    Fixed27 public mintProportion = Fixed27(0.01 * 10**27);
+    Fixed27 public rewardRate = Fixed27(0.01 * 10**27);
 
-    // Time from proposal until it can be accepted
-    uint public challengeTime = 30 minutes;
-
-    // Total amount that is staked for each (loan, (risk, value)) tuple
+    // Total amount that is staked for each (loan, (risk, value)) tuple, and the amount of the largest stake to any proposal for a loan
     mapping (uint => mapping (bytes => uint)) public proposals;
+    mapping (uint => uint) public largestStake;
 
     // Amount that is staked for each (loan, (risk, value), underwriter) tuple
     // This isn't unset if a proposal is unstaked or paid out after being closed,
     // as this keeps the history of which proposal which underwriter staked towards
     mapping (uint => mapping (bytes => mapping (address => uint))) public perUnderwriterStake;
 
-    // Loans which an underwriter has staked towards
+    // List of loans which an underwriter has staked towards
     mapping (address => uint[]) public underwriterStakes;
-
-    // Time at which the asset can be accepted for each loan
-    mapping (uint => uint) public minChallengePeriodEnd;
-
-    // Total amount that an underwriter has staked in all assets
-    mapping (address => uint) public staked;
 
     // (risk, value) pair for each loan that was accepted
     mapping (uint => bytes) public acceptedProposals;
 
-    // Amount repaid and written off per loan
+    // Amount repaid and written off per loan, and a boolean whether the loan has been closed
     mapping (uint => uint) public repaid;
     mapping (uint => uint) public writtenOff;
-
-    // Whether the loan has been closed
     mapping (uint => bool) public closed;
 
     // Total amount staked (tokens held by this contract)
@@ -86,14 +80,12 @@ contract Bookrunner is Auth, Math, FixedPoint {
     }
 
     function file(bytes32 name, uint value) public auth {
-        if (name == "challengeTime") {
-            challengeTime = value;
-        } else if (name == "minimumDeposit") {
+        if (name == "minimumDeposit") {
             minimumDeposit = value;
-        } else if (name == "minimumStakeThreshold") {
-            minimumStakeThreshold = Fixed27(value);
-        } else if (name == "mintProportion") {
-            mintProportion = Fixed27(value);
+        } else if (name == "minimumStake") {
+            minimumStake = Fixed27(value);
+        } else if (name == "rewardRate") {
+            rewardRate = Fixed27(value);
         } else { revert("unknown-name");}
     }
 
@@ -101,11 +93,12 @@ contract Bookrunner is Auth, Math, FixedPoint {
         if (contractName == "juniorToken") { juniorToken = ERC20Like(addr); }
         else if (contractName == "navFeed") { navFeed = NAVFeedLike(addr); }
         else if (contractName == "memberlist") { memberlist = MemberlistLike(addr); }
+        else if (contractName == "assessor") { assessor = AssessorLike(addr); }
         else revert();
     }
 
     function propose(uint loan, uint risk, uint value, uint deposit) public {
-        require(deposit >= minimumDeposit, "min-deposit-required");
+        require(deposit >= minimumDeposit, "min-deposit-required"); // TODO: minimumDeposit should be in currency?
         require(acceptedProposals[loan].length == 0, "asset-already-accepted");
         require(juniorToken.balanceOf(msg.sender) >= deposit, "insufficient-balance");
 
@@ -118,8 +111,6 @@ contract Bookrunner is Auth, Math, FixedPoint {
         proposals[loan][proposal] = deposit;
         perUnderwriterStake[loan][proposal][msg.sender] = deposit;
         underwriterStakes[msg.sender].push(loan);
-        minChallengePeriodEnd[loan] = block.timestamp + challengeTime;
-        staked[msg.sender] = safeAdd(staked[msg.sender], deposit);
 
         emit Propose(loan, risk, value, deposit);
     }
@@ -133,38 +124,39 @@ contract Bookrunner is Auth, Math, FixedPoint {
         require(stakeAmount <= prevPerUnderwriterStake || juniorToken.balanceOf(msg.sender) >= safeSub(stakeAmount, prevPerUnderwriterStake), "insufficient-balance");
         require(stakeAmount > 0, "requires-unstaking"); // unstake() should be called for setting the stake to 0
 
+        uint newStake;
         if (stakeAmount > prevPerUnderwriterStake) {
             uint increase = safeSub(stakeAmount, prevPerUnderwriterStake);
             juniorToken.transferFrom(msg.sender, address(this), increase);
 
             totalStaked = safeAdd(totalStaked, increase);
-            proposals[loan][proposal] = safeAdd(proposals[loan][proposal], increase);
+            newStake = safeAdd(proposals[loan][proposal], increase);
             perUnderwriterStake[loan][proposal][msg.sender] = safeAdd(prevPerUnderwriterStake, increase);
-            staked[msg.sender] = safeAdd(staked[msg.sender], increase);
         } else if (stakeAmount < prevPerUnderwriterStake) {
             uint decrease = safeSub(prevPerUnderwriterStake, stakeAmount);
             juniorToken.transfer(msg.sender, decrease);
 
             totalStaked = safeSub(totalStaked, decrease);
-            proposals[loan][proposal] = safeSub(proposals[loan][proposal], decrease);
+            newStake = safeSub(proposals[loan][proposal], decrease);
             perUnderwriterStake[loan][proposal][msg.sender] = safeSub(prevPerUnderwriterStake, decrease);
-            staked[msg.sender] = safeSub(staked[msg.sender], decrease);
         }
 
         if (prevPerUnderwriterStake == 0) {
             underwriterStakes[msg.sender].push(loan);
         }
+
+        proposals[loan][proposal] = newStake;
+        if (newStake > largestStake[loan]) {
+            largestStake[loan] = newStake;
+        }
     }
 
     function accept(uint loan, uint risk, uint value) public {
-        require(block.timestamp >= minChallengePeriodEnd[loan], "challenge-period-not-ended");
         bytes memory proposal = abi.encodePacked(risk, value);
+        require(proposals[loan][proposal] == largestStake[loan], "not-largest-stake");
 
-        // TODO: proposals[loan][proposal] should be multiplied by the TIN token price
-        require(proposals[loan][proposal] >= rmul(minimumStakeThreshold.value, value), "stake-threshold-not-reached");
-
-        // TODO: if there are multiple proposals which pass the minimumStakeThreshold, only accept the one with the largest stake
-        // store proposalWithLargestStake[loan], update on stake(), check here if proposals[loan][proposal] == proposalWithLargestStake[loan]
+        Fixed27 memory juniorTokenPrice = assessor.calcJuniorTokenPrice();
+        require(rmul(proposals[loan][proposal], juniorTokenPrice.value) >= rmul(minimumStake.value, value), "stake-threshold-not-reached");
 
         // TODO: If there are more assets that qualify than liquidity to finance them, only those with the largest stake get financed in that time period.
         // + preference to finance assets with highest stake without no votes
@@ -186,7 +178,6 @@ contract Bookrunner is Auth, Math, FixedPoint {
         
         safeTransfer(msg.sender, stakeAmount);
         totalStaked = safeSub(totalStaked, stakeAmount);
-        staked[msg.sender] = safeSub(staked[msg.sender], stakeAmount);
 
         uint i = 0;
         while (underwriterStakes[msg.sender][i] != loan) { i++; }
@@ -197,6 +188,7 @@ contract Bookrunner is Auth, Math, FixedPoint {
         return acceptedProposals[loan].length != 0;
     }
 
+    // TODO: rewrite to calcDisburse and calcMintedSlashed?
     function calcStakedDisburse(address underwriter, bool disbursing) public view returns (uint minted, uint slashed, uint tokenPayout) {
         uint[] memory loans = underwriterStakes[underwriter];
 
@@ -208,7 +200,7 @@ contract Bookrunner is Auth, Math, FixedPoint {
             uint256 relativeStake = rdiv(underwriterStake, proposalStake);
 
             // (mint proportion * (relative stake * repaid amount))
-            uint newlyMinted = rmul(mintProportion.value, rmul(relativeStake, repaid[loan]));
+            uint newlyMinted = rmul(rewardRate.value, rmul(relativeStake, repaid[loan]));
             minted = safeAdd(minted, newlyMinted);
 
             // relative stake * written off amount
@@ -238,15 +230,17 @@ contract Bookrunner is Auth, Math, FixedPoint {
 
         safeTransfer(underwriter, tokenPayout);
         totalStaked = safeSub(totalStaked, tokenPayout);
-        staked[underwriter] = safeSub(staked[underwriter], min(tokenPayout, staked[underwriter]));
 
         return tokenPayout;
     }
 
     function setRepaid(uint loan, uint amount) public auth {
         require(!closed[loan], "already-closed");
+        
+        // TODO: repaid amount should be converted from currency into tokens, since if the TIN price has dropped, more tokens should be minted?
+
         repaid[loan] = amount;
-        mint(rmul(mintProportion.value, amount));
+        mint(rmul(rewardRate.value, amount));
     }
 
     // Write-off the loan, and burn the associated stake. If the writeoff amount is less than the stake,
@@ -254,6 +248,10 @@ contract Bookrunner is Auth, Math, FixedPoint {
     // is more than the stake, then the TIN price will start going down.
     function setWrittenOff(uint loan, uint writeoffPercentage, uint amount) public auth {
         require(!closed[loan], "already-closed");
+
+        // TODO: amount should be converted from currency into tokens, since if the TIN price has dropped, more tokens should be burned?
+        // maybe repaid[] and writtenOff[] should be stored in currency, since if the price changes between the repay and disburse(),
+        // the new price should be used for the conversion?
 
         bytes memory acceptedProposal = acceptedProposals[loan];
         uint alreadyWrittenOff = writtenOff[loan];

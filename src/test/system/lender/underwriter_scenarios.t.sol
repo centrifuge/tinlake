@@ -28,6 +28,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         bookrunner = new Bookrunner();
         bookrunner.depend("juniorToken", address(juniorToken));
         bookrunner.depend("navFeed", address(nftFeed));
+        bookrunner.depend("assessor", address(assessor));
 
         Memberlist memberlist = new Memberlist();
         bookrunner.depend("memberlist", address(memberlist));
@@ -72,16 +73,6 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         proposeAndStake(loan, risk, value, 10 ether, 50 ether);
         borrower.approveNFT(collateralNFT, address(shelf));
         borrower.borrowAction(loan, nftPrice);
-    }
-
-    function testFailAcceptLoanBeforeChallengePeriodEnded() public {
-        invest(700 ether, 300 ether);
-        (uint nftPrice, uint risk, uint value) = (200 ether, DEFAULT_RISK_GROUP_TEST_LOANS, 200 ether);
-        uint loan = prepLoan(5 days);
-        wireBookrunner();
-
-        proposeAndStake(loan, risk, value, 10 ether, 50 ether);
-        issuer.accept(loan, risk, value);
     }
 
     function testWithdrawAcceptedLoan() public {
@@ -136,7 +127,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         assertEqTol(postUnderwriterBalance - preUnderwriterBalance, tokenPayoutAfterClose, " balance increase");
     }
 
-    function testDisburseBurnedTokens() public {
+    function testSlashingEntireStake() public {
         invest(700 ether, 300 ether);
         (uint nftPrice, uint risk, uint value) = (200 ether, DEFAULT_RISK_GROUP_TEST_LOANS, 200 ether);
         uint loan = prepLoan(5 days);
@@ -152,10 +143,17 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         uint maturity = 5 days;
         hevm.warp(block.timestamp + maturity + 3 days); // 3 days overdue
 
+        uint preJuniorTokenPrice = assessor.calcJuniorTokenPrice(nftFeed.currentNAV(), reserve.totalBalance());
         uint preJuniorSupply = juniorToken.totalSupply();
         nftFeed.writeOff(loan, 0); // 60% writeoff
+        closeEpoch(true);
+        uint postJuniorTokenPrice = assessor.calcJuniorTokenPrice(nftFeed.currentNAV(), reserve.totalBalance());
         uint postJuniorSupply = juniorToken.totalSupply();
 
+        emit log_named_uint("preJuniorTokenPrice", preJuniorTokenPrice);
+        emit log_named_uint("postJuniorTokenPrice", postJuniorTokenPrice);
+
+        assertTrue(postJuniorTokenPrice < preJuniorTokenPrice); // the entire stake was slashed, which means the TIN token price will go down due to the NAV drop
         assertEqTol(preJuniorSupply - postJuniorSupply, 100 ether, " supply decrease"); // min(60% of 200 ether + debt, 100 ether staked)
 
         (uint minted, uint burned, uint tokenPayout) = juniorTranche.calcStakedDisburse(address(underwriter));
@@ -170,11 +168,29 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         assertEqTol(minted, 0 ether, " minted 100%");
         assertEqTol(burned, 90 ether, " burned 100%"); // 90% of 100 ether
         assertEqTol(tokenPayout, 0, " tokenPayout 100%"); // full stake slashed
+    }
 
-        uint preUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
-        underwriter.disburseStaked();
-        uint postUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
-        assertEqTol(postUnderwriterBalance - preUnderwriterBalance, tokenPayout, " balance after writeoff");
+    function testSlashingPartialStake() public {
+        invest(700 ether, 300 ether);
+        (uint nftPrice, uint risk, uint value) = (200 ether, DEFAULT_RISK_GROUP_TEST_LOANS, 200 ether);
+        uint loan = prepLoan(5 days);
+        wireBookrunner();
+
+        proposeAndStake(loan, risk, value, 10 ether, 180 ether);
+        hevm.warp(block.timestamp + 1 hours);
+        issuer.accept(loan, risk, value);
+
+        borrower.approveNFT(collateralNFT, address(shelf));
+        borrower.borrowAction(loan, nftPrice);
+
+        uint maturity = 5 days;
+        hevm.warp(block.timestamp + maturity + 3 days); // 3 days overdue
+
+        uint preJuniorTokenPrice = assessor.calcJuniorTokenPrice(nftFeed.currentNAV(), reserve.totalBalance());
+        nftFeed.writeOff(loan, 0); // 60% writeoff
+        uint postJuniorTokenPrice = assessor.calcJuniorTokenPrice(nftFeed.currentNAV(), reserve.totalBalance());
+
+        // assertEqTol(postJuniorTokenPrice, preJuniorTokenPrice, " token price"); // less than the stake was slashed, so the TIN token price shouldn't be impacted
     }
 
     // --- Utils ---
