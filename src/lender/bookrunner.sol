@@ -32,53 +32,41 @@ abstract contract AssessorLike is FixedPoint {
 
 contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 
-    NAVFeedLike public navFeed;
-    ERC20Like public juniorToken;
-    MemberlistLike public memberlist; 
-    AssessorLike public assessor; 
+    // --- Dependencies ---
+    NAVFeedLike     public navFeed;
+    ERC20Like       public juniorToken;
+    MemberlistLike  public memberlist; 
+    AssessorLike    public assessor; 
 
-    // Absolute min TIN required to propose a new asset, and the stake threshold required relative to the NFT value
-    uint public minimumDeposit = 10 ether;
-    Fixed27 public minimumStake = Fixed27(0.10 * 10**27);
+    // --- Data ---
+    uint    public minimumDeposit   = 10 ether;                     // Absolute min TIN required to propose a new asset
+    Fixed27 public minimumStake     = Fixed27(0.10 * 10**27);       // The stake threshold required relative to the NFT value
+    Fixed27 public rewardRate       = Fixed27(0.01 * 10**27);       //  % of the repaid amount that is minted in TIN tokens for the underwriters
 
-    // % of the repaid amount that is minted in TIN tokens for the underwriters
-    Fixed27 public rewardRate = Fixed27(0.01 * 10**27);
+    uint                                                            public totalStaked;         // Total amount staked (tokens held by this contract)
+    mapping (uint => mapping (bytes => uint))                       public proposals;           // Total amount that is staked for each (loan, (risk, value)) tuple
+    mapping (uint => uint)                                          public largestStake;        // Largest stake to any proposal for a loan
+    mapping (uint => bytes)                                         public acceptedProposals;   // (risk, value) pair for each loan that was accepted
+    mapping (address => uint[])                                     public underwriterStakes;   // List of loans which an underwriter has staked towards
+    mapping (uint => mapping (bytes => mapping (address => uint)))  public perUnderwriterStake; // Amount that is staked for each (loan, (risk, value), underwriter) tuple
+    mapping (uint => uint)                                          public repaid;              // Amount repaid per loan
+    mapping (uint => uint)                                          public writtenOff;          // Amount written off per loan
+    mapping (uint => bool)                                          public closed;              // Whether the loan has been closed
 
-    // Total amount that is staked for each (loan, (risk, value)) tuple, and the amount of the largest stake to any proposal for a loan
-    mapping (uint => mapping (bytes => uint)) public proposals;
-    mapping (uint => uint) public largestStake;
-
-    // Amount that is staked for each (loan, (risk, value), underwriter) tuple
-    // This isn't unset if a proposal is unstaked or paid out after being closed,
-    // as this keeps the history of which proposal which underwriter staked towards
-    mapping (uint => mapping (bytes => mapping (address => uint))) public perUnderwriterStake;
-
-    // List of loans which an underwriter has staked towards
-    mapping (address => uint[]) public underwriterStakes;
-
-    // (risk, value) pair for each loan that was accepted
-    mapping (uint => bytes) public acceptedProposals;
-
-    // Amount repaid and written off per loan, and a boolean whether the loan has been closed
-    mapping (uint => uint) public repaid;
-    mapping (uint => uint) public writtenOff;
-    mapping (uint => bool) public closed;
-
-    // Total amount staked (tokens held by this contract)
-    uint public totalStaked;
-
+    // --- Events ---
     event Propose(uint indexed loan, uint risk, uint value, uint deposit);
+    event Stake(uint indexed loan, uint risk, uint value, uint stakeAmount);
+    event Unstake(uint indexed loan, uint risk, uint value);
     event Accept(uint indexed loan, uint risk, uint value);
     event Mint(address indexed usr, uint amount);
     event Burn(address indexed usr, uint amount);
-
-    modifier memberOnly { require(memberlist.hasMember(msg.sender), "not-allowed-to-underwrite"); _; }
 
     constructor() {
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
     }
 
+     // --- Administration ---
     function file(bytes32 name, uint value) public auth {
         if (name == "minimumDeposit") {
             minimumDeposit = value;
@@ -97,6 +85,7 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
         else revert();
     }
 
+     // --- Staking ---
     function propose(uint loan, uint risk, uint value, uint deposit) public {
         require(deposit >= minimumDeposit, "min-deposit-required"); // TODO: minimumDeposit should be in currency?
         require(acceptedProposals[loan].length == 0, "asset-already-accepted");
@@ -149,6 +138,25 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
         if (newStake > largestStake[loan]) {
             largestStake[loan] = newStake;
         }
+
+        emit Stake(loan, risk, value, stakeAmount);
+    }
+
+    function unstake(uint loan, uint risk, uint value) public memberOnly {
+        bytes memory proposal = abi.encodePacked(risk, value);
+        require(keccak256(acceptedProposals[loan]) != keccak256(proposal), "cannot-unstake-accepted-proposal");
+
+        uint stakeAmount = perUnderwriterStake[loan][proposal][msg.sender];
+        proposals[loan][proposal] = safeSub(proposals[loan][proposal], stakeAmount);
+        
+        safeTransfer(msg.sender, stakeAmount);
+        totalStaked = safeSub(totalStaked, stakeAmount);
+
+        uint i = 0;
+        while (underwriterStakes[msg.sender][i] != loan) { i++; }
+        delete underwriterStakes[msg.sender][i];
+
+        emit Unstake(loan, risk, value);
     }
 
     function accept(uint loan, uint risk, uint value) public {
@@ -169,20 +177,8 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
         emit Accept(loan, risk, value);
     }
 
-    function unstake(uint loan, uint risk, uint value) public memberOnly {
-        bytes memory proposal = abi.encodePacked(risk, value);
-        require(keccak256(acceptedProposals[loan]) != keccak256(proposal), "cannot-unstake-accepted-proposal");
-
-        uint stakeAmount = perUnderwriterStake[loan][proposal][msg.sender];
-        proposals[loan][proposal] = safeSub(proposals[loan][proposal], stakeAmount);
-        
-        safeTransfer(msg.sender, stakeAmount);
-        totalStaked = safeSub(totalStaked, stakeAmount);
-
-        uint i = 0;
-        while (underwriterStakes[msg.sender][i] != loan) { i++; }
-        delete underwriterStakes[msg.sender][i];
-    }
+    // --- Utils ---
+    modifier memberOnly { require(memberlist.hasMember(msg.sender), "not-allowed-to-underwrite"); _; }
 
     function assetWasAccepted(uint loan) public view returns (bool) {
         return acceptedProposals[loan].length != 0;
