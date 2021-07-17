@@ -44,11 +44,11 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
     Fixed27 public rewardRate       = Fixed27(0.01 * 10**27);       //  % of the repaid amount that is minted in TIN tokens for the underwriters
 
     uint                                                            public totalStaked;         // Total amount staked (tokens held by this contract)
-    mapping (uint => mapping (bytes => uint))                       public proposals;           // Total amount that is staked for each (loan, (risk, value)) tuple
+    mapping (uint => mapping (bytes => uint))                       public proposals;           // Total amount that is staked for each <loan, <risk, value>> tuple
     mapping (uint => uint)                                          public largestStake;        // Largest stake to any proposal for a loan
-    mapping (uint => bytes)                                         public acceptedProposals;   // (risk, value) pair for each loan that was accepted
+    mapping (uint => bytes)                                         public acceptedProposals;   // <risk, value> pair for each loan that was accepted
     mapping (address => uint[])                                     public underwriterStakes;   // List of loans which an underwriter has staked towards
-    mapping (uint => mapping (bytes => mapping (address => uint)))  public perUnderwriterStake; // Amount that is staked for each (loan, (risk, value), underwriter) tuple
+    mapping (uint => mapping (bytes => mapping (address => uint)))  public perUnderwriterStake; // Amount that is staked for each <loan, <risk, value>, underwriter> tuple
     mapping (uint => uint)                                          public repaid;              // Amount repaid per loan
     mapping (uint => uint)                                          public writtenOff;          // Amount written off per loan
     mapping (uint => bool)                                          public closed;              // Whether the loan has been closed
