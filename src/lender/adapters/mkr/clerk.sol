@@ -89,7 +89,8 @@ interface ERC20Like {
     function approve(address usr, uint amount) external;
 }
 
-contract Clerk is Auth, Interest {
+import "ds-test/test.sol";
+contract Clerk is Auth, Interest, DSTest {
 
     // max amount of DAI that can be brawn from MKR
     uint public creditline;
@@ -230,7 +231,7 @@ contract Clerk is Auth, Interest {
     // mint DROP, join DROP into cdp, draw DAI and send to reserve
     function draw(uint amountDAI) public auth active {
         //make sure there is no collateral deficit before drawing out new DAI
-        require(collatDeficit() == 0, "please-heal-cdp-first"); 
+        require(collatDeficit() == 0, "please-heal-cdp-first");
         require(amountDAI <= remainingCredit(), "not-enough-credit-left");
         // collateral value that needs to be locked in vault to draw amountDAI
         uint collateralDAI = calcOvercollAmount(amountDAI);
@@ -414,6 +415,7 @@ contract Clerk is Auth, Interest {
         // calculate current debt (see jug.drip function in MakerDAO)
         return rmul(art, rmul(rpow(safeAdd(jug.base(), duty), safeSub(block.timestamp, rho), ONE), rateIdx));
     }
+
     function stabilityFeeIndex() public view returns(uint) {
         (, uint rate, , ,) = vat.ilks(ilk());
         return rate;

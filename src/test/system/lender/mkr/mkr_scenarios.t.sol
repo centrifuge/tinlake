@@ -259,7 +259,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
     }
 
     function testLoanRepayToMKRAndReserve() public {
-        uint fee = 1000000564701133626865910626; // 5% per day
+        uint fee = 1000000364701133626865910626; // 5% per day
         setStabilityFee(fee);
         uint juniorAmount = 200 ether;
         uint mkrAmount = 100 ether;
@@ -268,7 +268,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
         assertEq(clerk.remainingCredit(), 0);
 
-        warp(1 days);
+        warp(5 days);
         uint expectedDebt = 105 ether;
         assertEq(clerk.debt(), expectedDebt, "testLoanRepayToMKRAndReserve#1");
         assertEq(clerk.remainingCredit(), 0);

@@ -44,9 +44,9 @@ contract TestSuite is BaseSystemTest {
 
     function setupOngoingDefaultLoan(uint borrowAmount) public returns(uint) {
         // borrow loans with default maturity date 5 days from now
-        uint maturityDate = DEFAULT_MATURITY_DATE;
+        uint maturityFromNow = DEFAULT_MATURITY_DATE;
         uint nftPrice = borrowAmount*3;
-        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, nftFeed.uniqueDayTimestamp(block.timestamp) + maturityDate);
+        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, nftFeed.uniqueDayTimestamp(block.timestamp) + maturityFromNow);
         return loan;
 
     }

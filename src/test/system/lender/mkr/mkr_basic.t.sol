@@ -17,7 +17,7 @@ contract MKRTestBasis is TestSuite, Interest {
         bool mkrAdapter = true;
         TinlakeConfig memory defaultConfig = defaultConfig();
         deployContracts(mkrAdapter, defaultConfig);
-        createTestUsers(); 
+        createTestUsers();
 
         nftFeed_ = NFTFeedLike(address(nftFeed));
         root.relyContract(address(clerk), address(this));
@@ -76,9 +76,8 @@ contract MKRTestBasis is TestSuite, Interest {
         if(borrowAmount > juniorAmount) {
             debt = safeSub(borrowAmount, juniorAmount);
         }
-        assertEq(clerk.debt(), debt);
 
-        uint drawAmount = safeSub(borrowAmount, juniorAmount);
+        assertEq(clerk.debt(), debt);
 
         // seniorDebt should equal to seniorRatio from the current NAV
         assertEq(assessor.seniorDebt(), rmul(nftFeed.currentNAV(), assessor.seniorRatio()));
