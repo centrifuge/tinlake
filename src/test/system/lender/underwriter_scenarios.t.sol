@@ -112,17 +112,17 @@ contract UnderwriterSystemTest is TestSuite, Interest {
 
         assertEqTol(postJuniorSupply - preJuniorSupply, 2 ether, " supply increase"); // 1% of 200 ether
 
-        (uint minted, uint slashed, uint tokenPayout) = juniorTranche.calcStakedDisburse(address(underwriter));
+        (uint minted, uint slashed, uint tokenPayout) = bookrunner.calcStakedDisburse(address(underwriter));
         assertEqTol(minted, 1.8 ether, " minted");
         assertEqTol(slashed, 0 ether, " slashed");
         assertEqTol(tokenPayout, 0 ether, " tokenPayout pre close");
         
         borrower.close(loan);
-        (,, uint tokenPayoutAfterClose) = juniorTranche.calcStakedDisburse(address(underwriter));
+        (,, uint tokenPayoutAfterClose) = bookrunner.calcStakedDisburse(address(underwriter));
         assertEqTol(tokenPayoutAfterClose, 91.8 ether, " tokenPayout post close"); // 90 ether stake + 90% of 1% of 200 ether minted
 
         uint preUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
-        juniorTranche.disburseStaked(address(underwriter));
+        bookrunner.disburse(address(underwriter));
         uint postUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
         assertEqTol(postUnderwriterBalance - preUnderwriterBalance, tokenPayoutAfterClose, " balance increase");
     }
@@ -156,7 +156,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         assertTrue(postJuniorTokenPrice < preJuniorTokenPrice); // the entire stake was slashed, which means the TIN token price will go down due to the NAV drop
         assertEqTol(preJuniorSupply - postJuniorSupply, 100 ether, " supply decrease"); // min(60% of 200 ether + debt, 100 ether staked)
 
-        (uint minted, uint burned, uint tokenPayout) = juniorTranche.calcStakedDisburse(address(underwriter));
+        (uint minted, uint burned, uint tokenPayout) = bookrunner.calcStakedDisburse(address(underwriter));
         assertEqTol(minted, 0 ether, " minted 60%");
         assertEqTol(burned, 90 ether, " burned 60%"); // 90% of 100 ether
         assertEqTol(tokenPayout, 0, " tokenPayout 60%"); // not yet closed
@@ -164,7 +164,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         hevm.warp(block.timestamp + 6 days); // 9 days overdue
         nftFeed.writeOff(loan, 2); // 100% writeoff
 
-        (minted, burned, tokenPayout) = juniorTranche.calcStakedDisburse(address(underwriter));
+        (minted, burned, tokenPayout) = bookrunner.calcStakedDisburse(address(underwriter));
         assertEqTol(minted, 0 ether, " minted 100%");
         assertEqTol(burned, 90 ether, " burned 100%"); // 90% of 100 ether
         assertEqTol(tokenPayout, 0, " tokenPayout 100%"); // full stake slashed
@@ -238,10 +238,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
 
         nftFeed.depend("bookrunner", address(bookrunner));
         nftFeed.rely(address(bookrunner));
-
         bookrunner.rely(address(nftFeed));
-        bookrunner.rely(address(juniorTranche));
-        juniorTranche.depend("bookrunner", address(bookrunner));
     }
 
     function proposeAndStake(uint loan, uint risk, uint value, uint proposeAmount, uint stakeAmount) internal {

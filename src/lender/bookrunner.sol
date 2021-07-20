@@ -184,8 +184,11 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
         return acceptedProposals[loan].length != 0;
     }
 
-    // TODO: rewrite to calcDisburse and calcMintedSlashed?
-    function calcStakedDisburse(address underwriter, bool disbursing) public view returns (uint minted, uint slashed, uint tokenPayout) {
+    function calcStakedDisburse(address underwriter) public view returns (uint minted, uint slashed, uint tokenPayout) {
+        return calcStakedDisburse(underwriter, false);
+    }
+
+    function calcStakedDisburse(address underwriter, bool disbursing) internal view returns (uint minted, uint slashed, uint tokenPayout) {
         uint[] memory loans = underwriterStakes[underwriter];
 
         for (uint i = 0; i < loans.length; i++) {
@@ -220,6 +223,10 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
         return (minted, slashed, tokenPayout);
     }
 
+    function disburse() public returns (uint) {
+        return disburse(msg.sender);
+    }
+
     function disburse(address underwriter) public auth returns (uint) {
         (,, uint tokenPayout) = calcStakedDisburse(underwriter, true);
 
@@ -227,10 +234,6 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
         totalStaked = safeSub(totalStaked, tokenPayout);
 
         return tokenPayout;
-    }
-
-    function disburse() public returns (uint) {
-        return disburse(msg.sender);
     }
 
     function setRepaid(uint loan, uint amount) public auth {
