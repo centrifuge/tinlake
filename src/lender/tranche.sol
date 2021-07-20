@@ -27,12 +27,6 @@ interface CoordinatorLike {
     function lastEpochExecuted() external view returns(uint);
 }
 
-abstract contract BookrunnerLike is FixedPoint {
-    function staked(address) public virtual view returns (uint);
-    function calcStakedDisburse(address, bool) public virtual returns (uint, uint, uint);
-    function disburse(address) public virtual returns (uint);
-}
-
 contract Tranche is Math, Auth, FixedPoint {
     mapping(uint => Epoch) public epochs;
 
@@ -62,7 +56,6 @@ contract Tranche is Math, Auth, FixedPoint {
     ERC20Like public token;
     ReserveLike public reserve;
     CoordinatorLike public coordinator;
-    BookrunnerLike public bookrunner;
 
     // additional requested currency if the reserve could not fulfill a tranche request
     uint public requestedCurrency;
@@ -100,7 +93,6 @@ contract Tranche is Math, Auth, FixedPoint {
         else if (contractName == "currency") {currency = ERC20Like(addr);}
         else if (contractName == "reserve") {reserve = ReserveLike(addr);}
         else if (contractName == "coordinator") {coordinator = CoordinatorLike(addr);}
-        else if (contractName == "bookrunner") {bookrunner = BookrunnerLike(addr);}
         else revert();
         emit Depend(contractName, addr);
     }
@@ -194,19 +186,6 @@ contract Tranche is Math, Auth, FixedPoint {
         }
 
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
-    }
-
-    function calcStakedDisburse(address usr) public returns (uint minted, uint slashed, uint tokenPayout) {
-        if (address(bookrunner) != address(0)) {
-            return bookrunner.calcStakedDisburse(usr, false);
-        } else {
-            return (0, 0, 0);
-        }
-    }
-
-    function disburseStaked(address usr) public auth returns (uint tokenPayout) {
-        require(address(bookrunner) != address(0));
-        return bookrunner.disburse(usr);
     }
 
     // the disburse function can be used after an epoch is over to receive currency and tokens

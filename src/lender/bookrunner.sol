@@ -220,7 +220,6 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
         return (minted, slashed, tokenPayout);
     }
 
-    // Called from tranche, not directly, hence the auth modifier
     function disburse(address underwriter) public auth returns (uint) {
         (,, uint tokenPayout) = calcStakedDisburse(underwriter, true);
 
@@ -228,6 +227,10 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
         totalStaked = safeSub(totalStaked, tokenPayout);
 
         return tokenPayout;
+    }
+
+    function disburse() public returns (uint) {
+        return disburse(msg.sender);
     }
 
     function setRepaid(uint loan, uint amount) public auth {
