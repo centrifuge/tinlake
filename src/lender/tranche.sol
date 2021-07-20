@@ -229,7 +229,6 @@ contract Tranche is Math, Auth, FixedPoint {
         if (payoutTokenAmount > 0) {
             payoutTokenAmount = _safeTransfer(token, usr, payoutTokenAmount);
         }
-
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
     }
 
@@ -293,7 +292,6 @@ contract Tranche is Math, Auth, FixedPoint {
             requestedCurrency = safeSub(requestedCurrency, payoutAmount);
         }
     }
-
     // adjust token balance after epoch execution -> min/burn tokens
     function adjustTokenBalance(uint epochID, uint epochSupplyToken, uint epochRedeemToken) internal {
         // mint token amount for supply
