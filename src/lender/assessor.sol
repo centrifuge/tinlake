@@ -130,9 +130,9 @@ contract Assessor is Definitions, Auth, Interest {
         if(seniorDebt_ > seniorAsset_) {
             seniorDebt_ = seniorAsset_;
             seniorBalance_ = 0;
-            return;
+        } else {
+            seniorBalance_ = safeSub(seniorAsset_, seniorDebt_);
         }
-        seniorBalance_ = safeSub(seniorAsset_, seniorDebt_);
         seniorRatio = Fixed27(seniorRatio_);
     }
 
