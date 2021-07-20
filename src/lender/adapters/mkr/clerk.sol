@@ -89,8 +89,7 @@ interface ERC20Like {
     function approve(address usr, uint amount) external;
 }
 
-import "ds-test/test.sol";
-contract Clerk is Auth, Interest, DSTest {
+contract Clerk is Auth, Interest {
 
     // max amount of DAI that can be brawn from MKR
     uint public creditline;
