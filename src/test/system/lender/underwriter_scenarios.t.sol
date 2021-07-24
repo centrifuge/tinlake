@@ -183,14 +183,43 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         borrower.approveNFT(collateralNFT, address(shelf));
         borrower.borrowAction(loan, nftPrice);
 
+        hevm.warp(block.timestamp + 1 days);
+        uint startNAV = assessor.currentNAV();
+        closeEpoch(true); // make sure nav is correct
+
         uint maturity = 5 days;
-        hevm.warp(block.timestamp + maturity + 3 days); // 3 days overdue
+        hevm.warp(block.timestamp + maturity + 2 days); // 3 days overdue
+
+        uint preDebt = pile.debt(loan);
 
         uint preJuniorTokenPrice = assessor.calcJuniorTokenPrice(nftFeed.currentNAV(), reserve.totalBalance());
+        uint preNAV = assessor.currentNAV();
+        uint preReserve = reserve.totalBalance();
+        uint preSupply = juniorToken.totalSupply();
         nftFeed.writeOff(loan, 0); // 60% writeoff
+        closeEpoch(true);
+        uint postNAV = assessor.currentNAV();
         uint postJuniorTokenPrice = assessor.calcJuniorTokenPrice(nftFeed.currentNAV(), reserve.totalBalance());
+        uint postReserve = reserve.totalBalance();
+        uint postSupply = juniorToken.totalSupply();
 
-        // assertEqTol(postJuniorTokenPrice, preJuniorTokenPrice, " token price"); // less than the stake was slashed, so the TIN token price shouldn't be impacted
+        // loan debt: 295, writeoff 60% => nav should drop 177
+        // nav: 226 => 177
+        // reserve: 800 => 800
+        // junior supply => 490 => 370
+
+        emit log_named_uint("startNAV", startNAV);
+        emit log_named_uint("preDebt", preDebt);
+        emit log_named_uint("preJuniorTokenPrice", preJuniorTokenPrice);
+        emit log_named_uint("preNAV", preNAV); // it's fallen out of the nav after the maturity date => 0
+        emit log_named_uint("preReserve", preReserve);
+        emit log_named_uint("preSupply", preSupply);
+        emit log_named_uint("postNAV", postNAV);
+        emit log_named_uint("postJuniorTokenPrice", postJuniorTokenPrice);
+        emit log_named_uint("postReserve", postReserve);
+        emit log_named_uint("postSupply", postSupply);
+
+        assertEqTol(postJuniorTokenPrice, preJuniorTokenPrice, " token price"); // less than the stake was slashed, so the TIN token price shouldn't be impacted
     }
 
     // --- Utils ---

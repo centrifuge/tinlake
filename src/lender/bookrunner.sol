@@ -296,6 +296,11 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
         emit Burn(address(this), amount);
     }
 
+    // recovery transfer can be used by governance to recover funds if tokens are stuck
+    function authTransfer(address usr, uint amount) public auth {
+        juniorToken.transfer(usr, amount);
+    }
+
     function safeTransfer(address usr, uint amount) internal returns(uint) {
         juniorToken.transfer(usr, min(amount, juniorToken.balanceOf(address(this))));
         return amount;
