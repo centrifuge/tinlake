@@ -138,7 +138,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
 
     function repayLoan(address usr, uint loanId, uint currencyAmount) public {
         // transfer extra funds, so that usr can pay for interest
-        topUp(usr);
+        currency.mint(address(usr), currencyAmount);
         // borrower allows shelf full control over borrower tokens
         Borrower(usr).doApproveCurrency(address(shelf), type(uint256).max);
         // repay loan
@@ -198,7 +198,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         tokenId = collateralNFT.issue(borrower_);
         loan = setupLoan(tokenId, collateralNFT_, nftPrice, DEFAULT_RISK_GROUP_TEST_LOANS, maturityDate);
         borrower.approveNFT(collateralNFT, address(shelf));
-        
+
         uint preBalance = currency.balanceOf(borrower_);
         borrower.borrowAction(loan, borrowAmount);
 

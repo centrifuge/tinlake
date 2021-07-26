@@ -268,9 +268,11 @@ contract MKRLenderSystemTest is MKRTestBasis {
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
         assertEq(clerk.remainingCredit(), 0);
 
+        assertEq(clerk.debt(), mkrAmount, "testLoanRepayToMKRAndReserve#1");
+
         warp(1 days);
         uint expectedDebt = 105 ether;
-        assertEq(clerk.debt(), expectedDebt, "testLoanRepayToMKRAndReserve#1");
+        assertEq(clerk.debt(), expectedDebt, "testLoanRepayToMKRAndReserve#2");
         assertEq(clerk.remainingCredit(), 0);
 
         // repay loan and entire maker debt
@@ -278,7 +280,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         uint repayAmount = pile.debt(loan);
         repayDefaultLoan(repayAmount);
 
-        assertEqTol(clerk.debt(), 0, "testLoanRepayToMKRAndReserve#2");
+        assertEqTol(clerk.debt(), 0, "testLoanRepayToMKRAndReserve#3");
         assertEq(reserve.totalBalance(), repayAmount-expectedDebt);
     }
 
