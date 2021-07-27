@@ -19,7 +19,7 @@ contract MKRTestBasis is TestSuite, Interest {
         deployContracts(mkrAdapter, defaultConfig);
         createTestUsers();
 
-        nftFeed_ = NFTFeedLike(address(nftFeed));
+        navFeed_ = NAVFeedLike(address(nftFeed));
         root.relyContract(address(clerk), address(this));
         mkrAssessor = assessor;
         mkr.depend("currency" ,currency_);

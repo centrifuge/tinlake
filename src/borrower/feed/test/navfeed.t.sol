@@ -3,7 +3,7 @@ pragma solidity >=0.6.12;
 
 import "ds-test/test.sol";
 import "tinlake-math/math.sol";
-import "./../navfeed.sol";
+import "./../principal.sol";
 import "./../../test/mock/shelf.sol";
 import "./../../test/mock/pile.sol";
 
@@ -42,7 +42,7 @@ contract NAVTest is DSTest, Math {
         defaultRate = uint(1000000564701133626865910626);     // 5 % day
         discountRate = uint(1000000342100000000000000000);    // 3 % day
 
-        feed = new NAVFeed();
+        feed = new PrincipalNAVFeed();
         pile = new PileMock();
         shelf = new ShelfMock();
         feed.depend("shelf", address(shelf));

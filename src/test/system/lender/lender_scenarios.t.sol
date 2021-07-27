@@ -16,7 +16,7 @@ contract LenderSystemTest is TestSuite, Interest {
 
         baseSetup();
         createTestUsers();
-        nftFeed_ = NFTFeedLike(address(nftFeed));
+        navFeed_ = NAVFeedLike(address(nftFeed));
 
     }
 

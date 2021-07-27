@@ -14,7 +14,7 @@ contract ScenarioTest is BaseSystemTest {
         baseSetup();
         createTestUsers();
         // setup hevm
-        nftFeed_ = NFTFeedLike(address(nftFeed));
+        navFeed_ = NAVFeedLike(address(nftFeed));
     }
 
     // --- Tests ---
@@ -27,7 +27,7 @@ contract ScenarioTest is BaseSystemTest {
         priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
         // borrower issue loan
         uint loan =  borrower.issue(collateralNFT_, tokenId);
-        uint ceiling = nftFeed_.ceiling(loan);
+        uint ceiling = navFeed_.ceiling(loan);
 
         borrower.approveNFT(collateralNFT, address(shelf));
         fundLender(ceiling);
@@ -101,7 +101,7 @@ contract ScenarioTest is BaseSystemTest {
             uint tokenId = collateralNFT.issue(borrower_);
             // collateralNFT whitelist
             uint loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup);
-            uint ceiling = nftFeed_.ceiling(i);
+            uint ceiling = navFeed_.ceiling(i);
 
             borrower.approveNFT(collateralNFT, address(shelf));
 
@@ -138,7 +138,7 @@ contract ScenarioTest is BaseSystemTest {
         priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
         // borrower issue loans
         uint loan =  borrower.issue(collateralNFT_, tokenId);
-        uint ceiling = nftFeed_.ceiling(loan);
+        uint ceiling = navFeed_.ceiling(loan);
 
         borrower.approveNFT(collateralNFT, address(shelf));
         borrower.borrowAction(loan, ceiling);
@@ -173,7 +173,7 @@ contract ScenarioTest is BaseSystemTest {
         uint tokenId = collateralNFT.issue(borrower_);
         // borrower issue loans
         uint loan =  borrower.issue(collateralNFT_, tokenId);
-        uint ceiling = nftFeed_.ceiling(loan);
+        uint ceiling = navFeed_.ceiling(loan);
         borrower.borrowAction(loan, ceiling);
     }
 }
