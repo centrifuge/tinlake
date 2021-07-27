@@ -11,6 +11,10 @@ contract Discounting is FixedPoint, Interest {
         return rdiv(fv, rpow(discountRate, safeSub(maturityDate_, normalizedBlockTimestamp), ONE));
     }
 
+    // calculate the future value based on the amount, maturityDate interestRate and recoveryRate
+    function calcFutureValue(uint loanInterestRate, uint amount, uint maturityDate_, uint recoveryRatePD_) public view returns(uint) {
+        return rmul(rmul(rpow(loanInterestRate, safeSub(maturityDate_, uniqueDayTimestamp(block.timestamp)), ONE), amount), recoveryRatePD_);
+    }
     function secureSub(uint x, uint y) public pure returns(uint) {
         if(y > x) {
             return 0;

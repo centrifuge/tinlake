@@ -6,6 +6,10 @@ import "./navfeed.sol";
 
 contract PrincipalNAVFeed is NAVFeed {
 
+    // rate group for write-offs in pile contract
+    uint constant public WRITE_OFF_PHASE_A = 1001;
+    uint constant public WRITE_OFF_PHASE_B = 1002;
+
     function init() public override {
         require(ceilingRatio[0] == 0, "already-initialized");
 
