@@ -7,7 +7,7 @@ import "./definitions.sol";
 
 interface NAVFeedLike {
     function calcUpdateNAV() external returns (uint);
-    function approximatedNAV() external view returns (uint);
+    function latestNAV() external view returns (uint);
     function currentNAV() external view returns(uint);
 }
 
@@ -115,7 +115,7 @@ contract Assessor is Definitions, Auth, Interest {
         // re-balancing according to new ratio
         // we use the approximated NAV here because during the submission period
         // new loans might have been repaid in the meanwhile which are not considered in the epochNAV
-        uint nav_ = navFeed.approximatedNAV();
+        uint nav_ = navFeed.latestNAV();
         uint reserve_ = reserve.totalBalance();
 
         uint seniorRatio_ = calcSeniorRatio(seniorAsset_, nav_, reserve_);
@@ -149,7 +149,7 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     function calcSeniorTokenPrice() external view returns(uint) {
-        return calcSeniorTokenPrice(navFeed.approximatedNAV(), reserve.totalBalance());
+        return calcSeniorTokenPrice(navFeed.latestNAV(), reserve.totalBalance());
     }
 
     function calcSeniorTokenPrice(uint nav_, uint) public view returns(uint) {
@@ -157,7 +157,7 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     function calcJuniorTokenPrice() external view returns(uint) {
-        return _calcJuniorTokenPrice(navFeed.approximatedNAV(), reserve.totalBalance());
+        return _calcJuniorTokenPrice(navFeed.latestNAV(), reserve.totalBalance());
     }
 
     function calcJuniorTokenPrice(uint nav_, uint) public view returns (uint) {
@@ -165,7 +165,7 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     function calcTokenPrices() external view returns (uint, uint) {
-        uint epochNAV = navFeed.approximatedNAV();
+        uint epochNAV = navFeed.latestNAV();
         uint epochReserve = reserve.totalBalance();
         return calcTokenPrices(epochNAV, epochReserve);
     }
@@ -256,7 +256,7 @@ contract Assessor is Definitions, Auth, Interest {
 
     // returns the approximated NAV for gas-performance reasons
     function getNAV() public view returns(uint) {
-        return navFeed.approximatedNAV();
+        return navFeed.latestNAV();
     }
 
     // changes the total amount available for borrowing loans
@@ -272,7 +272,7 @@ contract Assessor is Definitions, Auth, Interest {
     // juniorRatio is denominated in RAY (10^27)
     function calcJuniorRatio() public view returns(uint) {
         uint seniorAsset = safeAdd(seniorDebt(), seniorBalance_);
-        uint assets = safeAdd(navFeed.approximatedNAV(), reserve.totalBalance());
+        uint assets = safeAdd(navFeed.latestNAV(), reserve.totalBalance());
 
         if(seniorAsset == 0 && assets == 0) {
             return 0;

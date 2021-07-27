@@ -32,7 +32,7 @@ interface NFTFeedLike {
     function borrow(uint loan, uint currencyAmount) external;
     function repay(uint loan, uint currencyAmount) external;
     function file(bytes32 what, bytes32 nftID_, uint maturityDate_) external;
-    function approximatedNAV() external returns (uint);
+    function latestNAV() external returns (uint);
     function currentNAV() external returns (uint);
     function calcUpdateNAV() external returns (uint);
 }
