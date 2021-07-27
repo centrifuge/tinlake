@@ -34,8 +34,6 @@ contract NAVFeed is BaseNFTFeed, Interest, FixedPoint {
 
     WriteOff [2] public writeOffs;
 
-    uint lastWriteOffs;
-
     struct WriteOff {
         uint rateGroup;
         // denominated in (10^27)
@@ -243,7 +241,8 @@ contract NAVFeed is BaseNFTFeed, Interest, FixedPoint {
         calcUpdateNAV();
         navDecrease = _repay(loan, amount);
 
-        if(navDecrease < latestNAV) {
+        // assuming latestNAV is always >= latestDiscount
+        if(navDecrease < latestDiscount) {
             latestDiscount = safeSub(latestDiscount, navDecrease);
             latestNAV = safeSub(latestNAV, navDecrease);
 
@@ -310,13 +309,15 @@ contract NAVFeed is BaseNFTFeed, Interest, FixedPoint {
 
         uint totalDiscount = rmul(latestDiscount, rpow(discountRate.value, safeSub(nnow, nLastUpdate), ONE));
 
+        // Loop over the loans which matured in between the last NAV update and now.
+        // Then remove their discounted future value from the total discount as they are overdue.
         uint diff = 0;
         for(uint i = nLastUpdate; i < nnow; i = i + 1 days) {
             diff = safeAdd(diff, rmul(buckets[i], rpow(discountRate.value, safeSub(nnow, i), ONE)));
         }
 
         totalDiscount = secureSub(totalDiscount, diff);
-        // todo fix rounding errors that this if statement is not required anymore
+        // TODO: fix rounding errors that this if statement is not required anymore
         if(totalDiscount == 1) {
             return 0;
         }
