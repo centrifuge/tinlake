@@ -287,7 +287,7 @@ contract LenderSystemTest is TestSuite, Interest {
 
         // 40% write off because one day too late
         // increase loan rate from 5% to 6%
-        pile.changeRate(loan, nftFeed.WRITE_OFF_PHASE_A());
+        pile.changeRate(loan, 1001);
         emit log_named_uint("loan debt",pile.debt(loan));
         assertEq(nftFeed.currentNAV(), rmul(pile.debt(loan), 6 * 10**26), 10);
 
