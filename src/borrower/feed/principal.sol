@@ -6,10 +6,6 @@ import "./navfeed.sol";
 
 contract PrincipalNAVFeed is NAVFeed {
 
-    // rate group for write-offs in pile contract
-    uint constant public WRITE_OFF_PHASE_A = 1001;
-    uint constant public WRITE_OFF_PHASE_B = 1002;
-
     function init() public override {
         require(ceilingRatio[0] == 0, "already-initialized");
 
@@ -67,9 +63,9 @@ contract PrincipalNAVFeed is NAVFeed {
 
         /// Overdue loans (= loans that were not repaid by the maturityDate) are moved to write Offs
         // 6% interest rate & 60% write off
-        setWriteOff(0, WRITE_OFF_PHASE_A, uint(1000000674400000000000000000), 6 * 10**26, 30);
+        file("writeOffGroup", 1001, uint(1000000674400000000000000000), 6 * 10**26, 30);
         // 6% interest rate & 80% write off
-        setWriteOff(1, WRITE_OFF_PHASE_B, uint(1000000674400000000000000000), 8 * 10**26, 90);
+        file("writeOffGroup", 1002, uint(1000000674400000000000000000), 8 * 10**26, 90);
     }
 
     // returns the ceiling of a loan

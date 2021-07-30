@@ -40,13 +40,13 @@ abstract contract NAVFeed is Auth, Discounting {
     mapping (bytes32 => uint)   public nftValues;       // nftID => nftValues
     mapping (bytes32 => uint)   public risk;            // nftID => risk
     mapping (uint => uint)      public borrowed;        // loan => borrowed
-    mapping (uint => bool)      public writeoffOverride;// loan => writeoffOverride
+    mapping (uint => bool)      public writeOffOverride;// loan => writeOffOverride
     mapping (uint => uint)      public buckets;         // timestamp => bucket
 
     // last time the NAV was updated
     uint public lastNAVUpdate;
 
-    struct WriteOff {
+    struct WriteOffGroup {
         uint rateGroup;
         // denominated in (10^27)
         Fixed27 percentage;
@@ -54,7 +54,7 @@ abstract contract NAVFeed is Auth, Discounting {
         uint overdueDays;
     }
 
-    WriteOff [] public writeOffs;
+    WriteOffGroup[] public writeOffGroups;
 
     // discount rate applied on every asset's fv depending on its maturityDate. The discount decreases with the maturityDate approaching.
     Fixed27 public discountRate;
@@ -184,18 +184,18 @@ abstract contract NAVFeed is Auth, Discounting {
     function unlockEvent(uint loan) public auth {}
 
     function writeOff(uint loan, uint phase_) public {
-        require(!writeoffOverride[loan], "already-overridden");
+        require(!writeOffOverride[loan], "already-overridden");
         bytes32 nftID_ = nftID(loan);
-        WriteOff memory writeOff_ = writeOffs[phase_];
-        require(block.timestamp >= maturityDate[nftID_] + writeOff_.overdueDays, "too-early");
+        WriteOffGroup memory writeOffGroup_ = writeOffGroups[phase_];
+        require(block.timestamp >= maturityDate[nftID_] + writeOffGroup_.overdueDays, "too-early");
         // TODO: require cant be set back to lower writeoff
-        pile.changeRate(loan, writeOff_.rateGroup);
+        pile.changeRate(loan, writeOffGroup_.rateGroup);
     }
 
-    function overrideWriteoff(uint loan, uint phase_) public auth {
-        writeoffOverride[loan] = true;
-        WriteOff memory writeOff_ = writeOffs[phase_];
-        pile.changeRate(loan, writeOff_.rateGroup);
+    function overrideWriteOff(uint loan, uint phase_) public auth {
+        writeOffOverride[loan] = true;
+        WriteOffGroup memory writeOffGroup_ = writeOffGroups[phase_];
+        pile.changeRate(loan, writeOffGroup_.rateGroup);
     }
 
     // --- NAV calculation ---
@@ -231,9 +231,9 @@ abstract contract NAVFeed is Auth, Discounting {
     function currentWriteOffs() public view returns(uint) {
         // include ovedue assets to the current NAV calculation
         uint sum = 0;
-        for (uint i = 0; i < writeOffs.length; i++) {
+        for (uint i = 0; i < writeOffGroups.length; i++) {
             // multiply writeOffGroupDebt with the writeOff rate
-            sum = safeAdd(sum, rmul(pile.rateDebt(writeOffs[i].rateGroup), writeOffs[i].percentage.value));
+            sum = safeAdd(sum, rmul(pile.rateDebt(writeOffGroups[i].rateGroup), writeOffGroups[i].percentage.value));
         }
         return sum;
     }
@@ -259,7 +259,7 @@ abstract contract NAVFeed is Auth, Discounting {
             recoveryRatePD[risk_] = Fixed27(recoveryRatePD_);
             emit File(name, risk_, thresholdRatio_, ceilingRatio_, rate_, recoveryRatePD_);
 
-        } else {revert ("unknown name");}
+        } else { revert ("unknown name");}
     }
 
     function file(bytes32 name, bytes32 nftID_, uint maturityDate_) public auth {
@@ -268,25 +268,34 @@ abstract contract NAVFeed is Auth, Discounting {
             require((futureValue[nftID_] == 0), "can-not-change-maturityDate-outstanding-debt");
             maturityDate[nftID_] = uniqueDayTimestamp(maturityDate_);
             emit File(name, nftID_, maturityDate_);
+
         } else { revert("unknown config parameter");}
     }
 
     function file(bytes32 name, uint value) public auth {
         if (name == "discountRate") {
             discountRate = Fixed27(value);
+            // TODO: recalculateDiscount()
             emit File(name, value);
+
         } else { revert("unknown config parameter");}
     }
 
-    function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) public virtual auth {
+    function file(bytes32 name, uint risk_group, uint thresholdRatio_rate, uint ceilingRatio_writeOffPercentage, uint rate_overdueDays) public auth {
         if(name == "riskGroupNFT") {
-            require(ceilingRatio[risk_] == 0, "risk-group-in-usage");
-            thresholdRatio[risk_] = thresholdRatio_;
-            ceilingRatio[risk_] = ceilingRatio_;
+            require(ceilingRatio[risk_group] == 0, "risk-group-in-usage");
+            thresholdRatio[risk_group] = thresholdRatio_rate;
+            ceilingRatio[risk_group] = ceilingRatio_writeOffPercentage;
+
             // set interestRate for risk group
-            pile.file("rate", risk_, rate_);
-            emit File(name, risk_, thresholdRatio_, ceilingRatio_, rate_);
-        } else {revert ("unkown name");}
+            pile.file("rate", risk_group, rate_overdueDays);
+            emit File(name, risk_group, thresholdRatio_rate, ceilingRatio_writeOffPercentage, rate_overdueDays);
+
+        } else if(name == "writeOffGroup") {
+            writeOffGroups.push(WriteOffGroup(risk_group, Fixed27(ceilingRatio_writeOffPercentage), rate_overdueDays));
+            pile.file("rate", risk_group, thresholdRatio_rate);
+
+        } else { revert ("unknown name");}
     }
 
     // The nft value is to be updated by authenticated oracles
@@ -327,16 +336,6 @@ abstract contract NAVFeed is Auth, Discounting {
         buckets[maturityDate_] = safeAdd(buckets[maturityDate_], futureValue[nftID_]);
 
         emit Update(nftID_, value, risk_);
-    }
-
-    function setWriteOff(uint, uint group_, uint rate_, uint writeOffPercentage_) internal {
-        writeOffs.push(WriteOff(group_, Fixed27(writeOffPercentage_), type(uint256).max));
-        pile.file("rate", group_, rate_);
-    }
-
-    function setWriteOff(uint, uint group_, uint rate_, uint writeOffPercentage_, uint overdueDays_) internal {
-        writeOffs.push(WriteOff(group_, Fixed27(writeOffPercentage_), overdueDays_));
-        pile.file("rate", group_, rate_);
     }
 
     // --- Utilities ---
