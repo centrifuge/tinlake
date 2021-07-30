@@ -67,24 +67,22 @@ contract PrincipalNAVFeed is NAVFeed {
 
         /// Overdue loans (= loans that were not repaid by the maturityDate) are moved to write Offs
         // 6% interest rate & 60% write off
-        setWriteOff(0, WRITE_OFF_PHASE_A, uint(1000000674400000000000000000), 6 * 10**26);
+        setWriteOff(0, WRITE_OFF_PHASE_A, uint(1000000674400000000000000000), 6 * 10**26, 30);
         // 6% interest rate & 80% write off
-        setWriteOff(1, WRITE_OFF_PHASE_B, uint(1000000674400000000000000000), 8 * 10**26);
+        setWriteOff(1, WRITE_OFF_PHASE_B, uint(1000000674400000000000000000), 8 * 10**26, 90);
     }
 
-    //  -- Getter methods --
     // returns the ceiling of a loan
     // the ceiling defines the maximum amount which can be borrowed
     function ceiling(uint loan) public override view returns (uint) {
-        if (borrowed[loan] > currentCeiling(loan)) {
+        bytes32 nftID_ = nftID(loan);
+        uint initialCeiling = rmul(nftValues[nftID_], ceilingRatio[risk[nftID_]]);
+
+        if (borrowed[loan] > initialCeiling) {
             return 0;
         }
-        return safeSub(currentCeiling(loan), borrowed[loan]);
-    }
 
-    function currentCeiling(uint loan) public override view returns(uint) {
-        bytes32 nftID_ = nftID(loan);
-        return rmul(nftValues[nftID_], ceilingRatio[risk[nftID_]]);
+        return safeSub(initialCeiling, borrowed[loan]);
     }
 
 }

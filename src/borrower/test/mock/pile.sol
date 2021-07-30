@@ -26,10 +26,7 @@ contract PileMock is Mock {
 
     }
 
-    function debt(uint loan) public returns(uint) {
-        // name = "debt_loan" because of two debt funcs
-        values_uint["debt_loan_loan"] = loan;
-        calls["debt_loan"]++;
+    function debt(uint) public view returns(uint) {
         return values_return["debt_loan"];
     }
 

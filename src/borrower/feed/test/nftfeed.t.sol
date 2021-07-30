@@ -83,7 +83,7 @@
 //         // check threshold computed correctly
 //         assertEq(nftFeed.threshold(loan), rmul(nftValue, nftFeed.thresholdRatio(riskGroup)));
 //         // check ceiling computed correctly
-//         assertEq(nftFeed.currentCeiling(loan),  rmul(nftValue, nftFeed.ceilingRatio(riskGroup)));
+//         assertEq(nftFeed.ceiling(loan),  rmul(nftValue, nftFeed.ceilingRatio(riskGroup)));
 //         // check rate set correctly in pile
 
 //         if (loanHasDebt) {

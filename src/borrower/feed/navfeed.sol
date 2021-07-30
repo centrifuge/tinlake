@@ -12,7 +12,7 @@ interface ShelfLike {
 
 interface PileLike {
     function setRate(uint loan, uint rate) external;
-    function debt(uint loan) external returns (uint);
+    function debt(uint loan) external view returns (uint);
     function pie(uint loan) external returns (uint);
     function changeRate(uint loan, uint newRate) external;
     function loanRates(uint loan) external returns (uint);
@@ -40,6 +40,7 @@ abstract contract NAVFeed is Auth, Discounting {
     mapping (bytes32 => uint)   public nftValues;       // nftID => nftValues
     mapping (bytes32 => uint)   public risk;            // nftID => risk
     mapping (uint => uint)      public borrowed;        // loan => borrowed
+    mapping (uint => bool)      public writeoffOverride;// loan => writeoffOverride
     mapping (uint => uint)      public buckets;         // timestamp => bucket
 
     // last time the NAV was updated
@@ -49,6 +50,8 @@ abstract contract NAVFeed is Auth, Discounting {
         uint rateGroup;
         // denominated in (10^27)
         Fixed27 percentage;
+        // amount of days after the maturity days that the writeoff group can be applied by default
+        uint overdueDays;
     }
 
     WriteOff [] public writeOffs;
@@ -77,7 +80,6 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function init() public virtual;
     function ceiling(uint loan) public virtual view returns (uint);
-    function currentCeiling(uint loan) public virtual view returns(uint);
 
     // --- Actions ---
     function borrow(uint loan, uint amount) external auth returns(uint navIncrease) {
@@ -91,7 +93,7 @@ abstract contract NAVFeed is Auth, Discounting {
     }
 
     function _borrow(uint loan, uint amount) internal returns(uint navIncrease) {
-        require(ceiling(loan) >= safeAdd(borrowed[loan], amount), "borrow-amount-too-high");
+        require(ceiling(loan) >= amount, "borrow-amount-too-high");
 
         bytes32 nftID_ = nftID(loan);
         uint maturityDate_ = maturityDate[nftID_];
@@ -180,6 +182,21 @@ abstract contract NAVFeed is Auth, Discounting {
     }
 
     function unlockEvent(uint loan) public auth {}
+
+    function writeOff(uint loan, uint phase_) public {
+        require(!writeoffOverride[loan], "already-overridden");
+        bytes32 nftID_ = nftID(loan);
+        WriteOff memory writeOff_ = writeOffs[phase_];
+        require(block.timestamp >= maturityDate[nftID_] + writeOff_.overdueDays, "too-early");
+        // TODO: require cant be set back to lower writeoff
+        pile.changeRate(loan, writeOff_.rateGroup);
+    }
+
+    function overrideWriteoff(uint loan, uint phase_) public auth {
+        writeoffOverride[loan] = true;
+        WriteOff memory writeOff_ = writeOffs[phase_];
+        pile.changeRate(loan, writeOff_.rateGroup);
+    }
 
     // --- NAV calculation ---
     function currentNAV() public view returns(uint) {
@@ -313,7 +330,12 @@ abstract contract NAVFeed is Auth, Discounting {
     }
 
     function setWriteOff(uint, uint group_, uint rate_, uint writeOffPercentage_) internal {
-        writeOffs.push(WriteOff(group_, Fixed27(writeOffPercentage_)));
+        writeOffs.push(WriteOff(group_, Fixed27(writeOffPercentage_), type(uint256).max));
+        pile.file("rate", group_, rate_);
+    }
+
+    function setWriteOff(uint, uint group_, uint rate_, uint writeOffPercentage_, uint overdueDays_) internal {
+        writeOffs.push(WriteOff(group_, Fixed27(writeOffPercentage_), overdueDays_));
         pile.file("rate", group_, rate_);
     }
 
@@ -335,16 +357,6 @@ abstract contract NAVFeed is Auth, Discounting {
     function nftID(uint loan) public view returns (bytes32) {
         (address registry, uint tokenId) = shelf.shelf(loan);
         return nftID(registry, tokenId);
-    }
-
-    // workaround for transition phase between V2 & V3
-    // TODO: should be removed
-    function totalValue() public view returns(uint) {
-        return currentNAV();
-    }
-
-    function dateBucket(uint timestamp) public view returns (uint) {
-        return buckets[timestamp];
     }
 
 }
