@@ -32,13 +32,13 @@ abstract contract NAVFeed is Auth, Discounting {
     PileLike    public pile;
     ShelfLike   public shelf;
 
-    mapping (uint => Fixed27)   public recoveryRatePD;  // risk => recoveryRatePD
-    mapping (uint => uint)      public thresholdRatio;  // risk => thresholdRatio
     mapping (uint => uint)      public ceilingRatio;    // risk => ceilingRatio
     mapping (bytes32 => uint)   public maturityDate;    // nftID => maturityDate
-    mapping (bytes32 => uint)   public futureValue;     // nftID => futureValue
-    mapping (bytes32 => uint)   public nftValues;       // nftID => nftValues
+    mapping (uint => uint)      public thresholdRatio;  // risk => thresholdRatio
+    mapping (uint => Fixed27)   public recoveryRatePD;  // risk => recoveryRatePD
     mapping (bytes32 => uint)   public risk;            // nftID => risk
+    mapping (bytes32 => uint)   public nftValues;       // nftID => nftValues
+    mapping (bytes32 => uint)   public futureValue;     // nftID => futureValue
     mapping (uint => uint)      public borrowed;        // loan => borrowed
     mapping (uint => bool)      public writeOffOverride;// loan => writeOffOverride
     mapping (uint => uint)      public buckets;         // timestamp => bucket
@@ -47,12 +47,13 @@ abstract contract NAVFeed is Auth, Discounting {
     uint public lastNAVUpdate;
 
     struct WriteOffGroup {
-        uint rateGroup;
         // denominated in (10^27)
         Fixed27 percentage;
         // amount of days after the maturity days that the writeoff group can be applied by default
         uint overdueDays;
     }
+
+    uint public constant WRITEOFF_RATE_GROUP_START = 1000;
 
     WriteOffGroup[] public writeOffGroups;
 
@@ -183,19 +184,22 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function unlockEvent(uint loan) public auth {}
 
-    function writeOff(uint loan, uint phase_) public {
+    function writeOff(uint loan, uint writeOffGroupIndex_) public {
         require(!writeOffOverride[loan], "already-overridden");
+
         bytes32 nftID_ = nftID(loan);
-        WriteOffGroup memory writeOffGroup_ = writeOffGroups[phase_];
+        WriteOffGroup memory writeOffGroup_ = writeOffGroups[writeOffGroupIndex_];
         require(block.timestamp >= maturityDate[nftID_] + writeOffGroup_.overdueDays, "too-early");
-        // TODO: require cant be set back to lower writeoff
-        pile.changeRate(loan, writeOffGroup_.rateGroup);
+
+        uint currentRate = pile.loanRates(loan);
+        require(writeOffGroup_.percentage.value > writeOffGroups[currentRate].percentage.value, "cannot-decrease-writeoff");
+
+        pile.changeRate(loan, WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_);
     }
 
-    function overrideWriteOff(uint loan, uint phase_) public auth {
+    function overrideWriteOff(uint loan, uint writeOffGroupIndex_) public auth {
         writeOffOverride[loan] = true;
-        WriteOffGroup memory writeOffGroup_ = writeOffGroups[phase_];
-        pile.changeRate(loan, writeOffGroup_.rateGroup);
+        pile.changeRate(loan, WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_);
     }
 
     // --- NAV calculation ---
@@ -233,7 +237,7 @@ abstract contract NAVFeed is Auth, Discounting {
         uint sum = 0;
         for (uint i = 0; i < writeOffGroups.length; i++) {
             // multiply writeOffGroupDebt with the writeOff rate
-            sum = safeAdd(sum, rmul(pile.rateDebt(writeOffGroups[i].rateGroup), writeOffGroups[i].percentage.value));
+            sum = safeAdd(sum, rmul(pile.rateDebt(WRITEOFF_RATE_GROUP_START + i), writeOffGroups[i].percentage.value));
         }
         return sum;
     }
@@ -281,31 +285,34 @@ abstract contract NAVFeed is Auth, Discounting {
         } else { revert("unknown config parameter");}
     }
 
-    function file(bytes32 name, uint risk_group, uint thresholdRatio_rate, uint ceilingRatio_writeOffPercentage, uint rate_overdueDays) public auth {
+    function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) public auth {
         if(name == "riskGroupNFT") {
-            require(ceilingRatio[risk_group] == 0, "risk-group-in-usage");
-            thresholdRatio[risk_group] = thresholdRatio_rate;
-            ceilingRatio[risk_group] = ceilingRatio_writeOffPercentage;
+            require(ceilingRatio[risk_] == 0, "risk-group-in-usage");
+            thresholdRatio[risk_] = thresholdRatio_;
+            ceilingRatio[risk_] = ceilingRatio_;
 
             // set interestRate for risk group
-            pile.file("rate", risk_group, rate_overdueDays);
-            emit File(name, risk_group, thresholdRatio_rate, ceilingRatio_writeOffPercentage, rate_overdueDays);
-
-        } else if(name == "writeOffGroup") {
-            writeOffGroups.push(WriteOffGroup(risk_group, Fixed27(ceilingRatio_writeOffPercentage), rate_overdueDays));
-            pile.file("rate", risk_group, thresholdRatio_rate);
+            pile.file("rate", risk_, rate_);
+            emit File(name, risk_, thresholdRatio_, ceilingRatio_, rate_);
 
         } else { revert ("unknown name");}
     }
 
-    // The nft value is to be updated by authenticated oracles
+    function file(bytes32 name, uint rate_, uint writeOffPercentage_, uint overdueDays_) public auth {
+        if(name == "writeOffGroup") {
+            uint index = writeOffGroups.length;
+            writeOffGroups.push(WriteOffGroup(Fixed27(writeOffPercentage_), overdueDays_));
+            pile.file("rate", WRITEOFF_RATE_GROUP_START + index, rate_);
+
+        } else { revert ("unknown name");}
+    }
+
     function update(bytes32 nftID_,  uint value) public auth {
         // switch of collateral risk group results in new: ceiling, threshold for existing loan
         nftValues[nftID_] = value;
         emit Update(nftID_, value);
     }
 
-    // update the nft value and change the risk group
     function update(bytes32 nftID_, uint value, uint risk_) public auth {
         nftValues[nftID_] = value;
 

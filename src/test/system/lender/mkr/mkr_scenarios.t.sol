@@ -327,7 +327,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         warp(5 days);
         // write 40% of debt off / second loan 100% loss
         root.relyContract(address(pile), address(this));
-        pile.changeRate(firstLoan, 1001);
+        pile.changeRate(firstLoan, 1000);
 
         navFeed_.calcUpdateNAV();
         assertTrue(mkrAssessor.calcSeniorTokenPrice() > 0);
