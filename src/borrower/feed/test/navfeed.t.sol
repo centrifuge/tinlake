@@ -314,12 +314,17 @@ contract NAVTest is DSTest, Math {
         uint amount = 50 ether;
         uint loan = 1;
 
-        borrow(tokenId,loan,  nftValue, amount, dueDate);
+        borrow(tokenId, loan, nftValue, amount, dueDate);
 
         hevm.warp(block.timestamp + 3 days);
 
-        // loan should be not included in nav anymore
-        assertEq(feed.currentNAV(), 0);
+        feed.calcUpdateNAV();
+        uint FV = 55.125 ether; // 50 * 1.05 ^ 2 = 55.125
+        assertEq(feed.currentNAV(), FV);
+
+        // loan should be fixed at its value on the maturity date
+        hevm.warp(block.timestamp + 3 days);
+        assertEq(feed.currentNAV(), FV);
     }
 
     function testRepayAfterMaturityDate() public {
@@ -353,6 +358,34 @@ contract NAVTest is DSTest, Math {
         // 80% -> 20% write off
         // 100 ether * 0.6 + 100 ether * 0.8 = 140 ether
         assertEq(feed.currentNAV(), 140 ether);
+    }
+
+    function testWriteOffOnMaturityDate() public {
+        uint nftValue = 100 ether;
+        uint tokenId = 1;
+        uint dueDate = block.timestamp + 2 days;
+        uint amount = 50 ether;
+        uint loan = 1;
+
+        borrow(tokenId, loan, nftValue, amount, dueDate);
+
+        hevm.warp(block.timestamp + 2 days);
+
+        uint preDiscount = feed.currentDiscount();
+        uint preWriteOffs = feed.currentWriteOffs();
+
+        feed.overrideWriteOff(loan, 1);
+
+        uint postDiscount = feed.currentDiscount();
+        uint postWriteOffs = feed.currentWriteOffs();
+
+        emit log_named_uint("preDiscount", preDiscount);
+        emit log_named_uint("preWriteOffs", preWriteOffs);
+        emit log_named_uint("postDiscount", postDiscount);
+        emit log_named_uint("postWriteOffs", postWriteOffs);
+
+
+        assertTrue(1 == 2);
     }
 
     function testRecoveryRatePD() public {

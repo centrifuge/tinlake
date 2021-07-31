@@ -36,6 +36,8 @@ interface NAVFeedLike {
     function currentNAV() external returns (uint);
     function calcUpdateNAV() external returns (uint);
     function init() external;
+    function writeOff(uint loan, uint writeOffGroupIndex_) external;
+    function overrideWriteOff(uint loan, uint writeOffGroupIndex_) external;
 }
 
 interface PileLike {

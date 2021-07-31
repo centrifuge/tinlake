@@ -22,6 +22,7 @@ contract Discounting is FixedPoint, Interest {
         return safeSub(x, y);
     }
 
+    // normalizes a timestamp to round down to the nearest midnight (UTC)
     function uniqueDayTimestamp(uint timestamp) public pure returns (uint) {
         return (1 days) * (timestamp/(1 days));
     }

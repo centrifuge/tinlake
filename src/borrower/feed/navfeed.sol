@@ -3,6 +3,7 @@ pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "tinlake-auth/auth.sol";
+import "ds-test/test.sol";
 import { Discounting } from "./discounting.sol";
 
 interface ShelfLike {
@@ -27,7 +28,7 @@ interface PileLike {
 // The applied discountRate is dependant on the maturity data of the underlying collateral. The discount decreases with the maturity date approaching.
 // To optimize the NAV calculation the discounting of future values happens bucketwise. FVs from assets with the same maturity date are added to one bucket.
 // This safes iterations & gas, as the same discountRates can be applied per bucket.
-abstract contract NAVFeed is Auth, Discounting {
+abstract contract NAVFeed is Auth, Discounting, DSTest {
 
     PileLike    public pile;
     ShelfLike   public shelf;
@@ -42,9 +43,6 @@ abstract contract NAVFeed is Auth, Discounting {
     mapping (uint => uint)      public borrowed;        // loan => borrowed
     mapping (uint => bool)      public writeOffOverride;// loan => writeOffOverride
     mapping (uint => uint)      public buckets;         // timestamp => bucket
-
-    // last time the NAV was updated
-    uint public lastNAVUpdate;
 
     struct WriteOffGroup {
         // denominated in (10^27)
@@ -65,6 +63,9 @@ abstract contract NAVFeed is Auth, Discounting {
     // This is required for more accurate Senior & JuniorAssetValue estimations between epochs
     uint public latestNAV;
     uint public latestDiscount;
+    uint public lastNAVUpdate;
+
+    uint public overdueButNotWrittenOff;
 
     event Depend(bytes32 indexed name, address addr);
     event File(bytes32 indexed name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_);
@@ -189,22 +190,46 @@ abstract contract NAVFeed is Auth, Discounting {
 
         bytes32 nftID_ = nftID(loan);
         WriteOffGroup memory writeOffGroup_ = writeOffGroups[writeOffGroupIndex_];
-        require(block.timestamp >= maturityDate[nftID_] + writeOffGroup_.overdueDays, "too-early");
+        uint maturityDate_ = maturityDate[nftID_];
+        require(block.timestamp >= maturityDate_ + writeOffGroup_.overdueDays * 60 * 60 * 24, "too-early");
 
         uint currentRate = pile.loanRates(loan);
-        require(writeOffGroup_.percentage.value > writeOffGroups[currentRate].percentage.value, "cannot-decrease-writeoff");
+        require(currentRate < WRITEOFF_RATE_GROUP_START || writeOffGroup_.overdueDays > writeOffGroups[currentRate].overdueDays, "cannot-go-back");
+
+        if (pile.loanRates(loan) < WRITEOFF_RATE_GROUP_START) {
+            // this is the first writeoff, remove future value for loan from bucket
+            uint fv = futureValue[nftID_];
+            buckets[maturityDate_] = safeSub(buckets[maturityDate_], fv);
+
+            if (uniqueDayTimestamp(lastNAVUpdate) >= maturityDate_) {
+                overdueButNotWrittenOff = secureSub(overdueButNotWrittenOff, fv);
+            }
+        }
 
         pile.changeRate(loan, WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_);
     }
 
     function overrideWriteOff(uint loan, uint writeOffGroupIndex_) public auth {
         writeOffOverride[loan] = true;
+
+        if (pile.loanRates(loan) < WRITEOFF_RATE_GROUP_START) {
+            // this is the first writeoff, remove future value for loan from bucket
+            bytes32 nftID_ = nftID(loan);
+            uint maturityDate_ = maturityDate[nftID_];
+            uint fv = futureValue[nftID_];
+            buckets[maturityDate_] = safeSub(buckets[maturityDate_], fv);
+
+            if (uniqueDayTimestamp(lastNAVUpdate) >= maturityDate_) {
+                overdueButNotWrittenOff = safeSub(overdueButNotWrittenOff, fv);
+            }
+        }
+
         pile.changeRate(loan, WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_);
     }
 
     // --- NAV calculation ---
     function currentNAV() public view returns(uint) {
-        return safeAdd(currentDiscount(), currentWriteOffs());
+        return safeAdd(safeAdd(currentDiscount(), overdueButNotWrittenOff), currentWriteOffs());
     }
 
     function currentDiscount() public view returns(uint) {
@@ -217,23 +242,15 @@ abstract contract NAVFeed is Auth, Discounting {
 
         uint totalDiscount = rmul(latestDiscount, rpow(discountRate.value, safeSub(nnow, nLastUpdate), ONE));
 
-        // Loop over the loans which matured in between the last NAV update and now.
-        // Then remove their discounted future value from the total discount as they are overdue.
-        uint diff = 0;
-        for(uint i = nLastUpdate; i < nnow; i = i + 1 days) {
-            diff = safeAdd(diff, rmul(buckets[i], rpow(discountRate.value, safeSub(nnow, i), ONE)));
-        }
-
-        totalDiscount = secureSub(totalDiscount, diff);
         // TODO: fix rounding errors that this if statement is not required anymore
-        if(totalDiscount == 1) {
+        if (totalDiscount == 1) {
             return 0;
         }
+
         return totalDiscount;
     }
 
     function currentWriteOffs() public view returns(uint) {
-        // include ovedue assets to the current NAV calculation
         uint sum = 0;
         for (uint i = 0; i < writeOffGroups.length; i++) {
             // multiply writeOffGroupDebt with the writeOff rate
@@ -243,8 +260,21 @@ abstract contract NAVFeed is Auth, Discounting {
     }
 
     function calcUpdateNAV() public returns(uint) {
+        uint nnow = uniqueDayTimestamp(block.timestamp);
+        uint nLastUpdate = uniqueDayTimestamp(lastNAVUpdate);
+
+        if (nLastUpdate < nnow) {
+            // Loop over the loans which matured in between the last NAV update and now, and save their future value.
+            uint overdueButNotWrittenOff_ = 0;
+            for (uint i = nLastUpdate; i < nnow; i = i + 1 days) {
+                overdueButNotWrittenOff_ = safeAdd(overdueButNotWrittenOff_, buckets[i]);
+            }
+            overdueButNotWrittenOff = overdueButNotWrittenOff_;
+            latestDiscount = secureSub(latestDiscount, overdueButNotWrittenOff_);
+        }
+
         latestDiscount = currentDiscount();
-        latestNAV = safeAdd(latestDiscount, currentWriteOffs());
+        latestNAV = safeAdd(safeAdd(latestDiscount, overdueButNotWrittenOff), currentWriteOffs());
         lastNAVUpdate = block.timestamp;
         return latestNAV;
     }

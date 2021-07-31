@@ -287,7 +287,7 @@ contract LenderSystemTest is TestSuite, Interest {
 
         // 40% write off because one day too late
         // increase loan rate from 5% to 6%
-        pile.changeRate(loan, 1000);
+        navFeed_.writeOff(loan, 0);
         emit log_named_uint("loan debt",pile.debt(loan));
         assertEq(nftFeed.currentNAV(), rmul(pile.debt(loan), 6 * 10**26), 10);
 
@@ -374,8 +374,9 @@ contract LenderSystemTest is TestSuite, Interest {
         assessor.file("seniorInterestRate", highRate);
 
 
-        // loan not repaid and not moved to penalty rate
-        hevm.warp(block.timestamp + 6 days);
+        // loan not repaid and written off by 80%
+        hevm.warp(block.timestamp + 10 days);
+        navFeed_.writeOff(loan, 1);
 
         // junior should lost everything
         assertTrue(assessor.seniorDebt() > nftFeed.currentNAV());
