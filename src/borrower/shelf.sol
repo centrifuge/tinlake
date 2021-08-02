@@ -30,6 +30,7 @@ interface PileLike {
 interface NAVFeedLike {
     function borrow(uint loan, uint currencyAmount) external;
     function repay(uint loan, uint currencyAmount) external;
+    function currentValue(uint loan) external view returns (uint);
 }
 
 interface ReserveLike {
@@ -236,17 +237,19 @@ contract Shelf is Auth, TitleOwned, Math {
     // locks an nft in the shelf
     // requires an issued loan
     function lock(uint loan) external owner(loan) {
-        if(address(subscriber) != address(0)) {
-            subscriber.unlockEvent(loan);
-        }
         NFTLike(shelf[loan].registry).transferFrom(msg.sender, address(this), shelf[loan].tokenId);
         emit Lock(loan);
     }
 
     // unlocks an nft in the shelf
-    // requires zero debt
+    // requires zero debt or 100% write off
     function unlock(uint loan) external owner(loan) {
-        require(pile.debt(loan) == 0, "loan-has-outstanding-debt");
+        require(pile.debt(loan) == 0 || ceiling.currentValue(loan) == 0, "loan-has-outstanding-debt");
+        
+        if (address(subscriber) != address(0)) {
+            subscriber.unlockEvent(loan);
+        }
+
         NFTLike(shelf[loan].registry).transferFrom(address(this), msg.sender, shelf[loan].tokenId);
         emit Unlock(loan);
     }

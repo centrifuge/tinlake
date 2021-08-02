@@ -16,7 +16,7 @@ interface PileLike {
     function debt(uint loan) external view returns (uint);
     function pie(uint loan) external returns (uint);
     function changeRate(uint loan, uint newRate) external;
-    function loanRates(uint loan) external returns (uint);
+    function loanRates(uint loan) external view returns (uint);
     function file(bytes32, uint, uint) external;
     function rates(uint rate) external view returns (uint, uint, uint ,uint48, uint);
     function total() external view returns (uint);
@@ -51,9 +51,10 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
         uint overdueDays;
     }
 
-    uint public constant WRITEOFF_RATE_GROUP_START = 1000;
-
     WriteOffGroup[] public writeOffGroups;
+
+    // Write-off groups will be added as rate groups to the pile with their index in the writeOffGroups array + this number
+    uint public constant WRITEOFF_RATE_GROUP_START = 1000;
 
     // discount rate applied on every asset's fv depending on its maturityDate. The discount decreases with the maturityDate approaching.
     Fixed27 public discountRate;
@@ -84,7 +85,7 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
     function ceiling(uint loan) public virtual view returns (uint);
 
     // --- Actions ---
-    function borrow(uint loan, uint amount) external auth returns(uint navIncrease) {
+    function borrow(uint loan, uint amount) external virtual auth returns(uint navIncrease) {
         calcUpdateNAV();
 
         // In case of successful borrow the latestNAV is increased by the borrowed amount
@@ -120,7 +121,7 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
         return calcDiscount(discountRate.value, fv, uniqueDayTimestamp(block.timestamp), maturityDate_);
     }
 
-    function repay(uint loan, uint amount) external auth returns (uint navDecrease) {
+    function repay(uint loan, uint amount) external virtual auth returns (uint navDecrease) {
         calcUpdateNAV();
 
         // In case of successful repayment the latestNAV is decreased by the repaid amount
@@ -172,7 +173,7 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
         return calcDiscount(discountRate.value, safeSub(preFutureValue, fv), uniqueDayTimestamp(block.timestamp), maturityDate_);
     }
 
-    function borrowEvent(uint loan) public auth {
+    function borrowEvent(uint loan) public virtual auth {
         uint risk_ = risk[nftID(loan)];
 
         // when issued every loan has per default interest rate of risk group 0.
@@ -183,7 +184,7 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
         }
     }
 
-    function unlockEvent(uint loan) public auth {}
+    function unlockEvent(uint loan) public virtual auth {}
 
     function writeOff(uint loan, uint writeOffGroupIndex_) public {
         require(!writeOffOverride[loan], "already-overridden");
@@ -393,6 +394,18 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
     function nftID(uint loan) public view returns (bytes32) {
         (address registry, uint tokenId) = shelf.shelf(loan);
         return nftID(registry, tokenId);
+    }
+
+    function currentValue(uint loan) public view returns (uint) {
+        uint rateGroup = pile.loanRates(loan);
+        bytes32 nftID_ = nftID(loan);
+        uint value = nftValues[nftID_];
+
+        if (rateGroup < WRITEOFF_RATE_GROUP_START) {
+            return value;
+        }
+
+        return safeSub(value, rmul(value, writeOffGroups[rateGroup - WRITEOFF_RATE_GROUP_START].percentage.value));
     }
 
 }
