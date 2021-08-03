@@ -306,25 +306,29 @@ contract NAVTest is DSTest, Math {
         assertEq(feed.maturityDate(nftID), feed.uniqueDayTimestamp(newDate));
     }
 
-
     function testOverdueLoan() public {
-        uint nftValue = 100 ether;
+        feed.file("discountRate", defaultRate); // discount rate == financing fee
+
+        // 1 loan due far in the future, with a borrow amount of 100
+        uint nftValue = 200 ether;
         uint tokenId = 1;
-        uint dueDate = block.timestamp + 2 days;
-        uint amount = 50 ether;
+        uint dueDate = block.timestamp + 10 days;
+        uint amount = 100 ether;
         uint loan = 1;
 
         borrow(tokenId, loan, nftValue, amount, dueDate);
 
-        hevm.warp(block.timestamp + 3 days);
+        // 1 loan due in 2 days, with a borrow amount of 20
+        borrow(2, 2, 40 ether, 20 ether, block.timestamp + 2 days);
 
+        hevm.warp(block.timestamp + 1 days);
         feed.calcUpdateNAV();
-        uint FV = 55.125 ether; // 50 * 1.05 ^ 2 = 55.125
-        assertEq(feed.currentNAV(), FV);
+        assertEq(feed.currentNAV(), 126 ether); // 100 * 1.05 ^ 1 + 20 * 1.05^1 = 126
 
-        // loan should be fixed at its value on the maturity date
-        hevm.warp(block.timestamp + 3 days);
-        assertEq(feed.currentNAV(), FV);
+        // loan 2 is 1 day over due, last NAV update was 1 day before the maturity date
+        hevm.warp(block.timestamp + 2 days);
+        feed.calcUpdateNAV();
+        assertEq(feed.currentNAV(), 137.8125 ether); // 100 * 1.05 ^ 3 + 20 * 1.05^2 = 137.8125
     }
 
     function testRepayAfterMaturityDate() public {

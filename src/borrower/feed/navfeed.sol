@@ -186,6 +186,8 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
 
     function unlockEvent(uint loan) public virtual auth {}
 
+    // TODO: we could also remove the writeOffGroupIndex_ argument, loop over the
+    // writeOffGroups and find the latest writeoff group which can be applied.
     function writeOff(uint loan, uint writeOffGroupIndex_) public {
         require(!writeOffOverride[loan], "already-overridden");
 
@@ -243,6 +245,15 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
 
         uint totalDiscount = rmul(latestDiscount, rpow(discountRate.value, safeSub(nnow, nLastUpdate), ONE));
 
+        uint diff = 0;
+        for(uint i = nLastUpdate; i < nnow; i = i + 1 days) {
+            // nLastUpdate < i < nnow
+            // 2 days ago < 1 day ago < now
+            diff = safeAdd(diff, rmul(buckets[i], rpow(discountRate.value, safeSub(nnow, i), ONE)));
+        }
+
+        totalDiscount = secureSub(totalDiscount, diff);
+
         // TODO: fix rounding errors that this if statement is not required anymore
         if (totalDiscount == 1) {
             return 0;
@@ -271,7 +282,6 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
                 overdueButNotWrittenOff_ = safeAdd(overdueButNotWrittenOff_, buckets[i]);
             }
             overdueButNotWrittenOff = overdueButNotWrittenOff_;
-            latestDiscount = secureSub(latestDiscount, overdueButNotWrittenOff_);
         }
 
         latestDiscount = currentDiscount();

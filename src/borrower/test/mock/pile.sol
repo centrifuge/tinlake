@@ -61,8 +61,8 @@ contract PileMock is Mock {
         calls["file"]++;
     }
 
-    function loanRates(uint) public returns(uint) {
-        return call("loanRates");
+    function loanRates(uint) public view returns(uint) {
+        return values_uint["loanRates"];
     }
 
     function rates(uint) public view returns(uint, uint, uint, uint48,uint) {
