@@ -387,20 +387,20 @@ contract LenderSystemTest is TestSuite, Interest {
         repayLoan(address(borrower), loan, loanDebt);
 
         // get tokens
-        // seniorInvestor.disburse();
-        // seniorInvestorB.disburse();
+        seniorInvestor.disburse();
+        seniorInvestorB.disburse();
 
         // only one investor wants to redeem
-        // seniorInvestor.redeemOrder(seniorAmount);
+        seniorInvestor.redeemOrder(seniorAmount);
 
-        // coordinator.closeEpoch();
-        // assertTrue(coordinator.poolClosing() == true);
+        coordinator.closeEpoch();
+        assertTrue(coordinator.poolClosing() == true);
 
-        // assertTrue(coordinator.submissionPeriod() == false);
+        assertTrue(coordinator.submissionPeriod() == false);
 
-        // (uint payoutCurrencyAmount, , ,uint remainingRedeemToken)  = seniorInvestor.disburse();
-        // assertTrue(payoutCurrencyAmount >  0);
-        // assertEq(remainingRedeemToken, 0);
+        (uint payoutCurrencyAmount, , ,uint remainingRedeemToken)  = seniorInvestor.disburse();
+        assertTrue(payoutCurrencyAmount >  0);
+        assertEq(remainingRedeemToken, 0);
 
     }
 
