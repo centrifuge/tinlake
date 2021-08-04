@@ -387,7 +387,7 @@ contract LenderSystemTest is TestSuite, Interest {
         repayLoan(address(borrower), loan, loanDebt);
 
         // get tokens
-        seniorInvestor.disburse();
+        // seniorInvestor.disburse();
         // seniorInvestorB.disburse();
 
         // only one investor wants to redeem

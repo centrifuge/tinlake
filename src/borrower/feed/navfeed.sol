@@ -103,11 +103,10 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
         require(maturityDate_ > block.timestamp, "maturity-date-is-not-in-the-future");
 
         // calculate amount including fixed fee if applicatable
-        (, , , , uint fixedRate) = pile.rates(pile.loanRates(loan));
+        (, , uint loanInterestRate, , uint fixedRate) = pile.rates(pile.loanRates(loan));
         uint amountIncludingFixed =  safeAdd(amount, rmul(amount, fixedRate));
 
         // calculate future value FV
-        (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
         uint fv = calcFutureValue(loanInterestRate, amountIncludingFixed, maturityDate_, recoveryRatePD[risk[nftID_]].value);
         futureValue[nftID_] = safeAdd(futureValue[nftID_], fv);
 
@@ -372,12 +371,18 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
         require(thresholdRatio[risk_] != 0, "risk group not defined in contract");
         risk[nftID_] = risk_;
 
+        // switch of collateral risk group results in new: ceiling, threshold and interest rate for existing loan
+        // change to new rate interestRate immediately in pile if loan debt exists
+        uint loan = shelf.nftlookup(nftID_);
+        if (pile.pie(loan) != 0) {
+            pile.changeRate(loan, risk_);
+        }
+
         // no currencyAmount borrowed yet
         if (futureValue[nftID_] == 0) {
             return;
         }
 
-        uint loan = shelf.nftlookup(nftID_);
         uint maturityDate_ = maturityDate[nftID_];
 
         // Changing the risk group of an nft, might lead to a new interest rate for the dependant loan.
