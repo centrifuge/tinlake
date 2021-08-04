@@ -214,17 +214,20 @@ contract NAVTest is DSTest, Math {
 
     function testTimeOverBuckets() public {
         uint nftValue = 100 ether;
+        uint loan = 1;
         uint tokenId = 1;
         uint dueDate = block.timestamp + 2 days;
         uint amount = 50 ether;
 
         // insert first element
-        borrow(tokenId, nftValue, amount, dueDate);
+        borrow(tokenId, loan, nftValue, amount, dueDate);
 
         // 50 * 1.05^2/(1.03^2)
         assertEq(feed.currentNAV(), 51.960741582371777180 ether);
 
         hevm.warp(block.timestamp + 3 days);
+        feed.overrideWriteOff(loan, 3); // 100% write off
+        
         assertEq(feed.currentNAV(), 0);
     }
 
@@ -355,15 +358,6 @@ contract NAVTest is DSTest, Math {
         assertEq(preNAV, feed.currentNAV());
     }
 
-    function testWriteOffs() public {
-        pile.setReturn("rate_debt", 100 ether);
-        // default is two different write off groups both with 100 ether in debt
-        // 60% -> 40% write off
-        // 80% -> 20% write off
-        // 100 ether * 0.6 + 100 ether * 0.8 = 140 ether
-        assertEq(feed.currentNAV(), 140 ether);
-    }
-
     function testWriteOffOnMaturityDate() public {
         uint nftValue = 100 ether;
         uint tokenId = 1;
@@ -375,21 +369,14 @@ contract NAVTest is DSTest, Math {
 
         hevm.warp(block.timestamp + 2 days);
 
-        uint preDiscount = feed.currentDiscount();
-        uint preWriteOffs = feed.currentWriteOffs();
+        pile.setReturn("debt_loan", 55.125 ether); // 50 * 1.05^2 = 55.125
 
-        feed.overrideWriteOff(loan, 1);
+        uint pre = feed.currentWriteOffs();
+        feed.overrideWriteOff(loan, 1); // 50% writeoff
+        pile.setReturn("rate_debt", (27.5625 ether));
+        uint post = feed.currentWriteOffs();
 
-        uint postDiscount = feed.currentDiscount();
-        uint postWriteOffs = feed.currentWriteOffs();
-
-        emit log_named_uint("preDiscount", preDiscount);
-        emit log_named_uint("preWriteOffs", preWriteOffs);
-        emit log_named_uint("postDiscount", postDiscount);
-        emit log_named_uint("postWriteOffs", postWriteOffs);
-
-
-        assertTrue(1 == 2);
+        assertTrue(post > pre);
     }
 
     function testRecoveryRatePD() public {

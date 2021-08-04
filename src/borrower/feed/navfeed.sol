@@ -178,6 +178,8 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
 
         // when issued every loan has per default interest rate of risk group 0.
         // correct interest rate has to be set on first borrow event
+        emit log_named_uint("borrowEvent_loanRates", pile.loanRates(loan));
+        emit log_named_uint("borrowEvent_risk", risk_);
         if (pile.loanRates(loan) != risk_) {
             // set loan interest rate to the one of the correct risk group
             pile.setRate(loan, risk_);
@@ -199,6 +201,18 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
         uint currentRate = pile.loanRates(loan);
         require(currentRate < WRITEOFF_RATE_GROUP_START || writeOffGroup_.overdueDays > writeOffGroups[currentRate].overdueDays, "cannot-go-back");
 
+        _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
+    }
+
+    function overrideWriteOff(uint loan, uint writeOffGroupIndex_) public auth {
+        writeOffOverride[loan] = true;
+        
+        bytes32 nftID_ = nftID(loan);
+        uint maturityDate_ = maturityDate[nftID_];
+        _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
+    }
+
+    function _writeOff(uint loan, uint writeOffGroupIndex_, bytes32 nftID_, uint maturityDate_) internal {
         if (pile.loanRates(loan) < WRITEOFF_RATE_GROUP_START) {
             // this is the first writeoff, remove future value for loan from bucket
             uint fv = futureValue[nftID_];
@@ -207,24 +221,9 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
             if (uniqueDayTimestamp(lastNAVUpdate) >= maturityDate_) {
                 overdueButNotWrittenOff = secureSub(overdueButNotWrittenOff, fv);
             }
-        }
 
-        pile.changeRate(loan, WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_);
-    }
-
-    function overrideWriteOff(uint loan, uint writeOffGroupIndex_) public auth {
-        writeOffOverride[loan] = true;
-
-        if (pile.loanRates(loan) < WRITEOFF_RATE_GROUP_START) {
-            // this is the first writeoff, remove future value for loan from bucket
-            bytes32 nftID_ = nftID(loan);
-            uint maturityDate_ = maturityDate[nftID_];
-            uint fv = futureValue[nftID_];
-            buckets[maturityDate_] = safeSub(buckets[maturityDate_], fv);
-
-            if (uniqueDayTimestamp(lastNAVUpdate) >= maturityDate_) {
-                overdueButNotWrittenOff = safeSub(overdueButNotWrittenOff, fv);
-            }
+            latestDiscount = secureSub(latestDiscount, fv);
+            latestNAV = secureSub(latestNAV, fv);
         }
 
         pile.changeRate(loan, WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_);
@@ -232,7 +231,14 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
 
     // --- NAV calculation ---
     function currentNAV() public view returns(uint) {
-        return safeAdd(safeAdd(currentDiscount(), overdueButNotWrittenOff), currentWriteOffs());
+        uint nnow = uniqueDayTimestamp(block.timestamp);
+        uint nLastUpdate = uniqueDayTimestamp(lastNAVUpdate);
+        uint overdueButNotWrittenOff_ = 0;
+        for (uint i = nLastUpdate; i < nnow; i = i + 1 days) {
+            overdueButNotWrittenOff_ = safeAdd(overdueButNotWrittenOff_, buckets[i]);
+        }
+
+        return safeAdd(safeAdd(currentDiscount(), safeAdd(overdueButNotWrittenOff, overdueButNotWrittenOff_)), currentWriteOffs());
     }
 
     function currentDiscount() public view returns(uint) {

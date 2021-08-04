@@ -80,6 +80,10 @@ contract Shelf is Auth, TitleOwned, Math {
     event Claim(uint indexed loan, address usr);
     event Depend(bytes32 indexed contractName, address addr);
 
+    // E.g. future value is 100. Written off 40%, currentValue = 40; repaid 70%, debt is 30.
+    // 50% writeoff, 50% repayment => pile.debt(loan) is 50%, ceiling.currentValue(loan) is ~50%
+    modifier canBeClosed (uint loan) { require(pile.debt(loan) == 0 || ceiling.currentValue(loan) == 0, "loan-has-outstanding-debt"); _; }
+
     constructor(address currency_, address title_, address pile_, address ceiling_) TitleOwned(title_) {
         currency = TokenLike(currency_);
         pile = PileLike(pile_);
@@ -127,8 +131,7 @@ contract Shelf is Auth, TitleOwned, Math {
         return loan;
     }
 
-    function close(uint loan) external {
-        require(pile.debt(loan) == 0, "loan-has-outstanding-debt");
+    function close(uint loan) external canBeClosed(loan) {
         require(!nftLocked(loan), "nft-not-locked");
         (address registry, uint tokenId) = token(loan);
         require(title.ownerOf(loan) == msg.sender || NFTLike(registry).ownerOf(tokenId) == msg.sender, "not-loan-or-nft-owner");
@@ -243,9 +246,7 @@ contract Shelf is Auth, TitleOwned, Math {
 
     // unlocks an nft in the shelf
     // requires zero debt or 100% write off
-    function unlock(uint loan) external owner(loan) {
-        require(pile.debt(loan) == 0 || ceiling.currentValue(loan) == 0, "loan-has-outstanding-debt");
-        
+    function unlock(uint loan) external owner(loan) canBeClosed(loan) {
         if (address(subscriber) != address(0)) {
             subscriber.unlockEvent(loan);
         }

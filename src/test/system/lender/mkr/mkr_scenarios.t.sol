@@ -324,11 +324,13 @@ contract MKRLenderSystemTest is MKRTestBasis {
         repayDefaultLoan(repayAmount);
 
         warp(5 days);
-        // write 40% of debt off / second loan 100% loss
+        // write 50% of debt off / second loan 100% loss
         root.relyContract(address(pile), address(this));
-        navFeed_.writeOff(firstLoan, 0);
+        root.relyContract(address(nftFeed), address(this));
+        nftFeed.overrideWriteOff(1, 1);
+        nftFeed.overrideWriteOff(2, 3);
 
-        navFeed_.calcUpdateNAV();
+        nftFeed.calcUpdateNAV();
         assertTrue(mkrAssessor.calcSeniorTokenPrice() > 0);
         assertEq(mkrAssessor.calcJuniorTokenPrice(), 0);
         assertTrue(clerk.debt() > clerk.cdpink());

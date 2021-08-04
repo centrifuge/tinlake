@@ -61,11 +61,16 @@ contract PrincipalNAVFeed is NAVFeed {
             ONE                                     // recoveryRatePD:  1.0
         );
 
-        /// Overdue loans (= loans that were not repaid by the maturityDate) are moved to write Offs
-        // 6% interest rate & 60% write off
-        file("writeOffGroup", uint(1000000674400000000000000000), 6 * 10**26, 2);
-        // 6% interest rate & 80% write off
-        file("writeOffGroup", uint(1000000674400000000000000000), 8 * 10**26, 4);
+        /// Overdue loans (= loans that were not repaid by the maturityDate) are moved to write offs
+
+        // 6% interest rate & 25% write off
+        file("writeOffGroup", uint(1000000674400000000000000000), 75 * 10**25, 30);
+        // 6% interest rate & 50% write off
+        file("writeOffGroup", uint(1000000674400000000000000000), 50 * 10**25, 60);
+        // 6% interest rate & 75% write off
+        file("writeOffGroup", uint(1000000674400000000000000000), 25 * 10**25, 90);
+        // 6% interest rate & 100% write off
+        file("writeOffGroup", uint(1000000674400000000000000000), 0, 120);
     }
 
     // returns the ceiling of a loan

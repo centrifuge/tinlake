@@ -188,11 +188,12 @@ contract NFTFeedTest is DSTest, Math {
         uint risk = 0;
 
         uint loan = 1;
-        shelf.setReturn("shelf",address(1), 1);
+        shelf.setReturn("shelf", address(1), 1);
         pile.setReturn("loanRates", 1);
 
         feed.update(nftID, value, risk);
         feed.borrowEvent(loan);
+
         assertEq(pile.values_uint("setRate_loan"), loan);
         // risk group is used as rate
         assertEq(pile.values_uint("setRate_rate"), risk);
@@ -218,7 +219,7 @@ contract NFTFeedTest is DSTest, Math {
         feed.borrow(loan, amount);
 
         // total ceiling for risk group 1
-        assertEq(feed.ceiling(loan), safeSub(maxCeiling,amount));
+        assertEq(feed.ceiling(loan), safeSub(maxCeiling, amount));
 
         feed.borrow(loan, safeSub(maxCeiling,amount));
 

@@ -14,6 +14,8 @@ contract PileMock is Mock {
     }
 
     function setRate(uint loan, uint rate) public {
+        emit log_named_uint("setRate_loan", loan);
+        emit log_named_uint("setRate_rate", rate);
         values_uint["setRate_loan"] = loan;
         values_uint["setRate_rate"] = rate;
         calls["setRate"]++;
@@ -62,7 +64,7 @@ contract PileMock is Mock {
     }
 
     function loanRates(uint) public view returns(uint) {
-        return values_uint["loanRates"];
+        return values_return["loanRates"];
     }
 
     function rates(uint) public view returns(uint, uint, uint, uint48,uint) {
