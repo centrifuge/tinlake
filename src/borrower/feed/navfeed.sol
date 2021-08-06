@@ -228,6 +228,7 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
             } else {
                 // Written off after the maturity date
                 overdueButNotWrittenOff = secureSub(overdueButNotWrittenOff, fv);
+                latestNAV = secureSub(latestNAV, fv);
             }
         }
 
