@@ -3,7 +3,6 @@ pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "tinlake-auth/auth.sol";
-import "ds-test/test.sol";
 import { Discounting } from "./discounting.sol";
 
 interface ShelfLike {
@@ -28,7 +27,7 @@ interface PileLike {
 // The applied discountRate is dependant on the maturity data of the underlying collateral. The discount decreases with the maturity date approaching.
 // To optimize the NAV calculation the discounting of future values happens bucketwise. FVs from assets with the same maturity date are added to one bucket.
 // This safes iterations & gas, as the same discountRates can be applied per bucket.
-abstract contract NAVFeed is Auth, Discounting, DSTest {
+abstract contract NAVFeed is Auth, Discounting {
 
     PileLike    public pile;
     ShelfLike   public shelf;
@@ -178,8 +177,6 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
 
         // when issued every loan has per default interest rate of risk group 0.
         // correct interest rate has to be set on first borrow event
-        emit log_named_uint("borrowEvent_loanRates", pile.loanRates(loan));
-        emit log_named_uint("borrowEvent_risk", risk_);
         if (pile.loanRates(loan) != risk_) {
             // set loan interest rate to the one of the correct risk group
             pile.setRate(loan, risk_);
@@ -257,8 +254,6 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
 
         uint diff = 0;
         for(uint i = nLastUpdate; i < nnow; i = i + 1 days) {
-            // nLastUpdate < i < nnow
-            // 2 days ago < 1 day ago < now
             diff = safeAdd(diff, rmul(buckets[i], rpow(discountRate.value, safeSub(nnow, i), ONE)));
         }
 
