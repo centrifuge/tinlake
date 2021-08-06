@@ -212,17 +212,23 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
     }
 
     function _writeOff(uint loan, uint writeOffGroupIndex_, bytes32 nftID_, uint maturityDate_) internal {
-        if (pile.loanRates(loan) < WRITEOFF_RATE_GROUP_START) {
-            // this is the first writeoff, remove future value for loan from bucket
-            uint fv = futureValue[nftID_];
-            buckets[maturityDate_] = safeSub(buckets[maturityDate_], fv);
+        // Ensure we have an up to date NAV
+        calcUpdateNAV();
 
-            if (uniqueDayTimestamp(lastNAVUpdate) >= maturityDate_) {
+        if (pile.loanRates(loan) < WRITEOFF_RATE_GROUP_START) {
+            uint fv = futureValue[nftID_];
+
+            if (uniqueDayTimestamp(lastNAVUpdate) <= maturityDate_) {
+                // Written off before or on the maturity date
+                buckets[maturityDate_] = safeSub(buckets[maturityDate_], fv);
+
+                uint pv = rmul(fv, rpow(discountRate.value, safeSub(uniqueDayTimestamp(maturityDate_), uniqueDayTimestamp(block.timestamp)), ONE));
+                latestDiscount = secureSub(latestDiscount, pv);
+                latestNAV = secureSub(latestNAV, pv);
+            } else {
+                // Written off after the maturity date
                 overdueButNotWrittenOff = secureSub(overdueButNotWrittenOff, fv);
             }
-
-            latestDiscount = secureSub(latestDiscount, fv);
-            latestNAV = secureSub(latestNAV, fv);
         }
 
         pile.changeRate(loan, WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_);
