@@ -191,10 +191,13 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
     function writeOff(uint loan) public {
         require(!writeOffOverride[loan], "already-overridden");
         uint writeOffGroupIndex_ = currentValidWriteOffGroup(loan);
-        bytes32 nftID_ = nftID(loan);
-        uint maturityDate_ = maturityDate[nftID_];
-        _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
-        emit WriteOff(loan, writeOffGroupIndex_, false);
+        
+        if (pile.loanRates(loan) != WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_) {
+            bytes32 nftID_ = nftID(loan);
+            uint maturityDate_ = maturityDate[nftID_];
+            _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
+            emit WriteOff(loan, writeOffGroupIndex_, false);
+        }
     }
 
     function overrideWriteOff(uint loan, uint writeOffGroupIndex_) public auth {
