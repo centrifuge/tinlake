@@ -75,6 +75,7 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
     event File(bytes32 indexed name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_);
     event File(bytes32 indexed name, bytes32 nftID_, uint maturityDate_);
     event File(bytes32 indexed name, uint value);
+    event WriteOff(uint indexed loan, uint indexed writeOffGroupsIndex, bool override_);
 
     constructor () {
         wards[msg.sender] = 1;
@@ -187,20 +188,13 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
 
     function unlockEvent(uint loan) public virtual auth {}
 
-    // TODO: we could also remove the writeOffGroupIndex_ argument, loop over the
-    // writeOffGroups and find the latest writeoff group which can be applied.
-    function writeOff(uint loan, uint writeOffGroupIndex_) public {
+    function writeOff(uint loan) public {
         require(!writeOffOverride[loan], "already-overridden");
-
+        uint writeOffGroupIndex_ = currentValidWriteOffGroup(loan);
         bytes32 nftID_ = nftID(loan);
-        WriteOffGroup memory writeOffGroup_ = writeOffGroups[writeOffGroupIndex_];
         uint maturityDate_ = maturityDate[nftID_];
-        require(block.timestamp >= maturityDate_ + writeOffGroup_.overdueDays * 60 * 60 * 24, "too-early");
-
-        uint currentRate = pile.loanRates(loan);
-        require(currentRate < WRITEOFF_RATE_GROUP_START || writeOffGroup_.overdueDays > writeOffGroups[currentRate].overdueDays, "cannot-go-back");
-
         _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
+        emit WriteOff(loan, writeOffGroupIndex_, false);
     }
 
     function overrideWriteOff(uint loan, uint writeOffGroupIndex_) public auth {
@@ -209,6 +203,7 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
         bytes32 nftID_ = nftID(loan);
         uint maturityDate_ = maturityDate[nftID_];
         _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
+        emit WriteOff(loan, writeOffGroupIndex_, true);
     }
 
     function _writeOff(uint loan, uint writeOffGroupIndex_, bytes32 nftID_, uint maturityDate_) internal {
@@ -434,6 +429,22 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
         }
 
         return safeSub(value, rmul(value, writeOffGroups[rateGroup - WRITEOFF_RATE_GROUP_START].percentage.value));
+    }
+
+    function currentValidWriteOffGroup(uint loan) public view returns (uint) {
+        bytes32 nftID_ = nftID(loan);
+        uint maturityDate_ = maturityDate[nftID_];
+
+        uint lastValidWriteOff;
+        uint highestOverdueDays = 0;
+        for (uint i = 0; i < writeOffGroups.length; i++) {
+            uint overdueDays = writeOffGroups[i].overdueDays;
+            if (overdueDays >= highestOverdueDays && block.timestamp >= maturityDate_ + overdueDays * 60 * 60 * 24) {
+                lastValidWriteOff = i;
+                highestOverdueDays = overdueDays;
+            }
+        }
+        return lastValidWriteOff;
     }
 
 }
