@@ -149,10 +149,10 @@ contract PoolAdmin {
         emit FileWriteOffGroup(rate_, writeOffPercentage_, overdueDays_);
     }
 
-    function fileWriteOffGroups(uint[] memory rates_, uint[] memory writeOffPercentages_, uint[] memory overdueDayss_) public operator {
-        require(rates_.length == writeOffPercentages_.length && writeOffPercentages_.length == overdueDayss_.length, "non-matching-arguments");
+    function fileWriteOffGroups(uint[] memory rates_, uint[] memory writeOffPercentages_, uint[] memory overdueDays_) public operator {
+        require(rates_.length == writeOffPercentages_.length && writeOffPercentages_.length == overdueDays_.length, "non-matching-arguments");
         for (uint i = 0; i < rates_.length; i++) {
-            fileWriteOffGroup(rates_[i], writeOffPercentages_[i], overdueDayss_[i]);
+            fileWriteOffGroup(rates_[i], writeOffPercentages_[i], overdueDays_[i]);
         }
     }
 
