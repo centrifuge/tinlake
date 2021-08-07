@@ -10,6 +10,14 @@ contract CeilingMock is Mock {
         return call("values");
     }
 
+    function presentValue(uint) public view returns(uint) {
+        return values_return["presentValue"];
+    }
+
+    function futureValue(uint) public view returns(uint) {
+        return values_return["futureValue"];
+    }
+
     function borrow (uint loan, uint amount) public {
         bytes32 name = "borrow";
         require(method_fail[name] == false);

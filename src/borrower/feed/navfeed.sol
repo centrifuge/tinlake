@@ -417,16 +417,16 @@ abstract contract NAVFeed is Auth, Discounting {
         return nftID(registry, tokenId);
     }
 
-    function currentValue(uint loan) public view returns (uint) {
+    function presentValue(uint loan) public view returns (uint) {
         uint rateGroup = pile.loanRates(loan);
         bytes32 nftID_ = nftID(loan);
-        uint value = nftValues[nftID_];
+        uint value = futureValue[nftID_];
 
         if (rateGroup < WRITEOFF_RATE_GROUP_START) {
             return value;
         }
 
-        return safeSub(value, rmul(value, writeOffGroups[rateGroup - WRITEOFF_RATE_GROUP_START].percentage.value));
+        return rmul(value, writeOffGroups[rateGroup - WRITEOFF_RATE_GROUP_START].percentage.value);
     }
 
     function currentValidWriteOffGroup(uint loan) public view returns (uint) {
