@@ -16,6 +16,7 @@ interface NAVFeedLike {
     function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) external;
     function file(bytes32 name, uint rate_, uint writeOffPercentage_, uint overdueDays_) external;
     function file(bytes32 name, uint value) external;
+    function file(bytes32 name, bytes32 nftID_, uint maturityDate_) external;
     function update(bytes32 nftID_,  uint value) external;
     function update(bytes32 nftID_, uint value, uint risk_) external;
 }
@@ -126,6 +127,7 @@ contract PoolAdmin {
     event FileWriteOffGroup(uint rate_, uint writeOffPercentage_, uint overdueDays_);
     event UpdateNFTValue(bytes32 nftID_, uint value);
     event UpdateNFTValueRisk(bytes32 nftID_, uint value, uint risk_);
+    event UpdateNFTMaturityDate(bytes32 nftID_, uint maturityDate_);
 
     function overrideWriteOff(uint loan, uint writeOffGroupIndex_) public operator {
         navFeed.overrideWriteOff(loan, writeOffGroupIndex_);
@@ -164,6 +166,11 @@ contract PoolAdmin {
     function updateNFTValueRisk(bytes32 nftID_, uint value, uint risk_) public operator {
         navFeed.update(nftID_, value, risk_);
         emit UpdateNFTValueRisk(nftID_, value, risk_);
+    }
+
+    function updateNFTMaturityDate(bytes32 nftID_, uint maturityDate_) public operator {
+        navFeed.file("maturityDate", nftID_, maturityDate_);
+        emit UpdateNFTMaturityDate(nftID_, maturityDate_);
     }
 
     function relyManager(address usr) public operator {
