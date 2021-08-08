@@ -30,7 +30,8 @@ interface PileLike {
 interface NAVFeedLike {
     function borrow(uint loan, uint currencyAmount) external;
     function repay(uint loan, uint currencyAmount) external;
-    function close(uint loan) external;
+    function presentValue(uint loan) external view returns (uint);
+    function futureValue(uint loan) external view returns (uint);
 }
 
 interface ReserveLike {
@@ -128,12 +129,10 @@ contract Shelf is Auth, TitleOwned, Math {
     }
 
     function close(uint loan) external {
-        require(pile.debt(loan) == 0, "loan-has-outstanding-debt");
         require(!nftLocked(loan), "nft-not-locked");
         (address registry, uint tokenId) = token(loan);
         require(title.ownerOf(loan) == msg.sender || NFTLike(registry).ownerOf(tokenId) == msg.sender, "not-loan-or-nft-owner");
         title.close(loan);
-        ceiling.close(loan);
         bytes32 nft = keccak256(abi.encodePacked(shelf[loan].registry, shelf[loan].tokenId));
         nftlookup[nft] = 0;
         resetLoanBalance(loan);
@@ -238,17 +237,22 @@ contract Shelf is Auth, TitleOwned, Math {
     // locks an nft in the shelf
     // requires an issued loan
     function lock(uint loan) external owner(loan) {
-        if(address(subscriber) != address(0)) {
-            subscriber.unlockEvent(loan);
-        }
         NFTLike(shelf[loan].registry).transferFrom(msg.sender, address(this), shelf[loan].tokenId);
         emit Lock(loan);
     }
 
     // unlocks an nft in the shelf
-    // requires zero debt
+    // requires zero debt or 100% write off
     function unlock(uint loan) external owner(loan) {
-        require(pile.debt(loan) == 0, "loan-has-outstanding-debt");
+        // loans can be unlocked and closed when the debt is 0, the loan is written off 100%, or the loan has been partially written off and the remainder has been repaid
+        uint debt_ = pile.debt(loan);
+        uint pv = ceiling.presentValue(loan);
+        require(debt_ == 0 || pv == 0 || safeSub(ceiling.futureValue(loan), debt_) >= pv, "loan-has-outstanding-debt");
+
+        if (address(subscriber) != address(0)) {
+            subscriber.unlockEvent(loan);
+        }
+
         NFTLike(shelf[loan].registry).transferFrom(address(this), msg.sender, shelf[loan].tokenId);
         emit Unlock(loan);
     }

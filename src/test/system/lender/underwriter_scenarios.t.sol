@@ -84,9 +84,9 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         proposeAndStake(loan, risk, value, 10 ether, 50 ether);
         hevm.warp(block.timestamp + 1 hours);
 
-        assertEqTol(nftFeed.currentCeiling(loan), 0, " ceilingPreAccept");
+        assertEqTol(nftFeed.ceiling(loan), 0, " ceilingPreAccept");
         issuer.accept(loan, risk, value);
-        assertEqTol(nftFeed.currentCeiling(loan), nftPrice, " ceilingPostAccept");
+        assertEqTol(nftFeed.ceiling(loan), nftPrice, " ceilingPostAccept");
 
         borrower.approveNFT(collateralNFT, address(shelf));
         borrower.borrowAction(loan, nftPrice);
@@ -145,7 +145,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
 
         uint preJuniorTokenPrice = assessor.calcJuniorTokenPrice(nftFeed.currentNAV(), reserve.totalBalance());
         uint preJuniorSupply = juniorToken.totalSupply();
-        nftFeed.writeOff(loan, 0); // 60% writeoff
+        nftFeed.overrideWriteOff(loan, 0); // 60% writeoff
         closeEpoch(true);
         uint postJuniorTokenPrice = assessor.calcJuniorTokenPrice(nftFeed.currentNAV(), reserve.totalBalance());
         uint postJuniorSupply = juniorToken.totalSupply();
@@ -162,7 +162,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         assertEqTol(tokenPayout, 0, " tokenPayout 60%"); // not yet closed
 
         hevm.warp(block.timestamp + 6 days); // 9 days overdue
-        nftFeed.writeOff(loan, 2); // 100% writeoff
+        nftFeed.overrideWriteOff(loan, 2); // 100% writeoff
 
         (minted, burned, tokenPayout) = bookrunner.calcStakedDisburse(address(underwriter));
         assertEqTol(minted, 0 ether, " minted 100%");
@@ -196,7 +196,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         uint preNAV = assessor.currentNAV();
         uint preReserve = reserve.totalBalance();
         uint preSupply = juniorToken.totalSupply();
-        nftFeed.writeOff(loan, 0); // 60% writeoff
+        nftFeed.overrideWriteOff(loan, 0); // 60% writeoff
         closeEpoch(true);
         uint postNAV = assessor.currentNAV();
         uint postJuniorTokenPrice = assessor.calcJuniorTokenPrice(nftFeed.currentNAV(), reserve.totalBalance());

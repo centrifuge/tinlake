@@ -20,7 +20,7 @@ interface TokenLike{
     function burn(address, uint) external;
 }
 
-interface NFTFeedLike {
+interface NAVFeedLike {
     function rely(address addr) external;
     function update(bytes32 nftID, uint value) external;
     function update(bytes32 nftID, uint value, uint risk) external;
@@ -33,9 +33,12 @@ interface NFTFeedLike {
     function borrow(uint loan, uint currencyAmount) external;
     function repay(uint loan, uint currencyAmount) external;
     function file(bytes32 what, bytes32 nftID_, uint maturityDate_) external;
-    function approximatedNAV() external returns (uint);
+    function latestNAV() external returns (uint);
     function currentNAV() external returns (uint);
     function calcUpdateNAV() external returns (uint);
+    function init() external;
+    function writeOff(uint loan, uint writeOffGroupIndex_) external;
+    function overrideWriteOff(uint loan, uint writeOffGroupIndex_) external;
 }
 
 interface PileLike {

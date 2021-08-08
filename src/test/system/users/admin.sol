@@ -11,19 +11,19 @@ contract AdminUser {
     Title title;
     TReserveLike reserve;
     CollectorLike collector;
-    NFTFeedLike nftFeed;
+    NAVFeedLike navFeed;
     MemberlistLike juniorMemberlist;
     MemberlistLike seniorMemberlist;
     TrancheLike juniorTranche;
     ERC20Like juniorToken;
 
-    constructor(address shelf_, address pile_, address nftFeed_, address title_, address reserve_, address collector_, address juniorMemberlist_, address seniorMemberlist_, address juniorTranche_, address juniorToken_) {
+    constructor(address shelf_, address pile_, address navFeed_, address title_, address reserve_, address collector_, address juniorMemberlist_, address seniorMemberlist_, address juniorTranche_, address juniorToken_) {
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
         title = Title(title_);
         reserve = TReserveLike(reserve_);
         collector = CollectorLike(collector_);
-        nftFeed = NFTFeedLike(nftFeed_);
+        navFeed = NAVFeedLike(navFeed_);
         juniorMemberlist = MemberlistLike(juniorMemberlist_);
         seniorMemberlist = MemberlistLike(seniorMemberlist_);
         juniorTranche = TrancheLike(juniorTranche_);
@@ -31,18 +31,18 @@ contract AdminUser {
     }
 
     function priceNFT(bytes32 lookupId, uint nftPrice) public {
-        nftFeed.update(lookupId, nftPrice);
+        navFeed.update(lookupId, nftPrice);
     }
 
     function setMaturityDate(address collateralNFT_, uint tokenId, uint maturityDate) public {
         bytes32 lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
-        nftFeed.file("maturityDate", lookupId , maturityDate);
+        navFeed.file("maturityDate", lookupId , maturityDate);
     }
 
     function priceNFTAndSetRiskGroup(bytes32 lookupId, uint nftPrice, uint riskGroup, uint maturityDate) public {
-        nftFeed.update(lookupId, nftPrice, riskGroup);
+        navFeed.update(lookupId, nftPrice, riskGroup);
         // add default maturity date
-        nftFeed.file("maturityDate", lookupId , maturityDate);
+        navFeed.file("maturityDate", lookupId , maturityDate);
     }
 
     function setCollectPrice(uint loan, uint price) public {
@@ -74,7 +74,7 @@ contract AdminUser {
     }
 
     function relyNftFeed(address addr) public {
-        nftFeed.rely(addr);
+        navFeed.rely(addr);
     }
 
     function relyJuniorTranche(address addr) public {

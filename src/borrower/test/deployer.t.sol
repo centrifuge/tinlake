@@ -7,7 +7,6 @@ import { TitleFab } from "../fabs/title.sol";
 import { PileFab } from "../fabs/pile.sol";
 import { ShelfFab} from "../fabs/shelf.sol";
 import { NAVFeedFab } from "../fabs/navfeed.sol";
-import { NFTFeedFab } from "../fabs/nftfeed.sol";
 import { CollectorFab } from "../fabs/collector.sol";
 
 

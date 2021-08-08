@@ -15,7 +15,7 @@ contract TestSuite is BaseSystemTest {
     }
 
     function seniorSupply(uint currencyAmount, Investor investor) public {
-        admin.makeSeniorTokenMember(address(investor), safeAdd(block.timestamp, 8 days));
+        admin.makeSeniorTokenMember(address(investor), type(uint256).max);
         currency.mint(address(investor), currencyAmount);
         investor.supplyOrder(currencyAmount);
         (,uint supplyAmount, ) = seniorTranche.users(address(investor));
@@ -24,7 +24,7 @@ contract TestSuite is BaseSystemTest {
 
     function juniorSupply(uint currencyAmount) public {
         currency.mint(address(juniorInvestor), currencyAmount);
-        admin.makeJuniorTokenMember(juniorInvestor_, safeAdd(block.timestamp, 8 days));
+        admin.makeJuniorTokenMember(juniorInvestor_, type(uint256).max);
         juniorInvestor.supplyOrder(currencyAmount);
         (,uint supplyAmount, ) = juniorTranche.users(juniorInvestor_);
         assertEq(supplyAmount, currencyAmount);
@@ -44,9 +44,9 @@ contract TestSuite is BaseSystemTest {
 
     function setupOngoingDefaultLoan(uint borrowAmount) public returns(uint) {
         // borrow loans with default maturity date 5 days from now
-        uint maturityDate = DEFAULT_MATURITY_DATE;
+        uint maturityFromNow = DEFAULT_MATURITY_DATE;
         uint nftPrice = borrowAmount*3;
-        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, nftFeed.uniqueDayTimestamp(block.timestamp) + maturityDate);
+        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, nftFeed.uniqueDayTimestamp(block.timestamp) + maturityFromNow);
         return loan;
 
     }

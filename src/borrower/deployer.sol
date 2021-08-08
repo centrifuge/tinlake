@@ -18,7 +18,7 @@ interface NAVFeedLike {
 }
 
 interface FeedFabLike {
-    function newFeed() external returns(address);
+    function newPrincipalFeed() external returns(address);
 }
 
 interface FileLike {
@@ -102,7 +102,7 @@ contract BorrowerDeployer is FixedPoint {
 
     function deployFeed() public {
         require(feed == ZERO);
-        feed = feedFab.newFeed();
+        feed = feedFab.newPrincipalFeed();
         AuthLike(feed).rely(root);
     }
 

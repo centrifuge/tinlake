@@ -110,7 +110,7 @@ contract AssessorTest is DSTest, Math {
         uint seniorSupply =  80 ether;
         uint seniorRedeem = 0;
 
-        navFeed.setReturn("approximatedNAV", 10 ether);
+        navFeed.setReturn("latestNAV", 10 ether);
         reserveMock.setReturn("balance", 90 ether);
 
 
@@ -123,7 +123,7 @@ contract AssessorTest is DSTest, Math {
         uint seniorSupply =  300 ether;
         uint seniorRedeem = 0;
 
-        navFeed.setReturn("approximatedNAV", 200 ether);
+        navFeed.setReturn("latestNAV", 200 ether);
         reserveMock.setReturn("balance", 0 ether);
 
         assessor.changeSeniorAsset(seniorSupply, seniorRedeem);
@@ -137,7 +137,7 @@ contract AssessorTest is DSTest, Math {
         uint seniorSupply =  100 ether;
         uint seniorRedeem = 0;
 
-        navFeed.setReturn("approximatedNAV", 10 ether);
+        navFeed.setReturn("latestNAV", 10 ether);
         reserveMock.setReturn("balance", 90 ether);
 
 
@@ -150,7 +150,7 @@ contract AssessorTest is DSTest, Math {
         uint seniorSupply =  100 ether;
         uint seniorRedeem = 0;
 
-        navFeed.setReturn("approximatedNAV", 0);
+        navFeed.setReturn("latestNAV", 0);
         reserveMock.setReturn("balance", 120 ether);
 
 
@@ -163,7 +163,7 @@ contract AssessorTest is DSTest, Math {
         uint seniorSupply =  100 ether;
         uint seniorRedeem = 0;
 
-        navFeed.setReturn("approximatedNAV", 10 ether);
+        navFeed.setReturn("latestNAV", 10 ether);
         reserveMock.setReturn("balance", 50 ether);
 
 
@@ -177,7 +177,7 @@ contract AssessorTest is DSTest, Math {
         uint interestRate = uint(1000000564701133626865910626);
         assessor.file("seniorInterestRate", interestRate);
 
-        navFeed.setReturn("approximatedNAV", 200 ether);
+        navFeed.setReturn("latestNAV", 200 ether);
         reserveMock.setReturn("balance", 200 ether);
 
         uint seniorSupply = 200 ether;
@@ -211,7 +211,7 @@ contract AssessorTest is DSTest, Math {
 
     function testCalcSeniorTokenPriceWithSupplyRoundingError() public {
         uint nav = 10 ether;
-        navFeed.setReturn("approximatedNAV", nav);
+        navFeed.setReturn("latestNAV", nav);
         uint seniorTokenSupply = 2; // set value in range of supply rounding tolearnce
         reserveMock.setReturn("balance", 100 ether);
         seniorTranche.setReturn("tokenSupply", seniorTokenSupply);
@@ -223,7 +223,7 @@ contract AssessorTest is DSTest, Math {
     
     function testCalcSeniorTokenPrice() public {
         uint nav = 10 ether;
-        navFeed.setReturn("approximatedNAV", nav);
+        navFeed.setReturn("latestNAV", nav);
         uint seniorSupply = 80 ether;
         reserveMock.setReturn("balance", 100 ether);
 
@@ -242,7 +242,7 @@ contract AssessorTest is DSTest, Math {
 
     function testCalcJuniorTokenPrice() public {
         uint nav = 10 ether;
-        navFeed.setReturn("approximatedNAV", nav);
+        navFeed.setReturn("latestNAV", nav);
         uint seniorSupply = 80 ether;
         reserveMock.setReturn("balance", 90 ether);
 
@@ -267,7 +267,7 @@ contract AssessorTest is DSTest, Math {
         uint nav = 200 ether;
 
 
-        navFeed.setReturn("approximatedNAV", 200 ether);
+        navFeed.setReturn("latestNAV", 200 ether);
         reserveMock.setReturn("balance", 200 ether);
 
         uint seniorSupply = 200 ether;
