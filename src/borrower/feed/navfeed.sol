@@ -4,6 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import "tinlake-auth/auth.sol";
 import { Discounting } from "./discounting.sol";
+import "../../fixed_point.sol";
 
 interface ShelfLike {
     function shelf(uint loan) external view returns (address registry, uint tokenId);
@@ -22,6 +23,12 @@ interface PileLike {
     function rateDebt(uint rate) external view returns (uint);
 }
 
+abstract contract BookrunnerLike is FixedPoint {
+    function setRepaid(uint loan, uint amount) public virtual;
+    function setWrittenOff(uint loan, uint writeoffPercentage, uint amount) public virtual;
+    function setClosed(uint loan) public virtual;
+}
+
 // The NAV Feed contract extends the functionality of the NFT Feed by the Net Asset Value (NAV) computation of a Tinlake pool.
 // NAV is computed as the sum of all discounted future values (fv) of ongoing loans (debt > 0) in the pool.
 // The applied discountRate is dependant on the maturity data of the underlying collateral. The discount decreases with the maturity date approaching.
@@ -29,8 +36,9 @@ interface PileLike {
 // This safes iterations & gas, as the same discountRates can be applied per bucket.
 abstract contract NAVFeed is Auth, Discounting {
 
-    PileLike    public pile;
-    ShelfLike   public shelf;
+    PileLike        public pile;
+    ShelfLike       public shelf;
+    BookrunnerLike  public bookrunner;
 
     mapping (uint => uint)      public ceilingRatio;    // risk => ceilingRatio
     mapping (bytes32 => uint)   public maturityDate;    // nftID => maturityDate
@@ -168,6 +176,11 @@ abstract contract NAVFeed is Auth, Discounting {
 
         futureValue[nftID_] = fv;
 
+        // Mint and transfer new + staked TIN to underwriters
+        if (address(bookrunner) != address(0)) {
+            bookrunner.setRepaid(loan, amount);
+        }
+
         // return decrease NAV amount
         return calcDiscount(discountRate.value, safeSub(preFutureValue, fv), uniqueDayTimestamp(block.timestamp), maturityDate_);
     }
@@ -183,7 +196,11 @@ abstract contract NAVFeed is Auth, Discounting {
         }
     }
 
-    function unlockEvent(uint loan) public virtual auth {}
+    function unlockEvent(uint loan) public virtual auth {
+        if (address(bookrunner) != address(0)) {
+            bookrunner.setClosed(loan);
+        }
+    }
 
     function writeOff(uint loan) public {
         require(!writeOffOverride[loan], "already-overridden");
@@ -228,6 +245,12 @@ abstract contract NAVFeed is Auth, Discounting {
         }
 
         pile.changeRate(loan, WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_);
+
+        if (address(bookrunner) != address(0)) {
+            uint pct = safeSub(1e27, writeOffGroups[writeOffGroupIndex_].percentage.value);
+            uint amount = rmul(nftValues[nftID_], pct);
+            bookrunner.setWrittenOff(loan, pct, amount);
+        }
     }
 
     // --- NAV calculation ---
@@ -299,6 +322,7 @@ abstract contract NAVFeed is Auth, Discounting {
     function depend(bytes32 contractName, address addr) external auth {
         if (contractName == "pile") {pile = PileLike(addr);}
         else if (contractName == "shelf") { shelf = ShelfLike(addr); }
+        else if (contractName == "bookrunner") { bookrunner = BookrunnerLike(addr); }
         else revert();
         emit Depend(contractName, addr);
     }

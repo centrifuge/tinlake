@@ -115,16 +115,12 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         (uint minted, uint slashed, uint tokenPayout) = bookrunner.calcStakedDisburse(address(underwriter));
         assertEqTol(minted, 1.8 ether, " minted");
         assertEqTol(slashed, 0 ether, " slashed");
-        assertEqTol(tokenPayout, 0 ether, " tokenPayout pre close");
+        assertEqTol(tokenPayout, 91.8 ether, " tokenPayout post unlock");
         
-        borrower.close(loan);
-        (,, uint tokenPayoutAfterClose) = bookrunner.calcStakedDisburse(address(underwriter));
-        assertEqTol(tokenPayoutAfterClose, 91.8 ether, " tokenPayout post close"); // 90 ether stake + 90% of 1% of 200 ether minted
-
         uint preUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
         bookrunner.disburse(address(underwriter));
         uint postUnderwriterBalance = juniorToken.balanceOf(address(underwriter));
-        assertEqTol(postUnderwriterBalance - preUnderwriterBalance, tokenPayoutAfterClose, " balance increase");
+        assertEqTol(postUnderwriterBalance - preUnderwriterBalance, 91.8 ether, " balance increase");
     }
 
     function testSlashingEntireStake() public {
@@ -145,7 +141,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
 
         uint preJuniorTokenPrice = assessor.calcJuniorTokenPrice(nftFeed.currentNAV(), reserve.totalBalance());
         uint preJuniorSupply = juniorToken.totalSupply();
-        nftFeed.overrideWriteOff(loan, 0); // 60% writeoff
+        nftFeed.overrideWriteOff(loan, 2); // 75% writeoff
         closeEpoch(true);
         uint postJuniorTokenPrice = assessor.calcJuniorTokenPrice(nftFeed.currentNAV(), reserve.totalBalance());
         uint postJuniorSupply = juniorToken.totalSupply();
@@ -162,7 +158,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         assertEqTol(tokenPayout, 0, " tokenPayout 60%"); // not yet closed
 
         hevm.warp(block.timestamp + 6 days); // 9 days overdue
-        nftFeed.overrideWriteOff(loan, 2); // 100% writeoff
+        nftFeed.overrideWriteOff(loan, 3); // 100% writeoff
 
         (minted, burned, tokenPayout) = bookrunner.calcStakedDisburse(address(underwriter));
         assertEqTol(minted, 0 ether, " minted 100%");
@@ -196,15 +192,15 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         uint preNAV = assessor.currentNAV();
         uint preReserve = reserve.totalBalance();
         uint preSupply = juniorToken.totalSupply();
-        nftFeed.overrideWriteOff(loan, 0); // 60% writeoff
+        nftFeed.overrideWriteOff(loan, 0); // 25% writeoff
         closeEpoch(true);
         uint postNAV = assessor.currentNAV();
         uint postJuniorTokenPrice = assessor.calcJuniorTokenPrice(nftFeed.currentNAV(), reserve.totalBalance());
         uint postReserve = reserve.totalBalance();
         uint postSupply = juniorToken.totalSupply();
 
-        // loan debt: 295, writeoff 60% => nav should drop 177
-        // nav: 226 => 177
+        // loan debt: 295, writeoff 25% => nav should drop 74
+        // nav: 226 => 152
         // reserve: 800 => 800
         // junior supply => 490 => 370
 
@@ -219,7 +215,8 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         emit log_named_uint("postReserve", postReserve);
         emit log_named_uint("postSupply", postSupply);
 
-        assertEqTol(postJuniorTokenPrice, preJuniorTokenPrice, " token price"); // less than the stake was slashed, so the TIN token price shouldn't be impacted
+        // small differences are allowed, but should be roughly the same TIN token price as the loss was covered by the staked TIN
+        assertTrue(safeSub(preJuniorTokenPrice, postJuniorTokenPrice) < 10e5);
     }
 
     // --- Utils ---

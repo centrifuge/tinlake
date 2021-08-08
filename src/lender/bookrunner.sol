@@ -257,10 +257,14 @@ contract Bookrunner is Auth, Math, FixedPoint, DSTest {
 
         bytes memory acceptedProposal = acceptedProposals[loan];
         uint alreadyWrittenOff = writtenOff[loan];
+        emit log_named_uint("amount", amount);
+        emit log_named_uint("alreadyWrittenOff", alreadyWrittenOff);
+        require(amount >= alreadyWrittenOff, "write-off-cannot-decrease");
         uint newlyWrittenOff = safeSub(amount, alreadyWrittenOff);
 
         uint stakeToBurn = 0;
         if (proposals[loan][acceptedProposal] > alreadyWrittenOff) {
+            emit log_named_uint("proposals[loan][acceptedProposal]", proposals[loan][acceptedProposal]);
             stakeToBurn = safeSub(proposals[loan][acceptedProposal], alreadyWrittenOff); 
         }
         
