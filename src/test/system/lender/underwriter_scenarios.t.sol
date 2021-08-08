@@ -200,9 +200,9 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         uint postSupply = juniorToken.totalSupply();
 
         // loan debt: 295, writeoff 25% => nav should drop 74
-        // nav: 226 => 152
+        // nav: 255 => 222
         // reserve: 800 => 800
-        // junior supply => 490 => 370
+        // junior supply => 490 => 440
 
         emit log_named_uint("startNAV", startNAV);
         emit log_named_uint("preDebt", preDebt);
@@ -215,8 +215,7 @@ contract UnderwriterSystemTest is TestSuite, Interest {
         emit log_named_uint("postReserve", postReserve);
         emit log_named_uint("postSupply", postSupply);
 
-        // small differences are allowed, but should be roughly the same TIN token price as the loss was covered by the staked TIN
-        assertTrue(safeSub(preJuniorTokenPrice, postJuniorTokenPrice) < 10e5);
+        assertEqTol(postJuniorTokenPrice, preJuniorTokenPrice, " token price"); // less than the stake was slashed, so the TIN token price shouldn't be impacted
     }
 
     // --- Utils ---
