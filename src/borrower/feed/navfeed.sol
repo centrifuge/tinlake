@@ -3,7 +3,6 @@ pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "tinlake-auth/auth.sol";
-import "ds-test/test.sol";
 import { Discounting } from "./discounting.sol";
 
 interface ShelfLike {
@@ -28,7 +27,7 @@ interface PileLike {
 // The applied discountRate is dependant on the maturity data of the underlying collateral. The discount decreases with the maturity date approaching.
 // To optimize the NAV calculation the discounting of future values happens bucketwise. FVs from assets with the same maturity date are added to one bucket.
 // This safes iterations & gas, as the same discountRates can be applied per bucket.
-abstract contract NAVFeed is Auth, Discounting, DSTest {
+abstract contract NAVFeed is Auth, Discounting {
 
     PileLike    public pile;
     ShelfLike   public shelf;
@@ -75,6 +74,7 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
     event File(bytes32 indexed name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_);
     event File(bytes32 indexed name, bytes32 nftID_, uint maturityDate_);
     event File(bytes32 indexed name, uint value);
+    event WriteOff(uint indexed loan, uint indexed writeOffGroupsIndex, bool override_);
 
     constructor () {
         wards[msg.sender] = 1;
@@ -177,8 +177,6 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
 
         // when issued every loan has per default interest rate of risk group 0.
         // correct interest rate has to be set on first borrow event
-        emit log_named_uint("borrowEvent_loanRates", pile.loanRates(loan));
-        emit log_named_uint("borrowEvent_risk", risk_);
         if (pile.loanRates(loan) != risk_) {
             // set loan interest rate to the one of the correct risk group
             pile.setRate(loan, risk_);
@@ -187,20 +185,16 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
 
     function unlockEvent(uint loan) public virtual auth {}
 
-    // TODO: we could also remove the writeOffGroupIndex_ argument, loop over the
-    // writeOffGroups and find the latest writeoff group which can be applied.
-    function writeOff(uint loan, uint writeOffGroupIndex_) public {
+    function writeOff(uint loan) public {
         require(!writeOffOverride[loan], "already-overridden");
-
-        bytes32 nftID_ = nftID(loan);
-        WriteOffGroup memory writeOffGroup_ = writeOffGroups[writeOffGroupIndex_];
-        uint maturityDate_ = maturityDate[nftID_];
-        require(block.timestamp >= maturityDate_ + writeOffGroup_.overdueDays * 60 * 60 * 24, "too-early");
-
-        uint currentRate = pile.loanRates(loan);
-        require(currentRate < WRITEOFF_RATE_GROUP_START || writeOffGroup_.overdueDays > writeOffGroups[currentRate].overdueDays, "cannot-go-back");
-
-        _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
+        uint writeOffGroupIndex_ = currentValidWriteOffGroup(loan);
+        
+        if (pile.loanRates(loan) != WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_) {
+            bytes32 nftID_ = nftID(loan);
+            uint maturityDate_ = maturityDate[nftID_];
+            _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
+            emit WriteOff(loan, writeOffGroupIndex_, false);
+        }
     }
 
     function overrideWriteOff(uint loan, uint writeOffGroupIndex_) public auth {
@@ -209,20 +203,28 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
         bytes32 nftID_ = nftID(loan);
         uint maturityDate_ = maturityDate[nftID_];
         _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
+        emit WriteOff(loan, writeOffGroupIndex_, true);
     }
 
     function _writeOff(uint loan, uint writeOffGroupIndex_, bytes32 nftID_, uint maturityDate_) internal {
+        // Ensure we have an up to date NAV
+        calcUpdateNAV();
+
         if (pile.loanRates(loan) < WRITEOFF_RATE_GROUP_START) {
-            // this is the first writeoff, remove future value for loan from bucket
             uint fv = futureValue[nftID_];
-            buckets[maturityDate_] = safeSub(buckets[maturityDate_], fv);
 
-            if (uniqueDayTimestamp(lastNAVUpdate) >= maturityDate_) {
+            if (uniqueDayTimestamp(lastNAVUpdate) <= maturityDate_) {
+                // Written off before or on the maturity date
+                buckets[maturityDate_] = safeSub(buckets[maturityDate_], fv);
+
+                uint pv = rmul(fv, rpow(discountRate.value, safeSub(uniqueDayTimestamp(maturityDate_), uniqueDayTimestamp(block.timestamp)), ONE));
+                latestDiscount = secureSub(latestDiscount, pv);
+                latestNAV = secureSub(latestNAV, pv);
+            } else {
+                // Written off after the maturity date
                 overdueButNotWrittenOff = secureSub(overdueButNotWrittenOff, fv);
+                latestNAV = secureSub(latestNAV, fv);
             }
-
-            latestDiscount = secureSub(latestDiscount, fv);
-            latestNAV = secureSub(latestNAV, fv);
         }
 
         pile.changeRate(loan, WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_);
@@ -252,8 +254,6 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
 
         uint diff = 0;
         for(uint i = nLastUpdate; i < nnow; i = i + 1 days) {
-            // nLastUpdate < i < nnow
-            // 2 days ago < 1 day ago < now
             diff = safeAdd(diff, rmul(buckets[i], rpow(discountRate.value, safeSub(nnow, i), ONE)));
         }
 
@@ -417,16 +417,32 @@ abstract contract NAVFeed is Auth, Discounting, DSTest {
         return nftID(registry, tokenId);
     }
 
-    function currentValue(uint loan) public view returns (uint) {
+    function presentValue(uint loan) public view returns (uint) {
         uint rateGroup = pile.loanRates(loan);
         bytes32 nftID_ = nftID(loan);
-        uint value = nftValues[nftID_];
+        uint value = futureValue[nftID_];
 
         if (rateGroup < WRITEOFF_RATE_GROUP_START) {
             return value;
         }
 
-        return safeSub(value, rmul(value, writeOffGroups[rateGroup - WRITEOFF_RATE_GROUP_START].percentage.value));
+        return rmul(value, writeOffGroups[rateGroup - WRITEOFF_RATE_GROUP_START].percentage.value);
+    }
+
+    function currentValidWriteOffGroup(uint loan) public view returns (uint) {
+        bytes32 nftID_ = nftID(loan);
+        uint maturityDate_ = maturityDate[nftID_];
+
+        uint lastValidWriteOff;
+        uint highestOverdueDays = 0;
+        for (uint i = 0; i < writeOffGroups.length; i++) {
+            uint overdueDays = writeOffGroups[i].overdueDays;
+            if (overdueDays >= highestOverdueDays && block.timestamp >= maturityDate_ + overdueDays * 60 * 60 * 24) {
+                lastValidWriteOff = i;
+                highestOverdueDays = overdueDays;
+            }
+        }
+        return lastValidWriteOff;
     }
 
 }

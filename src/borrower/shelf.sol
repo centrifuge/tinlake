@@ -30,7 +30,8 @@ interface PileLike {
 interface NAVFeedLike {
     function borrow(uint loan, uint currencyAmount) external;
     function repay(uint loan, uint currencyAmount) external;
-    function currentValue(uint loan) external view returns (uint);
+    function presentValue(uint loan) external view returns (uint);
+    function futureValue(uint loan) external view returns (uint);
 }
 
 interface ReserveLike {
@@ -80,10 +81,6 @@ contract Shelf is Auth, TitleOwned, Math {
     event Claim(uint indexed loan, address usr);
     event Depend(bytes32 indexed contractName, address addr);
 
-    // E.g. future value is 100. Written off 40%, currentValue = 40; repaid 70%, debt is 30.
-    // 50% writeoff, 50% repayment => pile.debt(loan) is 50%, ceiling.currentValue(loan) is ~50%
-    modifier canBeClosed (uint loan) { require(pile.debt(loan) == 0 || ceiling.currentValue(loan) == 0, "loan-has-outstanding-debt"); _; }
-
     constructor(address currency_, address title_, address pile_, address ceiling_) TitleOwned(title_) {
         currency = TokenLike(currency_);
         pile = PileLike(pile_);
@@ -131,7 +128,7 @@ contract Shelf is Auth, TitleOwned, Math {
         return loan;
     }
 
-    function close(uint loan) external canBeClosed(loan) {
+    function close(uint loan) external {
         require(!nftLocked(loan), "nft-not-locked");
         (address registry, uint tokenId) = token(loan);
         require(title.ownerOf(loan) == msg.sender || NFTLike(registry).ownerOf(tokenId) == msg.sender, "not-loan-or-nft-owner");
@@ -246,7 +243,12 @@ contract Shelf is Auth, TitleOwned, Math {
 
     // unlocks an nft in the shelf
     // requires zero debt or 100% write off
-    function unlock(uint loan) external owner(loan) canBeClosed(loan) {
+    function unlock(uint loan) external owner(loan) {
+        // loans can be unlocked and closed when the debt is 0, the loan is written off 100%, or the loan has been partially written off and the remainder has been repaid
+        uint debt_ = pile.debt(loan);
+        uint pv = ceiling.presentValue(loan);
+        require(debt_ == 0 || pv == 0 || safeSub(ceiling.futureValue(loan), debt_) >= pv, "loan-has-outstanding-debt");
+
         if (address(subscriber) != address(0)) {
             subscriber.unlockEvent(loan);
         }
