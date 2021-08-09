@@ -8,6 +8,7 @@ import { Discounting } from "./discounting.sol";
 interface ShelfLike {
     function shelf(uint loan) external view returns (address registry, uint tokenId);
     function nftlookup(bytes32 nftID) external returns (uint loan);
+    function loanCount() external returns (uint);
 }
 
 interface PileLike {
@@ -324,11 +325,47 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function file(bytes32 name, uint value) public auth {
         if (name == "discountRate") {
-            discountRate = Fixed27(value);
-            // TODO: recalculateDiscount()
+            _updateDiscountRate(value);
+            
             emit File(name, value);
 
         } else { revert("unknown config parameter");}
+    }
+
+    function updateDiscountRate(uint discountRate_) internal {
+
+      for (uint i = 1; i < shelf.loanCount(); i++) {
+         bytes32 nftID = nftID(registry, tokenId);
+          
+             function nftID(address registry, uint tokenId) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(registry, tokenId));
+    }
+
+    // returns the nftID for the underlying collateral nft
+    function nftID(uint loan) public view returns (bytes32) {
+        (address registry, uint tokenId) = shelf.shelf(loan);
+        return nftID(registry, tokenId);
+    }
+
+          futureValue[nftID_]
+
+          // check if loan overdue
+
+          // check if loan writtenoff
+
+          // retrieve asset based on loan id
+
+          // retrieve future value
+
+          // apply new discount rate and add to nav
+
+      }
+        // iterate over loans
+        // iterate over buckets
+        
+        // return rdiv(amount, rpow(discountRate.value, safeSub(maturityDate_, normalizedBlockTimestamp), ONE));
+
+        discountRate = discountRate_;
     }
 
     function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) public auth {
@@ -419,8 +456,7 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function currentValue(uint loan) public view returns (uint) {
         uint rateGroup = pile.loanRates(loan);
-        bytes32 nftID_ = nftID(loan);
-        uint value = nftValues[nftID_];
+        uint value = nftValues[nftID(loan)];
 
         if (rateGroup < WRITEOFF_RATE_GROUP_START) {
             return value;
@@ -430,8 +466,7 @@ abstract contract NAVFeed is Auth, Discounting {
     }
 
     function currentValidWriteOffGroup(uint loan) public view returns (uint) {
-        bytes32 nftID_ = nftID(loan);
-        uint maturityDate_ = maturityDate[nftID_];
+        uint maturityDate_ = maturityDate[nftID(loan)];
 
         uint lastValidWriteOff;
         uint highestOverdueDays = 0;

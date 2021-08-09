@@ -4,11 +4,18 @@ pragma solidity >=0.6.12;
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
 
-import { TitleOwned, TitleLike } from "tinlake-title/title.sol";
+import { TitleOwned } from "tinlake-title/title.sol";
 
 interface NFTLike {
     function ownerOf(uint256 tokenId) external view returns (address owner);
     function transferFrom(address from, address to, uint256 tokenId) external;
+}
+
+interface TitleLike {
+    function issue(address) external returns (uint);
+    function close(uint) external;
+    function ownerOf(uint) external view returns (address);
+    function count() external view returns (uint);
 }
 
 interface TokenLike {
@@ -272,5 +279,9 @@ contract Shelf is Auth, TitleOwned, Math {
             balances[loan] = 0;
             balance = safeSub(balance, loanBalance);
         }
+    }
+
+    function loanCount() public returns (uint) {
+        return title.count();
     }
 }
