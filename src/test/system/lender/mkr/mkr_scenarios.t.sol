@@ -323,13 +323,14 @@ contract MKRLenderSystemTest is MKRTestBasis {
         uint repayAmount = 5 ether;
         repayDefaultLoan(repayAmount);
 
-        // nav will be zero because loan is overdue
         warp(5 days);
-        // write 40% of debt off / second loan 100% loss
+        // write 50% of debt off / second loan 100% loss
         root.relyContract(address(pile), address(this));
-        pile.changeRate(firstLoan, nftFeed.WRITE_OFF_PHASE_A());
+        root.relyContract(address(nftFeed), address(this));
+        nftFeed.overrideWriteOff(1, 1);
+        nftFeed.overrideWriteOff(2, 3);
 
-        nftFeed_.calcUpdateNAV();
+        nftFeed.calcUpdateNAV();
         assertTrue(mkrAssessor.calcSeniorTokenPrice() > 0);
         assertEq(mkrAssessor.calcJuniorTokenPrice(), 0);
         assertTrue(clerk.debt() > clerk.cdpink());
@@ -340,7 +341,6 @@ contract MKRLenderSystemTest is MKRTestBasis {
         repayDefaultLoan(repayAmount);
 
         assertEqTol(clerk.debt(), preClerkDebt-repayAmount, "testJuniorLostAll#1");
-
     }
 
     function testRedeemCurrencyFromMKR() public {

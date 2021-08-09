@@ -29,7 +29,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
     address  seniorInvestor_;
     Investor juniorInvestor;
     address  juniorInvestor_;
-    NFTFeedLike nftFeed_;
+    NAVFeedLike navFeed_;
 
     Hevm hevm;
 
@@ -213,7 +213,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         tokenId = collateralNFT.issue(borrower_);
         loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup);
         // borrow max amount possible
-        uint ceiling_ = nftFeed_.ceiling(loan);
+        uint ceiling_ = navFeed_.ceiling(loan);
         borrow(loan, tokenId, ceiling_);
         return (loan, tokenId, ceiling_);
     }
@@ -277,11 +277,11 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         // create borrower collateral collateralNFT
         uint tokenId = collateralNFT.issue(borrower_);
         uint loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup);
-        uint ceiling = nftFeed_.ceiling(loan);
+        uint ceiling = navFeed_.ceiling(loan);
 
-        assertEq(nftFeed_.ceiling(loan), ceiling);
+        assertEq(navFeed_.ceiling(loan), ceiling);
         borrow(loan, tokenId, ceiling);
-        assertEq(nftFeed_.ceiling(loan), 0);
+        assertEq(navFeed_.ceiling(loan), 0);
 
         hevm.warp(block.timestamp + 10 days);
 

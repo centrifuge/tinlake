@@ -5,7 +5,6 @@ pragma experimental ABIEncoderV2;
 import { TitleFab } from "../../borrower/fabs/title.sol";
 import { ShelfFab } from "../../borrower/fabs/shelf.sol";
 import { PileFab } from "../../borrower/fabs/pile.sol";
-import { NFTFeedFab } from "../../borrower/fabs/nftfeed.sol";
 import { NAVFeedFab } from "../../borrower/fabs/navfeed.sol";
 import { CollectorFab } from "../../borrower/fabs/collector.sol";
 import { BorrowerDeployer } from "../../borrower/deployer.sol";
@@ -48,7 +47,7 @@ import "../simple/token.sol";
 import "tinlake-erc20/erc20.sol";
 
 
-import { TokenLike, NFTFeedLike } from "./interfaces.sol";
+import { TokenLike, NAVFeedLike } from "./interfaces.sol";
 
 import {SimpleMkr} from "./../simple/mkr.sol";
 
