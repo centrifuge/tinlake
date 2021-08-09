@@ -208,7 +208,9 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function _writeOff(uint loan, uint writeOffGroupIndex_, bytes32 nftID_, uint maturityDate_) internal {
         // Ensure we have an up to date NAV
+        if(block.timestamp > lastNAVUpdate) {
         calcUpdateNAV();
+        }
 
         if (pile.loanRates(loan) < WRITEOFF_RATE_GROUP_START) {
             uint fv = futureValue[nftID_];
