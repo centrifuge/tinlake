@@ -39,7 +39,9 @@ interface ReserveLike {
 }
 
 interface SubscriberLike {
-    function borrowEvent(uint loan) external;
+    function borrowEvent(uint loan, uint amount) external;
+    function repayEvent(uint loan, uint amount) external;
+    function lockEvent(uint loan) external;
     function unlockEvent(uint loan) external;
 }
 
@@ -157,9 +159,11 @@ contract Shelf is Auth, TitleOwned, Math {
     // a max ceiling needs to be defined by an oracle
     function borrow(uint loan, uint currencyAmount) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
+
         if(address(subscriber) != address(0)) {
-            subscriber.borrowEvent(loan);
+            subscriber.borrowEvent(loan, currencyAmount);
         }
+
         pile.accrue(loan);
 
         balances[loan] = safeAdd(balances[loan], currencyAmount);
@@ -194,6 +198,11 @@ contract Shelf is Auth, TitleOwned, Math {
     function repay(uint loan, uint currencyAmount) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
         require(balances[loan] == 0, "withdraw-required-before-repay");
+
+        if(address(subscriber) != address(0)) {
+            subscriber.repayEvent(loan, currencyAmount);
+        }
+
         _repay(loan, msg.sender, currencyAmount);
         emit Repay(loan, currencyAmount);
     }
@@ -237,6 +246,10 @@ contract Shelf is Auth, TitleOwned, Math {
     // locks an nft in the shelf
     // requires an issued loan
     function lock(uint loan) external owner(loan) {
+        if(address(subscriber) != address(0)) {
+            subscriber.lockEvent(loan);
+        }
+
         NFTLike(shelf[loan].registry).transferFrom(msg.sender, address(this), shelf[loan].tokenId);
         emit Lock(loan);
     }
@@ -254,6 +267,7 @@ contract Shelf is Auth, TitleOwned, Math {
         }
 
         NFTLike(shelf[loan].registry).transferFrom(address(this), msg.sender, shelf[loan].tokenId);
+
         emit Unlock(loan);
     }
 
