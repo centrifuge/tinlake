@@ -209,7 +209,9 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function _writeOff(uint loan, uint writeOffGroupIndex_, bytes32 nftID_, uint maturityDate_) internal {
         // Ensure we have an up to date NAV
+        if(block.timestamp > lastNAVUpdate) {
         calcUpdateNAV();
+        }
 
         if (pile.loanRates(loan) < WRITEOFF_RATE_GROUP_START) {
             uint fv = futureValue[nftID_];
@@ -217,7 +219,6 @@ abstract contract NAVFeed is Auth, Discounting {
             if (uniqueDayTimestamp(lastNAVUpdate) <= maturityDate_) {
                 // Written off before or on the maturity date
                 buckets[maturityDate_] = safeSub(buckets[maturityDate_], fv);
-
                 uint pv = rmul(fv, rpow(discountRate.value, safeSub(uniqueDayTimestamp(maturityDate_), uniqueDayTimestamp(block.timestamp)), ONE));
                 latestDiscount = secureSub(latestDiscount, pv);
                 latestNAV = secureSub(latestNAV, pv);
@@ -296,6 +297,41 @@ abstract contract NAVFeed is Auth, Discounting {
         return latestNAV;
     }
 
+    function _recalcNav(uint discountRate_) internal {
+        uint overdueButNotWrittenOff_ = 0;
+        uint latestDiscount_ = 0;
+        uint nav = 0;
+        for (uint loanID = 1; loanID < shelf.loanCount(); loanID++) {
+            bytes32 nftID_ = nftID(loanID);
+            uint maturityDate_ = maturityDate[nftID_];
+            uint nnow = uniqueDayTimestamp(block.timestamp);
+               
+            // overdue loan
+            if (maturityDate_ < nnow) {
+                uint loanRate = pile.loanRates(loanID);
+                if (loanRate >= WRITEOFF_RATE_GROUP_START) { // indicator for loans that were written off
+                    // for loans that were written off: multiply outstanding loanDebt with the writeOff rate and add to NAV
+                    uint loanValue = rmul(pile.debt(loanID), writeOffGroups[loanRate].percentage.value);
+                    overdueButNotWrittenOff_ = safeAdd(overdueButNotWrittenOff_, loanValue);
+                } 
+                else { 
+                    // for loans that are overdue, but not written off, just add the future value to the NAV
+                    uint loanValue = futureValue[nftID_];
+                    latestDiscount_= safeAdd(latestDiscount_, loanValue);
+                }
+            }
+            else {
+                uint loanValue = rdiv(futureValue[nftID_], rpow(discountRate_, safeSub(maturityDate_, nnow), ONE));
+                latestDiscount_= safeAdd(latestDiscount_, loanValue);
+            }
+        }
+
+        latestDiscount = latestDiscount_;
+        overdueButNotWrittenOff = overdueButNotWrittenOff_;
+        latestNAV = safeAdd(latestDiscount, overdueButNotWrittenOff);
+        lastNAVUpdate = block.timestamp;
+    }
+
     // --- Administration ---
     function depend(bytes32 contractName, address addr) external auth {
         if (contractName == "pile") {pile = PileLike(addr);}
@@ -325,47 +361,11 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function file(bytes32 name, uint value) public auth {
         if (name == "discountRate") {
-            _updateDiscountRate(value);
-            
+            _recalcNav(value);
+            discountRate = Fixed27(value);
             emit File(name, value);
 
         } else { revert("unknown config parameter");}
-    }
-
-    function updateDiscountRate(uint discountRate_) internal {
-
-      for (uint i = 1; i < shelf.loanCount(); i++) {
-         bytes32 nftID = nftID(registry, tokenId);
-          
-             function nftID(address registry, uint tokenId) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(registry, tokenId));
-    }
-
-    // returns the nftID for the underlying collateral nft
-    function nftID(uint loan) public view returns (bytes32) {
-        (address registry, uint tokenId) = shelf.shelf(loan);
-        return nftID(registry, tokenId);
-    }
-
-          futureValue[nftID_]
-
-          // check if loan overdue
-
-          // check if loan writtenoff
-
-          // retrieve asset based on loan id
-
-          // retrieve future value
-
-          // apply new discount rate and add to nav
-
-      }
-        // iterate over loans
-        // iterate over buckets
-        
-        // return rdiv(amount, rpow(discountRate.value, safeSub(maturityDate_, normalizedBlockTimestamp), ONE));
-
-        discountRate = discountRate_;
     }
 
     function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) public auth {
@@ -454,19 +454,21 @@ abstract contract NAVFeed is Auth, Discounting {
         return nftID(registry, tokenId);
     }
 
-    function currentValue(uint loan) public view returns (uint) {
+    function presentValue(uint loan) public view returns (uint) {
         uint rateGroup = pile.loanRates(loan);
-        uint value = nftValues[nftID(loan)];
+        bytes32 nftID_ = nftID(loan);
+        uint value = futureValue[nftID_];
 
         if (rateGroup < WRITEOFF_RATE_GROUP_START) {
             return value;
         }
 
-        return safeSub(value, rmul(value, writeOffGroups[rateGroup - WRITEOFF_RATE_GROUP_START].percentage.value));
+        return rmul(value, writeOffGroups[rateGroup - WRITEOFF_RATE_GROUP_START].percentage.value);
     }
 
     function currentValidWriteOffGroup(uint loan) public view returns (uint) {
-        uint maturityDate_ = maturityDate[nftID(loan)];
+        bytes32 nftID_ = nftID(loan);
+        uint maturityDate_ = maturityDate[nftID_];
 
         uint lastValidWriteOff;
         uint highestOverdueDays = 0;
