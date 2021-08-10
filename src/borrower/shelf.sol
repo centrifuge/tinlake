@@ -4,18 +4,11 @@ pragma solidity >=0.6.12;
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
 
-import { TitleOwned } from "tinlake-title/title.sol";
+import { TitleOwned, TitleLike } from "tinlake-title/title.sol";
 
 interface NFTLike {
     function ownerOf(uint256 tokenId) external view returns (address owner);
     function transferFrom(address from, address to, uint256 tokenId) external;
-}
-
-interface TitleLike {
-    function issue(address) external returns (uint);
-    function close(uint) external;
-    function ownerOf(uint) external view returns (address);
-    function count() external view returns (uint);
 }
 
 interface TokenLike {
@@ -87,10 +80,6 @@ contract Shelf is Auth, TitleOwned, Math {
     event Unlock(uint indexed loan);
     event Claim(uint indexed loan, address usr);
     event Depend(bytes32 indexed contractName, address addr);
-
-    // E.g. future value is 100. Written off 40%, currentValue = 40; repaid 70%, debt is 30.
-    // 50% writeoff, 50% repayment => pile.debt(loan) is 50%, ceiling.currentValue(loan) is ~50%
-    modifier canBeClosed (uint loan) { require(pile.debt(loan) == 0 || ceiling.currentValue(loan) == 0, "loan-has-outstanding-debt"); _; }
 
     constructor(address currency_, address title_, address pile_, address ceiling_) TitleOwned(title_) {
         currency = TokenLike(currency_);
