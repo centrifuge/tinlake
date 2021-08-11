@@ -300,7 +300,7 @@ abstract contract NAVFeed is Auth, Discounting {
                 latestDiscount_= safeAdd(latestDiscount_, loanValue);
             }
         }
-        latestNAV = safeAdd(latestDiscount_, safeDiv(latestNAV, latestDiscount));
+        latestNAV = safeAdd(latestDiscount_, safeSub(latestNAV, latestDiscount));
         latestDiscount = latestDiscount_;
     }
 
