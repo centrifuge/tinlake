@@ -288,39 +288,20 @@ abstract contract NAVFeed is Auth, Discounting {
     }
 
     function _recalcNav(uint discountRate_) internal {
-        uint overdueLoans_ = 0;
         uint latestDiscount_ = 0;
-        uint writeOffs_ = 0;
-        uint nav = 0;
+
         for (uint loanID = 1; loanID < shelf.loanCount(); loanID++) {
             bytes32 nftID_ = nftID(loanID);
             uint maturityDate_ = maturityDate[nftID_];
-            uint nnow = uniqueDayTimestamp(block.timestamp);
-               
+    
             // overdue loan
-            if (maturityDate_ < nnow) {
-                uint loanRate = pile.loanRates(loanID);
-                if (loanRate >= WRITEOFF_RATE_GROUP_START) { // indicator for loans that were written off
-                    // for loans that were written off: multiply outstanding loanDebt with the writeOff rate and add to NAV
-                    uint loanValue = rmul(pile.debt(loanID), writeOffGroups[loanRate].percentage.value);
-                    uint writeOffs_ = safeAdd(writeOffs_, loanValue);
-                } 
-                else { 
-                    // for loans that are overdue, but not written off, just add the future value to the NAV
-                    uint loanValue = futureValue[nftID_];
-                    overdueLoans_ = safeAdd(overdueLoans_, loanValue);
-                }
-            }
-            else {
-                uint loanValue = rdiv(futureValue[nftID_], rpow(discountRate_, safeSub(maturityDate_, nnow), ONE));
+            if (maturityDate_ > lastNAVUpdate) {
+                uint loanValue = rdiv(futureValue[nftID_], rpow(discountRate_, safeSub(maturityDate_, lastNAVUpdate), ONE));
                 latestDiscount_= safeAdd(latestDiscount_, loanValue);
             }
         }
-
+        latestNAV = safeAdd(latestDiscount_, safeDiv(latestNAV, latestDiscount));
         latestDiscount = latestDiscount_;
-        overdueLoans = overdueLoans_;
-        latestNAV = safeAdd(latestDiscount, safeAdd(overdueLoans, writeOffs_));
-        lastNAVUpdate = block.timestamp;
     }
 
     // --- Administration ---
