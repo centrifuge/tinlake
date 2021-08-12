@@ -63,4 +63,8 @@ contract ShelfMock is Mock {
         SimpleToken currency = SimpleToken(currency_);
         currency.approve(recepeint, amount);
     }
+
+    function loanCount() public view returns(uint) {
+        return values_return["loanCount"];
+    }
 }
