@@ -275,4 +275,8 @@ contract Shelf is Auth, TitleOwned, Math {
             balance = safeSub(balance, loanBalance);
         }
     }
+
+    function loanCount() public returns (uint) {
+        return title.count();
+    }
 }

@@ -8,6 +8,7 @@ import { Discounting } from "./discounting.sol";
 interface ShelfLike {
     function shelf(uint loan) external view returns (address registry, uint tokenId);
     function nftlookup(bytes32 nftID) external returns (uint loan);
+    function loanCount() external returns (uint);
 }
 
 interface PileLike {
@@ -219,7 +220,6 @@ abstract contract NAVFeed is Auth, Discounting {
             if (uniqueDayTimestamp(lastNAVUpdate) <= maturityDate_) {
                 // Written off before or on the maturity date
                 buckets[maturityDate_] = safeSub(buckets[maturityDate_], fv);
-
                 uint pv = rmul(fv, rpow(discountRate.value, safeSub(uniqueDayTimestamp(maturityDate_), uniqueDayTimestamp(block.timestamp)), ONE));
                 latestDiscount = secureSub(latestDiscount, pv);
                 latestNAV = secureSub(latestNAV, pv);
@@ -287,6 +287,23 @@ abstract contract NAVFeed is Auth, Discounting {
         return latestNAV;
     }
 
+    function _recalcNav(uint discountRate_) internal {
+        uint latestDiscount_ = 0;
+
+        for (uint loanID = 1; loanID < shelf.loanCount(); loanID++) {
+            bytes32 nftID_ = nftID(loanID);
+            uint maturityDate_ = maturityDate[nftID_];
+    
+            // overdue loan
+            if (maturityDate_ > lastNAVUpdate) {
+                uint loanValue = rdiv(futureValue[nftID_], rpow(discountRate_, safeSub(maturityDate_, lastNAVUpdate), ONE));
+                latestDiscount_= safeAdd(latestDiscount_, loanValue);
+            }
+        }
+        latestNAV = safeAdd(latestDiscount_, safeSub(latestNAV, latestDiscount));
+        latestDiscount = latestDiscount_;
+    }
+
     // --- Administration ---
     function depend(bytes32 contractName, address addr) external auth {
         if (contractName == "pile") {pile = PileLike(addr);}
@@ -316,8 +333,8 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function file(bytes32 name, uint value) public auth {
         if (name == "discountRate") {
+            _recalcNav(value);
             discountRate = Fixed27(value);
-            // TODO: recalculateDiscount()
             emit File(name, value);
 
         } else { revert("unknown config parameter");}
