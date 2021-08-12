@@ -160,7 +160,7 @@ contract NFTFeedTest is DSTest, Math {
         pile.setReturn("loanRates", 1);
 
         feed.update(nftID, value, risk);
-        feed.borrowEvent(loan);
+        feed.borrowEvent(loan, 50 ether);
 
         assertEq(pile.values_uint("setRate_loan"), loan);
         // risk group is used as rate

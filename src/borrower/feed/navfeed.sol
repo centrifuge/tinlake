@@ -174,7 +174,7 @@ abstract contract NAVFeed is Auth, Discounting {
         return calcDiscount(discountRate.value, safeSub(preFutureValue, fv), uniqueDayTimestamp(block.timestamp), maturityDate_);
     }
 
-    function borrowEvent(uint loan) public virtual auth {
+    function borrowEvent(uint loan, uint) public virtual auth {
         uint risk_ = risk[nftID(loan)];
 
         // when issued every loan has per default interest rate of risk group 0.
@@ -185,6 +185,8 @@ abstract contract NAVFeed is Auth, Discounting {
         }
     }
 
+    function repayEvent(uint loan, uint amount) public virtual auth {}
+    function lockEvent(uint loan) public virtual auth {}
     function unlockEvent(uint loan) public virtual auth {}
 
     function writeOff(uint loan) public {
