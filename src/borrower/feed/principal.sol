@@ -77,7 +77,7 @@ contract PrincipalNAVFeed is NAVFeed {
     // the ceiling defines the maximum amount which can be borrowed
     function ceiling(uint loan) public override view returns (uint) {
         bytes32 nftID_ = nftID(loan);
-        uint initialCeiling = rmul(nftValues[nftID_], ceilingRatio[risk[nftID_]]);
+        uint initialCeiling = rmul(nftValues(nftID_), ceilingRatio[risk(nftID_)]);
 
         if (borrowed[loan] > initialCeiling) {
             return 0;

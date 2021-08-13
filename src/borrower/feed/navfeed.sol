@@ -34,13 +34,23 @@ abstract contract NAVFeed is Auth, Discounting {
     PileLike    public pile;
     ShelfLike   public shelf;
 
+    struct Details {
+        uint128 nftValues;
+        uint128 futureValue;
+        uint128 maturityDate;
+        uint128 risk;
+    }
+
+    mapping (bytes32 => Details) public loanDetails;
+    function maturityDate(bytes32 nft_) public view returns(uint){ return uint(loanDetails[nft_].maturityDate);}
+    function risk(bytes32 nft_) public view returns(uint){ return uint(loanDetails[nft_].risk);}
+    function nftValues(bytes32 nft_) public view returns(uint){ return uint(loanDetails[nft_].nftValues);}
+    function futureValue(bytes32 nft_) public view returns(uint){ return uint(loanDetails[nft_].futureValue);}
+
     mapping (uint => uint)      public ceilingRatio;    // risk => ceilingRatio
-    mapping (bytes32 => uint)   public maturityDate;    // nftID => maturityDate
     mapping (uint => uint)      public thresholdRatio;  // risk => thresholdRatio
     mapping (uint => Fixed27)   public recoveryRatePD;  // risk => recoveryRatePD
-    mapping (bytes32 => uint)   public risk;            // nftID => risk
-    mapping (bytes32 => uint)   public nftValues;       // nftID => nftValues
-    mapping (bytes32 => uint)   public futureValue;     // nftID => futureValue
+    
     mapping (uint => uint)      public borrowed;        // loan => borrowed
     mapping (uint => bool)      public writeOffOverride;// loan => writeOffOverride
     mapping (uint => uint)      public buckets;         // timestamp => bucket
@@ -107,8 +117,8 @@ abstract contract NAVFeed is Auth, Discounting {
     function file(bytes32 name, bytes32 nftID_, uint maturityDate_) public auth {
         // maturity date only can be changed when there is no debt on the collateral -> futureValue == 0
         if (name == "maturityDate") {
-            require((futureValue[nftID_] == 0), "can-not-change-maturityDate-outstanding-debt");
-            maturityDate[nftID_] = uniqueDayTimestamp(maturityDate_);
+            require((futureValue(nftID_) == 0), "can-not-change-maturityDate-outstanding-debt");
+            loanDetails[nftID_].maturityDate = uint128(uniqueDayTimestamp(maturityDate_));
             emit File(name, nftID_, maturityDate_);
 
         } else { revert("unknown config parameter");}
@@ -165,7 +175,7 @@ abstract contract NAVFeed is Auth, Discounting {
         require(ceiling(loan) >= amount, "borrow-amount-too-high");
 
         bytes32 nftID_ = nftID(loan);
-        uint maturityDate_ = maturityDate[nftID_];
+        uint maturityDate_ = maturityDate(nftID_);
         require(maturityDate_ > block.timestamp, "maturity-date-is-not-in-the-future");
 
         // calculate amount including fixed fee if applicatable
@@ -173,8 +183,8 @@ abstract contract NAVFeed is Auth, Discounting {
         uint amountIncludingFixed =  safeAdd(amount, rmul(amount, fixedRate));
 
         // calculate future value FV
-        uint fv = calcFutureValue(loanInterestRate, amountIncludingFixed, maturityDate_, recoveryRatePD[risk[nftID_]].value);
-        futureValue[nftID_] = safeAdd(futureValue[nftID_], fv);
+        uint fv = calcFutureValue(loanInterestRate, amountIncludingFixed, maturityDate_, recoveryRatePD[risk(nftID_)].value);
+        loanDetails[nftID_].futureValue = uint128(safeAdd(futureValue(nftID_), fv));
 
         // add future value to the bucket of assets with the same maturity date
         buckets[maturityDate_] = safeAdd(buckets[maturityDate_], fv);
@@ -191,7 +201,7 @@ abstract contract NAVFeed is Auth, Discounting {
 
         // In case of successful repayment the latestNAV is decreased by the repaid amount
         bytes32 nftID_ = nftID(loan);
-        uint maturityDate_ = maturityDate[nftID_];
+        uint maturityDate_ = maturityDate(nftID_);
         uint nnow = uniqueDayTimestamp(block.timestamp);
 
         // case 1: repayment of a written-off loan
@@ -202,18 +212,18 @@ abstract contract NAVFeed is Auth, Discounting {
         }
 
         uint debt = safeSub(pile.debt(loan), amount);
-        uint preFV = futureValue[nftID_];
+        uint preFV = futureValue(nftID_);
 
         // in case of partial repayment, compute the fv of the remaining debt and add to the according fv bucket
         uint fv = 0;
         uint fvDecrease = preFV;
         if (debt != 0) {
             (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
-            fv = calcFutureValue(loanInterestRate, debt, maturityDate_, recoveryRatePD[risk[nftID_]].value);
+            fv = calcFutureValue(loanInterestRate, debt, maturityDate_, recoveryRatePD[risk(nftID_)].value);
             fvDecrease = safeSub(preFV, fv);
         }
 
-        futureValue[nftID_] = fv;
+        loanDetails[nftID_].futureValue = uint128(fv);
 
         // case 2: repayment of a loan before or on maturity date
         if (maturityDate_ >= nnow) {
@@ -232,7 +242,7 @@ abstract contract NAVFeed is Auth, Discounting {
 
 
     function borrowEvent(uint loan, uint) public virtual auth {
-        uint risk_ = risk[nftID(loan)];
+        uint risk_ = risk(nftID(loan));
 
         // when issued every loan has per default interest rate of risk group 0.
         // correct interest rate has to be set on first borrow event
@@ -252,7 +262,7 @@ abstract contract NAVFeed is Auth, Discounting {
 
         if (pile.loanRates(loan) != WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_) {
             bytes32 nftID_ = nftID(loan);
-            uint maturityDate_ = maturityDate[nftID_];
+            uint maturityDate_ = maturityDate(nftID_);
             _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
             emit WriteOff(loan, writeOffGroupIndex_, false);
         }
@@ -262,7 +272,7 @@ abstract contract NAVFeed is Auth, Discounting {
         writeOffOverride[loan] = true;
 
         bytes32 nftID_ = nftID(loan);
-        uint maturityDate_ = maturityDate[nftID_];
+        uint maturityDate_ = maturityDate(nftID_);
         _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
         emit WriteOff(loan, writeOffGroupIndex_, true);
     }
@@ -274,7 +284,7 @@ abstract contract NAVFeed is Auth, Discounting {
         }
         // first time written-off
         if (isLoanWrittenOff(loan) == false) {
-            uint fv = futureValue[nftID_];
+            uint fv = futureValue(nftID_);
 
             if (uniqueDayTimestamp(lastNAVUpdate) > maturityDate_) {
                 // write off after the maturity date
@@ -372,13 +382,13 @@ abstract contract NAVFeed is Auth, Discounting {
 
         for (uint loanID = 1; loanID < shelf.loanCount(); loanID++) {
             bytes32 nftID_ = nftID(loanID);
-            uint maturityDate_ = maturityDate[nftID_];
+            uint maturityDate_ = maturityDate(nftID_);
 
             if (maturityDate_ < lastNAVUpdate) {
                 continue;
             }
 
-            latestDiscount_= safeAdd(latestDiscount_, calcDiscount(discountRate.value, futureValue[nftID_], lastNAVUpdate, maturityDate_));
+            latestDiscount_= safeAdd(latestDiscount_, calcDiscount(discountRate.value, futureValue(nftID_), lastNAVUpdate, maturityDate_));
 
         }
 
@@ -387,21 +397,21 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function update(bytes32 nftID_,  uint value) public auth {
         // switch of collateral risk group results in new: ceiling, threshold for existing loan
-        nftValues[nftID_] = value;
+        loanDetails[nftID_].nftValues = uint128(value);
         emit Update(nftID_, value);
     }
 
     function update(bytes32 nftID_, uint value, uint risk_) public auth {
-        nftValues[nftID_] = value;
+        loanDetails[nftID_].nftValues  = uint128(value);
 
         // no change in risk group
-        if (risk_ == risk[nftID_]) {
+        if (risk_ == risk(nftID_)) {
             return;
         }
 
         // nfts can only be added to risk groups that are part of the score card
         require(thresholdRatio[risk_] != 0, "risk group not defined in contract");
-        risk[nftID_] = risk_;
+        loanDetails[nftID_].risk = uint128(risk_);
 
         // switch of collateral risk group results in new: ceiling, threshold and interest rate for existing loan
         // change to new rate interestRate immediately in pile if loan debt exists
@@ -411,20 +421,20 @@ abstract contract NAVFeed is Auth, Discounting {
         }
 
         // no currencyAmount borrowed yet
-        if (futureValue[nftID_] == 0) {
+        if (futureValue(nftID_) == 0) {
             return;
         }
 
-        uint maturityDate_ = maturityDate[nftID_];
+        uint maturityDate_ = maturityDate(nftID_);
 
         // Changing the risk group of an nft, might lead to a new interest rate for the dependant loan.
         // New interest rate leads to a future value.
         // recalculation required
-        buckets[maturityDate_] = safeSub(buckets[maturityDate_], futureValue[nftID_]);
+        buckets[maturityDate_] = safeSub(buckets[maturityDate_], futureValue(nftID_));
 
         (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
-        futureValue[nftID_] = calcFutureValue(loanInterestRate, pile.debt(loan), maturityDate[nftID_], recoveryRatePD[risk[nftID_]].value);
-        buckets[maturityDate_] = safeAdd(buckets[maturityDate_], futureValue[nftID_]);
+        loanDetails[nftID_].futureValue = uint128(calcFutureValue(loanInterestRate, pile.debt(loan), maturityDate(nftID_), recoveryRatePD[risk(nftID_)].value));
+        buckets[maturityDate_] = safeAdd(buckets[maturityDate_], futureValue(nftID_));
 
         emit Update(nftID_, value, risk_);
     }
@@ -434,7 +444,7 @@ abstract contract NAVFeed is Auth, Discounting {
     // if the loan debt is above the loan threshold the NFT can be seized
     function threshold(uint loan) public view returns (uint) {
         bytes32 nftID_ = nftID(loan);
-        return rmul(nftValues[nftID_], thresholdRatio[risk[nftID_]]);
+        return rmul(nftValues(nftID_), thresholdRatio[risk(nftID_)]);
     }
 
     // returns a unique id based on the nft registry and tokenId
@@ -452,7 +462,7 @@ abstract contract NAVFeed is Auth, Discounting {
     function presentValue(uint loan) public view returns (uint) {
         uint rateGroup = pile.loanRates(loan);
         bytes32 nftID_ = nftID(loan);
-        uint value = futureValue[nftID_];
+        uint value = futureValue(nftID_);
 
         if (rateGroup < WRITEOFF_RATE_GROUP_START) {
             return value;
@@ -463,7 +473,7 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function currentValidWriteOffGroup(uint loan) public view returns (uint) {
         bytes32 nftID_ = nftID(loan);
-        uint maturityDate_ = maturityDate[nftID_];
+        uint maturityDate_ = maturityDate(nftID_);
 
         uint lastValidWriteOff;
         uint highestOverdueDays = 0;

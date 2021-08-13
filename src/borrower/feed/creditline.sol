@@ -12,7 +12,7 @@ contract CreditlineNAVFeed is NAVFeed {
 
     function ceiling(uint loan) public override view returns (uint) {
         bytes32 nftID_ = nftID(loan);
-        uint initialCeiling = rmul(nftValues[nftID_], ceilingRatio[risk[nftID_]]);
+        uint initialCeiling = rmul(nftValues(nftID_), ceilingRatio[risk(nftID_)]);
         return safeSub(initialCeiling, pile.debt(loan));
     }
 
