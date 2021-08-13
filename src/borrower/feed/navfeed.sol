@@ -28,6 +28,7 @@ interface PileLike {
 // The applied discountRate is dependant on the maturity data of the underlying collateral. The discount decreases with the maturity date approaching.
 // To optimize the NAV calculation the discounting of future values happens bucketwise. FVs from assets with the same maturity date are added to one bucket.
 // This safes iterations & gas, as the same discountRates can be applied per bucket.
+
 abstract contract NAVFeed is Auth, Discounting {
 
     PileLike    public pile;
@@ -185,57 +186,55 @@ abstract contract NAVFeed is Auth, Discounting {
         return calcDiscount(discountRate.value, fv, uniqueDayTimestamp(block.timestamp), maturityDate_);
     }
 
-    function repay(uint loan, uint amount) external virtual auth returns (uint navDecrease) {
+    function repay(uint loan, uint amount) external virtual auth {
         calcUpdateNAV();
 
         // In case of successful repayment the latestNAV is decreased by the repaid amount
-        navDecrease = _repay(loan, amount);
-
-        // assuming latestNAV is always >= latestDiscount
-        if(navDecrease < latestDiscount) {
-            latestDiscount = safeSub(latestDiscount, navDecrease);
-            latestNAV = safeSub(latestNAV, navDecrease);
-
-            return navDecrease;
-        }
-        latestNAV = 0;
-        latestDiscount = 0;
-        return navDecrease;
-    }
-
-    function _repay(uint loan, uint amount) internal returns (uint navDecrease) {
         bytes32 nftID_ = nftID(loan);
         uint maturityDate_ = maturityDate[nftID_];
         uint nnow = uniqueDayTimestamp(block.timestamp);
 
-        // no fv decrease calculation needed if maturity date is in the past
-        // repayment on maturity date is fine
-        // unique day timestamp is always 00:00 am
-        if (maturityDate_ < nnow) {
-            return 0;
+        // case 1: repayment of a written-off loan
+        if (isLoanWrittenOff(loan)) {
+            // return nav decrease
+            // todo decrease latestNAV
+            return;
         }
 
-        // remove future value for loan from bucket
-        buckets[maturityDate_] = safeSub(buckets[maturityDate_], futureValue[nftID_]);
+//        // todo remove leftover
+//        if (maturityDate_ < nnow) {
+//            return;
+//        }
 
-        uint debt = pile.debt(loan);
-        debt = safeSub(debt, amount);
-
-        uint fv = 0;
-        uint preFutureValue = futureValue[nftID_];
+        uint debt = safeSub(pile.debt(loan), amount);
+        uint preFV = futureValue[nftID_];
 
         // in case of partial repayment, compute the fv of the remaining debt and add to the according fv bucket
+        uint fv = 0;
+        uint fvDecrease = preFV;
         if (debt != 0) {
             (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
             fv = calcFutureValue(loanInterestRate, debt, maturityDate_, recoveryRatePD[risk[nftID_]].value);
-            buckets[maturityDate_] = safeAdd(buckets[maturityDate_], fv);
+            fvDecrease = safeSub(preFV, fv);
         }
 
         futureValue[nftID_] = fv;
 
-        // return decrease NAV amount
-        return calcDiscount(discountRate.value, safeSub(preFutureValue, fv), uniqueDayTimestamp(block.timestamp), maturityDate_);
+        // case 2: repayment of an overdue loan
+        if (maturityDate_ < nnow) {
+            overdueLoans = safeSub(overdueLoans, fvDecrease);
+            latestNAV = secureSub(latestNAV, fvDecrease);
+
+        } else {
+            // case 3: repayment of a loan before or on maturity date
+            // remove future value decrease from bucket
+            buckets[maturityDate_] = safeSub(buckets[maturityDate_], fvDecrease);
+            uint discountDecrease = calcDiscount(discountRate.value, fvDecrease, uniqueDayTimestamp(block.timestamp), maturityDate_);
+            latestDiscount = secureSub(latestDiscount, discountDecrease);
+            latestNAV = secureSub(latestNAV, discountDecrease);
+        }
     }
+
 
     function borrowEvent(uint loan, uint) public virtual auth {
         uint risk_ = risk[nftID(loan)];
@@ -278,24 +277,29 @@ abstract contract NAVFeed is Auth, Discounting {
         if(block.timestamp > lastNAVUpdate) {
             calcUpdateNAV();
         }
-
-        if (pile.loanRates(loan) < WRITEOFF_RATE_GROUP_START) {
+        // first time written-off
+        if (isLoanWrittenOff(loan) == false) {
             uint fv = futureValue[nftID_];
 
-            if (uniqueDayTimestamp(lastNAVUpdate) <= maturityDate_) {
-                // Written off before or on the maturity date
+            if (uniqueDayTimestamp(lastNAVUpdate) > maturityDate_) {
+                // write off after the maturity date
+                overdueLoans = secureSub(overdueLoans, fv);
+                latestNAV = secureSub(latestNAV, fv);
+
+            } else {
+                // write off before or on the maturity date
                 buckets[maturityDate_] = safeSub(buckets[maturityDate_], fv);
                 uint pv = rmul(fv, rpow(discountRate.value, safeSub(uniqueDayTimestamp(maturityDate_), uniqueDayTimestamp(block.timestamp)), ONE));
                 latestDiscount = secureSub(latestDiscount, pv);
                 latestNAV = secureSub(latestNAV, pv);
-            } else {
-                // Written off after the maturity date
-                overdueLoans = secureSub(overdueLoans, fv);
-                latestNAV = secureSub(latestNAV, fv);
             }
         }
 
         pile.changeRate(loan, WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_);
+    }
+
+    function isLoanWrittenOff(uint loan) public view returns(bool) {
+        return pile.loanRates(loan) >= WRITEOFF_RATE_GROUP_START;
     }
 
     // --- NAV calculation ---
