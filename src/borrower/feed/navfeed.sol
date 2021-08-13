@@ -196,15 +196,10 @@ abstract contract NAVFeed is Auth, Discounting {
 
         // case 1: repayment of a written-off loan
         if (isLoanWrittenOff(loan)) {
-            // return nav decrease
-            // todo decrease latestNAV
+            // update nav with write-off decrease
+            latestNAV = secureSub(latestNAV, rmul(amount, writeOffGroups[pile.loanRates(loan)-WRITEOFF_RATE_GROUP_START].percentage.value));
             return;
         }
-
-//        // todo remove leftover
-//        if (maturityDate_ < nnow) {
-//            return;
-//        }
 
         uint debt = safeSub(pile.debt(loan), amount);
         uint preFV = futureValue[nftID_];
@@ -220,18 +215,18 @@ abstract contract NAVFeed is Auth, Discounting {
 
         futureValue[nftID_] = fv;
 
-        // case 2: repayment of an overdue loan
-        if (maturityDate_ < nnow) {
-            overdueLoans = safeSub(overdueLoans, fvDecrease);
-            latestNAV = secureSub(latestNAV, fvDecrease);
-
-        } else {
-            // case 3: repayment of a loan before or on maturity date
+        // case 2: repayment of a loan before or on maturity date
+        if (maturityDate_ >= nnow) {
             // remove future value decrease from bucket
             buckets[maturityDate_] = safeSub(buckets[maturityDate_], fvDecrease);
             uint discountDecrease = calcDiscount(discountRate.value, fvDecrease, uniqueDayTimestamp(block.timestamp), maturityDate_);
             latestDiscount = secureSub(latestDiscount, discountDecrease);
             latestNAV = secureSub(latestNAV, discountDecrease);
+
+        } else {
+            // case 3: repayment of an overdue loan
+            overdueLoans = safeSub(overdueLoans, fvDecrease);
+            latestNAV = secureSub(latestNAV, fvDecrease);
         }
     }
 
