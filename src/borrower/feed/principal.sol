@@ -79,11 +79,11 @@ contract PrincipalNAVFeed is NAVFeed {
         bytes32 nftID_ = nftID(loan);
         uint initialCeiling = rmul(nftValues(nftID_), ceilingRatio(risk(nftID_)));
 
-        if (borrowed[loan] > initialCeiling) {
+        if (borrowed(loan) > initialCeiling) {
             return 0;
         }
 
-        return safeSub(initialCeiling, borrowed[loan]);
+        return safeSub(initialCeiling, borrowed(loan));
     }
 
 }
