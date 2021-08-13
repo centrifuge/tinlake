@@ -30,8 +30,7 @@ interface PileLike {
 interface NAVFeedLike {
     function borrow(uint loan, uint currencyAmount) external;
     function repay(uint loan, uint currencyAmount) external;
-    function presentValue(uint loan) external view returns (uint);
-    function futureValue(uint loan) external view returns (uint);
+    function zeroPV(uint loan) external view returns (bool);
 }
 
 interface ReserveLike {
@@ -83,6 +82,13 @@ contract Shelf is Auth, TitleOwned, Math {
     event Claim(uint indexed loan, address usr);
     event Depend(bytes32 indexed contractName, address addr);
 
+    modifier canBeClosed(uint loan) {
+        // loans can be unlocked and closed when the debt is 0, or the loan is written off completely
+        uint debt_ = pile.debt(loan);
+        require(debt_ == 0 || ceiling.zeroPV(loan) == true, "loan-has-outstanding-debt");
+        _;
+    }
+
     constructor(address currency_, address title_, address pile_, address ceiling_) TitleOwned(title_) {
         currency = TokenLike(currency_);
         pile = PileLike(pile_);
@@ -130,10 +136,15 @@ contract Shelf is Auth, TitleOwned, Math {
         return loan;
     }
 
-    function close(uint loan) external {
+    function close(uint loan) external canBeClosed(loan) {
         require(!nftLocked(loan), "nft-not-locked");
         (address registry, uint tokenId) = token(loan);
         require(title.ownerOf(loan) == msg.sender || NFTLike(registry).ownerOf(tokenId) == msg.sender, "not-loan-or-nft-owner");
+        
+        // loans can be unlocked and closed when the debt is 0, or the loan is written off completely
+        uint debt_ = pile.debt(loan);
+        require(debt_ == 0 || ceiling.zeroPV(loan) == true, "loan-has-outstanding-debt");
+
         title.close(loan);
         bytes32 nft = keccak256(abi.encodePacked(shelf[loan].registry, shelf[loan].tokenId));
         nftlookup[nft] = 0;
@@ -256,11 +267,17 @@ contract Shelf is Auth, TitleOwned, Math {
 
     // unlocks an nft in the shelf
     // requires zero debt or 100% write off
-    function unlock(uint loan) external owner(loan) {
-        // loans can be unlocked and closed when the debt is 0, the loan is written off 100%, or the loan has been partially written off and the remainder has been repaid
+    function unlock(uint loan) external owner(loan) canBeClosed(loan) {
+        pile.accrue(loan);
+        
+        // loans can be unlocked and closed when the debt is 0, or the loan is written off completely
         uint debt_ = pile.debt(loan);
-        uint pv = ceiling.presentValue(loan);
-        require(debt_ == 0 || pv == 0 || safeSub(ceiling.futureValue(loan), debt_) >= pv, "loan-has-outstanding-debt");
+        bool zeroPV = ceiling.zeroPV(loan);
+        require(debt_ == 0 || zeroPV == true, "loan-has-outstanding-debt");
+
+        if (zeroPV) {
+            pile.decDebt(loan, debt_);
+        }
 
         if (address(subscriber) != address(0)) {
             subscriber.unlockEvent(loan);

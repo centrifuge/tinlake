@@ -54,7 +54,7 @@ abstract contract NAVFeed is Auth, Discounting {
     WriteOffGroup[] public writeOffGroups;
 
     // Write-off groups will be added as rate groups to the pile with their index in the writeOffGroups array + this number
-    uint public constant WRITEOFF_RATE_GROUP_START = 1000;
+    uint public constant WRITEOFF_RATE_GROUP_START = 1_000_000;
 
     // discount rate applied on every asset's fv depending on its maturityDate. The discount decreases with the maturityDate approaching.
     Fixed27 public discountRate;
@@ -428,16 +428,12 @@ abstract contract NAVFeed is Auth, Discounting {
         return nftID(registry, tokenId);
     }
 
-    function presentValue(uint loan) public view returns (uint) {
-        uint rateGroup = pile.loanRates(loan);
-        bytes32 nftID_ = nftID(loan);
-        uint value = futureValue[nftID_];
-
-        if (rateGroup < WRITEOFF_RATE_GROUP_START) {
-            return value;
+    function zeroPV(uint loan) public view returns (bool) {
+        if (pile.debt(loan) == 0) {
+            return true;
         }
 
-        return rmul(value, writeOffGroups[rateGroup - WRITEOFF_RATE_GROUP_START].percentage.value);
+        return writeOffGroups[pile.loanRates(loan) - WRITEOFF_RATE_GROUP_START].percentage.value == 0;
     }
 
     function currentValidWriteOffGroup(uint loan) public view returns (uint) {
