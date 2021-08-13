@@ -375,7 +375,7 @@ abstract contract NAVFeed is Auth, Discounting {
             bytes32 nftID_ = nftID(loanID);
             uint maturityDate_ = maturityDate[nftID_];
 
-            if (maturityDate_ <= lastNAVUpdate) {
+            if (maturityDate_ < lastNAVUpdate) {
                 continue;
             }
 
