@@ -134,10 +134,6 @@ contract Shelf is Auth, TitleOwned, Math {
         (address registry, uint tokenId) = token(loan);
         require(title.ownerOf(loan) == msg.sender || NFTLike(registry).ownerOf(tokenId) == msg.sender, "not-loan-or-nft-owner");
         
-        // loans can be unlocked and closed when the debt is 0, or the loan is written off completely
-        uint debt_ = pile.debt(loan);
-        require(debt_ == 0 || ceiling.zeroPV(loan) == true, "loan-has-outstanding-debt");
-
         title.close(loan);
         bytes32 nft = keccak256(abi.encodePacked(shelf[loan].registry, shelf[loan].tokenId));
         nftlookup[nft] = 0;
