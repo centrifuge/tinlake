@@ -7,7 +7,7 @@ import "./navfeed.sol";
 contract PrincipalNAVFeed is NAVFeed {
 
     function init() public override {
-        require(ceilingRatio[0] == 0, "already-initialized");
+        require(ceilingRatio(0) == 0, "already-initialized");
 
         // gas optimized initialization of writeOffs and risk groups
         // write off are hardcoded in the contract instead of init function params
@@ -77,7 +77,7 @@ contract PrincipalNAVFeed is NAVFeed {
     // the ceiling defines the maximum amount which can be borrowed
     function ceiling(uint loan) public override view returns (uint) {
         bytes32 nftID_ = nftID(loan);
-        uint initialCeiling = rmul(nftValues(nftID_), ceilingRatio[risk(nftID_)]);
+        uint initialCeiling = rmul(nftValues(nftID_), ceilingRatio(risk(nftID_)));
 
         if (borrowed[loan] > initialCeiling) {
             return 0;

@@ -41,16 +41,28 @@ abstract contract NAVFeed is Auth, Discounting {
         uint128 risk;
     }
 
+    // nft => loanDetails
     mapping (bytes32 => Details) public loanDetails;
-    function maturityDate(bytes32 nft_) public view returns(uint){ return uint(loanDetails[nft_].maturityDate);}
-    function risk(bytes32 nft_) public view returns(uint){ return uint(loanDetails[nft_].risk);}
-    function nftValues(bytes32 nft_) public view returns(uint){ return uint(loanDetails[nft_].nftValues);}
-    function futureValue(bytes32 nft_) public view returns(uint){ return uint(loanDetails[nft_].futureValue);}
 
-    mapping (uint => uint)      public ceilingRatio;    // risk => ceilingRatio
-    mapping (uint => uint)      public thresholdRatio;  // risk => thresholdRatio
-    mapping (uint => Fixed27)   public recoveryRatePD;  // risk => recoveryRatePD
-    
+    function maturityDate(bytes32 nft_)     public view returns(uint){ return uint(loanDetails[nft_].maturityDate);}
+    function risk(bytes32 nft_)             public view returns(uint){ return uint(loanDetails[nft_].risk);}
+    function nftValues(bytes32 nft_)        public view returns(uint){ return uint(loanDetails[nft_].nftValues);}
+    function futureValue(bytes32 nft_)      public view returns(uint){ return uint(loanDetails[nft_].futureValue);}
+
+
+    struct RiskGroup {
+        uint128 ceilingRatio;
+        uint128 thresholdRatio;
+        uint128 recoveryRatePD;
+    }
+    // risk => riskGroup
+    mapping (uint => RiskGroup) public riskGroup;
+
+    function ceilingRatio(uint riskID)     public view returns(uint){ return uint(riskGroup[riskID].ceilingRatio);}
+    function thresholdRatio(uint riskID)   public view returns(uint){ return uint(riskGroup[riskID].thresholdRatio);}
+    function recoveryRatePD(uint riskID)   public view returns(uint){ return uint(riskGroup[riskID].recoveryRatePD);}
+
+
     mapping (uint => uint)      public borrowed;        // loan => borrowed
     mapping (uint => bool)      public writeOffOverride;// loan => writeOffOverride
     mapping (uint => uint)      public buckets;         // timestamp => bucket
@@ -108,7 +120,7 @@ abstract contract NAVFeed is Auth, Discounting {
     function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_) public auth  {
         if(name == "riskGroup") {
             file("riskGroupNFT", risk_, thresholdRatio_, ceilingRatio_, rate_);
-            recoveryRatePD[risk_] = Fixed27(recoveryRatePD_);
+            riskGroup[risk_].recoveryRatePD= uint128(recoveryRatePD_);
             emit File(name, risk_, thresholdRatio_, ceilingRatio_, rate_, recoveryRatePD_);
 
         } else { revert ("unknown name");}
@@ -140,9 +152,9 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) public auth {
         if(name == "riskGroupNFT") {
-            require(ceilingRatio[risk_] == 0, "risk-group-in-usage");
-            thresholdRatio[risk_] = thresholdRatio_;
-            ceilingRatio[risk_] = ceilingRatio_;
+            require(ceilingRatio(risk_) == 0, "risk-group-in-usage");
+            riskGroup[risk_].thresholdRatio = uint128(thresholdRatio_);
+            riskGroup[risk_].ceilingRatio = uint128(ceilingRatio_);
 
             // set interestRate for risk group
             pile.file("rate", risk_, rate_);
@@ -183,7 +195,7 @@ abstract contract NAVFeed is Auth, Discounting {
         uint amountIncludingFixed =  safeAdd(amount, rmul(amount, fixedRate));
 
         // calculate future value FV
-        uint fv = calcFutureValue(loanInterestRate, amountIncludingFixed, maturityDate_, recoveryRatePD[risk(nftID_)].value);
+        uint fv = calcFutureValue(loanInterestRate, amountIncludingFixed, maturityDate_, recoveryRatePD(risk(nftID_)));
         loanDetails[nftID_].futureValue = uint128(safeAdd(futureValue(nftID_), fv));
 
         // add future value to the bucket of assets with the same maturity date
@@ -219,7 +231,7 @@ abstract contract NAVFeed is Auth, Discounting {
         uint fvDecrease = preFV;
         if (debt != 0) {
             (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
-            fv = calcFutureValue(loanInterestRate, debt, maturityDate_, recoveryRatePD[risk(nftID_)].value);
+            fv = calcFutureValue(loanInterestRate, debt, maturityDate_, recoveryRatePD(risk(nftID_)));
             fvDecrease = safeSub(preFV, fv);
         }
 
@@ -410,7 +422,7 @@ abstract contract NAVFeed is Auth, Discounting {
         }
 
         // nfts can only be added to risk groups that are part of the score card
-        require(thresholdRatio[risk_] != 0, "risk group not defined in contract");
+        require(thresholdRatio(risk_) != 0, "risk group not defined in contract");
         loanDetails[nftID_].risk = uint128(risk_);
 
         // switch of collateral risk group results in new: ceiling, threshold and interest rate for existing loan
@@ -433,7 +445,7 @@ abstract contract NAVFeed is Auth, Discounting {
         buckets[maturityDate_] = safeSub(buckets[maturityDate_], futureValue(nftID_));
 
         (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
-        loanDetails[nftID_].futureValue = uint128(calcFutureValue(loanInterestRate, pile.debt(loan), maturityDate(nftID_), recoveryRatePD[risk(nftID_)].value));
+        loanDetails[nftID_].futureValue = uint128(calcFutureValue(loanInterestRate, pile.debt(loan), maturityDate(nftID_), recoveryRatePD(risk(nftID_))));
         buckets[maturityDate_] = safeAdd(buckets[maturityDate_], futureValue(nftID_));
 
         emit Update(nftID_, value, risk_);
@@ -444,7 +456,7 @@ abstract contract NAVFeed is Auth, Discounting {
     // if the loan debt is above the loan threshold the NFT can be seized
     function threshold(uint loan) public view returns (uint) {
         bytes32 nftID_ = nftID(loan);
-        return rmul(nftValues(nftID_), thresholdRatio[risk(nftID_)]);
+        return rmul(nftValues(nftID_), thresholdRatio(risk(nftID_)));
     }
 
     // returns a unique id based on the nft registry and tokenId
