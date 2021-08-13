@@ -318,7 +318,7 @@ abstract contract NAVFeed is Auth, Discounting {
         // calculate the discount of the overdue loans which is needed
         // for the total discount calculation
         for(uint i = nLastUpdate; i < nnow; i = i + 1 days) {
-            errPV = safeAdd(diff, rmul(buckets[i], rpow(discountRate.value, safeSub(nnow, i), ONE)));
+            errPV = safeAdd(errPV, rmul(buckets[i], rpow(discountRate.value, safeSub(nnow, i), ONE)));
             overdue = safeAdd(overdue, buckets[i]);
         }
 
