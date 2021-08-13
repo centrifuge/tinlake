@@ -82,13 +82,6 @@ contract Shelf is Auth, TitleOwned, Math {
     event Claim(uint indexed loan, address usr);
     event Depend(bytes32 indexed contractName, address addr);
 
-    modifier canBeClosed(uint loan) {
-        // loans can be unlocked and closed when the debt is 0, or the loan is written off completely
-        uint debt_ = pile.debt(loan);
-        require(debt_ == 0 || ceiling.zeroPV(loan) == true, "loan-has-outstanding-debt");
-        _;
-    }
-
     constructor(address currency_, address title_, address pile_, address ceiling_) TitleOwned(title_) {
         currency = TokenLike(currency_);
         pile = PileLike(pile_);
@@ -136,7 +129,7 @@ contract Shelf is Auth, TitleOwned, Math {
         return loan;
     }
 
-    function close(uint loan) external canBeClosed(loan) {
+    function close(uint loan) external {
         require(!nftLocked(loan), "nft-not-locked");
         (address registry, uint tokenId) = token(loan);
         require(title.ownerOf(loan) == msg.sender || NFTLike(registry).ownerOf(tokenId) == msg.sender, "not-loan-or-nft-owner");
@@ -267,7 +260,7 @@ contract Shelf is Auth, TitleOwned, Math {
 
     // unlocks an nft in the shelf
     // requires zero debt or 100% write off
-    function unlock(uint loan) external owner(loan) canBeClosed(loan) {
+    function unlock(uint loan) external owner(loan) {
         pile.accrue(loan);
         
         // loans can be unlocked and closed when the debt is 0, or the loan is written off completely
