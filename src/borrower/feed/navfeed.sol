@@ -8,7 +8,7 @@ import { Discounting } from "./discounting.sol";
 interface ShelfLike {
     function shelf(uint loan) external view returns (address registry, uint tokenId);
     function nftlookup(bytes32 nftID) external returns (uint loan);
-    function loanCount() external returns (uint);
+    function loanCount() external view returns (uint);
 }
 
 interface PileLike {
@@ -85,6 +85,69 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function init() public virtual;
     function ceiling(uint loan) public virtual view returns (uint);
+
+    // --- Administration ---
+    function depend(bytes32 contractName, address addr) external auth {
+        if (contractName == "pile") {pile = PileLike(addr);}
+        else if (contractName == "shelf") { shelf = ShelfLike(addr); }
+        else revert();
+        emit Depend(contractName, addr);
+    }
+
+    function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_) public auth  {
+        if(name == "riskGroup") {
+            file("riskGroupNFT", risk_, thresholdRatio_, ceilingRatio_, rate_);
+            recoveryRatePD[risk_] = Fixed27(recoveryRatePD_);
+            emit File(name, risk_, thresholdRatio_, ceilingRatio_, rate_, recoveryRatePD_);
+
+        } else { revert ("unknown name");}
+    }
+
+    function file(bytes32 name, bytes32 nftID_, uint maturityDate_) public auth {
+        // maturity date only can be changed when there is no debt on the collateral -> futureValue == 0
+        if (name == "maturityDate") {
+            require((futureValue[nftID_] == 0), "can-not-change-maturityDate-outstanding-debt");
+            maturityDate[nftID_] = uniqueDayTimestamp(maturityDate_);
+            emit File(name, nftID_, maturityDate_);
+
+        } else { revert("unknown config parameter");}
+    }
+
+    function file(bytes32 name, uint value) public auth {
+        if (name == "discountRate") {
+            uint oldDiscountRate = discountRate.value;
+            discountRate = Fixed27(value);
+            // the nav needs to be re-calculated based on the new discount rate
+            // no need to recalculate it if initialized the first time
+            if(oldDiscountRate != 0) {
+                reCalcNAV();
+            }
+            emit File(name, value);
+
+        } else { revert("unknown config parameter");}
+    }
+
+    function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) public auth {
+        if(name == "riskGroupNFT") {
+            require(ceilingRatio[risk_] == 0, "risk-group-in-usage");
+            thresholdRatio[risk_] = thresholdRatio_;
+            ceilingRatio[risk_] = ceilingRatio_;
+
+            // set interestRate for risk group
+            pile.file("rate", risk_, rate_);
+            emit File(name, risk_, thresholdRatio_, ceilingRatio_, rate_);
+
+        } else { revert ("unknown name");}
+    }
+
+    function file(bytes32 name, uint rate_, uint writeOffPercentage_, uint overdueDays_) public auth {
+        if(name == "writeOffGroup") {
+            uint index = writeOffGroups.length;
+            writeOffGroups.push(WriteOffGroup(Fixed27(writeOffPercentage_), overdueDays_));
+            pile.file("rate", WRITEOFF_RATE_GROUP_START + index, rate_);
+
+        } else { revert ("unknown name");}
+    }
 
     // --- Actions ---
     function borrow(uint loan, uint amount) external virtual auth returns(uint navIncrease) {
@@ -213,7 +276,7 @@ abstract contract NAVFeed is Auth, Discounting {
     function _writeOff(uint loan, uint writeOffGroupIndex_, bytes32 nftID_, uint maturityDate_) internal {
         // Ensure we have an up to date NAV
         if(block.timestamp > lastNAVUpdate) {
-        calcUpdateNAV();
+            calcUpdateNAV();
         }
 
         if (pile.loanRates(loan) < WRITEOFF_RATE_GROUP_START) {
@@ -237,33 +300,38 @@ abstract contract NAVFeed is Auth, Discounting {
 
     // --- NAV calculation ---
     function currentNAV() public view returns(uint) {
-        (uint totalDiscount, uint overdue, uint writeOffs) = currentPresentValues();
+        (uint totalDiscount, uint overdue, uint writeOffs) = currentPVs();
         return safeAdd(totalDiscount, safeAdd(overdue, writeOffs));
     }
 
-    function currentPresentValues() public view returns(uint totalDiscount, uint overdue, uint writeOffs) {
+    function currentPVs() public view returns(uint totalDiscount, uint overdue, uint writeOffs) {
         if (latestDiscount == 0) {
-            // todo check if this is correct in all possible cases
+            // all loans are overdue or writtenOff
             return (0, overdueLoans, currentWriteOffs());
         }
 
-        uint diff = 0;
+        uint errPV = 0;
         uint nnow = uniqueDayTimestamp(block.timestamp);
         uint nLastUpdate = uniqueDayTimestamp(lastNAVUpdate);
 
+        // find all new overdue loans since the last update
+        // calculate the discount of the overdue loans which is needed
+        // for the total discount calculation
         for(uint i = nLastUpdate; i < nnow; i = i + 1 days) {
-            diff = safeAdd(diff, rmul(buckets[i], rpow(discountRate.value, safeSub(nnow, i), ONE)));
+            errPV = safeAdd(errPV, rmul(buckets[i], rpow(discountRate.value, safeSub(nnow, i), ONE)));
             overdue = safeAdd(overdue, buckets[i]);
         }
 
-        return (
-                // current totalDiscount of loans before maturity date
-                secureSub(rmul(latestDiscount, rpow(discountRate.value, safeSub(nnow, nLastUpdate), ONE)), diff),
-                // current overdue loans not written off
-                safeAdd(overdueLoans, overdue),
-                // current write-offs loans
-                currentWriteOffs()
-                );
+        return
+        (
+            // calculate current totalDiscount based on the previous totalDiscount (optimized calculation)
+            // the overdue loans are incorrectly in this new result with their current PV and need to be removed
+            secureSub(rmul(latestDiscount, rpow(discountRate.value, safeSub(nnow, nLastUpdate), ONE)), errPV),
+            // current overdue loans not written off
+            safeAdd(overdueLoans, overdue),
+            // current write-offs loans
+            currentWriteOffs()
+        );
     }
 
     function currentWriteOffs() public view returns(uint) {
@@ -276,7 +344,7 @@ abstract contract NAVFeed is Auth, Discounting {
     }
 
     function calcUpdateNAV() public returns(uint) {
-        (uint totalDiscount, uint overdue, uint writeOffs) = currentPresentValues();
+        (uint totalDiscount, uint overdue, uint writeOffs) = currentPVs();
         // todo fix round error to remove edge case
         if(totalDiscount == 1) {
             totalDiscount = 0;
@@ -289,79 +357,33 @@ abstract contract NAVFeed is Auth, Discounting {
         return latestNAV;
     }
 
-    function _recalcNav(uint discountRate_) internal {
+
+    // re-calculates the nav in a non-optimized way
+    // the method is not update the NAV to latest block.timestamp
+    function reCalcNAV() public {
+        uint latestDiscount_ = reCalcTotalDiscount();
+
+        latestNAV = safeAdd(latestDiscount_, safeSub(latestNAV, latestDiscount));
+        latestDiscount = latestDiscount_;
+    }
+
+    // re-calculates the totalDiscount in a non-optimized way based on lastNAVUpdate
+    function reCalcTotalDiscount() public view returns(uint) {
         uint latestDiscount_ = 0;
 
         for (uint loanID = 1; loanID < shelf.loanCount(); loanID++) {
             bytes32 nftID_ = nftID(loanID);
             uint maturityDate_ = maturityDate[nftID_];
-    
-            // overdue loan
-            if (maturityDate_ > lastNAVUpdate) {
-                uint loanValue = rdiv(futureValue[nftID_], rpow(discountRate_, safeSub(maturityDate_, lastNAVUpdate), ONE));
-                latestDiscount_= safeAdd(latestDiscount_, loanValue);
+
+            if (maturityDate_ < lastNAVUpdate) {
+                continue;
             }
+
+            latestDiscount_= safeAdd(latestDiscount_, calcDiscount(discountRate.value, futureValue[nftID_], lastNAVUpdate, maturityDate_));
+
         }
-        latestNAV = safeAdd(latestDiscount_, safeSub(latestNAV, latestDiscount));
-        latestDiscount = latestDiscount_;
-    }
 
-    // --- Administration ---
-    function depend(bytes32 contractName, address addr) external auth {
-        if (contractName == "pile") {pile = PileLike(addr);}
-        else if (contractName == "shelf") { shelf = ShelfLike(addr); }
-        else revert();
-        emit Depend(contractName, addr);
-    }
-
-    function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_) public auth  {
-        if(name == "riskGroup") {
-            file("riskGroupNFT", risk_, thresholdRatio_, ceilingRatio_, rate_);
-            recoveryRatePD[risk_] = Fixed27(recoveryRatePD_);
-            emit File(name, risk_, thresholdRatio_, ceilingRatio_, rate_, recoveryRatePD_);
-
-        } else { revert ("unknown name");}
-    }
-
-    function file(bytes32 name, bytes32 nftID_, uint maturityDate_) public auth {
-        // maturity date only can be changed when there is no debt on the collateral -> futureValue == 0
-        if (name == "maturityDate") {
-            require((futureValue[nftID_] == 0), "can-not-change-maturityDate-outstanding-debt");
-            maturityDate[nftID_] = uniqueDayTimestamp(maturityDate_);
-            emit File(name, nftID_, maturityDate_);
-
-        } else { revert("unknown config parameter");}
-    }
-
-    function file(bytes32 name, uint value) public auth {
-        if (name == "discountRate") {
-            _recalcNav(value);
-            discountRate = Fixed27(value);
-            emit File(name, value);
-
-        } else { revert("unknown config parameter");}
-    }
-
-    function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) public auth {
-        if(name == "riskGroupNFT") {
-            require(ceilingRatio[risk_] == 0, "risk-group-in-usage");
-            thresholdRatio[risk_] = thresholdRatio_;
-            ceilingRatio[risk_] = ceilingRatio_;
-
-            // set interestRate for risk group
-            pile.file("rate", risk_, rate_);
-            emit File(name, risk_, thresholdRatio_, ceilingRatio_, rate_);
-
-        } else { revert ("unknown name");}
-    }
-
-    function file(bytes32 name, uint rate_, uint writeOffPercentage_, uint overdueDays_) public auth {
-        if(name == "writeOffGroup") {
-            uint index = writeOffGroups.length;
-            writeOffGroups.push(WriteOffGroup(Fixed27(writeOffPercentage_), overdueDays_));
-            pile.file("rate", WRITEOFF_RATE_GROUP_START + index, rate_);
-
-        } else { revert ("unknown name");}
+        return latestDiscount_;
     }
 
     function update(bytes32 nftID_,  uint value) public auth {
@@ -446,9 +468,10 @@ abstract contract NAVFeed is Auth, Discounting {
 
         uint lastValidWriteOff;
         uint highestOverdueDays = 0;
+        // it is not guaranteed that writeOff groups are sorted by overdue days
         for (uint i = 0; i < writeOffGroups.length; i++) {
             uint overdueDays = writeOffGroups[i].overdueDays;
-            if (overdueDays >= highestOverdueDays && block.timestamp >= maturityDate_ + overdueDays * 60 * 60 * 24) {
+            if (overdueDays >= highestOverdueDays && block.timestamp >= maturityDate_ + overdueDays * 1 days) {
                 lastValidWriteOff = i;
                 highestOverdueDays = overdueDays;
             }

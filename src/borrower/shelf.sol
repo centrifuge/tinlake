@@ -87,7 +87,7 @@ contract Shelf is Auth, TitleOwned, Math {
         currency = TokenLike(currency_);
         pile = PileLike(pile_);
         ceiling = NAVFeedLike(ceiling_);
-        
+
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
     }
@@ -187,7 +187,7 @@ contract Shelf is Auth, TitleOwned, Math {
     function withdraw(uint loan, uint currencyAmount, address usr) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
         require(currencyAmount <= balances[loan], "withdraw-amount-too-high");
-        
+
         balances[loan] = safeSub(balances[loan], currencyAmount);
         balance = safeSub(balance, currencyAmount);
         require(currency.transfer(usr, currencyAmount), "currency-transfer-failed");
@@ -290,7 +290,7 @@ contract Shelf is Auth, TitleOwned, Math {
         }
     }
 
-    function loanCount() public returns (uint) {
+    function loanCount() public view returns (uint) {
         return title.count();
     }
 }
