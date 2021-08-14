@@ -359,13 +359,13 @@ abstract contract NAVFeed is Auth, Discounting {
 
         return
         (
-            // calculate current totalDiscount based on the previous totalDiscount (optimized calculation)
-            // the overdue loans are incorrectly in this new result with their current PV and need to be removed
-            secureSub(rmul(latestDiscount, rpow(discountRate.value, safeSub(nnow, nLastUpdate), ONE)), errPV),
-            // current overdue loans not written off
-            safeAdd(overdueLoans, overdue),
-            // current write-offs loans
-            currentWriteOffs()
+        // calculate current totalDiscount based on the previous totalDiscount (optimized calculation)
+        // the overdue loans are incorrectly in this new result with their current PV and need to be removed
+        secureSub(rmul(latestDiscount, rpow(discountRate.value, safeSub(nnow, nLastUpdate), ONE)), errPV),
+        // current overdue loans not written off
+        safeAdd(overdueLoans, overdue),
+        // current write-offs loans
+        currentWriteOffs()
         );
     }
 
