@@ -227,7 +227,7 @@ contract NAVTest is DSTest, Math {
 
         hevm.warp(block.timestamp + 3 days);
         feed.overrideWriteOff(loan, 3); // 100% write off
-        
+
         assertEq(feed.currentNAV(), 0);
     }
 
@@ -254,17 +254,14 @@ contract NAVTest is DSTest, Math {
         pile.setReturn("debt_loan", amount);
         shelf.setReturn("shelf", mockNFTRegistry, tokenId);
         uint maturityDate = feed.maturityDate(feed.nftID(loan));
-        uint navBefore = feed.currentNAV();
 
         // loan id doesn't matter because shelf is mocked
         // repay not full amount
-        uint navDecrease = feed.repay(loan, 30 ether);
-
+        feed.repay(loan, 30 ether);
 
         // list : [1 days] -> [2 days] -> [4 days] -> [5 days]
         //(50*1.05^1)/(1.03^1) + (50*1.05^2) /(1.03^2)  + 100*1.05^4/(1.03^4) + (50-30)*1.05^5/(1.03^5)  ~= 232.94 eth
         assertEq(feed.currentNAV(), 232.947215966580871770 ether, ONE_WEI_TOLERANCE);
-        assertEq(feed.currentNAV(), safeSub(navBefore, navDecrease));
 
         // newFV = (loan.debt - repayment)*interest^timeLeft
         // newFV = (50-30)*1.05^5
@@ -352,10 +349,12 @@ contract NAVTest is DSTest, Math {
         // make repayment for overdue loan
         uint preNAV = feed.currentNAV();
 
-        uint navDecrease = feed.repay(loan, repaymentAmount);
-        // nav should be already decreased
-        assertEq(navDecrease, 0);
-        assertEq(preNAV, feed.currentNAV());
+
+        pile.setReturn("debt_loan", repaymentAmount);
+        feed.repay(loan, repaymentAmount);
+
+        // overdue but not written-off case
+        assertTrue(preNAV > feed.currentNAV());
     }
 
     function testWriteOffOnMaturityDate() public {
