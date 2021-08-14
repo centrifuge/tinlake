@@ -243,6 +243,56 @@ contract NAVTest is DSTest, Math {
         assertTrue(feed.uniqueDayTimestamp(randomUnixTimestamp) == dayTimestamp);
     }
 
+    // gas consumption 
+    // 100    loans = 
+    // 1000   loans = 
+    // 10000  loans = 
+    function recalcDiscount(uint discountRate_, uint expectedTotalDiscount) logs_gas public {
+        // file new discountRate to trigger navRecalc
+        emit log_named_uint("discountRate_", discountRate_);
+        emit log_named_uint("feed.latestDiscount()", feed.latestDiscount());
+        feed.file("discountRate", discountRate_);
+        assertTrue(expectedTotalDiscount == feed.latestDiscount());
+        emit log_named_uint("expectedTotalDiscount", expectedTotalDiscount);
+        emit log_named_uint("feed.latestDiscount()", feed.latestDiscount());
+        assertTrue(discountRate == 1);
+    }
+
+    // checks if optimized and unoptimized totalDiscount computations return the same value
+    // -> the result of reCalcTotalDiscount & currentPVs have to compute the same totalDiscount value for the same discountRate
+    function testRecalcDiscount() public {
+        uint loanCount = 1000;
+        shelf.setReturn("loanCount", loanCount);
+        uint discountRate_ = defaultRate;
+        feed.file("discountRate", discountRate_);
+        emit log_named_uint("discountRate_", discountRate_);
+        emit log_named_uint("feed.latestDiscount()", feed.latestDiscount());
+        // create 1000 loans
+        for (uint i = 1; i<loanCount; i++) {
+            uint nftValue = 100 ether;
+            uint tokenId = i;
+            uint dueDate = block.timestamp + 10 days;
+            uint amount = 50 ether;
+            uint risk = 1;
+            uint loan = i;
+
+            bytes32 nftID = prepareDefaultNFT(tokenId, nftValue, risk);
+            borrow(tokenId, loan, nftValue, amount, dueDate);
+        }
+        
+        recalcDiscount(discountRate_, feed.latestDiscount());
+    }
+
+
+    // expectedTotalDiscount: 60542754254474966883063
+    // feed.latestDiscount(): 52187191383315155363352
+
+    // fuzz loan count
+    // testChangeDiscountRate() public {
+
+    // }
+
+
     function testRepay() public {
         uint amount = 50 ether;
 

@@ -380,9 +380,7 @@ abstract contract NAVFeed is Auth, Discounting {
             }
 
             latestDiscount_= safeAdd(latestDiscount_, calcDiscount(discountRate.value, futureValue[nftID_], lastNAVUpdate, maturityDate_));
-
         }
-
         return latestDiscount_;
     }
 
