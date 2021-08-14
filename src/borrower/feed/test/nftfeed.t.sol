@@ -244,5 +244,4 @@ contract NFTFeedTest is DSTest, Math {
         assertEq(feed.ceiling(loan), maxCeiling);
         feed.borrow(loan, maxCeiling+1);
     }
-
 }
