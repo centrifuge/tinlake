@@ -6,7 +6,6 @@ import { TitleFab } from "../../borrower/fabs/title.sol";
 import { ShelfFab } from "../../borrower/fabs/shelf.sol";
 import { PileFab } from "../../borrower/fabs/pile.sol";
 import { NAVFeedFab } from "../../borrower/fabs/navfeed.sol";
-import { CollectorFab } from "../../borrower/fabs/collector.sol";
 import { BorrowerDeployer } from "../../borrower/deployer.sol";
 
 
@@ -38,7 +37,6 @@ import { ClerkFab } from "../../lender/adapters/mkr/fabs/clerk.sol";
 import { Title } from "tinlake-title/title.sol";
 import { Pile } from "../../borrower/pile.sol";
 import { Shelf } from "../../borrower/shelf.sol";
-import { Collector } from "../../borrower/collect/collector.sol";
 import { NAVFeed } from "../../borrower/feed/navfeed.sol";
 
 import { TestRoot } from "./root.sol";
@@ -115,7 +113,6 @@ abstract contract TestSetup is Config {
     Pile         pile;
     Title        title;
     NAVFeed      nftFeed;
-    Collector    collector;
 
 
     // Lender contracts
@@ -194,24 +191,21 @@ abstract contract TestSetup is Config {
         TitleFab titlefab = new TitleFab();
         ShelfFab shelffab = new ShelfFab();
         PileFab pileFab = new PileFab();
-        CollectorFab collectorFab = new CollectorFab();
         address nftFeedFab_;
         nftFeedFab_ = address(new NAVFeedFab());
 
         borrowerDeployer = new BorrowerDeployer(root_, address(titlefab), address(shelffab), address(pileFab),
-            address(collectorFab), nftFeedFab_, currency_, config.titleName, config.titleSymbol, config.discountRate);
+            nftFeedFab_, currency_, config.titleName, config.titleSymbol, config.discountRate);
 
         borrowerDeployer.deployTitle();
         borrowerDeployer.deployPile();
         borrowerDeployer.deployFeed();
         borrowerDeployer.deployShelf();
-        borrowerDeployer.deployCollector();
         borrowerDeployer.deploy();
 
         shelf = Shelf(borrowerDeployer.shelf());
         pile = Pile(borrowerDeployer.pile());
         title = Title(borrowerDeployer.title());
-        collector = Collector(borrowerDeployer.collector());
         nftFeed = NAVFeed(borrowerDeployer.feed());
     }
 

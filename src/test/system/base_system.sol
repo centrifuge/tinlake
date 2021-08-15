@@ -7,7 +7,6 @@ import "./setup.sol";
 import "./users/admin.sol";
 import "./users/investor.sol";
 import "./users/borrower.sol";
-import "./users/keeper.sol";
 import {BaseTypes} from "../../lender/test/coordinator-base.t.sol";
 import "./assertions.sol";
 
@@ -21,9 +20,6 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
 
     Borrower randomUser;
     address randomUser_;
-
-    Keeper keeper;
-    address keeper_;
 
     Investor seniorInvestor;
     address  seniorInvestor_;
@@ -50,9 +46,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         borrower_ = address(borrower);
         randomUser = new Borrower(address(shelf), address(reserve), currency_, address(pile));
         randomUser_ = address(randomUser);
-        keeper = new Keeper(address(collector), currency_);
-        keeper_ = address(keeper);
-        admin = new AdminUser(address(shelf), address(pile), address(nftFeed), address(title), address(reserve), address(collector), address(juniorMemberlist), address(seniorMemberlist));
+        admin = new AdminUser(address(shelf), address(pile), address(nftFeed), address(title), address(reserve), address(juniorMemberlist), address(seniorMemberlist));
         admin_ = address(admin);
         root.relyBorrowerAdmin(admin_);
         root.relyLenderAdmin(admin_);
@@ -159,19 +153,6 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
 
         seniorInvestor.supplyOrder(amountSenior);
         juniorInvestor.supplyOrder(amountJunior);
-    }
-
-    // helpers keeper
-    function seize(uint loanId) public {
-        collector.seize(loanId);
-    }
-
-    function addKeeperAndCollect(uint loanId, address usr, uint recoveryPrice) public {
-        seize(loanId);
-        admin.addKeeper(loanId, usr, recoveryPrice);
-        topUp(usr);
-        Borrower(usr).doApproveCurrency(address(shelf), type(uint256).max);
-        admin.collect(loanId, usr);
     }
 
     function setupCurrencyOnLender(uint amount) public {

@@ -201,12 +201,14 @@ abstract contract NAVFeed is Auth, Discounting {
         require(ceiling(loan) >= amount, "borrow-amount-too-high");
 
         bytes32 nftID_ = nftID(loan);
-        uint maturityDate_ = maturityDate(nftID_);
-        require(maturityDate_ > block.timestamp, "maturity-date-is-not-in-the-future");
+        uint maturityDate_ = uniqueDayTimestamp(maturityDate(nftID_));
+        uint nnow = uniqueDayTimestamp(block.timestamp);
+        require(maturityDate_ > nnow, "maturity-date-is-not-in-the-future");
+
 
         // calculate amount including fixed fee if applicatable
         (, , uint loanInterestRate, , uint fixedRate) = pile.rates(pile.loanRates(loan));
-        uint amountIncludingFixed =  safeAdd(amount, rmul(amount, fixedRate));
+        uint amountIncludingFixed = safeAdd(amount, rmul(amount, fixedRate));
 
         // calculate future value FV
         uint fv = calcFutureValue(loanInterestRate, amountIncludingFixed, maturityDate_, recoveryRatePD(risk(nftID_)));
@@ -219,7 +221,7 @@ abstract contract NAVFeed is Auth, Discounting {
         loanDetails[loan].borrowed = toUint128(safeAdd(borrowed(loan), amount));
 
         // return increase NAV amount
-        return calcDiscount(discountRate.value, fv, uniqueDayTimestamp(block.timestamp), maturityDate_);
+        return calcDiscount(discountRate.value, fv, nnow, maturityDate_);
     }
 
     function repay(uint loan, uint amount) external virtual auth {
@@ -227,7 +229,7 @@ abstract contract NAVFeed is Auth, Discounting {
 
         // In case of successful repayment the latestNAV is decreased by the repaid amount
         bytes32 nftID_ = nftID(loan);
-        uint maturityDate_ = maturityDate(nftID_);
+        uint maturityDate_ = uniqueDayTimestamp(maturityDate(nftID_));
         uint nnow = uniqueDayTimestamp(block.timestamp);
 
         // case 1: repayment of a written-off loan
@@ -258,7 +260,6 @@ abstract contract NAVFeed is Auth, Discounting {
             uint discountDecrease = calcDiscount(discountRate.value, fvDecrease, uniqueDayTimestamp(block.timestamp), maturityDate_);
             latestDiscount = secureSub(latestDiscount, discountDecrease);
             latestNAV = secureSub(latestNAV, discountDecrease);
-
         } else {
             // case 3: repayment of an overdue loan
             overdueLoans = safeSub(overdueLoans, fvDecrease);
@@ -287,7 +288,7 @@ abstract contract NAVFeed is Auth, Discounting {
 
         if (pile.loanRates(loan) != WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_) {
             bytes32 nftID_ = nftID(loan);
-            uint maturityDate_ = maturityDate(nftID_);
+            uint maturityDate_ = uniqueDayTimestamp(maturityDate(nftID_));
             _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
             emit WriteOff(loan, writeOffGroupIndex_, false);
         }
@@ -297,14 +298,15 @@ abstract contract NAVFeed is Auth, Discounting {
         loanDetails[loan].authWriteOff = true;
 
         bytes32 nftID_ = nftID(loan);
-        uint maturityDate_ = maturityDate(nftID_);
+        uint maturityDate_ = uniqueDayTimestamp(maturityDate(nftID_));
         _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
         emit WriteOff(loan, writeOffGroupIndex_, true);
     }
 
     function _writeOff(uint loan, uint writeOffGroupIndex_, bytes32 nftID_, uint maturityDate_) internal {
+        uint nnow = uniqueDayTimestamp(block.timestamp);
         // Ensure we have an up to date NAV
-        if(block.timestamp > lastNAVUpdate) {
+        if(nnow > lastNAVUpdate) {
             calcUpdateNAV();
         }
         // first time written-off
@@ -319,7 +321,7 @@ abstract contract NAVFeed is Auth, Discounting {
             } else {
                 // write off before or on the maturity date
                 buckets[maturityDate_] = safeSub(buckets[maturityDate_], fv);
-                uint pv = rmul(fv, rpow(discountRate.value, safeSub(uniqueDayTimestamp(maturityDate_), uniqueDayTimestamp(block.timestamp)), ONE));
+                uint pv = rmul(fv, rpow(discountRate.value, safeSub(uniqueDayTimestamp(maturityDate_), nnow), ONE));
                 latestDiscount = secureSub(latestDiscount, pv);
                 latestNAV = secureSub(latestNAV, pv);
             }
@@ -346,25 +348,24 @@ abstract contract NAVFeed is Auth, Discounting {
 
         uint errPV = 0;
         uint nnow = uniqueDayTimestamp(block.timestamp);
-        uint nLastUpdate = uniqueDayTimestamp(lastNAVUpdate);
 
         // find all new overdue loans since the last update
         // calculate the discount of the overdue loans which is needed
         // for the total discount calculation
-        for(uint i = nLastUpdate; i < nnow; i = i + 1 days) {
+        for(uint i = lastNAVUpdate; i < nnow; i = i + 1 days) {
             errPV = safeAdd(errPV, rmul(buckets[i], rpow(discountRate.value, safeSub(nnow, i), ONE)));
             overdue = safeAdd(overdue, buckets[i]);
         }
 
         return
         (
-        // calculate current totalDiscount based on the previous totalDiscount (optimized calculation)
-        // the overdue loans are incorrectly in this new result with their current PV and need to be removed
-        secureSub(rmul(latestDiscount, rpow(discountRate.value, safeSub(nnow, nLastUpdate), ONE)), errPV),
-        // current overdue loans not written off
-        safeAdd(overdueLoans, overdue),
-        // current write-offs loans
-        currentWriteOffs()
+            // calculate current totalDiscount based on the previous totalDiscount (optimized calculation)
+            // the overdue loans are incorrectly in this new result with their current PV and need to be removed
+            secureSub(rmul(latestDiscount, rpow(discountRate.value, safeSub(nnow, lastNAVUpdate), ONE)), errPV),
+            // current overdue loans not written off
+            safeAdd(overdueLoans, overdue),
+            // current write-offs loans
+            currentWriteOffs()
         );
     }
 
@@ -384,13 +385,13 @@ abstract contract NAVFeed is Auth, Discounting {
         latestDiscount = totalDiscount;
 
         latestNAV = safeAdd(safeAdd(totalDiscount, overdue), writeOffs);
-        lastNAVUpdate = block.timestamp;
+        lastNAVUpdate = uniqueDayTimestamp(block.timestamp);
         return latestNAV;
     }
 
 
     // re-calculates the nav in a non-optimized way
-    // the method is not update the NAV to latest block.timestamp
+    // the method is not updating the NAV to latest block.timestamp
     function reCalcNAV() public {
         uint latestDiscount_ = reCalcTotalDiscount();
 
@@ -412,7 +413,6 @@ abstract contract NAVFeed is Auth, Discounting {
 
             latestDiscount_= safeAdd(latestDiscount_, calcDiscount(discountRate.value, futureValue(nftID_), lastNAVUpdate, maturityDate_));
         }
-
         return latestDiscount_;
     }
 
@@ -498,19 +498,19 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function currentValidWriteOffGroup(uint loan) public view returns (uint) {
         bytes32 nftID_ = nftID(loan);
-        uint maturityDate_ = maturityDate(nftID_);
+        uint maturityDate_ = uniqueDayTimestamp(maturityDate(nftID_));
+        uint nnow = uniqueDayTimestamp(block.timestamp);
 
         uint128 lastValidWriteOff;
         uint128 highestOverdueDays = 0;
         // it is not guaranteed that writeOff groups are sorted by overdue days
         for (uint128 i = 0; i < writeOffGroups.length; i++) {
             uint128 overdueDays = writeOffGroups[i].overdueDays;
-            if (overdueDays >= highestOverdueDays && block.timestamp >= maturityDate_ + overdueDays * 1 days) {
+            if (overdueDays >= highestOverdueDays && nnow >= maturityDate_ + overdueDays * 1 days) {
                 lastValidWriteOff = i;
                 highestOverdueDays = overdueDays;
             }
         }
         return lastValidWriteOff;
     }
-
 }

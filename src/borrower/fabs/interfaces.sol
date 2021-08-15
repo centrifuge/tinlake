@@ -10,10 +10,6 @@ interface TitleFabLike {
     function newTitle(string calldata, string calldata) external returns (address);
 }
 
-interface CollectorFabLike {
-    function newCollector(address, address, address) external returns (address);
-}
-
 interface PileFabLike {
     function newPile() external returns (address);
 }
