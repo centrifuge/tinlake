@@ -244,54 +244,61 @@ contract NAVTest is DSTest, Math {
     }
 
     // gas consumption 
-    // 100    loans = 
-    // 1000   loans = 
-    // 10000  loans = 
-    function recalcDiscount(uint discountRate_, uint expectedTotalDiscount) logs_gas public {
+    // 100    loans = 984822
+    // 500    loans = 5426989
+    // 1000   loans = 10835851
+    function recalcDiscount(uint discountRate_, uint expectedTotalDiscount) public {
         // file new discountRate to trigger navRecalc
-        emit log_named_uint("discountRate_", discountRate_);
-        emit log_named_uint("feed.latestDiscount()", feed.latestDiscount());
         feed.file("discountRate", discountRate_);
         assertTrue(expectedTotalDiscount == feed.latestDiscount());
-        emit log_named_uint("expectedTotalDiscount", expectedTotalDiscount);
-        emit log_named_uint("feed.latestDiscount()", feed.latestDiscount());
-        assertTrue(discountRate == 1);
     }
 
     // checks if optimized and unoptimized totalDiscount computations return the same value
     // -> the result of reCalcTotalDiscount & currentPVs have to compute the same totalDiscount value for the same discountRate
     function testRecalcDiscount() public {
-        uint loanCount = 1000;
-        shelf.setReturn("loanCount", loanCount);
-        uint discountRate_ = defaultRate;
+        uint loanCount = 100;
+        uint discountRate_ = defaultRate; // 5% per day
         feed.file("discountRate", discountRate_);
-        emit log_named_uint("discountRate_", discountRate_);
-        emit log_named_uint("feed.latestDiscount()", feed.latestDiscount());
-        // create 1000 loans
+        shelf.setReturn("loanCount", loanCount);
+        
+        // create loans
         for (uint i = 1; i<loanCount; i++) {
             uint nftValue = 100 ether;
             uint tokenId = i;
-            uint dueDate = block.timestamp + 10 days;
+            uint dueDate = block.timestamp + (1 days * i);
             uint amount = 50 ether;
             uint risk = 1;
             uint loan = i;
-
             bytes32 nftID = prepareDefaultNFT(tokenId, nftValue, risk);
             borrow(tokenId, loan, nftValue, amount, dueDate);
         }
-        
+        // file the same discount rate to trigger the updateDiscountRate routine -> totalDiscount value should stay unchanged
         recalcDiscount(discountRate_, feed.latestDiscount());
     }
 
-
-    // expectedTotalDiscount: 60542754254474966883063
-    // feed.latestDiscount(): 52187191383315155363352
-
-    // fuzz loan count
-    // testChangeDiscountRate() public {
-
-    // }
-
+    function testChangeDiscountRate() public {
+        uint loanCount = 100;
+        feed.file("discountRate", defaultRate); // file default rate 5% day
+        shelf.setReturn("loanCount", loanCount);
+        
+        // create loans
+        for (uint i = 1; i<loanCount; i++) {
+            uint nftValue = 100 ether;
+            uint tokenId = i;
+            uint dueDate = block.timestamp + (1 days * i);
+            uint amount = 50 ether;
+            uint risk = 1;
+            uint loan = i;
+            bytes32 nftID = prepareDefaultNFT(tokenId, nftValue, risk);
+            borrow(tokenId, loan, nftValue, amount, dueDate);
+        }
+        assertTrue(feed.latestDiscount() == 4950000000000000000000);
+        assertTrue(feed.latestNAV() == 4950000000000000000000);
+        // change discountRate -> file new fee 3% day
+        uint expectedTotalDiscount = 33229158876667979731935;
+        recalcDiscount(discountRate, expectedTotalDiscount);
+        assertTrue(feed.latestNAV() == expectedTotalDiscount);
+    }
 
     function testRepay() public {
         uint amount = 50 ether;

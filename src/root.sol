@@ -13,7 +13,6 @@ interface DependLike {
 }
 
 interface BorrowerDeployerLike {
-    function collector() external returns (address);
     function feed() external returns (address);
     function shelf() external returns (address);
     function title() external returns (address);
@@ -87,7 +86,6 @@ contract TinlakeRoot is Auth {
         address assessor_ = lenderDeployer.assessor();
 
         // Borrower depends
-        DependLike(borrowerDeployer.collector()).depend("reserve", reserve_);
         DependLike(borrowerDeployer.shelf()).depend("lender", reserve_);
         DependLike(borrowerDeployer.shelf()).depend("reserve", reserve_);
 

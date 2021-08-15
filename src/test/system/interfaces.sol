@@ -76,13 +76,6 @@ interface TrancheLike {
     function tokenSupply() external returns(uint);
 }
 
-interface CollectorLike {
-    function collect(uint loan) external;
-    function collect(uint loan, address buyer) external;
-    function file(bytes32 what, uint loan, address buyer, uint price) external;
-    function relyCollector(address user) external;
-}
-
 interface MemberlistLike {
     function updateMember(address usr, uint validUntil) external;
     function removeMember(address usr, uint validUntil) external;
