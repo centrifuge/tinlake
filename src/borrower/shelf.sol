@@ -138,7 +138,7 @@ contract Shelf is Auth, TitleOwned, Math {
         title.close(loan);
         bytes32 nft = keccak256(abi.encodePacked(shelf[loan].registry, shelf[loan].tokenId));
         nftlookup[nft] = 0;
-        resetLoanBalance(loan);
+        _resetLoanBalance(loan);
         emit Close(loan);
     }
 
@@ -220,7 +220,7 @@ contract Shelf is Auth, TitleOwned, Math {
         ceiling.repay(loan, loanDebt);
         // sets loan debt to 0
         pile.decDebt(loan, loanDebt);
-        resetLoanBalance(loan);
+        _resetLoanBalance(loan);
         reserve.balance();
         // reBalance lender interest bearing amount based on new NAV
         assessor.reBalance();
@@ -283,7 +283,7 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Claim(loan, usr);
     }
 
-    function resetLoanBalance(uint loan) internal {
+    function _resetLoanBalance(uint loan) internal {
         uint loanBalance = balances[loan];
         if (loanBalance  > 0) {
             balances[loan] = 0;

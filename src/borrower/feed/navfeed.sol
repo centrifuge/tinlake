@@ -379,10 +379,7 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function calcUpdateNAV() public returns(uint) {
         (uint totalDiscount, uint overdue, uint writeOffs) = currentPVs();
-        // todo fix round error to remove edge case
-        if(totalDiscount == 1) {
-            totalDiscount = 0;
-        }
+
         overdueLoans = overdue;
         latestDiscount = totalDiscount;
 
@@ -414,7 +411,6 @@ abstract contract NAVFeed is Auth, Discounting {
             }
 
             latestDiscount_= safeAdd(latestDiscount_, calcDiscount(discountRate.value, futureValue(nftID_), lastNAVUpdate, maturityDate_));
-
         }
 
         return latestDiscount_;
