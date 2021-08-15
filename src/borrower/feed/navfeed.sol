@@ -266,7 +266,6 @@ abstract contract NAVFeed is Auth, Discounting {
         }
     }
 
-
     function borrowEvent(uint loan, uint) public virtual auth {
         uint risk_ = risk(nftID(loan));
 
@@ -380,10 +379,7 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function calcUpdateNAV() public returns(uint) {
         (uint totalDiscount, uint overdue, uint writeOffs) = currentPVs();
-        // todo fix round error to remove edge case
-        if(totalDiscount == 1) {
-            totalDiscount = 0;
-        }
+
         overdueLoans = overdue;
         latestDiscount = totalDiscount;
 
@@ -415,7 +411,6 @@ abstract contract NAVFeed is Auth, Discounting {
             }
 
             latestDiscount_= safeAdd(latestDiscount_, calcDiscount(discountRate.value, futureValue(nftID_), lastNAVUpdate, maturityDate_));
-
         }
 
         return latestDiscount_;
@@ -485,16 +480,20 @@ abstract contract NAVFeed is Auth, Discounting {
         return nftID(registry, tokenId);
     }
 
-    function presentValue(uint loan) public view returns (uint) {
-        uint rateGroup = pile.loanRates(loan);
-        bytes32 nftID_ = nftID(loan);
-        uint value = futureValue(nftID_);
-
-        if (rateGroup < WRITEOFF_RATE_GROUP_START) {
-            return value;
+    // returns true if the present value of a loan is zero
+    // true if all debt is repaid or debt is 100% written-off
+    function zeroPV(uint loan) public view returns (bool) {
+        if (pile.debt(loan) == 0) {
+            return true;
         }
 
-        return rmul(value, toUint128(writeOffGroups[rateGroup - WRITEOFF_RATE_GROUP_START].percentage));
+        uint rate = pile.loanRates(loan);
+
+        if(rate < WRITEOFF_RATE_GROUP_START) {
+            return false;
+        }
+
+        return writeOffGroups[safeSub(rate, WRITEOFF_RATE_GROUP_START)].percentage == 0;
     }
 
     function currentValidWriteOffGroup(uint loan) public view returns (uint) {
