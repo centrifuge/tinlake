@@ -166,7 +166,7 @@ abstract contract NAVFeed is Auth, Discounting {
         bytes32 nftID_ = nftID(loan);
         uint maturityDate_ = uniqueDayTimestamp(maturityDate[nftID_]);
         uint nnow = uniqueDayTimestamp(block.timestamp);
-        require(maturityDate_ > uniqueDayTimestamp(block.timestamp), "maturity-date-is-not-in-the-future");
+        require(maturityDate_ > nnow, "maturity-date-is-not-in-the-future");
 
         // calculate amount including fixed fee if applicatable
         (, , uint loanInterestRate, , uint fixedRate) = pile.rates(pile.loanRates(loan));
@@ -368,7 +368,7 @@ abstract contract NAVFeed is Auth, Discounting {
     }
 
     // re-calculates the totalDiscount in a non-optimized way based on lastNAVUpdate
-    function reCalcTotalDiscount() public returns(uint) {
+    function reCalcTotalDiscount() public view returns(uint) {
         uint latestDiscount_ = 0;
 
         for (uint loanID = 1; loanID < shelf.loanCount(); loanID++) {
