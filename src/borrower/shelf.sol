@@ -32,6 +32,7 @@ interface NAVFeedLike {
     function repay(uint loan, uint currencyAmount) external;
     function presentValue(uint loan) external view returns (uint);
     function futureValue(uint loan) external view returns (uint);
+    function zeroPV(uint loan) external view returns (bool);
 }
 
 interface ReserveLike {
@@ -259,8 +260,8 @@ contract Shelf is Auth, TitleOwned, Math {
     function unlock(uint loan) external owner(loan) {
         // loans can be unlocked and closed when the debt is 0, the loan is written off 100%, or the loan has been partially written off and the remainder has been repaid
         uint debt_ = pile.debt(loan);
-        uint pv = ceiling.presentValue(loan);
-        require(debt_ == 0 || pv == 0 || safeSub(ceiling.futureValue(loan), debt_) >= pv, "loan-has-outstanding-debt");
+
+        require(debt_ == 0 || ceiling.zeroPV(loan), "loan-has-outstanding-debt");
 
         if (address(subscriber) != address(0)) {
             subscriber.unlockEvent(loan);
