@@ -275,8 +275,9 @@ abstract contract NAVFeed is Auth, Discounting {
     }
 
     function _writeOff(uint loan, uint writeOffGroupIndex_, bytes32 nftID_, uint maturityDate_) internal {
+        uint nnow = uniqueDayTimestamp(block.timestamp);
         // Ensure we have an up to date NAV
-        if(uniqueDayTimestamp(block.timestamp) > lastNAVUpdate) {
+        if(nnow > lastNAVUpdate) {
             calcUpdateNAV();
         }
 
@@ -286,7 +287,7 @@ abstract contract NAVFeed is Auth, Discounting {
             if (uniqueDayTimestamp(lastNAVUpdate) <= maturityDate_) {
                 // Written off before or on the maturity date
                 buckets[maturityDate_] = safeSub(buckets[maturityDate_], fv);
-                uint pv = rmul(fv, rpow(discountRate.value, safeSub(uniqueDayTimestamp(maturityDate_), uniqueDayTimestamp(block.timestamp)), ONE));
+                uint pv = rmul(fv, rpow(discountRate.value, safeSub(uniqueDayTimestamp(maturityDate_), nnow), ONE));
                 latestDiscount = secureSub(latestDiscount, pv);
                 latestNAV = secureSub(latestNAV, pv);
             } else {
