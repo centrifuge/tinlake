@@ -32,6 +32,7 @@ interface NAVFeedLike {
     function repay(uint loan, uint currencyAmount) external;
     function presentValue(uint loan) external view returns (uint);
     function futureValue(uint loan) external view returns (uint);
+    function zeroPV(uint loan) external view returns (bool);
 }
 
 interface ReserveLike {
@@ -137,7 +138,7 @@ contract Shelf is Auth, TitleOwned, Math {
         title.close(loan);
         bytes32 nft = keccak256(abi.encodePacked(shelf[loan].registry, shelf[loan].tokenId));
         nftlookup[nft] = 0;
-        resetLoanBalance(loan);
+        _resetLoanBalance(loan);
         emit Close(loan);
     }
 
@@ -219,7 +220,7 @@ contract Shelf is Auth, TitleOwned, Math {
         ceiling.repay(loan, loanDebt);
         // sets loan debt to 0
         pile.decDebt(loan, loanDebt);
-        resetLoanBalance(loan);
+        _resetLoanBalance(loan);
         reserve.balance();
         // reBalance lender interest bearing amount based on new NAV
         assessor.reBalance();
@@ -259,8 +260,8 @@ contract Shelf is Auth, TitleOwned, Math {
     function unlock(uint loan) external owner(loan) {
         // loans can be unlocked and closed when the debt is 0, the loan is written off 100%, or the loan has been partially written off and the remainder has been repaid
         uint debt_ = pile.debt(loan);
-        uint pv = ceiling.presentValue(loan);
-        require(debt_ == 0 || pv == 0 || safeSub(ceiling.futureValue(loan), debt_) >= pv, "loan-has-outstanding-debt");
+
+        require(debt_ == 0 || ceiling.zeroPV(loan), "loan-has-outstanding-debt");
 
         if (address(subscriber) != address(0)) {
             subscriber.unlockEvent(loan);
@@ -282,7 +283,7 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Claim(loan, usr);
     }
 
-    function resetLoanBalance(uint loan) internal {
+    function _resetLoanBalance(uint loan) internal {
         uint loanBalance = balances[loan];
         if (loanBalance  > 0) {
             balances[loan] = 0;

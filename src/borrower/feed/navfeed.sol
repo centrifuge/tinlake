@@ -9,7 +9,6 @@ interface ShelfLike {
     function shelf(uint loan) external view returns (address registry, uint tokenId);
     function nftlookup(bytes32 nftID) external returns (uint loan);
     function loanCount() external view returns (uint);
-}
 
 interface PileLike {
     function setRate(uint loan, uint rate) external;
@@ -229,7 +228,7 @@ abstract contract NAVFeed is Auth, Discounting {
 
         // In case of successful repayment the latestNAV is decreased by the repaid amount
         bytes32 nftID_ = nftID(loan);
-        uint maturityDate_ = maturityDate(nftID_);
+        uint maturityDate_ = uniqueDayTimestamp(maturityDate(nftID_));
         uint nnow = uniqueDayTimestamp(block.timestamp);
 
         // case 1: repayment of a written-off loan
@@ -267,7 +266,6 @@ abstract contract NAVFeed is Auth, Discounting {
         }
     }
 
-
     function borrowEvent(uint loan, uint) public virtual auth {
         uint risk_ = risk(nftID(loan));
 
@@ -302,7 +300,7 @@ abstract contract NAVFeed is Auth, Discounting {
         loanDetails[loan].authWriteOff = true;
 
         bytes32 nftID_ = nftID(loan);
-        uint maturityDate_ = maturityDate(nftID_);
+        uint maturityDate_ = uniqueDayTimestamp(maturityDate(nftID_));
         _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
         emit WriteOff(loan, writeOffGroupIndex_, true);
     }
@@ -384,10 +382,7 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function calcUpdateNAV() public returns(uint) {
         (uint totalDiscount, uint overdue, uint writeOffs) = currentPVs();
-        // todo fix round error to remove edge case
-        if(totalDiscount == 1) {
-            totalDiscount = 0;
-        }
+
         overdueLoans = overdue;
         latestDiscount = totalDiscount;
 
@@ -487,16 +482,20 @@ abstract contract NAVFeed is Auth, Discounting {
         return nftID(registry, tokenId);
     }
 
-    function presentValue(uint loan) public view returns (uint) {
-        uint rateGroup = pile.loanRates(loan);
-        bytes32 nftID_ = nftID(loan);
-        uint value = futureValue(nftID_);
-
-        if (rateGroup < WRITEOFF_RATE_GROUP_START) {
-            return value;
+    // returns true if the present value of a loan is zero
+    // true if all debt is repaid or debt is 100% written-off
+    function zeroPV(uint loan) public view returns (bool) {
+        if (pile.debt(loan) == 0) {
+            return true;
         }
 
-        return rmul(value, toUint128(writeOffGroups[rateGroup - WRITEOFF_RATE_GROUP_START].percentage));
+        uint rate = pile.loanRates(loan);
+
+        if(rate < WRITEOFF_RATE_GROUP_START) {
+            return false;
+        }
+
+        return writeOffGroups[safeSub(rate, WRITEOFF_RATE_GROUP_START)].percentage == 0;
     }
 
     function currentValidWriteOffGroup(uint loan) public view returns (uint) {
