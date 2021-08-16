@@ -328,9 +328,8 @@ abstract contract NAVFeed is Auth, Discounting {
                 latestNAV = secureSub(latestNAV, pv);
             }
         }
-
-        uint rate = WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_;
-        pile.changeRate(loan, rate);
+        
+        pile.changeRate(loan, WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_);
     }
 
     function isLoanWrittenOff(uint loan) public view returns(bool) {
