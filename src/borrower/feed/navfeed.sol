@@ -9,6 +9,7 @@ interface ShelfLike {
     function shelf(uint loan) external view returns (address registry, uint tokenId);
     function nftlookup(bytes32 nftID) external returns (uint loan);
     function loanCount() external view returns (uint);
+}
 
 interface PileLike {
     function setRate(uint loan, uint rate) external;
