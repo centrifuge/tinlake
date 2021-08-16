@@ -287,6 +287,7 @@ abstract contract NAVFeed is Auth, Discounting {
         bytes32 nftID_ = nftID(loan);
         uint maturityDate_ = maturityDate(nftID_);
         uint nnow = uniqueDayTimestamp(block.timestamp);
+        require(maturityDate_ > 0 && loan < shelf.loanCount(), "loan does not exist");
         require((maturityDate_ < nnow), "maturity-date-in-the-future"); // can not write-off healthy loans
 
         uint writeOffGroupIndex_ = currentValidWriteOffGroup(loan); // check the writeoff ground based on the amount of days overdue
@@ -328,7 +329,7 @@ abstract contract NAVFeed is Auth, Discounting {
                 latestNAV = secureSub(latestNAV, pv);
             }
         }
-        
+
         pile.changeRate(loan, WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_);
     }
 

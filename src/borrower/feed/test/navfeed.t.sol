@@ -560,6 +560,7 @@ contract NAVTest is DSTest, Math {
         uint loan = 1;
         uint tokenID = 1;
         bytes32 nftID = prepareDefaultNFT(tokenID, nftValue, risk);
+        shelf.setReturn("loanCount", 2);
         borrow(tokenID, loan, nftValue, amount, dueDate);
 
         // loan overdue after 5 days
@@ -591,6 +592,7 @@ contract NAVTest is DSTest, Math {
         uint loan = 1;
         uint tokenID = 1;
         bytes32 nftID = prepareDefaultNFT(tokenID, nftValue, risk);
+        shelf.setReturn("loanCount", 2);
         borrow(tokenID, loan, nftValue, amount, dueDate);
     
         // sould fail as loan is not overdue yet
