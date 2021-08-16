@@ -243,7 +243,7 @@ contract NAVTest is DSTest, Math {
         assertTrue(feed.uniqueDayTimestamp(randomUnixTimestamp) == dayTimestamp);
     }
 
-    // gas consumption 
+    // gas consumption
     // 100    loans = 984822
     // 500    loans = 5426989
     // 1000   loans = 10835851
@@ -260,7 +260,7 @@ contract NAVTest is DSTest, Math {
         uint discountRate_ = defaultRate; // 5% per day
         feed.file("discountRate", discountRate_);
         shelf.setReturn("loanCount", loanCount);
-        
+
         // create loans
         for (uint i = 1; i<loanCount; i++) {
             uint nftValue = 100 ether;
@@ -274,13 +274,15 @@ contract NAVTest is DSTest, Math {
         }
         // file the same discount rate to trigger the updateDiscountRate routine -> totalDiscount value should stay unchanged
         recalcDiscount(discountRate_, feed.latestDiscount());
+
+        hevm.warp(block.timestamp + 2 days);
     }
 
     function testChangeDiscountRate() public {
         uint loanCount = 100;
         feed.file("discountRate", defaultRate); // file default rate 5% day
         shelf.setReturn("loanCount", loanCount);
-        
+
         // create loans
         for (uint i = 1; i<loanCount; i++) {
             uint nftValue = 100 ether;
