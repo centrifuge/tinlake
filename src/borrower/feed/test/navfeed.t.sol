@@ -500,7 +500,7 @@ contract NAVTest is DSTest, Math {
         setupLinkedListBuckets();
 
         pile.setReturn("debt_loan", amount);
-        shelf.setReturn("nftlookup" ,loan);
+        shelf.setReturn("nftlookup", loan);
         shelf.setReturn("shelf", mockNFTRegistry, tokenId);
 
         uint nav = feed.currentNAV();
@@ -542,6 +542,63 @@ contract NAVTest is DSTest, Math {
         uint maturityDateOffset = 1 days;
         // repay one second too late should fail
         _repayOnMaturityDate(feed.uniqueDayTimestamp(block.timestamp) + maturityDateOffset + 1 days , maturityDateOffset);
+    }
+
+
+    // 6% interest rate & 25% write off
+    // file("writeOffGroup", uint(1000000674400000000000000000), 75 * 10**25, 30);
+    // 6% interest rate & 50% write off
+    // file("writeOffGroup", uint(1000000674400000000000000000), 50 * 10**25, 60);
+    // 6% interest rate & 75% write off
+    // file("writeOffGroup", uint(1000000674400000000000000000), 25 * 10**25, 90);
+    // 6% interest rate & 100% write off
+    // file("writeOffGroup", uint(1000000674400000000000000000), 0, 120);
+    function testPublicWriteOff() public {
+        // create loan 
+        uint nftValue = 100 ether;
+        uint dueDate = block.timestamp + (4 days);
+        uint amount = 50 ether;
+        uint risk = 1;
+        uint loan = 1;
+        uint tokenID = 1;
+        bytes32 nftID = prepareDefaultNFT(tokenID, nftValue, risk);
+        shelf.setReturn("loanCount", 2);
+        borrow(tokenID, loan, nftValue, amount, dueDate);
+
+        // loan overdue after 5 days
+        hevm.warp(block.timestamp + 35 days); // -> group 1000
+        feed.writeOff(loan);
+        // check pile calls with correct writeOff rate
+        assertEq(pile.values_uint("changeRate_loan"), loan);
+        assertEq(pile.values_uint("changeRate_rate"), feed.WRITEOFF_RATE_GROUP_START());
+
+        hevm.warp(block.timestamp + 30 days); // -> group 1001
+        feed.writeOff(loan);
+        // check pile calls with correct writeOff rate
+        assertEq(pile.values_uint("changeRate_loan"), loan);
+        assertEq(pile.values_uint("changeRate_rate"), feed.WRITEOFF_RATE_GROUP_START() + 1);
+        
+        hevm.warp(block.timestamp + 30 days); // -> group 1002
+        feed.writeOff(loan);
+        // check pile calls with correct writeOff rate
+        assertEq(pile.values_uint("changeRate_loan"), loan);
+        assertEq(pile.values_uint("changeRate_rate"), feed.WRITEOFF_RATE_GROUP_START() + 2);
+    }
+
+    function testFailWriteOffHealthyLoan() public {
+        // create loan 
+        uint nftValue = 100 ether;
+        uint dueDate = block.timestamp + (4 days);
+        uint amount = 50 ether;
+        uint risk = 1;
+        uint loan = 1;
+        uint tokenID = 1;
+        bytes32 nftID = prepareDefaultNFT(tokenID, nftValue, risk);
+        shelf.setReturn("loanCount", 2);
+        borrow(tokenID, loan, nftValue, amount, dueDate);
+    
+        // sould fail as loan is not overdue yet
+        feed.writeOff(loan);
     }
 }
 

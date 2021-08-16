@@ -202,7 +202,7 @@ abstract contract NAVFeed is Auth, Discounting {
         require(ceiling(loan) >= amount, "borrow-amount-too-high");
 
         bytes32 nftID_ = nftID(loan);
-        uint maturityDate_ = uniqueDayTimestamp(maturityDate(nftID_));
+        uint maturityDate_ = maturityDate(nftID_);
         uint nnow = uniqueDayTimestamp(block.timestamp);
         require(maturityDate_ > nnow, "maturity-date-is-not-in-the-future");
 
@@ -285,11 +285,15 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function writeOff(uint loan) public {
         require(!loanDetails[loan].authWriteOff, "only-auth-write-off");
-        uint writeOffGroupIndex_ = currentValidWriteOffGroup(loan);
+        bytes32 nftID_ = nftID(loan);
+        uint maturityDate_ = maturityDate(nftID_);
+        uint nnow = uniqueDayTimestamp(block.timestamp);
+        require(maturityDate_ > 0 && loan < shelf.loanCount(), "loan does not exist");
+        require((maturityDate_ < nnow), "maturity-date-in-the-future"); // can not write-off healthy loans
+
+        uint writeOffGroupIndex_ = currentValidWriteOffGroup(loan); // check the writeoff ground based on the amount of days overdue
 
         if (pile.loanRates(loan) != WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_) {
-            bytes32 nftID_ = nftID(loan);
-            uint maturityDate_ = uniqueDayTimestamp(maturityDate(nftID_));
             _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
             emit WriteOff(loan, writeOffGroupIndex_, false);
         }
@@ -313,7 +317,6 @@ abstract contract NAVFeed is Auth, Discounting {
         // first time written-off
         if (isLoanWrittenOff(loan) == false) {
             uint fv = futureValue(nftID_);
-
             if (uniqueDayTimestamp(lastNAVUpdate) > maturityDate_) {
                 // write off after the maturity date
                 overdueLoans = secureSub(overdueLoans, fv);
