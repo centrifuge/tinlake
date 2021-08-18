@@ -23,10 +23,14 @@ interface PileLike {
     function rateDebt(uint rate) external view returns (uint);
 }
 
-// The NAV Feed contract extends the functionality of the NFT Feed by the Net Asset Value (NAV) computation of a Tinlake pool.
+// todo update comments to new implementation -> here
+// The NAV Feed contract extends the functionality of the NFT Feed
+// by the Net Asset Value (NAV) computation of a Tinlake pool.
 // NAV is computed as the sum of all discounted future values (fv) of ongoing loans (debt > 0) in the pool.
-// The applied discountRate is dependant on the maturity data of the underlying collateral. The discount decreases with the maturity date approaching.
-// To optimize the NAV calculation the discounting of future values happens bucketwise. FVs from assets with the same maturity date are added to one bucket.
+// The applied discountRate is dependant on the maturity data of the underlying collateral.
+// The discount decreases with the maturity date approaching.
+// To optimize the NAV calculation the discounting of future values happens bucketwise.
+// FVs from assets with the same maturity date are added to one bucket.
 // This safes iterations & gas, as the same discountRates can be applied per bucket.
 
 abstract contract NAVFeed is Auth, Discounting {
@@ -74,10 +78,12 @@ abstract contract NAVFeed is Auth, Discounting {
 
     WriteOffGroup[] public writeOffGroups;
 
-    // Write-off groups will be added as rate groups to the pile with their index in the writeOffGroups array + this number
+    // Write-off groups will be added as rate groups to the pile with their index
+    // in the writeOffGroups array + this number
     uint public constant WRITEOFF_RATE_GROUP_START = 1000;
 
-    // discount rate applied on every asset's fv depending on its maturityDate. The discount decreases with the maturityDate approaching.
+    // Discount rate applied on every asset's fv depending on its maturityDate.
+    // The discount decreases with the maturityDate approaching.
     Fixed27 public discountRate;
 
     // latestNAV is calculated in case of borrows & repayments between epoch executions.
@@ -95,7 +101,8 @@ abstract contract NAVFeed is Auth, Discounting {
     event File(bytes32 indexed name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_);
     event Update(bytes32 indexed nftID, uint value);
     event Update(bytes32 indexed nftID, uint value, uint risk);
-    event File(bytes32 indexed name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_);
+    event File(bytes32 indexed name, uint risk_, uint thresholdRatio_, uint ceilingRatio_,
+        uint rate_, uint recoveryRatePD_);
     event File(bytes32 indexed name, bytes32 nftID_, uint maturityDate_);
     event File(bytes32 indexed name, uint value);
     event WriteOff(uint indexed loan, uint indexed writeOffGroupsIndex, bool override_);
@@ -189,23 +196,16 @@ abstract contract NAVFeed is Auth, Discounting {
 
     // --- Actions ---
     function borrow(uint loan, uint amount) external virtual auth returns(uint navIncrease) {
-        calcUpdateNAV();
-
-        // In case of successful borrow the latestNAV is increased by the borrowed amount
-        navIncrease = _borrow(loan, amount);
-        latestDiscount = safeAdd(latestDiscount, navIncrease);
-        latestNAV = safeAdd(latestNAV, navIncrease);
-        return navIncrease;
-    }
-
-    function _borrow(uint loan, uint amount) internal returns(uint navIncrease) {
-        require(ceiling(loan) >= amount, "borrow-amount-too-high");
-
+        uint nnow = uniqueDayTimestamp(block.timestamp);
         bytes32 nftID_ = nftID(loan);
         uint maturityDate_ = maturityDate(nftID_);
-        uint nnow = uniqueDayTimestamp(block.timestamp);
+
+        require(ceiling(loan) >= amount, "borrow-amount-too-high");
         require(maturityDate_ > nnow, "maturity-date-is-not-in-the-future");
 
+        if(nnow > lastNAVUpdate) {
+            calcUpdateNAV();
+        }
 
         // calculate amount including fixed fee if applicatable
         (, , uint loanInterestRate, , uint fixedRate) = pile.rates(pile.loanRates(loan));
@@ -222,21 +222,29 @@ abstract contract NAVFeed is Auth, Discounting {
         loanDetails[loan].borrowed = toUint128(safeAdd(borrowed(loan), amount));
 
         // return increase NAV amount
-        return calcDiscount(discountRate.value, fv, nnow, maturityDate_);
+        uint navIncrease = calcDiscount(discountRate.value, fv, nnow, maturityDate_);
+
+        latestDiscount = safeAdd(latestDiscount, navIncrease);
+        latestNAV = safeAdd(latestNAV, navIncrease);
+        return navIncrease;
     }
 
     function repay(uint loan, uint amount) external virtual auth {
-        calcUpdateNAV();
+        uint nnow = uniqueDayTimestamp(block.timestamp);
+        if(nnow > lastNAVUpdate) {
+            calcUpdateNAV();
+        }
 
         // In case of successful repayment the latestNAV is decreased by the repaid amount
         bytes32 nftID_ = nftID(loan);
         uint maturityDate_ = uniqueDayTimestamp(maturityDate(nftID_));
-        uint nnow = uniqueDayTimestamp(block.timestamp);
+
 
         // case 1: repayment of a written-off loan
         if (isLoanWrittenOff(loan)) {
             // update nav with write-off decrease
-            latestNAV = secureSub(latestNAV, rmul(amount, toUint128(writeOffGroups[pile.loanRates(loan)-WRITEOFF_RATE_GROUP_START].percentage)));
+            latestNAV = secureSub(latestNAV, rmul(amount,
+                toUint128(writeOffGroups[pile.loanRates(loan)-WRITEOFF_RATE_GROUP_START].percentage)));
             return;
         }
 
@@ -258,7 +266,8 @@ abstract contract NAVFeed is Auth, Discounting {
         if (maturityDate_ >= nnow) {
             // remove future value decrease from bucket
             buckets[maturityDate_] = safeSub(buckets[maturityDate_], fvDecrease);
-            uint discountDecrease = calcDiscount(discountRate.value, fvDecrease, uniqueDayTimestamp(block.timestamp), maturityDate_);
+            uint discountDecrease = calcDiscount(discountRate.value, fvDecrease,
+                uniqueDayTimestamp(block.timestamp), maturityDate_);
             latestDiscount = secureSub(latestDiscount, discountDecrease);
             latestNAV = secureSub(latestNAV, discountDecrease);
         } else {
@@ -289,9 +298,11 @@ abstract contract NAVFeed is Auth, Discounting {
         uint maturityDate_ = maturityDate(nftID_);
         uint nnow = uniqueDayTimestamp(block.timestamp);
         require(maturityDate_ > 0 && loan < shelf.loanCount(), "loan does not exist");
-        require((maturityDate_ < nnow), "maturity-date-in-the-future"); // can not write-off healthy loans
+        // can not write-off healthy loans
+        require((maturityDate_ < nnow), "maturity-date-in-the-future");
 
-        uint writeOffGroupIndex_ = currentValidWriteOffGroup(loan); // check the writeoff ground based on the amount of days overdue
+        // check the writeoff ground based on the amount of days overdue
+        uint writeOffGroupIndex_ = currentValidWriteOffGroup(loan);
 
         if (pile.loanRates(loan) != WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_) {
             _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
@@ -300,8 +311,9 @@ abstract contract NAVFeed is Auth, Discounting {
     }
 
     function overrideWriteOff(uint loan, uint writeOffGroupIndex_) public auth {
-        loanDetails[loan].authWriteOff = true;
-
+        if(loanDetails[loan].authWriteOff  == false) {
+            loanDetails[loan].authWriteOff = true;
+        }
         bytes32 nftID_ = nftID(loan);
         uint maturityDate_ = uniqueDayTimestamp(maturityDate(nftID_));
         _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
@@ -399,11 +411,12 @@ abstract contract NAVFeed is Auth, Discounting {
 
     // re-calculates the nav in a non-optimized way
     // the method is not updating the NAV to latest block.timestamp
-    function reCalcNAV() public {
+    function reCalcNAV() public returns (uint) {
         uint latestDiscount_ = reCalcTotalDiscount();
 
         latestNAV = safeAdd(latestDiscount_, safeSub(latestNAV, latestDiscount));
         latestDiscount = latestDiscount_;
+        return latestNAV;
     }
 
     // re-calculates the totalDiscount in a non-optimized way based on lastNAVUpdate
@@ -418,7 +431,8 @@ abstract contract NAVFeed is Auth, Discounting {
                 continue;
             }
 
-            latestDiscount_= safeAdd(latestDiscount_, calcDiscount(discountRate.value, futureValue(nftID_), lastNAVUpdate, maturityDate_));
+            latestDiscount_= safeAdd(latestDiscount_, calcDiscount(discountRate.value,
+                futureValue(nftID_), lastNAVUpdate, maturityDate_));
         }
         return latestDiscount_;
     }
@@ -461,7 +475,8 @@ abstract contract NAVFeed is Auth, Discounting {
         buckets[maturityDate_] = safeSub(buckets[maturityDate_], futureValue(nftID_));
 
         (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
-        details[nftID_].futureValue = toUint128(calcFutureValue(loanInterestRate, pile.debt(loan), maturityDate(nftID_), recoveryRatePD(risk(nftID_))));
+        details[nftID_].futureValue = toUint128(calcFutureValue(loanInterestRate, pile.debt(loan),
+            maturityDate(nftID_), recoveryRatePD(risk(nftID_))));
         buckets[maturityDate_] = safeAdd(buckets[maturityDate_], futureValue(nftID_));
 
         emit Update(nftID_, value, risk_);
