@@ -112,6 +112,7 @@ abstract contract NAVFeed is Auth, Discounting {
 
     constructor () {
         wards[msg.sender] = 1;
+        lastNAVUpdate = uniqueDayTimestamp(block.timestamp);
         emit Rely(msg.sender);
     }
 
@@ -356,8 +357,11 @@ abstract contract NAVFeed is Auth, Discounting {
         // calculate the discount of the overdue loans which is needed
         // for the total discount calculation
         for(uint i = lastNAVUpdate; i < nnow; i = i + 1 days) {
-            errPV = safeAdd(errPV, rmul(buckets[i], rpow(discountRate.value, safeSub(nnow, i), ONE)));
-            overdue = safeAdd(overdue, buckets[i]);
+            uint b = buckets[i];
+            if (b != 0) {
+                errPV = safeAdd(errPV, rmul(b, rpow(discountRate.value, safeSub(nnow, i), ONE)));
+                overdue = safeAdd(overdue, b);
+            }
         }
 
         return
