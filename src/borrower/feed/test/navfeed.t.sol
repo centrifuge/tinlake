@@ -544,7 +544,6 @@ contract NAVTest is DSTest, Math {
         _repayOnMaturityDate(feed.uniqueDayTimestamp(block.timestamp) + maturityDateOffset + 1 days , maturityDateOffset);
     }
 
-
     // 6% interest rate & 25% write off
     // file("writeOffGroup", uint(1000000674400000000000000000), 75 * 10**25, 30);
     // 6% interest rate & 50% write off
@@ -600,6 +599,34 @@ contract NAVTest is DSTest, Math {
         // sould fail as loan is not overdue yet
         feed.writeOff(loan);
     }
+
+    function fileWriteOffGroup(uint percentage, uint overdueDays, uint index) public {
+        feed.file("writeOffGroup", percentage, 0, overdueDays);
+        (uint p, uint o) = feed.writeOffGroups(index);
+    
+        assertTrue(pile.values_uint("file_rate") == safeAdd(feed.WRITEOFF_RATE_GROUP_START(), index));
+        assertTrue(pile.values_uint("file_ratePerSecond") == percentage);
+        assertTrue(p == 0);
+        assertTrue(overdueDays == o);
+    }
+
+    function testFileWriteOff(uint128 overdueDays) public {
+        if (overdueDays <= 120) {
+            return;
+        }
+        // 4 default writeoff Groups exist: 1000 - 1003
+        uint expectedIndex = 4;
+        fileWriteOffGroup(uint(1000000674400000000000000000), overdueDays, expectedIndex);
+    }
+
+    function testFailFileWriteOffOverdueDaysTooLow(uint128 overdueDays) public {
+        require(overdueDays <= 120);
+         // 4 default writeoff Groups exist: 1000 - 1004
+        uint expectedIndex = 4;
+        uint overdueDays = 110; // -> 110 < 120 (last writeOff group)
+        fileWriteOffGroup(uint(1000000674400000000000000000), overdueDays, expectedIndex);
+    }
+
 }
 
 
