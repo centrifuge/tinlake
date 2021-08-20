@@ -618,15 +618,6 @@ contract NAVTest is DSTest, Math {
         uint expectedIndex = 4;
         fileWriteOffGroup(uint(1000000674400000000000000000), overdueDays, expectedIndex);
     }
-
-    function testFailFileWriteOffOverdueDaysTooLow(uint128 overdueDays) public {
-        require(overdueDays <= 120);
-         // 4 default writeoff Groups exist: 1000 - 1004
-        uint expectedIndex = 4;
-        uint overdueDays = 110; // -> 110 < 120 (last writeOff group)
-        fileWriteOffGroup(uint(1000000674400000000000000000), overdueDays, expectedIndex);
-    }
-
 }
 
 

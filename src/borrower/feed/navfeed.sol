@@ -181,10 +181,6 @@ abstract contract NAVFeed is Auth, Discounting {
     function file(bytes32 name, uint rate_, uint writeOffPercentage_, uint overdueDays_) public auth {
         if(name == "writeOffGroup") {
             uint index = writeOffGroups.length;
-            if (index > 0) { // make sure the added writeoff group has more overdue days then the prev one
-                uint prevOverdueDays = writeOffGroups[safeSub(index, 1)].overdueDays;
-                require((prevOverdueDays < overdueDays_), "overdue-day-amount-too-small");
-            }
             writeOffGroups.push(WriteOffGroup(toUint128(writeOffPercentage_), toUint128(overdueDays_)));
             pile.file("rate", safeAdd(WRITEOFF_RATE_GROUP_START, index), rate_);
         } else { revert ("unknown name");}
