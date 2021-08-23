@@ -61,7 +61,6 @@ contract Shelf is Auth, TitleOwned, Math {
     SubscriberLike      public subscriber;
 
     uint                public balance;
-    address             public lender;
 
     struct Loan {
         address registry;
@@ -96,12 +95,7 @@ contract Shelf is Auth, TitleOwned, Math {
 
     // sets the dependency to another contract
     function depend(bytes32 contractName, address addr) external auth {
-        if (contractName == "lender") {
-            if (lender != address(0)) currency.approve(lender, uint(0));
-            currency.approve(addr, type(uint256).max);
-            lender = addr;
-        }
-        else if (contractName == "token") { currency = TokenLike(addr); }
+        if (contractName == "token") { currency = TokenLike(addr); }
         else if (contractName == "title") { title = TitleLike(addr); }
         else if (contractName == "pile") { pile = PileLike(addr); }
         else if (contractName == "ceiling") { ceiling = NAVFeedLike(addr); }

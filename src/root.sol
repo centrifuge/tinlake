@@ -86,9 +86,7 @@ contract TinlakeRoot is Auth {
         address assessor_ = lenderDeployer.assessor();
 
         // Borrower depends
-        DependLike(borrowerDeployer.shelf()).depend("lender", reserve_);
         DependLike(borrowerDeployer.shelf()).depend("reserve", reserve_);
-
         DependLike(borrowerDeployer.shelf()).depend("assessor", assessor_);
 
         // Lender depends
