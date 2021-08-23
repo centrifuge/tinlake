@@ -96,7 +96,7 @@ contract MKRTestBasis is TestSuite, Interest {
 
     function _mkrLiquidationPostAssertions() public {
         //sanity check - correct currency amount for each token
-        assertEqTol(mkrAssessor.currentNAV() + reserve.totalBalance(), rmul(seniorToken.totalSupply(), mkrAssessor.calcSeniorTokenPrice())
+        assertEqTol(mkrAssessor.getNAV() + reserve.totalBalance(), rmul(seniorToken.totalSupply(), mkrAssessor.calcSeniorTokenPrice())
             + rmul(juniorToken.totalSupply(), mkrAssessor.calcJuniorTokenPrice()),  "mkrPostCon#1");
 
         assertEqTol(clerk.remainingCredit(), 0,  "mkrPostCon#2");

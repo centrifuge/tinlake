@@ -136,10 +136,6 @@ contract AssessorMock is Mock {
         return values_return["borrowAmountEpoch"];
     }
 
-    function currentNAV() public view returns(uint) {
-        return values_uint["currentNAV"];
-    }
-
     function getNAV() public view returns(uint) {
         return values_uint["getNAV"];
     }

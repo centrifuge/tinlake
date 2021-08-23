@@ -171,7 +171,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
 
         // repay loans and everybody redeems
         repayAllDebtDefaultLoan();
-        assertEq(mkrAssessor.currentNAV(), 0);
+        assertEq(mkrAssessor.getNAV(), 0);
         // reserve should keep the currency no automatic clerk.wipe
         assertTrue(reserve.totalBalance() > 0);
 
