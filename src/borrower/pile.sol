@@ -81,11 +81,11 @@ contract Pile is Auth, Interest {
 
         if (currencyAmount > total) {
             total = 0;
+            emit DecreaseDebt(loan, currencyAmount);
             return;
         }
 
         total = safeSub(total, currencyAmount);
-
         emit DecreaseDebt(loan, currencyAmount);
     }
 
