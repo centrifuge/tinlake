@@ -189,8 +189,7 @@ abstract contract NAVFeed is Auth, Discounting {
         if(name == "writeOffGroup") {
             uint index = writeOffGroups.length;
             writeOffGroups.push(WriteOffGroup(toUint128(writeOffPercentage_), toUint128(overdueDays_)));
-            pile.file("rate", WRITEOFF_RATE_GROUP_START + index, rate_);
-
+            pile.file("rate", safeAdd(WRITEOFF_RATE_GROUP_START, index), rate_);
         } else { revert ("unknown name");}
     }
 
