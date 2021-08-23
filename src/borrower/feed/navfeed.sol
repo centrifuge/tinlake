@@ -232,14 +232,13 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function repay(uint loan, uint amount) external virtual auth {
         uint nnow = uniqueDayTimestamp(block.timestamp);
-        if(nnow > lastNAVUpdate) {
+        if (nnow > lastNAVUpdate) {
             calcUpdateNAV();
         }
 
         // In case of successful repayment the latestNAV is decreased by the repaid amount
         bytes32 nftID_ = nftID(loan);
-        uint maturityDate_ = uniqueDayTimestamp(maturityDate(nftID_));
-
+        uint maturityDate_ = maturityDate(nftID_);
 
         // case 1: repayment of a written-off loan
         if (isLoanWrittenOff(loan)) {
@@ -267,8 +266,7 @@ abstract contract NAVFeed is Auth, Discounting {
         if (maturityDate_ >= nnow) {
             // remove future value decrease from bucket
             buckets[maturityDate_] = safeSub(buckets[maturityDate_], fvDecrease);
-            uint discountDecrease = calcDiscount(discountRate.value, fvDecrease,
-                uniqueDayTimestamp(block.timestamp), maturityDate_);
+            uint discountDecrease = calcDiscount(discountRate.value, fvDecrease, nnow, maturityDate_);
             latestDiscount = secureSub(latestDiscount, discountDecrease);
             latestNAV = secureSub(latestNAV, discountDecrease);
         } else {
@@ -295,14 +293,16 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function writeOff(uint loan) public {
         require(!loanDetails[loan].authWriteOff, "only-auth-write-off");
+
         bytes32 nftID_ = nftID(loan);
         uint maturityDate_ = maturityDate(nftID_);
         uint nnow = uniqueDayTimestamp(block.timestamp);
-        require(maturityDate_ > 0 && loan < shelf.loanCount(), "loan does not exist");
-        // can not write-off healthy loans
-        require((maturityDate_ < nnow), "maturity-date-in-the-future");
+        require(maturityDate_ > 0 && loan < shelf.loanCount(), "loan-does-not-exist");
 
-        // check the writeoff ground based on the amount of days overdue
+        // can not write-off healthy loans
+        require(maturityDate_ < nnow, "maturity-date-in-the-future");
+
+        // check the writeoff group based on the amount of days overdue
         uint writeOffGroupIndex_ = currentValidWriteOffGroup(loan);
 
         if (pile.loanRates(loan) != WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_) {
@@ -316,7 +316,7 @@ abstract contract NAVFeed is Auth, Discounting {
             loanDetails[loan].authWriteOff = true;
         }
         bytes32 nftID_ = nftID(loan);
-        uint maturityDate_ = uniqueDayTimestamp(maturityDate(nftID_));
+        uint maturityDate_ = maturityDate(nftID_);
         _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
         emit WriteOff(loan, writeOffGroupIndex_, true);
     }
@@ -521,7 +521,7 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function currentValidWriteOffGroup(uint loan) public view returns (uint) {
         bytes32 nftID_ = nftID(loan);
-        uint maturityDate_ = uniqueDayTimestamp(maturityDate(nftID_));
+        uint maturityDate_ = maturityDate(nftID_);
         uint nnow = uniqueDayTimestamp(block.timestamp);
 
         uint128 lastValidWriteOff;

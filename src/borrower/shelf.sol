@@ -130,7 +130,7 @@ contract Shelf is Auth, TitleOwned, Math {
     }
 
     function close(uint loan) external {
-        require(!nftLocked(loan), "nft-not-locked");
+        require(!nftLocked(loan), "nft-locked");
         (address registry, uint tokenId) = token(loan);
         require(title.ownerOf(loan) == msg.sender || NFTLike(registry).ownerOf(tokenId) == msg.sender, "not-loan-or-nft-owner");
         title.close(loan);
