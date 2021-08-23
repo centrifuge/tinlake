@@ -554,7 +554,7 @@ contract NAVTest is DSTest, Math {
     // 6% interest rate & 100% write off
     // file("writeOffGroup", uint(1000000674400000000000000000), 0, 120);
     function testPublicWriteOff() public {
-        // create loan 
+        // create loan
         uint nftValue = 100 ether;
         uint dueDate = block.timestamp + (4 days);
         uint amount = 50 ether;
@@ -577,7 +577,7 @@ contract NAVTest is DSTest, Math {
         // check pile calls with correct writeOff rate
         assertEq(pile.values_uint("changeRate_loan"), loan);
         assertEq(pile.values_uint("changeRate_rate"), feed.WRITEOFF_RATE_GROUP_START() + 1);
-        
+
         hevm.warp(block.timestamp + 30 days); // -> group 1002
         feed.writeOff(loan);
         // check pile calls with correct writeOff rate
@@ -586,7 +586,7 @@ contract NAVTest is DSTest, Math {
     }
 
     function testFailWriteOffHealthyLoan() public {
-        // create loan 
+        // create loan
         uint nftValue = 100 ether;
         uint dueDate = block.timestamp + (4 days);
         uint amount = 50 ether;
@@ -596,7 +596,7 @@ contract NAVTest is DSTest, Math {
         bytes32 nftID = prepareDefaultNFT(tokenID, nftValue, risk);
         shelf.setReturn("loanCount", 2);
         borrow(tokenID, loan, nftValue, amount, dueDate);
-    
+
         // sould fail as loan is not overdue yet
         feed.writeOff(loan);
     }
