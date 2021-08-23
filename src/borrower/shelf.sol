@@ -99,7 +99,11 @@ contract Shelf is Auth, TitleOwned, Math {
         else if (contractName == "title") { title = TitleLike(addr); }
         else if (contractName == "pile") { pile = PileLike(addr); }
         else if (contractName == "ceiling") { ceiling = NAVFeedLike(addr); }
-        else if (contractName == "reserve") { reserve = ReserveLike(addr); }
+        else if (contractName == "reserve") {
+            if (address(reserve) != address(0)) currency.approve(address(reserve), uint(0));
+            currency.approve(addr, type(uint256).max);
+            reserve = ReserveLike(addr); 
+        }
         else if (contractName == "assessor") { assessor = AssessorLike(addr);}
         else if (contractName == "subscriber") { subscriber = SubscriberLike(addr); }
         else revert();
@@ -136,7 +140,7 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Close(loan);
     }
 
-    // used by the lender contracts to know if currency is needed or currency can be taken
+    // used by the reserve to know if currency is needed or currency can be taken
     function balanceRequest() external view returns (bool, uint) {
         uint currencyBalance = currency.balanceOf(address(this));
         if (balance > currencyBalance) {
@@ -164,7 +168,7 @@ contract Shelf is Auth, TitleOwned, Math {
         balances[loan] = safeAdd(balances[loan], currencyAmount);
         balance = safeAdd(balance, currencyAmount);
 
-        // request currency from lender contracts
+        // request currency from reserve
         reserve.balance();
 
         // increase NAV

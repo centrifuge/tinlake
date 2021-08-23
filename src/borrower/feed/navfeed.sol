@@ -105,6 +105,7 @@ abstract contract NAVFeed is Auth, Discounting {
         uint rate_, uint recoveryRatePD_);
     event File(bytes32 indexed name, bytes32 nftID_, uint maturityDate_);
     event File(bytes32 indexed name, uint value);
+    event File(bytes32 indexed name, uint rate_, uint writeOffPercentage_, uint overdueDays_);
     event WriteOff(uint indexed loan, uint indexed writeOffGroupsIndex, bool override_);
 
     // getter functions
@@ -190,6 +191,7 @@ abstract contract NAVFeed is Auth, Discounting {
             uint index = writeOffGroups.length;
             writeOffGroups.push(WriteOffGroup(toUint128(writeOffPercentage_), toUint128(overdueDays_)));
             pile.file("rate", safeAdd(WRITEOFF_RATE_GROUP_START, index), rate_);
+            emit File(name, rate_, writeOffPercentage_, overdueDays_);
         } else { revert ("unknown name");}
     }
 
@@ -221,7 +223,7 @@ abstract contract NAVFeed is Auth, Discounting {
         loanDetails[loan].borrowed = toUint128(safeAdd(borrowed(loan), amount));
 
         // return increase NAV amount
-        uint navIncrease = calcDiscount(discountRate.value, fv, nnow, maturityDate_);
+        navIncrease = calcDiscount(discountRate.value, fv, nnow, maturityDate_);
 
         latestDiscount = safeAdd(latestDiscount, navIncrease);
         latestNAV = safeAdd(latestNAV, navIncrease);
