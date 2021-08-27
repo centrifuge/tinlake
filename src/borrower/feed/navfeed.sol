@@ -296,10 +296,10 @@ abstract contract NAVFeed is Auth, Discounting {
 
         bytes32 nftID_ = nftID(loan);
         uint maturityDate_ = maturityDate(nftID_);
-        uint nnow = uniqueDayTimestamp(block.timestamp);
         require(maturityDate_ > 0 && loan < shelf.loanCount(), "loan-does-not-exist");
 
         // can not write-off healthy loans
+        uint nnow = uniqueDayTimestamp(block.timestamp);
         require(maturityDate_ < nnow, "maturity-date-in-the-future");
 
         // check the writeoff group based on the amount of days overdue
@@ -312,11 +312,15 @@ abstract contract NAVFeed is Auth, Discounting {
     }
 
     function overrideWriteOff(uint loan, uint writeOffGroupIndex_) public auth {
-        if(loanDetails[loan].authWriteOff  == false) {
-            loanDetails[loan].authWriteOff = true;
-        }
+        // can not write-off healthy loans
         bytes32 nftID_ = nftID(loan);
         uint maturityDate_ = maturityDate(nftID_);
+        uint nnow = uniqueDayTimestamp(block.timestamp);
+        require(maturityDate_ < nnow, "maturity-date-in-the-future");
+
+        if (loanDetails[loan].authWriteOff == false) {
+            loanDetails[loan].authWriteOff = true;
+        }
         _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
         emit WriteOff(loan, writeOffGroupIndex_, true);
     }

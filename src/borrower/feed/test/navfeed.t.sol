@@ -416,6 +416,23 @@ contract NAVTest is DSTest, Math {
         assertTrue(preNAV > feed.currentNAV());
     }
 
+    function testPartialRepayAfterMaturityDate() public {
+        setupLinkedListBuckets();
+        uint loan = 2;
+        uint amount = 30 ether;
+        bytes32 nftID = feed.nftID(loan);
+        uint maturityDate = feed.maturityDate(nftID);
+
+        // repayment has to happen after maturity date
+        hevm.warp(safeAdd(maturityDate, 1 days));
+
+        // make partial repayment for overdue loan
+        pile.setReturn("debt_loan", amount);
+        feed.repay(loan, 15 ether); // repay 50%
+
+        assertTrue(feed.currentNAV() > 0);
+    }
+
     function testWriteOffOnMaturityDate() public {
         uint nftValue = 100 ether;
         uint tokenId = 1;
@@ -425,7 +442,7 @@ contract NAVTest is DSTest, Math {
 
         borrow(tokenId, loan, nftValue, amount, dueDate);
 
-        hevm.warp(block.timestamp + 2 days);
+        hevm.warp(block.timestamp + 3 days);
 
         pile.setReturn("debt_loan", 55.125 ether); // 50 * 1.05^2 = 55.125
 
@@ -598,8 +615,24 @@ contract NAVTest is DSTest, Math {
         shelf.setReturn("loanCount", 2);
         borrow(tokenID, loan, nftValue, amount, dueDate);
 
-        // sould fail as loan is not overdue yet
+        // should fail as loan is not overdue yet
         feed.writeOff(loan);
+    }
+
+    function testFailOverrideWriteOffHealthyLoan() public {
+        // create loan
+        uint nftValue = 100 ether;
+        uint dueDate = block.timestamp + (4 days);
+        uint amount = 50 ether;
+        uint risk = 1;
+        uint loan = 1;
+        uint tokenID = 1;
+        bytes32 nftID = prepareDefaultNFT(tokenID, nftValue, risk);
+        shelf.setReturn("loanCount", 2);
+        borrow(tokenID, loan, nftValue, amount, dueDate);
+
+        // should also fail, even admins cant writeoff non overdue loans
+        feed.overrideWriteOff(loan, 0);
     }
 
     function fileWriteOffGroup(uint percentage, uint overdueDays, uint index) public {
