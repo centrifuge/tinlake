@@ -560,13 +560,15 @@ contract NAVTest is DSTest, Math {
         uint risk = 1;
         uint loan = 1;
         uint tokenID = 1;
-        bytes32 nftID = prepareDefaultNFT(tokenID, nftValue, risk);
+        prepareDefaultNFT(tokenID, nftValue, risk);
         shelf.setReturn("loanCount", 2);
         borrow(tokenID, loan, nftValue, amount, dueDate);
 
         // loan overdue after 5 days
         hevm.warp(block.timestamp + 35 days); // -> group 1000
+        pile.setReturn("debt_loan", 60 ether);
         feed.writeOff(loan);
+        assertEq(feed.latestNAV(), 45 ether); // NAV includes debt * writeoff factor
         // check pile calls with correct writeOff rate
         assertEq(pile.values_uint("changeRate_loan"), loan);
         assertEq(pile.values_uint("changeRate_rate"), feed.WRITEOFF_RATE_GROUP_START());

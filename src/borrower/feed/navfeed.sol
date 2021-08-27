@@ -327,24 +327,28 @@ abstract contract NAVFeed is Auth, Discounting {
         if(nnow > lastNAVUpdate) {
             calcUpdateNAV();
         }
+        
+        uint latestNAV_ = latestNAV;
+
         // first time written-off
         if (isLoanWrittenOff(loan) == false) {
             uint fv = futureValue(nftID_);
             if (uniqueDayTimestamp(lastNAVUpdate) > maturityDate_) {
                 // write off after the maturity date
                 overdueLoans = secureSub(overdueLoans, fv);
-                latestNAV = secureSub(latestNAV, fv);
+                latestNAV_ = secureSub(latestNAV_, fv);
 
             } else {
                 // write off before or on the maturity date
                 buckets[maturityDate_] = safeSub(buckets[maturityDate_], fv);
                 uint pv = rmul(fv, rpow(discountRate.value, safeSub(uniqueDayTimestamp(maturityDate_), nnow), ONE));
                 latestDiscount = secureSub(latestDiscount, pv);
-                latestNAV = secureSub(latestNAV, pv);
+                latestNAV_ = secureSub(latestNAV_, pv);
             }
         }
 
         pile.changeRate(loan, WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_);
+        latestNAV = safeAdd(latestNAV_, rmul(pile.debt(loan), writeOffGroups[writeOffGroupIndex_].percentage));
     }
 
     function isLoanWrittenOff(uint loan) public view returns(bool) {
