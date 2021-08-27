@@ -536,20 +536,4 @@ abstract contract NAVFeed is Auth, Discounting {
         return lastValidWriteOff;
     }
 
-    function currentValidWriteOffGroup(uint loan) public view returns (uint) {
-        bytes32 nftID_ = nftID(loan);
-        uint maturityDate_ = maturityDate[nftID_];
-
-        uint lastValidWriteOff;
-        uint highestOverdueDays = 0;
-        for (uint i = 0; i < writeOffGroups.length; i++) {
-            uint overdueDays = writeOffGroups[i].overdueDays;
-            if (overdueDays >= highestOverdueDays && block.timestamp >= maturityDate_ + overdueDays * 60 * 60 * 24) {
-                lastValidWriteOff = i;
-                highestOverdueDays = overdueDays;
-            }
-        }
-        return lastValidWriteOff;
-    }
-
 }
