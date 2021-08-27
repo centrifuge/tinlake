@@ -133,8 +133,6 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
     int                 public constant ERR_POOL_CLOSING = -7;
     uint                public constant BIG_NUMBER = ONE * ONE;
 
-    uint                public constant IMPROVEMENT_WEIGHT =  10000;
-
     event File(bytes32 indexed name, uint value);
     event File(bytes32 indexed name, bool value);
     event Depend(bytes32 indexed contractName, address addr);
@@ -384,7 +382,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
             return BIG_NUMBER;
         }
 
-        return rmul(IMPROVEMENT_WEIGHT, rdiv(ONE, safeSub(newReserve_, assessor.maxReserve())));
+        return rdiv(ONE, safeSub(newReserve_, assessor.maxReserve()));
     }
 
     // the score improvement ratio uses the normalized distance to (minRatio+maxRatio)/2 as score
@@ -398,8 +396,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
             return BIG_NUMBER;
         }
         // absDistance of ratio can never be zero
-        return rmul(IMPROVEMENT_WEIGHT, rdiv(ONE, absDistance(newSeniorRatio.value,
-                safeDiv(safeAdd(minSeniorRatio.value, maxSeniorRatio.value), 2))));
+        return rdiv(ONE, absDistance(newSeniorRatio.value,
+                safeDiv(safeAdd(minSeniorRatio.value, maxSeniorRatio.value), 2)));
     }
 
     // internal method to save new improvement score
