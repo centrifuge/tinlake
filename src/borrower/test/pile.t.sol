@@ -39,15 +39,12 @@ contract PileTest is Interest, DSTest {
 
     function _increaseDebt(uint loan, uint amount) internal {
         pile.incDebt(loan, amount);
-        assertEq(pile.total(), amount);
         assertEq(pile.debt(loan), amount);
     }
 
     function _decreaseDebt(uint loan, uint amount) internal {
-        uint total = pile.total();
         uint loanDebt = pile.debt(loan);
         pile.decDebt(loan, amount);
-        assertEq(pile.total(), safeSub(total, amount));
         assertEq(pile.debt(loan), safeSub(loanDebt, amount));
     }
 
@@ -83,7 +80,6 @@ contract PileTest is Interest, DSTest {
         _setUpLoan(loan, rateGroup);
         pile.incDebt(loan, amount);
     
-        assertEq(pile.total(), safeAdd(amount, fixedBorrowFee));
         assertEq(pile.debt(loan), safeAdd(amount, fixedBorrowFee));
     }
 
@@ -167,7 +163,6 @@ contract PileTest is Interest, DSTest {
         assertDebt(loan, 105 ether);
         assertEq(pile.rateDebt(lowRate), 105 ether);
         assertEq(pile.rateDebt(highRate), 0);
-        assertEq(pile.total(), 105 ether);
 
         // rate switch
         pile.changeRate(loan, highRate);
@@ -175,7 +170,6 @@ contract PileTest is Interest, DSTest {
 
         assertEq(pile.rateDebt(lowRate), 0);
         assertEq(pile.rateDebt(highRate), 105 ether);
-        assertEq(pile.total(), 105 ether);
 
         hevm.warp(block.timestamp + 1 days);
 
