@@ -113,7 +113,7 @@ contract Assessor is Definitions, Auth, Interest {
 
     function reBalance(uint seniorAsset_) internal {
         // re-balancing according to new ratio
-        // we use the actual NAV here because during the submission period
+        // we use the approximated NAV here because because during the submission period
         // new loans might have been repaid in the meanwhile which are not considered in the epochNAV
         uint nav_ = getNAV();
         uint reserve_ = reserve.totalBalance();
@@ -251,7 +251,7 @@ contract Assessor is Definitions, Auth, Interest {
 
     // returns the current NAV
     function getNAV() public view returns(uint) {
-        return navFeed.currentNAV();
+        return navFeed.latestNAV();
     }
 
     // changes the total amount available for borrowing loans
