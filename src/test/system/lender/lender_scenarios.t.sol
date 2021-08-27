@@ -322,12 +322,13 @@ contract LenderSystemTest is TestSuite, Interest {
         assertEq(reserve.totalBalance(), loanDebt);
         assertEq(nftFeed.currentNAV(), 0, 10);
 
+        uint oneWeiLeft = 1;
         // max redeem from both
-        seniorInvestor.redeemOrder(seniorToken.balanceOf(seniorInvestor_));
+        seniorInvestor.redeemOrder(seniorToken.balanceOf(seniorInvestor_)-oneWeiLeft);
         juniorInvestor.redeemOrder(juniorToken.balanceOf(juniorInvestor_));
 
         // tokens should be locked
-        assertEq(seniorToken.balanceOf(seniorInvestor_), 0);
+        assertEq(seniorToken.balanceOf(seniorInvestor_), oneWeiLeft);
         assertEq(juniorToken.balanceOf(juniorInvestor_), 0);
 
         coordinator.closeEpoch();
@@ -335,7 +336,7 @@ contract LenderSystemTest is TestSuite, Interest {
 
         // senior full payout
         (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) = seniorInvestor.disburse();
-        assertEq(payoutCurrencyAmount ,rmul(80 ether, coordinator.epochSeniorTokenPrice()));
+        assertEq(payoutCurrencyAmount , rmul(80 ether-oneWeiLeft, coordinator.epochSeniorTokenPrice()));
         assertEq(remainingRedeemToken, 0);
         assertEq(remainingSupplyCurrency, 0);
 

@@ -32,6 +32,7 @@ interface NAVFeedLike {
     function repay(uint loan, uint currencyAmount) external;
     function presentValue(uint loan) external view returns (uint);
     function futureValue(uint loan) external view returns (uint);
+    function zeroPV(uint loan) external view returns (bool);
 }
 
 interface ReserveLike {
@@ -39,7 +40,9 @@ interface ReserveLike {
 }
 
 interface SubscriberLike {
-    function borrowEvent(uint loan) external;
+    function borrowEvent(uint loan, uint amount) external;
+    function repayEvent(uint loan, uint amount) external;
+    function lockEvent(uint loan) external;
     function unlockEvent(uint loan) external;
 }
 
@@ -85,7 +88,7 @@ contract Shelf is Auth, TitleOwned, Math {
         currency = TokenLike(currency_);
         pile = PileLike(pile_);
         ceiling = NAVFeedLike(ceiling_);
-        
+
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
     }
@@ -135,7 +138,7 @@ contract Shelf is Auth, TitleOwned, Math {
         title.close(loan);
         bytes32 nft = keccak256(abi.encodePacked(shelf[loan].registry, shelf[loan].tokenId));
         nftlookup[nft] = 0;
-        resetLoanBalance(loan);
+        _resetLoanBalance(loan);
         emit Close(loan);
     }
 
@@ -157,9 +160,11 @@ contract Shelf is Auth, TitleOwned, Math {
     // a max ceiling needs to be defined by an oracle
     function borrow(uint loan, uint currencyAmount) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
+
         if(address(subscriber) != address(0)) {
-            subscriber.borrowEvent(loan);
+            subscriber.borrowEvent(loan, currencyAmount);
         }
+
         pile.accrue(loan);
 
         balances[loan] = safeAdd(balances[loan], currencyAmount);
@@ -183,7 +188,7 @@ contract Shelf is Auth, TitleOwned, Math {
     function withdraw(uint loan, uint currencyAmount, address usr) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
         require(currencyAmount <= balances[loan], "withdraw-amount-too-high");
-        
+
         balances[loan] = safeSub(balances[loan], currencyAmount);
         balance = safeSub(balance, currencyAmount);
         require(currency.transfer(usr, currencyAmount), "currency-transfer-failed");
@@ -194,6 +199,11 @@ contract Shelf is Auth, TitleOwned, Math {
     function repay(uint loan, uint currencyAmount) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
         require(balances[loan] == 0, "withdraw-required-before-repay");
+
+        if(address(subscriber) != address(0)) {
+            subscriber.repayEvent(loan, currencyAmount);
+        }
+
         _repay(loan, msg.sender, currencyAmount);
         emit Repay(loan, currencyAmount);
     }
@@ -210,7 +220,7 @@ contract Shelf is Auth, TitleOwned, Math {
         ceiling.repay(loan, loanDebt);
         // sets loan debt to 0
         pile.decDebt(loan, loanDebt);
-        resetLoanBalance(loan);
+        _resetLoanBalance(loan);
         reserve.balance();
         // reBalance lender interest bearing amount based on new NAV
         assessor.reBalance();
@@ -237,6 +247,10 @@ contract Shelf is Auth, TitleOwned, Math {
     // locks an nft in the shelf
     // requires an issued loan
     function lock(uint loan) external owner(loan) {
+        if(address(subscriber) != address(0)) {
+            subscriber.lockEvent(loan);
+        }
+
         NFTLike(shelf[loan].registry).transferFrom(msg.sender, address(this), shelf[loan].tokenId);
         emit Lock(loan);
     }
@@ -246,14 +260,15 @@ contract Shelf is Auth, TitleOwned, Math {
     function unlock(uint loan) external owner(loan) {
         // loans can be unlocked and closed when the debt is 0, the loan is written off 100%, or the loan has been partially written off and the remainder has been repaid
         uint debt_ = pile.debt(loan);
-        uint pv = ceiling.presentValue(loan);
-        require(debt_ == 0 || pv == 0 || safeSub(ceiling.futureValue(loan), debt_) >= pv, "loan-has-outstanding-debt");
+
+        require(debt_ == 0 || ceiling.zeroPV(loan), "loan-has-outstanding-debt");
 
         if (address(subscriber) != address(0)) {
             subscriber.unlockEvent(loan);
         }
 
         NFTLike(shelf[loan].registry).transferFrom(address(this), msg.sender, shelf[loan].tokenId);
+
         emit Unlock(loan);
     }
 
@@ -268,11 +283,15 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Claim(loan, usr);
     }
 
-    function resetLoanBalance(uint loan) internal {
+    function _resetLoanBalance(uint loan) internal {
         uint loanBalance = balances[loan];
         if (loanBalance  > 0) {
             balances[loan] = 0;
             balance = safeSub(balance, loanBalance);
         }
+    }
+
+    function loanCount() public view returns (uint) {
+        return title.count();
     }
 }

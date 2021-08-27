@@ -10,17 +10,15 @@ contract AdminUser {
     PileLike pile;
     Title title;
     TReserveLike reserve;
-    CollectorLike collector;
     NAVFeedLike nftFeed;
     MemberlistLike juniorMemberlist;
     MemberlistLike seniorMemberlist;
 
-    constructor(address shelf_, address pile_, address navFeed_, address title_, address reserve_, address collector_, address juniorMemberlist_, address seniorMemberlist_) {
+    constructor(address shelf_, address pile_, address navFeed_, address title_, address reserve_, address juniorMemberlist_, address seniorMemberlist_) {
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
         title = Title(title_);
         reserve = TReserveLike(reserve_);
-        collector = CollectorLike(collector_);
         nftFeed = NAVFeedLike(navFeed_);
         juniorMemberlist = MemberlistLike(juniorMemberlist_);
         seniorMemberlist = MemberlistLike(seniorMemberlist_);
@@ -34,22 +32,6 @@ contract AdminUser {
         nftFeed.update(lookupId, nftPrice, riskGroup);
         // add default maturity date
         nftFeed.file("maturityDate", lookupId , maturityDate);
-    }
-
-    function setCollectPrice(uint loan, uint price) public {
-        collector.file("loan", loan, address(0), price);
-    }
-
-    function addKeeper(uint loan, address usr, uint price) public {
-        collector.file("loan", loan, usr, price);
-    }
-
-    function whitelistKeeper(address usr) public {
-        collector.relyCollector(usr);
-    }
-
-    function collect(uint loan, address usr) public {
-        collector.collect(loan, usr);
     }
 
     function makeJuniorTokenMember(address usr, uint validitUntil) public {

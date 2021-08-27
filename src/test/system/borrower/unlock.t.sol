@@ -87,16 +87,4 @@ contract UnlockTest is BaseSystemTest {
         // borrower does not repay
         unlockNFT(loanId, tokenId);
     }
-
-    function testFailUnlockCollected() public {
-        uint nftPrice = 200 ether; // -> ceiling 100 ether
-        // thresholdRatio => 80% -> 160 ether
-        uint riskGroup = 1; // -> 12% per year
-        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
-
-        // threshold reached after 10 years
-        hevm.warp(block.timestamp + 3650 days);
-        seize(loanId);
-        unlockNFT(loanId, tokenId);
-    }
 }

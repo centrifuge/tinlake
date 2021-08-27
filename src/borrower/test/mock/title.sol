@@ -17,4 +17,7 @@ contract TitleMock is Mock {
         values_uint["close_loan"] = loan;
         calls["close"]++;
     }
+    function count() public view returns(uint) {
+        return values_return["count"];
+    }
 }

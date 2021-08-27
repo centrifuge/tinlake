@@ -182,7 +182,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
     // closeEpoch creates a snapshot of the current lender state
     // if all orders can be fulfilled epoch is executed otherwise
     // submission period starts
-    function closeEpoch() external minimumEpochTimePassed {
+    function closeEpoch() external minimumEpochTimePassed returns (bool epochExecuted) {
         require(submissionPeriod == false);
         lastEpochClosed = block.timestamp;
         currentEpoch = currentEpoch + 1;
@@ -207,7 +207,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
             assessor.changeSeniorAsset(0, 0);
             assessor.changeBorrowAmountEpoch(epochReserve);
             lastEpochExecuted = safeAdd(lastEpochExecuted, 1);
-            return;
+            return true;
         }
 
         // calculate current token prices which are used for the execute
@@ -231,11 +231,12 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
             order.seniorSupply, order.juniorSupply) == SUCCESS) {
             _executeEpoch(order.seniorRedeem, order.juniorRedeem,
                 orderSeniorSupply, orderJuniorSupply);
-            return;
+            return true;
         }
         // if 100% order fulfillment is not possible submission period starts
         // challenge period time starts after first valid submission is received
         submissionPeriod = true;
+        return false;
     }
 
 
@@ -580,7 +581,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
 
         // assessor performs senior debt reBalancing according to new ratio
         assessor.changeSeniorAsset(seniorSupply, seniorRedeem);
-        
+
         juniorTranche.epochUpdate(epochID, calcFulfillment(juniorSupply, order.juniorSupply).value,
             calcFulfillment(juniorRedeem, order.juniorRedeem).value,
             epochJuniorTokenPrice.value, order.juniorSupply, order.juniorRedeem);
@@ -595,7 +596,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         assessor.changeSeniorAsset(0, 0);
         // the new reserve after this epoch can be used for new loans
         assessor.changeBorrowAmountEpoch(newReserve);
-        
+
         // reset state for next epochs
         lastEpochExecuted = epochID;
         minChallengePeriodEnd = 0;

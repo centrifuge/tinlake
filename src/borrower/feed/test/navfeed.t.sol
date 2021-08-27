@@ -227,7 +227,7 @@ contract NAVTest is DSTest, Math {
 
         hevm.warp(block.timestamp + 3 days);
         feed.overrideWriteOff(loan, 3); // 100% write off
-        
+
         assertEq(feed.currentNAV(), 0);
     }
 
@@ -243,6 +243,65 @@ contract NAVTest is DSTest, Math {
         assertTrue(feed.uniqueDayTimestamp(randomUnixTimestamp) == dayTimestamp);
     }
 
+    // gas consumption
+    // 100    loans = 984822
+    // 500    loans = 5426989
+    // 1000   loans = 10835851
+    function recalcDiscount(uint discountRate_, uint expectedTotalDiscount) public {
+        // file new discountRate to trigger navRecalc
+        feed.file("discountRate", discountRate_);
+        assertTrue(expectedTotalDiscount == feed.latestDiscount());
+    }
+
+    // checks if optimized and unoptimized totalDiscount computations return the same value
+    // -> the result of reCalcTotalDiscount & currentPVs have to compute the same totalDiscount value for the same discountRate
+    function testRecalcDiscount() public {
+        uint loanCount = 100;
+        uint discountRate_ = defaultRate; // 5% per day
+        feed.file("discountRate", discountRate_);
+        shelf.setReturn("loanCount", loanCount);
+
+        // create loans
+        for (uint i = 1; i<loanCount; i++) {
+            uint nftValue = 100 ether;
+            uint tokenId = i;
+            uint dueDate = block.timestamp + (1 days * i);
+            uint amount = 50 ether;
+            uint risk = 1;
+            uint loan = i;
+            bytes32 nftID = prepareDefaultNFT(tokenId, nftValue, risk);
+            borrow(tokenId, loan, nftValue, amount, dueDate);
+        }
+        // file the same discount rate to trigger the updateDiscountRate routine -> totalDiscount value should stay unchanged
+        recalcDiscount(discountRate_, feed.latestDiscount());
+
+        hevm.warp(block.timestamp + 2 days);
+    }
+
+    function testChangeDiscountRate() public {
+        uint loanCount = 100;
+        feed.file("discountRate", defaultRate); // file default rate 5% day
+        shelf.setReturn("loanCount", loanCount);
+
+        // create loans
+        for (uint i = 1; i<loanCount; i++) {
+            uint nftValue = 100 ether;
+            uint tokenId = i;
+            uint dueDate = block.timestamp + (1 days * i);
+            uint amount = 50 ether;
+            uint risk = 1;
+            uint loan = i;
+            bytes32 nftID = prepareDefaultNFT(tokenId, nftValue, risk);
+            borrow(tokenId, loan, nftValue, amount, dueDate);
+        }
+        assertTrue(feed.latestDiscount() == 4950000000000000000000);
+        assertTrue(feed.latestNAV() == 4950000000000000000000);
+        // change discountRate -> file new fee 3% day
+        uint expectedTotalDiscount = 33229158876667979731935;
+        recalcDiscount(discountRate, expectedTotalDiscount);
+        assertTrue(feed.latestNAV() == expectedTotalDiscount);
+    }
+
     function testRepay() public {
         uint amount = 50 ether;
 
@@ -254,17 +313,14 @@ contract NAVTest is DSTest, Math {
         pile.setReturn("debt_loan", amount);
         shelf.setReturn("shelf", mockNFTRegistry, tokenId);
         uint maturityDate = feed.maturityDate(feed.nftID(loan));
-        uint navBefore = feed.currentNAV();
 
         // loan id doesn't matter because shelf is mocked
         // repay not full amount
-        uint navDecrease = feed.repay(loan, 30 ether);
-
+        feed.repay(loan, 30 ether);
 
         // list : [1 days] -> [2 days] -> [4 days] -> [5 days]
         //(50*1.05^1)/(1.03^1) + (50*1.05^2) /(1.03^2)  + 100*1.05^4/(1.03^4) + (50-30)*1.05^5/(1.03^5)  ~= 232.94 eth
         assertEq(feed.currentNAV(), 232.947215966580871770 ether, ONE_WEI_TOLERANCE);
-        assertEq(feed.currentNAV(), safeSub(navBefore, navDecrease));
 
         // newFV = (loan.debt - repayment)*interest^timeLeft
         // newFV = (50-30)*1.05^5
@@ -352,10 +408,12 @@ contract NAVTest is DSTest, Math {
         // make repayment for overdue loan
         uint preNAV = feed.currentNAV();
 
-        uint navDecrease = feed.repay(loan, repaymentAmount);
-        // nav should be already decreased
-        assertEq(navDecrease, 0);
-        assertEq(preNAV, feed.currentNAV());
+
+        pile.setReturn("debt_loan", repaymentAmount);
+        feed.repay(loan, repaymentAmount);
+
+        // overdue but not written-off case
+        assertTrue(preNAV > feed.currentNAV());
     }
 
     function testWriteOffOnMaturityDate() public {
@@ -442,7 +500,7 @@ contract NAVTest is DSTest, Math {
         setupLinkedListBuckets();
 
         pile.setReturn("debt_loan", amount);
-        shelf.setReturn("nftlookup" ,loan);
+        shelf.setReturn("nftlookup", loan);
         shelf.setReturn("shelf", mockNFTRegistry, tokenId);
 
         uint nav = feed.currentNAV();
@@ -484,6 +542,81 @@ contract NAVTest is DSTest, Math {
         uint maturityDateOffset = 1 days;
         // repay one second too late should fail
         _repayOnMaturityDate(feed.uniqueDayTimestamp(block.timestamp) + maturityDateOffset + 1 days , maturityDateOffset);
+    }
+
+    // 6% interest rate & 25% write off
+    // file("writeOffGroup", uint(1000000674400000000000000000), 75 * 10**25, 30);
+    // 6% interest rate & 50% write off
+    // file("writeOffGroup", uint(1000000674400000000000000000), 50 * 10**25, 60);
+    // 6% interest rate & 75% write off
+    // file("writeOffGroup", uint(1000000674400000000000000000), 25 * 10**25, 90);
+    // 6% interest rate & 100% write off
+    // file("writeOffGroup", uint(1000000674400000000000000000), 0, 120);
+    function testPublicWriteOff() public {
+        // create loan
+        uint nftValue = 100 ether;
+        uint dueDate = block.timestamp + (4 days);
+        uint amount = 50 ether;
+        uint risk = 1;
+        uint loan = 1;
+        uint tokenID = 1;
+        bytes32 nftID = prepareDefaultNFT(tokenID, nftValue, risk);
+        shelf.setReturn("loanCount", 2);
+        borrow(tokenID, loan, nftValue, amount, dueDate);
+
+        // loan overdue after 5 days
+        hevm.warp(block.timestamp + 35 days); // -> group 1000
+        feed.writeOff(loan);
+        // check pile calls with correct writeOff rate
+        assertEq(pile.values_uint("changeRate_loan"), loan);
+        assertEq(pile.values_uint("changeRate_rate"), feed.WRITEOFF_RATE_GROUP_START());
+
+        hevm.warp(block.timestamp + 30 days); // -> group 1001
+        feed.writeOff(loan);
+        // check pile calls with correct writeOff rate
+        assertEq(pile.values_uint("changeRate_loan"), loan);
+        assertEq(pile.values_uint("changeRate_rate"), feed.WRITEOFF_RATE_GROUP_START() + 1);
+
+        hevm.warp(block.timestamp + 30 days); // -> group 1002
+        feed.writeOff(loan);
+        // check pile calls with correct writeOff rate
+        assertEq(pile.values_uint("changeRate_loan"), loan);
+        assertEq(pile.values_uint("changeRate_rate"), feed.WRITEOFF_RATE_GROUP_START() + 2);
+    }
+
+    function testFailWriteOffHealthyLoan() public {
+        // create loan
+        uint nftValue = 100 ether;
+        uint dueDate = block.timestamp + (4 days);
+        uint amount = 50 ether;
+        uint risk = 1;
+        uint loan = 1;
+        uint tokenID = 1;
+        bytes32 nftID = prepareDefaultNFT(tokenID, nftValue, risk);
+        shelf.setReturn("loanCount", 2);
+        borrow(tokenID, loan, nftValue, amount, dueDate);
+
+        // sould fail as loan is not overdue yet
+        feed.writeOff(loan);
+    }
+
+    function fileWriteOffGroup(uint percentage, uint overdueDays, uint index) public {
+        feed.file("writeOffGroup", percentage, 0, overdueDays);
+        (uint p, uint o) = feed.writeOffGroups(index);
+    
+        assertTrue(pile.values_uint("file_rate") == safeAdd(feed.WRITEOFF_RATE_GROUP_START(), index));
+        assertTrue(pile.values_uint("file_ratePerSecond") == percentage);
+        assertTrue(p == 0);
+        assertTrue(overdueDays == o);
+    }
+
+    function testFileWriteOff(uint128 overdueDays) public {
+        if (overdueDays <= 120) {
+            return;
+        }
+        // 4 default writeoff Groups exist: 1000 - 1003
+        uint expectedIndex = 4;
+        fileWriteOffGroup(uint(1000000674400000000000000000), overdueDays, expectedIndex);
     }
 }
 

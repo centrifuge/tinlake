@@ -19,7 +19,6 @@ contract TestRoot is TinlakeRoot {
         relyContract(bD.shelf(), usr);
         relyContract(bD.pile(), usr);
         relyContract(bD.feed(), usr);
-        relyContract(bD.collector(), usr);
     }
 
     // Needed for System Tests
@@ -35,6 +34,5 @@ contract TestRoot is TinlakeRoot {
         denyContract(bD.feed(), usr);
         denyContract(bD.shelf(), usr);
         denyContract(bD.pile(), usr);
-        denyContract(bD.collector(), usr);
     }
 }
