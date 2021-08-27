@@ -11,7 +11,7 @@ interface LendingAdapterLike {
     function heal() external;
 }
 
-interface NAVFeedLike {
+interface FeedLike {
     function overrideWriteOff(uint loan, uint writeOffGroupIndex_) external;
     function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) external;
     function file(bytes32 name, uint rate_, uint writeOffPercentage_, uint overdueDays_) external;
@@ -35,7 +35,7 @@ contract PoolAdmin {
   
     AssessorLike        public assessor;
     LendingAdapterLike  public lending;
-    NAVFeedLike         public navFeed;
+    FeedLike            public navFeed;
     MemberlistLike      public seniorMemberlist;
     MemberlistLike      public juniorMemberlist;
     CoordinatorLike     public coordinator;
@@ -256,6 +256,10 @@ contract PoolAdmin {
             seniorMemberlist = MemberlistLike(addr);
         } else if (contractName == "juniorMemberlist") {
             juniorMemberlist = MemberlistLike(addr);
+        } else if (contractName == "navFeed") {
+            navFeed = FeedLike(addr);
+        } else if (contractName == "coordinator") {
+            coordinator = CoordinatorLike(addr);
         } else revert();
         emit Depend(contractName, addr);
     }

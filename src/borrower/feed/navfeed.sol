@@ -374,7 +374,6 @@ abstract contract NAVFeed is Auth, Discounting {
                 overdue = safeAdd(overdue, b);
             }
         }
-    }
 
         return
         (
@@ -535,5 +534,4 @@ abstract contract NAVFeed is Auth, Discounting {
         }
         return lastValidWriteOff;
     }
-
 }

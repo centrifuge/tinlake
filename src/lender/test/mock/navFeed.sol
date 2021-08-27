@@ -3,8 +3,13 @@ pragma solidity >=0.6.12;
 import "ds-test/test.sol";
 
 import "../../../test/mock/mock.sol";
+import "tinlake-auth/auth.sol";
 
-contract NAVFeedMock is Mock {
+contract NAVFeedMock is Mock, Auth {
+    constructor() {
+        wards[msg.sender] = 1;
+    }
+
     function latestNAV() public view returns (uint) {
         return values_return["latestNAV"];
     }

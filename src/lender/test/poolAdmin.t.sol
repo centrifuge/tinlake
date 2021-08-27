@@ -5,6 +5,8 @@ import "ds-test/test.sol";
 
 import "./../assessor.sol";
 import "./../admin/pool.sol";
+import "./mock/coordinator.sol";
+import "./mock/navFeed.sol";
 import "./mock/memberlist.sol";
 import "./mock/clerk.sol";
 
@@ -14,6 +16,8 @@ contract PoolAdminTest is DSTest {
     ClerkMock lending;
     MemberlistMock seniorMemberlist;
     MemberlistMock juniorMemberlist;
+    CoordinatorMock coordinator;
+    NAVFeedMock navFeed;
     PoolAdmin poolAdmin;
 
     address[] users;
@@ -23,17 +27,24 @@ contract PoolAdminTest is DSTest {
         lending = new ClerkMock();
         seniorMemberlist = new MemberlistMock();
         juniorMemberlist = new MemberlistMock();
+        coordinator = new CoordinatorMock();
+        navFeed = new NAVFeedMock();
         poolAdmin = new PoolAdmin();
+        poolAdmin.relyOperator(address(this));
 
         assessor.rely(address(poolAdmin));
         lending.rely(address(poolAdmin));
         seniorMemberlist.rely(address(poolAdmin));
         juniorMemberlist.rely(address(poolAdmin));
+        coordinator.rely(address(poolAdmin));
+        navFeed.rely(address(poolAdmin));
 
         poolAdmin.depend("assessor", address(assessor));
         poolAdmin.depend("lending", address(lending));
         poolAdmin.depend("seniorMemberlist", address(seniorMemberlist));
         poolAdmin.depend("juniorMemberlist", address(juniorMemberlist));
+        poolAdmin.depend("coordinator", address(coordinator));
+        poolAdmin.depend("navFeed", address(navFeed));
 
         users = new address[](3);
         users[0] = address(1);
@@ -50,7 +61,7 @@ contract PoolAdminTest is DSTest {
     }
 
     function testSetMaxReserve() public {
-        poolAdmin.relyAdmin(address(this));
+        poolAdmin.relyManager(address(this));
         callMaxReserve(); 
     }
 
@@ -67,7 +78,7 @@ contract PoolAdminTest is DSTest {
     }
 
     function testRaiseCreditline() public {
-        poolAdmin.relyAdmin(address(this));
+        poolAdmin.relyManager(address(this));
         callRaiseCreditline();
     }
 
@@ -83,7 +94,7 @@ contract PoolAdminTest is DSTest {
     }
 
     function testSinkCreditline() public {
-        poolAdmin.relyAdmin(address(this));
+        poolAdmin.relyManager(address(this));
         callSinkCreditline();
     }
 
@@ -92,7 +103,7 @@ contract PoolAdminTest is DSTest {
     }
 
     function testHealCreditline() public {
-        poolAdmin.relyAdmin(address(this));
+        poolAdmin.relyManager(address(this));
         poolAdmin.healCreditline();
 
         assertEq(lending.calls("heal"), 1);
@@ -103,7 +114,7 @@ contract PoolAdminTest is DSTest {
     }
 
     function testSetMaxReserveAndRaiseCreditline() public {
-        poolAdmin.relyAdmin(address(this));
+        poolAdmin.relyManager(address(this));
 
         uint maxReserve = 150 ether;
         uint amount = 100 ether;
@@ -114,7 +125,7 @@ contract PoolAdminTest is DSTest {
     }
 
     function testSetMaxReserveAndSinkCreditline() public {
-        poolAdmin.relyAdmin(address(this));
+        poolAdmin.relyManager(address(this));
 
         uint maxReserve = 150 ether;
         uint amount = 100 ether;
@@ -136,12 +147,12 @@ contract PoolAdminTest is DSTest {
     }
 
     function testUpdateSeniorMemberAsAdmin() public {
-        poolAdmin.relyAdmin(address(this));
+        poolAdmin.relyManager(address(this));
         updateSeniorMember();
     }
 
     function testFailUpdateSeniorMemberAsNonAdmin() public {
-        poolAdmin.denyAdmin(address(this));
+        poolAdmin.denyManager(address(this));
         updateSeniorMember();
     }
 
@@ -155,12 +166,12 @@ contract PoolAdminTest is DSTest {
     }
 
     function testUpdateSeniorMembersAsAdmin() public {
-        poolAdmin.relyAdmin(address(this));
+        poolAdmin.relyManager(address(this));
         updateSeniorMembers();
     }
 
     function testFailUpdateSeniorMembersAsNonAdmin() public {
-        poolAdmin.denyAdmin(address(this));
+        poolAdmin.denyManager(address(this));
         updateSeniorMembers();
     }
 
@@ -176,12 +187,12 @@ contract PoolAdminTest is DSTest {
     }
 
     function testUpdateJuniorMemberAsAdmin() public {
-        poolAdmin.relyAdmin(address(this));
+        poolAdmin.relyManager(address(this));
         updateJuniorMember();
     }
 
     function testFailUpdateJuniorMemberAsNonAdmin() public {
-        poolAdmin.denyAdmin(address(this));
+        poolAdmin.denyManager(address(this));
         updateJuniorMember();
     }
 
@@ -195,12 +206,12 @@ contract PoolAdminTest is DSTest {
     }
 
     function testUpdateJuniorMembersAsAdmin() public {
-        poolAdmin.relyAdmin(address(this));
+        poolAdmin.relyManager(address(this));
         updateJuniorMembers();
     }
 
     function testFailUpdateJuniorMembersAsNonAdmin() public {
-        poolAdmin.denyAdmin(address(this));
+        poolAdmin.denyManager(address(this));
         updateJuniorMembers();
     }
 

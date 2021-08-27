@@ -2,8 +2,14 @@
 pragma solidity >=0.6.12;
 
 import "../../../test/mock/mock.sol";
+import "tinlake-auth/auth.sol";
 
-contract CoordinatorMock is Mock {
+contract CoordinatorMock is Mock, Auth {
+    
+    constructor() {
+        wards[msg.sender] = 1;
+    }
+
     function submissionPeriod() public view returns(bool) {
         return values_bool_return["submissionPeriod"];
     }

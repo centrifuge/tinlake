@@ -30,8 +30,9 @@ interface AdapterDeployerLike {
 }
 
 interface PoolAdminLike {
-    function rely(address) external;
-    function relyAdmin(address) external;
+    function relyManager(address) external;
+    function relyOperator(address) external;
+    function relyWard(address) external;
 }
 
 contract TinlakeRoot is Auth {
@@ -100,12 +101,17 @@ contract TinlakeRoot is Auth {
         // Lender wards
         if (oracle != address(0)) AuthLike(navFeed).rely(oracle);
 
-        // directly relying governance so it can be used to directly add/remove pool admins without going through the root
+        // directly relying governance so it can be used to directly add/remove pool managers without going through the root
         PoolAdminLike poolAdmin = PoolAdminLike(lenderDeployer.poolAdmin());
-        PoolAdminLike(poolAdmin).rely(governance);
+        PoolAdminLike(poolAdmin).relyManager(governance);
+        PoolAdminLike(poolAdmin).relyOperator(governance);
+        PoolAdminLike(poolAdmin).relyWard(governance);
+
+        DependLike(lenderDeployer.poolAdmin()).depend("navFeed", navFeed);
+        AuthLike(navFeed).rely(lenderDeployer.poolAdmin());
 
         for (uint i = 0; i < poolAdmins.length; i++) {
-            PoolAdminLike(poolAdmin).relyAdmin(poolAdmins[i]);
+            PoolAdminLike(poolAdmin).relyManager(poolAdmins[i]);
         }
     }
 
