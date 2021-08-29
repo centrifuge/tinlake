@@ -13,7 +13,7 @@ interface LendingAdapterLike {
 
 interface FeedLike {
     function overrideWriteOff(uint loan, uint writeOffGroupIndex_) external;
-    function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) external;
+    function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_) external;
     function file(bytes32 name, uint rate_, uint writeOffPercentage_, uint overdueDays_) external;
     function file(bytes32 name, uint value) external;
     function file(bytes32 name, bytes32 nftID_, uint maturityDate_) external;
@@ -122,7 +122,7 @@ contract PoolAdmin {
     event RelyManager(address indexed usr);
     event DenyManager(address indexed usr);
     event OverrideWriteOff(uint loan, uint writeOffGroupIndex);
-    event FileRiskGroup(uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_);
+    event FileRiskGroup(uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_);
     event FileRiskGroups(uint[] risks_, uint[] thresholdRatios_, uint[] ceilingRatios_, uint[] rates_);
     event FileWriteOffGroup(uint rate_, uint writeOffPercentage_, uint overdueDays_);
     event UpdateNFTValue(bytes32 nftID_, uint value);
@@ -134,15 +134,15 @@ contract PoolAdmin {
         emit OverrideWriteOff(loan, writeOffGroupIndex_);
     }
 
-    function fileRiskGroup(uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) public operator {
-        navFeed.file("riskGroup", risk_, thresholdRatio_, ceilingRatio_, rate_);
-        emit FileRiskGroup(risk_, thresholdRatio_, ceilingRatio_, rate_);
+    function fileRiskGroup(uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_) public operator {
+        navFeed.file("riskGroup", risk_, thresholdRatio_, ceilingRatio_, rate_, recoveryRatePD_);
+        emit FileRiskGroup(risk_, thresholdRatio_, ceilingRatio_, rate_, recoveryRatePD_);
     }
 
-    function fileRiskGroups(uint[] memory risks_, uint[] memory thresholdRatios_, uint[] memory ceilingRatios_, uint[] memory rates_) public operator {
+    function fileRiskGroups(uint[] memory risks_, uint[] memory thresholdRatios_, uint[] memory ceilingRatios_, uint[] memory rates_, uint[] memory recoveryRatePDs_) public operator {
         require(risks_.length == thresholdRatios_.length && thresholdRatios_.length == ceilingRatios_.length && ceilingRatios_.length == rates_.length, "non-matching-arguments");
         for (uint i = 0; i < risks_.length; i++) {
-            fileRiskGroup(risks_[i], thresholdRatios_[i], ceilingRatios_[i], rates_[i]);
+            fileRiskGroup(risks_[i], thresholdRatios_[i], ceilingRatios_[i], rates_[i], recoveryRatePDs_[i]);
         }
     }
 

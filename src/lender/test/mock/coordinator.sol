@@ -42,4 +42,9 @@ contract CoordinatorMock is Mock, Auth {
     function calcSeniorRatio(uint, uint, uint) public view returns(uint) {
         return values_return["calcSeniorRatio"];
     }
+
+    function file(bytes32 name, uint value) public {
+        values_bytes32["file_name"] = name;
+        values_uint["file_value"] = value;
+    }
 }

@@ -10,7 +10,7 @@ import "./mock/navFeed.sol";
 import "./mock/memberlist.sol";
 import "./mock/clerk.sol";
 
-contract PoolAdminTest is DSTest {
+contract ManagerPoolAdminTest is DSTest {
 
     Assessor assessor;
     ClerkMock lending;
@@ -30,7 +30,7 @@ contract PoolAdminTest is DSTest {
         coordinator = new CoordinatorMock();
         navFeed = new NAVFeedMock();
         poolAdmin = new PoolAdmin();
-        poolAdmin.relyOperator(address(this));
+        poolAdmin.relyOperator(address(this)); // required to call relyManager()
 
         assessor.rely(address(poolAdmin));
         lending.rely(address(poolAdmin));
@@ -52,7 +52,6 @@ contract PoolAdminTest is DSTest {
         users[2] = address(3);
     }
 
-    // Test setting max reserve
     function callMaxReserve() public {
         uint maxReserve = 150 ether;
         
@@ -65,11 +64,10 @@ contract PoolAdminTest is DSTest {
         callMaxReserve(); 
     }
 
-    function testFailSetMaxReserveNotAdmin() public {
+    function testFailSetMaxReserveNotManager() public {
         callMaxReserve(); 
     }
 
-    // Test lending adapter
     function callRaiseCreditline() public {
         uint amount = 100 ether;
         poolAdmin.raiseCreditline(amount);
@@ -82,7 +80,7 @@ contract PoolAdminTest is DSTest {
         callRaiseCreditline();
     }
 
-    function testFailRaiseCreditlineNotAdmin() public {
+    function testFailRaiseCreditlineNotManager() public {
         callRaiseCreditline();
     }
 
@@ -98,7 +96,7 @@ contract PoolAdminTest is DSTest {
         callSinkCreditline();
     }
 
-    function testFailSinkCreditlineNotAdmin() public {
+    function testFailSinkCreditlineNotManager() public {
         callSinkCreditline();
     }
 
@@ -135,7 +133,6 @@ contract PoolAdminTest is DSTest {
         assertEq(lending.values_uint("clerk_sink_amount"), amount);
     }
 
-    // Test senior memberlist
     function updateSeniorMember() public {
         address usr = address(1);
         uint validUntil = block.timestamp + 365 days;
@@ -175,7 +172,6 @@ contract PoolAdminTest is DSTest {
         updateSeniorMembers();
     }
 
-    // Test junior memberlist
     function updateJuniorMember() public {
         address usr = address(1);
         uint validUntil = block.timestamp + 365 days;
