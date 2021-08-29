@@ -9,6 +9,7 @@ interface LendingAdapterLike {
     function raise(uint256 amount) external;
     function sink(uint256 amount) external;
     function heal() external;
+    function file(bytes32 what, uint value) external;
 }
 
 interface FeedLike {
@@ -196,6 +197,7 @@ contract PoolAdmin {
     event FileChallengeTime(uint value);
     event FileMinSeniorRatio(uint value);
     event FileMaxSeniorRatio(uint value);
+    event FileMatBuffer(uint value);
 
     function fileSeniorInterestRate(uint value) public ward {
         assessor.file("seniorInterestRate", value);
@@ -225,6 +227,11 @@ contract PoolAdmin {
     function fileMaxSeniorRatio(uint value) public ward {
         assessor.file("maxSeniorRatio", value);
         emit FileMaxSeniorRatio(value);
+    }
+
+    function fileMatBuffer(uint value) public ward {
+        lending.file("buffer", value);
+        emit FileMatBuffer(value);
     }
 
     function relyOperator(address usr) public ward {

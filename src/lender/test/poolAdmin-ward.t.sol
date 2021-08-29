@@ -110,5 +110,15 @@ contract WardPoolAdminTest is DSTest {
         fileMaxSeniorRatio(); 
     }
 
+    function fileMatBuffer() public {
+        uint matBuffer = 0.02 * 10**27;
+        poolAdmin.fileMatBuffer(matBuffer);
+        assertEq(lending.values_uint("file_value"), matBuffer);
+    }
+
+    function testFileMatBuffer() public {
+        fileMatBuffer(); 
+    }
+
 }
 
