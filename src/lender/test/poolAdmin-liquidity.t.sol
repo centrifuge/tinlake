@@ -10,7 +10,7 @@ import "./mock/navFeed.sol";
 import "./mock/memberlist.sol";
 import "./mock/clerk.sol";
 
-contract ManagerPoolAdminTest is DSTest {
+contract LiquidityManagementPoolAdminTest is DSTest {
 
     Assessor assessor;
     ClerkMock lending;
@@ -30,7 +30,7 @@ contract ManagerPoolAdminTest is DSTest {
         coordinator = new CoordinatorMock();
         navFeed = new NAVFeedMock();
         poolAdmin = new PoolAdmin();
-        poolAdmin.relyOperator(address(this)); // required to call relyManager()
+        poolAdmin.relyLevel2(address(this)); // required to call relyLevel1()
 
         assessor.rely(address(poolAdmin));
         lending.rely(address(poolAdmin));
@@ -60,7 +60,7 @@ contract ManagerPoolAdminTest is DSTest {
     }
 
     function testSetMaxReserve() public {
-        poolAdmin.relyManager(address(this));
+        poolAdmin.relyLevel1(address(this));
         callMaxReserve(); 
     }
 
@@ -76,7 +76,7 @@ contract ManagerPoolAdminTest is DSTest {
     }
 
     function testRaiseCreditline() public {
-        poolAdmin.relyManager(address(this));
+        poolAdmin.relyLevel1(address(this));
         callRaiseCreditline();
     }
 
@@ -92,7 +92,7 @@ contract ManagerPoolAdminTest is DSTest {
     }
 
     function testSinkCreditline() public {
-        poolAdmin.relyManager(address(this));
+        poolAdmin.relyLevel1(address(this));
         callSinkCreditline();
     }
 
@@ -101,7 +101,7 @@ contract ManagerPoolAdminTest is DSTest {
     }
 
     function testHealCreditline() public {
-        poolAdmin.relyManager(address(this));
+        poolAdmin.relyLevel1(address(this));
         poolAdmin.healCreditline();
 
         assertEq(lending.calls("heal"), 1);
@@ -112,7 +112,7 @@ contract ManagerPoolAdminTest is DSTest {
     }
 
     function testSetMaxReserveAndRaiseCreditline() public {
-        poolAdmin.relyManager(address(this));
+        poolAdmin.relyLevel1(address(this));
 
         uint maxReserve = 150 ether;
         uint amount = 100 ether;
@@ -123,7 +123,7 @@ contract ManagerPoolAdminTest is DSTest {
     }
 
     function testSetMaxReserveAndSinkCreditline() public {
-        poolAdmin.relyManager(address(this));
+        poolAdmin.relyLevel1(address(this));
 
         uint maxReserve = 150 ether;
         uint amount = 100 ether;
@@ -144,12 +144,12 @@ contract ManagerPoolAdminTest is DSTest {
     }
 
     function testUpdateSeniorMemberAsAdmin() public {
-        poolAdmin.relyManager(address(this));
+        poolAdmin.relyLevel1(address(this));
         updateSeniorMember();
     }
 
     function testFailUpdateSeniorMemberAsNonAdmin() public {
-        poolAdmin.denyManager(address(this));
+        poolAdmin.denyLevel1(address(this));
         updateSeniorMember();
     }
 
@@ -163,12 +163,12 @@ contract ManagerPoolAdminTest is DSTest {
     }
 
     function testUpdateSeniorMembersAsAdmin() public {
-        poolAdmin.relyManager(address(this));
+        poolAdmin.relyLevel1(address(this));
         updateSeniorMembers();
     }
 
     function testFailUpdateSeniorMembersAsNonAdmin() public {
-        poolAdmin.denyManager(address(this));
+        poolAdmin.denyLevel1(address(this));
         updateSeniorMembers();
     }
 
@@ -183,12 +183,12 @@ contract ManagerPoolAdminTest is DSTest {
     }
 
     function testUpdateJuniorMemberAsAdmin() public {
-        poolAdmin.relyManager(address(this));
+        poolAdmin.relyLevel1(address(this));
         updateJuniorMember();
     }
 
     function testFailUpdateJuniorMemberAsNonAdmin() public {
-        poolAdmin.denyManager(address(this));
+        poolAdmin.denyLevel1(address(this));
         updateJuniorMember();
     }
 
@@ -202,12 +202,12 @@ contract ManagerPoolAdminTest is DSTest {
     }
 
     function testUpdateJuniorMembersAsAdmin() public {
-        poolAdmin.relyManager(address(this));
+        poolAdmin.relyLevel1(address(this));
         updateJuniorMembers();
     }
 
     function testFailUpdateJuniorMembersAsNonAdmin() public {
-        poolAdmin.denyManager(address(this));
+        poolAdmin.denyLevel1(address(this));
         updateJuniorMembers();
     }
 

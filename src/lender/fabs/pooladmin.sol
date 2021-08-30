@@ -7,8 +7,8 @@ contract PoolAdminFab {
     function newPoolAdmin() public returns (address) {
         PoolAdmin poolAdmin = new PoolAdmin();
 
-        poolAdmin.relyWard(msg.sender);
-        poolAdmin.denyWard(address(this));
+        poolAdmin.relyLevel3(msg.sender);
+        poolAdmin.denyLevel3(address(this));
 
         return address(poolAdmin);
     }

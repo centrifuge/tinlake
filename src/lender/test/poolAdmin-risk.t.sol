@@ -10,7 +10,7 @@ import "./mock/navFeed.sol";
 import "./mock/memberlist.sol";
 import "./mock/clerk.sol";
 
-contract OperatorPoolAdminTest is DSTest {
+contract RiskManagementPoolAdminTest is DSTest {
 
     uint constant ONE = 10e27;
 
@@ -30,7 +30,7 @@ contract OperatorPoolAdminTest is DSTest {
         coordinator = new CoordinatorMock();
         navFeed = new NAVFeedMock();
         poolAdmin = new PoolAdmin();
-        poolAdmin.relyWard(address(this)); // required to call relyOperator()
+        poolAdmin.relyLevel3(address(this)); // required to call relyLevel2()
 
         assessor.rely(address(poolAdmin));
         lending.rely(address(poolAdmin));
@@ -56,7 +56,7 @@ contract OperatorPoolAdminTest is DSTest {
     }
 
     function testOverrideWriteOff() public {
-        poolAdmin.relyOperator(address(this));
+        poolAdmin.relyLevel2(address(this));
         callOverrideWriteOff();
     }
 
@@ -70,7 +70,7 @@ contract OperatorPoolAdminTest is DSTest {
     }
 
     function testFileRiskGroup() public {
-        poolAdmin.relyOperator(address(this));
+        poolAdmin.relyLevel2(address(this));
         callFileRiskGroup();
     }
 
@@ -86,7 +86,7 @@ contract OperatorPoolAdminTest is DSTest {
     }
 
     function testFileWriteOffGroup() public {
-        poolAdmin.relyOperator(address(this));
+        poolAdmin.relyLevel2(address(this));
         callFileWriteOffGroup();
     }
 
@@ -96,6 +96,15 @@ contract OperatorPoolAdminTest is DSTest {
 
     // TODO: testFileWriteOffGroups
 
+    function fileMatBuffer() public {
+        uint matBuffer = 0.02 * 10**27;
+        poolAdmin.fileMatBuffer(matBuffer);
+        assertEq(lending.values_uint("file_value"), matBuffer);
+    }
+
+    function testFileMatBuffer() public {
+        fileMatBuffer(); 
+    }
     function callUpdateNFTValue() public {
         bytes32 nftID_ = "1";
         uint value = 100;
@@ -105,7 +114,7 @@ contract OperatorPoolAdminTest is DSTest {
     }
 
     function testUpdateNFTValue() public {
-        poolAdmin.relyOperator(address(this));
+        poolAdmin.relyLevel2(address(this));
         callUpdateNFTValue();
     }
 
@@ -124,7 +133,7 @@ contract OperatorPoolAdminTest is DSTest {
     }
 
     function testUpdateNFTValueRisk() public {
-        poolAdmin.relyOperator(address(this));
+        poolAdmin.relyLevel2(address(this));
         callUpdateNFTValueRisk();
     }
 
@@ -141,7 +150,7 @@ contract OperatorPoolAdminTest is DSTest {
     }
 
     function testUpdateNFTMaturityDate() public {
-        poolAdmin.relyOperator(address(this));
+        poolAdmin.relyLevel2(address(this));
         callUpdateNFTMaturityDate();
     }
 

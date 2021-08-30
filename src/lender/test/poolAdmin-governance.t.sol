@@ -10,7 +10,7 @@ import "./mock/navFeed.sol";
 import "./mock/memberlist.sol";
 import "./mock/clerk.sol";
 
-contract WardPoolAdminTest is DSTest {
+contract PoolGovernancePoolAdminTest is DSTest {
 
     uint constant ONE = 10e27;
 
@@ -110,14 +110,14 @@ contract WardPoolAdminTest is DSTest {
         fileMaxSeniorRatio(); 
     }
 
-    function fileMatBuffer() public {
-        uint matBuffer = 0.02 * 10**27;
-        poolAdmin.fileMatBuffer(matBuffer);
-        assertEq(lending.values_uint("file_value"), matBuffer);
+    function fileEpochScoringWeights() public {
+        poolAdmin.fileEpochScoringWeights(2000, 200, 20, 2);
+        assertEq(coordinator.values_bytes32("file_name"), "weightSeniorSupply");
+        assertEq(coordinator.values_uint("file_value"), 2);
     }
 
-    function testFileMatBuffer() public {
-        fileMatBuffer(); 
+    function testFileEpochScoringWeights() public {
+        fileEpochScoringWeights(); 
     }
 
 }
