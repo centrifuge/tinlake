@@ -182,10 +182,7 @@ contract Assessor is Definitions, Auth, Interest {
             return ONE;
         }
 
-        // reserve includes creditline from maker
         uint totalAssets = safeAdd(nav_, reserve_);
-
-        // includes creditline
         uint seniorAssetValue = calcExpectedSeniorAsset(seniorDebt(), seniorBalance_);
 
         if(totalAssets < seniorAssetValue) {

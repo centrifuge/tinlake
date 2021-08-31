@@ -253,7 +253,7 @@ contract Shelf is Auth, TitleOwned, Math {
     // unlocks an nft in the shelf
     // requires zero debt or 100% write off
     function unlock(uint loan) external owner(loan) {
-        // loans can be unlocked and closed when the debt is 0, the loan is written off 100%, or the loan has been partially written off and the remainder has been repaid
+        // loans can be unlocked and closed when the debt is 0, or the loan is written off 100%
         uint debt_ = pile.debt(loan);
 
         require(debt_ == 0 || ceiling.zeroPV(loan), "loan-has-outstanding-debt");

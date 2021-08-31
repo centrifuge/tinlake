@@ -23,16 +23,14 @@ interface PileLike {
     function rateDebt(uint rate) external view returns (uint);
 }
 
-// todo update comments to new implementation -> here
-// The NAV Feed contract extends the functionality of the NFT Feed
-// by the Net Asset Value (NAV) computation of a Tinlake pool.
+// The NAV Feed contract calculates the Net Asset Value of a Tinlake pool.
 // NAV is computed as the sum of all discounted future values (fv) of ongoing loans (debt > 0) in the pool.
 // The applied discountRate is dependant on the maturity data of the underlying collateral.
 // The discount decreases with the maturity date approaching.
-// To optimize the NAV calculation the discounting of future values happens bucketwise.
-// FVs from assets with the same maturity date are added to one bucket.
-// This safes iterations & gas, as the same discountRates can be applied per bucket.
-
+// To optimize the NAV calculation, the NAV is calculated as the change in discounted future values since the calculation.
+// When loans are overdue, they are locked at their fv on the maturity date.
+// They can then be written off, using the public writeoff method based on
+// the default writeoff schedule, or using the override writeoff method.
 abstract contract NAVFeed is Auth, Discounting {
     PileLike    public pile;
     ShelfLike   public shelf;
