@@ -428,9 +428,10 @@ contract NAVTest is DSTest, Math {
 
         // make partial repayment for overdue loan
         pile.setReturn("debt_loan", amount);
-        feed.repay(loan, 15 ether); // repay 50%
 
-        assertTrue(feed.currentNAV() > 0);
+        uint preNAV = feed.currentNAV();
+        feed.repay(loan, 15 ether); // repay 50%
+        assertTrue(feed.currentNAV() < preNAV);
     }
 
     function testWriteOffOnMaturityDate() public {
