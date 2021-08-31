@@ -29,6 +29,8 @@ interface MemberlistLike {
 
 interface CoordinatorLike {
     function file(bytes32 name, uint value) external;
+    function file(bytes32 name, bool value) external;
+    function poolClosing() external view returns(bool);
 }
 
 // Wrapper contract for various pool management tasks.
@@ -124,10 +126,10 @@ contract PoolAdmin {
     
     // --- Risk Management, authorized by level 2 admins ---
     event OverrideWriteOff(uint loan, uint writeOffGroupIndex);
-    event FileRiskGroup(uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_);
-    event FileRiskGroups(uint[] risks_, uint[] thresholdRatios_, uint[] ceilingRatios_, uint[] rates_);
-    event FileWriteOffGroup(uint rate_, uint writeOffPercentage_, uint overdueDays_);
-    event FileMatBuffer(uint value);
+    event AddRiskGroup(uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_);
+    event AddRiskGroups(uint[] risks_, uint[] thresholdRatios_, uint[] ceilingRatios_, uint[] rates_);
+    event AddWriteOffGroup(uint rate_, uint writeOffPercentage_, uint overdueDays_);
+    event SetMatBuffer(uint value);
     event UpdateNFTValue(bytes32 nftID_, uint value);
     event UpdateNFTValueRisk(bytes32 nftID_, uint value, uint risk_);
     event UpdateNFTMaturityDate(bytes32 nftID_, uint maturityDate_);
@@ -137,33 +139,33 @@ contract PoolAdmin {
         emit OverrideWriteOff(loan, writeOffGroupIndex_);
     }
 
-    function fileRiskGroup(uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_) public level2 {
+    function addRiskGroup(uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_) public level2 {
         navFeed.file("riskGroup", risk_, thresholdRatio_, ceilingRatio_, rate_, recoveryRatePD_);
-        emit FileRiskGroup(risk_, thresholdRatio_, ceilingRatio_, rate_, recoveryRatePD_);
+        emit AddRiskGroup(risk_, thresholdRatio_, ceilingRatio_, rate_, recoveryRatePD_);
     }
 
-    function fileRiskGroups(uint[] memory risks_, uint[] memory thresholdRatios_, uint[] memory ceilingRatios_, uint[] memory rates_, uint[] memory recoveryRatePDs_) public level2 {
+    function addRiskGroups(uint[] memory risks_, uint[] memory thresholdRatios_, uint[] memory ceilingRatios_, uint[] memory rates_, uint[] memory recoveryRatePDs_) public level2 {
         require(risks_.length == thresholdRatios_.length && thresholdRatios_.length == ceilingRatios_.length && ceilingRatios_.length == rates_.length, "non-matching-arguments");
         for (uint i = 0; i < risks_.length; i++) {
-            fileRiskGroup(risks_[i], thresholdRatios_[i], ceilingRatios_[i], rates_[i], recoveryRatePDs_[i]);
+            addRiskGroup(risks_[i], thresholdRatios_[i], ceilingRatios_[i], rates_[i], recoveryRatePDs_[i]);
         }
     }
 
-    function fileWriteOffGroup(uint rate_, uint writeOffPercentage_, uint overdueDays_) public level2 {
+    function addWriteOffGroup(uint rate_, uint writeOffPercentage_, uint overdueDays_) public level2 {
         navFeed.file("writeOffGroup", rate_, writeOffPercentage_, overdueDays_);
-        emit FileWriteOffGroup(rate_, writeOffPercentage_, overdueDays_);
+        emit AddWriteOffGroup(rate_, writeOffPercentage_, overdueDays_);
     }
 
-    function fileWriteOffGroups(uint[] memory rates_, uint[] memory writeOffPercentages_, uint[] memory overdueDays_) public level2 {
+    function addWriteOffGroups(uint[] memory rates_, uint[] memory writeOffPercentages_, uint[] memory overdueDays_) public level2 {
         require(rates_.length == writeOffPercentages_.length && writeOffPercentages_.length == overdueDays_.length, "non-matching-arguments");
         for (uint i = 0; i < rates_.length; i++) {
-            fileWriteOffGroup(rates_[i], writeOffPercentages_[i], overdueDays_[i]);
+            addWriteOffGroup(rates_[i], writeOffPercentages_[i], overdueDays_[i]);
         }
     }
 
-    function fileMatBuffer(uint value) public level3 {
+    function setMatBuffer(uint value) public level3 {
         lending.file("buffer", value);
-        emit FileMatBuffer(value);
+        emit SetMatBuffer(value);
     }
 
     function updateNFTValue(bytes32 nftID_, uint value) public level2 {
@@ -194,50 +196,64 @@ contract PoolAdmin {
     // --- Pool Governance, authorized by level 3 admins ---
     event Depend(bytes32 indexed contractname, address addr);
     event File(bytes32 indexed what, bool indexed data);
-    event FileSeniorInterestRate(uint value);
-    event FileDiscountRate(uint value);
-    event FileMinimumEpochTime(uint value);
-    event FileChallengeTime(uint value);
-    event FileMinSeniorRatio(uint value);
-    event FileMaxSeniorRatio(uint value);
-    event FileEpochScoringWeights(uint weightSeniorRedeem, uint weightJuniorRedeem, uint weightJuniorSupply, uint weightSeniorSupply);
+    event SetSeniorInterestRate(uint value);
+    event SetDiscountRate(uint value);
+    event SetMinimumEpochTime(uint value);
+    event SetChallengeTime(uint value);
+    event SetMinSeniorRatio(uint value);
+    event SetMaxSeniorRatio(uint value);
+    event SetEpochScoringWeights(uint weightSeniorRedeem, uint weightJuniorRedeem, uint weightJuniorSupply, uint weightSeniorSupply);
+    event ClosePool();
+    event UnclosePool();
 
-    function fileSeniorInterestRate(uint value) public level3 {
+    function setSeniorInterestRate(uint value) public level3 {
         assessor.file("seniorInterestRate", value);
-        emit FileSeniorInterestRate(value);
+        emit SetSeniorInterestRate(value);
     }
 
-    function fileDiscountRate(uint value) public level3 {
+    function setDiscountRate(uint value) public level3 {
         navFeed.file("discountRate", value);
-        emit FileDiscountRate(value);
+        emit SetDiscountRate(value);
     }
 
-    function fileMinimumEpochTime(uint value) public level3 {
+    function setMinimumEpochTime(uint value) public level3 {
         coordinator.file("minimumEpochTime", value);
-        emit FileMinimumEpochTime(value);
+        emit SetMinimumEpochTime(value);
     }
 
-    function fileChallengeTime(uint value) public level3 {
+    function setChallengeTime(uint value) public level3 {
         coordinator.file("challengeTime", value);
-        emit FileChallengeTime(value);
+        emit SetChallengeTime(value);
     }
 
-    function fileMinSeniorRatio(uint value) public level3 {
+    function setMinSeniorRatio(uint value) public level3 {
         assessor.file("minSeniorRatio", value);
-        emit FileMinSeniorRatio(value);
+        emit SetMinSeniorRatio(value);
     }
 
-    function fileMaxSeniorRatio(uint value) public level3 {
+    function setMaxSeniorRatio(uint value) public level3 {
         assessor.file("maxSeniorRatio", value);
-        emit FileMaxSeniorRatio(value);
+        emit SetMaxSeniorRatio(value);
     }
 
-    function fileEpochScoringWeights(uint weightSeniorRedeem, uint weightJuniorRedeem, uint weightJuniorSupply, uint weightSeniorSupply) public level3 {
+    function setEpochScoringWeights(uint weightSeniorRedeem, uint weightJuniorRedeem, uint weightJuniorSupply, uint weightSeniorSupply) public level3 {
         coordinator.file("weightSeniorRedeem", weightSeniorRedeem);
         coordinator.file("weightJuniorRedeem", weightJuniorRedeem);
         coordinator.file("weightJuniorSupply", weightJuniorSupply);
         coordinator.file("weightSeniorSupply", weightSeniorSupply);
-        emit FileEpochScoringWeights(weightSeniorRedeem, weightJuniorRedeem, weightJuniorSupply, weightSeniorSupply);
+        emit SetEpochScoringWeights(weightSeniorRedeem, weightJuniorRedeem, weightJuniorSupply, weightSeniorSupply);
+    }
+
+    function closePool() public level3 {
+        require(coordinator.poolClosing() == false, "already-closed");
+        coordinator.file("poolClosing", true);
+        emit ClosePool();
+    }
+
+    function unclosePool() public level3 {
+        require(coordinator.poolClosing() == true, "not-yet-closed");
+        coordinator.file("poolClosing", false);
+        emit UnclosePool();
     }
 
     function relyLevel2(address usr) public level3 {

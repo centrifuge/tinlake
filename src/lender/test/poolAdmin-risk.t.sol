@@ -64,46 +64,46 @@ contract RiskManagementPoolAdminTest is DSTest {
         callOverrideWriteOff(); 
     }
 
-    function callFileRiskGroup() public {
-        poolAdmin.fileRiskGroup(0, 8*10**26, 6*10**26, ONE, ONE);
+    function callAddRiskGroup() public {
+        poolAdmin.addRiskGroup(0, 8*10**26, 6*10**26, ONE, ONE);
         assertEq(navFeed.values_uint("file_thresholdRatio_"), 8*10**26);
     }
 
-    function testFileRiskGroup() public {
+    function testAddRiskGroup() public {
         poolAdmin.relyLevel2(address(this));
-        callFileRiskGroup();
+        callAddRiskGroup();
     }
 
-    function testFailFileRiskGroupNotOperator() public {
-        callFileRiskGroup(); 
+    function testFailAddRiskGroupNotOperator() public {
+        callAddRiskGroup(); 
     }
 
-    // TODO: testFileRiskGroups
+    // TODO: testAddRiskGroups
 
-    function callFileWriteOffGroup() public {
-        poolAdmin.fileWriteOffGroup(uint(1000000674400000000000000000), 75 * 10**25, 30);
+    function callAddWriteOffGroup() public {
+        poolAdmin.addWriteOffGroup(uint(1000000674400000000000000000), 75 * 10**25, 30);
         assertEq(navFeed.values_uint("file_writeOffPercentage"), 75 * 10**25);
     }
 
-    function testFileWriteOffGroup() public {
+    function testAddWriteOffGroup() public {
         poolAdmin.relyLevel2(address(this));
-        callFileWriteOffGroup();
+        callAddWriteOffGroup();
     }
 
-    function testFailFileWriteOffGroupNotOperator() public {
-        callFileWriteOffGroup(); 
+    function testFailAddWriteOffGroupNotOperator() public {
+        callAddWriteOffGroup(); 
     }
 
-    // TODO: testFileWriteOffGroups
+    // TODO: testAddWriteOffGroups
 
-    function fileMatBuffer() public {
+    function setMatBuffer() public {
         uint matBuffer = 0.02 * 10**27;
-        poolAdmin.fileMatBuffer(matBuffer);
+        poolAdmin.setMatBuffer(matBuffer);
         assertEq(lending.values_uint("file_value"), matBuffer);
     }
 
-    function testFileMatBuffer() public {
-        fileMatBuffer(); 
+    function testSetMatBuffer() public {
+        setMatBuffer(); 
     }
     function callUpdateNFTValue() public {
         bytes32 nftID_ = "1";

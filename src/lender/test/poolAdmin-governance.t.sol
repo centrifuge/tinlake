@@ -46,78 +46,103 @@ contract PoolGovernancePoolAdminTest is DSTest {
         poolAdmin.depend("navFeed", address(navFeed));
     }
 
-    function fileSeniorInterestRate() public {
+    function setSeniorInterestRate() public {
         uint seniorInterestRate = 1000000674400000000000000000;
-        poolAdmin.fileSeniorInterestRate(seniorInterestRate);
+        poolAdmin.setSeniorInterestRate(seniorInterestRate);
         assertEq(assessor.seniorInterestRate(), seniorInterestRate);
     }
 
-    function testFileSeniorInterestRate() public {
-        fileSeniorInterestRate(); 
+    function testSetSeniorInterestRate() public {
+        setSeniorInterestRate(); 
     }
 
-    function fileDiscountRate() public {
+    function setDiscountRate() public {
         uint discountRate = 1000000674400000000000000000;
-        poolAdmin.fileDiscountRate(discountRate);
+        poolAdmin.setDiscountRate(discountRate);
         assertEq(navFeed.values_uint("file_value"), discountRate);
     }
 
-    function testFileDiscountRate() public {
-        fileDiscountRate(); 
+    function testSetDiscountRate() public {
+        setDiscountRate(); 
     }
 
-    function fileMinimumEpochTime() public {
+    function setMinimumEpochTime() public {
         uint minimumEpochTime = 2 days;
-        poolAdmin.fileMinimumEpochTime(minimumEpochTime);
+        poolAdmin.setMinimumEpochTime(minimumEpochTime);
         assertEq(coordinator.values_uint("file_value"), minimumEpochTime);
     }
 
-    function testFileMinimumEpochTime() public {
-        fileMinimumEpochTime(); 
+    function testSetMinimumEpochTime() public {
+        setMinimumEpochTime(); 
     }
 
-    function fileChallengeTime() public {
+    function setChallengeTime() public {
         uint challengeTime = 1 hours;
-        poolAdmin.fileChallengeTime(challengeTime);
+        poolAdmin.setChallengeTime(challengeTime);
         assertEq(coordinator.values_uint("file_value"), challengeTime);
     }
 
-    function testFileChallengeTime() public {
-        fileChallengeTime(); 
+    function testSetChallengeTime() public {
+        setChallengeTime(); 
     }
 
-    function fileMinSeniorRatio() public {
+    function setMinSeniorRatio() public {
         // required to call first because minSeniorRatio < maxSeniorRatio must be true
         uint maxSeniorRatio = 0.8 * 10**27;
-        poolAdmin.fileMaxSeniorRatio(maxSeniorRatio);
+        poolAdmin.setMaxSeniorRatio(maxSeniorRatio);
 
         uint minSeniorRatio = 0.2 * 10**27;
-        poolAdmin.fileMinSeniorRatio(minSeniorRatio);
+        poolAdmin.setMinSeniorRatio(minSeniorRatio);
         assertEq(assessor.minSeniorRatio(), minSeniorRatio);
     }
 
-    function testFileMinSeniorRatio() public {
-        fileMinSeniorRatio(); 
+    function testSetMinSeniorRatio() public {
+        setMinSeniorRatio(); 
     }
 
-    function fileMaxSeniorRatio() public {
+    function setMaxSeniorRatio() public {
         uint maxSeniorRatio = 0.8 * 10**27;
-        poolAdmin.fileMaxSeniorRatio(maxSeniorRatio);
+        poolAdmin.setMaxSeniorRatio(maxSeniorRatio);
         assertEq(assessor.maxSeniorRatio(), maxSeniorRatio);
     }
 
-    function testFileMaxSeniorRatio() public {
-        fileMaxSeniorRatio(); 
+    function testSetMaxSeniorRatio() public {
+        setMaxSeniorRatio(); 
     }
 
-    function fileEpochScoringWeights() public {
-        poolAdmin.fileEpochScoringWeights(2000, 200, 20, 2);
+    function setEpochScoringWeights() public {
+        poolAdmin.setEpochScoringWeights(2000, 200, 20, 2);
         assertEq(coordinator.values_bytes32("file_name"), "weightSeniorSupply");
         assertEq(coordinator.values_uint("file_value"), 2);
     }
 
-    function testFileEpochScoringWeights() public {
-        fileEpochScoringWeights(); 
+    function testSetEpochScoringWeights() public {
+        setEpochScoringWeights(); 
+    }
+
+    function testClosePool() public {
+        poolAdmin.closePool();
+        assertEq(coordinator.values_bytes32("file_name"), "poolClosing");
+        assertEq(coordinator.values_uint("file_value"), 1);
+    }
+
+    function testUnclosePool() public {
+        poolAdmin.closePool();
+        assertEq(coordinator.values_bytes32("file_name"), "poolClosing");
+        assertEq(coordinator.values_uint("file_value"), 1);
+
+        poolAdmin.unclosePool();
+        assertEq(coordinator.values_bytes32("file_name"), "poolClosing");
+        assertEq(coordinator.values_uint("file_value"), 0);
+    }
+
+    function testFailUncloseOpenPool() public {
+        poolAdmin.unclosePool();
+    }
+
+    function testFailCloseAlreadyClosedPool() public {
+        poolAdmin.closePool();
+        poolAdmin.closePool();
     }
 
 }

@@ -47,4 +47,14 @@ contract CoordinatorMock is Mock, Auth {
         values_bytes32["file_name"] = name;
         values_uint["file_value"] = value;
     }
+
+    function file(bytes32 name, bool value) public {
+        values_bytes32["file_name"] = name;
+        values_uint["file_value"] = value == true ? 1 : 0;
+    }
+    
+    function poolClosing() public view returns (bool) {
+        return values_uint["file_value"] == 1;
+    }
+
 }
