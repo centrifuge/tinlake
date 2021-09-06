@@ -20,9 +20,6 @@ contract LenderIntegrationTest is BaseSystemTest {
         assertEq(assessor.wards(address(poolAdmin)), 1);
         uint newReserve = 200 ether;
         assertEq(poolAdmin.admin_level(address(this)), 3);
-        poolAdmin.deny(address(this));
-        poolAdmin.rely(address(this), 1);
-        assertEq(poolAdmin.admin_level(address(this)), 1);
         poolAdmin.setMaxReserve(newReserve);
         assertEq(assessor.maxReserve(), newReserve);
     }
