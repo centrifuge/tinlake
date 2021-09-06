@@ -252,7 +252,7 @@ contract Assessor is Definitions, Auth, Interest {
 
     // returns the current NAV
     function getNAV() public view returns(uint) {
-        if (navFeed.lastNAVUpdate() >= maxStaleNAV) {
+        if (block.timestamp >= navFeed.lastNAVUpdate() + maxStaleNAV) {
             return navFeed.currentNAV();
         }
 
