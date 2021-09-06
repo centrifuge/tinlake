@@ -47,13 +47,17 @@ contract PoolAdmin {
 
     mapping (address => uint256) public admin_level;
 
-    modifier level1     { require(admin_level[msg.sender] >= 1 && live); _; }
-    modifier level2     { require(admin_level[msg.sender] >= 2 && live); _; }
-    modifier level3     { require(admin_level[msg.sender] == 3 && live); _; }
+    uint public constant LEVEL_1 = 1;
+    uint public constant LEVEL_2 = 2;
+    uint public constant LEVEL_3 = 3;
+
+    modifier level1     { require(admin_level[msg.sender] >= LEVEL_1 && live); _; }
+    modifier level2     { require(admin_level[msg.sender] >= LEVEL_2 && live); _; }
+    modifier level3     { require(admin_level[msg.sender] == LEVEL_3 && live); _; }
 
     constructor() {
-        admin_level[msg.sender] = 3;
-        emit Rely(msg.sender, 3);
+        admin_level[msg.sender] = LEVEL_3;
+        emit Rely(msg.sender, LEVEL_3);
     }
 
     // --- Liquidity Management, authorized by level 1 admins ---
@@ -244,7 +248,7 @@ contract PoolAdmin {
     }
 
     function rely(address usr, uint level) public level3 {
-        require(level == 1 || level == 2 || level == 3, "invalid-level");
+        require(level > 0 && level <= LEVEL_3, "invalid-level");
         admin_level[usr] = level;
         emit Rely(usr, level);
     }
