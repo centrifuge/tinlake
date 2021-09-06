@@ -18,6 +18,6 @@ contract NAVFeedMock is Mock {
     }
 
     function lastNAVUpdate() public view returns (uint) {
-        return values_return["lastNAVUpdate"];
+        return block.timestamp;
     }
 }
