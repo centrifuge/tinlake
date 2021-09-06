@@ -23,6 +23,10 @@ interface FileLike {
     function file(bytes32 name, uint value) external;
 }
 
+interface PoolAdminLike {
+    function rely(address, uint) external;
+}
+
 contract LenderDeployer is FixedPoint {
     address public immutable root;
     address public immutable currency;
@@ -154,8 +158,8 @@ contract LenderDeployer is FixedPoint {
     function deployPoolAdmin() public {
         require(poolAdmin == address(0) && deployer == address(1));
         poolAdmin = poolAdminFab.newPoolAdmin();
-        AuthLike(poolAdmin).rely(root);
-        if (adapterDeployer != address(0)) AuthLike(poolAdmin).rely(adapterDeployer);
+        PoolAdminLike(poolAdmin).rely(root, 3);
+        if (adapterDeployer != address(0)) PoolAdminLike(poolAdmin).rely(adapterDeployer, 3);
     }
 
     function deployCoordinator() public {
@@ -210,6 +214,8 @@ contract LenderDeployer is FixedPoint {
         DependLike(coordinator).depend("juniorTranche", juniorTranche);
         DependLike(coordinator).depend("assessor", assessor);
 
+        AuthLike(coordinator).rely(poolAdmin);
+
         // assessor
         DependLike(assessor).depend("seniorTranche", seniorTranche);
         DependLike(assessor).depend("juniorTranche", juniorTranche);
@@ -223,6 +229,7 @@ contract LenderDeployer is FixedPoint {
         DependLike(poolAdmin).depend("assessor", assessor);
         DependLike(poolAdmin).depend("juniorMemberlist", juniorMemberlist);
         DependLike(poolAdmin).depend("seniorMemberlist", seniorMemberlist);
+        DependLike(poolAdmin).depend("coordinator", coordinator);
         
         AuthLike(juniorMemberlist).rely(poolAdmin);
         AuthLike(seniorMemberlist).rely(poolAdmin);
