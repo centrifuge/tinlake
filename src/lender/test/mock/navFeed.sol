@@ -16,4 +16,8 @@ contract NAVFeedMock is Mock {
     function currentNAV() public view returns (uint) {
         return values_return["currentNAV"];
     }
+
+    function lastNAVUpdate() public view returns (uint) {
+        return values_return["lastNAVUpdate"];
+    }
 }

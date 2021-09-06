@@ -8,7 +8,8 @@ import "./definitions.sol";
 interface NAVFeedLike {
     function calcUpdateNAV() external returns (uint);
     function latestNAV() external view returns (uint);
-    function currentNAV() external view returns(uint);
+    function currentNAV() external view returns (uint);
+    function lastNAVUpdate() external view returns (uint);
 }
 
 interface TrancheLike {
@@ -52,6 +53,7 @@ contract Assessor is Definitions, Auth, Interest {
     uint            public maxReserve;
 
     uint            public creditBufferTime = 1 days;
+    uint            public maxStaleNAV = 1 days;
 
     TrancheLike     public seniorTranche;
     TrancheLike     public juniorTranche;
@@ -101,6 +103,8 @@ contract Assessor is Definitions, Auth, Interest {
             minSeniorRatio = Fixed27(value);
         } else if (name == "creditBufferTime") {
             creditBufferTime = value;
+        } else if (name == "maxStaleNAV") {
+            maxStaleNAV = value;
         } else {
             revert("unknown-variable");
         }
@@ -248,6 +252,10 @@ contract Assessor is Definitions, Auth, Interest {
 
     // returns the current NAV
     function getNAV() public view returns(uint) {
+        if (navFeed.lastNAVUpdate() >= maxStaleNAV) {
+            return navFeed.currentNAV();
+        }
+
         return navFeed.latestNAV();
     }
 
