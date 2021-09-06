@@ -155,14 +155,14 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
           else if (name == "weightJuniorRedeem") { weightJuniorRedeem = value; }
           else if (name == "weightJuniorSupply") { weightJuniorSupply = value; }
           else if (name == "weightSeniorSupply") { weightSeniorSupply = value; }
-          else { revert("unkown-name");}
+          else { revert("unknown-name");}
         emit File(name, value);
      }
 
     function file(bytes32 name, bool value) public auth {
         if (name == "poolClosing") {
             poolClosing = value;
-        } else { revert("unkown-name"); }
+        } else { revert("unknown-name"); }
         emit File(name, value);
      }
 

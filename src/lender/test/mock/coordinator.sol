@@ -2,8 +2,14 @@
 pragma solidity >=0.6.12;
 
 import "../../../test/mock/mock.sol";
+import "tinlake-auth/auth.sol";
 
-contract CoordinatorMock is Mock {
+contract CoordinatorMock is Mock, Auth {
+    
+    constructor() {
+        wards[msg.sender] = 1;
+    }
+
     function submissionPeriod() public view returns(bool) {
         return values_bool_return["submissionPeriod"];
     }
@@ -36,4 +42,19 @@ contract CoordinatorMock is Mock {
     function calcSeniorRatio(uint, uint, uint) public view returns(uint) {
         return values_return["calcSeniorRatio"];
     }
+
+    function file(bytes32 name, uint value) public {
+        values_bytes32["file_name"] = name;
+        values_uint["file_value"] = value;
+    }
+
+    function file(bytes32 name, bool value) public {
+        values_bytes32["file_name"] = name;
+        values_uint["file_value"] = value == true ? 1 : 0;
+    }
+    
+    function poolClosing() public view returns (bool) {
+        return values_uint["file_value"] == 1;
+    }
+
 }

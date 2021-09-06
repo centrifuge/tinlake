@@ -52,5 +52,10 @@ contract ClerkMock is Mock, Auth {
         calls["heal"]++;
     }
 
+    function file(bytes32 name, uint256 value) public auth {
+        values_bytes32["file_name"] = name;
+        values_uint["file_value"] = value;
+    }
+
 }
 
