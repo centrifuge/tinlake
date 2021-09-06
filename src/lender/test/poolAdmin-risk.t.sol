@@ -30,7 +30,6 @@ contract RiskManagementPoolAdminTest is DSTest {
         coordinator = new CoordinatorMock();
         navFeed = new NAVFeedMock();
         poolAdmin = new PoolAdmin();
-        poolAdmin.relyLevel3(address(this)); // required to call relyLevel2()
 
         assessor.rely(address(poolAdmin));
         lending.rely(address(poolAdmin));
@@ -56,11 +55,11 @@ contract RiskManagementPoolAdminTest is DSTest {
     }
 
     function testOverrideWriteOff() public {
-        poolAdmin.relyLevel2(address(this));
         callOverrideWriteOff();
     }
 
     function testFailOverrideWriteOffNotOperator() public {
+        poolAdmin.deny(address(this));
         callOverrideWriteOff(); 
     }
 
@@ -70,11 +69,11 @@ contract RiskManagementPoolAdminTest is DSTest {
     }
 
     function testAddRiskGroup() public {
-        poolAdmin.relyLevel2(address(this));
         callAddRiskGroup();
     }
 
     function testFailAddRiskGroupNotOperator() public {
+        poolAdmin.deny(address(this));
         callAddRiskGroup(); 
     }
 
@@ -86,11 +85,11 @@ contract RiskManagementPoolAdminTest is DSTest {
     }
 
     function testAddWriteOffGroup() public {
-        poolAdmin.relyLevel2(address(this));
         callAddWriteOffGroup();
     }
 
     function testFailAddWriteOffGroupNotOperator() public {
+        poolAdmin.deny(address(this));
         callAddWriteOffGroup(); 
     }
 
@@ -114,11 +113,11 @@ contract RiskManagementPoolAdminTest is DSTest {
     }
 
     function testUpdateNFTValue() public {
-        poolAdmin.relyLevel2(address(this));
         callUpdateNFTValue();
     }
 
     function testFailUpdateNFTValueNotOperator() public {
+        poolAdmin.deny(address(this));
         callUpdateNFTValue(); 
     }
 
@@ -133,11 +132,11 @@ contract RiskManagementPoolAdminTest is DSTest {
     }
 
     function testUpdateNFTValueRisk() public {
-        poolAdmin.relyLevel2(address(this));
         callUpdateNFTValueRisk();
     }
 
     function testFailUpdateNFTValueRiskNotOperator() public {
+        poolAdmin.deny(address(this));
         callUpdateNFTValueRisk(); 
     }
 
@@ -150,11 +149,11 @@ contract RiskManagementPoolAdminTest is DSTest {
     }
 
     function testUpdateNFTMaturityDate() public {
-        poolAdmin.relyLevel2(address(this));
         callUpdateNFTMaturityDate();
     }
 
     function testFailUpdateNFTMaturityDateNotOperator() public {
+        poolAdmin.deny(address(this));
         callUpdateNFTMaturityDate(); 
     }
 

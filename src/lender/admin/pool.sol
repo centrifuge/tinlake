@@ -45,20 +45,15 @@ contract PoolAdmin {
 
     bool                public live = true;
 
-    mapping (address => uint256) public level1_admins;
-    mapping (address => uint256) public level2_admins;
-    mapping (address => uint256) public level3_admins;
+    mapping (address => uint256) public admin_level;
 
-    modifier level1     { require(level1_admins[msg.sender] == 1 && live); _; }
-    modifier level2     { require(level2_admins[msg.sender] == 1 && live); _; }
-    modifier level3     { require(level3_admins[msg.sender] == 1 && live); _; }
-
-    event Rely(uint indexed level, address indexed usr);
-    event Deny(uint indexed level, address indexed usr);
+    modifier level1     { require(admin_level[msg.sender] >= 1 && live); _; }
+    modifier level2     { require(admin_level[msg.sender] >= 2 && live); _; }
+    modifier level3     { require(admin_level[msg.sender] == 3 && live); _; }
 
     constructor() {
-        level3_admins[msg.sender] = 1;
-        emit Rely(3, msg.sender);
+        admin_level[msg.sender] = 3;
+        emit Rely(msg.sender, 3);
     }
 
     // --- Liquidity Management, authorized by level 1 admins ---
@@ -145,7 +140,7 @@ contract PoolAdmin {
     }
 
     function addRiskGroups(uint[] memory risks_, uint[] memory thresholdRatios_, uint[] memory ceilingRatios_, uint[] memory rates_, uint[] memory recoveryRatePDs_) public level2 {
-        require(risks_.length == thresholdRatios_.length && thresholdRatios_.length == ceilingRatios_.length && ceilingRatios_.length == rates_.length, "non-matching-arguments");
+        require(risks_.length == thresholdRatios_.length && thresholdRatios_.length == ceilingRatios_.length && ceilingRatios_.length == rates_.length && rates_.length == recoveryRatePDs_.length, "non-matching-arguments");
         for (uint i = 0; i < risks_.length; i++) {
             addRiskGroup(risks_[i], thresholdRatios_[i], ceilingRatios_[i], rates_[i], recoveryRatePDs_[i]);
         }
@@ -183,18 +178,7 @@ contract PoolAdmin {
         emit UpdateNFTMaturityDate(nftID_, maturityDate_);
     }
 
-    function relyLevel1(address usr) public level2 {
-        level1_admins[usr] = 1;
-        emit Rely(1, usr);
-    }
-
-    function denyLevel1(address usr) public level2 {
-        level1_admins[usr] = 0;
-        emit Deny(1, usr);
-    }
-
     // --- Pool Governance, authorized by level 3 admins ---
-    event Depend(bytes32 indexed contractname, address addr);
     event File(bytes32 indexed what, bool indexed data);
     event SetSeniorInterestRate(uint value);
     event SetDiscountRate(uint value);
@@ -205,6 +189,9 @@ contract PoolAdmin {
     event SetEpochScoringWeights(uint weightSeniorRedeem, uint weightJuniorRedeem, uint weightJuniorSupply, uint weightSeniorSupply);
     event ClosePool();
     event UnclosePool();
+    event Rely(address indexed usr, uint indexed level);
+    event Deny(address indexed usr);
+    event Depend(bytes32 indexed contractname, address addr);
 
     function setSeniorInterestRate(uint value) public level3 {
         assessor.file("seniorInterestRate", value);
@@ -256,24 +243,15 @@ contract PoolAdmin {
         emit UnclosePool();
     }
 
-    function relyLevel2(address usr) public level3 {
-        level2_admins[usr] = 1;
-        emit Rely(2, usr);
+    function rely(address usr, uint level) public level3 {
+        require(level == 1 || level == 2 || level == 3, "invalid-level");
+        admin_level[usr] = level;
+        emit Rely(usr, level);
     }
 
-    function denyLevel2(address usr) public level3 {
-        level2_admins[usr] = 0;
-        emit Deny(2, usr);
-    }
-
-    function relyLevel3(address usr) public level3 {
-        level3_admins[usr] = 1;
-        emit Rely(3, usr);
-    }
-
-    function denyLevel3(address usr) public level3 {
-        level3_admins[usr] = 0;
-        emit Deny(3, usr);
+    function deny(address usr) public level3 {
+        admin_level[usr] = 0;
+        emit Deny(usr);
     }
 
     function depend(bytes32 contractName, address addr) public level3 {

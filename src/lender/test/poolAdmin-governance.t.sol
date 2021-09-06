@@ -137,6 +137,7 @@ contract PoolGovernancePoolAdminTest is DSTest {
     }
 
     function testFailUncloseOpenPool() public {
+        poolAdmin.deny(address(this));
         poolAdmin.unclosePool();
     }
 

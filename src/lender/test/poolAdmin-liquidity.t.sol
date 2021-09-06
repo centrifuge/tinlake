@@ -30,7 +30,6 @@ contract LiquidityManagementPoolAdminTest is DSTest {
         coordinator = new CoordinatorMock();
         navFeed = new NAVFeedMock();
         poolAdmin = new PoolAdmin();
-        poolAdmin.relyLevel2(address(this)); // required to call relyLevel1()
 
         assessor.rely(address(poolAdmin));
         lending.rely(address(poolAdmin));
@@ -60,11 +59,11 @@ contract LiquidityManagementPoolAdminTest is DSTest {
     }
 
     function testSetMaxReserve() public {
-        poolAdmin.relyLevel1(address(this));
         callMaxReserve(); 
     }
 
     function testFailSetMaxReserveNotManager() public {
+        poolAdmin.deny(address(this));
         callMaxReserve(); 
     }
 
@@ -76,11 +75,11 @@ contract LiquidityManagementPoolAdminTest is DSTest {
     }
 
     function testRaiseCreditline() public {
-        poolAdmin.relyLevel1(address(this));
         callRaiseCreditline();
     }
 
     function testFailRaiseCreditlineNotManager() public {
+        poolAdmin.deny(address(this));
         callRaiseCreditline();
     }
 
@@ -92,27 +91,26 @@ contract LiquidityManagementPoolAdminTest is DSTest {
     }
 
     function testSinkCreditline() public {
-        poolAdmin.relyLevel1(address(this));
         callSinkCreditline();
     }
 
     function testFailSinkCreditlineNotManager() public {
+        poolAdmin.deny(address(this));
         callSinkCreditline();
     }
 
     function testHealCreditline() public {
-        poolAdmin.relyLevel1(address(this));
         poolAdmin.healCreditline();
 
         assertEq(lending.calls("heal"), 1);
     }
 
     function testFailHealCreditline() public {
+        poolAdmin.deny(address(this));
         poolAdmin.healCreditline();
     }
 
     function testSetMaxReserveAndRaiseCreditline() public {
-        poolAdmin.relyLevel1(address(this));
 
         uint maxReserve = 150 ether;
         uint amount = 100 ether;
@@ -123,7 +121,6 @@ contract LiquidityManagementPoolAdminTest is DSTest {
     }
 
     function testSetMaxReserveAndSinkCreditline() public {
-        poolAdmin.relyLevel1(address(this));
 
         uint maxReserve = 150 ether;
         uint amount = 100 ether;
@@ -144,12 +141,11 @@ contract LiquidityManagementPoolAdminTest is DSTest {
     }
 
     function testUpdateSeniorMemberAsAdmin() public {
-        poolAdmin.relyLevel1(address(this));
         updateSeniorMember();
     }
 
     function testFailUpdateSeniorMemberAsNonAdmin() public {
-        poolAdmin.denyLevel1(address(this));
+        poolAdmin.deny(address(this));
         updateSeniorMember();
     }
 
@@ -163,12 +159,11 @@ contract LiquidityManagementPoolAdminTest is DSTest {
     }
 
     function testUpdateSeniorMembersAsAdmin() public {
-        poolAdmin.relyLevel1(address(this));
         updateSeniorMembers();
     }
 
     function testFailUpdateSeniorMembersAsNonAdmin() public {
-        poolAdmin.denyLevel1(address(this));
+        poolAdmin.deny(address(this));
         updateSeniorMembers();
     }
 
@@ -183,12 +178,11 @@ contract LiquidityManagementPoolAdminTest is DSTest {
     }
 
     function testUpdateJuniorMemberAsAdmin() public {
-        poolAdmin.relyLevel1(address(this));
         updateJuniorMember();
     }
 
     function testFailUpdateJuniorMemberAsNonAdmin() public {
-        poolAdmin.denyLevel1(address(this));
+        poolAdmin.deny(address(this));
         updateJuniorMember();
     }
 
@@ -202,12 +196,11 @@ contract LiquidityManagementPoolAdminTest is DSTest {
     }
 
     function testUpdateJuniorMembersAsAdmin() public {
-        poolAdmin.relyLevel1(address(this));
         updateJuniorMembers();
     }
 
     function testFailUpdateJuniorMembersAsNonAdmin() public {
-        poolAdmin.denyLevel1(address(this));
+        poolAdmin.deny(address(this));
         updateJuniorMembers();
     }
 
