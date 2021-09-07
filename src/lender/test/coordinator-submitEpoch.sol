@@ -102,7 +102,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
         Fixed27 memory currSeniorRatio = Fixed27(assessor.calcSeniorRatio(coordinator.epochSeniorAsset(),
             coordinator.epochNAV(), coordinator.epochReserve()));
 
-        assertTrue(coordinator.checkRatioInRange(currSeniorRatio, Fixed27(model.minSeniorRatio), Fixed27(model.maxSeniorRatio)) == currSeniorRatioInRange);
+        assertTrue(coordinator.checkRatioInRange(currSeniorRatio.value, model.minSeniorRatio, model.maxSeniorRatio) == currSeniorRatioInRange);
         assertTrue((coordinator.epochReserve() <= assessor.maxReserve()) == reserveHealthy);
     }
 
