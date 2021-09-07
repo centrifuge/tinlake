@@ -152,7 +152,7 @@ contract Pile is Auth, Interest {
     // updates the total debt
     function drip(uint rate) public {        
         if (block.timestamp >= rates[rate].lastUpdated) {
-            (uint chi, uint deltaInterest) = compounding(rates[rate].chi, rates[rate].ratePerSecond, rates[rate].lastUpdated, rates[rate].pie);
+            (uint chi,) = compounding(rates[rate].chi, rates[rate].ratePerSecond, rates[rate].lastUpdated, rates[rate].pie);
             rates[rate].chi = chi;
             rates[rate].lastUpdated = uint48(block.timestamp);
         }
