@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
+pragma experimental ABIEncoderV2;
 
 import "./../fixed_point.sol";
 import "tinlake-auth/auth.sol";
