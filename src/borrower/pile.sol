@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2018  Rain <rainbreak@riseup.net>, Centrifuge
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 import "tinlake-math/interest.sol";
 import "tinlake-auth/auth.sol";

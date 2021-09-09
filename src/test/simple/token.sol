@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2017, 2018, 2019 dbrock, rain, mrchico
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 import "tinlake-math/math.sol";
 import "tinlake-erc20/erc20.sol";
