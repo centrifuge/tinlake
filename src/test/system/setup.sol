@@ -5,7 +5,7 @@ pragma experimental ABIEncoderV2;
 import { TitleFab } from "../../borrower/fabs/title.sol";
 import { ShelfFab } from "../../borrower/fabs/shelf.sol";
 import { PileFab } from "../../borrower/fabs/pile.sol";
-import { NAVFeedFab } from "../../borrower/fabs/navfeed.sol";
+import { PrincipalNAVFeedFab } from "../../borrower/fabs/navfeed.principal.sol";
 import { BorrowerDeployer } from "../../borrower/deployer.sol";
 
 
@@ -191,11 +191,11 @@ abstract contract TestSetup is Config {
         TitleFab titlefab = new TitleFab();
         ShelfFab shelffab = new ShelfFab();
         PileFab pileFab = new PileFab();
-        address nftFeedFab_;
-        nftFeedFab_ = address(new NAVFeedFab());
+        address navFeedFab_;
+        navFeedFab_ = address(new PrincipalNAVFeedFab());
 
         borrowerDeployer = new BorrowerDeployer(root_, address(titlefab), address(shelffab), address(pileFab),
-            nftFeedFab_, currency_, config.titleName, config.titleSymbol, config.discountRate);
+            navFeedFab_, currency_, config.titleName, config.titleSymbol, config.discountRate);
 
         borrowerDeployer.deployTitle();
         borrowerDeployer.deployPile();

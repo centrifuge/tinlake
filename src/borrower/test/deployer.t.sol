@@ -6,7 +6,7 @@ import { Title } from "tinlake-title/title.sol";
 import { TitleFab } from "../fabs/title.sol";
 import { PileFab } from "../fabs/pile.sol";
 import { ShelfFab} from "../fabs/shelf.sol";
-import { NAVFeedFab } from "../fabs/navfeed.sol";
+import { PrincipalNAVFeedFab } from "../fabs/navfeed.principal.sol";
 
 import "../deployer.sol";
 import { SimpleToken } from "../../test/simple/token.sol";
@@ -17,7 +17,7 @@ contract DeployerTest is DSTest {
     TitleFab titlefab;
     ShelfFab shelffab;
     PileFab pilefab;
-    NAVFeedFab feedFab;
+    PrincipalNAVFeedFab feedFab;
     Title title;
 
     function setUp() public {
@@ -26,7 +26,7 @@ contract DeployerTest is DSTest {
         titlefab = new TitleFab();
         shelffab = new ShelfFab();
         pilefab = new PileFab();
-        feedFab = new NAVFeedFab();
+        feedFab = new PrincipalNAVFeedFab();
    }
 
     function testBorrowerDeploy() public logs_gas {

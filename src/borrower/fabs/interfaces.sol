@@ -2,8 +2,7 @@
 pragma solidity >=0.6.12;
 
 interface NAVFeedFabLike {
-    function newPrincipalFeed() external returns (address);
-    function newCreditlineFeed() external returns (address);
+    function newFeed() external returns (address);
 }
 
 interface TitleFabLike {
