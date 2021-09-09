@@ -81,7 +81,8 @@ abstract contract NAVFeed is Auth, Discounting {
 
     // Discount rate applied on every asset's fv depending on its maturityDate.
     // The discount decreases with the maturityDate approaching.
-    Fixed27 public discountRate;
+    // denominated in (10^27)
+    uint public discountRate;
 
     // latestNAV is calculated in case of borrows & repayments between epoch executions.
     // It decreases/increases the NAV by the repaid/borrowed amount without running the NAV calculation routine.
@@ -158,8 +159,8 @@ abstract contract NAVFeed is Auth, Discounting {
 
     function file(bytes32 name, uint value) public auth {
         if (name == "discountRate") {
-            uint oldDiscountRate = discountRate.value;
-            discountRate = Fixed27(value);
+            uint oldDiscountRate = discountRate;
+            discountRate = value;
             // the nav needs to be re-calculated based on the new discount rate
             // no need to recalculate it if initialized the first time
             if(oldDiscountRate != 0) {
@@ -220,7 +221,7 @@ abstract contract NAVFeed is Auth, Discounting {
         loanDetails[loan].borrowed = toUint128(safeAdd(borrowed(loan), amount));
 
         // return increase NAV amount
-        navIncrease = calcDiscount(discountRate.value, fv, nnow, maturityDate_);
+        navIncrease = calcDiscount(discountRate, fv, nnow, maturityDate_);
 
         latestDiscount = safeAdd(latestDiscount, navIncrease);
         latestNAV = safeAdd(latestNAV, navIncrease);
@@ -263,7 +264,7 @@ abstract contract NAVFeed is Auth, Discounting {
         if (maturityDate_ >= nnow) {
             // remove future value decrease from bucket
             buckets[maturityDate_] = safeSub(buckets[maturityDate_], fvDecrease);
-            uint discountDecrease = calcDiscount(discountRate.value, fvDecrease, nnow, maturityDate_);
+            uint discountDecrease = calcDiscount(discountRate, fvDecrease, nnow, maturityDate_);
             latestDiscount = secureSub(latestDiscount, discountDecrease);
             latestNAV = secureSub(latestNAV, discountDecrease);
         } else {
@@ -342,7 +343,7 @@ abstract contract NAVFeed is Auth, Discounting {
             } else {
                 // write off before or on the maturity date
                 buckets[maturityDate_] = safeSub(buckets[maturityDate_], fv);
-                uint pv = rmul(fv, rpow(discountRate.value, safeSub(uniqueDayTimestamp(maturityDate_), nnow), ONE));
+                uint pv = rmul(fv, rpow(discountRate, safeSub(uniqueDayTimestamp(maturityDate_), nnow), ONE));
                 latestDiscount = secureSub(latestDiscount, pv);
                 latestNAV_ = secureSub(latestNAV_, pv);
             }
@@ -377,7 +378,7 @@ abstract contract NAVFeed is Auth, Discounting {
         for(uint i = lastNAVUpdate; i < nnow; i = i + 1 days) {
             uint b = buckets[i];
             if (b != 0) {
-                errPV = safeAdd(errPV, rmul(b, rpow(discountRate.value, safeSub(nnow, i), ONE)));
+                errPV = safeAdd(errPV, rmul(b, rpow(discountRate, safeSub(nnow, i), ONE)));
                 overdue = safeAdd(overdue, b);
             }
         }
@@ -386,7 +387,7 @@ abstract contract NAVFeed is Auth, Discounting {
         (
             // calculate current totalDiscount based on the previous totalDiscount (optimized calculation)
             // the overdue loans are incorrectly in this new result with their current PV and need to be removed
-            secureSub(rmul(latestDiscount, rpow(discountRate.value, safeSub(nnow, lastNAVUpdate), ONE)), errPV),
+            secureSub(rmul(latestDiscount, rpow(discountRate, safeSub(nnow, lastNAVUpdate), ONE)), errPV),
             // current overdue loans not written off
             safeAdd(overdueLoans, overdue),
             // current write-offs loans
@@ -437,7 +438,7 @@ abstract contract NAVFeed is Auth, Discounting {
                 continue;
             }
 
-            latestDiscount_= safeAdd(latestDiscount_, calcDiscount(discountRate.value,
+            latestDiscount_= safeAdd(latestDiscount_, calcDiscount(discountRate,
                 futureValue(nftID_), lastNAVUpdate, maturityDate_));
         }
         return latestDiscount_;

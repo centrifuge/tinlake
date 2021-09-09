@@ -2,10 +2,9 @@
 pragma solidity >=0.7.6;
 
 import "tinlake-math/interest.sol";
-import "./../../fixed_point.sol";
 
 // contract without a state which defines the relevant formulars for the navfeed
-contract Discounting is FixedPoint, Interest {
+contract Discounting is Interest {
 
     function calcDiscount(uint discountRate, uint fv, uint normalizedBlockTimestamp, uint maturityDate_) public pure returns (uint result) {
         return rdiv(fv, rpow(discountRate, safeSub(maturityDate_, normalizedBlockTimestamp), ONE));
