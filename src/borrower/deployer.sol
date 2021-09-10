@@ -110,7 +110,6 @@ contract BorrowerDeployer is FixedPoint {
 
         // allow nftFeed to update rate groups
         AuthLike(pile).rely(feed);
-        NAVFeedLike(feed).init();
 
         DependLike(shelf).depend("subscriber", address(feed));
 
