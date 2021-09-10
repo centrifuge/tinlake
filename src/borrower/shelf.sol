@@ -72,16 +72,16 @@ contract Shelf is Auth, TitleOwned, Math {
     mapping (bytes32 => uint) public nftlookup;
 
     // Events
-    event Close(uint indexed loan);
-    event Issue(address indexed registry_, uint indexed token_);
-    event Borrow(uint indexed loan, uint currencyAmount);
-    event Withdraw(uint indexed loan, uint currencyAmount, address usr);
-    event Repay(uint indexed loan, uint currencyAmount);
-    event Recover(uint indexed loan, address usr, uint currencyAmount);
-    event Lock(uint indexed loan);
-    event Unlock(uint indexed loan);
-    event Claim(uint indexed loan, address usr);
-    event Depend(bytes32 indexed contractName, address addr);
+    // event Close(uint indexed loan);
+    // event Issue(address indexed registry_, uint indexed token_);
+    // event Borrow(uint indexed loan, uint currencyAmount);
+    // event Withdraw(uint indexed loan, uint currencyAmount, address usr);
+    // event Repay(uint indexed loan, uint currencyAmount);
+    // event Recover(uint indexed loan, address usr, uint currencyAmount);
+    // event Lock(uint indexed loan);
+    // event Unlock(uint indexed loan);
+    // event Claim(uint indexed loan, address usr);
+    // event Depend(bytes32 indexed contractName, address addr);
 
     constructor(address currency_, address title_, address pile_, address ceiling_) TitleOwned(title_) {
         currency = TokenLike(currency_);
@@ -107,7 +107,7 @@ contract Shelf is Auth, TitleOwned, Math {
         else if (contractName == "assessor") { assessor = AssessorLike(addr);}
         else if (contractName == "subscriber") { subscriber = SubscriberLike(addr); }
         else revert();
-        emit Depend(contractName, addr);
+        // emit Depend(contractName, addr);
     }
 
     function token(uint loan) public view returns (address registry, uint nft) {
@@ -125,7 +125,7 @@ contract Shelf is Auth, TitleOwned, Math {
         shelf[loan].registry = registry_;
         shelf[loan].tokenId = token_;
 
-        emit Issue(registry_, token_);
+        // emit Issue(registry_, token_);
         return loan;
     }
 
@@ -137,7 +137,7 @@ contract Shelf is Auth, TitleOwned, Math {
         bytes32 nft = keccak256(abi.encodePacked(shelf[loan].registry, shelf[loan].tokenId));
         nftlookup[nft] = 0;
         _resetLoanBalance(loan);
-        emit Close(loan);
+        // emit Close(loan);
     }
 
     // used by the reserve to know if currency is needed or currency can be taken
@@ -178,7 +178,7 @@ contract Shelf is Auth, TitleOwned, Math {
         // reBalance lender interest bearing amount based on new NAV
         assessor.reBalance();
 
-        emit Borrow(loan, currencyAmount);
+        // emit Borrow(loan, currencyAmount);
     }
 
 
@@ -190,7 +190,7 @@ contract Shelf is Auth, TitleOwned, Math {
         balances[loan] = safeSub(balances[loan], currencyAmount);
         balance = safeSub(balance, currencyAmount);
         require(currency.transfer(usr, currencyAmount), "currency-transfer-failed");
-        emit Withdraw(loan, currencyAmount, usr);
+        // emit Withdraw(loan, currencyAmount, usr);
     }
 
     // repays the entire or partial debt of a loan
@@ -217,7 +217,7 @@ contract Shelf is Auth, TitleOwned, Math {
         // reBalance lender interest bearing amount based on new NAV
         assessor.reBalance();
 
-        emit Repay(loan, currencyAmount);
+        // emit Repay(loan, currencyAmount);
     }
 
     // a collector can recover defaulted loans
@@ -236,7 +236,7 @@ contract Shelf is Auth, TitleOwned, Math {
         reserve.balance();
         // reBalance lender interest bearing amount based on new NAV
         assessor.reBalance();
-        emit Recover(loan, usr, currencyAmount);
+        // emit Recover(loan, usr, currencyAmount);
     }
 
     // locks an nft in the shelf
@@ -247,7 +247,7 @@ contract Shelf is Auth, TitleOwned, Math {
         }
 
         NFTLike(shelf[loan].registry).transferFrom(msg.sender, address(this), shelf[loan].tokenId);
-        emit Lock(loan);
+        // emit Lock(loan);
     }
 
     // unlocks an nft in the shelf
@@ -264,7 +264,7 @@ contract Shelf is Auth, TitleOwned, Math {
 
         NFTLike(shelf[loan].registry).transferFrom(address(this), msg.sender, shelf[loan].tokenId);
 
-        emit Unlock(loan);
+        // emit Unlock(loan);
     }
 
     function nftLocked(uint loan) public view returns (bool) {
@@ -275,7 +275,7 @@ contract Shelf is Auth, TitleOwned, Math {
     // transfers the nft to the collector
     function claim(uint loan, address usr) public auth {
         NFTLike(shelf[loan].registry).transferFrom(address(this), usr, shelf[loan].tokenId);
-        emit Claim(loan, usr);
+        // emit Claim(loan, usr);
     }
 
     function _resetLoanBalance(uint loan) internal {
