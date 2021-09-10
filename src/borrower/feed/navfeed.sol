@@ -31,7 +31,7 @@ interface PileLike {
 // When loans are overdue, they are locked at their fv on the maturity date.
 // They can then be written off, using the public writeoff method based on
 // the default writeoff schedule, or using the override writeoff method.
-abstract contract NAVFeed is Auth, Discounting {
+contract NAVFeed is Auth, Discounting {
     PileLike    public pile;
     ShelfLike   public shelf;
 
@@ -128,8 +128,22 @@ abstract contract NAVFeed is Auth, Discounting {
         return uint128(value);
     }
 
-    function init() public virtual;
-    function ceiling(uint loan) public virtual view returns (uint);
+    function init() public virtual {
+        require(ceilingRatio(0) == 0, "already-initialized");
+    }
+
+    // returns the ceiling of a loan
+    // the ceiling defines the maximum amount which can be borrowed
+    function ceiling(uint loan) public virtual view returns (uint) {
+        bytes32 nftID_ = nftID(loan);
+        uint initialCeiling = rmul(nftValues(nftID_), ceilingRatio(risk(nftID_)));
+
+        if (borrowed(loan) > initialCeiling) {
+            return 0;
+        }
+
+        return safeSub(initialCeiling, borrowed(loan));
+    }
 
     // --- Administration ---
     function depend(bytes32 contractName, address addr) external auth {
