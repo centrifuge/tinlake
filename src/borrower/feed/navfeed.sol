@@ -128,10 +128,6 @@ contract NAVFeed is Auth, Discounting {
         return uint128(value);
     }
 
-    function init() public virtual {
-        require(ceilingRatio(0) == 0, "already-initialized");
-    }
-
     // returns the ceiling of a loan
     // the ceiling defines the maximum amount which can be borrowed
     function ceiling(uint loan) public virtual view returns (uint) {

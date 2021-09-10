@@ -4,9 +4,9 @@ pragma solidity >=0.7.6;
 import "./navfeed.sol";
 
 contract CreditlineNAVFeed is NAVFeed {
-    function init() public override {
-        require(ceilingRatio(0) == 0, "already-initialized");
-    }
+    // function init() public override {
+    //     require(ceilingRatio(0) == 0, "already-initialized");
+    // }
 
     function ceiling(uint loan) public override view returns (uint) {
         bytes32 nftID_ = nftID(loan);

@@ -28,7 +28,7 @@ contract NFTFeedTest is DSTest, Math {
         shelf = new ShelfMock();
         feed.depend("shelf", address(shelf));
         feed.depend("pile", address(pile));
-        feed.init();
+        // feed.init();
         feed.file("discountRate", defaultRate);
     }
 
