@@ -249,8 +249,15 @@ contract PoolAdmin {
 
     function rely(address usr, uint level) public level3 {
         require(level > 0 && level <= LEVEL_3, "invalid-level");
-        admin_level[usr] = level;
-        emit Rely(usr, level);
+        if (level > admin_level[usr]) {
+            admin_level[usr] = level;
+            emit Rely(usr, level);
+        }
+    }
+
+    function rely(address usr) public level3 {
+        admin_level[usr] = 3;
+        emit Rely(usr, 3);
     }
 
     function deny(address usr) public level3 {
