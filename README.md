@@ -13,11 +13,7 @@ dapp update
 ```
 
 ## Testing
-The tests for Tinlake are written in Solidity. To set up your environment, you should add these variables:
-```bash
-export DAPP_SOLC_VERSION=0.6.12
-export DAPP_TEST_TIMESTAMP=1234567
-```
+The tests for Tinlake are written in Solidity.
 
 ### Run all tests
 ```bash
