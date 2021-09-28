@@ -5,7 +5,8 @@ import "ds-test/test.sol";
 
 import "./../assessor.sol";
 import "./../admin/pool.sol";
-import "./../../borrower/feed/navfeed.sol";
+import "./../../borrower/feed/principal.sol";
+import "./../../borrower/test/mock/pile.sol";
 import "./mock/coordinator.sol";
 import "./mock/navFeed.sol";
 import "./mock/memberlist.sol";
@@ -21,8 +22,9 @@ contract RiskManagementPoolAdminTest is DSTest {
     MemberlistMock juniorMemberlist;
     CoordinatorMock coordinator;
     NAVFeedMock navFeedMock;
-    NAVFeed navFeed;
+    NAVFeed public navFeed;
     PoolAdmin poolAdmin;
+    PileMock pile;
 
     function setUp() public {
         assessor = new Assessor();
@@ -30,8 +32,9 @@ contract RiskManagementPoolAdminTest is DSTest {
         seniorMemberlist = new MemberlistMock();
         juniorMemberlist = new MemberlistMock();
         coordinator = new CoordinatorMock();
-        // navFeed = new NAVFeed();
+        navFeed = new PrincipalNAVFeed();
         poolAdmin = new PoolAdmin();
+        pile = new PileMock();
 
         assessor.rely(address(poolAdmin));
         lending.rely(address(poolAdmin));
@@ -46,6 +49,7 @@ contract RiskManagementPoolAdminTest is DSTest {
         poolAdmin.depend("juniorMemberlist", address(juniorMemberlist));
         poolAdmin.depend("coordinator", address(coordinator));
         poolAdmin.depend("navFeed", address(navFeed));
+        navFeed.depend("pile", address(pile));
     }
 
     function callOverrideWriteOff() public {
@@ -68,8 +72,7 @@ contract RiskManagementPoolAdminTest is DSTest {
     function callAddRiskGroup() public {
         poolAdmin.addRiskGroup(0, 8*10**26, 6*10**26, ONE, ONE);
         (uint128 ceilingRatio,,) = navFeed.riskGroup(0);
-        emit log_named_uint("test", ceilingRatio);
-        // assertEq(ceilingRatio, 6*10**26);
+        assertEq(uint256(ceilingRatio), 6*10**26);
     }
 
     function testAddRiskGroup() public {
@@ -85,17 +88,14 @@ contract RiskManagementPoolAdminTest is DSTest {
 
     function callAddRiskGroups(uint256[] memory risks_, uint256[] memory thresholdRatios_, uint256[] memory ceilingRatios_, uint256[] memory rates_, uint256[] memory recoveryRatePDs_) public {
         poolAdmin.addRiskGroups(risks_, thresholdRatios_, ceilingRatios_, rates_, recoveryRatePDs_);
-        // emit log_named_uint("test", navFeed.calls("addRiskGroup"));
-        // assertEq(navFeed.calls("addRiskGroup"), 3);
+        for (uint i; i < ceilingRatios_.length; i++) {
+            (uint128 ceilingRatio,,) = navFeed.riskGroup(i);
+            assertEq(uint256(ceilingRatio), ceilingRatios_[i]);
+        }
     }
 
-    // function callFailAddRiskGroupsDifferentArrayLength(uint256[] risks_, uint256[] thresholdRatios_, uint256[] ceilingRatios_, uint256[] rates_, uint256[] recoveryRatePDs_) public {
-    //     poolAdmin.addRiskGroups(risks_, thresholdRatios_, ceilingRatios_, rates_, recoveryRatePDs_);
-    //     assertEq(navFeed.calls("addRiskGroup"), 3);
-    // }
 
     function testAddRiskGroups() public {
-        navFeed.rely(address(this));
         uint[] memory risks_ = new uint[](3);
         uint[] memory thresholdRatios_ = new uint[](3);
         uint[] memory ceilingRatios_ = new uint[](3);
@@ -119,7 +119,7 @@ contract RiskManagementPoolAdminTest is DSTest {
         callAddRiskGroups(risks_, thresholdRatios_, ceilingRatios_, rates_, recoveryRatePDs_);
     }
 
-    function testFailAddRiskGroups() public {
+    function testFailAddRiskGroupsWrongArrayLength() public {
         uint[] memory risks_ = new uint[](3);
         uint[] memory thresholdRatios_ = new uint[](3);
         uint[] memory ceilingRatios_ = new uint[](3);
@@ -133,6 +133,31 @@ contract RiskManagementPoolAdminTest is DSTest {
         ceilingRatios_[1] = 6*10**26;
         rates_[0] = ONE;
         rates_[1] = ONE;
+        recoveryRatePDs_[0] = ONE;
+        recoveryRatePDs_[0] = ONE;
+        callAddRiskGroups(risks_, thresholdRatios_, ceilingRatios_, rates_, recoveryRatePDs_);
+    }
+
+    function testFailAddRiskGroupsNoAuth() public {
+        navFeed.deny(address(poolAdmin));
+        uint[] memory risks_ = new uint[](3);
+        uint[] memory thresholdRatios_ = new uint[](3);
+        uint[] memory ceilingRatios_ = new uint[](3);
+        uint[] memory rates_ = new uint[](3);
+        uint[] memory recoveryRatePDs_ = new uint[](3);
+        risks_[0] = 0;
+        risks_[1] = 1;
+        risks_[2] = 2;
+        thresholdRatios_[0] = 8*10**26;
+        thresholdRatios_[1] = 8*10**26;
+        thresholdRatios_[2] = 8*10**26;
+        ceilingRatios_[0] = 6*10**26;
+        ceilingRatios_[1] = 6*10**26;
+        ceilingRatios_[2] = 6*10**26;
+        rates_[0] = ONE;
+        rates_[1] = ONE;
+        rates_[2] = ONE;
+        recoveryRatePDs_[0] = ONE;
         recoveryRatePDs_[0] = ONE;
         recoveryRatePDs_[0] = ONE;
         callAddRiskGroups(risks_, thresholdRatios_, ceilingRatios_, rates_, recoveryRatePDs_);
