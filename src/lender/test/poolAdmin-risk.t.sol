@@ -33,6 +33,7 @@ contract RiskManagementPoolAdminTest is DSTest {
         juniorMemberlist = new MemberlistMock();
         coordinator = new CoordinatorMock();
         navFeed = new PrincipalNAVFeed();
+        navFeedMock = new NAVFeedMock();
         poolAdmin = new PoolAdmin();
         pile = new PileMock();
 
@@ -41,13 +42,13 @@ contract RiskManagementPoolAdminTest is DSTest {
         seniorMemberlist.rely(address(poolAdmin));
         juniorMemberlist.rely(address(poolAdmin));
         coordinator.rely(address(poolAdmin));
+        navFeedMock.rely(address(poolAdmin));
 
         poolAdmin.depend("assessor", address(assessor));
         poolAdmin.depend("lending", address(lending));
         poolAdmin.depend("seniorMemberlist", address(seniorMemberlist));
         poolAdmin.depend("juniorMemberlist", address(juniorMemberlist));
         poolAdmin.depend("coordinator", address(coordinator));
-        poolAdmin.depend("navFeed", address(navFeed));
         navFeed.depend("pile", address(pile));
     }
 
@@ -60,11 +61,12 @@ contract RiskManagementPoolAdminTest is DSTest {
     }
 
     function testOverrideWriteOff() public {
+        navFeedMock.rely(address(poolAdmin));
+        poolAdmin.depend("navFeed", address(navFeedMock));
         callOverrideWriteOff();
     }
 
     function testFailOverrideWriteOffNotOperator() public {
-        poolAdmin.deny(address(this));
         callOverrideWriteOff(); 
     }
 
@@ -79,14 +81,13 @@ contract RiskManagementPoolAdminTest is DSTest {
 
     function testAddRiskGroup() public {
         navFeed.rely(address(poolAdmin));
+        poolAdmin.depend("navFeed", address(navFeed));
         callAddRiskGroup();
     }
 
     function testFailAddRiskGroupNotOperator() public {
         callAddRiskGroup(); 
     }
-
-    // TODO: testAddRiskGroups
 
     function callAddRiskGroups(uint256[] memory risks_, uint256[] memory thresholdRatios_, uint256[] memory ceilingRatios_, uint256[] memory rates_, uint256[] memory recoveryRatePDs_) public {
         poolAdmin.addRiskGroups(risks_, thresholdRatios_, ceilingRatios_, rates_, recoveryRatePDs_);
@@ -99,9 +100,9 @@ contract RiskManagementPoolAdminTest is DSTest {
         assertEq(pile.calls("file"), 3);
     }
 
-
     function testAddRiskGroups() public {
         navFeed.rely(address(poolAdmin));
+        poolAdmin.depend("navFeed", address(navFeed));
         uint[] memory risks_ = new uint[](3);
         uint[] memory thresholdRatios_ = new uint[](3);
         uint[] memory ceilingRatios_ = new uint[](3);
@@ -127,6 +128,7 @@ contract RiskManagementPoolAdminTest is DSTest {
 
     function testFailAddRiskGroupsWrongArrayLength() public {
         navFeed.rely(address(poolAdmin));
+        poolAdmin.depend("navFeed", address(navFeed));
         uint[] memory risks_ = new uint[](3);
         uint[] memory thresholdRatios_ = new uint[](3);
         uint[] memory ceilingRatios_ = new uint[](3);
@@ -179,11 +181,12 @@ contract RiskManagementPoolAdminTest is DSTest {
     }
 
     function testAddWriteOffGroup() public {
+        navFeedMock.rely(address(poolAdmin));
+        poolAdmin.depend("navFeed", address(navFeedMock));
         callAddWriteOffGroup();
     }
 
     function testFailAddWriteOffGroupNotOperator() public {
-        poolAdmin.deny(address(this));
         callAddWriteOffGroup(); 
     }
 
@@ -207,11 +210,12 @@ contract RiskManagementPoolAdminTest is DSTest {
     }
 
     function testUpdateNFTValue() public {
+        navFeedMock.rely(address(poolAdmin));
+        poolAdmin.depend("navFeed", address(navFeedMock));
         callUpdateNFTValue();
     }
 
     function testFailUpdateNFTValueNotOperator() public {
-        poolAdmin.deny(address(this));
         callUpdateNFTValue(); 
     }
 
@@ -226,11 +230,12 @@ contract RiskManagementPoolAdminTest is DSTest {
     }
 
     function testUpdateNFTValueRisk() public {
+        navFeedMock.rely(address(poolAdmin));
+        poolAdmin.depend("navFeed", address(navFeedMock));
         callUpdateNFTValueRisk();
     }
 
     function testFailUpdateNFTValueRiskNotOperator() public {
-        poolAdmin.deny(address(this));
         callUpdateNFTValueRisk(); 
     }
 
@@ -243,11 +248,12 @@ contract RiskManagementPoolAdminTest is DSTest {
     }
 
     function testUpdateNFTMaturityDate() public {
+        navFeedMock.rely(address(poolAdmin));
+        poolAdmin.depend("navFeed", address(navFeedMock));
         callUpdateNFTMaturityDate();
     }
 
     function testFailUpdateNFTMaturityDateNotOperator() public {
-        poolAdmin.deny(address(this));
         callUpdateNFTMaturityDate(); 
     }
 
