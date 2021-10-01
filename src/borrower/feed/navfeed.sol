@@ -313,7 +313,7 @@ contract NAVFeed is Auth, Discounting {
         // check the writeoff group based on the amount of days overdue
         uint writeOffGroupIndex_ = currentValidWriteOffGroup(loan);
 
-        if (pile.loanRates(loan) != WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_) {
+        if (writeOffGroupIndex_ < type(uint128).max && pile.loanRates(loan) != WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_) {
             _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
             // emit WriteOff(loan, writeOffGroupIndex_, false);
         }
@@ -540,7 +540,7 @@ contract NAVFeed is Auth, Discounting {
         uint maturityDate_ = maturityDate(nftID_);
         uint nnow = uniqueDayTimestamp(block.timestamp);
 
-        uint128 lastValidWriteOff;
+        uint128 lastValidWriteOff = type(uint128).max;
         uint128 highestOverdueDays = 0;
         // it is not guaranteed that writeOff groups are sorted by overdue days
         for (uint128 i = 0; i < writeOffGroups.length; i++) {
@@ -550,6 +550,8 @@ contract NAVFeed is Auth, Discounting {
                 highestOverdueDays = overdueDays;
             }
         }
+
+        // returns type(uint128).max if no write-off group is valid for this loan
         return lastValidWriteOff;
     }
 }

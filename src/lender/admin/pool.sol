@@ -193,8 +193,7 @@ contract PoolAdmin {
     event SetEpochScoringWeights(uint weightSeniorRedeem, uint weightJuniorRedeem, uint weightJuniorSupply, uint weightSeniorSupply);
     event ClosePool();
     event UnclosePool();
-    event Rely(address indexed usr, uint indexed level);
-    event Deny(address indexed usr);
+    event SetAdminLevel(address indexed usr, uint indexed level);
     event Depend(bytes32 indexed contractname, address addr);
 
     function setSeniorInterestRate(uint value) public level3 {
@@ -247,22 +246,26 @@ contract PoolAdmin {
         emit UnclosePool();
     }
 
-    function rely(address usr, uint level) public level3 {
-        require(level > 0 && level <= LEVEL_3, "invalid-level");
-        if (level > admin_level[usr]) {
-            admin_level[usr] = level;
-            emit Rely(usr, level);
-        }
+    function setAdminLevel(address usr, uint level) public level2 {
+        require(level >= 0 && level <= LEVEL_3, "invalid-level");
+        
+        // Level 2 admins can add level 1 admins, level 3 admins can add level 2 and 3 admins
+        require(level < 2 || admin_level[msg.sender] == LEVEL_3, "level-3-required-to-add");
+
+        // Level 2 admins can't remove level 2 or level 3 admins
+        require(admin_level[usr] == 1 || admin_level[msg.sender] == LEVEL_3, "level-3-required-to-remove");
+
+        admin_level[usr] = level;
+        emit SetAdminLevel(usr, level);
     }
 
+    // Aliases so the root contract can use its relyContract/denyContract methods
     function rely(address usr) public level3 {
-        admin_level[usr] = 3;
-        emit Rely(usr, 3);
+        setAdminLevel(usr, 3);
     }
 
     function deny(address usr) public level3 {
-        admin_level[usr] = 0;
-        emit Deny(usr);
+        setAdminLevel(usr, 0);
     }
 
     function depend(bytes32 contractName, address addr) public level3 {
