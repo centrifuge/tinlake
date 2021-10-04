@@ -248,18 +248,20 @@ abstract contract NAVFeed is Auth, Discounting {
 
         uint debt = safeSub(pile.debt(loan), amount);
         uint preFV = futureValue(nftID_);
-
         // in case of partial repayment, compute the fv of the remaining debt and add to the according fv bucket
         uint fv = 0;
         uint fvDecrease = preFV;
         if (debt != 0) {
             (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
             fv = calcFutureValue(loanInterestRate, debt, maturityDate_, recoveryRatePD(risk(nftID_)));
-            fvDecrease = safeSub(preFV, fv);
+            if (preFV >= fv) {
+                fvDecrease = safeSub(preFV, fv);
+            } else {
+                fvDecrease = 0;
+            }
         }
 
         details[nftID_].futureValue = toUint128(fv);
-
         // case 2: repayment of a loan before or on maturity date
         if (maturityDate_ >= nnow) {
             // remove future value decrease from bucket
@@ -299,10 +301,8 @@ abstract contract NAVFeed is Auth, Discounting {
         // can not write-off healthy loans
         uint nnow = uniqueDayTimestamp(block.timestamp);
         require(maturityDate_ < nnow, "maturity-date-in-the-future");
-
         // check the writeoff group based on the amount of days overdue
         uint writeOffGroupIndex_ = currentValidWriteOffGroup(loan);
-
         if (pile.loanRates(loan) != WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_) {
             _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
             emit WriteOff(loan, writeOffGroupIndex_, false);
