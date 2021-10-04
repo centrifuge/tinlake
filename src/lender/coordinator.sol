@@ -13,10 +13,6 @@ interface TrancheLike {
     function payoutRequestedCurrency() external;
 }
 
-interface ReserveLike {
-    function balance() external;
-}
-
 abstract contract AssessorLike is FixedPoint {
     // definitions
     function calcSeniorRatio(uint seniorAsset, uint NAV, uint reserve_) public virtual pure returns(uint);
@@ -73,7 +69,6 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
     TrancheLike         public juniorTranche;
     TrancheLike         public seniorTranche;
 
-    ReserveLike         public reserve;
     AssessorLike        public assessor;
 
     uint                public lastEpochExecuted;
@@ -170,7 +165,6 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
     function depend (bytes32 contractName, address addr) public auth {
         if (contractName == "juniorTranche") { juniorTranche = TrancheLike(addr); }
         else if (contractName == "seniorTranche") { seniorTranche = TrancheLike(addr); }
-        else if (contractName == "reserve") { reserve = ReserveLike(addr); }
         else if (contractName == "assessor") { assessor = AssessorLike(addr); }
         else revert();
         emit Depend(contractName, addr);
@@ -184,7 +178,6 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         require(submissionPeriod == false);
         lastEpochClosed = block.timestamp;
         currentEpoch = currentEpoch + 1;
-        reserve.balance();
         assessor.changeBorrowAmountEpoch(0);
 
         (uint orderJuniorSupply, uint orderJuniorRedeem) = juniorTranche.closeEpoch();

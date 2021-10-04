@@ -217,12 +217,9 @@ abstract contract TestSetup is Config {
 
         deployLender();
 
-        // add root mock
-        ShelfMock shelf_ = new ShelfMock();
         NAVFeedMock nav = new NAVFeedMock();
 
         assessor.depend("navFeed", address(nav));
-        reserve.depend("shelf", address(shelf_));
     }
 
     function prepareMKRLenderDeployer(address rootAddr, address trancheFab, address memberlistFab, address restrictedTokenFab,
@@ -311,11 +308,11 @@ abstract contract TestSetup is Config {
         ld.deployAssessor();
         ld.deployPoolAdmin();
         ld.deployCoordinator();
-       
+
 
         ld.deploy();
         fetchContractAddr(ld);
-        
+
         if (mkrAdapter) {
             adapterDeployer.deployClerk(address(ld));
             clerk = Clerk(adapterDeployer.clerk());

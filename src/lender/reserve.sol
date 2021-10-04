@@ -13,10 +13,6 @@ interface ERC20Like {
     function approve(address, uint) external;
 }
 
-interface ShelfLike {
-    function balanceRequest() external returns (bool requestWant, uint256 amount);
-}
-
 interface LendingAdapter {
     function remainingCredit() external view returns (uint);
     function draw(uint amount) external;
@@ -29,7 +25,6 @@ interface LendingAdapter {
 // of the total balance
 contract Reserve is Math, Auth {
     ERC20Like public currency;
-    ShelfLike public shelf;
 
     // additional currency from lending adapters
     // for deactivating set to address(0)
@@ -64,9 +59,7 @@ contract Reserve is Math, Auth {
     }
 
     function depend(bytes32 contractName, address addr) public auth {
-        if (contractName == "shelf") {
-            shelf = ShelfLike(addr);
-        } else if (contractName == "currency") {
+        if (contractName == "currency") {
             currency = ERC20Like(addr);
             if (pot == address(this)) {
                 currency.approve(pot, type(uint256).max);
@@ -145,30 +138,22 @@ contract Reserve is Math, Auth {
             if(drawAmount > left) {
                 drawAmount = left;
             }
-            
+
             lending.draw(drawAmount);
         }
 
         _payoutAction(usr, currencyAmount);
     }
 
-    // balance handles currency requests from the borrower side
-    // currency is moved between shelf and reserve if needed
-    function balance() public {
-        (bool requestWant, uint256 currencyAmount) = shelf.balanceRequest();
-        if(currencyAmount == 0) {
-            return;
-        }
-        if (requestWant) {
-            require(
-                currencyAvailable  >= currencyAmount,
-                "not-enough-currency-reserve"
-            );
+    // payout currency for loans not all funds
+    // in the reserve are compulsory available for loans in the current epoch
+    function payoutForLoans(uint currencyAmount) public auth {
+        require(
+            currencyAvailable  >= currencyAmount,
+            "not-enough-currency-reserve"
+        );
 
-            currencyAvailable = safeSub(currencyAvailable, currencyAmount);
-            _payout(address(shelf), currencyAmount);
-            return;
-        }
-        _deposit(address(shelf), currencyAmount);
+        currencyAvailable = safeSub(currencyAvailable, currencyAmount);
+        _payout(msg.sender, currencyAmount);
     }
 }
