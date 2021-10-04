@@ -24,6 +24,7 @@ contract PileMock is Mock {
     function changeRate(uint loan, uint rate) public {
         values_uint["changeRate_loan"] = loan;
         values_uint["changeRate_rate"] = rate;
+        setReturn("loanRates", rate);
         calls["changeRate"]++;
 
     }

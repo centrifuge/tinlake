@@ -434,6 +434,25 @@ contract NAVTest is DSTest, Math {
         assertTrue(feed.currentNAV() < preNAV);
     }
 
+    function testPartialRepayHigherThenFvAfterMaturityDate() public {
+        setupLinkedListBuckets();
+        uint loan = 1;
+        bytes32 nftID = feed.nftID(loan);
+        uint maturityDate = feed.maturityDate(nftID);
+        uint debt = 162 ether; // overdue debt is higher then the FV
+        uint repaymentAmount = 60 ether; // repayment amount higher then FV, but lower then actual debt
+
+        // repayment has to happen after maturity date
+        hevm.warp(safeAdd(maturityDate, 1 days));
+
+        // make partial repayment for overdue loan
+        pile.setReturn("debt_loan", debt);
+    
+        uint preNAV = feed.currentNAV();
+        feed.repay(loan, repaymentAmount);
+        assertTrue(feed.currentNAV() == preNAV);
+    }
+
     function testWriteOffOnMaturityDate() public {
         uint nftValue = 100 ether;
         uint tokenId = 1;
@@ -465,7 +484,7 @@ contract NAVTest is DSTest, Math {
         uint loan = 1;
 
         bytes32 nftID = prepareDefaultNFT(tokenId, nftValue, risk);
-        feed.file("maturityDate",nftID, dueDate);
+        feed.file("maturityDate", nftID, dueDate);
 
         pile.setReturn("loanRates", uint(1000000564701133626865910626));
 
