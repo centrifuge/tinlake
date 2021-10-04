@@ -254,7 +254,11 @@ abstract contract NAVFeed is Auth, Discounting {
         if (debt != 0) {
             (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
             fv = calcFutureValue(loanInterestRate, debt, maturityDate_, recoveryRatePD(risk(nftID_)));
-            fvDecrease = (preFV >= fv) ? fvDecrease = safeSub(preFV, fv) : 0;
+            if (preFV >= fv) {
+                fvDecrease = safeSub(preFV, fv);
+            } else {
+                fvDecrease = 0;
+            }
         }
 
         details[nftID_].futureValue = toUint128(fv);
