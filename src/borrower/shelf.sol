@@ -141,17 +141,6 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Close(loan);
     }
 
-    // used by the lender contracts to know if currency is needed or currency can be taken
-    function balanceRequest() external view returns (bool, uint) {
-        uint currencyBalance = currency.balanceOf(address(this));
-        if (balance > currencyBalance) {
-            return (true, safeSub(balance, currencyBalance));
-
-        } else {
-            return (false, safeSub(currencyBalance, balance));
-        }
-    }
-
     // starts the borrow process of a loan
     // informs the system of the requested currencyAmount
     // interest accumulation starts with this method
@@ -303,6 +292,7 @@ contract Shelf is Auth, TitleOwned, Math {
         }
     }
 
+    // returns the total number of loans including closed loans
     function loanCount() public view returns (uint) {
         return title.count();
     }
