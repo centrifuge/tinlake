@@ -57,7 +57,7 @@ contract PoolAdmin {
 
     constructor() {
         admin_level[msg.sender] = LEVEL_3;
-        emit Rely(msg.sender, LEVEL_3);
+        emit SetAdminLevel(msg.sender, LEVEL_3);
     }
 
     // --- Liquidity Management, authorized by level 1 admins ---
@@ -246,15 +246,15 @@ contract PoolAdmin {
         emit UnclosePool();
     }
 
-    function setAdminLevel(address usr, uint level) public level2 {
-        require(level >= 0 && level <= LEVEL_3, "invalid-level");
-        
-        // Level 2 admins can add level 1 admins, level 3 admins can add level 2 and 3 admins
-        require(level < 2 || admin_level[msg.sender] == LEVEL_3, "level-3-required-to-add");
+    modifier canSetAdminlevel(uint level) {
+        require(level >= 0 && level <= LEVEL_3);
+        if (level == 0) require(admin_level[msg.sender] == LEVEL_3);
+        if (level == LEVEL_1) require(admin_level[msg.sender] >= LEVEL_2);
+        if (level == LEVEL_2 || level == LEVEL_3) require(admin_level[msg.sender] == LEVEL_3);
+        _;
+    }
 
-        // Level 2 admins can't remove level 2 or level 3 admins
-        require(admin_level[usr] == 1 || admin_level[msg.sender] == LEVEL_3, "level-3-required-to-remove");
-
+    function setAdminLevel(address usr, uint level) public canSetAdminlevel(level) {
         admin_level[usr] = level;
         emit SetAdminLevel(usr, level);
     }

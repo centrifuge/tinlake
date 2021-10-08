@@ -24,7 +24,7 @@ interface FileLike {
 }
 
 interface PoolAdminLike {
-    function rely(address, uint) external;
+    function rely(address) external;
 }
 
 contract LenderDeployer is FixedPoint {
@@ -158,8 +158,8 @@ contract LenderDeployer is FixedPoint {
     function deployPoolAdmin() public {
         require(poolAdmin == address(0) && deployer == address(1));
         poolAdmin = poolAdminFab.newPoolAdmin();
-        PoolAdminLike(poolAdmin).rely(root, 3);
-        if (adapterDeployer != address(0)) PoolAdminLike(poolAdmin).rely(adapterDeployer, 3);
+        PoolAdminLike(poolAdmin).rely(root);
+        if (adapterDeployer != address(0)) PoolAdminLike(poolAdmin).rely(adapterDeployer);
     }
 
     function deployCoordinator() public {
