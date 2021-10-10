@@ -91,8 +91,10 @@ contract TinlakeRoot is Auth {
         // Lender depends
         address navFeed = borrowerDeployer.feed();
 
-        DependLike(reserve_).depend("shelf", shelf_);
+        // shelf can deposit and payout from reserve
+        AuthLike(reserve_).rely(shelf_);
         DependLike(assessor_).depend("navFeed", navFeed);
+
 
         // Lender wards
         if (oracle != address(0)) AuthLike(navFeed).rely(oracle);

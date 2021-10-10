@@ -171,7 +171,7 @@ contract LenderDeployer is FixedPoint {
     function deploy() public virtual {
         require(coordinator != address(0) && assessor != address(0) &&
                 reserve != address(0) && seniorTranche != address(0));
-    
+
         require(!wired, "lender contracts already wired"); // make sure lender contracts only wired once
         wired = true;
 
@@ -209,7 +209,6 @@ contract LenderDeployer is FixedPoint {
         DependLike(juniorOperator).depend("token", juniorToken);
 
         // coordinator
-        DependLike(coordinator).depend("reserve", reserve);
         DependLike(coordinator).depend("seniorTranche", seniorTranche);
         DependLike(coordinator).depend("juniorTranche", juniorTranche);
         DependLike(coordinator).depend("assessor", assessor);
@@ -224,13 +223,13 @@ contract LenderDeployer is FixedPoint {
         AuthLike(assessor).rely(coordinator);
         AuthLike(assessor).rely(reserve);
         AuthLike(assessor).rely(poolAdmin);
-        
+
         // poolAdmin
         DependLike(poolAdmin).depend("assessor", assessor);
         DependLike(poolAdmin).depend("juniorMemberlist", juniorMemberlist);
         DependLike(poolAdmin).depend("seniorMemberlist", seniorMemberlist);
         DependLike(poolAdmin).depend("coordinator", coordinator);
-        
+
         AuthLike(juniorMemberlist).rely(poolAdmin);
         AuthLike(seniorMemberlist).rely(poolAdmin);
 

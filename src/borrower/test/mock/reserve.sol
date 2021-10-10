@@ -7,6 +7,13 @@ contract ReserveMock is Mock {
 
     function balance() public {
         calls["balance"]++;
-
+    }
+    function deposit(uint currencyAmount) public {
+        calls["deposit"]++;
+        values_uint["currencyAmount"] = currencyAmount;
+    }
+    function payout(uint currencyAmount) public {
+        calls["payout"]++;
+        values_uint["currencyAmount"] = currencyAmount;
     }
 }

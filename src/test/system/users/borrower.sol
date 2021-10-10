@@ -37,9 +37,6 @@ contract Borrower {
         shelf.borrow(loan, currencyAmount);
     }
 
-    function balance() public {
-        reserve.balance();
-    }
 
     function repay(uint loan, uint currencyAmount) public {
         shelf.repay(loan, currencyAmount);
@@ -62,7 +59,6 @@ contract Borrower {
     function repayAction(uint loan, uint currencyAmount) public {
         shelf.repay(loan, currencyAmount);
         shelf.unlock(loan);
-        reserve.balance();
     }
 
     function doClose(uint loan) public {

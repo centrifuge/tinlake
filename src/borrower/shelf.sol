@@ -36,7 +36,8 @@ interface NAVFeedLike {
 }
 
 interface ReserveLike {
-    function balance() external;
+    function deposit(uint currencyAmount) external;
+    function payoutForLoans(uint currencyAmount) external;
 }
 
 interface SubscriberLike {
@@ -102,7 +103,7 @@ contract Shelf is Auth, TitleOwned, Math {
         else if (contractName == "reserve") {
             if (address(reserve) != address(0)) currency.approve(address(reserve), uint(0));
             currency.approve(addr, type(uint256).max);
-            reserve = ReserveLike(addr); 
+            reserve = ReserveLike(addr);
         }
         else if (contractName == "assessor") { assessor = AssessorLike(addr);}
         else if (contractName == "subscriber") { subscriber = SubscriberLike(addr); }
@@ -140,17 +141,6 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Close(loan);
     }
 
-    // used by the reserve to know if currency is needed or currency can be taken
-    function balanceRequest() external view returns (bool, uint) {
-        uint currencyBalance = currency.balanceOf(address(this));
-        if (balance > currencyBalance) {
-            return (true, safeSub(balance, currencyBalance));
-
-        } else {
-            return (false, safeSub(currencyBalance, balance));
-        }
-    }
-
     // starts the borrow process of a loan
     // informs the system of the requested currencyAmount
     // interest accumulation starts with this method
@@ -168,8 +158,8 @@ contract Shelf is Auth, TitleOwned, Math {
         balances[loan] = safeAdd(balances[loan], currencyAmount);
         balance = safeAdd(balance, currencyAmount);
 
-        // request currency from reserve
-        reserve.balance();
+        // payout to shelf
+        reserve.payoutForLoans(currencyAmount);
 
         // increase NAV
         ceiling.borrow(loan, currencyAmount);
@@ -212,7 +202,7 @@ contract Shelf is Auth, TitleOwned, Math {
         require(currency.transferFrom(msg.sender, address(this), currencyAmount), "currency-transfer-failed");
         ceiling.repay(loan, currencyAmount);
         pile.decDebt(loan, currencyAmount);
-        reserve.balance();
+        reserve.deposit(currencyAmount);
 
         // reBalance lender interest bearing amount based on new NAV
         assessor.reBalance();
@@ -233,10 +223,27 @@ contract Shelf is Auth, TitleOwned, Math {
         // sets loan debt to 0
         pile.decDebt(loan, loanDebt);
         _resetLoanBalance(loan);
-        reserve.balance();
+        reserve.deposit(currencyAmount);
         // reBalance lender interest bearing amount based on new NAV
         assessor.reBalance();
         emit Recover(loan, usr, currencyAmount);
+    }
+
+    function _repay(uint loan, address usr, uint currencyAmount) internal {
+        pile.accrue(loan);
+        uint loanDebt = pile.debt(loan);
+
+        // only repay max loan debt
+        if (currencyAmount > loanDebt) {
+            currencyAmount = loanDebt;
+        }
+        require(currency.transferFrom(usr, address(this), currencyAmount), "currency-transfer-failed");
+        ceiling.repay(loan, currencyAmount);
+        pile.decDebt(loan, currencyAmount);
+
+        reserve.deposit(currencyAmount);
+        // reBalance lender interest bearing amount based on new NAV
+        assessor.reBalance();
     }
 
     // locks an nft in the shelf
@@ -245,7 +252,6 @@ contract Shelf is Auth, TitleOwned, Math {
         if(address(subscriber) != address(0)) {
             subscriber.lockEvent(loan);
         }
-
         NFTLike(shelf[loan].registry).transferFrom(msg.sender, address(this), shelf[loan].tokenId);
         emit Lock(loan);
     }
@@ -286,6 +292,7 @@ contract Shelf is Auth, TitleOwned, Math {
         }
     }
 
+    // returns the total number of loans including closed loans
     function loanCount() public view returns (uint) {
         return title.count();
     }

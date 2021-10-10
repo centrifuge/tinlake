@@ -7,7 +7,6 @@ import "tinlake-math/math.sol";
 import "../../test/simple/token.sol";
 import "./../reserve.sol";
 import "./mock/assessor.sol";
-import "../../borrower/test/mock/shelf.sol";
 import "./mock/clerk.sol";
 
 interface ReserveLike {
@@ -38,12 +37,10 @@ contract LendingAdapterMock is ClerkMock {
 contract ReserveTest is DSTest, Math {
     SimpleToken currency;
     Reserve reserve;
-    ShelfMock shelf;
     AssessorMock assessor;
 
     LendingAdapterMock lending;
 
-    address shelf_;
     address reserve_;
     address currency_;
     address assessor_;
@@ -52,17 +49,14 @@ contract ReserveTest is DSTest, Math {
 
     function setUp() public {
         currency = new SimpleToken("CUR", "Currency");
-        shelf = new ShelfMock();
         assessor = new AssessorMock();
 
         reserve = new Reserve(address(currency));
-        shelf_ = address(shelf);
         reserve_ = address(reserve);
         currency_ = address(currency);
         assessor_ = address(assessor);
         self = address(this);
-
-        reserve.depend("shelf", shelf_);
+        currency.approve(reserve_, type(uint).max);
     }
 
     function setUpLendingAdapter() public {
@@ -78,70 +72,63 @@ contract ReserveTest is DSTest, Math {
         reserve.deposit(amount);
     }
 
-    function testReserveBalanceBorrowFullReserve() public {
+    function testFullLoanPayout() public {
         uint borrowAmount = 100 ether;
-        bool requestWant = true;
         // fund reserve with exact borrowAmount
         fundReserve(borrowAmount);
-        // borrow action: shelf requests currency
-        shelf.setReturn("balanceRequest", requestWant, borrowAmount);
 
         uint reserveBalance = currency.balanceOf(reserve_);
-        uint shelfBalance = currency.balanceOf(shelf_);
+        uint selfBalance = currency.balanceOf(self);
 
           // set maxCurrencyAvailable allowance to exact borrowAmount
         reserve.file("currencyAvailable", borrowAmount);
         uint currencyAvailable = reserve.currencyAvailable();
 
-        reserve.balance();
+        reserve.payoutForLoans(currencyAvailable);
 
-        // assert currency was transferred from reserve to shelf
+        // assert currency was transferred from reserve
         assertEq(currency.balanceOf(reserve_), safeSub(reserveBalance, borrowAmount));
-        assertEq(currency.balanceOf(shelf_), safeAdd(shelfBalance, borrowAmount));
+        assertEq(currency.balanceOf(self), safeAdd(selfBalance, borrowAmount));
         assertEq(reserve.currencyAvailable(), safeSub(currencyAvailable, borrowAmount));
     }
 
-    function testReserveBalanceBorrowPartialReserve() public {
+    function testPartialPayout() public {
         uint borrowAmount = 100 ether;
         bool requestWant = true;
         // fund reserve with twice as much currency then borrowAmount
         fundReserve(safeMul(borrowAmount, 2));
-        // borrow action: shelf requests currency
-        shelf.setReturn("balanceRequest", requestWant, borrowAmount);
 
         uint reserveBalance = currency.balanceOf(reserve_);
-        uint shelfBalance = currency.balanceOf(shelf_);
+        uint selfBalance = currency.balanceOf(self);
 
         // set maxCurrencyAvailable allowance to twice as much as borrowAmount
         reserve.file("currencyAvailable",  safeMul(borrowAmount, 2));
         uint currencyAvailable = reserve.currencyAvailable();
 
-        reserve.balance();
+        reserve.payoutForLoans(borrowAmount);
 
-        // assert currency was transferred from reserve to shelf
+        // assert currency was transferred from reserve
         assertEq(currency.balanceOf(reserve_), safeSub(reserveBalance, borrowAmount));
-        assertEq(currency.balanceOf(shelf_), safeAdd(shelfBalance, borrowAmount));
+        assertEq(currency.balanceOf(self), safeAdd(selfBalance, borrowAmount));
         assertEq(reserve.currencyAvailable(), safeSub(currencyAvailable, borrowAmount));
     }
 
     function testReserveBalanceRepay() public {
         uint repayAmount = 100 ether;
         bool requestWant = false;
-        // fund shelf with enough currency
-        currency.mint(shelf_, repayAmount);
+        // fund test with enough currency
+        currency.mint(self, repayAmount);
 
-        // borrow action: shelf requests currency
-        shelf.setReturn("balanceRequest", requestWant, repayAmount);
-        // shelf approve reserve to take currency
-        shelf.doApprove(currency_, reserve_, repayAmount);
         uint reserveBalance = currency.balanceOf(reserve_);
-        uint shelfBalance = currency.balanceOf(shelf_);
+        uint selfBalance = currency.balanceOf(self);
         uint currencyAvailable = reserve.currencyAvailable();
-        reserve.balance();
 
-        // assert currency was transferred from shelf to reserve
+        //simulate shelf behaviour
+        reserve.deposit(repayAmount);
+
+        // assert currency was transferred to reserve
         assertEq(currency.balanceOf(reserve_), safeAdd(reserveBalance, repayAmount));
-        assertEq(currency.balanceOf(shelf_), safeSub(shelfBalance, repayAmount));
+        assertEq(currency.balanceOf(self), safeSub(selfBalance, repayAmount));
         assertEq(reserve.currencyAvailable(), currencyAvailable);
     }
 
@@ -150,50 +137,31 @@ contract ReserveTest is DSTest, Math {
         bool requestWant = true;
         // fund reserve with enough currency
         fundReserve(200 ether);
-        // borrow action: shelf requests currency
-        shelf.setReturn("balanceRequest", requestWant, borrowAmount);
         // set max available currency
         reserve.file("currencyAvailable", 200 ether);
         // deactivate pool
         reserve.file("currencyAvailable", 0 ether);
 
-        reserve.balance();
+        reserve.payoutForLoans(borrowAmount);
     }
 
     function testFailBalanceBorrowAmountTooHigh() public {
         uint borrowAmount = 100 ether;
-        bool requestWant = true;
-        // fund reserve with enough currency
-        fundReserve(borrowAmount);
-        // borrow action: shelf requests too much currency
-        shelf.setReturn("balanceRequest", requestWant, safeMul(borrowAmount, 2));
+        fundReserve(borrowAmount*2);
+
         // set max available currency
         reserve.file("currencyAvailable", borrowAmount);
-        reserve.balance();
+        reserve.payoutForLoans(borrowAmount+1);
     }
 
     function testFailBalanceReserveUnderfunded() public {
         uint borrowAmount = 100 ether;
-        bool requestWant = true;
         // fund reserve with amount smaller than borrowAmount
         fundReserve(borrowAmount-1);
-        // borrow action: shelf requests too much currency
-        shelf.setReturn("balanceRequest", requestWant, safeMul(borrowAmount, 2));
+
         // set max available currency to borrowAmount
         reserve.file("currencyAvailable", borrowAmount);
-        reserve.balance();
-    }
-
-    function testFailBalanceShelfNotEnoughFunds() public {
-        uint repayAmount = 100 ether;
-        bool requestWant = false;
-        // fund shelf with currency amount smaller then repay amount
-        currency.mint(shelf_, safeSub(repayAmount, 1));
-        // borrow action: shelf requests currency
-        shelf.setReturn("balanceRequest", requestWant, repayAmount);
-        // shelf approve reserve to take currency
-        shelf.doApprove(currency_, reserve_, repayAmount);
-        reserve.balance();
+        reserve.payoutForLoans(borrowAmount);
     }
 
     function testDepositPayout() public {

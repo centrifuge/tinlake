@@ -52,5 +52,10 @@ contract ReserveMock is Mock, Auth {
         values_uint["deposit_amount"] = amount;
         currency.transferFrom(address(this), msg.sender, amount);
     }
+
+    function payoutForLoans(uint amount) public {
+        values_uint["deposit_amount"] = amount;
+        currency.transferFrom(address(this), msg.sender, amount);
+    }
 }
 

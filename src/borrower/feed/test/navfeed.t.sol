@@ -514,6 +514,7 @@ contract NAVTest is DSTest, Math {
         uint normalizedDueDate = feed.uniqueDayTimestamp(dueDate);
 
         uint FV = 55.125 ether; // 50 * 1.05 ^ 2 = 55.125
+       
         assertEq(feed.buckets(normalizedDueDate), FV);
 
         uint defaultRisk = 0;
@@ -522,11 +523,18 @@ contract NAVTest is DSTest, Math {
         // should stay the same because risk class didn't change
         assertEq(feed.buckets(normalizedDueDate), FV);
 
+        uint NAV = feed.latestNAV();
         uint newRisk = 1;
+
         feed.update(nftID, nftValue, newRisk);
 
+        uint newFV = 49.6125 ether; 
+        uint newNAV = feed.calcDiscount(feed.discountRate(), newFV, feed.uniqueDayTimestamp(block.timestamp), feed.maturityDate(nftID));
+
         //  55.125 * 0.9
-        assertEq(feed.buckets(normalizedDueDate), 49.6125 ether);
+        assertEq(feed.buckets(normalizedDueDate), newFV);
+        assertEq(feed.latestNAV(), newNAV);
+        assertEq(feed.latestDiscount(), newNAV);
     }
 
     function _repayOnMaturityDate(uint repayTimestamp, uint) internal {
