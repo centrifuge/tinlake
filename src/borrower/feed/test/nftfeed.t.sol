@@ -127,7 +127,7 @@ contract NFTFeedTest is DSTest, Math {
         value = 1000;
         risk = 0;
         feed.update(nftID, value, risk);
-        // // assert all values were set correctly
+        // assert all values were set correctly
         assertLoanValuesSetCorrectly(nftID, value, loan, risk, true);
      }
 

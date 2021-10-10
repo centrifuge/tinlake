@@ -451,6 +451,7 @@ abstract contract NAVFeed is Auth, Discounting {
     }
 
     function update(bytes32 nftID_, uint value, uint risk_) public auth {
+        uint nnow = uniqueDayTimestamp(block.timestamp);
         details[nftID_].nftValues  = toUint128(value);
 
         // no change in risk group
@@ -461,6 +462,11 @@ abstract contract NAVFeed is Auth, Discounting {
         // nfts can only be added to risk groups that are part of the score card
         require(thresholdRatio(risk_) != 0, "risk group not defined in contract");
         details[nftID_].risk = toUint128(risk_);
+
+        // update nav -> latestNAVUpdate = now
+        if(nnow > lastNAVUpdate) {
+            calcUpdateNAV();
+        }
 
         // switch of collateral risk group results in new: ceiling, threshold and interest rate for existing loan
         // change to new rate interestRate immediately in pile if loan debt exists
@@ -474,18 +480,29 @@ abstract contract NAVFeed is Auth, Discounting {
             return;
         }
 
+
         uint maturityDate_ = maturityDate(nftID_);
 
         // Changing the risk group of an nft, might lead to a new interest rate for the dependant loan.
         // New interest rate leads to a future value.
         // recalculation required
-        buckets[maturityDate_] = safeSub(buckets[maturityDate_], futureValue(nftID_));
+        uint fvDecrease = futureValue(nftID_);
+        uint navDecrease = calcDiscount(discountRate.value, fvDecrease, nnow, maturityDate_);
+        buckets[maturityDate_] = safeSub(buckets[maturityDate_], fvDecrease);
+        latestDiscount = safeSub(latestDiscount, navDecrease);
+        latestNAV = safeSub(latestNAV, navDecrease);
 
+        // update latest NAV
+        // update latest Discount
         (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
         details[nftID_].futureValue = toUint128(calcFutureValue(loanInterestRate, pile.debt(loan),
             maturityDate(nftID_), recoveryRatePD(risk(nftID_))));
-        buckets[maturityDate_] = safeAdd(buckets[maturityDate_], futureValue(nftID_));
-
+        
+        uint fvIncrease =  futureValue(nftID_);
+        uint navIncrease = calcDiscount(discountRate.value, fvIncrease, nnow, maturityDate_);
+        buckets[maturityDate_] = safeAdd(buckets[maturityDate_], fvIncrease);
+        latestDiscount = safeAdd(latestDiscount, navIncrease);
+        latestNAV = safeAdd(latestNAV, navIncrease);
         emit Update(nftID_, value, risk_);
     }
 
