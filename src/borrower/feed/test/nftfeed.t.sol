@@ -3,13 +3,13 @@ pragma solidity >=0.7.6;
 
 import "ds-test/test.sol";
 import "tinlake-math/interest.sol";
-import "./../principal.sol";
+import "./navfeed.tests.sol";
 import "./../../test/mock/shelf.sol";
 import "./../../test/mock/pile.sol";
 
 
 contract NFTFeedTest is DSTest, Math {
-    PrincipalNAVFeed public feed;
+    TestNAVFeed public feed;
     ShelfMock shelf;
     PileMock pile;
 
@@ -23,7 +23,7 @@ contract NFTFeedTest is DSTest, Math {
         defaultCeilingRatio = 6*10**26;                       // 60% ceiling
         defaultRate = uint(1000000564701133626865910626);     // 5 % day
 
-        feed = new PrincipalNAVFeed();
+        feed = new TestNAVFeed();
         pile = new PileMock();
         shelf = new ShelfMock();
         feed.depend("shelf", address(shelf));

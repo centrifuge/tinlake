@@ -95,16 +95,16 @@ contract NAVFeed is Auth, Discounting {
     uint public overdueLoans;
 
     // events
-    // event Depend(bytes32 indexed name, address addr);
-    // event File(bytes32 indexed name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_);
-    // event Update(bytes32 indexed nftID, uint value);
-    // event Update(bytes32 indexed nftID, uint value, uint risk);
-    // event File(bytes32 indexed name, uint risk_, uint thresholdRatio_, uint ceilingRatio_,
-    //     uint rate_, uint recoveryRatePD_);
-    // event File(bytes32 indexed name, bytes32 nftID_, uint maturityDate_);
-    // event File(bytes32 indexed name, uint value);
-    // event File(bytes32 indexed name, uint rate_, uint writeOffPercentage_, uint overdueDays_);
-    // event WriteOff(uint indexed loan, uint indexed writeOffGroupsIndex, bool override_);
+    event Depend(bytes32 indexed name, address addr);
+    event File(bytes32 indexed name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_);
+    event Update(bytes32 indexed nftID, uint value);
+    event Update(bytes32 indexed nftID, uint value, uint risk);
+    event File(bytes32 indexed name, uint risk_, uint thresholdRatio_, uint ceilingRatio_,
+        uint rate_, uint recoveryRatePD_);
+    event File(bytes32 indexed name, bytes32 nftID_, uint maturityDate_);
+    event File(bytes32 indexed name, uint value);
+    event File(bytes32 indexed name, uint rate_, uint writeOffPercentage_, uint overdueDays_);
+    event WriteOff(uint indexed loan, uint indexed writeOffGroupsIndex, bool override_);
 
     // getter functions
     function maturityDate(bytes32 nft_)     public view returns(uint){ return uint(details[nft_].maturityDate);}
@@ -126,7 +126,7 @@ contract NAVFeed is Auth, Discounting {
         require(value <= type(uint128).max, "SafeCast: value doesn't fit in 128 bits");
         return uint128(value);
     }
-
+    
     // returns the ceiling of a loan
     // the ceiling defines the maximum amount which can be borrowed
     function ceiling(uint loan) public virtual view returns (uint) {
@@ -145,14 +145,14 @@ contract NAVFeed is Auth, Discounting {
         if (contractName == "pile") {pile = PileLike(addr);}
         else if (contractName == "shelf") { shelf = ShelfLike(addr); }
         else revert();
-        // emit Depend(contractName, addr);
+        emit Depend(contractName, addr);
     }
 
     function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_) public auth  {
         if(name == "riskGroup") {
             file("riskGroupNFT", risk_, thresholdRatio_, ceilingRatio_, rate_);
             riskGroup[risk_].recoveryRatePD= toUint128(recoveryRatePD_);
-            // emit File(name, risk_, thresholdRatio_, ceilingRatio_, rate_, recoveryRatePD_);
+            emit File(name, risk_, thresholdRatio_, ceilingRatio_, rate_, recoveryRatePD_);
 
         } else { revert ("unknown name");}
     }
@@ -162,7 +162,7 @@ contract NAVFeed is Auth, Discounting {
         if (name == "maturityDate") {
             require((futureValue(nftID_) == 0), "can-not-change-maturityDate-outstanding-debt");
             details[nftID_].maturityDate = toUint128(uniqueDayTimestamp(maturityDate_));
-            // emit File(name, nftID_, maturityDate_);
+            emit File(name, nftID_, maturityDate_);
 
         } else { revert("unknown config parameter");}
     }
@@ -176,7 +176,7 @@ contract NAVFeed is Auth, Discounting {
             if(oldDiscountRate != 0) {
                 reCalcNAV();
             }
-            // emit File(name, value);
+            emit File(name, value);
 
         } else { revert("unknown config parameter");}
     }
@@ -189,7 +189,7 @@ contract NAVFeed is Auth, Discounting {
 
             // set interestRate for risk group
             pile.file("rate", risk_, rate_);
-            // emit File(name, risk_, thresholdRatio_, ceilingRatio_, rate_);
+            emit File(name, risk_, thresholdRatio_, ceilingRatio_, rate_);
 
         } else { revert ("unknown name");}
     }
@@ -199,7 +199,7 @@ contract NAVFeed is Auth, Discounting {
             uint index = writeOffGroups.length;
             writeOffGroups.push(WriteOffGroup(toUint128(writeOffPercentage_), toUint128(overdueDays_)));
             pile.file("rate", safeAdd(WRITEOFF_RATE_GROUP_START, index), rate_);
-            // emit File(name, rate_, writeOffPercentage_, overdueDays_);
+            emit File(name, rate_, writeOffPercentage_, overdueDays_);
         } else { revert ("unknown name");}
     }
 
@@ -316,7 +316,7 @@ contract NAVFeed is Auth, Discounting {
 
         if (writeOffGroupIndex_ < type(uint128).max && pile.loanRates(loan) != WRITEOFF_RATE_GROUP_START + writeOffGroupIndex_) {
             _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
-            // emit WriteOff(loan, writeOffGroupIndex_, false);
+            emit WriteOff(loan, writeOffGroupIndex_, false);
         }
     }
 
@@ -331,7 +331,7 @@ contract NAVFeed is Auth, Discounting {
             loanDetails[loan].authWriteOff = true;
         }
         _writeOff(loan, writeOffGroupIndex_, nftID_, maturityDate_);
-        // emit WriteOff(loan, writeOffGroupIndex_, true);
+        emit WriteOff(loan, writeOffGroupIndex_, true);
     }
 
     function _writeOff(uint loan, uint writeOffGroupIndex_, bytes32 nftID_, uint maturityDate_) internal {
@@ -458,7 +458,7 @@ contract NAVFeed is Auth, Discounting {
     function update(bytes32 nftID_,  uint value) public auth {
         // switch of collateral risk group results in new: ceiling, threshold for existing loan
         details[nftID_].nftValues = toUint128(value);
-        // emit Update(nftID_, value);
+        emit Update(nftID_, value);
     }
 
     function update(bytes32 nftID_, uint value, uint risk_) public auth {
@@ -497,7 +497,7 @@ contract NAVFeed is Auth, Discounting {
             maturityDate(nftID_), recoveryRatePD(risk(nftID_))));
         buckets[maturityDate_] = safeAdd(buckets[maturityDate_], futureValue(nftID_));
 
-        // emit Update(nftID_, value, risk_);
+        emit Update(nftID_, value, risk_);
     }
 
     // --- Utilities ---
