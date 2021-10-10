@@ -96,7 +96,7 @@ contract BorrowerDeployer is FixedPoint {
         AuthLike(feed).rely(root);
     }
 
-    function deploy() public {
+    function deploy(bool initNAVFeed) public {
         // ensures all required deploy methods were called
         require(shelf != ZERO);
         require(!wired, "borrower contracts already wired"); // make sure borrower contracts only wired once
@@ -117,6 +117,15 @@ contract BorrowerDeployer is FixedPoint {
         AuthLike(title).rely(shelf);
         
         FileLike(feed).file("discountRate", discountRate.value);
+
+        if (initNAVFeed) {
+            NAVFeedLike(feed).init();
+        }
+    }
+
+
+    function deploy() public {
+        deploy(false);
     }
 }
 

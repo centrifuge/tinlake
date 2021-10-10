@@ -5,8 +5,10 @@ import "../navfeed.sol";
 
 contract TestNAVFeed is NAVFeed {
 
-    constructor () NAVFeed() {
-        // risk group: 0
+    function init() public {
+        require(ceilingRatio(0) == 0, "already-initialized");
+
+        // The following score cards just examples that are mostly optimized for the system test cases
         file("riskGroup",
             0,                                      // riskGroup:       0
             8*10**26,                               // thresholdRatio   80%
@@ -15,7 +17,6 @@ contract TestNAVFeed is NAVFeed {
             ONE                                     // recoveryRatePD:  1.0
         );
 
-        // risk group: 1
         file("riskGroup",
             1,                                      // riskGroup:       1
             7*10**26,                               // thresholdRatio   70%
@@ -24,7 +25,6 @@ contract TestNAVFeed is NAVFeed {
             90 * 10**25                             // recoveryRatePD:  0.9
         );
 
-        // risk group: 2
         file("riskGroup",
             2,                                      // riskGroup:       2
             7*10**26,                               // thresholdRatio   70%
@@ -33,7 +33,6 @@ contract TestNAVFeed is NAVFeed {
             90 * 10**25                             // recoveryRatePD:  0.9
         );
 
-        // risk group: 3
         file("riskGroup",
             3,                                      // riskGroup:       3
             7*10**26,                               // thresholdRatio   70%
@@ -42,7 +41,6 @@ contract TestNAVFeed is NAVFeed {
             ONE                                     // recoveryRatePD:  1.0
         );
 
-        // risk group: 4 (used by collector tests)
         file("riskGroup",
             4,                                      // riskGroup:       4
             5*10**26,                               // thresholdRatio   50%
@@ -59,7 +57,6 @@ contract TestNAVFeed is NAVFeed {
         file("writeOffGroup", uint(1000000674400000000000000000), 25 * 10**25, 90);
         // 6% interest rate & 100% write off
         file("writeOffGroup", uint(1000000674400000000000000000), 0, 120);
-
     }
 
 }

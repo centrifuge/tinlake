@@ -37,7 +37,7 @@ import { ClerkFab } from "../../lender/adapters/mkr/fabs/clerk.sol";
 import { Title } from "tinlake-title/title.sol";
 import { Pile } from "../../borrower/pile.sol";
 import { Shelf } from "../../borrower/shelf.sol";
-import { NAVFeed } from "../../borrower/feed/navfeed.sol";
+import { NAVFeed } from "../../borrower/feed/test/navfeed.tests.sol";
 
 import { TestRoot } from "./root.sol";
 
@@ -201,7 +201,7 @@ abstract contract TestSetup is Config {
         borrowerDeployer.deployPile();
         borrowerDeployer.deployFeed();
         borrowerDeployer.deployShelf();
-        borrowerDeployer.deploy();
+        borrowerDeployer.deploy(true);
 
         shelf = Shelf(borrowerDeployer.shelf());
         pile = Pile(borrowerDeployer.pile());

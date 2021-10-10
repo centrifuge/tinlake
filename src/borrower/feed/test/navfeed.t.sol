@@ -12,7 +12,7 @@ interface Hevm {
 }
 
 contract NAVTest is DSTest, Math {
-    NAVFeed public feed;
+    TestNAVFeed public feed;
     ShelfMock shelf;
     PileMock pile;
     uint defaultRate;
@@ -49,7 +49,7 @@ contract NAVTest is DSTest, Math {
         feed.depend("pile", address(pile));
         feed.file("discountRate", discountRate);
         mockNFTRegistry = address(42);
-        // feed.init();
+        feed.init();
     }
 
 
