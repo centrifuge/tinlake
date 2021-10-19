@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "../../test_suite.sol";
@@ -19,7 +19,7 @@ contract MKRTestBasis is TestSuite, Interest {
         deployContracts(mkrAdapter, defaultConfig);
         createTestUsers();
 
-        nftFeed_ = NFTFeedLike(address(nftFeed));
+        navFeed_ = NAVFeedLike(address(nftFeed));
         root.relyContract(address(clerk), address(this));
         mkrAssessor = assessor;
         mkr.depend("currency" ,currency_);
@@ -96,7 +96,7 @@ contract MKRTestBasis is TestSuite, Interest {
 
     function _mkrLiquidationPostAssertions() public {
         //sanity check - correct currency amount for each token
-        assertEqTol(mkrAssessor.currentNAV() + reserve.totalBalance(), rmul(seniorToken.totalSupply(), mkrAssessor.calcSeniorTokenPrice())
+        assertEqTol(mkrAssessor.getNAV() + reserve.totalBalance(), rmul(seniorToken.totalSupply(), mkrAssessor.calcSeniorTokenPrice())
             + rmul(juniorToken.totalSupply(), mkrAssessor.calcJuniorTokenPrice()),  "mkrPostCon#1");
 
         assertEqTol(clerk.remainingCredit(), 0,  "mkrPostCon#2");

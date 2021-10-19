@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2018  Rain <rainbreak@riseup.net>, Centrifuge
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 import "tinlake-math/interest.sol";
 import "tinlake-auth/auth.sol";
@@ -34,9 +34,6 @@ contract Pile is Auth, Interest {
     mapping (uint => uint) public loanRates;
 
 
-    // total debt of all ongoing loans
-    uint public total;
-
     // Events
     event IncreaseDebt(uint indexed loan, uint currencyAmount);
     event DecreaseDebt(uint indexed loan, uint currencyAmount);
@@ -64,7 +61,6 @@ contract Pile is Auth, Interest {
 
         pie[loan] = safeAdd(pie[loan], pieAmount);
         rates[rate].pie = safeAdd(rates[rate].pie, pieAmount);
-        total = safeAdd(total, currencyAmount);
 
         emit IncreaseDebt(loan, currencyAmount);
     }
@@ -78,13 +74,6 @@ contract Pile is Auth, Interest {
 
         pie[loan] = safeSub(pie[loan], pieAmount);
         rates[rate].pie = safeSub(rates[rate].pie, pieAmount);
-
-        if (currencyAmount > total) {
-            total = 0;
-            return;
-        }
-
-        total = safeSub(total, currencyAmount);
 
         emit DecreaseDebt(loan, currencyAmount);
     }
@@ -163,10 +152,9 @@ contract Pile is Auth, Interest {
     // updates the total debt
     function drip(uint rate) public {        
         if (block.timestamp >= rates[rate].lastUpdated) {
-            (uint chi, uint deltaInterest) = compounding(rates[rate].chi, rates[rate].ratePerSecond, rates[rate].lastUpdated, rates[rate].pie);
+            (uint chi,) = compounding(rates[rate].chi, rates[rate].ratePerSecond, rates[rate].lastUpdated, rates[rate].pie);
             rates[rate].chi = chi;
             rates[rate].lastUpdated = uint48(block.timestamp);
-            total = safeAdd(total, deltaInterest);
         }
     }
 }

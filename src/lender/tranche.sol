@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
-pragma experimental ABIEncoderV2;
+pragma solidity >=0.7.6;
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
@@ -33,12 +32,12 @@ contract Tranche is Math, Auth, FixedPoint {
     struct Epoch {
         // denominated in 10^27
         // percentage ONE == 100%
-        Fixed27 redeemFulfillment;
+        uint redeemFulfillment;
         // denominated in 10^27
         // percentage ONE == 100%
-        Fixed27 supplyFulfillment;
+        uint supplyFulfillment;
         // tokenPrice after end of epoch
-        Fixed27 tokenPrice;
+        uint tokenPrice;
     }
 
     struct UserOrder {
@@ -166,19 +165,19 @@ contract Tranche is Math, Auth, FixedPoint {
         // calculates disburse amounts as long as remaining tokens or currency is left or the end epoch is reached
         while(epochIdx <= endEpoch && (remainingSupplyCurrency != 0 || remainingRedeemToken != 0 )){
             if(remainingSupplyCurrency != 0) {
-                amount = rmul(remainingSupplyCurrency, epochs[epochIdx].supplyFulfillment.value);
+                amount = rmul(remainingSupplyCurrency, epochs[epochIdx].supplyFulfillment);
                 // supply currency payout in token
                 if (amount != 0) {
-                    payoutTokenAmount = safeAdd(payoutTokenAmount, safeDiv(safeMul(amount, ONE), epochs[epochIdx].tokenPrice.value));
+                    payoutTokenAmount = safeAdd(payoutTokenAmount, safeDiv(safeMul(amount, ONE), epochs[epochIdx].tokenPrice));
                     remainingSupplyCurrency = safeSub(remainingSupplyCurrency, amount);
                 }
             }
 
             if(remainingRedeemToken != 0) {
-                amount = rmul(remainingRedeemToken, epochs[epochIdx].redeemFulfillment.value);
+                amount = rmul(remainingRedeemToken, epochs[epochIdx].redeemFulfillment);
                 // redeem token payout in currency
                 if (amount != 0) {
-                    payoutCurrencyAmount = safeAdd(payoutCurrencyAmount, rmul(amount, epochs[epochIdx].tokenPrice.value));
+                    payoutCurrencyAmount = safeAdd(payoutCurrencyAmount, rmul(amount, epochs[epochIdx].tokenPrice));
                     remainingRedeemToken = safeSub(remainingRedeemToken, amount);
                 }
             }
@@ -238,9 +237,9 @@ contract Tranche is Math, Auth, FixedPoint {
         require(waitingForUpdate == true);
         waitingForUpdate = false;
 
-        epochs[epochID].supplyFulfillment.value = supplyFulfillment_;
-        epochs[epochID].redeemFulfillment.value = redeemFulfillment_;
-        epochs[epochID].tokenPrice.value = tokenPrice_;
+        epochs[epochID].supplyFulfillment = supplyFulfillment_;
+        epochs[epochID].redeemFulfillment = redeemFulfillment_;
+        epochs[epochID].tokenPrice = tokenPrice_;
 
         // currency needs to be converted to tokenAmount with current token price
         uint redeemInToken = 0;
@@ -256,8 +255,8 @@ contract Tranche is Math, Auth, FixedPoint {
         adjustTokenBalance(epochID, supplyInToken, redeemInToken);
 
         // the unfulfilled orders (1-fulfillment) is automatically ordered
-        totalSupply = safeAdd(safeTotalSub(totalSupply, epochSupplyOrderCurrency), rmul(epochSupplyOrderCurrency, safeSub(ONE, epochs[epochID].supplyFulfillment.value)));
-        totalRedeem = safeAdd(safeTotalSub(totalRedeem, redeemInToken), rmul(redeemInToken, safeSub(ONE, epochs[epochID].redeemFulfillment.value)));
+        totalSupply = safeAdd(safeTotalSub(totalSupply, epochSupplyOrderCurrency), rmul(epochSupplyOrderCurrency, safeSub(ONE, epochs[epochID].supplyFulfillment)));
+        totalRedeem = safeAdd(safeTotalSub(totalRedeem, redeemInToken), rmul(redeemInToken, safeSub(ONE, epochs[epochID].redeemFulfillment)));
     }
     
     function closeEpoch() public auth returns (uint totalSupplyCurrency_, uint totalRedeemToken_) {
@@ -297,12 +296,12 @@ contract Tranche is Math, Auth, FixedPoint {
         // mint token amount for supply
 
         uint mintAmount = 0;
-        if (epochs[epochID].tokenPrice.value > 0) {
-            mintAmount = rmul(epochSupplyToken, epochs[epochID].supplyFulfillment.value);
+        if (epochs[epochID].tokenPrice > 0) {
+            mintAmount = rmul(epochSupplyToken, epochs[epochID].supplyFulfillment);
         }
 
         // burn token amount for redeem
-        uint burnAmount = rmul(epochRedeemToken, epochs[epochID].redeemFulfillment.value);
+        uint burnAmount = rmul(epochRedeemToken, epochs[epochID].redeemFulfillment);
         // burn tokens that are not needed for disbursement
         uint diff;
         if (burnAmount > mintAmount) {
@@ -327,9 +326,9 @@ contract Tranche is Math, Auth, FixedPoint {
     // adjust currency balance after epoch execution -> receive/send currency from/to reserve
     function adjustCurrencyBalance(uint epochID, uint epochSupply, uint epochRedeem) internal {
         // currency that was supplied in this epoch
-        uint currencySupplied = rmul(epochSupply, epochs[epochID].supplyFulfillment.value);
+        uint currencySupplied = rmul(epochSupply, epochs[epochID].supplyFulfillment);
         // currency required for redemption
-        uint currencyRequired = rmul(epochRedeem, epochs[epochID].redeemFulfillment.value);
+        uint currencyRequired = rmul(epochRedeem, epochs[epochID].redeemFulfillment);
 
         uint diff;
         if (currencySupplied > currencyRequired) {

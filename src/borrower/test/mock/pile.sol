@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 import "../../../test/mock/mock.sol";
 
@@ -14,6 +14,8 @@ contract PileMock is Mock {
     }
 
     function setRate(uint loan, uint rate) public {
+        emit log_named_uint("setRate_loan", loan);
+        emit log_named_uint("setRate_rate", rate);
         values_uint["setRate_loan"] = loan;
         values_uint["setRate_rate"] = rate;
         calls["setRate"]++;
@@ -22,14 +24,12 @@ contract PileMock is Mock {
     function changeRate(uint loan, uint rate) public {
         values_uint["changeRate_loan"] = loan;
         values_uint["changeRate_rate"] = rate;
+        setReturn("loanRates", rate);
         calls["changeRate"]++;
 
     }
 
-    function debt(uint loan) public returns(uint) {
-        // name = "debt_loan" because of two debt funcs
-        values_uint["debt_loan_loan"] = loan;
-        calls["debt_loan"]++;
+    function debt(uint) public view returns(uint) {
         return values_return["debt_loan"];
     }
 
@@ -64,8 +64,8 @@ contract PileMock is Mock {
         calls["file"]++;
     }
 
-    function loanRates(uint) public returns(uint) {
-        return call("loanRates");
+    function loanRates(uint) public view returns(uint) {
+        return values_return["loanRates"];
     }
 
     function rates(uint) public view returns(uint, uint, uint, uint48,uint) {

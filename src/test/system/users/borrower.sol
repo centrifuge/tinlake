@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 import { Title } from "tinlake-title/title.sol";
 import "../interfaces.sol";
@@ -37,9 +37,6 @@ contract Borrower {
         shelf.borrow(loan, currencyAmount);
     }
 
-    function balance() public {
-        reserve.balance();
-    }
 
     function repay(uint loan, uint currencyAmount) public {
         shelf.repay(loan, currencyAmount);
@@ -62,7 +59,6 @@ contract Borrower {
     function repayAction(uint loan, uint currencyAmount) public {
         shelf.repay(loan, currencyAmount);
         shelf.unlock(loan);
-        reserve.balance();
     }
 
     function doClose(uint loan) public {

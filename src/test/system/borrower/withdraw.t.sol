@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "../base_system.sol";
@@ -81,19 +81,6 @@ contract WithdrawTest is BaseSystemTest {
         assertPreCondition(loanId, tokenId, ceiling);
         // recipient not borrower account
         withdraw(loanId, tokenId, ceiling, randomUser_);
-    }
-
-    function testWithdrawFromShelfHasFunds() public {
-        uint nftPrice = 100 ether; // -> ceiling 50 ether
-        uint riskGroup = 1; // -> 12% per year
-        uint ceiling = computeCeiling(riskGroup, nftPrice);
-
-        // transfer funds directly into the shelf, without calling tranche.supply()
-        uint investAmount = safeMul(ceiling, 2);
-        supplyFunds(investAmount, address(shelf));
-        (uint loanId, uint tokenId) = createLoanAndBorrow(borrower_, nftPrice, riskGroup);
-        assertPreCondition(loanId, tokenId, ceiling);
-        withdraw(loanId, tokenId, ceiling, borrower_);
     }
 
     function testPartialWithdraw() public {

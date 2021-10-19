@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 import { ClerkFabLike, TinlakeManagerFabLike } from "../fabs/interfaces.sol";
 
@@ -61,7 +61,7 @@ contract AdapterDeployer {
         deployUsr = msg.sender;
     }
 
-    function deployClerk(address lenderDeployer_) public {
+    function deployClerk(address lenderDeployer_, bool wireReserveAssessor) public {
         require(deployUsr == msg.sender && address(clerk) == address(0) && LenderDeployerLike(lenderDeployer_).seniorToken() != address(0));
 
         lenderDeployer = LenderDeployerLike(lenderDeployer_);
@@ -86,17 +86,21 @@ contract AdapterDeployer {
         AuthLike(assessor).rely(clerk);
 
         // reserve can draw and wipe on clerk
-        DependLike(reserve).depend("lending", clerk);
+        if (wireReserveAssessor) DependLike(reserve).depend("lending", clerk);
         AuthLike(clerk).rely(reserve);
 
         // allow clerk to hold seniorToken
         MemberlistLike(seniorMemberlist).updateMember(clerk, type(uint256).max);
 
-        DependLike(assessor).depend("lending", clerk);
+        if (wireReserveAssessor) DependLike(assessor).depend("lending", clerk);
 
         AuthLike(clerk).rely(poolAdmin);
 
         AuthLike(clerk).rely(root);
+    }
+
+    function deployClerk(address lenderDeployer_) public {
+        deployClerk(lenderDeployer_, true);
     }
 
     function deployMgr(address dai, address daiJoin, address end, address vat, address vow, address liq, address spotter, address jug, uint matBuffer) public {

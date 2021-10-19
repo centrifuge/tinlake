@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 import "ds-test/test.sol";
 import "tinlake-auth/auth.sol";
@@ -49,6 +49,11 @@ contract ReserveMock is Mock, Auth {
     }
 
     function payout(uint amount) public {
+        values_uint["deposit_amount"] = amount;
+        currency.transferFrom(address(this), msg.sender, amount);
+    }
+
+    function payoutForLoans(uint amount) public {
         values_uint["deposit_amount"] = amount;
         currency.transferFrom(address(this), msg.sender, amount);
     }

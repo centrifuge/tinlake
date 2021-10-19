@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 import { ReserveFabLike, AssessorFabLike, TrancheFabLike, CoordinatorFabLike, OperatorFabLike, MemberlistFabLike, RestrictedTokenFabLike, PoolAdminFabLike, ClerkFabLike } from "./fabs/interfaces.sol";
 
@@ -21,6 +21,10 @@ interface MemberlistLike {
 
 interface FileLike {
     function file(bytes32 name, uint value) external;
+}
+
+interface PoolAdminLike {
+    function rely(address) external;
 }
 
 contract LenderDeployer is FixedPoint {
@@ -154,8 +158,8 @@ contract LenderDeployer is FixedPoint {
     function deployPoolAdmin() public {
         require(poolAdmin == address(0) && deployer == address(1));
         poolAdmin = poolAdminFab.newPoolAdmin();
-        AuthLike(poolAdmin).rely(root);
-        if (adapterDeployer != address(0)) AuthLike(poolAdmin).rely(adapterDeployer);
+        PoolAdminLike(poolAdmin).rely(root);
+        if (adapterDeployer != address(0)) PoolAdminLike(poolAdmin).rely(adapterDeployer);
     }
 
     function deployCoordinator() public {
@@ -167,7 +171,7 @@ contract LenderDeployer is FixedPoint {
     function deploy() public virtual {
         require(coordinator != address(0) && assessor != address(0) &&
                 reserve != address(0) && seniorTranche != address(0));
-    
+
         require(!wired, "lender contracts already wired"); // make sure lender contracts only wired once
         wired = true;
 
@@ -205,10 +209,11 @@ contract LenderDeployer is FixedPoint {
         DependLike(juniorOperator).depend("token", juniorToken);
 
         // coordinator
-        DependLike(coordinator).depend("reserve", reserve);
         DependLike(coordinator).depend("seniorTranche", seniorTranche);
         DependLike(coordinator).depend("juniorTranche", juniorTranche);
         DependLike(coordinator).depend("assessor", assessor);
+
+        AuthLike(coordinator).rely(poolAdmin);
 
         // assessor
         DependLike(assessor).depend("seniorTranche", seniorTranche);
@@ -218,12 +223,13 @@ contract LenderDeployer is FixedPoint {
         AuthLike(assessor).rely(coordinator);
         AuthLike(assessor).rely(reserve);
         AuthLike(assessor).rely(poolAdmin);
-        
+
         // poolAdmin
         DependLike(poolAdmin).depend("assessor", assessor);
         DependLike(poolAdmin).depend("juniorMemberlist", juniorMemberlist);
         DependLike(poolAdmin).depend("seniorMemberlist", seniorMemberlist);
-        
+        DependLike(poolAdmin).depend("coordinator", coordinator);
+
         AuthLike(juniorMemberlist).rely(poolAdmin);
         AuthLike(seniorMemberlist).rely(poolAdmin);
 
