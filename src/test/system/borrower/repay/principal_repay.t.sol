@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "../../base_system.sol";

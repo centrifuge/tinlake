@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "./coordinator-base.t.sol";
@@ -13,13 +13,9 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
         // 1 trillion order
         uint maxOrder = 10 ** 18 * 10 ** 18;
         uint score = coordinator.scoreSolution(maxOrder, maxOrder, maxOrder, maxOrder);
+        
         // should not produce integer overflow
         assertTrue(score <= type(uint256).max);
-
-        uint maxDistancePoints = rmul(coordinator.IMPROVEMENT_WEIGHT(), rdiv(ONE, 1));
-        assertTrue(coordinator.BIG_NUMBER() > maxDistancePoints);
-        maxDistancePoints = rmul(coordinator.IMPROVEMENT_WEIGHT(), rdiv(ONE, 1));
-        assertTrue(coordinator.BIG_NUMBER() > maxDistancePoints);
     }
 
     function testFailNoSubmission() public {
@@ -106,7 +102,7 @@ contract CoordinatorSubmitEpochTest is CoordinatorTest, FixedPoint {
         Fixed27 memory currSeniorRatio = Fixed27(assessor.calcSeniorRatio(coordinator.epochSeniorAsset(),
             coordinator.epochNAV(), coordinator.epochReserve()));
 
-        assertTrue(coordinator.checkRatioInRange(currSeniorRatio, Fixed27(model.minSeniorRatio), Fixed27(model.maxSeniorRatio)) == currSeniorRatioInRange);
+        assertTrue(coordinator.checkRatioInRange(currSeniorRatio.value, model.minSeniorRatio, model.maxSeniorRatio) == currSeniorRatioInRange);
         assertTrue((coordinator.epochReserve() <= assessor.maxReserve()) == reserveHealthy);
     }
 

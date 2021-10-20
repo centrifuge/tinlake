@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "./setup.sol";
@@ -7,7 +7,6 @@ import "./setup.sol";
 import "./users/admin.sol";
 import "./users/investor.sol";
 import "./users/borrower.sol";
-import "./users/keeper.sol";
 import {BaseTypes} from "../../lender/test/coordinator-base.t.sol";
 import "./assertions.sol";
 
@@ -22,14 +21,11 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
     Borrower randomUser;
     address randomUser_;
 
-    Keeper keeper;
-    address keeper_;
-
     Investor seniorInvestor;
     address  seniorInvestor_;
     Investor juniorInvestor;
     address  juniorInvestor_;
-    NFTFeedLike nftFeed_;
+    NAVFeedLike navFeed_;
 
     Hevm hevm;
 
@@ -50,9 +46,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         borrower_ = address(borrower);
         randomUser = new Borrower(address(shelf), address(reserve), currency_, address(pile));
         randomUser_ = address(randomUser);
-        keeper = new Keeper(address(collector), currency_);
-        keeper_ = address(keeper);
-        admin = new AdminUser(address(shelf), address(pile), address(nftFeed), address(title), address(reserve), address(collector), address(juniorMemberlist), address(seniorMemberlist));
+        admin = new AdminUser(address(shelf), address(pile), address(nftFeed), address(title), address(reserve), address(juniorMemberlist), address(seniorMemberlist));
         admin_ = address(admin);
         root.relyBorrowerAdmin(admin_);
         root.relyLenderAdmin(admin_);
@@ -161,19 +155,6 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         juniorInvestor.supplyOrder(amountJunior);
     }
 
-    // helpers keeper
-    function seize(uint loanId) public {
-        collector.seize(loanId);
-    }
-
-    function addKeeperAndCollect(uint loanId, address usr, uint recoveryPrice) public {
-        seize(loanId);
-        admin.addKeeper(loanId, usr, recoveryPrice);
-        topUp(usr);
-        Borrower(usr).doApproveCurrency(address(shelf), type(uint256).max);
-        admin.collect(loanId, usr);
-    }
-
     function setupCurrencyOnLender(uint amount) public {
         defaultInvest(amount);
     }
@@ -213,7 +194,7 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         tokenId = collateralNFT.issue(borrower_);
         loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup);
         // borrow max amount possible
-        uint ceiling_ = nftFeed_.ceiling(loan);
+        uint ceiling_ = navFeed_.ceiling(loan);
         borrow(loan, tokenId, ceiling_);
         return (loan, tokenId, ceiling_);
     }
@@ -277,11 +258,11 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         // create borrower collateral collateralNFT
         uint tokenId = collateralNFT.issue(borrower_);
         uint loan = setupLoan(tokenId, collateralNFT_, nftPrice, riskGroup);
-        uint ceiling = nftFeed_.ceiling(loan);
+        uint ceiling = navFeed_.ceiling(loan);
 
-        assertEq(nftFeed_.ceiling(loan), ceiling);
+        assertEq(navFeed_.ceiling(loan), ceiling);
         borrow(loan, tokenId, ceiling);
-        assertEq(nftFeed_.ceiling(loan), 0);
+        assertEq(navFeed_.ceiling(loan), 0);
 
         hevm.warp(block.timestamp + 10 days);
 

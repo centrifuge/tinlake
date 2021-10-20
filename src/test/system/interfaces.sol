@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 interface Hevm {
     function warp(uint256) external;
@@ -20,7 +20,7 @@ interface TokenLike{
     function burn(address, uint) external;
 }
 
-interface NFTFeedLike {
+interface NAVFeedLike {
     function update(bytes32 nftID, uint value) external;
     function update(bytes32 nftID, uint value, uint risk) external;
     function ceiling(uint loan) external view returns(uint);
@@ -32,9 +32,12 @@ interface NFTFeedLike {
     function borrow(uint loan, uint currencyAmount) external;
     function repay(uint loan, uint currencyAmount) external;
     function file(bytes32 what, bytes32 nftID_, uint maturityDate_) external;
-    function approximatedNAV() external returns (uint);
+    function latestNAV() external returns (uint);
     function currentNAV() external returns (uint);
     function calcUpdateNAV() external returns (uint);
+    function init() external;
+    function writeOff(uint loan, uint writeOffGroupIndex_) external;
+    function overrideWriteOff(uint loan, uint writeOffGroupIndex_) external;
 }
 
 interface PileLike {
@@ -71,13 +74,6 @@ interface ERC20Like {
 interface TrancheLike {
     function balance() external returns(uint);
     function tokenSupply() external returns(uint);
-}
-
-interface CollectorLike {
-    function collect(uint loan) external;
-    function collect(uint loan, address buyer) external;
-    function file(bytes32 what, uint loan, address buyer, uint price) external;
-    function relyCollector(address user) external;
 }
 
 interface MemberlistLike {

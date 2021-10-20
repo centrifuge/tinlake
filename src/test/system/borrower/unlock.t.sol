@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "../base_system.sol";
@@ -85,18 +85,6 @@ contract UnlockTest is BaseSystemTest {
 
         hevm.warp(block.timestamp + 365 days);
         // borrower does not repay
-        unlockNFT(loanId, tokenId);
-    }
-
-    function testFailUnlockCollected() public {
-        uint nftPrice = 200 ether; // -> ceiling 100 ether
-        // thresholdRatio => 80% -> 160 ether
-        uint riskGroup = 1; // -> 12% per year
-        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
-
-        // threshold reached after 10 years
-        hevm.warp(block.timestamp + 3650 days);
-        seize(loanId);
         unlockNFT(loanId, tokenId);
     }
 }

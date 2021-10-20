@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 import { TinlakeRoot } from "../../root.sol";
 import { BorrowerDeployer } from "../../borrower/deployer.sol";
@@ -19,7 +19,6 @@ contract TestRoot is TinlakeRoot {
         relyContract(bD.shelf(), usr);
         relyContract(bD.pile(), usr);
         relyContract(bD.feed(), usr);
-        relyContract(bD.collector(), usr);
     }
 
     // Needed for System Tests
@@ -35,6 +34,5 @@ contract TestRoot is TinlakeRoot {
         denyContract(bD.feed(), usr);
         denyContract(bD.shelf(), usr);
         denyContract(bD.pile(), usr);
-        denyContract(bD.collector(), usr);
     }
 }

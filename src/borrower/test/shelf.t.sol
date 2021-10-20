@@ -59,6 +59,7 @@ contract ShelfTest is DSTest {
 
     function _borrow(uint loan_, uint currencyAmount_) internal {
         shelf.borrow(loan_, currencyAmount_);
+        assertEq(currency.calls("transferFrom"), 1);
 
         assertEq(ceiling.calls("borrow"), 1);
         assertEq(pile.calls("accrue"), 1);
@@ -76,11 +77,9 @@ contract ShelfTest is DSTest {
         assertEq(pile.values_uint("incDebt_currencyAmount"), currencyAmount_);
 
         shelf.withdraw(loan_, currencyAmount_, address(this));
-
-        assertEq(reserve.calls("balance"), 1);
         assertEq(totalBalance-currencyAmount_, shelf.balance());
         assertEq(loanBalance-currencyAmount_, shelf.balances(loan_));
-        assertEq(currency.calls("transferFrom"), 1);
+        assertEq(currency.calls("transferFrom"), 2);
         assertEq(currency.values_address("transferFrom_from"), address(shelf));
         assertEq(currency.values_address("transferFrom_to"), address(this));
         assertEq(currency.values_uint("transferFrom_amount"), currencyAmount_);
@@ -90,16 +89,16 @@ contract ShelfTest is DSTest {
         pile.setReturn("debt_loan", currencyAmount_);
         shelf.repay(loan_, currencyAmount_);
 
-        assertEq(reserve.calls("balance"), 2);
         assertEq(pile.calls("accrue"), 2);
         assertEq(pile.calls("decDebt"), 1);
         assertEq(shelf.balance(), 0);
         assertEq(shelf.balances(loan_), 0);
         assertEq(ceiling.calls("repay"), 1);
-        assertEq(currency.calls("transferFrom"), 2);
-        assertEq(currency.values_address("transferFrom_from"),address(this));
-        assertEq(currency.values_address("transferFrom_to"),address(shelf));
-        assertEq(currency.values_uint("transferFrom_amount"),currencyAmount_);
+        assertEq(currency.calls("transferFrom"), 4);
+        // last transfer from
+        assertEq(currency.values_address("transferFrom_from"), address(shelf));
+        assertEq(currency.values_address("transferFrom_to"), address(reserve));
+        assertEq(currency.values_uint("transferFrom_amount"), currencyAmount_);
     }
 
     function _recover(uint loan_, address usr_, uint currencyAmount_, uint debt_) internal {
@@ -108,9 +107,9 @@ contract ShelfTest is DSTest {
         assertEq(pile.calls("accrue"), 2);
         assertEq(pile.calls("decDebt"), 1);
 
-        assertEq(currency.calls("transferFrom"), 2);
-        assertEq(currency.values_address("transferFrom_from"), usr_);
-        assertEq(currency.values_address("transferFrom_to"), address(shelf));
+        assertEq(currency.calls("transferFrom"), 4);
+        assertEq(currency.values_address("transferFrom_from"), address(shelf));
+        assertEq(currency.values_address("transferFrom_to"), address(reserve));
         assertEq(currency.values_uint("transferFrom_amount"), currencyAmount_);
     }
 

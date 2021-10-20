@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
@@ -30,14 +30,20 @@ interface PileLike {
 interface NAVFeedLike {
     function borrow(uint loan, uint currencyAmount) external;
     function repay(uint loan, uint currencyAmount) external;
+    function presentValue(uint loan) external view returns (uint);
+    function futureValue(uint loan) external view returns (uint);
+    function zeroPV(uint loan) external view returns (bool);
 }
 
 interface ReserveLike {
-    function balance() external;
+    function deposit(uint currencyAmount) external;
+    function payoutForLoans(uint currencyAmount) external;
 }
 
 interface SubscriberLike {
-    function borrowEvent(uint loan) external;
+    function borrowEvent(uint loan, uint amount) external;
+    function repayEvent(uint loan, uint amount) external;
+    function lockEvent(uint loan) external;
     function unlockEvent(uint loan) external;
 }
 
@@ -56,7 +62,6 @@ contract Shelf is Auth, TitleOwned, Math {
     SubscriberLike      public subscriber;
 
     uint                public balance;
-    address             public lender;
 
     struct Loan {
         address registry;
@@ -83,7 +88,7 @@ contract Shelf is Auth, TitleOwned, Math {
         currency = TokenLike(currency_);
         pile = PileLike(pile_);
         ceiling = NAVFeedLike(ceiling_);
-        
+
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
     }
@@ -91,16 +96,15 @@ contract Shelf is Auth, TitleOwned, Math {
 
     // sets the dependency to another contract
     function depend(bytes32 contractName, address addr) external auth {
-        if (contractName == "lender") {
-            if (lender != address(0)) currency.approve(lender, uint(0));
-            currency.approve(addr, type(uint256).max);
-            lender = addr;
-        }
-        else if (contractName == "token") { currency = TokenLike(addr); }
+        if (contractName == "token") { currency = TokenLike(addr); }
         else if (contractName == "title") { title = TitleLike(addr); }
         else if (contractName == "pile") { pile = PileLike(addr); }
         else if (contractName == "ceiling") { ceiling = NAVFeedLike(addr); }
-        else if (contractName == "reserve") { reserve = ReserveLike(addr); }
+        else if (contractName == "reserve") {
+            if (address(reserve) != address(0)) currency.approve(address(reserve), uint(0));
+            currency.approve(addr, type(uint256).max);
+            reserve = ReserveLike(addr);
+        }
         else if (contractName == "assessor") { assessor = AssessorLike(addr);}
         else if (contractName == "subscriber") { subscriber = SubscriberLike(addr); }
         else revert();
@@ -127,26 +131,14 @@ contract Shelf is Auth, TitleOwned, Math {
     }
 
     function close(uint loan) external {
-        require(pile.debt(loan) == 0, "loan-has-outstanding-debt");
-        require(!nftLocked(loan), "nft-not-locked");
+        require(!nftLocked(loan), "nft-locked");
         (address registry, uint tokenId) = token(loan);
         require(title.ownerOf(loan) == msg.sender || NFTLike(registry).ownerOf(tokenId) == msg.sender, "not-loan-or-nft-owner");
         title.close(loan);
         bytes32 nft = keccak256(abi.encodePacked(shelf[loan].registry, shelf[loan].tokenId));
         nftlookup[nft] = 0;
-        resetLoanBalance(loan);
+        _resetLoanBalance(loan);
         emit Close(loan);
-    }
-
-    // used by the lender contracts to know if currency is needed or currency can be taken
-    function balanceRequest() external view returns (bool, uint) {
-        uint currencyBalance = currency.balanceOf(address(this));
-        if (balance > currencyBalance) {
-            return (true, safeSub(balance, currencyBalance));
-
-        } else {
-            return (false, safeSub(currencyBalance, balance));
-        }
     }
 
     // starts the borrow process of a loan
@@ -156,16 +148,18 @@ contract Shelf is Auth, TitleOwned, Math {
     // a max ceiling needs to be defined by an oracle
     function borrow(uint loan, uint currencyAmount) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
+
         if(address(subscriber) != address(0)) {
-            subscriber.borrowEvent(loan);
+            subscriber.borrowEvent(loan, currencyAmount);
         }
+
         pile.accrue(loan);
 
         balances[loan] = safeAdd(balances[loan], currencyAmount);
         balance = safeAdd(balance, currencyAmount);
 
-        // request currency from lender contracts
-        reserve.balance();
+        // payout to shelf
+        reserve.payoutForLoans(currencyAmount);
 
         // increase NAV
         ceiling.borrow(loan, currencyAmount);
@@ -182,7 +176,7 @@ contract Shelf is Auth, TitleOwned, Math {
     function withdraw(uint loan, uint currencyAmount, address usr) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
         require(currencyAmount <= balances[loan], "withdraw-amount-too-high");
-        
+
         balances[loan] = safeSub(balances[loan], currencyAmount);
         balance = safeSub(balance, currencyAmount);
         require(currency.transfer(usr, currencyAmount), "currency-transfer-failed");
@@ -193,7 +187,26 @@ contract Shelf is Auth, TitleOwned, Math {
     function repay(uint loan, uint currencyAmount) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
         require(balances[loan] == 0, "withdraw-required-before-repay");
-        _repay(loan, msg.sender, currencyAmount);
+
+        if(address(subscriber) != address(0)) {
+            subscriber.repayEvent(loan, currencyAmount);
+        }
+
+        pile.accrue(loan);
+        uint loanDebt = pile.debt(loan);
+
+        // only repay max loan debt
+        if (currencyAmount > loanDebt) {
+            currencyAmount = loanDebt;
+        }
+        require(currency.transferFrom(msg.sender, address(this), currencyAmount), "currency-transfer-failed");
+        ceiling.repay(loan, currencyAmount);
+        pile.decDebt(loan, currencyAmount);
+        reserve.deposit(currencyAmount);
+
+        // reBalance lender interest bearing amount based on new NAV
+        assessor.reBalance();
+
         emit Repay(loan, currencyAmount);
     }
 
@@ -209,8 +222,8 @@ contract Shelf is Auth, TitleOwned, Math {
         ceiling.repay(loan, loanDebt);
         // sets loan debt to 0
         pile.decDebt(loan, loanDebt);
-        resetLoanBalance(loan);
-        reserve.balance();
+        _resetLoanBalance(loan);
+        reserve.deposit(currencyAmount);
         // reBalance lender interest bearing amount based on new NAV
         assessor.reBalance();
         emit Recover(loan, usr, currencyAmount);
@@ -227,8 +240,8 @@ contract Shelf is Auth, TitleOwned, Math {
         require(currency.transferFrom(usr, address(this), currencyAmount), "currency-transfer-failed");
         ceiling.repay(loan, currencyAmount);
         pile.decDebt(loan, currencyAmount);
-        reserve.balance();
 
+        reserve.deposit(currencyAmount);
         // reBalance lender interest bearing amount based on new NAV
         assessor.reBalance();
     }
@@ -237,17 +250,26 @@ contract Shelf is Auth, TitleOwned, Math {
     // requires an issued loan
     function lock(uint loan) external owner(loan) {
         if(address(subscriber) != address(0)) {
-            subscriber.unlockEvent(loan);
+            subscriber.lockEvent(loan);
         }
         NFTLike(shelf[loan].registry).transferFrom(msg.sender, address(this), shelf[loan].tokenId);
         emit Lock(loan);
     }
 
     // unlocks an nft in the shelf
-    // requires zero debt
+    // requires zero debt or 100% write off
     function unlock(uint loan) external owner(loan) {
-        require(pile.debt(loan) == 0, "loan-has-outstanding-debt");
+        // loans can be unlocked and closed when the debt is 0, or the loan is written off 100%
+        uint debt_ = pile.debt(loan);
+
+        require(debt_ == 0 || ceiling.zeroPV(loan), "loan-has-outstanding-debt");
+
+        if (address(subscriber) != address(0)) {
+            subscriber.unlockEvent(loan);
+        }
+
         NFTLike(shelf[loan].registry).transferFrom(address(this), msg.sender, shelf[loan].tokenId);
+
         emit Unlock(loan);
     }
 
@@ -262,11 +284,16 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Claim(loan, usr);
     }
 
-    function resetLoanBalance(uint loan) internal {
+    function _resetLoanBalance(uint loan) internal {
         uint loanBalance = balances[loan];
         if (loanBalance  > 0) {
             balances[loan] = 0;
             balance = safeSub(balance, loanBalance);
         }
+    }
+
+    // returns the total number of loans including closed loans
+    function loanCount() public view returns (uint) {
+        return title.count();
     }
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 import "../../../test/mock/mock.sol";
 
@@ -134,10 +134,6 @@ contract AssessorMock is Mock {
 
     function borrowAmountEpoch() public view returns(uint) {
         return values_return["borrowAmountEpoch"];
-    }
-
-    function currentNAV() public view returns(uint) {
-        return values_uint["currentNAV"];
     }
 
     function getNAV() public view returns(uint) {

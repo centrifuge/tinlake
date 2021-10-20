@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 import "../../../test/mock/mock.sol";
 
@@ -8,6 +8,14 @@ contract CeilingMock is Mock {
     function values(uint loan) public returns(uint) {
         values_uint["values_loan"] = loan;
         return call("values");
+    }
+
+    function presentValue(uint) public view returns(uint) {
+        return values_return["presentValue"];
+    }
+
+    function futureValue(uint) public view returns(uint) {
+        return values_return["futureValue"];
     }
 
     function borrow (uint loan, uint amount) public {

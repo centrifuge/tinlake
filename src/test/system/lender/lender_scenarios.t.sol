@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 pragma experimental ABIEncoderV2;
 
 
@@ -16,7 +16,7 @@ contract LenderSystemTest is TestSuite, Interest {
 
         baseSetup();
         createTestUsers();
-        nftFeed_ = NFTFeedLike(address(nftFeed));
+        navFeed_ = NAVFeedLike(address(nftFeed));
 
     }
 
@@ -180,14 +180,14 @@ contract LenderSystemTest is TestSuite, Interest {
         // 80 ether token from previous supply/redeem
         assertEq(seniorToken.balanceOf(seniorInvestor_), safeAdd(payoutTokenAmount, 80 ether));
 
-        uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nftFeed.approximatedNAV(), reserve.totalBalance());
-        uint juniorTokenPrice = assessor.calcJuniorTokenPrice(nftFeed.approximatedNAV(), reserve.totalBalance());
+        uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nftFeed.latestNAV(), reserve.totalBalance());
+        uint juniorTokenPrice = assessor.calcJuniorTokenPrice(nftFeed.latestNAV(), reserve.totalBalance());
 
         // ongoing loan has 5 % interest, senior wants 2% interest therefore 3%  left for junior
         // juniorAssetValue increased more than seniorAssetValue therefore higher juniorTokenPrice
         assertTrue(juniorTokenPrice > seniorTokenPrice);
 
-        assertEq(nftFeed.approximatedNAV() + reserve.totalBalance(), rmul(seniorTranche.tokenSupply(),seniorTokenPrice) + rmul(juniorTranche.tokenSupply(),juniorTokenPrice), 10);
+        assertEq(nftFeed.latestNAV() + reserve.totalBalance(), rmul(seniorTranche.tokenSupply(),seniorTokenPrice) + rmul(juniorTranche.tokenSupply(),juniorTokenPrice), 10);
     }
 
     function testLoanRepayments() public {
@@ -223,7 +223,7 @@ contract LenderSystemTest is TestSuite, Interest {
         repayLoan(address(borrower), loan, loanDebt);
 
         assertEq(reserve.totalBalance(), loanDebt);
-        assertEq(nftFeed.approximatedNAV(), 0);
+        assertEq(nftFeed.latestNAV(), 0);
 
         // max redeem from both
         seniorInvestor.redeemOrder(seniorToken.balanceOf(seniorInvestor_));
@@ -263,7 +263,6 @@ contract LenderSystemTest is TestSuite, Interest {
         uint highRate = uint(1000001103100000000000000000);
         assessor.file("seniorInterestRate", highRate);
 
-
         // remove existing order
         seniorSupply(0);
 
@@ -283,15 +282,16 @@ contract LenderSystemTest is TestSuite, Interest {
         uint nav = nftFeed.currentNAV();
 
         // now ongoing loan is not repaid before maturity date: moved to write-off by admin
-        assertEq(nav, 0);
         root.relyContract(address(pile), address(this));
+        root.relyContract(address(nftFeed), address(this));
 
-        // 40% write off because one day too late
+        // 50% write off
         // increase loan rate from 5% to 6%
-        pile.changeRate(loan, nftFeed.WRITE_OFF_PHASE_A());
+        nftFeed.overrideWriteOff(loan, 1);
         emit log_named_uint("loan debt",pile.debt(loan));
-        assertEq(nftFeed.currentNAV(), rmul(pile.debt(loan), 6 * 10**26));
+        assertEq(nftFeed.currentNAV(), rmul(pile.debt(loan), 50 * 10**25), 10);
 
+        assessor.calcUpdateNAV();
         juniorTokenPrice = assessor.calcJuniorTokenPrice();
 
         // senior debt ~141 ether and nav ~134 ether
@@ -316,17 +316,19 @@ contract LenderSystemTest is TestSuite, Interest {
         assertEq(assessor.calcJuniorTokenPrice(), 0);
 
         uint loanDebt = pile.debt(loan);
+
         repayLoan(address(borrower), loan, loanDebt);
 
         assertEq(reserve.totalBalance(), loanDebt);
-        assertEq(nftFeed.approximatedNAV(), 0);
+        assertEq(nftFeed.currentNAV(), 0, 10);
 
+        uint oneWeiLeft = 1;
         // max redeem from both
-        seniorInvestor.redeemOrder(seniorToken.balanceOf(seniorInvestor_));
+        seniorInvestor.redeemOrder(seniorToken.balanceOf(seniorInvestor_)-oneWeiLeft);
         juniorInvestor.redeemOrder(juniorToken.balanceOf(juniorInvestor_));
 
         // tokens should be locked
-        assertEq(seniorToken.balanceOf(seniorInvestor_), 0);
+        assertEq(seniorToken.balanceOf(seniorInvestor_), oneWeiLeft);
         assertEq(juniorToken.balanceOf(juniorInvestor_), 0);
 
         coordinator.closeEpoch();
@@ -334,7 +336,7 @@ contract LenderSystemTest is TestSuite, Interest {
 
         // senior full payout
         (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) = seniorInvestor.disburse();
-        assertEq(payoutCurrencyAmount ,rmul(80 ether, coordinator.epochSeniorTokenPrice()));
+        assertEq(payoutCurrencyAmount , rmul(80 ether-oneWeiLeft, coordinator.epochSeniorTokenPrice()));
         assertEq(remainingRedeemToken, 0);
         assertEq(remainingSupplyCurrency, 0);
 
@@ -373,9 +375,10 @@ contract LenderSystemTest is TestSuite, Interest {
         root.relyContract(address(assessor), address(this));
         assessor.file("seniorInterestRate", highRate);
 
-
-        // loan not repaid and not moved to penalty rate
-        hevm.warp(block.timestamp + 6 days);
+        // loan not repaid and written off by 75%
+        hevm.warp(block.timestamp + 10 days);
+        root.relyContract(address(nftFeed), address(this));
+        nftFeed.overrideWriteOff(loan, 2);
 
         // junior should lost everything
         assertTrue(assessor.seniorDebt() > nftFeed.currentNAV());
@@ -383,7 +386,6 @@ contract LenderSystemTest is TestSuite, Interest {
         // repay loan to get some currency in reserve
         uint loanDebt = pile.debt(loan);
         repayLoan(address(borrower), loan, loanDebt);
-
 
         // get tokens
         seniorInvestor.disburse();
