@@ -361,7 +361,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         assertEq(currency.balanceOf(address(juniorInvestor)), payoutCurrency);
     }
 
-    function testWipeAndDrawOnEpochExecution() public {
+    function testWipeAndDrawWithAutoHeal() public {
         root.relyContract(address(mkrAssessor), address(this));
         mkrAssessor.file("minSeniorRatio", 0);
 
@@ -418,8 +418,8 @@ contract MKRLenderSystemTest is MKRTestBasis {
         coordinator.executeEpoch();
         // check for DROP token price
         uint seniorTokenPriceExecution = mkrAssessor.calcSeniorTokenPrice();
-        assertTrue(coordinator.submissionPeriod() == false);
-        // drop price during epoch execution higher then suring epoch closing
+        // drop price during epoch execution higher then during epoch closing -> requires healing
         assertTrue(seniorTokenPriceClosing < seniorTokenPriceExecution); 
+        assertTrue(coordinator.submissionPeriod() == false);  
    }
 }
