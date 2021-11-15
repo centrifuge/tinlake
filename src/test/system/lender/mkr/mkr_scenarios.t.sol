@@ -459,8 +459,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         hevm.warp(block.timestamp + 1 days);
         seniorSupply(200 ether);
         juniorInvestor.redeemOrder(1 ether);
-        coordinator.closeEpoch(); 
-        uint seniorTokenPriceClosing = mkrAssessor.calcSeniorTokenPrice();
+        coordinator.closeEpoch(); // auto execute epoch in teh same block
         assertTrue(coordinator.submissionPeriod() == false); 
    }
 }
