@@ -1,4 +1,5 @@
 all    :; dapp build
+install     : install_solc dapp_update yarn_install
 clean  :; dapp clean
 update:
 	dapp update

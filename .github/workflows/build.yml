@@ -16,8 +16,6 @@ jobs:
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
     - name: install
       run: nix-shell --run "make install"
-    - name: lint
-      run: nix-shell --run "make lint"
     - name: test
       if: ${{ github.event_name == 'pull_request' }}
       run: nix-shell --run "make test"
