@@ -422,4 +422,45 @@ contract MKRLenderSystemTest is MKRTestBasis {
         assertTrue(seniorTokenPriceClosing < seniorTokenPriceExecution); 
         assertTrue(coordinator.submissionPeriod() == false);  
    }
+
+   function testWipeAndDrawWithAutoHealSameBlock() public {
+        root.relyContract(address(mkrAssessor), address(this));
+        mkrAssessor.file("minSeniorRatio", 0);
+
+        // initial junior & senior investments
+        uint seniorSupplyAmount = 800 ether;
+        uint juniorSupplyAmount = 400 ether;
+        juniorSupply(juniorSupplyAmount); 
+        seniorSupply(seniorSupplyAmount);
+        hevm.warp(block.timestamp + 1 days);
+        coordinator.closeEpoch();
+        seniorInvestor.disburse();
+        juniorInvestor.disburse();
+        assertTrue(coordinator.submissionPeriod() == false);
+
+        //setup maker creditline
+        uint mkrCreditline = 800 ether;
+        root.relyContract(address(reserve), address(this));
+        // activate clerk in reserve
+        reserve.depend("lending", address(clerk));
+        clerk.raise(mkrCreditline);
+        assertEq(clerk.remainingCredit(), mkrCreditline);
+
+        // borrow loan & draw from maker 
+        uint borrowAmount = 1600 ether;
+        setupOngoingDefaultLoan(borrowAmount);
+        uint debt = safeSub(borrowAmount, safeAdd(seniorSupplyAmount, juniorSupplyAmount));
+        assertEq(clerk.debt(), debt);
+
+        // submit new supply & redeem orders into the pool under following conditions
+        // epoch close & epoch execution should happen in same block, so that no healing is required
+
+        // 1. close epoch --> juniorRedeem amount too high, epoch won't execute automatically
+        hevm.warp(block.timestamp + 1 days);
+        seniorSupply(200 ether);
+        juniorInvestor.redeemOrder(1 ether);
+        coordinator.closeEpoch(); 
+        uint seniorTokenPriceClosing = mkrAssessor.calcSeniorTokenPrice();
+        assertTrue(coordinator.submissionPeriod() == false); 
+   }
 }
