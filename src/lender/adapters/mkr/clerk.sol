@@ -248,7 +248,7 @@ contract Clerk is Auth, Interest {
         // move dai to reserve
         dai.approve(address(reserve), amountDAI);
         reserve.hardDeposit(amountDAI);
-        // increase seniorAsset by amountDAI
+        // increase seniorAsset by collateralDAI
         updateSeniorAsset(0, collateralDAI);
     }
 
