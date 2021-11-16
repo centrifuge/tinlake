@@ -229,11 +229,14 @@ contract Clerk is Auth, Interest {
 
     // mint DROP, join DROP into cdp, draw DAI and send to reserve
     function draw(uint amountDAI) public auth active {
-        //make sure there is no collateral deficit before drawing out new DAI
-        require(collatDeficit() == 0, "please-heal-cdp-first");
+        // make sure to heal CDP before drawing new DAI
+        uint healAmountDAI = collatDeficit();
+        if (healAmountDAI > 0) { 
+            require((validate(0, healAmountDAI, 0, 0) == 0), "violates-constraints");
+        }
         require(amountDAI <= remainingCredit(), "not-enough-credit-left");
         // collateral value that needs to be locked in vault to draw amountDAI
-        uint collateralDAI = calcOvercollAmount(amountDAI);
+        uint collateralDAI = safeAdd(calcOvercollAmount(amountDAI), healAmountDAI);
         uint collateralDROP = rdiv(collateralDAI, assessor.calcSeniorTokenPrice());
         // mint required DROP
         tranche.mint(address(this), collateralDROP);
@@ -245,7 +248,7 @@ contract Clerk is Auth, Interest {
         // move dai to reserve
         dai.approve(address(reserve), amountDAI);
         reserve.hardDeposit(amountDAI);
-        // increase seniorAsset by amountDAI
+        // increase seniorAsset by collateralDAI
         updateSeniorAsset(0, collateralDAI);
     }
 
@@ -335,7 +338,7 @@ contract Clerk is Auth, Interest {
         }
 
         require((validate(0, amountDAI, 0, 0) == 0), "violates-constraints");
-        //    mint drop and move into vault
+        // mint drop and move into vault
         uint priceDROP = assessor.calcSeniorTokenPrice();
         uint collateralDROP = rdiv(amountDAI, priceDROP);
         tranche.mint(address(this), collateralDROP);
