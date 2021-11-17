@@ -134,7 +134,7 @@ contract ClerkTest is Assertions, Interest {
 
         jug.setReturn("base", 0);
         assertEq(clerk.stabilityFee(), interestRatePerSecond);
-        
+
         uint base = ONE;
         jug.setReturn("base", base);
         assertEq(clerk.stabilityFee(), safeAdd(interestRatePerSecond, base));
@@ -681,5 +681,10 @@ contract ClerkTest is Assertions, Interest {
     function testFile() public {
         clerk.file("tolerance", 100);
         assertEq(clerk.collateralTolerance(), 100);
+    }
+
+    function testFileAutoHealMax() public {
+        clerk.file("autoHealMax", 200 ether);
+        assertEq(clerk.autoHealMax(), 200 ether);
     }
 }
