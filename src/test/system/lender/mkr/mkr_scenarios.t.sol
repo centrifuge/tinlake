@@ -362,13 +362,22 @@ contract MKRLenderSystemTest is MKRTestBasis {
     }
 
     function testWipeAndDrawWithAutoHeal() public {
+        _wipeAndDrawWithAutoHeal(1 days);
+    }
+
+    function testFailAutoHeal() public {
+        clerk.file("autoHealMax", 0.1 * 1 ether);
+        _wipeAndDrawWithAutoHeal(1 days);
+    }
+
+    function _wipeAndDrawWithAutoHeal(uint timeUntilExecute) public {
         root.relyContract(address(mkrAssessor), address(this));
         mkrAssessor.file("minSeniorRatio", 0);
 
         // initial junior & senior investments
         uint seniorSupplyAmount = 800 ether;
         uint juniorSupplyAmount = 400 ether;
-        juniorSupply(juniorSupplyAmount); 
+        juniorSupply(juniorSupplyAmount);
         seniorSupply(seniorSupplyAmount);
         hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
@@ -384,7 +393,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         clerk.raise(mkrCreditline);
         assertEq(clerk.remainingCredit(), mkrCreditline);
 
-        // borrow loan & draw from maker 
+        // borrow loan & draw from maker
         uint borrowAmount = 1600 ether;
         setupOngoingDefaultLoan(borrowAmount);
         uint debt = safeSub(borrowAmount, safeAdd(seniorSupplyAmount, juniorSupplyAmount));
@@ -399,12 +408,12 @@ contract MKRLenderSystemTest is MKRTestBasis {
         hevm.warp(block.timestamp + 1 days);
         seniorSupply(200 ether);
         juniorInvestor.redeemOrder(400 ether);
-        coordinator.closeEpoch(); 
+        coordinator.closeEpoch();
         uint seniorTokenPriceClosing = mkrAssessor.calcSeniorTokenPrice();
         assertTrue(coordinator.submissionPeriod() == true);
 
-        // 2. submit solution & execute epoch after 1 day so that 
-        hevm.warp(block.timestamp + 1 days);
+        // 2. submit solution & execute epoch
+        hevm.warp(block.timestamp + timeUntilExecute);
         // valid submission
         ModelInput memory submission = ModelInput({
             seniorSupply : 200 ether, // --> calls maker wipe
@@ -419,8 +428,8 @@ contract MKRLenderSystemTest is MKRTestBasis {
         // check for DROP token price
         uint seniorTokenPriceExecution = mkrAssessor.calcSeniorTokenPrice();
         // drop price during epoch execution higher then during epoch closing -> requires healing
-        assertTrue(seniorTokenPriceClosing < seniorTokenPriceExecution); 
-        assertTrue(coordinator.submissionPeriod() == false);  
+        assertTrue(seniorTokenPriceClosing < seniorTokenPriceExecution);
+        assertTrue(coordinator.submissionPeriod() == false);
    }
 
    function testWipeAndDrawWithAutoHealSameBlock() public {
@@ -430,7 +439,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         // initial junior & senior investments
         uint seniorSupplyAmount = 800 ether;
         uint juniorSupplyAmount = 400 ether;
-        juniorSupply(juniorSupplyAmount); 
+        juniorSupply(juniorSupplyAmount);
         seniorSupply(seniorSupplyAmount);
         hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
@@ -446,7 +455,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         clerk.raise(mkrCreditline);
         assertEq(clerk.remainingCredit(), mkrCreditline);
 
-        // borrow loan & draw from maker 
+        // borrow loan & draw from maker
         uint borrowAmount = 1600 ether;
         setupOngoingDefaultLoan(borrowAmount);
         uint debt = safeSub(borrowAmount, safeAdd(seniorSupplyAmount, juniorSupplyAmount));
@@ -460,6 +469,6 @@ contract MKRLenderSystemTest is MKRTestBasis {
         seniorSupply(200 ether);
         juniorInvestor.redeemOrder(1 ether);
         coordinator.closeEpoch(); // auto execute epoch in teh same block
-        assertTrue(coordinator.submissionPeriod() == false); 
+        assertTrue(coordinator.submissionPeriod() == false);
    }
 }

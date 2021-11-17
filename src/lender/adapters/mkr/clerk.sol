@@ -117,6 +117,10 @@ contract Clerk is Auth, Interest {
     // collateral tolerance accepted because of potential rounding problems
     uint public collateralTolerance = 10;
 
+    // maximum amount which can be used to heal as part of a draw operation
+    // if the collateral deficit is higher a specific heal call is required
+    uint public autoHealMax = 100 ether;
+
     // the debt is only repaid if amount is higher than the threshold
     // repaying a lower amount would cause more cost in gas fees than the debt reduction
     uint public wipeThreshold = 1 * WAD;
@@ -172,6 +176,8 @@ contract Clerk is Auth, Interest {
             collateralTolerance = value;
         } else if (what == "wipeThreshold") {
             wipeThreshold = value;
+        } else if (what == "autoHealMax") {
+            autoHealMax = value;
         } else { revert(); }
         emit File(what, value);
     }
@@ -231,9 +237,9 @@ contract Clerk is Auth, Interest {
     function draw(uint amountDAI) public auth active {
         // make sure to heal CDP before drawing new DAI
         uint healAmountDAI = collatDeficit();
-        if (healAmountDAI > 0) { 
-            require((validate(0, healAmountDAI, 0, 0) == 0), "violates-constraints");
-        }
+
+        require(healAmountDAI <= autoHealMax, "collateral-deficit-heal-needed");
+
         require(amountDAI <= remainingCredit(), "not-enough-credit-left");
         // collateral value that needs to be locked in vault to draw amountDAI
         uint collateralDAI = safeAdd(calcOvercollAmount(amountDAI), healAmountDAI);
