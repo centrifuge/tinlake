@@ -5,13 +5,16 @@ import "ds-test/test.sol";
 import "../token/memberlist.sol";
 import "tinlake-math/math.sol";
 
+interface Hevm {
+    function warp(uint256) external;
+}
 
 contract MemberlistTest is Math, DSTest {
-
-    uint memberlistValidity = safeAdd(block.timestamp, 8 days);
+    uint memberlistValidity;
     Memberlist memberlist;
     Memberlist testMemberlist;
     Memberlist testMemberlist1;
+    Hevm hevm;
 
     address self;
     address memberlist_;
@@ -21,10 +24,14 @@ contract MemberlistTest is Math, DSTest {
         memberlist = new Memberlist();
         self = address(this);
         memberlist_ = address(memberlist);
+        memberlist_ = address(memberlist);
         members = new address[](3);
         members[0] = address(1);
         members[1] = address(2);
         members[2] = address(3);
+        hevm = Hevm(HEVM_ADDRESS);
+        hevm.warp(block.timestamp + 1 days);
+        memberlistValidity = safeAdd(block.timestamp, 8 days);
     }
 
     function testAddMember() public {
@@ -59,9 +66,9 @@ contract MemberlistTest is Math, DSTest {
 
     function testFailIsMemberNotAdded() public view {
         memberlist.member(self);
-    }   
+    }
 
     function testFailHasMemberNotAdded() public view {
          assert(memberlist.hasMember(self));
-    }   
+    }
 }

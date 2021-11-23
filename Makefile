@@ -4,4 +4,4 @@ dapp_update :; dapp update
 build       :; dapp build
 clean       :; dapp clean
 test        :; dapp test
-test_deep   :; dapp test --fuzz-runs 50000
+test_deep   :; dapp test --fuzz-runs 30000
