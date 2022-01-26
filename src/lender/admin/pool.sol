@@ -166,6 +166,10 @@ contract PoolAdmin {
         lending.file("buffer", value);
         emit SetMatBuffer(value);
     }
+    
+    function setMaxAutoHeal(uint value) public level3 {
+        lending.file("autoHealMax", value);
+    }
 
     function updateNFTValue(bytes32 nftID_, uint value) public level2 {
         navFeed.update(nftID_, value);

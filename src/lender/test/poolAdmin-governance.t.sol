@@ -96,8 +96,20 @@ contract PoolGovernancePoolAdminTest is DSTest {
         assertEq(assessor.minSeniorRatio(), minSeniorRatio);
     }
 
+    function testAutoheal() public {
+        poolAdmin.closePool();
+        poolAdmin.closePool();
+    }
+
     function testSetMinSeniorRatio() public {
         setMinSeniorRatio(); 
+    }
+
+    function testSetMaxAutoHeal() public {
+        uint autoHeal = 50000000000000000000;
+        poolAdmin.setMaxAutoHeal(autoHeal);
+        assertEq(lending.values_uint("file_value"), autoHeal);
+        assertEq(lending.values_bytes32("file_name"),"autoHealMax");
     }
 
     function setMaxSeniorRatio() public {
