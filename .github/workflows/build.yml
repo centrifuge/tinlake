@@ -19,6 +19,6 @@ jobs:
     - name: test
       if: ${{ github.event_name == 'pull_request' }}
       run: nix-shell --run "make test"
-    - name: test deep
+    - name: test push
       if: ${{ github.event_name == 'push' }}
-      run: nix-shell --run "make test_deep"
+      run: nix-shell --run "make test"
