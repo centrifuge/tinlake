@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 import "ds-test/test.sol";
 import "tinlake-auth/auth.sol";
@@ -50,6 +50,11 @@ contract ClerkMock is Mock, Auth {
 
     function heal() public auth {
         calls["heal"]++;
+    }
+
+    function file(bytes32 name, uint256 value) public auth {
+        values_bytes32["file_name"] = name;
+        values_uint["file_value"] = value;
     }
 
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 import "ds-test/test.sol";
 
@@ -9,6 +9,9 @@ import "../token/restricted.sol";
 import "../token/memberlist.sol";
 import "tinlake-math/math.sol";
 
+interface Hevm {
+    function warp(uint256) external;
+}
 
 contract OperatorTest is Math, DSTest {
 
@@ -17,6 +20,7 @@ contract OperatorTest is Math, DSTest {
     Operator operator;
     Memberlist memberlist;
     RestrictedToken token;
+    Hevm hevm;
 
     address self;
     address operator_;
@@ -32,6 +36,8 @@ contract OperatorTest is Math, DSTest {
 
         self = address(this);
         operator_ = address(operator);
+        hevm = Hevm(HEVM_ADDRESS);
+        hevm.warp(block.timestamp + 1 days);
     }
 
     function testSupplyOrder() public {

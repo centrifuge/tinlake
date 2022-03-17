@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 import "../../../test/mock/mock.sol";
 
@@ -16,5 +16,8 @@ contract TitleMock is Mock {
     function close(uint loan) public {
         values_uint["close_loan"] = loan;
         calls["close"]++;
+    }
+    function count() public view returns(uint) {
+        return values_return["count"];
     }
 }

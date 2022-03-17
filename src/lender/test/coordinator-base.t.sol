@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "ds-test/test.sol";
@@ -69,11 +69,8 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
 
     AssessorMockWithDef assessor;
 
-    ReserveMock reserve;
-
     address seniorTranche_;
     address juniorTranche_;
-    address reserve_;
     address assessor_;
 
     struct TestCaseDesc {
@@ -84,12 +81,10 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
     function setUp() public virtual {
         seniorTranche = new TrancheMock();
         juniorTranche = new TrancheMock();
-        reserve = new ReserveMock(address(0));
         assessor = new AssessorMockWithDef();
 
         seniorTranche_ = address(seniorTranche);
         juniorTranche_ = address(juniorTranche);
-        reserve_ = address(reserve);
         assessor_ = address(assessor);
 
         hevm = Hevm(HEVM_ADDRESS);
@@ -99,9 +94,7 @@ contract CoordinatorTest is DSTest, Math, BaseTypes {
         coordinator = new EpochCoordinator(challengeTime);
         coordinator.depend("juniorTranche", juniorTranche_);
         coordinator.depend("seniorTranche", seniorTranche_);
-        coordinator.depend("reserve", reserve_);
         coordinator.depend("assessor", assessor_);
-        reserve.rely(address(coordinator));
         initTestConfig(getNoOrderModel());
     }
 

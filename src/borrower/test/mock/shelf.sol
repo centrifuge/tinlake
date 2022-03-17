@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 import "../../../test/mock/mock.sol";
 import "../../../test/simple/token.sol";
@@ -62,5 +62,9 @@ contract ShelfMock is Mock {
     function doApprove(address currency_, address recepeint, uint amount) public {
         SimpleToken currency = SimpleToken(currency_);
         currency.approve(recepeint, amount);
+    }
+
+    function loanCount() public view returns(uint) {
+        return values_return["loanCount"];
     }
 }

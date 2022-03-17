@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 import "ds-test/test.sol";
 import "../token/restricted.sol";
@@ -16,8 +16,8 @@ interface Hevm {
 contract RestrictedTokenTest is Math, DSTest {
 
     Hevm hevm;
-    
-    uint memberlistValidity = safeAdd(block.timestamp, 8 days);
+
+    uint memberlistValidity;
     Memberlist memberlist;
     RestrictedToken token;
 
@@ -30,7 +30,7 @@ contract RestrictedTokenTest is Math, DSTest {
         memberlist = new Memberlist();
         token = new RestrictedToken("TST", "TST");
         token.depend("memberlist", address(memberlist));
-        
+
         TestUser randomUser = new TestUser();
         randomUser_ = address(randomUser);
 
@@ -41,7 +41,8 @@ contract RestrictedTokenTest is Math, DSTest {
         token.mint(self, 100 ether);
 
         hevm = Hevm(HEVM_ADDRESS);
-        hevm.warp(block.timestamp);
+        hevm.warp(block.timestamp + 1 days);
+        memberlistValidity = safeAdd(block.timestamp, 8 days);
     }
 
     function testReceiveTokens() public {

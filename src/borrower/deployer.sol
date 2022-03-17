@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
-import { ShelfFabLike, CollectorFabLike, PileFabLike, TitleFabLike } from "./fabs/interfaces.sol";
+import { ShelfFabLike, PileFabLike, TitleFabLike } from "./fabs/interfaces.sol";
 import { FixedPoint } from "./../fixed_point.sol";
 
 interface DependLike {
@@ -31,13 +31,11 @@ contract BorrowerDeployer is FixedPoint {
     TitleFabLike     public immutable titlefab;
     ShelfFabLike     public immutable shelffab;
     PileFabLike      public immutable pilefab;
-    CollectorFabLike public immutable collectorFab;
     FeedFabLike      public immutable feedFab;
 
     address public title;
     address public shelf;
     address public pile;
-    address public collector;
     address public immutable currency;
     address public feed;
 
@@ -53,7 +51,6 @@ contract BorrowerDeployer is FixedPoint {
       address titlefab_,
       address shelffab_,
       address pilefab_,
-      address collectorFab_,
       address feedFab_,
       address currency_,
       string memory titleName_,
@@ -66,7 +63,6 @@ contract BorrowerDeployer is FixedPoint {
         shelffab = ShelfFabLike(shelffab_);
 
         pilefab = PileFabLike(pilefab_);
-        collectorFab = CollectorFabLike(collectorFab_);
         feedFab = FeedFabLike(feedFab_);
 
         currency = currency_;
@@ -74,12 +70,6 @@ contract BorrowerDeployer is FixedPoint {
         titleName = titleName_;
         titleSymbol = titleSymbol_;
         discountRate = Fixed27(discountRate_);
-    }
-
-    function deployCollector() public {
-        require(collector == ZERO && address(shelf) != ZERO);
-        collector = collectorFab.newCollector(address(shelf), address(pile), address(feed));
-        AuthLike(collector).rely(root);
     }
 
     function deployPile() public {
@@ -106,9 +96,9 @@ contract BorrowerDeployer is FixedPoint {
         AuthLike(feed).rely(root);
     }
 
-    function deploy() public {
+    function deploy(bool initNAVFeed) public {
         // ensures all required deploy methods were called
-        require(shelf != ZERO && collector != ZERO);
+        require(shelf != ZERO);
         require(!wired, "borrower contracts already wired"); // make sure borrower contracts only wired once
         wired = true;
 
@@ -120,17 +110,22 @@ contract BorrowerDeployer is FixedPoint {
 
         // allow nftFeed to update rate groups
         AuthLike(pile).rely(feed);
-        NAVFeedLike(feed).init();
 
         DependLike(shelf).depend("subscriber", address(feed));
 
         AuthLike(feed).rely(shelf);
         AuthLike(title).rely(shelf);
-
-        // collector allowed to call
-        AuthLike(shelf).rely(collector);
         
         FileLike(feed).file("discountRate", discountRate.value);
+
+        if (initNAVFeed) {
+            NAVFeedLike(feed).init();
+        }
+    }
+
+
+    function deploy() public {
+        deploy(false);
     }
 }
 

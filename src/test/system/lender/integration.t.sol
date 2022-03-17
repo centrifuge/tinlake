@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "./../base_system.sol";
@@ -19,9 +19,7 @@ contract LenderIntegrationTest is BaseSystemTest {
     function testAdminPermissions() public {
         assertEq(assessor.wards(address(poolAdmin)), 1);
         uint newReserve = 200 ether;
-        assertEq(poolAdmin.wards(address(this)), 1);
-        poolAdmin.relyAdmin(address(this));
-        assertEq(poolAdmin.admins(address(this)), 1);
+        assertEq(poolAdmin.admin_level(address(this)), 3);
         poolAdmin.setMaxReserve(newReserve);
         assertEq(assessor.maxReserve(), newReserve);
     }

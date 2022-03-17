@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "./coordinator-base.t.sol";
@@ -20,18 +20,18 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
 
         Fixed27 memory newSeniorRatio = Fixed27(92 * 10**25);
 
-        uint score = coordinator.scoreRatioImprovement(newSeniorRatio);
+        uint score = coordinator.scoreRatioImprovement(newSeniorRatio.value);
 
         newSeniorRatio = Fixed27(91 * 10**25);
-        uint betterScore = coordinator.scoreRatioImprovement(newSeniorRatio);
+        uint betterScore = coordinator.scoreRatioImprovement(newSeniorRatio.value);
 
         assertTrue(betterScore > score);
 
         // healthy
         newSeniorRatio = Fixed27(83 * 10**25);
         Fixed27 memory healthyRatio = Fixed27(81 * 10**25);
-        uint healthyScore1 = coordinator.scoreRatioImprovement(newSeniorRatio);
-        uint healthyScore2 = coordinator.scoreRatioImprovement(healthyRatio);
+        uint healthyScore1 = coordinator.scoreRatioImprovement(newSeniorRatio.value);
+        uint healthyScore2 = coordinator.scoreRatioImprovement(healthyRatio.value);
         assertEq(healthyScore1, healthyScore2);
     }
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.6.12;
+pragma solidity >=0.7.6;
 
 import "tinlake-auth/auth.sol";
 import "tinlake-math/interest.sol";
@@ -7,8 +7,9 @@ import "./definitions.sol";
 
 interface NAVFeedLike {
     function calcUpdateNAV() external returns (uint);
-    function approximatedNAV() external view returns (uint);
-    function currentNAV() external view returns(uint);
+    function latestNAV() external view returns (uint);
+    function currentNAV() external view returns (uint);
+    function lastNAVUpdate() external view returns (uint);
 }
 
 interface TrancheLike {
@@ -52,6 +53,7 @@ contract Assessor is Definitions, Auth, Interest {
     uint            public maxReserve;
 
     uint            public creditBufferTime = 1 days;
+    uint            public maxStaleNAV = 1 days;
 
     TrancheLike     public seniorTranche;
     TrancheLike     public juniorTranche;
@@ -101,6 +103,8 @@ contract Assessor is Definitions, Auth, Interest {
             minSeniorRatio = Fixed27(value);
         } else if (name == "creditBufferTime") {
             creditBufferTime = value;
+        } else if (name == "maxStaleNAV") {
+            maxStaleNAV = value;
         } else {
             revert("unknown-variable");
         }
@@ -113,9 +117,9 @@ contract Assessor is Definitions, Auth, Interest {
 
     function reBalance(uint seniorAsset_) internal {
         // re-balancing according to new ratio
-        // we use the approximated NAV here because during the submission period
+        // we use the approximated NAV here because because during the submission period
         // new loans might have been repaid in the meanwhile which are not considered in the epochNAV
-        uint nav_ = navFeed.approximatedNAV();
+        uint nav_ = getNAV();
         uint reserve_ = reserve.totalBalance();
 
         uint seniorRatio_ = calcSeniorRatio(seniorAsset_, nav_, reserve_);
@@ -149,7 +153,7 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     function calcSeniorTokenPrice() external view returns(uint) {
-        return calcSeniorTokenPrice(navFeed.approximatedNAV(), reserve.totalBalance());
+        return calcSeniorTokenPrice(getNAV(), reserve.totalBalance());
     }
 
     function calcSeniorTokenPrice(uint nav_, uint) public view returns(uint) {
@@ -157,7 +161,7 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     function calcJuniorTokenPrice() external view returns(uint) {
-        return _calcJuniorTokenPrice(navFeed.approximatedNAV(), reserve.totalBalance());
+        return _calcJuniorTokenPrice(getNAV(), reserve.totalBalance());
     }
 
     function calcJuniorTokenPrice(uint nav_, uint) public view returns (uint) {
@@ -165,7 +169,7 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     function calcTokenPrices() external view returns (uint, uint) {
-        uint epochNAV = navFeed.approximatedNAV();
+        uint epochNAV = getNAV();
         uint epochReserve = reserve.totalBalance();
         return calcTokenPrices(epochNAV, epochReserve);
     }
@@ -182,10 +186,7 @@ contract Assessor is Definitions, Auth, Interest {
             return ONE;
         }
 
-        // reserve includes creditline from maker
         uint totalAssets = safeAdd(nav_, reserve_);
-
-        // includes creditline
         uint seniorAssetValue = calcExpectedSeniorAsset(seniorDebt(), seniorBalance_);
 
         if(totalAssets < seniorAssetValue) {
@@ -250,13 +251,12 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     // returns the current NAV
-    function currentNAV() public view returns(uint) {
-        return navFeed.currentNAV();
-    }
-
-    // returns the approximated NAV for gas-performance reasons
     function getNAV() public view returns(uint) {
-        return navFeed.approximatedNAV();
+        if (block.timestamp >= navFeed.lastNAVUpdate() + maxStaleNAV) {
+            return navFeed.currentNAV();
+        }
+
+        return navFeed.latestNAV();
     }
 
     // changes the total amount available for borrowing loans
@@ -272,7 +272,7 @@ contract Assessor is Definitions, Auth, Interest {
     // juniorRatio is denominated in RAY (10^27)
     function calcJuniorRatio() public view returns(uint) {
         uint seniorAsset = safeAdd(seniorDebt(), seniorBalance_);
-        uint assets = safeAdd(navFeed.approximatedNAV(), reserve.totalBalance());
+        uint assets = safeAdd(getNAV(), reserve.totalBalance());
 
         if(seniorAsset == 0 && assets == 0) {
             return 0;
