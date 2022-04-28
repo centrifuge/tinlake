@@ -5,6 +5,7 @@ import "ds-test/test.sol";
 import "tinlake-math/math.sol";
 import "./navfeed.tests.sol";
 import "./../../test/mock/shelf.sol";
+import "./../../test/mock/title.sol";
 import "./../../test/mock/pile.sol";
 
 interface Hevm {
@@ -15,6 +16,7 @@ contract NAVTest is DSTest, Math {
     TestNAVFeed public feed;
     ShelfMock shelf;
     PileMock pile;
+    TitleMock title;
     uint defaultRate;
     uint defaultThresholdRatio;
     uint defaultCeilingRatio;
@@ -45,7 +47,9 @@ contract NAVTest is DSTest, Math {
         feed = new TestNAVFeed();
         pile = new PileMock();
         shelf = new ShelfMock();
+        title = new TitleMock();
         feed.depend("shelf", address(shelf));
+        feed.depend("title", address(title));
         feed.depend("pile", address(pile));
         feed.file("discountRate", discountRate);
         mockNFTRegistry = address(42);
@@ -259,7 +263,7 @@ contract NAVTest is DSTest, Math {
         uint loanCount = 100;
         uint discountRate_ = defaultRate; // 5% per day
         feed.file("discountRate", discountRate_);
-        shelf.setReturn("loanCount", loanCount);
+        title.setReturn("count", loanCount);
 
         // create loans
         for (uint i = 1; i<loanCount; i++) {
@@ -281,7 +285,7 @@ contract NAVTest is DSTest, Math {
     function testChangeDiscountRate() public {
         uint loanCount = 100;
         feed.file("discountRate", defaultRate); // file default rate 5% day
-        shelf.setReturn("loanCount", loanCount);
+        title.setReturn("count", loanCount);
 
         // create loans
         for (uint i = 1; i<loanCount; i++) {
@@ -606,7 +610,7 @@ contract NAVTest is DSTest, Math {
         uint loan = 1;
         uint tokenID = 1;
         prepareDefaultNFT(tokenID, nftValue, risk);
-        shelf.setReturn("loanCount", 2);
+        title.setReturn("count", 2);
         borrow(tokenID, loan, nftValue, amount, dueDate);
 
         // loan overdue after 5 days

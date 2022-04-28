@@ -10,6 +10,11 @@ interface ShelfLike {
     function loanCount() external view returns (uint);
 }
 
+//TitleLike
+interface TLike {
+    function count() external view returns (uint);
+}
+
 interface PileLike {
     function setRate(uint loan, uint rate) external;
     function debt(uint loan) external view returns (uint);
@@ -33,6 +38,7 @@ interface PileLike {
 contract NAVFeed is Auth, Discounting {
     PileLike    public pile;
     ShelfLike   public shelf;
+    TLike   public title;
 
     struct NFTDetails {
         uint128 nftValues;
@@ -122,6 +128,10 @@ contract NAVFeed is Auth, Discounting {
         emit Rely(msg.sender);
     }
 
+    function approximatedNAV() view public returns(uint) {
+        return latestNAV;
+    }
+
     function toUint128(uint256 value) internal pure returns (uint128) {
         require(value <= type(uint128).max, "SafeCast: value doesn't fit in 128 bits");
         return uint128(value);
@@ -144,6 +154,7 @@ contract NAVFeed is Auth, Discounting {
     function depend(bytes32 contractName, address addr) external auth {
         if (contractName == "pile") {pile = PileLike(addr);}
         else if (contractName == "shelf") { shelf = ShelfLike(addr); }
+        else if (contractName == "title") { title = TLike(addr); }
         else revert();
         emit Depend(contractName, addr);
     }
@@ -306,7 +317,7 @@ contract NAVFeed is Auth, Discounting {
 
         bytes32 nftID_ = nftID(loan);
         uint maturityDate_ = maturityDate(nftID_);
-        require(maturityDate_ > 0 && loan < shelf.loanCount(), "loan-does-not-exist");
+        require(maturityDate_ > 0 && loan < title.count(), "loan-does-not-exist");
 
         // can not write-off healthy loans
         uint nnow = uniqueDayTimestamp(block.timestamp);
@@ -441,7 +452,7 @@ contract NAVFeed is Auth, Discounting {
     function reCalcTotalDiscount() public view returns(uint) {
         uint latestDiscount_ = 0;
 
-        for (uint loanID = 1; loanID < shelf.loanCount(); loanID++) {
+        for (uint loanID = 1; loanID < title.count(); loanID++) {
             bytes32 nftID_ = nftID(loanID);
             uint maturityDate_ = maturityDate(nftID_);
 
