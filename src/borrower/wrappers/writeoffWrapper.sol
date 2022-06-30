@@ -14,7 +14,7 @@ interface FeedLike {
     function maturityDate(bytes32 nft_) external view returns(uint);
 }
 
-contract writeoffWrapper is Auth, Discounting {
+contract WriteoffWrapper is Auth, Discounting {
 
     mapping(address => uint) public writeoffRates;
 
