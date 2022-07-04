@@ -10,13 +10,12 @@ contract NAVFeedMock is Mock, Auth {
         wards[msg.sender] = 1;
     }
 
-    function maturityDate(bytes32 nft_)     public view returns(uint){ 
-            return values_uint["load_maturityDate"];
+    function maturityDate(bytes32 nft_) public view returns(uint){ 
+            return values_return["maturityDate"];
         }
 
-    function nftID(uint loan) public view returns (bytes32) {
-        calls["nftID"]++;
-        return values_bytes32["nftID"];
+    function nftID(uint loan) public returns (bytes32) {
+        return values_bytes32_return["nftID"];
     }
 
     // function nftID(address registry, uint tokenId) public pure returns (bytes32) {
