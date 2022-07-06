@@ -17,8 +17,4 @@ contract NAVFeedMock is Mock, Auth {
     function nftID(uint loan) public returns (bytes32) {
         return values_bytes32_return["nftID"];
     }
-
-    // function nftID(address registry, uint tokenId) public pure returns (bytes32) {
-    //     return keccak256(abi.encodePacked(registry, tokenId));
-    // }
 }

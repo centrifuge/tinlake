@@ -33,8 +33,4 @@ contract DeployerTest is DSTest, Discounting {
         navFeed.setBytes32Return("nftID", "1");
         writeoffWrapper.writeOff(1, address(pile), address(navFeed));
    }
-
-//    function testFailWriteoffNotAuthorized() public {
-        
-//    }
 }
