@@ -117,6 +117,10 @@ contract Clerk is Auth, Interest {
     // collateral tolerance accepted because of potential rounding problems
     uint public collateralTolerance = 10;
 
+    // maximum amount which can be used to heal as part of a draw operation
+    // if the collateral deficit is higher a specific heal call is required
+    uint public autoHealMax = 100 ether;
+
     // the debt is only repaid if amount is higher than the threshold
     // repaying a lower amount would cause more cost in gas fees than the debt reduction
     uint public wipeThreshold = 1 * WAD;
@@ -172,6 +176,8 @@ contract Clerk is Auth, Interest {
             collateralTolerance = value;
         } else if (what == "wipeThreshold") {
             wipeThreshold = value;
+        } else if (what == "autoHealMax") {
+            autoHealMax = value;
         } else { revert(); }
         emit File(what, value);
     }
@@ -229,11 +235,14 @@ contract Clerk is Auth, Interest {
 
     // mint DROP, join DROP into cdp, draw DAI and send to reserve
     function draw(uint amountDAI) public auth active {
-        //make sure there is no collateral deficit before drawing out new DAI
-        require(collatDeficit() == 0, "please-heal-cdp-first");
+        // make sure to heal CDP before drawing new DAI
+        uint healAmountDAI = collatDeficit();
+
+        require(healAmountDAI <= autoHealMax, "collateral-deficit-heal-needed");
+
         require(amountDAI <= remainingCredit(), "not-enough-credit-left");
         // collateral value that needs to be locked in vault to draw amountDAI
-        uint collateralDAI = calcOvercollAmount(amountDAI);
+        uint collateralDAI = safeAdd(calcOvercollAmount(amountDAI), healAmountDAI);
         uint collateralDROP = rdiv(collateralDAI, assessor.calcSeniorTokenPrice());
         // mint required DROP
         tranche.mint(address(this), collateralDROP);
@@ -245,7 +254,7 @@ contract Clerk is Auth, Interest {
         // move dai to reserve
         dai.approve(address(reserve), amountDAI);
         reserve.hardDeposit(amountDAI);
-        // increase seniorAsset by amountDAI
+        // increase seniorAsset by collateralDAI
         updateSeniorAsset(0, collateralDAI);
     }
 
@@ -335,7 +344,7 @@ contract Clerk is Auth, Interest {
         }
 
         require((validate(0, amountDAI, 0, 0) == 0), "violates-constraints");
-        //    mint drop and move into vault
+        // mint drop and move into vault
         uint priceDROP = assessor.calcSeniorTokenPrice();
         uint collateralDROP = rdiv(amountDAI, priceDROP);
         tranche.mint(address(this), collateralDROP);

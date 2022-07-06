@@ -2,13 +2,13 @@ let
   pkgs = import (builtins.fetchGit rec {
     name = "dapptools-${rev}";
     url = https://github.com/dapphub/dapptools;
-    rev = "961dbcc6ec939103a1b78534d07672d7b4e642c1";
+    rev = "e41b6cd9119bbd494aba1236838b859f2136696b";
   }) {};
 
 in
   pkgs.mkShell {
     src = null;
-    name = "tinlake-maker-lib";
+    name = "tinlake";
     buildInputs = with pkgs; [
       pkgs.dapp
     ];

@@ -360,4 +360,115 @@ contract MKRLenderSystemTest is MKRTestBasis {
         // juniorTokenPrice should be still ONE
         assertEq(currency.balanceOf(address(juniorInvestor)), payoutCurrency);
     }
+
+    function testWipeAndDrawWithAutoHeal() public {
+        _wipeAndDrawWithAutoHeal(1 days);
+    }
+
+    function testFailAutoHeal() public {
+        clerk.file("autoHealMax", 0.1 * 1 ether);
+        _wipeAndDrawWithAutoHeal(1 days);
+    }
+
+    function _wipeAndDrawWithAutoHeal(uint timeUntilExecute) public {
+        root.relyContract(address(mkrAssessor), address(this));
+        mkrAssessor.file("minSeniorRatio", 0);
+
+        // initial junior & senior investments
+        uint seniorSupplyAmount = 800 ether;
+        uint juniorSupplyAmount = 400 ether;
+        juniorSupply(juniorSupplyAmount);
+        seniorSupply(seniorSupplyAmount);
+        hevm.warp(block.timestamp + 1 days);
+        coordinator.closeEpoch();
+        seniorInvestor.disburse();
+        juniorInvestor.disburse();
+        assertTrue(coordinator.submissionPeriod() == false);
+
+        //setup maker creditline
+        uint mkrCreditline = 800 ether;
+        root.relyContract(address(reserve), address(this));
+        // activate clerk in reserve
+        reserve.depend("lending", address(clerk));
+        clerk.raise(mkrCreditline);
+        assertEq(clerk.remainingCredit(), mkrCreditline);
+
+        // borrow loan & draw from maker
+        uint borrowAmount = 1600 ether;
+        setupOngoingDefaultLoan(borrowAmount);
+        uint debt = safeSub(borrowAmount, safeAdd(seniorSupplyAmount, juniorSupplyAmount));
+        assertEq(clerk.debt(), debt);
+
+        // submit new supply & redeem orders into the pool under following conditions
+        // epoch close & epoch execution should not happen in same block, so that DROP price is different during closign & execution
+        // senior supply should wipe maker debt
+        // junior redeem should draw from maker
+
+        // 1. close epoch --> juniorRedeem amount too high, epoch won't execute automatically
+        hevm.warp(block.timestamp + 1 days);
+        seniorSupply(200 ether);
+        juniorInvestor.redeemOrder(400 ether);
+        coordinator.closeEpoch();
+        uint seniorTokenPriceClosing = mkrAssessor.calcSeniorTokenPrice();
+        assertTrue(coordinator.submissionPeriod() == true);
+
+        // 2. submit solution & execute epoch
+        hevm.warp(block.timestamp + timeUntilExecute);
+        // valid submission
+        ModelInput memory submission = ModelInput({
+            seniorSupply : 200 ether, // --> calls maker wipe
+            juniorSupply : 0 ether,
+            seniorRedeem : 0 ether,
+            juniorRedeem : 1 ether    // --> calls maker draw
+        });
+        int valid = submitSolution(address(coordinator), submission);
+        assertEq(valid, coordinator.NEW_BEST());
+        hevm.warp(block.timestamp + 2 hours);
+        coordinator.executeEpoch();
+        // check for DROP token price
+        uint seniorTokenPriceExecution = mkrAssessor.calcSeniorTokenPrice();
+        // drop price during epoch execution higher then during epoch closing -> requires healing
+        assertTrue(seniorTokenPriceClosing < seniorTokenPriceExecution);
+        assertTrue(coordinator.submissionPeriod() == false);
+   }
+
+   function testWipeAndDrawWithAutoHealSameBlock() public {
+        root.relyContract(address(mkrAssessor), address(this));
+        mkrAssessor.file("minSeniorRatio", 0);
+
+        // initial junior & senior investments
+        uint seniorSupplyAmount = 800 ether;
+        uint juniorSupplyAmount = 400 ether;
+        juniorSupply(juniorSupplyAmount);
+        seniorSupply(seniorSupplyAmount);
+        hevm.warp(block.timestamp + 1 days);
+        coordinator.closeEpoch();
+        seniorInvestor.disburse();
+        juniorInvestor.disburse();
+        assertTrue(coordinator.submissionPeriod() == false);
+
+        //setup maker creditline
+        uint mkrCreditline = 800 ether;
+        root.relyContract(address(reserve), address(this));
+        // activate clerk in reserve
+        reserve.depend("lending", address(clerk));
+        clerk.raise(mkrCreditline);
+        assertEq(clerk.remainingCredit(), mkrCreditline);
+
+        // borrow loan & draw from maker
+        uint borrowAmount = 1600 ether;
+        setupOngoingDefaultLoan(borrowAmount);
+        uint debt = safeSub(borrowAmount, safeAdd(seniorSupplyAmount, juniorSupplyAmount));
+        assertEq(clerk.debt(), debt);
+
+        // submit new supply & redeem orders into the pool under following conditions
+        // epoch close & epoch execution should happen in same block, so that no healing is required
+
+        // 1. close epoch --> juniorRedeem amount too high, epoch won't execute automatically
+        hevm.warp(block.timestamp + 1 days);
+        seniorSupply(200 ether);
+        juniorInvestor.redeemOrder(1 ether);
+        coordinator.closeEpoch(); // auto execute epoch in teh same block
+        assertTrue(coordinator.submissionPeriod() == false);
+   }
 }
