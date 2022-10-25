@@ -10,13 +10,13 @@ import { Discounting } from "../../feed/discounting.sol";
 import "../../test/mock/pile.sol";
 import "../../test/mock/feed.sol";
 
-contract DeployerTest is DSTest, Discounting {
-    WriteoffWrapper writeoffWrapper;
+contract WriteOffTest is DSTest, Discounting {
+    WriteOffWrapper writeOffWrapper;
     PileMock pile;
     NAVFeedMock navFeed;
 
     function setUp() public {
-        writeoffWrapper = new WriteoffWrapper();
+        writeOffWrapper = new WriteOffWrapper();
         pile = new PileMock();
         navFeed = new NAVFeedMock();
    }
@@ -24,13 +24,14 @@ contract DeployerTest is DSTest, Discounting {
    function testWriteoff() public {
         navFeed.setReturn("maturityDate", block.timestamp - 60 * 60 * 24);
         navFeed.setBytes32Return("nftID", "1");
-        writeoffWrapper.writeOff(1, address(pile), address(navFeed));
+        navFeed.setReturn("pile", address(pile));
+        writeOffWrapper.writeOff(1, address(navFeed));
         assertEq(pile.calls("changeRate"), 1);
    }
 
    function testFailWriteoffLoanNotOverDue() public {
         navFeed.setReturn("maturityDate", block.timestamp + 60 * 60 * 24);
         navFeed.setBytes32Return("nftID", "1");
-        writeoffWrapper.writeOff(1, address(pile), address(navFeed));
+        writeOffWrapper.writeOff(1, address(navFeed));
    }
 }
