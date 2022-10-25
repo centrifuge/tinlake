@@ -1,9 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2018  Rain <rainbreak@riseup.net>, Centrifuge
 pragma solidity >=0.7.6;
+pragma experimental ABIEncoderV2;
 
 import "tinlake-auth/auth.sol";
 import { Discounting } from "../feed/discounting.sol";
+
+struct Loan {
+    address registry;
+    uint256 tokenId;
+}
+
+interface ShelfLike {
+    function shelf(uint) external view returns (Loan memory);
+}
 
 interface PileLike {
     function changeRate(uint, uint) external;
@@ -11,6 +21,7 @@ interface PileLike {
 
 interface FeedLike {
     function pile() external view returns (address);
+    function shelf() external view returns (address);
     function nftID(uint loan) external view returns (bytes32);
     function maturityDate(bytes32 nft_) external view returns(uint);
 }
@@ -41,17 +52,24 @@ contract WriteOffWrapper is Auth, Discounting {
     function writeOff(uint _loanID, address _feed) public auth {
         FeedLike feed = FeedLike(_feed);
         PileLike pile = PileLike(feed.pile());
+        require(writeOffRates[address(pile)] != 0, "WriteOffWrapper/pile-has-no-write-off-group");
+        ShelfLike shelf = ShelfLike(feed.shelf());
+        require(shelf.shelf(_loanID).tokenId != 0, "WriteOffWrapper/loan-does-not-exist");
         uint nnow = uniqueDayTimestamp(block.timestamp);
         bytes32 nftID = feed.nftID(_loanID);
         uint maturityDate = feed.maturityDate(nftID);
         
-        require(maturityDate < nnow, "loan isn't overdue yet.");
+        require(maturityDate < nnow, "WriteOffWrapper/loan-not-overdue");
 
         pile.changeRate(_loanID, writeOffRates[address(pile)]);
     }
 
-    // TODO: revert if pile is not in mapping
-    // TODO: revert if loanID doesn't exist
+    function file(bytes32 what, address addr, uint data) public auth {
+        if (what == "writeOffRates") {
+            writeOffRates[addr] = data;
+        }
+    }
+
     // TODO: Check that the chosen writeoff_group has an interest rate? of 0?
 
 }

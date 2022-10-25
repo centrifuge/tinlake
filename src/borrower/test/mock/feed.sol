@@ -14,6 +14,10 @@ contract NAVFeedMock is Mock, Auth {
             return values_address_return["pile"];
     }
 
+    function shelf() public view returns(address){ 
+            return values_address_return["shelf"];
+    }
+
     function maturityDate(bytes32 nft_) public view returns(uint){ 
             return values_return["maturityDate"];
     }
