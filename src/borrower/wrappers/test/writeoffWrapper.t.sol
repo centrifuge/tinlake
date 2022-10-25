@@ -2,7 +2,7 @@
 pragma solidity >=0.7.6;
 
 import "ds-test/test.sol";
-import "../writeoffWrapper.sol";
+import "../writeOffWrapper.sol";
 import { Discounting } from "../../feed/discounting.sol";
 // import "../../pile.sol";
 // import "../../feed/navfeed.sol";
@@ -21,7 +21,7 @@ contract WriteOffTest is DSTest, Discounting {
         navFeed = new NAVFeedMock();
    }
 
-   function testWriteoff() public {
+   function testWriteOff() public {
         navFeed.setReturn("maturityDate", block.timestamp - 60 * 60 * 24);
         navFeed.setBytes32Return("nftID", "1");
         navFeed.setReturn("pile", address(pile));
@@ -29,7 +29,7 @@ contract WriteOffTest is DSTest, Discounting {
         assertEq(pile.calls("changeRate"), 1);
    }
 
-   function testFailWriteoffLoanNotOverDue() public {
+   function testFailWriteOffLoanNotOverDue() public {
         navFeed.setReturn("maturityDate", block.timestamp + 60 * 60 * 24);
         navFeed.setBytes32Return("nftID", "1");
         writeOffWrapper.writeOff(1, address(navFeed));
