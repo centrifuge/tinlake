@@ -41,12 +41,12 @@ contract WriteOffWrapper is Auth, Discounting {
         writeOffRates[address(0xE7876f282bdF0f62e5fdb2C63b8b89c10538dF32)] = 1000;  // Harbor Trade 2
         writeOffRates[address(0x3eC5c16E7f2C6A80E31997C68D8Fa6ACe089807f)] = 1000;  // New Silver 2
         writeOffRates[address(0xe17F3c35C18b2Af84ceE2eDed673c6A08A671695)] = 1001;  // Branch Series 3
-        writeOffRates[address(0x0168e7999318a6c2393c2Eb19A5Da4aB9d715173)] = 1000;  // FactorChain 1
+        writeOffRates[address(0x99D0333f97432fdEfA25B7634520d505e58B131B)] = 1000;  // FactorChain 1
         writeOffRates[address(0x37c8B836eA1b89b7cC4cFdDed4C4fbC454CcC679)] = 1000;  // Paperchain 3
-        writeOffRates[address(0xAAEaCfcCc3d3249f125Ba0644495560309C266cB)] = 1001;  // Pezesha 1
         writeOffRates[address(0xB7d1DE24c0243e6A3eC4De9fAB2B19AB46Fa941F)] = 1001;  // UP Series 1
-        writeOffRates[address(0x3fC72dA5545E2AB6202D81fbEb1C8273Be95068C)] = 1001;  // ConsolFreight 4
+        writeOffRates[address(0x3fC72dA5545E2AB6202D81fbEb1C8273Be95068C)] = 1000;  // ConsolFreight 4
         writeOffRates[address(0xdB07B21109117208a0317adfbed484C87c9c2aFf)] = 1000;  // databased.FINANCE 1
+        writeOffRates[address(0x4b0f712Aa9F91359f48D8628De8483B04530751a)] = 1001;  // Peoples 1
     }
     
     function writeOff(uint _loanID, address _feed) public auth {
