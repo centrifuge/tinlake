@@ -70,6 +70,4 @@ contract WriteOffWrapper is Auth, Discounting {
         }
     }
 
-    // TODO: Check that the chosen writeoff_group has an interest rate? of 0?
-
 }
