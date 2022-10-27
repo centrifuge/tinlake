@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import "ds-test/test.sol";
+import "forge-std/Test.sol";
 
-import "./../assessor.sol";
-import "./../admin/pool.sol";
+import "src/lender/assessor.sol";
+import "src/lender/admin/pool.sol";
 import "./mock/coordinator.sol";
 import "./mock/navFeed.sol";
 import "./mock/memberlist.sol";

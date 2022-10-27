@@ -36,7 +36,7 @@ import { ClerkFab } from "src/lender/adapters/mkr/fabs/clerk.sol";
 import { Title } from "tinlake-title/title.sol";
 import { Pile } from "src/borrower/pile.sol";
 import { Shelf } from "src/borrower/shelf.sol";
-import { NAVFeed } from "src/borrower/feed/test/navfeed.tests.sol";
+import { NAVFeed } from "test/borrower/feed/navfeed.tests.sol";
 
 import { TestRoot } from "./root.sol";
 
@@ -49,16 +49,10 @@ import { TokenLike, NAVFeedLike } from "./interfaces.sol";
 import {SimpleMkr} from "./../simple/mkr.sol";
 
 
-<<<<<<< HEAD
-import "../../borrower/test/mock/shelf.sol";
-import "../../lender/test/mock/navFeed.sol";
-import "../../lender/adapters/mkr/test/mock/spotter.sol";
-import "../../lender/adapters/mkr/test/mock/vat.sol";
-=======
 import "test/borrower/mock/shelf.sol";
 import "test/lender/mock/navFeed.sol";
 import "test/lender/adapters/mkr/mock/spotter.sol";
->>>>>>> af487ef (fix imports)
+import "test/lender/adapters/mkr/mock/vat.sol";
 import "./config.sol";
 
 
