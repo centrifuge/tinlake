@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import { TinlakeRoot } from "../../root.sol";
-import { BorrowerDeployer } from "../../borrower/deployer.sol";
-import { LenderDeployer } from "../../lender/deployer.sol";
-
 import "ds-test/test.sol";
+import { TinlakeRoot } from "src/root.sol";
+import { BorrowerDeployer } from "src/borrower/deployer.sol";
+import { LenderDeployer } from "src/lender/deployer.sol";
+
 contract TestRoot is TinlakeRoot {
     constructor (address deployUsr, address governance) TinlakeRoot(deployUsr, governance) {
     }

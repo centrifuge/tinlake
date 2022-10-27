@@ -4,7 +4,7 @@ pragma solidity >=0.6.12;
 import "ds-test/test.sol";
 import "tinlake-math/math.sol";
 
-import "./../buckets.sol";
+import "src/borrower/feed/buckets.sol";
 
 
 interface Hevm {

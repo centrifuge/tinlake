@@ -4,8 +4,8 @@ pragma solidity >=0.7.6;
 import "ds-test/test.sol";
 import "tinlake-math/math.sol";
 
-import "../../test/simple/token.sol";
-import "./../reserve.sol";
+import "../simple/token.sol";
+import "src/lender/reserve.sol";
 import "./mock/assessor.sol";
 import "./mock/clerk.sol";
 

@@ -3,12 +3,12 @@ pragma solidity >=0.7.6;
 
 import "ds-test/test.sol";
 import { Title } from "tinlake-title/title.sol";
-import { TitleFab } from "../fabs/title.sol";
-import { PileFab } from "../fabs/pile.sol";
-import { ShelfFab} from "../fabs/shelf.sol";
-import { TestNAVFeedFab } from "../fabs/navfeed.tests.sol";
+import { TitleFab } from "src/borrower/fabs/title.sol";
+import { PileFab } from "src/borrower/fabs/pile.sol";
+import { ShelfFab} from "src/borrower/fabs/shelf.sol";
+import { TestNAVFeedFab } from "src/borrower/fabs/navfeed.tests.sol";
 
-import "../deployer.sol";
+import "src/borrower/deployer.sol";
 import { SimpleToken } from "../../test/simple/token.sol";
 
 contract DeployerTest is DSTest {

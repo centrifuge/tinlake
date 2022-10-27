@@ -3,7 +3,7 @@ pragma solidity >=0.7.6;
 
 import "ds-test/test.sol";
 
-import "./../admin/member.sol";
+import "src/lender/admin/member.sol";
 import "./mock/memberlist.sol";
 
 

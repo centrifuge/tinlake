@@ -3,7 +3,7 @@ pragma solidity >=0.7.6;
 
 import "ds-test/test.sol";
 import "tinlake-math/math.sol";
-import "../pile.sol";
+import "src/borrower/pile.sol";
 
 interface Hevm {
     function warp(uint256) external;

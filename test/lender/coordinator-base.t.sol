@@ -5,12 +5,12 @@ pragma experimental ABIEncoderV2;
 import "ds-test/test.sol";
 import "tinlake-math/math.sol";
 
-import "./../coordinator.sol";
-import "./../definitions.sol";
+import "src/lender/coordinator.sol";
+import "src/lender/definitions.sol";
 import "./mock/tranche.sol";
 import "./mock/reserve.sol";
 import "./mock/assessor.sol";
-import "../deployer.sol";
+import "src/lender/deployer.sol";
 
 interface Hevm {
     function warp(uint256) external;

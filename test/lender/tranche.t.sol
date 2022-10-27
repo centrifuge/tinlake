@@ -4,9 +4,9 @@ pragma solidity >=0.7.6;
 import "ds-test/test.sol";
 import "tinlake-math/math.sol";
 
-import "./../tranche.sol";
-import "../../test/simple/token.sol";
-import "../test/mock/reserve.sol";
+import "src/lender/tranche.sol";
+import "../simple/token.sol";
+import "./mock/reserve.sol";
 
 interface Hevm {
     function warp(uint256) external;

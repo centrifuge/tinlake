@@ -4,8 +4,8 @@ pragma solidity >=0.7.6;
 import "ds-test/test.sol";
 import "tinlake-math/interest.sol";
 import "./navfeed.tests.sol";
-import "./../../test/mock/shelf.sol";
-import "./../../test/mock/pile.sol";
+import "../mock/shelf.sol";
+import "../mock/pile.sol";
 
 
 contract NFTFeedTest is DSTest, Math {

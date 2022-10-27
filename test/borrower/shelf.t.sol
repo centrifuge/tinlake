@@ -3,7 +3,7 @@ pragma solidity >=0.5.3;
 
 import "ds-test/test.sol";
 
-import "../shelf.sol";
+import "src/borrower/shelf.sol";
 import "./mock/title.sol";
 import "./mock/nft.sol";
 import "./mock/token.sol";
@@ -11,7 +11,7 @@ import "./mock/pile.sol";
 import "./mock/ceiling.sol";
 import "./mock/subscriber.sol";
 import "./mock/assessor.sol";
-import "../../lender/test/mock/reserve.sol";
+import "../lender/mock/reserve.sol";
 
 
 contract ShelfTest is DSTest {

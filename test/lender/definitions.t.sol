@@ -2,7 +2,7 @@
 pragma solidity >=0.7.6;
 
 import "ds-test/test.sol";
-import "./../definitions.sol";
+import "src/lender/definitions.sol";
 
 contract DefinitionTest is Math, DSTest {
     Definitions def;

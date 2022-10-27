@@ -2,42 +2,41 @@
 pragma solidity >=0.7.6;
 pragma experimental ABIEncoderV2;
 
-import { TitleFab } from "../../borrower/fabs/title.sol";
-import { ShelfFab } from "../../borrower/fabs/shelf.sol";
-import { PileFab } from "../../borrower/fabs/pile.sol";
-import { TestNAVFeedFab } from "../../borrower/fabs/navfeed.tests.sol";
-import { BorrowerDeployer } from "../../borrower/deployer.sol";
+import { TitleFab } from "src/borrower/fabs/title.sol";
+import { ShelfFab } from "src/borrower/fabs/shelf.sol";
+import { PileFab } from "src/borrower/fabs/pile.sol";
+import { TestNAVFeedFab } from "src/borrower/fabs/navfeed.tests.sol";
+import { BorrowerDeployer } from "src/borrower/deployer.sol";
+
+import { EpochCoordinator } from "src/lender/coordinator.sol";
+import { Reserve } from "src/lender/reserve.sol";
+import { Tranche } from "src/lender/tranche.sol";
+import { Operator } from "src/lender/operator.sol";
+import { Assessor } from "src/lender/assessor.sol";
+import { PoolAdmin } from "src/lender/admin/pool.sol";
+import { RestrictedToken } from "src/lender/token/restricted.sol";
+import { Memberlist } from "src/lender/token/memberlist.sol";
+import { Clerk } from "src/lender/adapters/mkr/clerk.sol";
 
 
-import { EpochCoordinator } from "../../lender/coordinator.sol";
-import { Reserve } from "../../lender/reserve.sol";
-import { Tranche } from "../../lender/tranche.sol";
-import { Operator } from "../../lender/operator.sol";
-import { Assessor } from "../../lender/assessor.sol";
-import { PoolAdmin } from "../../lender/admin/pool.sol";
-import { RestrictedToken } from "../../lender/token/restricted.sol";
-import { Memberlist } from "../../lender/token/memberlist.sol";
-import { Clerk } from "../../lender/adapters/mkr/clerk.sol";
-
-
-import { TrancheFab } from "../../lender/fabs/tranche.sol";
-import { RestrictedTokenFab } from "../../lender/fabs/restrictedtoken.sol";
-import { MemberlistFab } from "../../lender/fabs/memberlist.sol";
-import { AssessorFab } from "../../lender/fabs/assessor.sol";
-import { PoolAdminFab } from "../../lender/fabs/pooladmin.sol";
-import { ReserveFab } from "../../lender/fabs/reserve.sol";
-import { CoordinatorFab } from "../../lender/fabs/coordinator.sol";
-import { OperatorFab } from "../../lender/fabs/operator.sol";
-import { LenderDeployer } from "../../lender/deployer.sol";
+import { TrancheFab } from "src/lender/fabs/tranche.sol";
+import { RestrictedTokenFab } from "src/lender/fabs/restrictedtoken.sol";
+import { MemberlistFab } from "src/lender/fabs/memberlist.sol";
+import { AssessorFab } from "src/lender/fabs/assessor.sol";
+import { PoolAdminFab } from "src/lender/fabs/pooladmin.sol";
+import { ReserveFab } from "src/lender/fabs/reserve.sol";
+import { CoordinatorFab } from "src/lender/fabs/coordinator.sol";
+import { OperatorFab } from "src/lender/fabs/operator.sol";
+import { LenderDeployer } from "src/lender/deployer.sol";
 
 // MKR
-import { AdapterDeployer } from "../../lender/adapters/deployer.sol";
-import { ClerkFab } from "../../lender/adapters/mkr/fabs/clerk.sol";
+import { AdapterDeployer } from "src/lender/adapters/deployer.sol";
+import { ClerkFab } from "src/lender/adapters/mkr/fabs/clerk.sol";
 
 import { Title } from "tinlake-title/title.sol";
-import { Pile } from "../../borrower/pile.sol";
-import { Shelf } from "../../borrower/shelf.sol";
-import { NAVFeed } from "../../borrower/feed/test/navfeed.tests.sol";
+import { Pile } from "src/borrower/pile.sol";
+import { Shelf } from "src/borrower/shelf.sol";
+import { NAVFeed } from "src/borrower/feed/test/navfeed.tests.sol";
 
 import { TestRoot } from "./root.sol";
 
@@ -50,10 +49,16 @@ import { TokenLike, NAVFeedLike } from "./interfaces.sol";
 import {SimpleMkr} from "./../simple/mkr.sol";
 
 
+<<<<<<< HEAD
 import "../../borrower/test/mock/shelf.sol";
 import "../../lender/test/mock/navFeed.sol";
 import "../../lender/adapters/mkr/test/mock/spotter.sol";
 import "../../lender/adapters/mkr/test/mock/vat.sol";
+=======
+import "test/borrower/mock/shelf.sol";
+import "test/lender/mock/navFeed.sol";
+import "test/lender/adapters/mkr/mock/spotter.sol";
+>>>>>>> af487ef (fix imports)
 import "./config.sol";
 
 

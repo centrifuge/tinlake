@@ -2,21 +2,21 @@
 pragma solidity >=0.7.6;
 
 import "ds-test/test.sol";
-import "../clerk.sol";
 import "tinlake-math/interest.sol";
 
-import "../../../../test/simple/token.sol";
-import "../../../test/mock/reserve.sol";
-import "../../../test/mock/coordinator.sol";
-import "../../../test/mock/navFeed.sol";
-import "../../../test/mock/assessor.sol";
-import "../../../test/mock/tranche.sol";
+import "src/lender/adapters/mkr/clerk.sol";
+import "../../../simple/token.sol";
+import "../../mock/reserve.sol";
+import "../../mock/coordinator.sol";
+import "../../mock/navFeed.sol";
+import "../../mock/assessor.sol";
+import "../../mock/tranche.sol";
 import "./mock/mgr.sol";
 import "./mock/spotter.sol";
 import "./mock/vat.sol";
 import "./mock/jug.sol";
-import "../../../definitions.sol";
-import "../../../../test/system/assertions.sol";
+import "src/lender/definitions.sol";
+import "../../../system/assertions.sol";
 
 
 interface Hevm {

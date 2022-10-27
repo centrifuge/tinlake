@@ -3,8 +3,8 @@ pragma solidity >=0.7.6;
 
 import "ds-test/test.sol";
 
-import "./../assessor.sol";
-import "./../admin/pool.sol";
+import "src/lender/assessor.sol";
+import "src/lender/admin/pool.sol";
 import "./mock/coordinator.sol";
 import "./mock/navFeed.sol";
 import "./mock/memberlist.sol";

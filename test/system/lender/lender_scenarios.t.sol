@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 
 
 import "tinlake-math/interest.sol";
-import {BaseTypes} from "../../../lender/test/coordinator-base.t.sol";
+import {BaseTypes} from "test/lender/coordinator-base.t.sol";
 
 import "../test_suite.sol";
 

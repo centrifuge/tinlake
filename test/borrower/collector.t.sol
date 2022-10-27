@@ -3,12 +3,12 @@ pragma solidity >=0.6.12;
 
 import "ds-test/test.sol";
 
-import "../../test/mock/shelf.sol";
-import "../../test/mock/reserve.sol";
-import "../../test/mock/nft.sol";
-import "../../test/mock/pile.sol";
+import "./mock/shelf.sol";
+import "./mock/reserve.sol";
+import "./mock/nft.sol";
+import "./mock/pile.sol";
 
-import "../collector.sol";
+import "src/borrower/collect/collector.sol";
 
 
 contract CollectorTest is DSTest {

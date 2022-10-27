@@ -4,8 +4,8 @@ pragma experimental ABIEncoderV2;
 
 import "../../test_suite.sol";
 import "tinlake-math/interest.sol";
-import {BaseTypes} from "../../../../lender/test/coordinator-base.t.sol";
-import { Assessor }from "../../../../lender/assessor.sol";
+import {BaseTypes} from "test/lender/coordinator-base.t.sol";
+import { Assessor }from "src/lender/assessor.sol";
 
 contract MKRTestBasis is TestSuite, Interest {
     Assessor mkrAssessor;

@@ -4,10 +4,11 @@ pragma experimental ABIEncoderV2;
 
 import "./setup.sol";
 
+import "./setup.sol";
 import "./users/admin.sol";
 import "./users/investor.sol";
 import "./users/borrower.sol";
-import {BaseTypes} from "../../lender/test/coordinator-base.t.sol";
+import {BaseTypes} from "test/lender/coordinator-base.t.sol";
 import "./assertions.sol";
 
 contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
