@@ -3,8 +3,6 @@ pragma solidity >=0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "./setup.sol";
-
-import "./setup.sol";
 import "./users/admin.sol";
 import "./users/investor.sol";
 import "./users/borrower.sol";

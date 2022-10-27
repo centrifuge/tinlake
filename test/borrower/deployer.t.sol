@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import "ds-test/test.sol";
+import "forge-std/Test.sol";
 import { Title } from "tinlake-title/title.sol";
 import { TitleFab } from "src/borrower/fabs/title.sol";
 import { PileFab } from "src/borrower/fabs/pile.sol";

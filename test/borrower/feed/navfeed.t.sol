@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import "ds-test/test.sol";
+import "forge-std/Test.sol";
 import "tinlake-math/math.sol";
 import "./navfeed.tests.sol";
 import "../mock/shelf.sol";

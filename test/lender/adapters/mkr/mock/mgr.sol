@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
-import "ds-test/test.sol";
+import "forge-std/Test.sol";
 
-import "../../../../../test/mock/mock.sol";
+import "test/mock/mock.sol";
 import "./vat.sol";
 import {GemJoin} from "./gemJoin.sol";
 import {Urn} from "./urn.sol";

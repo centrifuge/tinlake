@@ -9,7 +9,6 @@ optimizer = true          # Enable or disable the solc optimizer
 optimizer_runs = 200      # The number of optimizer runs
 verbosity = 3             # The verbosity of tests
 remappings = [
-    'ds-test/=lib/ds-test/src/',
     'tinlake-auth/=lib/tinlake-auth/src/',
     'tinlake-erc20/=lib/tinlake-erc20/src/',
     'tinlake-math/=lib/tinlake-math/src/',

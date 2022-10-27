@@ -2,7 +2,7 @@
 pragma solidity >=0.7.6;
 pragma experimental ABIEncoderV2;
 
-import "ds-test/test.sol";
+import "forge-std/Test.sol";
 import "./base_system.sol";
 
 //  Contract to manage the config variables of a Tinlake test deployment

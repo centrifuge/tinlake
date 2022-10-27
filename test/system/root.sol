@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import "ds-test/test.sol";
+import "forge-std/Test.sol";
 import { TinlakeRoot } from "src/root.sol";
 import { BorrowerDeployer } from "src/borrower/deployer.sol";
 import { LenderDeployer } from "src/lender/deployer.sol";

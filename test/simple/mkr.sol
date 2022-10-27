@@ -3,7 +3,7 @@ pragma solidity >=0.7.6;
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 import "../../../lib/tinlake-math/src/interest.sol";
-import "ds-test/test.sol";
+import "forge-std/Test.sol";
 
 interface ERC20Like {
     function transferFrom(address from, address to, uint amount) external;

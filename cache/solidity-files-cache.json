@@ -11,10 +11,10 @@
     ]
   },
   "files": {
-    "lib/ds-test/src/test.sol": {
-      "lastModificationDate": 1642604392343,
-      "contentHash": "e265b2085e38d6de5119dd51d1f06f97",
-      "sourceName": "lib/ds-test/src/test.sol",
+    "lib/forge-std/lib/ds-test/src/test.sol": {
+      "lastModificationDate": 1666895207279,
+      "contentHash": "962996f0e05d5218857a538a62d7c47e",
+      "sourceName": "lib/forge-std/lib/ds-test/src/test.sol",
       "solcConfig": {
         "settings": {
           "optimizer": {
@@ -42,10 +42,261 @@
         }
       },
       "imports": [],
-      "versionRequirement": ">=0.4.23",
+      "versionRequirement": ">=0.5.0",
       "artifacts": {
         "DSTest": {
           "0.7.6+commit.7338295f.Darwin.appleclang": "test.sol/DSTest.json"
+        }
+      }
+    },
+    "lib/forge-std/src/Script.sol": {
+      "lastModificationDate": 1666895206435,
+      "contentHash": "571dde8775a6214a03d6772ee330ead5",
+      "sourceName": "lib/forge-std/src/Script.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs"
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol"
+      ],
+      "versionRequirement": ">=0.6.0, <0.9.0",
+      "artifacts": {
+        "Script": {
+          "0.7.6+commit.7338295f.Darwin.appleclang": "Script.sol/Script.json"
+        }
+      }
+    },
+    "lib/forge-std/src/StdJson.sol": {
+      "lastModificationDate": 1666895206435,
+      "contentHash": "75c782f20a301ab9827060a03da071e4",
+      "sourceName": "lib/forge-std/src/StdJson.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs"
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "lib/forge-std/src/Vm.sol"
+      ],
+      "versionRequirement": ">=0.6.0, <0.9.0",
+      "artifacts": {
+        "stdJson": {
+          "0.7.6+commit.7338295f.Darwin.appleclang": "StdJson.sol/stdJson.json"
+        }
+      }
+    },
+    "lib/forge-std/src/Test.sol": {
+      "lastModificationDate": 1666895206436,
+      "contentHash": "6cab65c53a9548c2428a10697fd06dd1",
+      "sourceName": "lib/forge-std/src/Test.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs"
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol"
+      ],
+      "versionRequirement": ">=0.6.0, <0.9.0",
+      "artifacts": {
+        "Test": {
+          "0.7.6+commit.7338295f.Darwin.appleclang": "Test.sol/Test.json"
+        },
+        "stdError": {
+          "0.7.6+commit.7338295f.Darwin.appleclang": "Test.sol/stdError.json"
+        },
+        "stdMath": {
+          "0.7.6+commit.7338295f.Darwin.appleclang": "Test.sol/stdMath.json"
+        },
+        "stdStorage": {
+          "0.7.6+commit.7338295f.Darwin.appleclang": "Test.sol/stdStorage.json"
+        }
+      }
+    },
+    "lib/forge-std/src/Vm.sol": {
+      "lastModificationDate": 1666895206436,
+      "contentHash": "bd4bde818b3c57b21e0601277b1d2dac",
+      "sourceName": "lib/forge-std/src/Vm.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs"
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [],
+      "versionRequirement": ">=0.6.0, <0.9.0",
+      "artifacts": {
+        "Vm": {
+          "0.7.6+commit.7338295f.Darwin.appleclang": "Vm.sol/Vm.json"
+        }
+      }
+    },
+    "lib/forge-std/src/console.sol": {
+      "lastModificationDate": 1666895206437,
+      "contentHash": "100b8a33b917da1147740d7ab8b0ded3",
+      "sourceName": "lib/forge-std/src/console.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs"
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [],
+      "versionRequirement": ">=0.4.22, <0.9.0",
+      "artifacts": {
+        "console": {
+          "0.7.6+commit.7338295f.Darwin.appleclang": "console.sol/console.json"
+        }
+      }
+    },
+    "lib/forge-std/src/console2.sol": {
+      "lastModificationDate": 1666895206437,
+      "contentHash": "5df91f8e93efbfcccf68973dc1b74a70",
+      "sourceName": "lib/forge-std/src/console2.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs"
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [],
+      "versionRequirement": ">=0.4.22, <0.9.0",
+      "artifacts": {
+        "console2": {
+          "0.7.6+commit.7338295f.Darwin.appleclang": "console2.sol/console2.json"
         }
       }
     },
@@ -2682,8 +2933,8 @@
       }
     },
     "test/borrower/collector.t.sol": {
-      "lastModificationDate": 1666896333108,
-      "contentHash": "01e0c1dd7eec9cbe4a81e896367d0de7",
+      "lastModificationDate": 1666899568463,
+      "contentHash": "41a6539f06d909a9371f2abcedd0a6f1",
       "sourceName": "test/borrower/collector.t.sol",
       "solcConfig": {
         "settings": {
@@ -2712,7 +2963,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/math.sol",
@@ -2732,8 +2989,8 @@
       }
     },
     "test/borrower/deployer.t.sol": {
-      "lastModificationDate": 1666896657875,
-      "contentHash": "4dc111cc2a9da58212ef2683e8536758",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "8f3ae8f8e0f14851adaa75da3b52b51d",
       "sourceName": "test/borrower/deployer.t.sol",
       "solcConfig": {
         "settings": {
@@ -2762,7 +3019,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -2806,8 +3069,8 @@
       }
     },
     "test/borrower/feed/buckets.t.sol": {
-      "lastModificationDate": 1666896696937,
-      "contentHash": "0d42d13aad0e8c663f329d22aed6c773",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "3116887001eb4f6ede95ee054553c541",
       "sourceName": "test/borrower/feed/buckets.t.sol",
       "solcConfig": {
         "settings": {
@@ -2836,7 +3099,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "src/borrower/feed/buckets.sol"
       ],
@@ -2854,8 +3123,8 @@
       }
     },
     "test/borrower/feed/navfeed.t.sol": {
-      "lastModificationDate": 1666896766826,
-      "contentHash": "8a14eb6072a4a78496127f0e0cf3d691",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "dfcbfaef5b70e90cdaaf0d8ef0de4939",
       "sourceName": "test/borrower/feed/navfeed.t.sol",
       "solcConfig": {
         "settings": {
@@ -2884,7 +3153,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -2909,8 +3184,8 @@
       }
     },
     "test/borrower/feed/nftfeed.t.sol": {
-      "lastModificationDate": 1666896822082,
-      "contentHash": "9dd639a98fba83424d3deaf0e7cf2040",
+      "lastModificationDate": 1666899600341,
+      "contentHash": "079b2094fb3c1fd608f2417b765a84ba",
       "sourceName": "test/borrower/feed/nftfeed.t.sol",
       "solcConfig": {
         "settings": {
@@ -2939,7 +3214,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -2988,7 +3269,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
       ],
@@ -3030,7 +3317,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
       ],
@@ -3072,7 +3365,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
       ],
@@ -3114,7 +3413,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
       ],
@@ -3156,7 +3461,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol",
@@ -3200,7 +3511,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
       ],
@@ -3242,7 +3559,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
       ],
@@ -3284,7 +3607,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
       ],
@@ -3296,8 +3625,8 @@
       }
     },
     "test/borrower/pile.t.sol": {
-      "lastModificationDate": 1666897073317,
-      "contentHash": "343c558b1e0553cb072d0b4e69003e67",
+      "lastModificationDate": 1666899600341,
+      "contentHash": "1666929de20729d08e0339e9c3d61a54",
       "sourceName": "test/borrower/pile.t.sol",
       "solcConfig": {
         "settings": {
@@ -3326,7 +3655,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-math/src/interest.sol",
         "lib/tinlake-math/src/math.sol",
@@ -3343,8 +3678,8 @@
       }
     },
     "test/borrower/shelf.t.sol": {
-      "lastModificationDate": 1666897072271,
-      "contentHash": "1a3262221b885e0f2c78ffbcb48b8dad",
+      "lastModificationDate": 1666899600341,
+      "contentHash": "aef3c930f0ba2169d22451c762819baa",
       "sourceName": "test/borrower/shelf.t.sol",
       "solcConfig": {
         "settings": {
@@ -3373,7 +3708,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-math/src/math.sol",
         "lib/tinlake-title/src/openzeppelin-solidity/introspection/ERC165.sol",
@@ -3408,8 +3749,8 @@
       }
     },
     "test/lender/adapters/mkr/clerk.t.sol": {
-      "lastModificationDate": 1666897071346,
-      "contentHash": "542a3d51ae9d8df7350e4032b22c3ae0",
+      "lastModificationDate": 1666899600341,
+      "contentHash": "68db7482aef18fae8486cb1bdf594569",
       "sourceName": "test/lender/adapters/mkr/clerk.t.sol",
       "solcConfig": {
         "settings": {
@@ -3438,7 +3779,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -3475,8 +3822,8 @@
       }
     },
     "test/lender/adapters/mkr/mock/gemJoin.sol": {
-      "lastModificationDate": 1666895125056,
-      "contentHash": "8c508424f919a9cbbdcbff19fd6ffcb8",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "4dae030d93c911f10fad399dec033d1a",
       "sourceName": "test/lender/adapters/mkr/mock/gemJoin.sol",
       "solcConfig": {
         "settings": {
@@ -3505,7 +3852,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
       ],
@@ -3547,7 +3900,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
       ],
@@ -3559,8 +3918,8 @@
       }
     },
     "test/lender/adapters/mkr/mock/mgr.sol": {
-      "lastModificationDate": 1666895125056,
-      "contentHash": "3c5ba0bc617ad80d09f20491691aa085",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "3301482eda7f33abfbd896e1eea10050",
       "sourceName": "test/lender/adapters/mkr/mock/mgr.sol",
       "solcConfig": {
         "settings": {
@@ -3589,7 +3948,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "test/lender/adapters/mkr/mock/gemJoin.sol",
         "test/lender/adapters/mkr/mock/urn.sol",
@@ -3604,8 +3969,8 @@
       }
     },
     "test/lender/adapters/mkr/mock/spotter.sol": {
-      "lastModificationDate": 1666895125057,
-      "contentHash": "06623a2e67a9c0648fda5c2f851ec112",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "0426073d50d095a8f1572fb5341d80ef",
       "sourceName": "test/lender/adapters/mkr/mock/spotter.sol",
       "solcConfig": {
         "settings": {
@@ -3634,7 +3999,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
       ],
@@ -3646,8 +4017,8 @@
       }
     },
     "test/lender/adapters/mkr/mock/urn.sol": {
-      "lastModificationDate": 1666895125057,
-      "contentHash": "e0b524a7b77488aaa62b3aac0d5a8918",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "0fbdeabeef93aff2cbbbb168e1c53904",
       "sourceName": "test/lender/adapters/mkr/mock/urn.sol",
       "solcConfig": {
         "settings": {
@@ -3676,7 +4047,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
       ],
@@ -3688,8 +4065,8 @@
       }
     },
     "test/lender/adapters/mkr/mock/vat.sol": {
-      "lastModificationDate": 1666895125058,
-      "contentHash": "20748a4e8c78953eb2b095ab06ff6941",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "df18858fff5632c3b9387bbdc88c24a5",
       "sourceName": "test/lender/adapters/mkr/mock/vat.sol",
       "solcConfig": {
         "settings": {
@@ -3718,7 +4095,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
       ],
@@ -3730,8 +4113,8 @@
       }
     },
     "test/lender/assessor.t.sol": {
-      "lastModificationDate": 1666897103508,
-      "contentHash": "bb29181e4d8680b7126de9b516b70cf6",
+      "lastModificationDate": 1666899600341,
+      "contentHash": "348a560d5c99c6f9d23fc112a91c2c24",
       "sourceName": "test/lender/assessor.t.sol",
       "solcConfig": {
         "settings": {
@@ -3760,7 +4143,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -3786,8 +4175,8 @@
       }
     },
     "test/lender/coordinator-base.t.sol": {
-      "lastModificationDate": 1666897141636,
-      "contentHash": "06723f047b346c5211a74348bf6fe0fb",
+      "lastModificationDate": 1666899600341,
+      "contentHash": "49b84f4b32a1ae7fbf5f4d8d531f669c",
       "sourceName": "test/lender/coordinator-base.t.sol",
       "solcConfig": {
         "settings": {
@@ -3816,7 +4205,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-math/src/math.sol",
         "src/fixed_point.sol",
@@ -3879,7 +4274,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-math/src/math.sol",
         "src/fixed_point.sol",
@@ -3931,7 +4332,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-math/src/math.sol",
         "src/fixed_point.sol",
@@ -3983,7 +4390,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-math/src/math.sol",
         "src/fixed_point.sol",
@@ -4035,7 +4448,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-math/src/math.sol",
         "src/fixed_point.sol",
@@ -4087,7 +4506,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-math/src/math.sol",
         "src/fixed_point.sol",
@@ -4109,8 +4534,8 @@
       }
     },
     "test/lender/definitions.t.sol": {
-      "lastModificationDate": 1666897161268,
-      "contentHash": "d8a0c44c12328c3bc9663da1d6667720",
+      "lastModificationDate": 1666899600341,
+      "contentHash": "1eb4c9301aaa51df8a27ae6b9dc0742b",
       "sourceName": "test/lender/definitions.t.sol",
       "solcConfig": {
         "settings": {
@@ -4139,7 +4564,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "src/fixed_point.sol",
         "src/lender/definitions.sol"
@@ -4152,8 +4583,8 @@
       }
     },
     "test/lender/memberAdmin.t.sol": {
-      "lastModificationDate": 1666898113023,
-      "contentHash": "2dd5c96cb3d1cb544f4aad55250df62e",
+      "lastModificationDate": 1666899600341,
+      "contentHash": "7702244a2118a5306320284853b45a61",
       "sourceName": "test/lender/memberAdmin.t.sol",
       "solcConfig": {
         "settings": {
@@ -4182,7 +4613,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-math/src/math.sol",
         "src/lender/admin/member.sol",
@@ -4197,8 +4634,8 @@
       }
     },
     "test/lender/memberlist.t.sol": {
-      "lastModificationDate": 1666897341236,
-      "contentHash": "82d87c11cccf58f8067af3e81b7941da",
+      "lastModificationDate": 1666899600341,
+      "contentHash": "78d4166e5f55bcfc38b2798dfd25369e",
       "sourceName": "test/lender/memberlist.t.sol",
       "solcConfig": {
         "settings": {
@@ -4227,7 +4664,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-math/src/math.sol",
         "src/lender/token/memberlist.sol"
@@ -4270,7 +4713,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
       ],
@@ -4282,8 +4731,8 @@
       }
     },
     "test/lender/mock/clerk.sol": {
-      "lastModificationDate": 1666895125068,
-      "contentHash": "1462ac9acf4f808ccbd7bef9e71b05e3",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "7658f7d8c9787cf1f8d5bbc7e714a49f",
       "sourceName": "test/lender/mock/clerk.sol",
       "solcConfig": {
         "settings": {
@@ -4312,7 +4761,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
@@ -4355,7 +4810,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
       ],
@@ -4397,7 +4858,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
@@ -4410,8 +4877,8 @@
       }
     },
     "test/lender/mock/navFeed.sol": {
-      "lastModificationDate": 1666895125068,
-      "contentHash": "57ef4d53bc98918ae2a9ca975386293e",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "48dc706dff920939ce2134dcd36af1c8",
       "sourceName": "test/lender/mock/navFeed.sol",
       "solcConfig": {
         "settings": {
@@ -4440,7 +4907,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
       ],
@@ -4452,8 +4925,8 @@
       }
     },
     "test/lender/mock/pool.sol": {
-      "lastModificationDate": 1666895125069,
-      "contentHash": "7a5894b39d637f36f79a84cf7e2f820b",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "df0cd2494681f080a9bd35a4fb6c23af",
       "sourceName": "test/lender/mock/pool.sol",
       "solcConfig": {
         "settings": {
@@ -4482,7 +4955,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
       ],
@@ -4494,8 +4973,8 @@
       }
     },
     "test/lender/mock/reserve.sol": {
-      "lastModificationDate": 1666895125069,
-      "contentHash": "e6d3bff0aa692b7e189b93712f937ea1",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "088a3e30d88d8b083b1ed1b6c7008211",
       "sourceName": "test/lender/mock/reserve.sol",
       "solcConfig": {
         "settings": {
@@ -4524,7 +5003,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
@@ -4570,7 +5055,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-math/src/math.sol",
         "test/mock/mock.sol"
@@ -4583,8 +5074,8 @@
       }
     },
     "test/lender/operator.t.sol": {
-      "lastModificationDate": 1666897365702,
-      "contentHash": "0b11877e6eb193a9ac4687fb94d58035",
+      "lastModificationDate": 1666899600341,
+      "contentHash": "bf56dd6d53b162fffd86fa16d4c42980",
       "sourceName": "test/lender/operator.t.sol",
       "solcConfig": {
         "settings": {
@@ -4613,7 +5104,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/math.sol",
@@ -4631,8 +5128,8 @@
       }
     },
     "test/lender/poolAdmin.t.sol": {
-      "lastModificationDate": 1666897390360,
-      "contentHash": "27ddc323168bcfcee360a1c76ba43620",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "970ff3a7ce2942e3f4ba18a78b2066e8",
       "sourceName": "test/lender/poolAdmin.t.sol",
       "solcConfig": {
         "settings": {
@@ -4661,7 +5158,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-math/src/interest.sol",
         "lib/tinlake-math/src/math.sol",
@@ -4681,8 +5184,8 @@
       }
     },
     "test/lender/reserve.t.sol": {
-      "lastModificationDate": 1666897461761,
-      "contentHash": "351aaebb670d40c07949917ecfaad527",
+      "lastModificationDate": 1666899600341,
+      "contentHash": "1d5eff64c32c8c626d47c31a74929c97",
       "sourceName": "test/lender/reserve.t.sol",
       "solcConfig": {
         "settings": {
@@ -4711,7 +5214,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/math.sol",
@@ -4736,8 +5245,8 @@
       }
     },
     "test/lender/restricted-token.t.sol": {
-      "lastModificationDate": 1666897486285,
-      "contentHash": "fa672edc6b2e56b131537e39320ce046",
+      "lastModificationDate": 1666899600341,
+      "contentHash": "3d6ac00c9411415cc7d2b777faef96c1",
       "sourceName": "test/lender/restricted-token.t.sol",
       "solcConfig": {
         "settings": {
@@ -4766,7 +5275,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/math.sol",
@@ -4787,8 +5302,8 @@
       }
     },
     "test/lender/tranche.t.sol": {
-      "lastModificationDate": 1666897510562,
-      "contentHash": "47a586bb78d379fb8b1c3e6c233e2713",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "4aa7ca6271133c50a511897a210db408",
       "sourceName": "test/lender/tranche.t.sol",
       "solcConfig": {
         "settings": {
@@ -4817,7 +5332,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/math.sol",
@@ -4841,8 +5362,8 @@
       }
     },
     "test/mock/mock.sol": {
-      "lastModificationDate": 1666895125073,
-      "contentHash": "5c28dfb37a944c858f2a42c2fe19e5d5",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "e0309d42bd41db1ec41325030aca5138",
       "sourceName": "test/mock/mock.sol",
       "solcConfig": {
         "settings": {
@@ -4871,7 +5392,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol"
       ],
       "versionRequirement": ">=0.6.12",
@@ -4885,8 +5412,8 @@
       }
     },
     "test/simple/mkr.sol": {
-      "lastModificationDate": 1666895125073,
-      "contentHash": "5a6272f59fda80e7ebe44733ffa7cb24",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "fe655067a932f83fe71671ec354411b1",
       "sourceName": "test/simple/mkr.sol",
       "solcConfig": {
         "settings": {
@@ -4915,7 +5442,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-math/src/math.sol"
       ],
@@ -4980,8 +5513,8 @@
       }
     },
     "test/system/assertions.sol": {
-      "lastModificationDate": 1666895125074,
-      "contentHash": "4ae16fca19b991f36bddeaf8c351ccc2",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "86153d39c8ac5a23d3b962ce09b0e271",
       "sourceName": "test/system/assertions.sol",
       "solcConfig": {
         "settings": {
@@ -5010,7 +5543,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-math/src/math.sol"
       ],
       "versionRequirement": ">=0.6.12",
@@ -5021,8 +5560,8 @@
       }
     },
     "test/system/base_system.sol": {
-      "lastModificationDate": 1666897552395,
-      "contentHash": "690809ed691961517b70dbcbcd146e91",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "298439f4f09b207ef0e9e05d2476b11a",
       "sourceName": "test/system/base_system.sol",
       "solcConfig": {
         "settings": {
@@ -5051,7 +5590,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -5167,7 +5712,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -5283,7 +5834,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -5399,7 +5956,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -5515,7 +6078,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -5631,7 +6200,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -5747,7 +6322,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -5863,7 +6444,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -5979,7 +6566,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -6065,8 +6658,8 @@
       }
     },
     "test/system/config.sol": {
-      "lastModificationDate": 1666895125077,
-      "contentHash": "d5911a6751e142cc03d7c10cb426c314",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "1c62cdccd7134ce7d7a539ec6d0f1573",
       "sourceName": "test/system/config.sol",
       "solcConfig": {
         "settings": {
@@ -6095,7 +6688,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -6279,7 +6878,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -6395,7 +7000,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -6512,7 +7123,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -6632,7 +7249,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -6720,8 +7343,8 @@
       }
     },
     "test/system/root.sol": {
-      "lastModificationDate": 1666897687542,
-      "contentHash": "82b88d7b18c5e0faed36e0b011643ac7",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "4e8085494f2f21703aa56b54cca859c8",
       "sourceName": "test/system/root.sol",
       "solcConfig": {
         "settings": {
@@ -6750,7 +7373,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "src/borrower/deployer.sol",
         "src/borrower/fabs/interfaces.sol",
@@ -6797,7 +7426,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -6913,7 +7548,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -7002,8 +7643,8 @@
       }
     },
     "test/system/test_suite.sol": {
-      "lastModificationDate": 1666895125080,
-      "contentHash": "c0e28a61aa3b43fc7f7d9396cbc52659",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "82013ac930a635e519f344341da72e73",
       "sourceName": "test/system/test_suite.sol",
       "solcConfig": {
         "settings": {
@@ -7032,7 +7673,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "lib/tinlake-auth/src/auth.sol",
         "lib/tinlake-erc20/src/erc20.sol",
         "lib/tinlake-math/src/interest.sol",
@@ -7228,8 +7875,8 @@
       }
     },
     "test/system/users/investor.sol": {
-      "lastModificationDate": 1666895125081,
-      "contentHash": "c539a9047ecf6a9f29a86c8e00042ee4",
+      "lastModificationDate": 1666899600342,
+      "contentHash": "a3c804e564d97050682e7c4194d45326",
       "sourceName": "test/system/users/investor.sol",
       "solcConfig": {
         "settings": {
@@ -7258,7 +7905,13 @@
         }
       },
       "imports": [
-        "lib/ds-test/src/test.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Script.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
         "test/system/interfaces.sol"
       ],
       "versionRequirement": ">=0.6.12",

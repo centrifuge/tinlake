@@ -2,7 +2,7 @@
 pragma solidity >=0.7.6;
 
 import "../interfaces.sol";
-import "ds-test/test.sol";
+import "forge-std/Test.sol";
 
 interface OperatorLike {
     function supplyOrder(uint currencyAmount) external;
