@@ -1,4 +1,4 @@
-name: push-to-main
+name: push-to-develop
 
 on:
   push:
@@ -36,4 +36,4 @@ jobs:
           forge test -vvv
         id: test
         env:
-          FOUNDRY_PROFILE: push_to_main
+          FOUNDRY_PROFILE: push_to_develop
