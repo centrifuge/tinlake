@@ -13,3 +13,6 @@
 [submodule "lib/tinlake-erc20"]
 	path = lib/tinlake-erc20
 	url = https://github.com/centrifuge/tinlake-erc20
+[submodule "lib/forge-std"]
+	path = lib/forge-std
+	url = https://github.com/foundry-rs/forge-std

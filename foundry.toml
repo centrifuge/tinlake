@@ -1,0 +1,13 @@
+[profile.default]
+src = 'src'
+out = 'out'
+libs = ['lib']
+remappings = [
+    'ds-test/=lib/ds-test/src/',
+    'tinlake-auth/=lib/tinlake-auth/src/',
+    'tinlake-erc20/=lib/tinlake-erc20/src/',
+    'tinlake-math/=lib/tinlake-math/src/',
+    'tinlake-title/=lib/tinlake-title/src/',
+]
+
+# See more config options https://github.com/foundry-rs/foundry/tree/master/config
