@@ -1,4 +1,4 @@
-RESULT=$(dapp test)
+RESULT=$(forge test)
 echo "$RESULT\n\n"
 PASS=$(echo $RESULT | grep -o PASS | wc -l)
 FAIL=$(echo $RESULT | grep -o FAIL | wc -l)
