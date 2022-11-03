@@ -2,7 +2,6 @@
 pragma solidity >=0.7.6;
 
 import "tinlake-auth/auth.sol";
-import { Discounting } from "./discounting.sol";
 
 interface ShelfLike {
     function shelf(uint loan) external view returns (address registry, uint tokenId);
@@ -21,15 +20,8 @@ interface PileLike {
     function rateDebt(uint rate) external view returns (uint);
 }
 
-// The NAV Feed contract calculates the Net Asset Value of a Tinlake pool.
-// NAV is computed as the sum of all discounted future values (fv) of ongoing loans (debt > 0) in the pool.
-// The applied discountRate is dependant on the maturity data of the underlying collateral.
-// The discount decreases with the maturity date approaching.
-// To optimize the NAV calculation, the NAV is calculated as the change in discounted future values since the calculation.
-// When loans are overdue, they are locked at their fv on the maturity date.
-// They can then be written off, using the public writeoff method based on
-// the default writeoff schedule, or using the override writeoff method.
-contract NAVFeed is Auth, Discounting {
+
+contract NAVFeed is Auth {
     PileLike    public pile;
     ShelfLike   public shelf;
 
@@ -144,8 +136,6 @@ contract NAVFeed is Auth, Discounting {
        pile.changeRate(loan, WRITEOFF_RATE_GROUP);
     }
 
-
-
     function isLoanWrittenOff(uint loan) public view returns(bool) {
         return pile.loanRates(loan) == WRITEOFF_RATE_GROUP;
     }
@@ -189,46 +179,12 @@ contract NAVFeed is Auth, Discounting {
         require(thresholdRatio(risk_) != 0, "risk group not defined in contract");
         details[nftID_].risk = toUint128(risk_);
 
-        // update nav -> latestNAVUpdate = now
-        if(nnow > lastNAVUpdate) {
-            calcUpdateNAV();
-        }
-
         // switch of collateral risk group results in new: ceiling, threshold and interest rate for existing loan
         // change to new rate interestRate immediately in pile if loan debt exists
         uint loan = shelf.nftlookup(nftID_);
         if (pile.pie(loan) != 0) {
             pile.changeRate(loan, risk_);
         }
-
-        // no currencyAmount borrowed yet
-        if (futureValue(nftID_) == 0) {
-            return;
-        }
-
-
-        uint maturityDate_ = maturityDate(nftID_);
-
-        // Changing the risk group of an nft, might lead to a new interest rate for the dependant loan.
-        // New interest rate leads to a future value.
-        // recalculation required
-        uint fvDecrease = futureValue(nftID_);
-        uint navDecrease = calcDiscount(discountRate, fvDecrease, nnow, maturityDate_);
-        buckets[maturityDate_] = safeSub(buckets[maturityDate_], fvDecrease);
-        latestDiscount = safeSub(latestDiscount, navDecrease);
-        latestNAV = safeSub(latestNAV, navDecrease);
-
-        // update latest NAV
-        // update latest Discount
-        (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
-        details[nftID_].futureValue = toUint128(calcFutureValue(loanInterestRate, pile.debt(loan),
-            maturityDate(nftID_), recoveryRatePD(risk(nftID_))));
-        
-        uint fvIncrease =  futureValue(nftID_);
-        uint navIncrease = calcDiscount(discountRate, fvIncrease, nnow, maturityDate_);
-        buckets[maturityDate_] = safeAdd(buckets[maturityDate_], fvIncrease);
-        latestDiscount = safeAdd(latestDiscount, navIncrease);
-        latestNAV = safeAdd(latestNAV, navIncrease);
         emit Update(nftID_, value, risk_);
     }
 
