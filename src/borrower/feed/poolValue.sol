@@ -144,7 +144,7 @@ contract NAVFeed is Auth {
     function currentNAV() public view returns(uint) {
         uint totalDebt;
         // calculate total debt
-        for (uint loanId = 1; loanId < shelf.loanCount(); loanId++) {
+        for (uint loanId = 1; loanId <= shelf.loanCount(); loanId++) {
             pile.accrue(loanId);
             totalDebt = safeAdd(totalDebt, pile.debt(loanId));
         }
