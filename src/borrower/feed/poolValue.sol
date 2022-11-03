@@ -104,7 +104,7 @@ contract NAVFeed is Auth {
     }
 
     function repay(uint loan, uint amount) external virtual auth {
-        //  // decrease borrowed amount to support creditline
+        //
         // if(amount > loanDetails[loan].borrowed) {
         //     loanDetails[loan].borrowed = 0;
         // }
