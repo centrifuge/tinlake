@@ -73,10 +73,7 @@ contract NAVFeed is Auth {
     function ceiling(uint loan) public virtual view returns (uint) {
         bytes32 nftID_ = nftID(loan);
         uint initialCeiling = rmul(nftValues(nftID_), ceilingRatio(risk(nftID_)));
-        if (borrowed(loan) > initialCeiling) {
-            return 0;
-        }
-        return safeSub(initialCeiling, borrowed(loan));
+        return safeSub(initialCeiling, pile.debt(loan));
     }
 
     // --- Administration ---
@@ -103,19 +100,17 @@ contract NAVFeed is Auth {
     // --- Actions ---
     function borrow(uint loan, uint amount) external virtual auth returns(uint navIncrease) {
         require(ceiling(loan) >= amount, "borrow-amount-too-high");
-        // increase borrowed amount for future ceiling computations
-        loanDetails[loan].borrowed = toUint128(safeAdd(borrowed(loan), amount));
         return amount;
     }
 
     function repay(uint loan, uint amount) external virtual auth {
-         // decrease borrowed amount to support creditline
-        if(amount > loanDetails[loan].borrowed) {
-            loanDetails[loan].borrowed = 0;
-        }
-        else {
-            loanDetails[loan].borrowed = safeSub(loanDetails[loan].borrowed, amount);
-        }
+        //  // decrease borrowed amount to support creditline
+        // if(amount > loanDetails[loan].borrowed) {
+        //     loanDetails[loan].borrowed = 0;
+        // }
+        // else {
+        //     loanDetails[loan].borrowed = safeSub(loanDetails[loan].borrowed, amount);
+        // } 
     }
 
     function borrowEvent(uint loan, uint) public virtual auth {
