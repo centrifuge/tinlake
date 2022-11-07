@@ -137,7 +137,7 @@ contract MKRLoanFuzzTest is MKRTestBasis {
             return;
         }
 
-        SpotterMock spotter = SpotterMock(clerk.spotter);
+        SpotterLike spotter = SpotterLike(clerk.spotter);
         spotter.setReturn("mat", 10**27);
         clerk.file("buffer", 0);
 
