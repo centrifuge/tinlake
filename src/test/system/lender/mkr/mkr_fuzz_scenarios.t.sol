@@ -127,4 +127,72 @@ contract MKRLoanFuzzTest is MKRTestBasis {
         assertTrue(assessor.calcSeniorTokenPrice() >= ONE);
 //        assertTrue(assessor.calcJuniorTokenPrice() > assessor.calcSeniorTokenPrice());
     }
+
+    function testBorrowRepayFuzzWithoutOvercollateralization(uint totalAvailable, uint borrowAmount) public {
+        if (borrowAmount > totalAvailable) {
+            return;
+        }
+
+        if(!checkRange(borrowAmount, 1 ether, MAX_CURRENCY_NUMBER) || !checkRange(totalAvailable, 1 ether, MAX_CURRENCY_NUMBER)) {
+            return;
+        }
+
+        SpotterMock spotter = SpotterMock(clerk.spotter);
+        spotter.setReturn("mat", config.mkrMAT);
+        clerk.file("buffer", 0);
+
+        uint fee = uint(1000000229200000000000000000); // 2% per day
+        setStabilityFee(fee);
+        uint juniorAmount = rmul(totalAvailable, 0.3 * 10**27);
+        uint totalSenior = rmul(totalAvailable, 0.7 * 10**27);
+
+        // DROP split randomly between senior investors and MKR
+        uint split = totalSenior % 100;
+        uint seniorAmount = rmul(totalSenior, split * 10**25);
+        uint makerAmount = totalSenior-seniorAmount;
+
+        emit log_named_uint("juniorAmount", juniorAmount / 1 ether);
+        emit log_named_uint("makerCreditLine", makerAmount / 1 ether);
+        emit log_named_uint("seniorAmount", seniorAmount / 1 ether);
+        emit log_named_uint("borrowAmount", borrowAmount / 1 ether);
+        emit log_named_uint("seniorAmount percentage", split);
+
+        invest(juniorAmount, seniorAmount, makerAmount);
+        borrow(borrowAmount);
+
+        uint drawTimestamp = block.timestamp;
+
+        // different repayment time
+        uint passTime = totalAvailable % DEFAULT_MATURITY_DATE;
+        emit log_named_uint("pass in seconds", passTime);
+        warp(passTime);
+
+        uint expectedDebt = chargeInterest(borrowAmount, fee, drawTimestamp);
+
+        // repay loan and entire maker debt
+        uint repayAmount = expectedDebt;
+
+        uint preMakerDebt = clerk.debt();
+        uint preReserve = reserve.totalBalance();
+        // check prices
+        emit log_named_uint("makerDebt", preMakerDebt);
+
+        repayDefaultLoan(repayAmount);
+
+        // check post state
+        if(repayAmount > preMakerDebt) {
+            assertEqTol(clerk.debt(), 0, "testDrawWipeDrawAgain#2");
+            assertEq(reserve.totalBalance(), preReserve+repayAmount-preMakerDebt, "testDrawWipeDrawAgain#3");
+        } else {
+            assertEq(clerk.debt(), preReserve+preMakerDebt-repayAmount,"testDrawWipeDrawAgain#3");
+        }
+
+        // check prices
+        emit log_named_uint("juniorTokenPrice", assessor.calcJuniorTokenPrice());
+        emit log_named_uint("seniorTokenPrice", assessor.calcSeniorTokenPrice());
+
+        assertTrue(assessor.calcJuniorTokenPrice() > ONE);
+        assertTrue(assessor.calcSeniorTokenPrice() >= ONE);
+//        assertTrue(assessor.calcJuniorTokenPrice() > assessor.calcSeniorTokenPrice());
+    }
 }
