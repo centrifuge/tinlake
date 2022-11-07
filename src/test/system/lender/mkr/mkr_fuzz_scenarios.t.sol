@@ -138,7 +138,7 @@ contract MKRLoanFuzzTest is MKRTestBasis {
         }
 
         SpotterMock spotter = SpotterMock(clerk.spotter);
-        spotter.setReturn("mat", config.mkrMAT);
+        spotter.setReturn("mat", 10**27);
         clerk.file("buffer", 0);
 
         uint fee = uint(1000000229200000000000000000); // 2% per day
