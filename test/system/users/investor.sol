@@ -10,7 +10,7 @@ interface OperatorLike {
     function disburse() external returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
 }
 
-contract Investor is DSTest {
+contract Investor is Test {
     ERC20Like currency;
     ERC20Like token;
 

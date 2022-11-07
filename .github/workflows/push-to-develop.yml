@@ -3,7 +3,7 @@ name: push-to-develop
 on:
   push:
     branches:
-      - master
+      - develop
 
 env:
   FOUNDRY_PROFILE: ci
@@ -33,7 +33,7 @@ jobs:
 
       - name: Run Forge tests
         run: |
-          forge test -vvv
+          forge test
         id: test
         env:
           FOUNDRY_PROFILE: push_to_develop

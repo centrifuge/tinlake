@@ -10,7 +10,7 @@ import "./mock/navFeed.sol";
 import "./mock/memberlist.sol";
 import "./mock/clerk.sol";
 
-contract PoolGovernancePoolAdminTest is DSTest {
+contract PoolGovernancePoolAdminTest is Test {
 
     uint constant ONE = 10e27;
 

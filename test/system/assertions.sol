@@ -3,7 +3,7 @@ pragma solidity >=0.7.6;
 import "forge-std/Test.sol";
 import "tinlake-math/math.sol";
 
-contract Assertions is DSTest, Math {
+contract Assertions is Test, Math {
     uint TWO_DECIMAL_PRECISION = 10**16;
     uint FIXED27_TWO_DECIMAL_PRECISION = 10**25;
     uint FIXED27_TEN_DECIMAL_PRECISION = 10**17;

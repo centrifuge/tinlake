@@ -18,7 +18,7 @@ contract User {
     }
 }
 
-contract TrancheTest is DSTest, Math, FixedPoint {
+contract TrancheTest is Test, Math, FixedPoint {
     Tranche tranche;
     SimpleToken token;
     SimpleToken currency;

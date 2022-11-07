@@ -60,7 +60,7 @@ abstract contract CoordinatorLike is BaseTypes {
 
 contract AssessorMockWithDef is AssessorMock, Definitions { }
 
-contract CoordinatorTest is DSTest, Math, BaseTypes {
+contract CoordinatorTest is Test, Math, BaseTypes {
     Hevm hevm;
     EpochCoordinator coordinator;
 

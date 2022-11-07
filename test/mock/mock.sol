@@ -12,7 +12,7 @@ interface SimpleTokenLike {
     function approve(address usr, uint amount) external;
 }
 
-contract Mock is DSTest, Math {
+contract Mock is Test, Math {
     // counting calls
     mapping (bytes32 => uint) public calls;
 

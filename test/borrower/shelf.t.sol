@@ -14,7 +14,7 @@ import "./mock/assessor.sol";
 import "../lender/mock/reserve.sol";
 
 
-contract ShelfTest is DSTest {
+contract ShelfTest is Test {
     Shelf shelf;
     NFTMock nft;
     TitleMock title;

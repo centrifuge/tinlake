@@ -15,7 +15,7 @@ interface Hevm {
     function warp(uint256) external;
 }
 
-contract AssessorTest is DSTest, Math {
+contract AssessorTest is Test, Math {
     Hevm hevm;
     Assessor assessor;
     TrancheMock seniorTranche;

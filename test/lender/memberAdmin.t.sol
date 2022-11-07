@@ -7,7 +7,7 @@ import "src/lender/admin/member.sol";
 import "./mock/memberlist.sol";
 
 
-contract MemberAdminTest is DSTest {
+contract MemberAdminTest is Test {
     MemberAdmin memberAdmin;
     MemberlistMock memberlist;
     address[] users;

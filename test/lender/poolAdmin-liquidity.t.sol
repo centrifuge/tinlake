@@ -10,7 +10,7 @@ import "./mock/navFeed.sol";
 import "./mock/memberlist.sol";
 import "./mock/clerk.sol";
 
-contract LiquidityManagementPoolAdminTest is DSTest {
+contract LiquidityManagementPoolAdminTest is Test {
 
     Assessor assessor;
     ClerkMock lending;

@@ -34,7 +34,7 @@ contract LendingAdapterMock is ClerkMock {
     }
 }
 
-contract ReserveTest is DSTest, Math {
+contract ReserveTest is Test, Math {
     SimpleToken currency;
     Reserve reserve;
     AssessorMock assessor;

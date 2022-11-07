@@ -8,7 +8,7 @@ import "../mock/shelf.sol";
 import "../mock/pile.sol";
 
 
-contract NFTFeedTest is DSTest, Math {
+contract NFTFeedTest is Test, Math {
     TestNAVFeed public feed;
     ShelfMock shelf;
     PileMock pile;

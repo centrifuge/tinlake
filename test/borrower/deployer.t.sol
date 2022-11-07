@@ -11,7 +11,7 @@ import { TestNAVFeedFab } from "src/borrower/fabs/navfeed.tests.sol";
 import "src/borrower/deployer.sol";
 import { SimpleToken } from "../../test/simple/token.sol";
 
-contract DeployerTest is DSTest {
+contract DeployerTest is Test {
     Title nft;
     SimpleToken dai;
     TitleFab titlefab;

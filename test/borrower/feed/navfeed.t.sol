@@ -11,7 +11,7 @@ interface Hevm {
     function warp(uint256) external;
 }
 
-contract NAVTest is DSTest, Math {
+contract NAVTest is Test, Math {
     TestNAVFeed public feed;
     ShelfMock shelf;
     PileMock pile;
