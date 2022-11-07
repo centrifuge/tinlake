@@ -46,7 +46,7 @@ contract GemJoinMock {
     }
 }
 
-contract SimpleMkr is Interest, DSTest, Auth {
+contract SimpleMkr is Interest, Test, Auth {
     ERC20Like public currency;
     ERC20Like public drop;
     uint public ratePerSecond;

@@ -13,7 +13,7 @@ interface Hevm {
     function warp(uint256) external;
 }
 
-contract OperatorTest is Math, DSTest {
+contract OperatorTest is Math, Test {
 
     uint memberlistValidity = safeAdd(block.timestamp, 8 days);
     TrancheMock tranche;

@@ -9,7 +9,7 @@ interface Hevm {
     function warp(uint256) external;
 }
 
-contract PileTest is Interest, DSTest {
+contract PileTest is Interest, Test {
     Pile pile;
     Hevm hevm;
 

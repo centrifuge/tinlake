@@ -1,17 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import "ds-test/test.sol";
-import "../writeOffWrapper.sol";
-import { Discounting } from "../../feed/discounting.sol";
-// import "../../pile.sol";
-// import "../../feed/navfeed.sol";
+import "forge-std/Test.sol";
+import "src/borrower/wrappers/writeOffWrapper.sol";
+import { Discounting } from "src/borrower/feed/discounting.sol";
+import "../mock/pile.sol";
+import "../mock/feed.sol";
+import "../mock/shelf.sol";
 
-import "../../test/mock/pile.sol";
-import "../../test/mock/feed.sol";
-import "../../test/mock/shelf.sol";
-
-contract WriteOffTest is DSTest, Discounting {
+contract WriteOffTest is Test, Discounting {
     WriteOffWrapper writeOffWrapper;
     PileMock pile;
     NAVFeedMock navFeed;
@@ -39,6 +36,7 @@ contract WriteOffTest is DSTest, Discounting {
           writeOffWrapper.file("writeOffRates", address(pile), 1000);
 
           // set mock data
+          vm.warp(1641070800);
           navFeed.setReturn("maturityDate", block.timestamp - 60 * 60 * 24);
           navFeed.setBytes32Return("nftID", "1");
           shelf.setReturn("shelf", address(1));

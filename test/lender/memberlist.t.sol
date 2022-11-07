@@ -9,7 +9,7 @@ interface Hevm {
     function warp(uint256) external;
 }
 
-contract MemberlistTest is Math, DSTest {
+contract MemberlistTest is Math, Test {
     uint memberlistValidity;
     Memberlist memberlist;
     Memberlist testMemberlist;

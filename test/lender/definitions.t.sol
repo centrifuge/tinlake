@@ -4,7 +4,7 @@ pragma solidity >=0.7.6;
 import "forge-std/Test.sol";
 import "src/lender/definitions.sol";
 
-contract DefinitionTest is Math, DSTest {
+contract DefinitionTest is Math, Test {
     Definitions def;
 
     function setUp() public {

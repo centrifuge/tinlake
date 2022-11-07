@@ -13,7 +13,7 @@ interface Hevm {
     function warp(uint256) external;
 }
 
-contract RestrictedTokenTest is Math, DSTest {
+contract RestrictedTokenTest is Math, Test {
 
     Hevm hevm;
 
