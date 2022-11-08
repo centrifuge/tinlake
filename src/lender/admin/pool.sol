@@ -9,17 +9,24 @@ interface LendingAdapterLike {
     function raise(uint256 amount) external;
     function sink(uint256 amount) external;
     function heal() external;
-    function file(bytes32 what, uint value) external;
+    function file(bytes32 what, uint256 value) external;
 }
 
 interface FeedLike {
-    function overrideWriteOff(uint loan, uint writeOffGroupIndex_) external;
-    function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_) external;
-    function file(bytes32 name, uint rate_, uint writeOffPercentage_, uint overdueDays_) external;
-    function file(bytes32 name, uint value) external;
-    function file(bytes32 name, bytes32 nftID_, uint maturityDate_) external;
-    function update(bytes32 nftID_,  uint value) external;
-    function update(bytes32 nftID_, uint value, uint risk_) external;
+    function overrideWriteOff(uint256 loan, uint256 writeOffGroupIndex_) external;
+    function file(
+        bytes32 name,
+        uint256 risk_,
+        uint256 thresholdRatio_,
+        uint256 ceilingRatio_,
+        uint256 rate_,
+        uint256 recoveryRatePD_
+    ) external;
+    function file(bytes32 name, uint256 rate_, uint256 writeOffPercentage_, uint256 overdueDays_) external;
+    function file(bytes32 name, uint256 value) external;
+    function file(bytes32 name, bytes32 nftID_, uint256 maturityDate_) external;
+    function update(bytes32 nftID_, uint256 value) external;
+    function update(bytes32 nftID_, uint256 value, uint256 risk_) external;
 }
 
 interface MemberlistLike {
@@ -28,32 +35,42 @@ interface MemberlistLike {
 }
 
 interface CoordinatorLike {
-    function file(bytes32 name, uint value) external;
+    function file(bytes32 name, uint256 value) external;
     function file(bytes32 name, bool value) external;
-    function poolClosing() external view returns(bool);
+    function poolClosing() external view returns (bool);
 }
 
 // Wrapper contract for various pool management tasks.
 contract PoolAdmin {
-  
-    AssessorLike        public assessor;
-    LendingAdapterLike  public lending;
-    FeedLike            public navFeed;
-    MemberlistLike      public seniorMemberlist;
-    MemberlistLike      public juniorMemberlist;
-    CoordinatorLike     public coordinator;
+    AssessorLike public assessor;
+    LendingAdapterLike public lending;
+    FeedLike public navFeed;
+    MemberlistLike public seniorMemberlist;
+    MemberlistLike public juniorMemberlist;
+    CoordinatorLike public coordinator;
 
-    bool                public live = true;
+    bool public live = true;
 
-    mapping (address => uint256) public admin_level;
+    mapping(address => uint256) public admin_level;
 
-    uint public constant LEVEL_1 = 1;
-    uint public constant LEVEL_2 = 2;
-    uint public constant LEVEL_3 = 3;
+    uint256 public constant LEVEL_1 = 1;
+    uint256 public constant LEVEL_2 = 2;
+    uint256 public constant LEVEL_3 = 3;
 
-    modifier level1     { require(admin_level[msg.sender] >= LEVEL_1 && live); _; }
-    modifier level2     { require(admin_level[msg.sender] >= LEVEL_2 && live); _; }
-    modifier level3     { require(admin_level[msg.sender] == LEVEL_3 && live); _; }
+    modifier level1() {
+        require(admin_level[msg.sender] >= LEVEL_1 && live);
+        _;
+    }
+
+    modifier level2() {
+        require(admin_level[msg.sender] >= LEVEL_2 && live);
+        _;
+    }
+
+    modifier level3() {
+        require(admin_level[msg.sender] == LEVEL_3 && live);
+        _;
+    }
 
     constructor() {
         admin_level[msg.sender] = LEVEL_3;
@@ -122,115 +139,147 @@ contract PoolAdmin {
         juniorMemberlist.updateMembers(users, validUntil);
         emit UpdateJuniorMembers(users, validUntil);
     }
-    
-    // --- Risk Management, authorized by level 2 admins ---
-    event OverrideWriteOff(uint loan, uint writeOffGroupIndex);
-    event AddRiskGroup(uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_);
-    event AddRiskGroups(uint[] risks_, uint[] thresholdRatios_, uint[] ceilingRatios_, uint[] rates_);
-    event AddWriteOffGroup(uint rate_, uint writeOffPercentage_, uint overdueDays_);
-    event SetMatBuffer(uint value);
-    event UpdateNFTValue(bytes32 nftID_, uint value);
-    event UpdateNFTValueRisk(bytes32 nftID_, uint value, uint risk_);
-    event UpdateNFTMaturityDate(bytes32 nftID_, uint maturityDate_);
 
-    function overrideWriteOff(uint loan, uint writeOffGroupIndex_) public level2 {
+    // --- Risk Management, authorized by level 2 admins ---
+    event OverrideWriteOff(uint256 loan, uint256 writeOffGroupIndex);
+    event AddRiskGroup(
+        uint256 risk_, uint256 thresholdRatio_, uint256 ceilingRatio_, uint256 rate_, uint256 recoveryRatePD_
+    );
+    event AddRiskGroups(uint256[] risks_, uint256[] thresholdRatios_, uint256[] ceilingRatios_, uint256[] rates_);
+    event AddWriteOffGroup(uint256 rate_, uint256 writeOffPercentage_, uint256 overdueDays_);
+    event SetMatBuffer(uint256 value);
+    event UpdateNFTValue(bytes32 nftID_, uint256 value);
+    event UpdateNFTValueRisk(bytes32 nftID_, uint256 value, uint256 risk_);
+    event UpdateNFTMaturityDate(bytes32 nftID_, uint256 maturityDate_);
+
+    function overrideWriteOff(uint256 loan, uint256 writeOffGroupIndex_) public level2 {
         navFeed.overrideWriteOff(loan, writeOffGroupIndex_);
         emit OverrideWriteOff(loan, writeOffGroupIndex_);
     }
 
-    function addRiskGroup(uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_, uint recoveryRatePD_) public level2 {
+    function addRiskGroup(
+        uint256 risk_,
+        uint256 thresholdRatio_,
+        uint256 ceilingRatio_,
+        uint256 rate_,
+        uint256 recoveryRatePD_
+    ) public level2 {
         navFeed.file("riskGroup", risk_, thresholdRatio_, ceilingRatio_, rate_, recoveryRatePD_);
         emit AddRiskGroup(risk_, thresholdRatio_, ceilingRatio_, rate_, recoveryRatePD_);
     }
 
-    function addRiskGroups(uint[] memory risks_, uint[] memory thresholdRatios_, uint[] memory ceilingRatios_, uint[] memory rates_, uint[] memory recoveryRatePDs_) public level2 {
-        require(risks_.length == thresholdRatios_.length && thresholdRatios_.length == ceilingRatios_.length && ceilingRatios_.length == rates_.length && rates_.length == recoveryRatePDs_.length, "non-matching-arguments");
-        for (uint i = 0; i < risks_.length; i++) {
+    function addRiskGroups(
+        uint256[] memory risks_,
+        uint256[] memory thresholdRatios_,
+        uint256[] memory ceilingRatios_,
+        uint256[] memory rates_,
+        uint256[] memory recoveryRatePDs_
+    ) public level2 {
+        require(
+            risks_.length == thresholdRatios_.length && thresholdRatios_.length == ceilingRatios_.length
+                && ceilingRatios_.length == rates_.length && rates_.length == recoveryRatePDs_.length,
+            "non-matching-arguments"
+        );
+        for (uint256 i = 0; i < risks_.length; i++) {
             addRiskGroup(risks_[i], thresholdRatios_[i], ceilingRatios_[i], rates_[i], recoveryRatePDs_[i]);
         }
     }
 
-    function addWriteOffGroup(uint rate_, uint writeOffPercentage_, uint overdueDays_) public level2 {
+    function addWriteOffGroup(uint256 rate_, uint256 writeOffPercentage_, uint256 overdueDays_) public level2 {
         navFeed.file("writeOffGroup", rate_, writeOffPercentage_, overdueDays_);
         emit AddWriteOffGroup(rate_, writeOffPercentage_, overdueDays_);
     }
 
-    function addWriteOffGroups(uint[] memory rates_, uint[] memory writeOffPercentages_, uint[] memory overdueDays_) public level2 {
-        require(rates_.length == writeOffPercentages_.length && writeOffPercentages_.length == overdueDays_.length, "non-matching-arguments");
-        for (uint i = 0; i < rates_.length; i++) {
+    function addWriteOffGroups(
+        uint256[] memory rates_,
+        uint256[] memory writeOffPercentages_,
+        uint256[] memory overdueDays_
+    ) public level2 {
+        require(
+            rates_.length == writeOffPercentages_.length && writeOffPercentages_.length == overdueDays_.length,
+            "non-matching-arguments"
+        );
+        for (uint256 i = 0; i < rates_.length; i++) {
             addWriteOffGroup(rates_[i], writeOffPercentages_[i], overdueDays_[i]);
         }
     }
 
-    function setMatBuffer(uint value) public level3 {
+    function setMatBuffer(uint256 value) public level3 {
         lending.file("buffer", value);
         emit SetMatBuffer(value);
     }
-    
-    function setMaxAutoHeal(uint value) public level3 {
+
+    function setMaxAutoHeal(uint256 value) public level3 {
         lending.file("autoHealMax", value);
     }
 
-    function updateNFTValue(bytes32 nftID_, uint value) public level2 {
+    function updateNFTValue(bytes32 nftID_, uint256 value) public level2 {
         navFeed.update(nftID_, value);
         emit UpdateNFTValue(nftID_, value);
     }
 
-    function updateNFTValueRisk(bytes32 nftID_, uint value, uint risk_) public level2 {
+    function updateNFTValueRisk(bytes32 nftID_, uint256 value, uint256 risk_) public level2 {
         navFeed.update(nftID_, value, risk_);
         emit UpdateNFTValueRisk(nftID_, value, risk_);
     }
 
-    function updateNFTMaturityDate(bytes32 nftID_, uint maturityDate_) public level2 {
+    function updateNFTMaturityDate(bytes32 nftID_, uint256 maturityDate_) public level2 {
         navFeed.file("maturityDate", nftID_, maturityDate_);
         emit UpdateNFTMaturityDate(nftID_, maturityDate_);
     }
 
     // --- Pool Governance, authorized by level 3 admins ---
     event File(bytes32 indexed what, bool indexed data);
-    event SetSeniorInterestRate(uint value);
-    event SetDiscountRate(uint value);
-    event SetMinimumEpochTime(uint value);
-    event SetChallengeTime(uint value);
-    event SetMinSeniorRatio(uint value);
-    event SetMaxSeniorRatio(uint value);
-    event SetEpochScoringWeights(uint weightSeniorRedeem, uint weightJuniorRedeem, uint weightJuniorSupply, uint weightSeniorSupply);
+    event SetSeniorInterestRate(uint256 value);
+    event SetDiscountRate(uint256 value);
+    event SetMinimumEpochTime(uint256 value);
+    event SetChallengeTime(uint256 value);
+    event SetMinSeniorRatio(uint256 value);
+    event SetMaxSeniorRatio(uint256 value);
+    event SetEpochScoringWeights(
+        uint256 weightSeniorRedeem, uint256 weightJuniorRedeem, uint256 weightJuniorSupply, uint256 weightSeniorSupply
+    );
     event ClosePool();
     event UnclosePool();
-    event SetAdminLevel(address indexed usr, uint indexed level);
+    event SetAdminLevel(address indexed usr, uint256 indexed level);
     event Depend(bytes32 indexed contractname, address addr);
 
-    function setSeniorInterestRate(uint value) public level3 {
+    function setSeniorInterestRate(uint256 value) public level3 {
         assessor.file("seniorInterestRate", value);
         emit SetSeniorInterestRate(value);
     }
 
-    function setDiscountRate(uint value) public level3 {
+    function setDiscountRate(uint256 value) public level3 {
         navFeed.file("discountRate", value);
         emit SetDiscountRate(value);
     }
 
-    function setMinimumEpochTime(uint value) public level3 {
+    function setMinimumEpochTime(uint256 value) public level3 {
         coordinator.file("minimumEpochTime", value);
         emit SetMinimumEpochTime(value);
     }
 
-    function setChallengeTime(uint value) public level3 {
+    function setChallengeTime(uint256 value) public level3 {
         coordinator.file("challengeTime", value);
         emit SetChallengeTime(value);
     }
 
-    function setMinSeniorRatio(uint value) public level3 {
+    function setMinSeniorRatio(uint256 value) public level3 {
         assessor.file("minSeniorRatio", value);
         emit SetMinSeniorRatio(value);
     }
 
-    function setMaxSeniorRatio(uint value) public level3 {
+    function setMaxSeniorRatio(uint256 value) public level3 {
         assessor.file("maxSeniorRatio", value);
         emit SetMaxSeniorRatio(value);
     }
 
-    function setEpochScoringWeights(uint weightSeniorRedeem, uint weightJuniorRedeem, uint weightJuniorSupply, uint weightSeniorSupply) public level3 {
+    function setEpochScoringWeights(
+        uint256 weightSeniorRedeem,
+        uint256 weightJuniorRedeem,
+        uint256 weightJuniorSupply,
+        uint256 weightSeniorSupply
+    ) public level3 {
         coordinator.file("weightSeniorRedeem", weightSeniorRedeem);
         coordinator.file("weightJuniorRedeem", weightJuniorRedeem);
         coordinator.file("weightJuniorSupply", weightJuniorSupply);
@@ -250,7 +299,7 @@ contract PoolAdmin {
         emit UnclosePool();
     }
 
-    modifier canSetAdminlevel(uint level) {
+    modifier canSetAdminlevel(uint256 level) {
         require(level >= 0 && level <= LEVEL_3);
         if (level == 0) require(admin_level[msg.sender] == LEVEL_3);
         if (level == LEVEL_1) require(admin_level[msg.sender] >= LEVEL_2);
@@ -258,7 +307,7 @@ contract PoolAdmin {
         _;
     }
 
-    function setAdminLevel(address usr, uint level) public canSetAdminlevel(level) {
+    function setAdminLevel(address usr, uint256 level) public canSetAdminlevel(level) {
         admin_level[usr] = level;
         emit SetAdminLevel(usr, level);
     }
@@ -285,7 +334,9 @@ contract PoolAdmin {
             navFeed = FeedLike(addr);
         } else if (contractName == "coordinator") {
             coordinator = CoordinatorLike(addr);
-        } else revert();
+        } else {
+            revert();
+        }
         emit Depend(contractName, addr);
     }
 
@@ -293,5 +344,4 @@ contract PoolAdmin {
         live = data;
         emit File(what, data);
     }
-
 }

@@ -19,46 +19,47 @@ interface Hevm {
 // abstract
 contract BaseTypes {
     struct Order {
-        uint  seniorRedeem;
-        uint  juniorRedeem;
-        uint  juniorSupply;
-        uint  seniorSupply;
+        uint256 seniorRedeem;
+        uint256 juniorRedeem;
+        uint256 juniorSupply;
+        uint256 seniorSupply;
     }
 
     struct LenderModel {
-        uint maxReserve;
-        uint reserve;
-        uint maxSeniorRatio;
-        uint minSeniorRatio;
-        uint seniorDebt;
-        uint seniorBalance;
-        uint NAV;
-        uint seniorRedeemOrder;
-        uint seniorSupplyOrder;
-        uint juniorSupplyOrder;
-        uint juniorRedeemOrder;
+        uint256 maxReserve;
+        uint256 reserve;
+        uint256 maxSeniorRatio;
+        uint256 minSeniorRatio;
+        uint256 seniorDebt;
+        uint256 seniorBalance;
+        uint256 NAV;
+        uint256 seniorRedeemOrder;
+        uint256 seniorSupplyOrder;
+        uint256 juniorSupplyOrder;
+        uint256 juniorRedeemOrder;
     }
 
     struct ModelInput {
-        uint seniorSupply;
-        uint juniorSupply;
-        uint seniorRedeem;
-        uint juniorRedeem;
+        uint256 seniorSupply;
+        uint256 juniorSupply;
+        uint256 seniorRedeem;
+        uint256 juniorRedeem;
     }
 
-    function submitSolution(address coordinator, ModelInput memory solution) internal returns(int) {
-        return CoordinatorLike(coordinator).submitSolution(solution.seniorRedeem, solution.juniorRedeem,
-            solution.juniorSupply, solution.seniorSupply);
+    function submitSolution(address coordinator, ModelInput memory solution) internal returns (int256) {
+        return CoordinatorLike(coordinator).submitSolution(
+            solution.seniorRedeem, solution.juniorRedeem, solution.juniorSupply, solution.seniorSupply
+        );
     }
 }
 
 abstract contract CoordinatorLike is BaseTypes {
     function bestSubmission() public virtual returns (Order memory);
     function order() public virtual returns (Order memory);
-    function submitSolution(uint,uint,uint,uint) public virtual returns (int);
+    function submitSolution(uint256, uint256, uint256, uint256) public virtual returns (int256);
 }
 
-contract AssessorMockWithDef is AssessorMock, Definitions { }
+contract AssessorMockWithDef is AssessorMock, Definitions {}
 
 contract CoordinatorTest is Test, Math, BaseTypes {
     Hevm hevm;
@@ -74,7 +75,7 @@ contract CoordinatorTest is Test, Math, BaseTypes {
     address assessor_;
 
     struct TestCaseDesc {
-        int status;
+        int256 status;
         bytes32 name;
     }
 
@@ -90,7 +91,7 @@ contract CoordinatorTest is Test, Math, BaseTypes {
         hevm = Hevm(HEVM_ADDRESS);
         hevm.warp(1234567);
 
-        uint challengeTime = 1 hours;
+        uint256 challengeTime = 1 hours;
         coordinator = new EpochCoordinator(challengeTime);
         coordinator.depend("juniorTranche", juniorTranche_);
         coordinator.depend("seniorTranche", seniorTranche_);
@@ -99,32 +100,35 @@ contract CoordinatorTest is Test, Math, BaseTypes {
     }
 
     function getNoOrderModel() internal pure returns (LenderModel memory) {
-        return LenderModel({maxReserve: 10000 ether,
-        reserve: 200 ether,
-        maxSeniorRatio: 80 * 10 **25,
-        minSeniorRatio: 75 * 10 **25,
-        seniorDebt: 700 ether,
-        seniorBalance: 100 ether,
-        NAV: 800 ether,
-        seniorRedeemOrder: 0,
-        seniorSupplyOrder: 0,
-        juniorSupplyOrder: 0,
-        juniorRedeemOrder: 0});
-    }
-
-    function getDefaultModel()  internal pure returns (LenderModel memory)  {
         return LenderModel({
             maxReserve: 10000 ether,
             reserve: 200 ether,
-            maxSeniorRatio: 85 * 10 **25,
-            minSeniorRatio: 75 * 10 **25,
+            maxSeniorRatio: 80 * 10 ** 25,
+            minSeniorRatio: 75 * 10 ** 25,
+            seniorDebt: 700 ether,
+            seniorBalance: 100 ether,
+            NAV: 800 ether,
+            seniorRedeemOrder: 0,
+            seniorSupplyOrder: 0,
+            juniorSupplyOrder: 0,
+            juniorRedeemOrder: 0
+        });
+    }
+
+    function getDefaultModel() internal pure returns (LenderModel memory) {
+        return LenderModel({
+            maxReserve: 10000 ether,
+            reserve: 200 ether,
+            maxSeniorRatio: 85 * 10 ** 25,
+            minSeniorRatio: 75 * 10 ** 25,
             seniorDebt: 700 ether,
             seniorBalance: 100 ether,
             NAV: 800 ether,
             seniorRedeemOrder: 100 ether,
             seniorSupplyOrder: 100 ether,
             juniorSupplyOrder: 100 ether,
-            juniorRedeemOrder: 100 ether});
+            juniorRedeemOrder: 100 ether
+        });
     }
 
     function consoleLog(LenderModel memory model_) internal {
@@ -148,7 +152,7 @@ contract CoordinatorTest is Test, Math, BaseTypes {
         seniorTranche.setEpochReturn(model_.seniorSupplyOrder, model_.seniorRedeemOrder);
     }
 
-    function calcNextEpochIn() public view returns(uint) {
+    function calcNextEpochIn() public view returns (uint256) {
         return (coordinator.minimumEpochTime()) - (block.timestamp - coordinator.lastEpochClosed());
     }
 
@@ -160,17 +164,18 @@ contract CoordinatorTest is Test, Math, BaseTypes {
         assertEq(bestSubmission.juniorSupply, model_.juniorSupply);
     }
 
-    function submitSolution(ModelInput memory solution) internal returns(int) {
-        return coordinator.submitSolution(solution.seniorRedeem, solution.juniorRedeem,
-            solution.juniorSupply, solution.seniorSupply);
+    function submitSolution(ModelInput memory solution) internal returns (int256) {
+        return coordinator.submitSolution(
+            solution.seniorRedeem, solution.juniorRedeem, solution.juniorSupply, solution.seniorSupply
+        );
     }
 
-    function calcNewSeniorRatio(LenderModel memory model, ModelInput memory input) public pure returns (uint) {
-        uint currencyAvailable = model.reserve + input.seniorSupply + input.juniorSupply;
-        uint currencyOut = input.seniorRedeem + input.juniorRedeem;
+    function calcNewSeniorRatio(LenderModel memory model, ModelInput memory input) public pure returns (uint256) {
+        uint256 currencyAvailable = model.reserve + input.seniorSupply + input.juniorSupply;
+        uint256 currencyOut = input.seniorRedeem + input.juniorRedeem;
 
-        uint seniorAsset = (model.seniorBalance + model.seniorDebt + input.seniorSupply) - input.seniorRedeem;
+        uint256 seniorAsset = (model.seniorBalance + model.seniorDebt + input.seniorSupply) - input.seniorRedeem;
 
-        return rdiv(seniorAsset, model.NAV + currencyAvailable-currencyOut);
+        return rdiv(seniorAsset, model.NAV + currencyAvailable - currencyOut);
     }
 }

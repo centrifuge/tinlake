@@ -3,6 +3,6 @@ pragma solidity >=0.7.6;
 
 abstract contract FixedPoint {
     struct Fixed27 {
-        uint value;
+        uint256 value;
     }
 }

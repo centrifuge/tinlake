@@ -19,14 +19,14 @@ contract PileTest is Interest, Test {
         pile = new Pile();
     }
 
-    function _setUpLoan(uint loan, uint rate) internal {
+    function _setUpLoan(uint256 loan, uint256 rate) internal {
         pile.file("rate", rate, rate);
         pile.setRate(loan, rate);
     }
 
     function testAccrue() public {
-        uint loan = 1;
-        uint amount = 66 ether;
+        uint256 loan = 1;
+        uint256 amount = 66 ether;
         // 12 % per year compound in seconds
         _setUpLoan(loan, 1000000003593629043335673583);
         _increaseDebt(loan, amount);
@@ -37,85 +37,84 @@ contract PileTest is Interest, Test {
         assertDebt(loan, 73.92 ether);
     }
 
-    function _increaseDebt(uint loan, uint amount) internal {
+    function _increaseDebt(uint256 loan, uint256 amount) internal {
         pile.incDebt(loan, amount);
         assertEq(pile.debt(loan), amount);
     }
 
-    function _decreaseDebt(uint loan, uint amount) internal {
-        uint loanDebt = pile.debt(loan);
+    function _decreaseDebt(uint256 loan, uint256 amount) internal {
+        uint256 loanDebt = pile.debt(loan);
         pile.decDebt(loan, amount);
         assertEq(pile.debt(loan), safeSub(loanDebt, amount));
     }
 
-    function _calculateDebt(uint rate, uint principal, uint time) internal pure returns(uint z) {
+    function _calculateDebt(uint256 rate, uint256 principal, uint256 time) internal pure returns (uint256 z) {
         return rmul(principal, rpow(rate, time, ONE));
     }
 
-    function _initRateGroup(uint rate_, uint ratePerSecond_) internal {
+    function _initRateGroup(uint256 rate_, uint256 ratePerSecond_) internal {
         pile.file("rate", rate_, ratePerSecond_);
-        (, uint chi , uint ratePerSecond,,) = pile.rates(rate_);
+        (, uint256 chi, uint256 ratePerSecond,,) = pile.rates(rate_);
         assertEq(ratePerSecond, ratePerSecond_);
         assertEq(chi, ONE);
     }
 
     function testIncDebtNoFixedFee() public {
-        uint loan = 1;
-        uint amount = 66 ether;
+        uint256 loan = 1;
+        uint256 amount = 66 ether;
         // 12 % per year compound in seconds
         _setUpLoan(loan, 1000000003593629043335673583);
         _increaseDebt(loan, amount);
     }
 
     function testIncDebtWithFixedFee() public {
-        uint loan = 1;
-        uint amount = 60 ether;
-        uint rateGroup = 1000000003593629043335673583;
+        uint256 loan = 1;
+        uint256 amount = 60 ether;
+        uint256 rateGroup = 1000000003593629043335673583;
         // 10% fixed Rate
-        uint fixedRate = safeDiv(ONE, 10);
-        uint fixedBorrowFee = rmul(amount, fixedRate);
+        uint256 fixedRate = safeDiv(ONE, 10);
+        uint256 fixedBorrowFee = rmul(amount, fixedRate);
         // set fixedRate for group
         pile.file("fixedRate", rateGroup, fixedRate);
         // add loan to rate group
         _setUpLoan(loan, rateGroup);
         pile.incDebt(loan, amount);
-    
+
         assertEq(pile.debt(loan), safeAdd(amount, fixedBorrowFee));
     }
 
     function testInitRateGroup() public {
-        uint rate = 1000000003593629043335673583;
-        uint ratePerSecond = rate;
+        uint256 rate = 1000000003593629043335673583;
+        uint256 ratePerSecond = rate;
         _initRateGroup(rate, ratePerSecond);
     }
 
     function testSetFixedRate() public {
-        uint rate = 1000000003593629043335673583;
-         // 10% fixed Rate
-        uint fixedRate_ = safeDiv(ONE, 10);
+        uint256 rate = 1000000003593629043335673583;
+        // 10% fixed Rate
+        uint256 fixedRate_ = safeDiv(ONE, 10);
         pile.file("fixedRate", rate, fixedRate_);
-        (,,,,uint fixedRate) = pile.rates(rate);
+        (,,,, uint256 fixedRate) = pile.rates(rate);
         assertEq(fixedRate, fixedRate_);
     }
 
     function testUpdateRateGroup() public {
-        uint rate = 1000000003593629043335673583;
-        uint initRatePerSecond = rate;
+        uint256 rate = 1000000003593629043335673583;
+        uint256 initRatePerSecond = rate;
         _initRateGroup(rate, initRatePerSecond);
 
         hevm.warp(block.timestamp + 1 days);
 
-        uint newRatePerSecond = 1000000564701133626865910626;
+        uint256 newRatePerSecond = 1000000564701133626865910626;
         pile.file("rate", rate, newRatePerSecond);
-        (, uint chi, uint ratePerSecond,,) = pile.rates(rate);
+        (, uint256 chi, uint256 ratePerSecond,,) = pile.rates(rate);
         assertEq(ratePerSecond, 1000000564701133626865910626);
         assertEq(chi, 1000310537755655376744337012);
     }
 
-
     function testFailIncDebtNoAccrue() public {
-        uint loan = 1;
-        uint amount = 66 ether;
+        uint256 loan = 1;
+        uint256 amount = 66 ether;
         // 12 % per year compound in seconds
         _setUpLoan(loan, 1000000003593629043335673583);
 
@@ -125,8 +124,8 @@ contract PileTest is Interest, Test {
     }
 
     function testDecDebt() public {
-        uint loan = 1;
-        uint amount = 66 ether;
+        uint256 loan = 1;
+        uint256 amount = 66 ether;
         // 12 % per year compound in seconds
         _setUpLoan(loan, 1000000003593629043335673583);
         _increaseDebt(loan, amount);
@@ -134,8 +133,8 @@ contract PileTest is Interest, Test {
     }
 
     function testFailDecDebtNoAccrue() public {
-        uint loan = 1;
-        uint amount = 66 ether;
+        uint256 loan = 1;
+        uint256 amount = 66 ether;
         // 12 % per year compound in seconds
         _setUpLoan(loan, 1000000003593629043335673583);
         _increaseDebt(loan, amount);
@@ -146,11 +145,11 @@ contract PileTest is Interest, Test {
     }
 
     function testChangeRate() public {
-        uint highRate = uint(1000001311675458706187136988); // 12 % per day
-        uint lowRate = uint(1000000564701133626865910626); // 5 % / day
+        uint256 highRate = uint256(1000001311675458706187136988); // 12 % per day
+        uint256 lowRate = uint256(1000000564701133626865910626); // 5 % / day
 
-        uint loan = 1;
-        uint principal = 100 ether;
+        uint256 loan = 1;
+        uint256 principal = 100 ether;
 
         pile.file("rate", highRate, highRate);
         pile.file("rate", lowRate, lowRate);
@@ -179,10 +178,10 @@ contract PileTest is Interest, Test {
     }
 
     function testChangeRateNoDebt() public {
-        uint highRate = uint(1000001311675458706187136988); // 12 % per day
-        uint lowRate = uint(1000000564701133626865910626); // 5 % / day
+        uint256 highRate = uint256(1000001311675458706187136988); // 12 % per day
+        uint256 lowRate = uint256(1000000564701133626865910626); // 5 % / day
 
-        uint loan = 1;
+        uint256 loan = 1;
 
         pile.file("rate", highRate, highRate);
         pile.file("rate", lowRate, lowRate);
@@ -203,20 +202,19 @@ contract PileTest is Interest, Test {
         hevm.warp(block.timestamp + 1 days);
         pile.drip(highRate);
         assertDebt(loan, 112 ether);
-
     }
 
     function testFailSetRate() public {
-        uint loan = 1;
-        uint rate = uint(1000001311675458706187136988);
+        uint256 loan = 1;
+        uint256 rate = uint256(1000001311675458706187136988);
         // fail rate not initiated
         pile.setRate(loan, rate);
     }
 
     function testFailChangeRate() public {
-        uint highRate = uint(1000001311675458706187136988); // 12 % per day
-        uint lowRate = uint(1000000564701133626865910626); // 5 % / day
-        uint loan = 1;
+        uint256 highRate = uint256(1000001311675458706187136988); // 12 % per day
+        uint256 lowRate = uint256(1000000564701133626865910626); // 5 % / day
+        uint256 loan = 1;
 
         pile.file("rate", highRate, highRate);
         // do not init lowRate
@@ -225,12 +223,12 @@ contract PileTest is Interest, Test {
         pile.changeRate(loan, lowRate);
     }
 
-    function assertDebt(uint loan, uint should) public {
-        uint debt = pile.debt(loan);
+    function assertDebt(uint256 loan, uint256 should) public {
+        uint256 debt = pile.debt(loan);
         assertEq(debt, should);
     }
 
-    function testSingleCompoundSec() public  {
+    function testSingleCompoundSec() public {
         /*
         Compound period in pile is in seconds
         compound seconds = (1+r/n)^nt
@@ -246,9 +244,9 @@ contract PileTest is Interest, Test {
         rate = (1+(0.05/(3600*24)))*10^27
         rate = 1000000593415115246806684338
         */
-        uint rate = 1000000593415115246806684338; // 5 % per day compound in seconds
-        uint loan = 1;
-        uint principal = 66 ether;
+        uint256 rate = 1000000593415115246806684338; // 5 % per day compound in seconds
+        uint256 loan = 1;
+        uint256 principal = 66 ether;
         pile.file("rate", rate, rate);
         pile.setRate(loan, rate);
         pile.drip(rate);
@@ -257,7 +255,7 @@ contract PileTest is Interest, Test {
         // one day later
         hevm.warp(block.timestamp + 1 days);
         pile.drip(rate);
-        uint should = _calculateDebt(rate, principal, uint(3600*24));
+        uint256 should = _calculateDebt(rate, principal, uint256(3600 * 24));
         assertDebt(loan, should);
     }
 
@@ -285,9 +283,9 @@ contract PileTest is Interest, Test {
         rate = 1000000564701133626865910626
 
         */
-        uint rate = uint(1000000564701133626865910626); // 5 % day
-        uint loan = 1;
-        uint principal = 66 ether;
+        uint256 rate = uint256(1000000564701133626865910626); // 5 % day
+        uint256 loan = 1;
+        uint256 principal = 66 ether;
 
         pile.file("rate", rate, rate);
         pile.setRate(loan, rate);
@@ -313,9 +311,9 @@ contract PileTest is Interest, Test {
         rate = 1.12^(1/(3600*24*365)) * 10^27
         rate = 1000000003593629043335673583
         */
-        uint rate = uint(1000000003593629043335673583); // 12 % per year
-        uint loan = 1;
-        uint principal = 66 ether;
+        uint256 rate = uint256(1000000003593629043335673583); // 12 % per year
+        uint256 loan = 1;
+        uint256 principal = 66 ether;
         pile.file("rate", rate, rate);
         pile.setRate(loan, rate);
         pile.drip(rate);
@@ -330,9 +328,9 @@ contract PileTest is Interest, Test {
     }
 
     function testDrip() public {
-        uint rate = uint(1000000564701133626865910626); // 5 % / day
+        uint256 rate = uint256(1000000564701133626865910626); // 5 % / day
         pile.file("rate", rate, rate);
-        (uint debt1, uint rateIndex1, uint ratePerSecond1, uint lastUpdated1, ) = pile.rates(rate);
+        (uint256 debt1, uint256 rateIndex1, uint256 ratePerSecond1, uint256 lastUpdated1,) = pile.rates(rate);
         assertEq(ratePerSecond1, rate);
         assertEq(lastUpdated1, block.timestamp);
         assertEq(debt1, 0);
@@ -340,14 +338,14 @@ contract PileTest is Interest, Test {
         // on day later
         hevm.warp(block.timestamp + 1 days);
 
-        (debt1,  rateIndex1,  ratePerSecond1, lastUpdated1, ) = pile.rates(rate);
+        (debt1, rateIndex1, ratePerSecond1, lastUpdated1,) = pile.rates(rate);
         assertEq(ratePerSecond1, rate);
         assertEq(debt1, 0);
         assertTrue(lastUpdated1 != block.timestamp);
 
         pile.drip(rate);
 
-        (uint debt2, uint rateIndex2, uint ratePerSecond2, uint lastUpdated2, ) = pile.rates(rate);
+        (uint256 debt2, uint256 rateIndex2, uint256 ratePerSecond2, uint256 lastUpdated2,) = pile.rates(rate);
         assertEq(ratePerSecond2, rate);
         assertEq(lastUpdated2, block.timestamp);
         assertEq(debt2, 0);
@@ -357,7 +355,7 @@ contract PileTest is Interest, Test {
     function testMaxrateIndex() public {
         // rateIndex is uint, max value = (2^256)-1 = 1.1579209e+77
         // rateIndex initial 10^27
-        uint rate = uint(1000000564701133626865910626); // 5 % / daily
+        uint256 rate = uint256(1000000564701133626865910626); // 5 % / daily
         pile.file("rate", rate, rate);
         hevm.warp(block.timestamp + 1050 days); // 1,05 ^1050 = 1.7732257e+22
 
@@ -370,7 +368,7 @@ contract PileTest is Interest, Test {
     function testFailrateIndexTooHigh() public {
         // rateIndex is uint, max value = (2^256)-1 = 1.1579209e+77
         // rateIndex initial 10^27
-        uint rate = uint(1000000564701133626865910626); // 5 % / daily
+        uint256 rate = uint256(1000000564701133626865910626); // 5 % / daily
         pile.file("rate", rate, rate);
         hevm.warp(block.timestamp + 1100 days); // 1,05 ^1100 = 2.0334288e+23
 
@@ -381,10 +379,10 @@ contract PileTest is Interest, Test {
     }
 
     function testMaxDebt() public {
-        uint rate = uint(1000000564701133626865910626); // 5 % day
+        uint256 rate = uint256(1000000564701133626865910626); // 5 % day
         pile.file("rate", rate, rate);
-        uint loan = 1;
-        uint principal = 1000000000  ether; // one billion 10^9 * 10^18 = 10^28
+        uint256 loan = 1;
+        uint256 principal = 1000000000 ether; // one billion 10^9 * 10^18 = 10^28
         pile.drip(rate);
         pile.setRate(loan, rate);
         pile.incDebt(loan, principal);
@@ -395,11 +393,11 @@ contract PileTest is Interest, Test {
         pile.drip(rate);
     }
 
-    function rad(uint wad_) internal pure returns (uint) {
+    function rad(uint256 wad_) internal pure returns (uint256) {
         return wad_ * 10 ** 27;
     }
 
-    function wad(uint rad_) internal pure returns (uint) {
+    function wad(uint256 rad_) internal pure returns (uint256) {
         return rad_ / 10 ** 27;
     }
 }

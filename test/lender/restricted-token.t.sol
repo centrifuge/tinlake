@@ -6,18 +6,16 @@ import "tinlake-math/math.sol";
 import "src/lender/token/restricted.sol";
 import "src/lender/token/memberlist.sol";
 
-contract TestUser {
-}
+contract TestUser {}
 
 interface Hevm {
     function warp(uint256) external;
 }
 
 contract RestrictedTokenTest is Math, Test {
-
     Hevm hevm;
 
-    uint memberlistValidity;
+    uint256 memberlistValidity;
     Memberlist memberlist;
     RestrictedToken token;
 
@@ -57,7 +55,7 @@ contract RestrictedTokenTest is Math, Test {
         token.transferFrom(self, randomUser_, 50 ether);
     }
 
-   function testFailReceiveTokensMembershipExpired() public {
+    function testFailReceiveTokensMembershipExpired() public {
         // membership expires in 8 days
         memberlist.updateMember(randomUser_, memberlistValidity);
         assertEq(memberlist.members(randomUser_), memberlistValidity);

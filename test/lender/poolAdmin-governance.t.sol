@@ -11,8 +11,7 @@ import "./mock/memberlist.sol";
 import "./mock/clerk.sol";
 
 contract PoolGovernancePoolAdminTest is Test {
-
-    uint constant ONE = 10e27;
+    uint256 constant ONE = 10e27;
 
     Assessor assessor;
     ClerkMock lending;
@@ -47,74 +46,74 @@ contract PoolGovernancePoolAdminTest is Test {
     }
 
     function setSeniorInterestRate() public {
-        uint seniorInterestRate = 1000000674400000000000000000;
+        uint256 seniorInterestRate = 1000000674400000000000000000;
         poolAdmin.setSeniorInterestRate(seniorInterestRate);
         assertEq(assessor.seniorInterestRate(), seniorInterestRate);
     }
 
     function testSetSeniorInterestRate() public {
-        setSeniorInterestRate(); 
+        setSeniorInterestRate();
     }
 
     function setDiscountRate() public {
-        uint discountRate = 1000000674400000000000000000;
+        uint256 discountRate = 1000000674400000000000000000;
         poolAdmin.setDiscountRate(discountRate);
         assertEq(navFeed.values_uint("file_value"), discountRate);
     }
 
     function testSetDiscountRate() public {
-        setDiscountRate(); 
+        setDiscountRate();
     }
 
     function setMinimumEpochTime() public {
-        uint minimumEpochTime = 2 days;
+        uint256 minimumEpochTime = 2 days;
         poolAdmin.setMinimumEpochTime(minimumEpochTime);
         assertEq(coordinator.values_uint("file_value"), minimumEpochTime);
     }
 
     function testSetMinimumEpochTime() public {
-        setMinimumEpochTime(); 
+        setMinimumEpochTime();
     }
 
     function setChallengeTime() public {
-        uint challengeTime = 1 hours;
+        uint256 challengeTime = 1 hours;
         poolAdmin.setChallengeTime(challengeTime);
         assertEq(coordinator.values_uint("file_value"), challengeTime);
     }
 
     function testSetChallengeTime() public {
-        setChallengeTime(); 
+        setChallengeTime();
     }
 
     function setMinSeniorRatio() public {
         // required to call first because minSeniorRatio < maxSeniorRatio must be true
-        uint maxSeniorRatio = 0.8 * 10**27;
+        uint256 maxSeniorRatio = 0.8 * 10 ** 27;
         poolAdmin.setMaxSeniorRatio(maxSeniorRatio);
 
-        uint minSeniorRatio = 0.2 * 10**27;
+        uint256 minSeniorRatio = 0.2 * 10 ** 27;
         poolAdmin.setMinSeniorRatio(minSeniorRatio);
         assertEq(assessor.minSeniorRatio(), minSeniorRatio);
     }
 
     function testSetMinSeniorRatio() public {
-        setMinSeniorRatio(); 
+        setMinSeniorRatio();
     }
 
     function testSetMaxAutoHeal() public {
-        uint autoHeal = 50000000000000000000;
+        uint256 autoHeal = 50000000000000000000;
         poolAdmin.setMaxAutoHeal(autoHeal);
         assertEq(lending.values_uint("file_value"), autoHeal);
-        assertEq(lending.values_bytes32("file_name"),"autoHealMax");
+        assertEq(lending.values_bytes32("file_name"), "autoHealMax");
     }
 
     function setMaxSeniorRatio() public {
-        uint maxSeniorRatio = 0.8 * 10**27;
+        uint256 maxSeniorRatio = 0.8 * 10 ** 27;
         poolAdmin.setMaxSeniorRatio(maxSeniorRatio);
         assertEq(assessor.maxSeniorRatio(), maxSeniorRatio);
     }
 
     function testSetMaxSeniorRatio() public {
-        setMaxSeniorRatio(); 
+        setMaxSeniorRatio();
     }
 
     function setEpochScoringWeights() public {
@@ -124,7 +123,7 @@ contract PoolGovernancePoolAdminTest is Test {
     }
 
     function testSetEpochScoringWeights() public {
-        setEpochScoringWeights(); 
+        setEpochScoringWeights();
     }
 
     function testClosePool() public {
@@ -152,6 +151,4 @@ contract PoolGovernancePoolAdminTest is Test {
         poolAdmin.closePool();
         poolAdmin.closePool();
     }
-
 }
-

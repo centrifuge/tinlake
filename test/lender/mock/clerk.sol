@@ -7,34 +7,35 @@ import "tinlake-auth/auth.sol";
 import "../../../test/mock/mock.sol";
 
 contract ClerkMock is Mock, Auth {
-    
     constructor() {
         wards[msg.sender] = 1;
     }
 
-    function remainingCredit() external view returns (uint) {
+    function remainingCredit() external view returns (uint256) {
         return values_return["remainingCredit"];
     }
-    function juniorStake() external view returns (uint) {
+
+    function juniorStake() external view returns (uint256) {
         return values_return["juniorStake"];
     }
-    function remainingOvercollCredit() external view returns (uint) {
+
+    function remainingOvercollCredit() external view returns (uint256) {
         return values_return["remainingOvercollCredit"];
     }
 
-    function debt() external view returns(uint) {
+    function debt() external view returns (uint256) {
         return values_return["debt"];
     }
 
-    function stabilityFee() external view returns(uint) {
+    function stabilityFee() external view returns (uint256) {
         return values_return["stabilityFee"];
     }
 
-    function activated() public view returns(bool) {
+    function activated() public view returns (bool) {
         return values_bool_return["activated"];
     }
 
-    function calcOvercollAmount(uint) external view returns (uint) {
+    function calcOvercollAmount(uint256) external view returns (uint256) {
         return values_return["calcOvercollAmount"];
     }
 
@@ -56,6 +57,4 @@ contract ClerkMock is Mock, Auth {
         values_bytes32["file_name"] = name;
         values_uint["file_value"] = value;
     }
-
 }
-

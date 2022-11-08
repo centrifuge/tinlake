@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import { Shelf } from "./../shelf.sol";
+import {Shelf} from "./../shelf.sol";
 
 contract ShelfFab {
     function newShelf(address tkn_, address title_, address debt_, address ceiling_) public returns (address) {
