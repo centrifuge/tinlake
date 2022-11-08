@@ -9,3 +9,5 @@ config_unknown.json
 /out
 .vscode
 hevm.libs.*
+cache/
+broadcast/

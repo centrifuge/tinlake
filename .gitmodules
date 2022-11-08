@@ -1,6 +1,3 @@
-[submodule "lib/ds-test"]
-	path = lib/ds-test
-	url = https://github.com/dapphub/ds-test
 [submodule "lib/tinlake-title"]
 	path = lib/tinlake-title
 	url = https://github.com/centrifuge/tinlake-title
@@ -13,3 +10,6 @@
 [submodule "lib/tinlake-erc20"]
 	path = lib/tinlake-erc20
 	url = https://github.com/centrifuge/tinlake-erc20
+[submodule "lib/forge-std"]
+	path = lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
