@@ -7,6 +7,10 @@ import "tinlake-math/interest.sol";
 import {BaseTypes} from "test/lender/coordinator-base.t.sol";
 import {MKRTestBasis} from "./mkr_basic.t.sol";
 
+interface MockLike {
+    function setReturn(bytes32 name, uint returnValue) external;
+}
+
 contract MKRLoanFuzzTest is MKRTestBasis {
     uint MAX_CURRENCY_NUMBER = 10 ** 30;
     function dripMakerDebt() public {}
@@ -137,8 +141,7 @@ contract MKRLoanFuzzTest is MKRTestBasis {
             return;
         }
 
-        SpotterLike spotter = SpotterLike(clerk.spotter);
-        spotter.setReturn("mat", 10**27);
+        MockLike(address(clerk.spotter())).setReturn("mat", 10**27);
         clerk.file("buffer", 0);
 
         uint fee = uint(1000000229200000000000000000); // 2% per day
