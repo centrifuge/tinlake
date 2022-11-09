@@ -47,6 +47,8 @@ contract TinlakeDeployScript is Script {
     bool isMkr = true;
     address mkrMgrFab = 0xE5797dD56688f80B79C1FAC7D4441c60cCE95b09;
 
+    mapping (string => address) contracts;
+
     function setUp() public {}
 
     function run() public {
@@ -57,33 +59,41 @@ contract TinlakeDeployScript is Script {
         // bytes memory data = cheats.parseJson(json);
         // Config memory config = abi.decode(data, (Config));
 
-        // Root
-        address tinlakeRoot = address(new TinlakeRoot(msg.sender, governance));
-
-        // Borrower
         // TODO: add caching based on bytecode
         // bytes memory bytecode = vm.getCode("src/borrower/fabs/title.sol:TitleFab");
-        BorrowerDeployer borrowerDeployer = new BorrowerDeployer(tinlakeRoot, address(new TitleFab()), address(new ShelfFab()), address(new PileFab()), address(new PrincipalNAVFeedFab()), currency, "Tinlake Loan Token", "TLNFT", discountRate);
+
+        TinlakeRoot root = new TinlakeRoot(msg.sender, governance);
+
+        address borrowerDeployer = deployBorrower(root);
+        (address lenderDeployer, address adapterDeployer) = deployLender(root);
+
+        root.prepare(lenderDeployer, borrowerDeployer, adapterDeployer, oracle, level1_admins, level3_admin1);
+        root.deploy();
+
+        printContracts(root);
+
+        vm.stopBroadcast();
+    }
+
+    function deployBorrower(TinlakeRoot root) internal returns (address) {
+        BorrowerDeployer borrowerDeployer = new BorrowerDeployer(address(root), address(new TitleFab()), address(new ShelfFab()), address(new PileFab()), address(new PrincipalNAVFeedFab()), currency, "Tinlake Loan Token", "TLNFT", discountRate);
 
         borrowerDeployer.deployTitle();
-        address title = borrowerDeployer.title();
         borrowerDeployer.deployPile();
-        address pile = borrowerDeployer.pile();
         borrowerDeployer.deployFeed();
-        address feed = borrowerDeployer.feed();
         borrowerDeployer.deployShelf();
-        address shelf = borrowerDeployer.shelf();
-        
         borrowerDeployer.deploy();
 
-        // Lender
-        address clerkFab = address(0);
+        return address(borrowerDeployer);
+    }
+
+    function deployLender(TinlakeRoot root) internal returns (address, address) {
         address adapterDeployer = address(0);
         if (isMkr) {
-            adapterDeployer = address(new AdapterDeployer(tinlakeRoot, address(new ClerkFab()), mkrMgrFab));
+            adapterDeployer = address(new AdapterDeployer(address(root), address(new ClerkFab()), mkrMgrFab));
         }
 
-        LenderDeployer lenderDeployer = new LenderDeployer(tinlakeRoot, currency, address(new TrancheFab()), address(new MemberlistFab()), address(new RestrictedTokenFab()), address(new ReserveFab()), address(new AssessorFab()), address(new CoordinatorFab()), address(new OperatorFab()), address(new PoolAdminFab()), memberAdmin, adapterDeployer);
+        LenderDeployer lenderDeployer = new LenderDeployer(address(root), currency, address(new TrancheFab()), address(new MemberlistFab()), address(new RestrictedTokenFab()), address(new ReserveFab()), address(new AssessorFab()), address(new CoordinatorFab()), address(new OperatorFab()), address(new PoolAdminFab()), memberAdmin, adapterDeployer);
 
         lenderDeployer.init(minSeniorRatio, maxSeniorRatio, maxReserve, challengeTime, seniorInterestRate, seniorTokenName, seniorTokenSymbol, juniorTokenName, juniorTokenSymbol);
         lenderDeployer.deployJunior();
@@ -96,9 +106,36 @@ contract TinlakeDeployScript is Script {
 
         // TODO: if (isMkr) deploy mgr
 
-        TinlakeRoot(tinlakeRoot).prepare(address(lenderDeployer), address(borrowerDeployer), adapterDeployer, oracle, level1_admins, level3_admin1);
-        TinlakeRoot(tinlakeRoot).deploy();
+        return (address(lenderDeployer), address(adapterDeployer));
+    }
 
-        vm.stopBroadcast();
+    function printContracts(TinlakeRoot root) internal {
+        console.log("ROOT_CONTRACT=%s", address(root));
+        console.log("TINLAKE_CURRENCY=%s", currency);
+        console.log("MEMBER_ADMIN=%s", memberAdmin);
+
+        BorrowerDeployer borrowerDeployer = BorrowerDeployer(address(root.borrowerDeployer()));
+        console.log("TITLE=%s", address(borrowerDeployer.title()));
+        console.log("PILE=%s", address(borrowerDeployer.pile()));
+        console.log("FEED=%s", address(borrowerDeployer.feed()));
+        console.log("SHELF=%s", address(borrowerDeployer.shelf()));
+
+        LenderDeployer lenderDeployer = LenderDeployer(address(root.lenderDeployer()));
+        console.log("JUNIOR_TRANCHE=%s", address(lenderDeployer.juniorTranche()));
+        console.log("JUNIOR_TOKEN=%s", address(lenderDeployer.juniorToken()));
+        console.log("JUNIOR_OPERATOR=%s", address(lenderDeployer.juniorOperator()));
+        console.log("JUNIOR_MEMBERLIST=%s", address(lenderDeployer.juniorMemberlist()));
+
+        console.log("SENIOR_TRANCHE=%s", address(lenderDeployer.seniorTranche()));
+        console.log("SENIOR_TOKEN=%s", address(lenderDeployer.seniorToken()));
+        console.log("SENIOR_OPERATOR=%s", address(lenderDeployer.seniorOperator()));
+        console.log("SENIOR_MEMBERLIST=%s", address(lenderDeployer.seniorMemberlist()));
+
+        console.log("RESERVE=%s", address(lenderDeployer.reserve()));
+        console.log("ASSESSOR=%s", address(lenderDeployer.assessor()));
+        console.log("POOL_ADMIN=%s", address(lenderDeployer.poolAdmin()));
+        console.log("COORDINATOR=%s", address(lenderDeployer.coordinator()));
+
+        // console.log("CLERK=%s", address(lenderDeployer.clerk()));
     }
 }
