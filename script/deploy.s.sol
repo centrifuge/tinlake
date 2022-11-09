@@ -18,8 +18,6 @@ interface ImmutableCreate2Factory {
     function hasBeenDeployed(address deploymentAddress) external view returns (bool);
 }
 
-interface AnyContract {}
-
 contract TinlakeDeployScript is Script {
     ImmutableCreate2Factory immutable factory = ImmutableCreate2Factory(0x0000000000FFe8B47B3e2130213B802212439497);
     bytes32 salt = 0x00000000000000000000000000000000000000008b99e5a778edb02572010000;
@@ -149,10 +147,12 @@ contract TinlakeDeployScript is Script {
         console.log("POOL_ADMIN=%s", address(lenderDeployer.poolAdmin()));
         console.log("COORDINATOR=%s", address(lenderDeployer.coordinator()));
 
-        AdapterDeployer adapterDeployer = AdapterDeployer(address(root.adapterDeployer()));
-        console.log("CLERK=%s", address(adapterDeployer.clerk()));
-        console.log("MAKER_MGR=%s", address(adapterDeployer.mgr()));
-        console.log("MKR_VAT=%s", vm.envAddress("MKR_VAT"));
-        console.log("MKR_JUG=%s", vm.envAddress("MKR_JUG"));
+        if (vm.envBool("IS_MKR")) {
+            AdapterDeployer adapterDeployer = AdapterDeployer(address(root.adapterDeployer()));
+            console.log("CLERK=%s", address(adapterDeployer.clerk()));
+            console.log("MAKER_MGR=%s", address(adapterDeployer.mgr()));
+            console.log("MKR_VAT=%s", vm.envAddress("MKR_VAT"));
+            console.log("MKR_JUG=%s", vm.envAddress("MKR_JUG"));
+        }
     }
 }
