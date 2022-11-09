@@ -94,6 +94,7 @@ contract TinlakeDeployScript is Script {
         if (vm.envBool("IS_MKR")) {
             AdapterDeployer adapterDeployer = AdapterDeployer(adapterDeployer_);
             adapterDeployer.deployClerk(address(lenderDeployer), vm.envBool("WIRE_CLERK"));
+            // TODO: fix the next line
             adapterDeployer.deployMgr(
                 vm.envAddress("MKR_DAI"),
                 vm.envAddress("MKR_DAI_JOIN"),
