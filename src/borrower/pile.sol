@@ -10,6 +10,20 @@ import "tinlake-auth/auth.sol";
 /// rate accumulators (chi values) for all interest rate categories. It calculates debt each
 /// loan according to its interest rate category and pie value.
 contract Pile is Auth, Interest {
+    /// @notice stores all needed information of an interest rate group
+    struct Rate {
+        // total debt of all loans with this rate
+        uint256 pie;
+        // accumlated rate index over time
+        uint256 chi;
+        // interest rate per second
+        uint256 ratePerSecond;
+        // last time the rate was accumulated
+        uint48 lastUpdated;
+        // fixed rate applied to each loan of the group
+        uint256 fixedRate;
+    }
+
     /// @notice Interest Rate Groups are identified by a `uint` and stored in a mapping
     mapping(uint256 => Rate) public rates;
 
@@ -95,8 +109,8 @@ contract Pile is Auth, Interest {
 
     /// @notice returns the current debt based on actual block.timestamp (now)
     /// @param loan the id of the loan
-    /// @return the debt of the loan
-    function debt(uint256 loan) external view returns (uint256 debt) {
+    /// @return loanDebt debt of the loan
+    function debt(uint256 loan) external view returns (uint256 loanDebt) {
         uint256 rate_ = loanRates[loan];
         uint256 chi_ = rates[rate_].chi;
         if (block.timestamp >= rates[rate_].lastUpdated) {
@@ -107,7 +121,7 @@ contract Pile is Auth, Interest {
 
     /// @notice returns the total debt of a interest rate group
     /// @param rate the id of the interest rate group
-    /// @return the total debt of the interest rate group
+    /// @return totalDebt total debt of the interest rate group
     function rateDebt(uint256 rate) external view returns (uint256 totalDebt) {
         uint256 chi_ = rates[rate].chi;
         uint256 pie_ = rates[rate].pie;

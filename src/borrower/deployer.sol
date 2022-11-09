@@ -25,6 +25,7 @@ interface FileLike {
     function file(bytes32 name, uint256 value) external;
 }
 
+/// @notice Borrower Deployer contract
 contract BorrowerDeployer is FixedPoint {
     address public immutable root;
 
@@ -72,29 +73,34 @@ contract BorrowerDeployer is FixedPoint {
         discountRate = Fixed27(discountRate_);
     }
 
+    /// @notice deploys the pile contract
     function deployPile() public {
         require(pile == ZERO);
         pile = pilefab.newPile();
         AuthLike(pile).rely(root);
     }
+    /// @notice deploys the title contract
 
     function deployTitle() public {
         require(title == ZERO);
         title = titlefab.newTitle(titleName, titleSymbol);
         AuthLike(title).rely(root);
     }
+    /// @notice deploys the shelf contract
 
     function deployShelf() public {
         require(shelf == ZERO && title != ZERO && pile != ZERO && feed != ZERO);
         shelf = shelffab.newShelf(currency, address(title), address(pile), address(feed));
         AuthLike(shelf).rely(root);
     }
+    /// @notice deploys the feed contract
 
     function deployFeed() public {
         require(feed == ZERO);
         feed = feedFab.newFeed();
         AuthLike(feed).rely(root);
     }
+    /// @notice deploys the borrower contracts and wires them together
 
     function deploy(bool initNAVFeed) public {
         // ensures all required deploy methods were called
@@ -122,8 +128,10 @@ contract BorrowerDeployer is FixedPoint {
             NAVFeedLike(feed).init();
         }
     }
+    /// @notice deploys the borrower contracts and wires them together without a NAVFeed
 
     function deploy() public {
+        // doesn't deploy the NAV feed
         deploy(false);
     }
 }
