@@ -35,7 +35,7 @@ contract TinlakeDeployScript is Script {
             lenderDeployer,
             borrowerDeployer,
             adapterDeployer,
-            address(0),
+            vm.envAddress("ORACLE"),
             vm.envAddress("LEVEL1_ADMINS", ","),
             vm.envAddress("LEVEL3_ADMIN1")
         );
