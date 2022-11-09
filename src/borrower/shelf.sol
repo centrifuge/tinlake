@@ -121,6 +121,7 @@ contract Shelf is Auth, TitleOwned, Math {
     /// @param loan the id of a loan
     /// @return registry the address of the registry
     /// @return tokenId the tokenId of the nft
+
     function token(uint256 loan) public view returns (address registry, uint256 tokenId) {
         return (shelf[loan].registry, shelf[loan].tokenId);
     }
@@ -286,6 +287,7 @@ contract Shelf is Auth, TitleOwned, Math {
     }
     /// @notice returns the information if an nft has been locked
     /// @param loan the id of the loan
+
     function nftLocked(uint256 loan) public view returns (bool) {
         return NFTLike(shelf[loan].registry).ownerOf(shelf[loan].tokenId) == address(this);
     }
