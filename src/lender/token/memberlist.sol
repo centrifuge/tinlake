@@ -5,18 +5,18 @@ import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
 
 contract Memberlist is Math, Auth {
-
-    uint constant minimumDelay = 7 days;
+    uint256 constant minimumDelay = 7 days;
 
     // -- Members--
-    mapping (address => uint) public members;
-    function updateMember(address usr, uint validUntil) public auth {
+    mapping(address => uint256) public members;
+
+    function updateMember(address usr, uint256 validUntil) public auth {
         require((safeAdd(block.timestamp, minimumDelay)) < validUntil);
         members[usr] = validUntil;
-     }
+    }
 
-    function updateMembers(address[] memory users, uint validUntil) public auth {
-        for (uint i = 0; i < users.length; i++) {
+    function updateMembers(address[] memory users, uint256 validUntil) public auth {
+        for (uint256 i = 0; i < users.length; i++) {
             updateMember(users[i], validUntil);
         }
     }
@@ -32,7 +32,7 @@ contract Memberlist is Math, Auth {
     function hasMember(address usr) public view returns (bool) {
         if (members[usr] >= block.timestamp) {
             return true;
-        } 
+        }
         return false;
     }
 }

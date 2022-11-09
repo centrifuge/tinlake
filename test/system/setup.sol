@@ -2,52 +2,49 @@
 pragma solidity >=0.7.6;
 pragma experimental ABIEncoderV2;
 
-import { TitleFab } from "src/borrower/fabs/title.sol";
-import { ShelfFab } from "src/borrower/fabs/shelf.sol";
-import { PileFab } from "src/borrower/fabs/pile.sol";
-import { TestNAVFeedFab } from "src/borrower/fabs/navfeed.tests.sol";
-import { BorrowerDeployer } from "src/borrower/deployer.sol";
+import {TitleFab} from "src/borrower/fabs/title.sol";
+import {ShelfFab} from "src/borrower/fabs/shelf.sol";
+import {PileFab} from "src/borrower/fabs/pile.sol";
+import {TestNAVFeedFab} from "src/borrower/fabs/navfeed.tests.sol";
+import {BorrowerDeployer} from "src/borrower/deployer.sol";
 
-import { EpochCoordinator } from "src/lender/coordinator.sol";
-import { Reserve } from "src/lender/reserve.sol";
-import { Tranche } from "src/lender/tranche.sol";
-import { Operator } from "src/lender/operator.sol";
-import { Assessor } from "src/lender/assessor.sol";
-import { PoolAdmin } from "src/lender/admin/pool.sol";
-import { RestrictedToken } from "src/lender/token/restricted.sol";
-import { Memberlist } from "src/lender/token/memberlist.sol";
-import { Clerk } from "src/lender/adapters/mkr/clerk.sol";
+import {EpochCoordinator} from "src/lender/coordinator.sol";
+import {Reserve} from "src/lender/reserve.sol";
+import {Tranche} from "src/lender/tranche.sol";
+import {Operator} from "src/lender/operator.sol";
+import {Assessor} from "src/lender/assessor.sol";
+import {PoolAdmin} from "src/lender/admin/pool.sol";
+import {RestrictedToken} from "src/lender/token/restricted.sol";
+import {Memberlist} from "src/lender/token/memberlist.sol";
+import {Clerk} from "src/lender/adapters/mkr/clerk.sol";
 
-
-import { TrancheFab } from "src/lender/fabs/tranche.sol";
-import { RestrictedTokenFab } from "src/lender/fabs/restrictedtoken.sol";
-import { MemberlistFab } from "src/lender/fabs/memberlist.sol";
-import { AssessorFab } from "src/lender/fabs/assessor.sol";
-import { PoolAdminFab } from "src/lender/fabs/pooladmin.sol";
-import { ReserveFab } from "src/lender/fabs/reserve.sol";
-import { CoordinatorFab } from "src/lender/fabs/coordinator.sol";
-import { OperatorFab } from "src/lender/fabs/operator.sol";
-import { LenderDeployer } from "src/lender/deployer.sol";
+import {TrancheFab} from "src/lender/fabs/tranche.sol";
+import {RestrictedTokenFab} from "src/lender/fabs/restrictedtoken.sol";
+import {MemberlistFab} from "src/lender/fabs/memberlist.sol";
+import {AssessorFab} from "src/lender/fabs/assessor.sol";
+import {PoolAdminFab} from "src/lender/fabs/pooladmin.sol";
+import {ReserveFab} from "src/lender/fabs/reserve.sol";
+import {CoordinatorFab} from "src/lender/fabs/coordinator.sol";
+import {OperatorFab} from "src/lender/fabs/operator.sol";
+import {LenderDeployer} from "src/lender/deployer.sol";
 
 // MKR
-import { AdapterDeployer } from "src/lender/adapters/deployer.sol";
-import { ClerkFab } from "src/lender/adapters/mkr/fabs/clerk.sol";
+import {AdapterDeployer} from "src/lender/adapters/deployer.sol";
+import {ClerkFab} from "src/lender/adapters/mkr/fabs/clerk.sol";
 
-import { Title } from "tinlake-title/title.sol";
-import { Pile } from "src/borrower/pile.sol";
-import { Shelf } from "src/borrower/shelf.sol";
-import { NAVFeed } from "test/borrower/feed/navfeed.tests.sol";
+import {Title} from "tinlake-title/title.sol";
+import {Pile} from "src/borrower/pile.sol";
+import {Shelf} from "src/borrower/shelf.sol";
+import {NAVFeed} from "test/borrower/feed/navfeed.tests.sol";
 
-import { TestRoot } from "./root.sol";
+import {TestRoot} from "./root.sol";
 
 import "../simple/token.sol";
 import "tinlake-erc20/erc20.sol";
 
-
-import { TokenLike, NAVFeedLike } from "./interfaces.sol";
+import {TokenLike, NAVFeedLike} from "./interfaces.sol";
 
 import {SimpleMkr} from "./../simple/mkr.sol";
-
 
 import "test/borrower/mock/shelf.sol";
 import "test/lender/mock/navFeed.sol";
@@ -55,35 +52,34 @@ import "test/lender/adapters/mkr/mock/spotter.sol";
 import "test/lender/adapters/mkr/mock/vat.sol";
 import "./config.sol";
 
-
 // abstract contract
 abstract contract LenderDeployerLike {
     address public root;
     address public currency;
 
     // contract addresses
-    address             public assessor;
-    address             public poolAdmin;
-    address             public seniorTranche;
-    address             public juniorTranche;
-    address             public seniorOperator;
-    address             public juniorOperator;
-    address             public reserve;
-    address             public coordinator;
+    address public assessor;
+    address public poolAdmin;
+    address public seniorTranche;
+    address public juniorTranche;
+    address public seniorOperator;
+    address public juniorOperator;
+    address public reserve;
+    address public coordinator;
 
-    address             public seniorToken;
-    address             public juniorToken;
+    address public seniorToken;
+    address public juniorToken;
 
     // token names
-    string              public seniorName;
-    string              public seniorSymbol;
-    string              public juniorName;
-    string              public juniorSymbol;
+    string public seniorName;
+    string public seniorSymbol;
+    string public juniorName;
+    string public juniorSymbol;
     // restricted token member list
-    address             public seniorMemberlist;
-    address             public juniorMemberlist;
+    address public seniorMemberlist;
+    address public juniorMemberlist;
 
-    address             public deployer;
+    address public deployer;
 
     function deployJunior() public virtual;
     function deploySenior() public virtual;
@@ -102,17 +98,15 @@ interface AdapterDeployerLike {
 
 abstract contract TestSetup is Config {
     Title public collateralNFT;
-    address      public collateralNFT_;
-    SimpleToken  public currency;
-    address      public currency_;
-
+    address public collateralNFT_;
+    SimpleToken public currency;
+    address public currency_;
 
     // Borrower contracts
-    Shelf        shelf;
-    Pile         pile;
-    Title        title;
-    NAVFeed      nftFeed;
-
+    Shelf shelf;
+    Pile pile;
+    Title title;
+    NAVFeed nftFeed;
 
     // Lender contracts
     Reserve reserve;
@@ -130,7 +124,7 @@ abstract contract TestSetup is Config {
 
     // Deployers
     BorrowerDeployer public borrowerDeployer;
-    LenderDeployer public  lenderDeployer;
+    LenderDeployer public lenderDeployer;
 
     //mkr adapter
     SimpleMkr mkr;
@@ -140,16 +134,15 @@ abstract contract TestSetup is Config {
     address public lenderDeployerAddr;
 
     TestRoot root;
-    address  root_;
+    address root_;
 
     TinlakeConfig internal deploymentConfig;
 
-    function issueNFT(address usr) public virtual returns (uint tokenId, bytes32 lookupId) {
+    function issueNFT(address usr) public virtual returns (uint256 tokenId, bytes32 lookupId) {
         tokenId = collateralNFT.issue(usr);
         lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
         return (tokenId, lookupId);
     }
-
 
     function deployContracts() public virtual {
         bool mkrAdapter = false;
@@ -221,8 +214,16 @@ abstract contract TestSetup is Config {
         assessor.depend("navFeed", address(nav));
     }
 
-    function prepareMKRLenderDeployer(address rootAddr, address trancheFab, address memberlistFab, address restrictedTokenFab,
-        address reserveFab, address coordinatorFab, address operatorFab, address poolAdminFab) public virtual {
+    function prepareMKRLenderDeployer(
+        address rootAddr,
+        address trancheFab,
+        address memberlistFab,
+        address restrictedTokenFab,
+        address reserveFab,
+        address coordinatorFab,
+        address operatorFab,
+        address poolAdminFab
+    ) public virtual {
         AssessorFab assessorFab = new AssessorFab();
         ClerkFab clerkFab = new ClerkFab();
 
@@ -234,24 +235,30 @@ abstract contract TestSetup is Config {
         lenderDeployerAddr = address(lenderDeployer);
 
         return;
-
     }
 
     function prepareDeployLender(address rootAddr, bool mkrAdapter) public virtual {
         ReserveFab reserveFab = new ReserveFab();
         AssessorFab assessorFab = new AssessorFab();
         PoolAdminFab poolAdminFab = new PoolAdminFab();
-        TrancheFab  trancheFab = new TrancheFab();
+        TrancheFab trancheFab = new TrancheFab();
         MemberlistFab memberlistFab = new MemberlistFab();
         RestrictedTokenFab restrictedTokenFab = new RestrictedTokenFab();
         OperatorFab operatorFab = new OperatorFab();
         CoordinatorFab coordinatorFab = new CoordinatorFab();
 
         // deploy lender deployer for mkr adapter
-        if(mkrAdapter) {
-            prepareMKRLenderDeployer(rootAddr, address(trancheFab), address(memberlistFab), address(restrictedTokenFab),
-                address(reserveFab), address(coordinatorFab),
-                address(operatorFab), address(poolAdminFab));
+        if (mkrAdapter) {
+            prepareMKRLenderDeployer(
+                rootAddr,
+                address(trancheFab),
+                address(memberlistFab),
+                address(restrictedTokenFab),
+                address(reserveFab),
+                address(coordinatorFab),
+                address(operatorFab),
+                address(poolAdminFab)
+            );
             return;
         }
 
@@ -272,8 +279,17 @@ abstract contract TestSetup is Config {
     function _initMKR(TinlakeConfig memory config) public virtual {
         mkr = new SimpleMkr(config.mkrStabilityFee, config.mkrILK);
 
-        lenderDeployer.init(config.minSeniorRatio, config.maxSeniorRatio, config.maxReserve, config.challengeTime, config.seniorInterestRate, config.seniorTokenName,
-            config.seniorTokenSymbol, config.juniorTokenName, config.juniorTokenSymbol);
+        lenderDeployer.init(
+            config.minSeniorRatio,
+            config.maxSeniorRatio,
+            config.maxReserve,
+            config.challengeTime,
+            config.seniorInterestRate,
+            config.seniorTokenName,
+            config.seniorTokenSymbol,
+            config.juniorTokenName,
+            config.juniorTokenSymbol
+        );
     }
 
     function fetchContractAddr(LenderDeployerLike ld) internal {
@@ -297,8 +313,16 @@ abstract contract TestSetup is Config {
             _initMKR(config);
         } else {
             lenderDeployer.init(
-                config.minSeniorRatio, config.maxSeniorRatio, config.maxReserve, config.challengeTime, config.seniorInterestRate,
-                    config.seniorTokenName, config.seniorTokenSymbol, config.juniorTokenName, config.juniorTokenSymbol);
+                config.minSeniorRatio,
+                config.maxSeniorRatio,
+                config.maxReserve,
+                config.challengeTime,
+                config.seniorInterestRate,
+                config.seniorTokenName,
+                config.seniorTokenSymbol,
+                config.juniorTokenName,
+                config.juniorTokenSymbol
+            );
         }
 
         ld.deployJunior();
@@ -307,7 +331,6 @@ abstract contract TestSetup is Config {
         ld.deployAssessor();
         ld.deployPoolAdmin();
         ld.deployCoordinator();
-
 
         ld.deploy();
         fetchContractAddr(ld);
@@ -320,7 +343,9 @@ abstract contract TestSetup is Config {
             SpotterMock spotter = new SpotterMock();
             spotter.setReturn("mat", config.mkrMAT);
 
-            adapterDeployer.wireClerk(address(mkr), address(mkr), address(spotter), address(mkr.jugMock()), 0.01 * 10**27);
+            adapterDeployer.wireClerk(
+                address(mkr), address(mkr), address(spotter), address(mkr.jugMock()), 0.01 * 10 ** 27
+            );
         }
     }
 }

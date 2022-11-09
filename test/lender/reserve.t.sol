@@ -10,8 +10,8 @@ import "./mock/assessor.sol";
 import "./mock/clerk.sol";
 
 interface ReserveLike {
-    function hardDeposit(uint currencyAmount) external;
-    function hardPayout(uint currencyAmount) external;
+    function hardDeposit(uint256 currencyAmount) external;
+    function hardPayout(uint256 currencyAmount) external;
 }
 
 contract LendingAdapterMock is ClerkMock {
@@ -23,13 +23,13 @@ contract LendingAdapterMock is ClerkMock {
         currency = ERC20Like(currency_);
     }
 
-    function draw(uint amount) public {
+    function draw(uint256 amount) public {
         currency.mint(address(this), amount);
         currency.approve(address(reserve), amount);
         reserve.hardDeposit(amount);
     }
 
-    function wipe(uint amount) public {
+    function wipe(uint256 amount) public {
         reserve.hardPayout(amount);
     }
 }
@@ -56,7 +56,7 @@ contract ReserveTest is Test, Math {
         currency_ = address(currency);
         assessor_ = address(assessor);
         self = address(this);
-        currency.approve(reserve_, type(uint).max);
+        currency.approve(reserve_, type(uint256).max);
     }
 
     function setUpLendingAdapter() public {
@@ -66,23 +66,23 @@ contract ReserveTest is Test, Math {
         lending.setReturn("activated", true);
     }
 
-    function fundReserve(uint amount) public {
+    function fundReserve(uint256 amount) public {
         currency.mint(self, amount);
         currency.approve(reserve_, amount);
         reserve.deposit(amount);
     }
 
     function testFullLoanPayout() public {
-        uint borrowAmount = 100 ether;
+        uint256 borrowAmount = 100 ether;
         // fund reserve with exact borrowAmount
         fundReserve(borrowAmount);
 
-        uint reserveBalance = currency.balanceOf(reserve_);
-        uint selfBalance = currency.balanceOf(self);
+        uint256 reserveBalance = currency.balanceOf(reserve_);
+        uint256 selfBalance = currency.balanceOf(self);
 
-          // set maxCurrencyAvailable allowance to exact borrowAmount
+        // set maxCurrencyAvailable allowance to exact borrowAmount
         reserve.file("currencyAvailable", borrowAmount);
-        uint currencyAvailable = reserve.currencyAvailable();
+        uint256 currencyAvailable = reserve.currencyAvailable();
 
         reserve.payoutForLoans(currencyAvailable);
 
@@ -93,17 +93,17 @@ contract ReserveTest is Test, Math {
     }
 
     function testPartialPayout() public {
-        uint borrowAmount = 100 ether;
+        uint256 borrowAmount = 100 ether;
         bool requestWant = true;
         // fund reserve with twice as much currency then borrowAmount
         fundReserve(safeMul(borrowAmount, 2));
 
-        uint reserveBalance = currency.balanceOf(reserve_);
-        uint selfBalance = currency.balanceOf(self);
+        uint256 reserveBalance = currency.balanceOf(reserve_);
+        uint256 selfBalance = currency.balanceOf(self);
 
         // set maxCurrencyAvailable allowance to twice as much as borrowAmount
-        reserve.file("currencyAvailable",  safeMul(borrowAmount, 2));
-        uint currencyAvailable = reserve.currencyAvailable();
+        reserve.file("currencyAvailable", safeMul(borrowAmount, 2));
+        uint256 currencyAvailable = reserve.currencyAvailable();
 
         reserve.payoutForLoans(borrowAmount);
 
@@ -114,14 +114,14 @@ contract ReserveTest is Test, Math {
     }
 
     function testReserveBalanceRepay() public {
-        uint repayAmount = 100 ether;
+        uint256 repayAmount = 100 ether;
         bool requestWant = false;
         // fund test with enough currency
         currency.mint(self, repayAmount);
 
-        uint reserveBalance = currency.balanceOf(reserve_);
-        uint selfBalance = currency.balanceOf(self);
-        uint currencyAvailable = reserve.currencyAvailable();
+        uint256 reserveBalance = currency.balanceOf(reserve_);
+        uint256 selfBalance = currency.balanceOf(self);
+        uint256 currencyAvailable = reserve.currencyAvailable();
 
         //simulate shelf behaviour
         reserve.deposit(repayAmount);
@@ -133,7 +133,7 @@ contract ReserveTest is Test, Math {
     }
 
     function testFailBalancePoolInactive() public {
-        uint borrowAmount = 100 ether;
+        uint256 borrowAmount = 100 ether;
         bool requestWant = true;
         // fund reserve with enough currency
         fundReserve(200 ether);
@@ -146,18 +146,18 @@ contract ReserveTest is Test, Math {
     }
 
     function testFailBalanceBorrowAmountTooHigh() public {
-        uint borrowAmount = 100 ether;
-        fundReserve(borrowAmount*2);
+        uint256 borrowAmount = 100 ether;
+        fundReserve(borrowAmount * 2);
 
         // set max available currency
         reserve.file("currencyAvailable", borrowAmount);
-        reserve.payoutForLoans(borrowAmount+1);
+        reserve.payoutForLoans(borrowAmount + 1);
     }
 
     function testFailBalanceReserveUnderfunded() public {
-        uint borrowAmount = 100 ether;
+        uint256 borrowAmount = 100 ether;
         // fund reserve with amount smaller than borrowAmount
-        fundReserve(borrowAmount-1);
+        fundReserve(borrowAmount - 1);
 
         // set max available currency to borrowAmount
         reserve.file("currencyAvailable", borrowAmount);
@@ -165,7 +165,7 @@ contract ReserveTest is Test, Math {
     }
 
     function testDepositPayout() public {
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         currency.mint(self, amount);
         assertEq(reserve.totalBalance(), 0);
         currency.approve(reserve_, amount);
@@ -182,45 +182,46 @@ contract ReserveTest is Test, Math {
 
     function testDrawFromZeroBalance() public {
         setUpLendingAdapter();
-        uint remainingCredit = 100 ether;
+        uint256 remainingCredit = 100 ether;
         lending.setReturn("remainingCredit", remainingCredit);
-        uint amount = 10 ether;
+        uint256 amount = 10 ether;
         reserve.payout(amount);
         assertEq(currency.balanceOf(self), amount);
     }
 
     function testAdditionalDraw() public {
         setUpLendingAdapter();
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         fundReserve(amount);
-        uint remainingCredit = 100 ether;
+        uint256 remainingCredit = 100 ether;
         lending.setReturn("remainingCredit", remainingCredit);
-        uint payoutAmount = 150 ether;
+        uint256 payoutAmount = 150 ether;
         reserve.payout(payoutAmount);
         assertEq(currency.balanceOf(self), payoutAmount);
     }
 
     function testAdditionalDrawMax() public {
         setUpLendingAdapter();
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         fundReserve(amount);
 
-        uint remainingCredit = 100 ether;
+        uint256 remainingCredit = 100 ether;
         lending.setReturn("remainingCredit", remainingCredit);
 
-        uint payoutAmount = 200 ether;
+        uint256 payoutAmount = 200 ether;
         reserve.payout(payoutAmount);
         assertEq(currency.balanceOf(self), payoutAmount);
     }
+
     function testFailDraw() public {
         setUpLendingAdapter();
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         fundReserve(amount);
 
-        uint remainingCredit = 100 ether;
+        uint256 remainingCredit = 100 ether;
         lending.setReturn("remainingCredit", remainingCredit);
 
-        uint payoutAmount = 201 ether;
+        uint256 payoutAmount = 201 ether;
         reserve.payout(payoutAmount);
         assertEq(currency.balanceOf(self), payoutAmount);
     }
@@ -228,30 +229,30 @@ contract ReserveTest is Test, Math {
     function testFailDrawFromZeroBalance() public {
         setUpLendingAdapter();
 
-        uint remainingCredit = 100 ether;
+        uint256 remainingCredit = 100 ether;
         lending.setReturn("remainingCredit", remainingCredit);
 
-        uint payoutAmount = 101 ether;
+        uint256 payoutAmount = 101 ether;
         reserve.payout(payoutAmount);
         assertEq(currency.balanceOf(self), payoutAmount);
     }
 
     function testWipe() public {
         setUpLendingAdapter();
-        uint debt = 70 ether;
+        uint256 debt = 70 ether;
         lending.setReturn("debt", debt);
 
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         fundReserve(amount);
-        assertEq(currency.balanceOf(reserve_), amount-debt);
+        assertEq(currency.balanceOf(reserve_), amount - debt);
     }
 
     function testWipeHighDebt() public {
         setUpLendingAdapter();
-        uint debt = 700 ether;
+        uint256 debt = 700 ether;
         lending.setReturn("debt", debt);
 
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         fundReserve(amount);
         assertEq(currency.balanceOf(reserve_), 0);
         assertEq(currency.balanceOf(address(lending)), amount);
@@ -259,23 +260,22 @@ contract ReserveTest is Test, Math {
 
     function testNoWipeZeroDebt() public {
         setUpLendingAdapter();
-        uint debt = 0;
+        uint256 debt = 0;
         lending.setReturn("debt", debt);
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         fundReserve(amount);
         assertEq(currency.balanceOf(reserve_), amount);
     }
 
     function testTotalReserveAvailable() public {
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         fundReserve(amount);
 
         assertEq(reserve.totalBalanceAvailable(), amount);
 
         setUpLendingAdapter();
-        uint remainingCredit = 50 ether;
+        uint256 remainingCredit = 50 ether;
         lending.setReturn("remainingCredit", remainingCredit);
-        assertEq(reserve.totalBalanceAvailable(), amount+remainingCredit);
+        assertEq(reserve.totalBalanceAvailable(), amount + remainingCredit);
     }
-
 }

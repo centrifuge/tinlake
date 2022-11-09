@@ -11,7 +11,6 @@ import "./mock/memberlist.sol";
 import "./mock/clerk.sol";
 
 contract LiquidityManagementPoolAdminTest is Test {
-
     Assessor assessor;
     ClerkMock lending;
     MemberlistMock seniorMemberlist;
@@ -52,23 +51,23 @@ contract LiquidityManagementPoolAdminTest is Test {
     }
 
     function callMaxReserve() public {
-        uint maxReserve = 150 ether;
-        
+        uint256 maxReserve = 150 ether;
+
         poolAdmin.setMaxReserve(maxReserve);
         assertEq(assessor.maxReserve(), maxReserve);
     }
 
     function testSetMaxReserve() public {
-        callMaxReserve(); 
+        callMaxReserve();
     }
 
     function testFailSetMaxReserveNotManager() public {
         poolAdmin.deny(address(this));
-        callMaxReserve(); 
+        callMaxReserve();
     }
 
     function callRaiseCreditline() public {
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         poolAdmin.raiseCreditline(amount);
 
         assertEq(lending.values_uint("clerk_raise_amount"), amount);
@@ -84,7 +83,7 @@ contract LiquidityManagementPoolAdminTest is Test {
     }
 
     function callSinkCreditline() public {
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         poolAdmin.sinkCreditline(amount);
 
         assertEq(lending.values_uint("clerk_sink_amount"), amount);
@@ -111,9 +110,8 @@ contract LiquidityManagementPoolAdminTest is Test {
     }
 
     function testSetMaxReserveAndRaiseCreditline() public {
-
-        uint maxReserve = 150 ether;
-        uint amount = 100 ether;
+        uint256 maxReserve = 150 ether;
+        uint256 amount = 100 ether;
         poolAdmin.setMaxReserveAndRaiseCreditline(maxReserve, amount);
 
         assertEq(assessor.maxReserve(), maxReserve);
@@ -121,9 +119,8 @@ contract LiquidityManagementPoolAdminTest is Test {
     }
 
     function testSetMaxReserveAndSinkCreditline() public {
-
-        uint maxReserve = 150 ether;
-        uint amount = 100 ether;
+        uint256 maxReserve = 150 ether;
+        uint256 amount = 100 ether;
         poolAdmin.setMaxReserveAndSinkCreditline(maxReserve, amount);
 
         assertEq(assessor.maxReserve(), maxReserve);
@@ -132,7 +129,7 @@ contract LiquidityManagementPoolAdminTest is Test {
 
     function updateSeniorMember() public {
         address usr = address(1);
-        uint validUntil = block.timestamp + 365 days;
+        uint256 validUntil = block.timestamp + 365 days;
         poolAdmin.updateSeniorMember(usr, validUntil);
 
         assertEq(seniorMemberlist.calls("updateMember"), 1);
@@ -150,7 +147,7 @@ contract LiquidityManagementPoolAdminTest is Test {
     }
 
     function updateSeniorMembers() public {
-        uint validUntil = block.timestamp + 365 days;
+        uint256 validUntil = block.timestamp + 365 days;
         poolAdmin.updateSeniorMembers(users, validUntil);
 
         assertEq(seniorMemberlist.calls("updateMembers"), 1);
@@ -169,7 +166,7 @@ contract LiquidityManagementPoolAdminTest is Test {
 
     function updateJuniorMember() public {
         address usr = address(1);
-        uint validUntil = block.timestamp + 365 days;
+        uint256 validUntil = block.timestamp + 365 days;
         poolAdmin.updateJuniorMember(usr, validUntil);
 
         assertEq(juniorMemberlist.calls("updateMember"), 1);
@@ -187,7 +184,7 @@ contract LiquidityManagementPoolAdminTest is Test {
     }
 
     function updateJuniorMembers() public {
-        uint validUntil = block.timestamp + 365 days;
+        uint256 validUntil = block.timestamp + 365 days;
         poolAdmin.updateJuniorMembers(users, validUntil);
 
         assertEq(juniorMemberlist.calls("updateMembers"), 1);
@@ -203,6 +200,4 @@ contract LiquidityManagementPoolAdminTest is Test {
         poolAdmin.deny(address(this));
         updateJuniorMembers();
     }
-
 }
-

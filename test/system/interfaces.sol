@@ -6,44 +6,44 @@ interface Hevm {
 }
 
 interface TitleLike {
-    function issue(address) external returns (uint);
-    function close(uint) external;
-    function ownerOf (uint) external returns (address);
+    function issue(address) external returns (uint256);
+    function close(uint256) external;
+    function ownerOf(uint256) external returns (address);
 }
 
-interface TokenLike{
-    function totalSupply() external returns (uint);
-    function balanceOf(address) external returns (uint);
-    function transferFrom(address,address,uint) external;
-    function approve(address, uint) external;
-    function mint(address, uint) external;
-    function burn(address, uint) external;
+interface TokenLike {
+    function totalSupply() external returns (uint256);
+    function balanceOf(address) external returns (uint256);
+    function transferFrom(address, address, uint256) external;
+    function approve(address, uint256) external;
+    function mint(address, uint256) external;
+    function burn(address, uint256) external;
 }
 
 interface NAVFeedLike {
-    function update(bytes32 nftID, uint value) external;
-    function update(bytes32 nftID, uint value, uint risk) external;
-    function ceiling(uint loan) external view returns(uint);
-    function values(uint) external view returns(uint);
-    function ceilingRatio(uint) external view returns(uint);
-    function thresholdRatio(uint) external view returns(uint);
-    function threshold(uint) external view returns (uint);
+    function update(bytes32 nftID, uint256 value) external;
+    function update(bytes32 nftID, uint256 value, uint256 risk) external;
+    function ceiling(uint256 loan) external view returns (uint256);
+    function values(uint256) external view returns (uint256);
+    function ceilingRatio(uint256) external view returns (uint256);
+    function thresholdRatio(uint256) external view returns (uint256);
+    function threshold(uint256) external view returns (uint256);
     // function file(bytes32 what, uint loan, uint currencyAmount) external;
-    function borrow(uint loan, uint currencyAmount) external;
-    function repay(uint loan, uint currencyAmount) external;
-    function file(bytes32 what, bytes32 nftID_, uint maturityDate_) external;
-    function latestNAV() external returns (uint);
-    function currentNAV() external returns (uint);
-    function calcUpdateNAV() external returns (uint);
+    function borrow(uint256 loan, uint256 currencyAmount) external;
+    function repay(uint256 loan, uint256 currencyAmount) external;
+    function file(bytes32 what, bytes32 nftID_, uint256 maturityDate_) external;
+    function latestNAV() external returns (uint256);
+    function currentNAV() external returns (uint256);
+    function calcUpdateNAV() external returns (uint256);
     function init() external;
-    function writeOff(uint loan, uint writeOffGroupIndex_) external;
-    function overrideWriteOff(uint loan, uint writeOffGroupIndex_) external;
+    function writeOff(uint256 loan, uint256 writeOffGroupIndex_) external;
+    function overrideWriteOff(uint256 loan, uint256 writeOffGroupIndex_) external;
 }
 
 interface PileLike {
-    function debt(uint loan) external returns(uint);
-    function file(bytes32 what, uint rate, uint speed) external;
-    function setRate(uint loan, uint rate) external;
+    function debt(uint256 loan) external returns (uint256);
+    function file(bytes32 what, uint256 rate, uint256 speed) external;
+    function setRate(uint256 loan, uint256 rate) external;
 }
 
 interface TReserveLike {
@@ -52,31 +52,33 @@ interface TReserveLike {
 }
 
 interface ShelfLike {
-    function lock(uint loan) external;
-    function unlock(uint loan) external;
-    function issue(address registry, uint token) external returns (uint loan);
-    function close(uint loan) external;
-    function borrow(uint loan, uint wad) external;
-    function withdraw(uint loan, uint wad, address usr) external;
-    function repay(uint loan, uint wad) external;
-    function shelf(uint loan) external returns(address registry,uint256 tokenId,uint price,uint principal, uint initial);
-    function file(bytes32 what, uint loan, address registry, uint nft) external;
+    function lock(uint256 loan) external;
+    function unlock(uint256 loan) external;
+    function issue(address registry, uint256 token) external returns (uint256 loan);
+    function close(uint256 loan) external;
+    function borrow(uint256 loan, uint256 wad) external;
+    function withdraw(uint256 loan, uint256 wad, address usr) external;
+    function repay(uint256 loan, uint256 wad) external;
+    function shelf(uint256 loan)
+        external
+        returns (address registry, uint256 tokenId, uint256 price, uint256 principal, uint256 initial);
+    function file(bytes32 what, uint256 loan, address registry, uint256 nft) external;
 }
 
 interface ERC20Like {
-    function transferFrom(address, address, uint) external;
-    function mint(address, uint) external;
-    function approve(address usr, uint wad) external returns (bool);
+    function transferFrom(address, address, uint256) external;
+    function mint(address, uint256) external;
+    function approve(address usr, uint256 wad) external returns (bool);
     function totalSupply() external returns (uint256);
-    function balanceOf(address usr) external returns (uint);
+    function balanceOf(address usr) external returns (uint256);
 }
 
 interface TrancheLike {
-    function balance() external returns(uint);
-    function tokenSupply() external returns(uint);
+    function balance() external returns (uint256);
+    function tokenSupply() external returns (uint256);
 }
 
 interface MemberlistLike {
-    function updateMember(address usr, uint validUntil) external;
-    function removeMember(address usr, uint validUntil) external;
+    function updateMember(address usr, uint256 validUntil) external;
+    function removeMember(address usr, uint256 validUntil) external;
 }

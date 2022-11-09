@@ -4,7 +4,6 @@ pragma solidity >=0.7.6;
 import "../../../test/mock/mock.sol";
 
 contract AssessorMock is Mock {
-
     function reBalance() public {
         calls["reBalance"]++;
     }

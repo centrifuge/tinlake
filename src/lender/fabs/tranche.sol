@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import { Tranche } from "./../tranche.sol";
+import {Tranche} from "./../tranche.sol";
 
 interface TrancheFabLike {
     function newTranche(address, address) external returns (address);

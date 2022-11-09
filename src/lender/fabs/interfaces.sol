@@ -14,7 +14,7 @@ interface TrancheFabLike {
 }
 
 interface CoordinatorFabLike {
-    function newCoordinator(uint) external returns (address);
+    function newCoordinator(uint256) external returns (address);
 }
 
 interface OperatorFabLike {
@@ -38,5 +38,7 @@ interface ClerkFabLike {
 }
 
 interface TinlakeManagerFabLike {
-    function newTinlakeManager(address, address, address,  address, address, address, address, address) external returns (address);
+    function newTinlakeManager(address, address, address, address, address, address, address, address)
+        external
+        returns (address);
 }

@@ -1,25 +1,26 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
+
 import "forge-std/Test.sol";
 import "tinlake-math/math.sol";
 
 contract Assertions is Test, Math {
-    uint TWO_DECIMAL_PRECISION = 10**16;
-    uint FIXED27_TWO_DECIMAL_PRECISION = 10**25;
-    uint FIXED27_TEN_DECIMAL_PRECISION = 10**17;
+    uint256 TWO_DECIMAL_PRECISION = 10 ** 16;
+    uint256 FIXED27_TWO_DECIMAL_PRECISION = 10 ** 25;
+    uint256 FIXED27_TEN_DECIMAL_PRECISION = 10 ** 17;
 
     // 2 wei default tolerance
-    uint TOLERANCE= 2;
+    uint256 TOLERANCE = 2;
 
     // assertEq with precision tolerance
-    function assertEq(uint a, uint b, uint precision)  public {
-        assertEq(a/precision, b/precision);
+    function assertEq(uint256 a, uint256 b, uint256 precision) public {
+        assertEq(a / precision, b / precision);
     }
 
     // assert equal two variables with a wei tolerance
-    function assertEqTol(uint actual, uint expected, bytes32 msg_) public {
-        uint diff;
-        if(actual > expected) {
+    function assertEqTol(uint256 actual, uint256 expected, bytes32 msg_) public {
+        uint256 diff;
+        if (actual > expected) {
             diff = safeSub(actual, expected);
         } else {
             diff = safeSub(expected, actual);
@@ -29,7 +30,6 @@ contract Assertions is Test, Math {
             emit log_named_uint("Expected", expected);
             emit log_named_uint("Actual  ", actual);
             emit log_named_uint("Diff    ", diff);
-
         }
         assertTrue(diff <= TOLERANCE);
     }

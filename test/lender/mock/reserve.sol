@@ -6,56 +6,56 @@ import "tinlake-auth/auth.sol";
 import "../../../test/mock/mock.sol";
 
 interface CurrencyLike {
-    function transferFrom(address from, address to, uint amount) external;
-    function balanceOf(address usr) external returns (uint);
+    function transferFrom(address from, address to, uint256 amount) external;
+    function balanceOf(address usr) external returns (uint256);
 }
 
 contract ReserveMock is Mock, Auth {
     CurrencyLike public currency;
+
     constructor(address currency_) {
         wards[msg.sender] = 1;
         currency = CurrencyLike(currency_);
     }
 
-    function file(bytes32 , uint currencyAmount) public {
+    function file(bytes32, uint256 currencyAmount) public {
         values_uint["borrow_amount"] = currencyAmount;
     }
 
-    function balance() public returns (uint) {
+    function balance() public returns (uint256) {
         return call("balance");
     }
 
-    function totalBalance() public view returns (uint) {
+    function totalBalance() public view returns (uint256) {
         return values_return["balance"];
     }
 
-    function totalBalanceAvailable() public view returns (uint) {
+    function totalBalanceAvailable() public view returns (uint256) {
         return values_return["totalBalanceAvailable"];
     }
 
-    function hardDeposit(uint amount) public {
+    function hardDeposit(uint256 amount) public {
         values_uint["deposit_amount"] = amount;
         currency.transferFrom(msg.sender, address(this), amount);
     }
 
-    function hardPayout(uint amount) public {
+    function hardPayout(uint256 amount) public {
         values_uint["deposit_amount"] = amount;
         currency.transferFrom(address(this), msg.sender, amount);
     }
 
-    function deposit(uint amount) public {
+    function deposit(uint256 amount) public {
         values_uint["deposit_amount"] = amount;
         currency.transferFrom(msg.sender, address(this), amount);
     }
 
-    function payout(uint amount) public {
+    function payout(uint256 amount) public {
         values_uint["deposit_amount"] = amount;
         currency.transferFrom(address(this), msg.sender, amount);
     }
 
-    function payoutForLoans(uint amount) public {
+    function payoutForLoans(uint256 amount) public {
         values_uint["deposit_amount"] = amount;
         currency.transferFrom(address(this), msg.sender, amount);
     }
 }
-

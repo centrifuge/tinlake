@@ -18,12 +18,11 @@ import "./mock/jug.sol";
 import "src/lender/definitions.sol";
 import "../../../system/assertions.sol";
 
-
 interface Hevm {
     function warp(uint256) external;
 }
 
-contract AssessorMockWithDef is AssessorMock, Definitions { }
+contract AssessorMockWithDef is AssessorMock, Definitions {}
 
 contract ClerkTest is Assertions, Interest {
     Hevm hevm;
@@ -77,7 +76,7 @@ contract ClerkTest is Assertions, Interest {
 
         // set values for the MKR contracts
         // mat = 110% -> 10% extra security margin required for mkr
-        uint mat = 1.1 * 10**27;
+        uint256 mat = 1.1 * 10 ** 27;
         spotter.setReturn("mat", mat);
         spotter.setReturn("pip", address(0));
         // set stability fee to 0
@@ -106,12 +105,12 @@ contract ClerkTest is Assertions, Interest {
         // day 2: 110.25   (100 * 1.05^2)
         // day 3: 115.7625 (100 * 1.05^3)
 
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         vat.increaseTab(amount);
         jug.setInterestUpToDate(false);
-        uint rho = block.timestamp;
+        uint256 rho = block.timestamp;
         jug.setReturn("ilks_rho", rho);
-        uint interestRatePerSecond = uint(1000000564701133626865910626);     // 5 % day
+        uint256 interestRatePerSecond = uint256(1000000564701133626865910626); // 5 % day
         jug.setReturn("ilks_duty", interestRatePerSecond);
         hevm.warp(block.timestamp + 1 days);
         assertEq(clerk.debt(), 105 ether);
@@ -119,7 +118,7 @@ contract ClerkTest is Assertions, Interest {
         assertEq(clerk.debt(), 110.25 ether);
 
         //rate idx after two days of 5% interest
-        uint rateIdx = rpow(interestRatePerSecond, safeSub(block.timestamp, rho), ONE);
+        uint256 rateIdx = rpow(interestRatePerSecond, safeSub(block.timestamp, rho), ONE);
         // simulate rate idx update
         vat.setReturn("stabilityFeeIdx", rateIdx);
         jug.setReturn("ilks_rho", block.timestamp);
@@ -129,20 +128,20 @@ contract ClerkTest is Assertions, Interest {
     }
 
     function testStabilityFeeWithJug() public {
-        uint interestRatePerSecond = uint(1000000564701133626865910626);     // 5 % day
+        uint256 interestRatePerSecond = uint256(1000000564701133626865910626); // 5 % day
         jug.setReturn("ilks_duty", interestRatePerSecond);
 
         jug.setReturn("base", 0);
         assertEq(clerk.stabilityFee(), interestRatePerSecond);
 
-        uint base = ONE;
+        uint256 base = ONE;
         jug.setReturn("base", base);
         assertEq(clerk.stabilityFee(), safeAdd(interestRatePerSecond, base));
     }
 
-    function raise(uint amountDAI) public{
-        uint creditlineInit = clerk.creditline();
-        uint remainingCreditInit = clerk.remainingCredit();
+    function raise(uint256 amountDAI) public {
+        uint256 creditlineInit = clerk.creditline();
+        uint256 remainingCreditInit = clerk.remainingCredit();
 
         clerk.raise(amountDAI);
 
@@ -152,15 +151,15 @@ contract ClerkTest is Assertions, Interest {
         assertEq(clerk.remainingCredit(), safeAdd(remainingCreditInit, amountDAI));
     }
 
-    function draw(uint amountDAI, uint dropPrice) public {
-        uint remainingCreditInit = clerk.remainingCredit();
-        uint reserveDAIBalanceInit = currency.balanceOf(address(reserve));
-        uint collatralBalanceInit = collateral.balanceOf(address(mgr));
-        uint juniorStakeInit = clerk.juniorStake();
-        uint overcollAmountDAI = clerk.calcOvercollAmount(amountDAI);
-        uint protectionAmount = safeSub(overcollAmountDAI, amountDAI);
-         // collateral that is required to draw the DAI from the vault -> including mkr extra protection margin
-        uint requiredCollateral = rdiv(overcollAmountDAI, dropPrice);
+    function draw(uint256 amountDAI, uint256 dropPrice) public {
+        uint256 remainingCreditInit = clerk.remainingCredit();
+        uint256 reserveDAIBalanceInit = currency.balanceOf(address(reserve));
+        uint256 collatralBalanceInit = collateral.balanceOf(address(mgr));
+        uint256 juniorStakeInit = clerk.juniorStake();
+        uint256 overcollAmountDAI = clerk.calcOvercollAmount(amountDAI);
+        uint256 protectionAmount = safeSub(overcollAmountDAI, amountDAI);
+        // collateral that is required to draw the DAI from the vault -> including mkr extra protection margin
+        uint256 requiredCollateral = rdiv(overcollAmountDAI, dropPrice);
         // assessor: set DROP token price
         assessor.setReturn("calcSeniorTokenPrice", dropPrice);
 
@@ -178,12 +177,12 @@ contract ClerkTest is Assertions, Interest {
         assertEq(clerk.juniorStake(), safeAdd(juniorStakeInit, protectionAmount));
     }
 
-    function wipe(uint amountDAI, uint dropPrice) public {
-        uint tabInit = clerk.debt();
-        uint reserveDAIBalanceInit = currency.balanceOf(address(reserve));
-        uint mgrDAIBalanceInit = currency.balanceOf(address(mgr));
-        uint collLockedInit = collateral.balanceOf(address(mgr));
-        uint collateralTotalBalanceInit = collateral.totalSupply();
+    function wipe(uint256 amountDAI, uint256 dropPrice) public {
+        uint256 tabInit = clerk.debt();
+        uint256 reserveDAIBalanceInit = currency.balanceOf(address(reserve));
+        uint256 mgrDAIBalanceInit = currency.balanceOf(address(mgr));
+        uint256 collLockedInit = collateral.balanceOf(address(mgr));
+        uint256 collateralTotalBalanceInit = collateral.totalSupply();
         // assessor: set DROP token price
         assessor.setReturn("calcSeniorTokenPrice", dropPrice);
 
@@ -192,8 +191,8 @@ contract ClerkTest is Assertions, Interest {
 
         // for testing set vat values correclty
         // assert collateral amount in cdp correct
-        uint mat = clerk.mat();
-        uint collLockedExpected = rdiv(rmul(clerk.debt(), mat), dropPrice);
+        uint256 mat = clerk.mat();
+        uint256 collLockedExpected = rdiv(rmul(clerk.debt(), mat), dropPrice);
         vat.setInk(collLockedExpected);
 
         // assert that the amount repaid is never higher than the actual debt
@@ -208,7 +207,7 @@ contract ClerkTest is Assertions, Interest {
         // assert remainingCredit is correct
         // remainingCredit can be maximum increased up to creditline value.
         // Mkr debt can grow bigger then creditline with accrued interest. When repaying mkr debt, make sure that remaining credit never exceeds creditline.
-        uint remainingCreditExpected;
+        uint256 remainingCreditExpected;
         if (clerk.debt() > clerk.creditline()) {
             remainingCreditExpected = 0;
         } else {
@@ -218,7 +217,7 @@ contract ClerkTest is Assertions, Interest {
         // assert juniorStake was reduced correctly
         assertEq(collateral.balanceOf(address(mgr)), collLockedExpected);
         // assert correct amount of collateral burned
-        uint collBurnedExpected = safeSub(collLockedInit, collLockedExpected);
+        uint256 collBurnedExpected = safeSub(collLockedInit, collLockedExpected);
         assertEq(collateral.totalSupply(), safeSub(collateralTotalBalanceInit, collBurnedExpected));
         // assert senior asset value decreased by correct amount
         assertEq(assessor.values_uint("changeSeniorAsset_seniorRedeem"), rmul(collBurnedExpected, dropPrice));
@@ -226,17 +225,17 @@ contract ClerkTest is Assertions, Interest {
         assertEq(clerk.juniorStake(), safeSub(rmul(collLockedExpected, dropPrice), clerk.debt()));
     }
 
-    function harvest(uint dropPrice) public {
-        uint collLockedInit = collateral.balanceOf(address(mgr));
-        uint collateralTotalBalanceInit = collateral.totalSupply();
-        uint mat = clerk.mat();
+    function harvest(uint256 dropPrice) public {
+        uint256 collLockedInit = collateral.balanceOf(address(mgr));
+        uint256 collateralTotalBalanceInit = collateral.totalSupply();
+        uint256 mat = clerk.mat();
 
         clerk.harvest();
         // assert collateral amount in cdp correct
-        uint collLockedExpected = rdiv(rmul(clerk.debt(), mat), dropPrice);
+        uint256 collLockedExpected = rdiv(rmul(clerk.debt(), mat), dropPrice);
         assertEq(collateral.balanceOf(address(mgr)), collLockedExpected);
         // assert correct amount of collateral burned
-        uint collBurnedExpected = safeSub(collLockedInit, collLockedExpected);
+        uint256 collBurnedExpected = safeSub(collLockedInit, collLockedExpected);
         assertEq(collateral.totalSupply(), safeSub(collateralTotalBalanceInit, collBurnedExpected));
         // assert senior asset value decreased by correct amount
         assertEq(assessor.values_uint("changeSeniorAsset_seniorRedeem"), rmul(collBurnedExpected, dropPrice));
@@ -244,9 +243,9 @@ contract ClerkTest is Assertions, Interest {
         vat.setInk(collLockedExpected);
     }
 
-    function heal(uint amount, uint, bool full) public {
-        uint totalBalanceDropInit = collateral.totalSupply();
-        if ( !full ) {
+    function heal(uint256 amount, uint256, bool full) public {
+        uint256 totalBalanceDropInit = collateral.totalSupply();
+        if (!full) {
             clerk.heal(amount);
         } else {
             clerk.heal();
@@ -256,12 +255,12 @@ contract ClerkTest is Assertions, Interest {
         assertEqTol(collateral.totalSupply(), safeAdd(totalBalanceDropInit, amount), "heal#1");
     }
 
-    function sink(uint amountDAI) public {
-        uint creditlineInit = clerk.creditline();
-        uint remainingCreditInit = clerk.remainingCredit();
+    function sink(uint256 amountDAI) public {
+        uint256 creditlineInit = clerk.creditline();
+        uint256 remainingCreditInit = clerk.remainingCredit();
 
-        uint reserve_ = 1000 ether;
-        uint seniorBalance = 800 ether;
+        uint256 reserve_ = 1000 ether;
+        uint256 seniorBalance = 800 ether;
         assessor.setReturn("balance", reserve_);
         assessor.setReturn("seniorBalance", seniorBalance);
         assessor.setReturn("borrowAmountEpoch", reserve_);
@@ -278,13 +277,13 @@ contract ClerkTest is Assertions, Interest {
         coordinator.setReturn("submissionPeriod", false);
         // set validation result in coordinator to 0 -> success
         coordinator.setIntReturn("validateRatioConstraints", 0);
-        uint amountDAI = 100 ether;
+        uint256 amountDAI = 100 ether;
         // assert calcOvercollAmount computes the correct value
-        uint overcollAmountDAI = clerk.calcOvercollAmount(amountDAI);
+        uint256 overcollAmountDAI = clerk.calcOvercollAmount(amountDAI);
 
         assertEq(overcollAmountDAI, 110 ether);
         // assert the security margin is computed correctly
-        uint creditProtection = safeSub(overcollAmountDAI, amountDAI);
+        uint256 creditProtection = safeSub(overcollAmountDAI, amountDAI);
         assertEq(creditProtection, 10 ether);
 
         raise(amountDAI);
@@ -295,7 +294,7 @@ contract ClerkTest is Assertions, Interest {
         coordinator.setReturn("submissionPeriod", false);
         // set validation result in coordinator to 0 -> success
         coordinator.setIntReturn("validateRatioConstraints", 0);
-        uint amountDAI = 100 ether;
+        uint256 amountDAI = 100 ether;
         // raise 100 DAI
         raise(amountDAI);
         // raise additional 100 DAI
@@ -307,29 +306,29 @@ contract ClerkTest is Assertions, Interest {
         coordinator.setReturn("submissionPeriod", true);
         // set validation result in coordinator to 0 -> success
         coordinator.setIntReturn("validateRatioConstraints", 0);
-        uint amountDAI = 100 ether;
+        uint256 amountDAI = 100 ether;
         raise(amountDAI);
     }
 
     function testFailRaisePoolConstraintsBroken() public {
-       // set submission period in coordinator to false
+        // set submission period in coordinator to false
         coordinator.setReturn("submissionPeriod", false);
         // set validation result in coordinator to -1 -> failure
         coordinator.setIntReturn("validateRatioConstraints", -1);
-        uint amountDAI = 100 ether;
+        uint256 amountDAI = 100 ether;
         raise(amountDAI);
     }
 
     function testFullDraw() public {
         testRaise();
-        uint dropPrice = ONE;
+        uint256 dropPrice = ONE;
         draw(clerk.creditline(), dropPrice);
     }
 
     function testPartialDraw() public {
         testRaise();
 
-        uint dropPrice = ONE;
+        uint256 dropPrice = ONE;
         // draw half creditline
         draw(safeDiv(clerk.creditline(), 2), dropPrice);
         // draw another half clerk.creditline()
@@ -338,14 +337,14 @@ contract ClerkTest is Assertions, Interest {
 
     function testFailDrawAmountTooHigh() public {
         testRaise();
-        uint dropPrice = ONE;
+        uint256 dropPrice = ONE;
         // fail condition: draw amount 1 above credit line
         draw(safeAdd(clerk.creditline(), 1), dropPrice);
     }
 
     function testFailDrawEpochClosing() public {
         testRaise();
-        uint dropPrice = ONE;
+        uint256 dropPrice = ONE;
         // fail condition: set submission period in coordinator to true
         coordinator.setReturn("submissionPeriod", true);
         // draw full amount
@@ -365,11 +364,11 @@ contract ClerkTest is Assertions, Interest {
     function testFullWipe() public {
         testFullDraw();
         // increase dropPrice
-        uint dropPrice = safeMul(2, ONE);
+        uint256 dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
         vat.increaseTab(10 ether);
         // make sure maker debt is set correclty
-        uint tab = clerk.debt();
+        uint256 tab = clerk.debt();
         assertEq(tab, 110 ether);
         // make sure reserve has enough DAI
         currency.mint(address(reserve), tab);
@@ -377,21 +376,22 @@ contract ClerkTest is Assertions, Interest {
         wipe(tab, dropPrice);
     }
 
-    function wipeAmountTooLow(uint amountDAI) public {
+    function wipeAmountTooLow(uint256 amountDAI) public {
         testFullDraw();
-        uint preReserve = currency.balanceOf(address(reserve));
+        uint256 preReserve = currency.balanceOf(address(reserve));
         clerk.wipe(amountDAI);
         assertEq(currency.balanceOf(address(reserve)), preReserve);
     }
 
     function testWipeAmountTooLow() public {
-        wipeAmountTooLow(clerk.wipeThreshold() -1);
+        wipeAmountTooLow(clerk.wipeThreshold() - 1);
     }
 
     function testFailWipeAmountTooLow() public {
         // wipe should happen because it is exactly the threshold
         wipeAmountTooLow(clerk.wipeThreshold());
     }
+
     function testWipeThresholdFile() public {
         clerk.file("wipeThreshold", 123);
         assertEq(clerk.wipeThreshold(), 123);
@@ -400,11 +400,11 @@ contract ClerkTest is Assertions, Interest {
     function testPartialWipe() public {
         testFullDraw();
         // increase dropPrice
-        uint dropPrice = safeMul(2, ONE);
+        uint256 dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
         vat.increaseTab(10 ether);
         // make sure maker debt is set correclty
-        uint tab = clerk.debt();
+        uint256 tab = clerk.debt();
         assertEq(tab, 110 ether);
         // make sure reserve has enough DAI
         currency.mint(address(reserve), tab);
@@ -418,11 +418,11 @@ contract ClerkTest is Assertions, Interest {
     function testWipeMaxDebt() public {
         testFullDraw();
         // increase dropPrice
-        uint dropPrice = safeMul(2, ONE);
+        uint256 dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
         vat.increaseTab(10 ether);
         // make sure maker debt is set correclty
-        uint tab = clerk.debt();
+        uint256 tab = clerk.debt();
         assertEq(tab, 110 ether);
         // make sure reserve has enough DAI
         currency.mint(address(reserve), tab);
@@ -434,7 +434,6 @@ contract ClerkTest is Assertions, Interest {
         testFullWipe();
         // try to repay again after full debt already repaid
         wipe(1 ether, ONE);
-
     }
 
     function testFailWipeEpochClosing() public {
@@ -442,11 +441,11 @@ contract ClerkTest is Assertions, Interest {
         // fail condiion: tset submission period in coordinator to true
         coordinator.setReturn("submissionPeriod", true);
         // increase dropPrice
-        uint dropPrice = safeMul(2, ONE);
+        uint256 dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
         vat.increaseTab(10 ether);
         // make sure maker debt is set correclty
-        uint tab = clerk.debt();
+        uint256 tab = clerk.debt();
         assertEq(tab, 110 ether);
         // make sure reserve has enough DAI
         currency.mint(address(reserve), tab);
@@ -457,34 +456,32 @@ contract ClerkTest is Assertions, Interest {
     function testFailWipeNoFundsInReserve() public {
         testFullDraw();
         // increase dropPrice
-        uint dropPrice = safeMul(2, ONE);
+        uint256 dropPrice = safeMul(2, ONE);
         // increase maker debt by 10 DAI
         vat.increaseTab(10 ether);
         // make sure maker debt is set correclty
-        uint tab = clerk.debt();
+        uint256 tab = clerk.debt();
         assertEq(tab, 110 ether);
         // fail conditon: not enough DAI in reserve (only 100 DAI that were drawn before) -> 110 required
         // repay full debt
         wipe(tab, dropPrice);
     }
 
-
     function testHarvest() public {
         testFullDraw();
         // increase dropPrice
-        uint dropPrice = safeMul(2, ONE);
+        uint256 dropPrice = safeMul(2, ONE);
         // assessor: set DROP token price
         assessor.setReturn("calcSeniorTokenPrice", dropPrice);
         // increase maker debt by 10 DAI
         vat.increaseTab(10 ether);
         // make sure maker debt is set correclty
-        uint tab = clerk.debt();
+        uint256 tab = clerk.debt();
         assertEq(tab, 110 ether);
         // harvest junior profit
         // 110 DROP locked -> 220 DAI
         // 220 DAI - 110 DAI (tab) - 11 (tab protectiom) => 99 DAI junior profit
         harvest(dropPrice);
-
     }
 
     function testFailHarvestEpochActive() public {
@@ -492,69 +489,67 @@ contract ClerkTest is Assertions, Interest {
         // fail condition: set submission period in coordinator to true
         coordinator.setReturn("submissionPeriod", true);
         // increase dropPrice
-        uint dropPrice = safeMul(2, ONE);
+        uint256 dropPrice = safeMul(2, ONE);
         // assessor: set DROP token price
         assessor.setReturn("calcSeniorTokenPrice", dropPrice);
         // increase maker debt by 10 DAI
         vat.increaseTab(10 ether);
         // make sure maker debt is set correclty
-        uint tab = clerk.debt();
+        uint256 tab = clerk.debt();
         assertEq(tab, 110 ether);
         // harvest junior profit
         // 110 DROP locked -> 220 DAI
         // 220 DAI - 110 DAI (tab) - 11 (tab protectiom) => 99 DAI junior profit
         harvest(dropPrice);
-
     }
 
     function testFailHarvestNoCollateralLocked() public {
         testRaise();
         // increase dropPrice
-        uint dropPrice = safeMul(2, ONE);
+        uint256 dropPrice = safeMul(2, ONE);
         // assessor: set DROP token price
         assessor.setReturn("calcSeniorTokenPrice", dropPrice);
         // harvest junior profit
         // 110 DROP locked -> 220 DAI
         // 220 DAI - 110 DAI (tab) - 11 (tab protectiom) => 99 DAI junior profit
         harvest(dropPrice);
-
     }
 
     function testFullSink() public {
         testFullWipe();
-        uint creditline = clerk.creditline();
+        uint256 creditline = clerk.creditline();
         sink(creditline);
     }
 
     function testSinkLowerBorrowAmountEpoch() public {
         testFullWipe();
-        uint creditline = clerk.creditline();
-        assessor.setReturn("borrowAmountEpoch", creditline/2);
+        uint256 creditline = clerk.creditline();
+        assessor.setReturn("borrowAmountEpoch", creditline / 2);
 
-        uint reserve_ = 1000 ether;
-        uint seniorBalance = 800 ether;
+        uint256 reserve_ = 1000 ether;
+        uint256 seniorBalance = 800 ether;
         assessor.setReturn("balance", reserve_);
         assessor.setReturn("seniorBalance", seniorBalance);
         // raise creditLine
         clerk.sink(creditline);
-        assertEq(assessor.values_uint("changeBorrowAmountEpoch"),0);
+        assertEq(assessor.values_uint("changeBorrowAmountEpoch"), 0);
     }
 
     function testPartialSink() public {
         testFullWipe();
-        uint creditline = clerk.creditline();
+        uint256 creditline = clerk.creditline();
         sink(safeDiv(creditline, 2));
     }
 
     function testFailSinkAmountTooHigh() public {
         testPartialWipe();
-        uint creditline = clerk.creditline();
+        uint256 creditline = clerk.creditline();
         sink(creditline);
     }
 
     function testFailSinkEpochClosing() public {
         testFullWipe();
-        uint creditline = clerk.creditline();
+        uint256 creditline = clerk.creditline();
         // fail condition: set submission period in coordinator to true
         coordinator.setReturn("submissionPeriod", true);
         sink(creditline);
@@ -588,8 +583,8 @@ contract ClerkTest is Assertions, Interest {
 
     function testMat() public {
         // add mat buffer of 1%
-        clerk.file("buffer", 0.01 * 10**27);
-        uint mat = rdiv(rmul(150, ONE), 100); // mat value 150 %
+        clerk.file("buffer", 0.01 * 10 ** 27);
+        uint256 mat = rdiv(rmul(150, ONE), 100); // mat value 150 %
         spotter.setReturn("mat", mat);
         // default matBuffer in clerk 1% -> assert cler.mat = 151 %
         assertEq(clerk.mat(), rdiv(rmul(151, ONE), 100));
@@ -600,80 +595,78 @@ contract ClerkTest is Assertions, Interest {
     }
 
     function testHealPartial() public {
-        uint dropPrice = ONE;
+        uint256 dropPrice = ONE;
         testFullDraw();
         // increase Mat value to 5%
-        clerk.file("buffer", 0.05 * 10**27);
+        clerk.file("buffer", 0.05 * 10 ** 27);
         // additional buffer can be minted
         coordinator.setIntReturn("validateRatioConstraints", 0);
 
-        uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
-        uint requiredCollateralDAI = clerk.calcOvercollAmount(clerk.debt());
+        uint256 lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
+        uint256 requiredCollateralDAI = clerk.calcOvercollAmount(clerk.debt());
 
         assertEq(lockedCollateralDAI, 110 ether);
         assertEq(requiredCollateralDAI, 115 ether);
         // partial healing
-        uint healingAmount = safeDiv(safeSub(requiredCollateralDAI, lockedCollateralDAI), 2); // healing amount = 2
+        uint256 healingAmount = safeDiv(safeSub(requiredCollateralDAI, lockedCollateralDAI), 2); // healing amount = 2
         assessor.setReturn("balance", 200 ether);
         heal(healingAmount, healingAmount, false);
     }
 
     function testHealFull() public {
         clerk.file("tolerance", 0);
-        uint dropPrice = ONE;
+        uint256 dropPrice = ONE;
         testFullDraw();
         // increase Mat value to additional 5%
-        clerk.file("buffer", 0.05 * 10**27);
+        clerk.file("buffer", 0.05 * 10 ** 27);
         // additional buffer can be minted
         coordinator.setIntReturn("validateRatioConstraints", 0);
 
-        uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
-        uint requiredCollateralDAI = clerk.calcOvercollAmount(clerk.debt());
+        uint256 lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
+        uint256 requiredCollateralDAI = clerk.calcOvercollAmount(clerk.debt());
 
         assertEq(lockedCollateralDAI, 110 ether);
         assertEqTol(requiredCollateralDAI, 115 ether, "testHealFull#1");
         // full healing
-        uint healingAmount = safeSub(requiredCollateralDAI, lockedCollateralDAI); // healing amount = 4
+        uint256 healingAmount = safeSub(requiredCollateralDAI, lockedCollateralDAI); // healing amount = 4
         // currency in reserve for validate
         assessor.setReturn("balance", 200 ether);
         heal(healingAmount, healingAmount, true);
-
     }
 
     function testHealMaxTab() public {
-        uint dropPrice = ONE;
+        uint256 dropPrice = ONE;
         testFullDraw();
         // increase Mat value from deafault 1% to 5%
         clerk.file("buffer", rdiv(rmul(5, ONE), 100));
         // additional buffer can be minted
         coordinator.setIntReturn("validateRatioConstraints", 0);
 
-        uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
-        uint requiredCollateralDAI = clerk.calcOvercollAmount(clerk.debt());
+        uint256 lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
+        uint256 requiredCollateralDAI = clerk.calcOvercollAmount(clerk.debt());
 
         assertEq(lockedCollateralDAI, 110 ether);
         assertEq(requiredCollateralDAI, 115 ether);
         // partial healing
         assessor.setReturn("balance", 200 ether);
         heal(10, 4, false);
-
     }
 
     function testFailHealPoolConstraintsViolated() public {
-         uint dropPrice = ONE;
+        uint256 dropPrice = ONE;
         testFullDraw();
         // increase Mat value from deafault 1% to 5%
-        clerk.file("buffer", 0.05 * 10**27);
+        clerk.file("buffer", 0.05 * 10 ** 27);
         // additional buffer can be minted
         coordinator.setIntReturn("validateRatioConstraints", -1);
 
-        uint lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
-        uint requiredCollateralDAI = clerk.calcOvercollAmount(clerk.debt());
+        uint256 lockedCollateralDAI = rmul(clerk.cdpink(), dropPrice);
+        uint256 requiredCollateralDAI = clerk.calcOvercollAmount(clerk.debt());
 
         assertEq(lockedCollateralDAI, 111 ether);
         assertEq(requiredCollateralDAI, 115 ether);
         // partial healing
-        uint healingAmount = safeDiv(safeSub(requiredCollateralDAI, lockedCollateralDAI), 2); // healing amount = 2
+        uint256 healingAmount = safeDiv(safeSub(requiredCollateralDAI, lockedCollateralDAI), 2); // healing amount = 2
         assessor.setReturn("balance", 200 ether);
         heal(healingAmount, healingAmount, false);
     }
