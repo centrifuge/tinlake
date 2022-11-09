@@ -38,7 +38,12 @@ forge test -m ':ContractName\.'
 
 To deploy Tinlake, you need to set up a `.env` file with the deployment parameters. A sample file can be found in `.env.example`.
 
-Then, you can run the following command:
+To confirm that the `.env` file is set up correctly, run:
+```bash
+./bin/env-check.sh
+```
+
+Once you've double checked all the environment variables, the deployment can be started:
 ```bash
 forge script script/deploy.s.sol:TinlakeDeployScript --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast --verify --etherscan-api-key $ETHERSCAN_KEY -vvvv
 ```

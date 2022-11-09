@@ -70,7 +70,7 @@ contract TinlakeDeployScript is Script {
         }
 
         LenderDeployer lenderDeployer =
-        new LenderDeployer(address(root), vm.envAddress("TINLAKE_CURRENCY"), getOrDeployFab("tranche.sol:TrancheFab"), getOrDeployFab("memberlist.sol:MemberlistFab"), getOrDeployFab("restrictedtoken.sol:RestrictedTokenFab"), getOrDeployFab("reserve.sol:ReserveFab"), getOrDeployFab("assessor.sol:AssessorFab"), getOrDeployFab("coordinator.sol:CoordinatorFab"), getOrDeployFab("operator.sol:OperatorFab"), getOrDeployFab("pooladmin.sol:PoolAdmin"), vm.envAddress("MEMBER_ADMIN"), adapterDeployer_);
+        new LenderDeployer(address(root), vm.envAddress("TINLAKE_CURRENCY"), getOrDeployFab("tranche.sol:TrancheFab"), getOrDeployFab("memberlist.sol:MemberlistFab"), getOrDeployFab("restrictedtoken.sol:RestrictedTokenFab"), getOrDeployFab("reserve.sol:ReserveFab"), getOrDeployFab("assessor.sol:AssessorFab"), getOrDeployFab("coordinator.sol:CoordinatorFab"), getOrDeployFab("operator.sol:OperatorFab"), getOrDeployFab("pooladmin.sol:PoolAdminFab"), vm.envAddress("MEMBER_ADMIN"), adapterDeployer_);
 
         lenderDeployer.init(
             vm.envUint("MIN_SENIOR_RATIO"),
