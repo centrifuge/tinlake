@@ -1,9 +1,9 @@
-name: push-to-develop
+name: push-to-main
 
 on:
   push:
     branches:
-      - develop
+      - main
 
 env:
   FOUNDRY_PROFILE: ci
@@ -35,5 +35,8 @@ jobs:
         run: |
           forge test
         id: test
+        
+      - name: Check formatting
+        run: forge fmt --check
         env:
-          FOUNDRY_PROFILE: push_to_develop
+          FOUNDRY_PROFILE: push_to_main
