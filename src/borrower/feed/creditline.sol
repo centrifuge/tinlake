@@ -4,9 +4,9 @@ pragma solidity >=0.7.6;
 import "./navfeed.sol";
 
 contract CreditlineNAVFeed is NAVFeed {
-    function ceiling(uint loan) public override view returns (uint) {
+    function ceiling(uint256 loan) public view override returns (uint256) {
         bytes32 nftID_ = nftID(loan);
-        uint initialCeiling = rmul(nftValues(nftID_), ceilingRatio(risk(nftID_)));
+        uint256 initialCeiling = rmul(nftValues(nftID_), ceilingRatio(risk(nftID_)));
         return safeSub(initialCeiling, pile.debt(loan));
     }
 }

@@ -14,8 +14,7 @@ interface Hevm {
 }
 
 contract OperatorTest is Math, Test {
-
-    uint memberlistValidity = safeAdd(block.timestamp, 8 days);
+    uint256 memberlistValidity = safeAdd(block.timestamp, 8 days);
     TrancheMock tranche;
     Operator operator;
     Memberlist memberlist;
@@ -41,7 +40,7 @@ contract OperatorTest is Math, Test {
     }
 
     function testSupplyOrder() public {
-        uint amount = 10;
+        uint256 amount = 10;
 
         // rely operator on tranche
         tranche.rely(operator_);
@@ -55,7 +54,7 @@ contract OperatorTest is Math, Test {
     }
 
     function testFailSupplyOrderNotMember() public {
-        uint amount = 10;
+        uint256 amount = 10;
 
         // rely operator on tranche
         tranche.rely(operator_);
@@ -63,14 +62,14 @@ contract OperatorTest is Math, Test {
     }
 
     function testFailSupplyOrderOperatorNotWard() public {
-        uint amount = 10;
+        uint256 amount = 10;
         // add investor to memberlist of tokenholders
         memberlist.updateMember(self, safeAdd(block.timestamp, memberlistValidity));
         operator.supplyOrder(amount);
     }
 
     function testRedeemOrder() public {
-        uint amount = 10;
+        uint256 amount = 10;
         // rely operator on tranche
         tranche.rely(operator_);
         // add investor to memberlist of tokenholders
@@ -83,15 +82,15 @@ contract OperatorTest is Math, Test {
     }
 
     function testFailRedeemOrderNotMember() public {
-        uint amount = 10;
+        uint256 amount = 10;
         // rely operator on tranche
         tranche.rely(operator_);
         operator.redeemOrder(amount);
     }
 
     function testFailRedeemOrderOperatorNotWard() public {
-        uint amount = 10;
-       // add investor to memberlist of tokenholders
+        uint256 amount = 10;
+        // add investor to memberlist of tokenholders
         memberlist.updateMember(self, safeAdd(block.timestamp, memberlistValidity));
         operator.redeemOrder(amount);
     }
@@ -116,10 +115,9 @@ contract OperatorTest is Math, Test {
     }
 
     function testFailDisburseOperatorNotWard() public {
-       // add investor to memberlist of tokenholders
+        // add investor to memberlist of tokenholders
         memberlist.updateMember(self, safeAdd(block.timestamp, memberlistValidity));
 
         operator.disburse();
     }
-
 }

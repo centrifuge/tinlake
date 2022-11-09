@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import { Title } from "tinlake-title/title.sol";
+import {Title} from "tinlake-title/title.sol";
 import "../interfaces.sol";
 
 contract AdminUser {
@@ -14,7 +14,15 @@ contract AdminUser {
     MemberlistLike juniorMemberlist;
     MemberlistLike seniorMemberlist;
 
-    constructor(address shelf_, address pile_, address navFeed_, address title_, address reserve_, address juniorMemberlist_, address seniorMemberlist_) {
+    constructor(
+        address shelf_,
+        address pile_,
+        address navFeed_,
+        address title_,
+        address reserve_,
+        address juniorMemberlist_,
+        address seniorMemberlist_
+    ) {
         shelf = ShelfLike(shelf_);
         pile = PileLike(pile_);
         title = Title(title_);
@@ -24,25 +32,27 @@ contract AdminUser {
         seniorMemberlist = MemberlistLike(seniorMemberlist_);
     }
 
-    function priceNFT(bytes32 lookupId, uint nftPrice) public {
+    function priceNFT(bytes32 lookupId, uint256 nftPrice) public {
         nftFeed.update(lookupId, nftPrice);
     }
 
-    function priceNFTAndSetRiskGroup(bytes32 lookupId, uint nftPrice, uint riskGroup, uint maturityDate) public {
+    function priceNFTAndSetRiskGroup(bytes32 lookupId, uint256 nftPrice, uint256 riskGroup, uint256 maturityDate)
+        public
+    {
         nftFeed.update(lookupId, nftPrice, riskGroup);
         // add default maturity date
-        nftFeed.file("maturityDate", lookupId , maturityDate);
+        nftFeed.file("maturityDate", lookupId, maturityDate);
     }
 
-    function makeJuniorTokenMember(address usr, uint validitUntil) public {
+    function makeJuniorTokenMember(address usr, uint256 validitUntil) public {
         juniorMemberlist.updateMember(usr, validitUntil);
     }
 
-    function makeSeniorTokenMember(address usr, uint validitUntil) public {
+    function makeSeniorTokenMember(address usr, uint256 validitUntil) public {
         seniorMemberlist.updateMember(usr, validitUntil);
     }
 
-    function fileFixedRate(uint rateGroup, uint rate) public {
+    function fileFixedRate(uint256 rateGroup, uint256 rate) public {
         pile.file("fixedRate", rateGroup, rate);
     }
 }

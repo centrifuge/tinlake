@@ -7,7 +7,6 @@ import "./coordinator-base.t.sol";
 contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
     function setUp() public override {
         super.setUp();
-
     }
 
     function testScoreRatioImprovement() public {
@@ -18,20 +17,20 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         emit log_named_uint("maxSeniorRatio", model.maxSeniorRatio);
         emit log_named_uint("maxSeniorRatio", model.minSeniorRatio);
 
-        Fixed27 memory newSeniorRatio = Fixed27(92 * 10**25);
+        Fixed27 memory newSeniorRatio = Fixed27(92 * 10 ** 25);
 
-        uint score = coordinator.scoreRatioImprovement(newSeniorRatio.value);
+        uint256 score = coordinator.scoreRatioImprovement(newSeniorRatio.value);
 
-        newSeniorRatio = Fixed27(91 * 10**25);
-        uint betterScore = coordinator.scoreRatioImprovement(newSeniorRatio.value);
+        newSeniorRatio = Fixed27(91 * 10 ** 25);
+        uint256 betterScore = coordinator.scoreRatioImprovement(newSeniorRatio.value);
 
         assertTrue(betterScore > score);
 
         // healthy
-        newSeniorRatio = Fixed27(83 * 10**25);
-        Fixed27 memory healthyRatio = Fixed27(81 * 10**25);
-        uint healthyScore1 = coordinator.scoreRatioImprovement(newSeniorRatio.value);
-        uint healthyScore2 = coordinator.scoreRatioImprovement(healthyRatio.value);
+        newSeniorRatio = Fixed27(83 * 10 ** 25);
+        Fixed27 memory healthyRatio = Fixed27(81 * 10 ** 25);
+        uint256 healthyScore1 = coordinator.scoreRatioImprovement(newSeniorRatio.value);
+        uint256 healthyScore2 = coordinator.scoreRatioImprovement(healthyRatio.value);
         assertEq(healthyScore1, healthyScore2);
     }
 
@@ -40,15 +39,14 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         model.maxReserve = 1000 ether;
         initTestConfig(model);
 
-        uint score = coordinator.scoreReserveImprovement(1200 ether);
-        uint betterScore = coordinator.scoreReserveImprovement(1100 ether);
-        uint healthyScore = coordinator.scoreReserveImprovement(1000 ether);
-        uint secondHealthScore = coordinator.scoreReserveImprovement(900 ether);
+        uint256 score = coordinator.scoreReserveImprovement(1200 ether);
+        uint256 betterScore = coordinator.scoreReserveImprovement(1100 ether);
+        uint256 healthyScore = coordinator.scoreReserveImprovement(1000 ether);
+        uint256 secondHealthScore = coordinator.scoreReserveImprovement(900 ether);
 
         assertTrue(betterScore > score);
         assertEq(healthyScore, secondHealthScore);
     }
-
 
     // test function with submitSolution
     function testScoreImprovementRatio() public {
@@ -68,21 +66,21 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         emit log_named_uint("maxSeniorRatio", model.maxSeniorRatio);
         emit log_named_uint("maxSeniorRatio", model.minSeniorRatio);
 
-        uint currentRatio = assessor.calcSeniorRatio(assessor.calcSeniorAssetValue(0,0,safeAdd(model.seniorDebt, model.seniorBalance), model.reserve, model.NAV),
-            model.NAV, model.reserve);
+        uint256 currentRatio = assessor.calcSeniorRatio(
+            assessor.calcSeniorAssetValue(
+                0, 0, safeAdd(model.seniorDebt, model.seniorBalance), model.reserve, model.NAV
+            ),
+            model.NAV,
+            model.reserve
+        );
 
         // check if ratio is broken
         assertTrue(currentRatio > model.maxSeniorRatio);
 
+        ModelInput memory solution =
+            ModelInput({seniorRedeem: 0 ether, juniorSupply: 0 ether, seniorSupply: 20 ether, juniorRedeem: 0 ether});
 
-        ModelInput memory solution = ModelInput({
-            seniorRedeem : 0 ether,
-            juniorSupply : 0 ether,
-            seniorSupply : 20 ether,
-            juniorRedeem : 0 ether
-            });
-
-        uint newRatio = calcNewSeniorRatio(model, solution);
+        uint256 newRatio = calcNewSeniorRatio(model, solution);
 
         //newRatio would be bad compared with current ratio
         assertTrue(newRatio > currentRatio);
@@ -93,12 +91,8 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         assertTrue(coordinator.gotFullValidSolution() == false);
 
         // senior redeem improves the ratio
-         solution = ModelInput({
-            seniorRedeem : 20 ether,
-            juniorSupply : 0 ether,
-            seniorSupply : 0 ether,
-            juniorRedeem : 0 ether
-            });
+        solution =
+            ModelInput({seniorRedeem: 20 ether, juniorSupply: 0 ether, seniorSupply: 0 ether, juniorRedeem: 0 ether});
 
         newRatio = calcNewSeniorRatio(model, solution);
         // check if ratio is still broken but better
@@ -110,36 +104,24 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         assertTrue(coordinator.gotFullValidSolution() == false);
         assertEq(coordinator.bestSubScore(), 0);
 
-
         // senior redeem improves the ratio
-        solution = ModelInput({
-            seniorRedeem : 80 ether,
-            juniorSupply : 0 ether,
-            seniorSupply : 0 ether,
-            juniorRedeem : 0 ether
-            });
-
+        solution =
+            ModelInput({seniorRedeem: 80 ether, juniorSupply: 0 ether, seniorSupply: 0 ether, juniorRedeem: 0 ether});
 
         newRatio = calcNewSeniorRatio(model, solution);
         // check if ratio is still broken but better
         assertTrue(newRatio > model.maxSeniorRatio);
-
 
         assertEq(submitSolution(solution), coordinator.NEW_BEST());
         // no solution in feasible region
         assertTrue(coordinator.gotFullValidSolution() == false);
         assertEq(coordinator.bestSubScore(), 0);
 
-
         // push ratio in feasible region
 
         // senior redeem improves the ratio
-        solution = ModelInput({
-            seniorRedeem : 500 ether,
-            juniorSupply : 100 ether,
-            seniorSupply : 0 ether,
-            juniorRedeem : 0 ether
-            });
+        solution =
+            ModelInput({seniorRedeem: 500 ether, juniorSupply: 100 ether, seniorSupply: 0 ether, juniorRedeem: 0 ether});
 
         newRatio = calcNewSeniorRatio(model, solution);
 
@@ -164,49 +146,38 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         hevm.warp(block.timestamp + 1 days);
         coordinator.closeEpoch();
 
-        uint currentRatio = assessor.calcSeniorRatio(assessor.calcSeniorAssetValue(0,0,safeAdd(model.seniorDebt, model.seniorBalance), model.reserve, model.NAV),
-            model.NAV, model.reserve);
+        uint256 currentRatio = assessor.calcSeniorRatio(
+            assessor.calcSeniorAssetValue(
+                0, 0, safeAdd(model.seniorDebt, model.seniorBalance), model.reserve, model.NAV
+            ),
+            model.NAV,
+            model.reserve
+        );
 
         // check ratio okay
         assertTrue(currentRatio <= model.maxSeniorRatio);
         assertTrue(currentRatio >= model.minSeniorRatio);
 
         //
-        ModelInput memory solution = ModelInput({
-            seniorRedeem : 0 ether,
-            juniorSupply : 0 ether,
-            seniorSupply : 10 ether,
-            juniorRedeem : 0 ether
-            });
-
+        ModelInput memory solution =
+            ModelInput({seniorRedeem: 0 ether, juniorSupply: 0 ether, seniorSupply: 10 ether, juniorRedeem: 0 ether});
 
         // benchmark status is better there for no best solution
         assertEq(submitSolution(solution), coordinator.ERR_NOT_NEW_BEST());
         assertTrue(coordinator.gotFullValidSolution() == false);
 
-
-        solution = ModelInput({
-            seniorRedeem : 0 ether,
-            juniorSupply : 0 ether,
-            seniorSupply : 0 ether,
-            juniorRedeem : 5 ether
-            });
+        solution =
+            ModelInput({seniorRedeem: 0 ether, juniorSupply: 0 ether, seniorSupply: 0 ether, juniorRedeem: 5 ether});
 
         // benchmark status is better there for no best solution
         assertEq(submitSolution(solution), coordinator.NEW_BEST());
         assertTrue(coordinator.gotFullValidSolution() == false);
 
-
         // destroy ratio but fix reserve
-        solution = ModelInput({
-            seniorRedeem : 0 ether,
-            juniorSupply : 0 ether,
-            seniorSupply : 270 ether,
-            juniorRedeem : 300 ether
-            });
+        solution =
+            ModelInput({seniorRedeem: 0 ether, juniorSupply: 0 ether, seniorSupply: 270 ether, juniorRedeem: 300 ether});
 
-
-        uint newRatio = calcNewSeniorRatio(model, solution);
+        uint256 newRatio = calcNewSeniorRatio(model, solution);
 
         // check ratio okay
         assertTrue(newRatio > model.maxSeniorRatio);
@@ -215,15 +186,10 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         assertEq(submitSolution(solution), coordinator.ERR_NOT_NEW_BEST());
         assertTrue(coordinator.gotFullValidSolution() == false);
 
-
         // fix reserve constraint
         // destroy ratio but fix reserve
-        solution = ModelInput({
-            seniorRedeem : 0 ether,
-            juniorSupply : 0 ether,
-            seniorSupply : 0 ether,
-            juniorRedeem : 30 ether
-            });
+        solution =
+            ModelInput({seniorRedeem: 0 ether, juniorSupply: 0 ether, seniorSupply: 0 ether, juniorRedeem: 30 ether});
 
         // benchmark status is better there for no best solution
         assertEq(submitSolution(solution), coordinator.NEW_BEST());
@@ -237,7 +203,7 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         initTestConfig(model);
 
         // newReserve <= maxReserve
-        uint newReserve = 199 ether;
+        uint256 newReserve = 199 ether;
         assertEq(coordinator.scoreReserveImprovement(newReserve), coordinator.BIG_NUMBER());
         // newReserve == maxReserve
         newReserve = 200 ether;
@@ -254,10 +220,9 @@ contract CoordinatorImprovementScoreTest is CoordinatorTest, FixedPoint {
         assertTrue(coordinator.scoreReserveImprovement(201 ether) > coordinator.scoreReserveImprovement(202 ether));
         assertEq(coordinator.scoreReserveImprovement(0), coordinator.BIG_NUMBER());
 
-        uint lowestScore = coordinator.scoreReserveImprovement(type(uint256).max);
-        uint lowScore = coordinator.scoreReserveImprovement(10*18 * 1 ether);
+        uint256 lowestScore = coordinator.scoreReserveImprovement(type(uint256).max);
+        uint256 lowScore = coordinator.scoreReserveImprovement(10 * 18 * 1 ether);
 
         assertTrue(lowScore > lowestScore);
     }
 }
-

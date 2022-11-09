@@ -13,7 +13,7 @@ interface Hevm {
 }
 
 contract User {
-    function authTransfer(Tranche tranche, address erc20, address usr, uint amount) public {
+    function authTransfer(Tranche tranche, address erc20, address usr, uint256 amount) public {
         tranche.authTransfer(erc20, usr, amount);
     }
 }
@@ -30,8 +30,8 @@ contract TrancheTest is Test, Math, FixedPoint {
     address reserve_;
     address self;
 
-    uint public currentEpoch;
-    uint public lastEpochExecuted;
+    uint256 public currentEpoch;
+    uint256 public lastEpochExecuted;
 
     function setUp() public {
         hevm = Hevm(HEVM_ADDRESS);
@@ -58,32 +58,34 @@ contract TrancheTest is Test, Math, FixedPoint {
         currency.mint(reserve_, 1000000000000 ether);
     }
 
-    function closeAndUpdate(uint supplyFulfillment, uint redeemFulfillment, uint tokenPrice) public {
-        (uint totalSupply, uint totalRedeem) = tranche.closeEpoch();
-        uint epochID = currentEpoch++;
-        tranche.epochUpdate(epochID, supplyFulfillment, redeemFulfillment, tokenPrice, totalSupply, rmul(totalRedeem, tokenPrice));
+    function closeAndUpdate(uint256 supplyFulfillment, uint256 redeemFulfillment, uint256 tokenPrice) public {
+        (uint256 totalSupply, uint256 totalRedeem) = tranche.closeEpoch();
+        uint256 epochID = currentEpoch++;
+        tranche.epochUpdate(
+            epochID, supplyFulfillment, redeemFulfillment, tokenPrice, totalSupply, rmul(totalRedeem, tokenPrice)
+        );
         lastEpochExecuted++;
     }
 
-    function supplyOrder(uint amount) public {
+    function supplyOrder(uint256 amount) public {
         currency.mint(self, amount);
         currency.approve(tranche_, amount);
         tranche.supplyOrder(self, amount);
 
-        (,uint supply,) = tranche.users(self);
+        (, uint256 supply,) = tranche.users(self);
         assertEq(supply, amount);
     }
 
-    function redeemOrder(uint tokenAmount) public {
+    function redeemOrder(uint256 tokenAmount) public {
         token.mint(self, tokenAmount);
         token.approve(tranche_, tokenAmount);
         tranche.redeemOrder(self, tokenAmount);
-        (,,uint redeemAmount) = tranche.users(self);
+        (,, uint256 redeemAmount) = tranche.users(self);
         assertEq(tokenAmount, redeemAmount);
     }
 
     function testSupplyOrder() public {
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         supplyOrder(amount);
         assertEq(tranche.totalSupply(), amount);
 
@@ -91,19 +93,18 @@ contract TrancheTest is Test, Math, FixedPoint {
         amount = 120 ether;
         supplyOrder(amount);
         assertEq(tranche.totalSupply(), amount);
-
     }
 
     function testSimpleCloseEpoch() public {
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         supplyOrder(amount);
         assertEq(tranche.totalSupply(), amount);
-        (uint totalSupply, ) = tranche.closeEpoch();
+        (uint256 totalSupply,) = tranche.closeEpoch();
         assertEq(totalSupply, amount);
     }
 
     function testFailSupplyAfterCloseEpoch() public {
-        uint amount = 1000000000 ether;
+        uint256 amount = 1000000000 ether;
         supplyOrder(amount);
         tranche.closeEpoch();
         currentEpoch++;
@@ -111,13 +112,13 @@ contract TrancheTest is Test, Math, FixedPoint {
     }
 
     function testSimpleEpochUpdate() public {
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         supplyOrder(amount);
 
         // 60 % fulfillment
-        uint supplyFulfillment_ = 6 * 10**26;
-        uint redeemFulfillment_ = ONE;
-        uint tokenPrice_ = ONE;
+        uint256 supplyFulfillment_ = 6 * 10 ** 26;
+        uint256 redeemFulfillment_ = ONE;
+        uint256 tokenPrice_ = ONE;
 
         closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
 
@@ -126,40 +127,43 @@ contract TrancheTest is Test, Math, FixedPoint {
     }
 
     function testSimpleDisburse() public {
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         supplyOrder(amount);
 
         // 60 % fulfillment
-        uint supplyFulfillment_ = 6 * 10**26;
-        uint redeemFulfillment_ = ONE;
-        uint tokenPrice_ = ONE;
+        uint256 supplyFulfillment_ = 6 * 10 ** 26;
+        uint256 redeemFulfillment_ = ONE;
+        uint256 tokenPrice_ = ONE;
 
-        closeAndUpdate(supplyFulfillment_,redeemFulfillment_, tokenPrice_);
+        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
 
         // should receive 60% => 60 ether
-        (uint payoutCurrencyAmount, uint payoutTokenAmount,
-        uint remainingSupplyCurrency,  uint remainingRedeemToken) =  tranche.calcDisburse(self);
+        (
+            uint256 payoutCurrencyAmount,
+            uint256 payoutTokenAmount,
+            uint256 remainingSupplyCurrency,
+            uint256 remainingRedeemToken
+        ) = tranche.calcDisburse(self);
 
         assertEq(payoutTokenAmount, 60 ether);
         assertEq(remainingSupplyCurrency, 40 ether);
 
         // 50 %
-        supplyFulfillment_ = 5 * 10**26;
+        supplyFulfillment_ = 5 * 10 ** 26;
         redeemFulfillment_ = ONE;
-        closeAndUpdate(supplyFulfillment_,redeemFulfillment_, tokenPrice_);
-
+        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
 
         // should receive 80% => 80 ether
-        (payoutCurrencyAmount, payoutTokenAmount,
-         remainingSupplyCurrency, remainingRedeemToken) =  tranche.calcDisburse(self);
+        (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken) =
+            tranche.calcDisburse(self);
 
         // 100 * 0.6 + 40 * 0.5
         assertEq(payoutTokenAmount, 80 ether);
         assertEq(remainingSupplyCurrency, 20 ether);
 
         // execute disburse
-        (payoutCurrencyAmount, payoutTokenAmount,
-        remainingSupplyCurrency, remainingRedeemToken) =  tranche.disburse(self);
+        (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken) =
+            tranche.disburse(self);
         assertEq(payoutTokenAmount, 80 ether);
         assertEq(remainingSupplyCurrency, 20 ether);
 
@@ -167,32 +171,30 @@ contract TrancheTest is Test, Math, FixedPoint {
     }
 
     function testRedeemDisburse() public {
-        uint tokenAmount = 100 ether;
+        uint256 tokenAmount = 100 ether;
         redeemOrder(tokenAmount);
 
         reserve.setReturn("totalBalanceAvailable", type(uint256).max);
 
-        uint supplyFulfillment_ = 0;
+        uint256 supplyFulfillment_ = 0;
 
         // 50 % redeem fulfillment
-        uint redeemFulfillment_ = 5 * 10**26;
+        uint256 redeemFulfillment_ = 5 * 10 ** 26;
         // token price= 1.5
-        uint tokenPrice_ = 15 * 10 **26;
+        uint256 tokenPrice_ = 15 * 10 ** 26;
 
         closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
 
-
         // execute disburse
-        (uint payoutCurrencyAmount,  ,
-        , ) =  tranche.disburse(self);
+        (uint256 payoutCurrencyAmount,,,) = tranche.disburse(self);
 
-//        // 50 * 1.5 = 75 ether
+        //        // 50 * 1.5 = 75 ether
         assertEq(payoutCurrencyAmount, 75 ether);
     }
 
     function testZeroEpochUpdate() public {
         // token price= 1.5
-        uint tokenPrice_ = 15 * 10 **26;
+        uint256 tokenPrice_ = 15 * 10 ** 26;
         tranche.closeEpoch();
         currentEpoch++;
         tranche.epochUpdate(currentEpoch, 0, 0, tokenPrice_, 0, 0);
@@ -200,25 +202,28 @@ contract TrancheTest is Test, Math, FixedPoint {
 
         tranche.closeEpoch();
         currentEpoch++;
-        tranche.epochUpdate(currentEpoch,0, 0, 0, 0, 0);
+        tranche.epochUpdate(currentEpoch, 0, 0, 0, 0, 0);
     }
 
     function testMultipleRedeem() public {
         // increase to 100 ether
-        uint tokenAmount = 100 ether;
+        uint256 tokenAmount = 100 ether;
         redeemOrder(tokenAmount);
         reserve.setReturn("totalBalanceAvailable", type(uint256).max);
 
-
         // 75 % for redeem Fulfillment
-        closeAndUpdate(0,7 * 10**26, ONE);
+        closeAndUpdate(0, 7 * 10 ** 26, ONE);
         // 50 % for redeem Fulfillment
-        closeAndUpdate(0,5 * 10**26, ONE);
+        closeAndUpdate(0, 5 * 10 ** 26, ONE);
 
-        (uint payoutCurrencyAmount, uint payoutTokenAmount,
-        uint remainingSupplyCurrency, uint remainingRedeemToken) =  tranche.disburse(self);
+        (
+            uint256 payoutCurrencyAmount,
+            uint256 payoutTokenAmount,
+            uint256 remainingSupplyCurrency,
+            uint256 remainingRedeemToken
+        ) = tranche.disburse(self);
 
-       // currency payout = 100 * 0.7 + 30 * 0.5 = 85 ether
+        // currency payout = 100 * 0.7 + 30 * 0.5 = 85 ether
         assertEq(payoutCurrencyAmount, 85 ether);
         assertEq(currency.balanceOf(self), 85 ether);
 
@@ -231,22 +236,21 @@ contract TrancheTest is Test, Math, FixedPoint {
         // redeem again
         redeemOrder(15 ether);
         // 20 % for redeem Fulfillment
-        closeAndUpdate(0, 2 * 10**26, ONE);
+        closeAndUpdate(0, 2 * 10 ** 26, ONE);
 
-        ( payoutCurrencyAmount, payoutTokenAmount,
-         remainingSupplyCurrency, remainingRedeemToken) =  tranche.disburse(self);
+        (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken) =
+            tranche.disburse(self);
         assertEq(payoutCurrencyAmount, 3 ether);
-
     }
 
     function testChangeOrderAfterDisburse() public {
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         supplyOrder(amount);
 
         // 60 % fulfillment
-        uint supplyFulfillment_ = 6 * 10**26;
-        uint redeemFulfillment_ = ONE;
-        uint tokenPrice_ = ONE;
+        uint256 supplyFulfillment_ = 6 * 10 ** 26;
+        uint256 redeemFulfillment_ = ONE;
+        uint256 tokenPrice_ = ONE;
 
         closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
 
@@ -260,27 +264,27 @@ contract TrancheTest is Test, Math, FixedPoint {
     }
 
     function testMint() public {
-        uint amount = 120 ether;
+        uint256 amount = 120 ether;
         tranche.mint(self, amount);
         assertEq(token.balanceOf(self), amount);
     }
 
     function testDisburseEndEpoch() public {
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         supplyOrder(amount);
 
         // 60 % fulfillment
-        uint supplyFulfillment_ = 1 * 10**26;
-        uint redeemFulfillment_ = ONE;
-        uint tokenPrice_ = ONE;
+        uint256 supplyFulfillment_ = 1 * 10 ** 26;
+        uint256 redeemFulfillment_ = ONE;
+        uint256 tokenPrice_ = ONE;
 
         // execute 3 times with 10% supply fulfillment
-        for (uint i = 0; i < 3; i++) {
+        for (uint256 i = 0; i < 3; i++) {
             closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
         }
 
         // execute disburse
-        (, uint payoutTokenAmount, , ) =  tranche.disburse(self, lastEpochExecuted);
+        (, uint256 payoutTokenAmount,,) = tranche.disburse(self, lastEpochExecuted);
 
         // total fulfillment
         // 100 * 0.1 = 10
@@ -292,81 +296,82 @@ contract TrancheTest is Test, Math, FixedPoint {
     }
 
     function testDisburseEndEpochMultiple() public {
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         supplyOrder(amount);
 
         // 10 % fulfillment
-        uint supplyFulfillment_ = 1 * 10**26;
-        uint redeemFulfillment_ = ONE;
-        uint tokenPrice_ = ONE;
+        uint256 supplyFulfillment_ = 1 * 10 ** 26;
+        uint256 redeemFulfillment_ = ONE;
+        uint256 tokenPrice_ = ONE;
 
         // execute 3 times with 10% supply fulfillment
 
         // first one has a cheaper price
-        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, 5 * 10**26);
+        closeAndUpdate(supplyFulfillment_, redeemFulfillment_, 5 * 10 ** 26);
         closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
         closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
 
+        (uint256 orderedInEpoch,,) = tranche.users(self);
 
-        (uint orderedInEpoch, ,) = tranche.users(self);
-
-        uint endEpoch = orderedInEpoch;
+        uint256 endEpoch = orderedInEpoch;
 
         // execute disburse first epoch
-        (uint payoutCurrencyAmount, uint payoutTokenAmount,
-        uint remainingSupplyCurrency, uint remainingRedeemToken) =  tranche.disburse(self, endEpoch);
-
+        (
+            uint256 payoutCurrencyAmount,
+            uint256 payoutTokenAmount,
+            uint256 remainingSupplyCurrency,
+            uint256 remainingRedeemToken
+        ) = tranche.disburse(self, endEpoch);
 
         // 10 currency for 20 tokens
         assertEq(payoutTokenAmount, 20 ether);
         assertEq(remainingSupplyCurrency, 90 ether);
 
-        (uint updatedOrderedInEpoch, ,) = tranche.users(self);
+        (uint256 updatedOrderedInEpoch,,) = tranche.users(self);
         // updated order should increase
-        assertEq(orderedInEpoch+1, updatedOrderedInEpoch);
+        assertEq(orderedInEpoch + 1, updatedOrderedInEpoch);
 
         // try again with same endEpoch
-        ( payoutCurrencyAmount,  payoutTokenAmount,
-         remainingSupplyCurrency,  remainingRedeemToken) =  tranche.disburse(self, endEpoch);
+        (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken) =
+            tranche.disburse(self, endEpoch);
 
         assertEq(payoutTokenAmount, 0);
 
-        ( payoutCurrencyAmount,  payoutTokenAmount,
-        remainingSupplyCurrency,  remainingRedeemToken) =  tranche.disburse(self, endEpoch+1);
+        (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken) =
+            tranche.disburse(self, endEpoch + 1);
         // 90 ether * 0.1
         assertEq(payoutTokenAmount, 9 ether);
-
     }
 
     function testEndEpochTooHigh() public {
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         supplyOrder(amount);
 
         // 10 % fulfillment
-        uint supplyFulfillment_ = 1 * 10**26;
-        uint redeemFulfillment_ = ONE;
-        uint tokenPrice_ = ONE;
+        uint256 supplyFulfillment_ = 1 * 10 ** 26;
+        uint256 redeemFulfillment_ = ONE;
+        uint256 tokenPrice_ = ONE;
 
         // execute two times with 10 %
         closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
         closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
 
         // execute disburse with too high endEpoch
-        uint endEpoch = 1000;
+        uint256 endEpoch = 1000;
 
-        (,uint payoutTokenAmount, , ) =  tranche.disburse(self, endEpoch);
+        (, uint256 payoutTokenAmount,,) = tranche.disburse(self, endEpoch);
 
         assertEq(payoutTokenAmount, 19 ether);
     }
 
     function testFailNotDisburseAllEpochsAndSupply() public {
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         supplyOrder(amount);
 
         // 10 % fulfillment
-        uint supplyFulfillment_ = 1 * 10**26;
-        uint redeemFulfillment_ = ONE;
-        uint tokenPrice_ = ONE;
+        uint256 supplyFulfillment_ = 1 * 10 ** 26;
+        uint256 redeemFulfillment_ = ONE;
+        uint256 tokenPrice_ = ONE;
 
         // execute two times with 10 %
         closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
@@ -374,9 +379,9 @@ contract TrancheTest is Test, Math, FixedPoint {
 
         // disburse only one epoch
 
-        (uint orderedInEpoch, ,) = tranche.users(self);
+        (uint256 orderedInEpoch,,) = tranche.users(self);
 
-        uint endEpoch = orderedInEpoch;
+        uint256 endEpoch = orderedInEpoch;
 
         // execute disburse first epoch
         tranche.disburse(self, endEpoch);
@@ -386,27 +391,27 @@ contract TrancheTest is Test, Math, FixedPoint {
     }
 
     function testDisburseSupplyAndRedeem() public {
-        uint supplyAmount = 100 ether;
-        uint redeemAmount =  50 ether;
+        uint256 supplyAmount = 100 ether;
+        uint256 redeemAmount = 50 ether;
         supplyOrder(supplyAmount);
         redeemOrder(redeemAmount);
 
         // 60 % fulfillment
-        uint supplyFulfillment_ = 6 * 10**26;
-        uint redeemFulfillment_ = 8 * 10**26;
-        uint tokenPrice_ = ONE;
+        uint256 supplyFulfillment_ = 6 * 10 ** 26;
+        uint256 redeemFulfillment_ = 8 * 10 ** 26;
+        uint256 tokenPrice_ = ONE;
 
         closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
 
         // execute disburse
-        (uint payoutCurrencyAmount, uint payoutTokenAmount, ,)  = tranche.disburse(self);
+        (uint256 payoutCurrencyAmount, uint256 payoutTokenAmount,,) = tranche.disburse(self);
 
         assertEq(payoutTokenAmount, rmul(supplyAmount, supplyFulfillment_));
         assertEq(payoutCurrencyAmount, rmul(redeemAmount, redeemFulfillment_));
     }
 
     function testRecoveryTransfer() public {
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         address recoveryAddr = address(123);
         supplyOrder(amount);
 
@@ -417,7 +422,7 @@ contract TrancheTest is Test, Math, FixedPoint {
     }
 
     function testFailRecoveryTransferNotAdmin() public {
-        uint amount = 100 ether;
+        uint256 amount = 100 ether;
         address recoveryAddr = address(123);
         supplyOrder(amount);
 
@@ -428,20 +433,20 @@ contract TrancheTest is Test, Math, FixedPoint {
     }
 
     function testCalcDisburseRoundingOff() public {
-        uint amount = 20 ether;
+        uint256 amount = 20 ether;
         supplyOrder(amount);
 
-        uint supplyFulfillment_ = ONE;
-        uint redeemFulfillment_ = ONE;
-        uint tokenPrice_ = 3 * 10 ** 27;
+        uint256 supplyFulfillment_ = ONE;
+        uint256 redeemFulfillment_ = ONE;
+        uint256 tokenPrice_ = 3 * 10 ** 27;
 
         closeAndUpdate(supplyFulfillment_, redeemFulfillment_, tokenPrice_);
 
         // the disburse method should always round off
-        ( , uint payoutTokenAmount,, ) =  tranche.calcDisburse(self);
+        (, uint256 payoutTokenAmount,,) = tranche.calcDisburse(self);
 
         // rdiv would round up in the 20/3 case but calc disburse should always round off
         // 20/3 = 6.666666666666666666 instead of (6.666666666666666667)
-        assertEq(rdiv(amount, tokenPrice_)-payoutTokenAmount, 1);
+        assertEq(rdiv(amount, tokenPrice_) - payoutTokenAmount, 1);
     }
 }

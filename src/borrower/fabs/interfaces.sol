@@ -16,5 +16,3 @@ interface PileFabLike {
 interface ShelfFabLike {
     function newShelf(address, address, address, address) external returns (address);
 }
-
-

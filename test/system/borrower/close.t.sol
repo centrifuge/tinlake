@@ -5,18 +5,17 @@ pragma experimental ABIEncoderV2;
 import "../base_system.sol";
 
 contract CloseTest is BaseSystemTest {
-
     function setUp() public {
         baseSetup();
         createTestUsers();
     }
 
-    function closeLoan(uint loanId, bytes32 lookupId) public {
+    function closeLoan(uint256 loanId, bytes32 lookupId) public {
         borrower.close(loanId);
         assertPostCondition(lookupId);
     }
 
-    function assertPreCondition(uint loanId, uint tokenId, bytes32 lookupId) public view {
+    function assertPreCondition(uint256 loanId, uint256 tokenId, bytes32 lookupId) public view {
         // assert: borrower owner of loan or owner of nft
         assert(title.ownerOf(loanId) == borrower_ || collateralNFT.ownerOf(tokenId) == borrower_);
         // assert: loan has been issued
@@ -36,8 +35,8 @@ contract CloseTest is BaseSystemTest {
     }
 
     function testCloseLoanOwner() public {
-        (uint tokenId, bytes32 lookupId) = issueNFT(borrower_);
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
+        (uint256 tokenId, bytes32 lookupId) = issueNFT(borrower_);
+        uint256 loanId = borrower.issue(collateralNFT_, tokenId);
         // transfer nft to random user / borrower still loanOwner
         borrower.approveNFT(collateralNFT, address(this));
         collateralNFT.transferFrom(borrower_, randomUser_, tokenId);
@@ -46,8 +45,8 @@ contract CloseTest is BaseSystemTest {
     }
 
     function testCloseLoanNFTOwner() public {
-        (uint tokenId, bytes32 lookupId) = issueNFT(randomUser_);
-        uint loanId = randomUser.issue(collateralNFT_, tokenId);
+        (uint256 tokenId, bytes32 lookupId) = issueNFT(randomUser_);
+        uint256 loanId = randomUser.issue(collateralNFT_, tokenId);
         // transfer nft to borrower / make borrower nftOwner
         randomUser.approveNFT(collateralNFT, address(this));
         collateralNFT.transferFrom(randomUser_, borrower_, tokenId);
@@ -55,32 +54,32 @@ contract CloseTest is BaseSystemTest {
     }
 
     function testFailCloseLoanNoPermissions() public {
-        (uint tokenId, bytes32 lookupId) = issueNFT(randomUser_);
+        (uint256 tokenId, bytes32 lookupId) = issueNFT(randomUser_);
         shelf.issue(collateralNFT_, tokenId);
         // borrower not loanOwner or nftOwner
         closeLoan(123, lookupId);
     }
 
     function testFailCloseLoanNotExisting() public {
-        ( ,bytes32 lookupId) = issueNFT(borrower_);
+        (, bytes32 lookupId) = issueNFT(borrower_);
         // loan not issued
-        uint loanId = 10;
+        uint256 loanId = 10;
         closeLoan(loanId, lookupId);
     }
 
     function testFailCloseNFTLocked() public {
-        (uint tokenId, bytes32 lookupId) = issueNFT(borrower_);
-        uint loanId = borrower.issue(collateralNFT_, tokenId);
+        (uint256 tokenId, bytes32 lookupId) = issueNFT(borrower_);
+        uint256 loanId = borrower.issue(collateralNFT_, tokenId);
         // lock nft
         borrower.lock(loanId);
         closeLoan(loanId, lookupId);
     }
 
     function testFailCloseLoanHasDebt() public {
-        uint nftPrice = 200 ether; // -> ceiling 100 ether
-        uint riskGroup = 1; // -> 12% per year
+        uint256 nftPrice = 200 ether; // -> ceiling 100 ether
+        uint256 riskGroup = 1; // -> 12% per year
 
-        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
+        (uint256 loanId, uint256 tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup);
         bytes32 lookupId = keccak256(abi.encodePacked(collateralNFT_, tokenId));
         closeLoan(loanId, lookupId);
     }

@@ -9,47 +9,45 @@ import "./base_system.sol";
 contract Config {
     struct TinlakeConfig {
         // borrower variables
-        uint discountRate;
+        uint256 discountRate;
         string titleName;
         string titleSymbol;
-
         // lender variables
-        uint seniorInterestRate;
-        uint maxReserve;
-        uint maxSeniorRatio;
-        uint minSeniorRatio;
-        uint challengeTime;
+        uint256 seniorInterestRate;
+        uint256 maxReserve;
+        uint256 maxSeniorRatio;
+        uint256 minSeniorRatio;
+        uint256 challengeTime;
         string seniorTokenName;
         string seniorTokenSymbol;
         string juniorTokenName;
         string juniorTokenSymbol;
-
         // mkr variables
-        uint mkrMAT;
-        uint mkrStabilityFee;
+        uint256 mkrMAT;
+        uint256 mkrStabilityFee;
         bytes32 mkrILK;
     }
 
     // returns a default config for a Tinlake deployment
-    function defaultConfig() public pure returns(TinlakeConfig memory t) {
-        return  TinlakeConfig({
+    function defaultConfig() public pure returns (TinlakeConfig memory t) {
+        return TinlakeConfig({
             // 3% per day
-            discountRate: uint(1000000342100000000000000000),
+            discountRate: uint256(1000000342100000000000000000),
             titleName: "Tinlake Loan Token",
             titleSymbol: "TLNT",
             // 2% per day
-            seniorInterestRate: uint(1000000229200000000000000000),
+            seniorInterestRate: uint256(1000000229200000000000000000),
             maxReserve: type(uint256).max,
-            maxSeniorRatio: 0.85 *10**27,
-            minSeniorRatio: 0.75 *10**27,
+            maxSeniorRatio: 0.85 * 10 ** 27,
+            minSeniorRatio: 0.75 * 10 ** 27,
             challengeTime: 1 hours,
             seniorTokenName: "DROP Token",
             seniorTokenSymbol: "DROP",
             juniorTokenName: "TIN Token",
             juniorTokenSymbol: "TIN",
-            mkrMAT: 1.10 * 10**27,
-            mkrStabilityFee: 10**27,
-            mkrILK: "drop"  
+            mkrMAT: 1.1 * 10 ** 27,
+            mkrStabilityFee: 10 ** 27,
+            mkrILK: "drop"
         });
     }
 }

@@ -10,10 +10,13 @@ interface MemberlistLike {
 
 // Only mebmber with a valid (not expired) membership should be allowed to receive tokens
 contract RestrictedToken is ERC20 {
+    MemberlistLike public memberlist;
 
-    MemberlistLike public memberlist; 
-    modifier checkMember(address usr) { memberlist.member(usr); _; }
-    
+    modifier checkMember(address usr) {
+        memberlist.member(usr);
+        _;
+    }
+
     function hasMember(address usr) public view returns (bool) {
         return memberlist.hasMember(usr);
     }
@@ -21,12 +24,11 @@ contract RestrictedToken is ERC20 {
     constructor(string memory symbol_, string memory name_) ERC20(symbol_, name_) {}
 
     function depend(bytes32 contractName, address addr) public auth {
-        if (contractName == "memberlist") { memberlist = MemberlistLike(addr); }
+        if (contractName == "memberlist") memberlist = MemberlistLike(addr);
         else revert();
     }
 
-    function transferFrom(address from, address to, uint wad) checkMember(to) public override returns (bool) {
+    function transferFrom(address from, address to, uint256 wad) public override checkMember(to) returns (bool) {
         return super.transferFrom(from, to, wad);
     }
 }
-

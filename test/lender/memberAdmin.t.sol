@@ -6,7 +6,6 @@ import "forge-std/Test.sol";
 import "src/lender/admin/member.sol";
 import "./mock/memberlist.sol";
 
-
 contract MemberAdminTest is Test {
     MemberAdmin memberAdmin;
     MemberlistMock memberlist;
@@ -25,7 +24,7 @@ contract MemberAdminTest is Test {
 
     function updateMember() public {
         address usr = address(1);
-        uint validUntil = block.timestamp + 365 days;
+        uint256 validUntil = block.timestamp + 365 days;
         memberAdmin.updateMember(address(memberlist), usr, validUntil);
 
         assertEq(memberlist.calls("updateMember"), 1);
@@ -44,7 +43,7 @@ contract MemberAdminTest is Test {
     }
 
     function updateMembers() public {
-        uint validUntil = block.timestamp + 365 days;
+        uint256 validUntil = block.timestamp + 365 days;
         memberAdmin.updateMembers(address(memberlist), users, validUntil);
 
         assertEq(memberlist.calls("updateMembers"), 1);

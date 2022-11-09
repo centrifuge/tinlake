@@ -4,15 +4,16 @@ pragma solidity >=0.7.6;
 import "../../../test/mock/mock.sol";
 
 contract ReserveMock is Mock {
-
     function balance() public {
         calls["balance"]++;
     }
-    function deposit(uint currencyAmount) public {
+
+    function deposit(uint256 currencyAmount) public {
         calls["deposit"]++;
         values_uint["currencyAmount"] = currencyAmount;
     }
-    function payout(uint currencyAmount) public {
+
+    function payout(uint256 currencyAmount) public {
         calls["payout"]++;
         values_uint["currencyAmount"] = currencyAmount;
     }

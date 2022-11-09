@@ -5,9 +5,16 @@ import "../interfaces.sol";
 import "forge-std/Test.sol";
 
 interface OperatorLike {
-    function supplyOrder(uint currencyAmount) external;
-    function redeemOrder(uint redeemAmount) external;
-    function disburse() external returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
+    function supplyOrder(uint256 currencyAmount) external;
+    function redeemOrder(uint256 redeemAmount) external;
+    function disburse()
+        external
+        returns (
+            uint256 payoutCurrencyAmount,
+            uint256 payoutTokenAmount,
+            uint256 remainingSupplyCurrency,
+            uint256 remainingRedeemToken
+        );
 }
 
 contract Investor is Test {
@@ -17,25 +24,32 @@ contract Investor is Test {
     OperatorLike operator;
     address tranche;
 
-    constructor(address operator_, address tranche_,  address currency_, address token_) {
+    constructor(address operator_, address tranche_, address currency_, address token_) {
         currency = ERC20Like(currency_);
         token = ERC20Like(token_);
         operator = OperatorLike(operator_);
         tranche = tranche_;
     }
 
-    function supplyOrder(uint currencyAmount) public {
+    function supplyOrder(uint256 currencyAmount) public {
         currency.approve(tranche, currencyAmount);
         operator.supplyOrder(currencyAmount);
     }
 
-    function disburse() public returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken) {
-       return operator.disburse();
+    function disburse()
+        public
+        returns (
+            uint256 payoutCurrencyAmount,
+            uint256 payoutTokenAmount,
+            uint256 remainingSupplyCurrency,
+            uint256 remainingRedeemToken
+        )
+    {
+        return operator.disburse();
     }
 
-    function redeemOrder(uint tokenAmount) public {
+    function redeemOrder(uint256 tokenAmount) public {
         token.approve(tranche, tokenAmount);
         operator.redeemOrder(tokenAmount);
     }
-
 }
