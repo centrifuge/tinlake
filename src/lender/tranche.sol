@@ -171,9 +171,8 @@ contract Tranche is Math, Auth, FixedPoint {
 
         // no disburse possible in this epoch
         if (users[usr].orderedInEpoch == coordinator.currentEpoch()) {
-            return (
-                payoutCurrencyAmount, payoutTokenAmount, users[usr].supplyCurrencyAmount, users[usr].redeemTokenAmount
-            );
+            return
+                (payoutCurrencyAmount, payoutTokenAmount, users[usr].supplyCurrencyAmount, users[usr].redeemTokenAmount);
         }
 
         if (endEpoch > lastEpochExecuted) {
