@@ -93,8 +93,8 @@ contract BorrowerDeployer is FixedPoint {
         shelf = shelffab.newShelf(currency, address(title), address(pile), address(feed));
         AuthLike(shelf).rely(root);
     }
-    /// @notice deploys the feed contract
 
+    /// @notice deploys the feed contract
     function deployFeed() public {
         require(feed == ZERO);
         feed = feedFab.newFeed();

@@ -6,8 +6,9 @@ import "tinlake-math/interest.sol";
 import "tinlake-auth/auth.sol";
 
 /// @notice Pile Contract to manage different interest groups of debt
-/// The following is one implementation of a debt module. It keeps track of different buckets of interest rates and is optimized for many loans per interest bucket. It keeps track of interest
-/// rate accumulators (chi values) for all interest rate categories. It calculates debt each
+/// The following is one implementation of a debt module.
+/// It keeps track of different buckets of interest rates and is optimized for many loans per interest bucket.
+/// Each bucket holds it own rate accumulators (chi values). It calculates debt for each
 /// loan according to its interest rate category and pie value.
 contract Pile is Auth, Interest {
     /// @notice stores all needed information of an interest rate group
