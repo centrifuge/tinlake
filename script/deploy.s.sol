@@ -2,39 +2,34 @@
 pragma solidity ^0.7.6;
 pragma abicoder v2;
 
+import "forge-std/Script.sol";
+
 import {TinlakeRoot} from "src/root.sol";
-
-import {TitleFab} from "src/borrower/fabs/title.sol";
-import {ShelfFab} from "src/borrower/fabs/shelf.sol";
-import {PileFab} from "src/borrower/fabs/pile.sol";
-import {PrincipalNAVFeedFab} from "src/borrower/fabs/navfeed.principal.sol";
 import {BorrowerDeployer} from "src/borrower/deployer.sol";
-
-import {ReserveFab} from "src/lender/fabs/reserve.sol";
-import {AssessorFab} from "src/lender/fabs/assessor.sol";
-import {PoolAdminFab} from "src/lender/fabs/pooladmin.sol";
-import {TrancheFab} from "src/lender/fabs/tranche.sol";
-import {MemberlistFab} from "src/lender/fabs/memberlist.sol";
-import {RestrictedTokenFab} from "src/lender/fabs/restrictedtoken.sol";
-import {OperatorFab} from "src/lender/fabs/operator.sol";
-import {CoordinatorFab} from "src/lender/fabs/coordinator.sol";
-import {ClerkFab} from "src/lender/adapters/mkr/fabs/clerk.sol";
 import {AdapterDeployer} from "src/lender/adapters/deployer.sol";
 import {LenderDeployer} from "src/lender/deployer.sol";
 
-import "forge-std/Script.sol";
+interface ImmutableCreate2Factory {
+    function safeCreate2(bytes32 salt, bytes calldata initCode) external payable returns (address deploymentAddress);
+    function findCreate2Address(bytes32 salt, bytes calldata initCode)
+        external
+        view
+        returns (address deploymentAddress);
+    function hasBeenDeployed(address deploymentAddress) external view returns (bool);
+}
+
+interface AnyContract {}
 
 contract TinlakeDeployScript is Script {
+    ImmutableCreate2Factory immutable factory = ImmutableCreate2Factory(0x0000000000FFe8B47B3e2130213B802212439497);
+    bytes32 salt = 0x00000000000000000000000000000000000000008b99e5a778edb02572010000;
+
     function setUp() public {}
 
     function run() public {
         vm.startBroadcast();
 
-        // TODO: add caching based on bytecode
-        // bytes memory bytecode = vm.getCode("src/borrower/fabs/title.sol:TitleFab");
-
         TinlakeRoot root = new TinlakeRoot(msg.sender, vm.envAddress("GOVERNANCE"));
-
         address borrowerDeployer = deployBorrower(root);
         (address lenderDeployer, address adapterDeployer) = deployLender(root);
 
@@ -53,9 +48,20 @@ contract TinlakeDeployScript is Script {
         vm.stopBroadcast();
     }
 
+    function getOrDeployFab(string memory contractPath) internal returns (address) {
+        bytes memory initCode = vm.getCode(contractPath);
+        address deploymentAddress = factory.findCreate2Address(salt, initCode);
+
+        if (factory.hasBeenDeployed(deploymentAddress)) {
+            return deploymentAddress;
+        } else {
+            return factory.safeCreate2(salt, initCode);
+        }
+    }
+
     function deployBorrower(TinlakeRoot root) internal returns (address) {
         BorrowerDeployer borrowerDeployer =
-        new BorrowerDeployer(address(root), address(new TitleFab()), address(new ShelfFab()), address(new PileFab()), address(new PrincipalNAVFeedFab()), vm.envAddress("TINLAKE_CURRENCY"), "Tinlake Loan Token", "TLNFT", vm.envUint("DISCOUNT_RATE"));
+        new BorrowerDeployer(address(root), getOrDeployFab("src/borrower/fabs/title.sol:TitleFab"), getOrDeployFab("src/borrower/fabs/shelf.sol:ShelfFab"), getOrDeployFab("src/borrower/fabs/pile.sol:PileFab"), getOrDeployFab("src/borrower/fabs/navfeed.principal.sol:PrincipalNAVFeedFab"), vm.envAddress("TINLAKE_CURRENCY"), "Tinlake Loan Token", "TLNFT", vm.envUint("DISCOUNT_RATE"));
 
         borrowerDeployer.deployTitle();
         borrowerDeployer.deployPile();
@@ -69,12 +75,13 @@ contract TinlakeDeployScript is Script {
     function deployLender(TinlakeRoot root) internal returns (address, address) {
         address adapterDeployer = address(0);
         if (vm.envBool("IS_MKR")) {
-            adapterDeployer =
-                address(new AdapterDeployer(address(root), address(new ClerkFab()), vm.envAddress("MKR_MGR_FAB")));
+            adapterDeployer = address(
+                new AdapterDeployer(address(root), getOrDeployFab("src/lender/adapters/mkr/fabs/clerk.sol:ClerkFab"), vm.envAddress("MKR_MGR_FAB"))
+            );
         }
 
         LenderDeployer lenderDeployer =
-        new LenderDeployer(address(root), vm.envAddress("TINLAKE_CURRENCY"), address(new TrancheFab()), address(new MemberlistFab()), address(new RestrictedTokenFab()), address(new ReserveFab()), address(new AssessorFab()), address(new CoordinatorFab()), address(new OperatorFab()), address(new PoolAdminFab()), vm.envAddress("MEMBER_ADMIN"), adapterDeployer);
+        new LenderDeployer(address(root), vm.envAddress("TINLAKE_CURRENCY"), getOrDeployFab("src/lender/fabs/tranche.sol:TrancheFab"), getOrDeployFab("src/lender/fabs/memberlist.sol:MemberlistFab"), getOrDeployFab("src/lender/fabs/restrictedtoken.sol:RestrictedTokenFab"), getOrDeployFab("src/lender/fabs/reserve.sol:ReserveFab"), getOrDeployFab("src/lender/fabs/assessor.sol:AssessorFab"), getOrDeployFab("src/lender/fabs/coordinator.sol:CoordinatorFab"), getOrDeployFab("src/lender/fabs/operator.sol:OperatorFab"), getOrDeployFab("src/lender/fabs/pooladmin.sol:PoolAdmin"), vm.envAddress("MEMBER_ADMIN"), adapterDeployer);
 
         lenderDeployer.init(
             vm.envUint("MIN_SENIOR_RATIO"),
