@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2018  Rain <rainbreak@riseup.net>, Centrifuge
 pragma solidity >=0.7.6;
-
 pragma experimental ABIEncoderV2;
 
 import "tinlake-auth/auth.sol";
