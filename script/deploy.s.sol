@@ -48,20 +48,9 @@ contract TinlakeDeployScript is Script {
         vm.stopBroadcast();
     }
 
-    function getOrDeployFab(string memory contractPath) internal returns (address) {
-        bytes memory initCode = vm.getCode(contractPath);
-        address deploymentAddress = factory.findCreate2Address(salt, initCode);
-
-        if (factory.hasBeenDeployed(deploymentAddress)) {
-            return deploymentAddress;
-        } else {
-            return factory.safeCreate2(salt, initCode);
-        }
-    }
-
     function deployBorrower(TinlakeRoot root) internal returns (address) {
         BorrowerDeployer borrowerDeployer =
-        new BorrowerDeployer(address(root), getOrDeployFab("src/borrower/fabs/title.sol:TitleFab"), getOrDeployFab("src/borrower/fabs/shelf.sol:ShelfFab"), getOrDeployFab("src/borrower/fabs/pile.sol:PileFab"), getOrDeployFab("src/borrower/fabs/navfeed.principal.sol:PrincipalNAVFeedFab"), vm.envAddress("TINLAKE_CURRENCY"), "Tinlake Loan Token", "TLNFT", vm.envUint("DISCOUNT_RATE"));
+        new BorrowerDeployer(address(root), getOrDeployFab("title.sol:TitleFab"), getOrDeployFab("shelf.sol:ShelfFab"), getOrDeployFab("pile.sol:PileFab"), getOrDeployFab("navfeed.principal.sol:PrincipalNAVFeedFab"), vm.envAddress("TINLAKE_CURRENCY"), "Tinlake Loan Token", "TLNFT", vm.envUint("DISCOUNT_RATE"));
 
         borrowerDeployer.deployTitle();
         borrowerDeployer.deployPile();
@@ -76,12 +65,12 @@ contract TinlakeDeployScript is Script {
         address adapterDeployer = address(0);
         if (vm.envBool("IS_MKR")) {
             adapterDeployer = address(
-                new AdapterDeployer(address(root), getOrDeployFab("src/lender/adapters/mkr/fabs/clerk.sol:ClerkFab"), vm.envAddress("MKR_MGR_FAB"))
+                new AdapterDeployer(address(root), getOrDeployFab("clerk.sol:ClerkFab"), vm.envAddress("MKR_MGR_FAB"))
             );
         }
 
         LenderDeployer lenderDeployer =
-        new LenderDeployer(address(root), vm.envAddress("TINLAKE_CURRENCY"), getOrDeployFab("src/lender/fabs/tranche.sol:TrancheFab"), getOrDeployFab("src/lender/fabs/memberlist.sol:MemberlistFab"), getOrDeployFab("src/lender/fabs/restrictedtoken.sol:RestrictedTokenFab"), getOrDeployFab("src/lender/fabs/reserve.sol:ReserveFab"), getOrDeployFab("src/lender/fabs/assessor.sol:AssessorFab"), getOrDeployFab("src/lender/fabs/coordinator.sol:CoordinatorFab"), getOrDeployFab("src/lender/fabs/operator.sol:OperatorFab"), getOrDeployFab("src/lender/fabs/pooladmin.sol:PoolAdmin"), vm.envAddress("MEMBER_ADMIN"), adapterDeployer);
+        new LenderDeployer(address(root), vm.envAddress("TINLAKE_CURRENCY"), getOrDeployFab("tranche.sol:TrancheFab"), getOrDeployFab("memberlist.sol:MemberlistFab"), getOrDeployFab("restrictedtoken.sol:RestrictedTokenFab"), getOrDeployFab("reserve.sol:ReserveFab"), getOrDeployFab("assessor.sol:AssessorFab"), getOrDeployFab("coordinator.sol:CoordinatorFab"), getOrDeployFab("operator.sol:OperatorFab"), getOrDeployFab("pooladmin.sol:PoolAdmin"), vm.envAddress("MEMBER_ADMIN"), adapterDeployer);
 
         lenderDeployer.init(
             vm.envUint("MIN_SENIOR_RATIO"),
@@ -105,6 +94,17 @@ contract TinlakeDeployScript is Script {
         // TODO: if (vm.envBool("IS_MKR")) deploy mgr
 
         return (address(lenderDeployer), address(adapterDeployer));
+    }
+
+    function getOrDeployFab(string memory contractPath) internal returns (address) {
+        bytes memory initCode = vm.getCode(contractPath);
+        address deploymentAddress = factory.findCreate2Address(salt, initCode);
+
+        if (factory.hasBeenDeployed(deploymentAddress)) {
+            return deploymentAddress;
+        } else {
+            return factory.safeCreate2(salt, initCode);
+        }
     }
 
     function printContracts(TinlakeRoot root) internal {
