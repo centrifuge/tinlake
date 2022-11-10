@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "tinlake-math/interest.sol";
 
 import "src/lender/adapters/mkr/clerk.sol";
+import "src/lender/adapters/mkr/simpleClerk.sol";
 import "../../../simple/token.sol";
 import "../../mock/reserve.sol";
 import "../../mock/coordinator.sol";
@@ -39,7 +40,7 @@ contract ClerkTest is Assertions, Interest {
     SpotterMock spotter;
     JugMock jug;
 
-    Clerk clerk;
+    SimpleClerk clerk;
     address self;
 
     function setUp() public {
@@ -56,7 +57,7 @@ contract ClerkTest is Assertions, Interest {
         spotter = new SpotterMock();
         jug = new JugMock();
 
-        clerk = new Clerk(address(currency), address(collateral));
+        clerk = new SimpleClerk(address(currency), address(collateral));
         clerk.depend("coordinator", address(coordinator));
         clerk.depend("assessor", address(assessor));
         clerk.depend("reserve", address(reserve));
