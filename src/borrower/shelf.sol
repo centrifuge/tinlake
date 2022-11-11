@@ -235,24 +235,7 @@ contract Shelf is Auth, TitleOwned, Math {
         assessor.reBalance();
         emit Recover(loan, usr, currencyAmount);
     }
-
-    function _repay(uint256 loan, address usr, uint256 currencyAmount) internal {
-        pile.accrue(loan);
-        uint256 loanDebt = pile.debt(loan);
-
-        // only repay max loan debt
-        if (currencyAmount > loanDebt) {
-            currencyAmount = loanDebt;
-        }
-        require(currency.transferFrom(usr, address(this), currencyAmount), "currency-transfer-failed");
-        ceiling.repay(loan, currencyAmount);
-        pile.decDebt(loan, currencyAmount);
-
-        reserve.deposit(currencyAmount);
-        // reBalance lender interest bearing amount based on new NAV
-        assessor.reBalance();
-    }
-
+    
     // locks an nft in the shelf
     // requires an issued loan
     function lock(uint256 loan) external owner(loan) {
