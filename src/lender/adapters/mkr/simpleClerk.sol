@@ -16,6 +16,7 @@ interface ERC20Like {
     function balanceOf(address) external view returns (uint);
     function transferFrom(address, address, uint) external returns (bool);
     function approve(address usr, uint amount) external;
+    function transfer(address, uint) external returns (bool);
 }
 
 contract SimpleClerk {
@@ -71,6 +72,7 @@ contract SimpleClerk {
     assessor = AssessorLike(assessor_);
     collateral =  ERC20Like(collateral_);
     dai = ERC20Like(dai_);
+    vow = vow_;
     wards[msg.sender] = 1;
     emit Rely(msg.sender);
   }
@@ -109,8 +111,8 @@ contract SimpleClerk {
     dai.approve(address(mgr), amountDAI);
     mgr.wipe(amountDAI);
 
-    uint amountDROP = div(mul(amountDAI, RAY), assessor.calcSeniorTokenPrice());
-    mgr.exit(profitDROP);
+    uint amountDROP = divup(mul(amountDAI, RAY), assessor.calcSeniorTokenPrice());
+    mgr.exit(amountDROP);
     
     collateral.approve(address(msg.sender), amountDROP);
     collateral.transfer(address(msg.sender), amountDROP);
