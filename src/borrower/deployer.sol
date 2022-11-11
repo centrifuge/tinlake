@@ -100,8 +100,9 @@ contract BorrowerDeployer is FixedPoint {
         feed = feedFab.newFeed();
         AuthLike(feed).rely(root);
     }
-    /// @notice deploys the borrower contracts and wires them together
 
+    /// @notice deploys the borrower contracts and wires them together
+    /// @param initNAVFeed boolean flag if a NAV feed should be deployed
     function deploy(bool initNAVFeed) public {
         // ensures all required deploy methods were called
         require(shelf != ZERO);
