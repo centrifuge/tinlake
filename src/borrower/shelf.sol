@@ -235,7 +235,7 @@ contract Shelf is Auth, TitleOwned, Math {
         assessor.reBalance();
         emit Recover(loan, usr, currencyAmount);
     }
-    
+
     // locks an nft in the shelf
     // requires an issued loan
     function lock(uint256 loan) external owner(loan) {
