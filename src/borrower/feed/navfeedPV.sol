@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
+import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
 
 interface ShelfLike {
@@ -18,10 +19,11 @@ interface PileLike {
     function file(bytes32, uint, uint) external;
     function rates(uint rate) external view returns (uint, uint, uint ,uint48, uint);
     function rateDebt(uint rate) external view returns (uint);
+    function accrue(uint loan) external;
 }
 
 
-contract NAVFeed is Auth {
+contract NAVFeedPV is Auth, Math  {
     PileLike    public pile;
     ShelfLike   public shelf;
 
@@ -34,14 +36,26 @@ contract NAVFeed is Auth {
         uint128 borrowed;
     }
 
+    struct RiskGroup {
+        // denominated in (10^27)
+        uint128 ceilingRatio;
+        // denominated in (10^27)
+        uint128 thresholdRatio;
+        // denominated in (10^27)
+        uint128 recoveryRatePD;
+    }
+
     // nft => details
     mapping (bytes32 => NFTDetails) public details;
     // loan => details
     mapping(uint => LoanDetails) public loanDetails;
+    // risk => riskGroup
+    mapping (uint => RiskGroup) public riskGroup;
 
     uint public latestNAV;
+    uint public lastNAVUpdate;
 
-    uint WRITEOFF_RATE_GROUP = 1000;
+    uint public constant WRITEOFF_RATE_GROUP = 1000;
 
 
     // events
@@ -85,7 +99,7 @@ contract NAVFeed is Auth {
     }
 
     function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) public auth {
-        if(name == "riskGroupNFT") {
+        if(name == "riskGroup") {
             require(ceilingRatio(risk_) == 0, "risk-group-in-usage");
             riskGroup[risk_].thresholdRatio = toUint128(thresholdRatio_);
             riskGroup[risk_].ceilingRatio = toUint128(ceilingRatio_);
@@ -104,13 +118,6 @@ contract NAVFeed is Auth {
     }
 
     function repay(uint loan, uint amount) external virtual auth {
-        //
-        // if(amount > loanDetails[loan].borrowed) {
-        //     loanDetails[loan].borrowed = 0;
-        // }
-        // else {
-        //     loanDetails[loan].borrowed = safeSub(loanDetails[loan].borrowed, amount);
-        // } 
     }
 
     function borrowEvent(uint loan, uint) public virtual auth {
@@ -140,7 +147,6 @@ contract NAVFeed is Auth {
         uint totalDebt;
         // calculate total debt
         for (uint loanId = 1; loanId <= shelf.loanCount(); loanId++) {
-            pile.accrue(loanId);
             totalDebt = safeAdd(totalDebt, pile.debt(loanId));
         }
 
@@ -206,8 +212,11 @@ contract NAVFeed is Auth {
     // returns true if the present value of a loan is zero
     // true if all debt is repaid or debt is 100% written-off
     function zeroPV(uint loan) public view returns (bool) {
-        return ((pile.debt(loan) == 0) || (pile.loanRates(loan) == WRITEOFF_RATE_GROUP_));
+        return ((pile.debt(loan) == 0) || (pile.loanRates(loan) == WRITEOFF_RATE_GROUP));
     }
 
-
+    // normalizes a timestamp to round down to the nearest midnight (UTC)
+    function uniqueDayTimestamp(uint timestamp) public pure returns (uint) {
+        return (1 days) * (timestamp/(1 days));
+    }
 }
