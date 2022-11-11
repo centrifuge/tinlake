@@ -52,9 +52,9 @@ contract WriteOffWrapper is Auth, Discounting {
 
     /// @notice writes of an overdue loan
     /// @param loan the loan id
-    /// @param feed address of the feed
-    function writeOff(uint256 loan, address feed) public auth {
-        FeedLike feed = FeedLike(feed);
+    /// @param nftFeed address of the feed
+    function writeOff(uint256 loan, address nftFeed) public auth {
+        FeedLike feed = FeedLike(nftFeed);
         PileLike pile = PileLike(feed.pile());
         require(writeOffRates[address(pile)] != 0, "WriteOffWrapper/pile-has-no-write-off-group");
         ShelfLike shelf = ShelfLike(feed.shelf());

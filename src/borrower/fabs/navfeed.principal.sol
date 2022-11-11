@@ -3,6 +3,7 @@ pragma solidity >=0.7.6;
 
 import {NAVFeed} from "./../feed/navfeed.sol";
 
+/// @notice factory contract for principal nav feed
 contract PrincipalNAVFeedFab {
     function newFeed() public returns (address) {
         NAVFeed feed = new NAVFeed();
