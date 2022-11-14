@@ -18,7 +18,7 @@ interface ImmutableCreate2Factory {
     function hasBeenDeployed(address deploymentAddress) external view returns (bool);
 }
 
-contract TinlakeDeployScript is Script {
+contract DeployScript is Script {
     ImmutableCreate2Factory immutable factory = ImmutableCreate2Factory(0x0000000000FFe8B47B3e2130213B802212439497);
     bytes32 salt = 0x00000000000000000000000000000000000000008b99e5a778edb02572010000;
 
@@ -41,7 +41,7 @@ contract TinlakeDeployScript is Script {
         );
         root.deploy();
 
-        printContracts(root);
+        console.log("ROOT_CONTRACT: %s", address(root));
 
         vm.stopBroadcast();
     }
@@ -132,42 +132,6 @@ contract TinlakeDeployScript is Script {
             return deploymentAddress;
         } else {
             return factory.safeCreate2(salt, initCode);
-        }
-    }
-
-    function printContracts(TinlakeRoot root) internal {
-        console.log("ROOT_CONTRACT=%s", address(root));
-        console.log("TINLAKE_CURRENCY=%s", vm.envAddress("TINLAKE_CURRENCY"));
-        console.log("MEMBER_ADMIN=%s", vm.envAddress("MEMBER_ADMIN"));
-
-        BorrowerDeployer borrowerDeployer = BorrowerDeployer(address(root.borrowerDeployer()));
-        console.log("TITLE=%s", address(borrowerDeployer.title()));
-        console.log("PILE=%s", address(borrowerDeployer.pile()));
-        console.log("FEED=%s", address(borrowerDeployer.feed()));
-        console.log("SHELF=%s", address(borrowerDeployer.shelf()));
-
-        LenderDeployer lenderDeployer = LenderDeployer(address(root.lenderDeployer()));
-        console.log("JUNIOR_TRANCHE=%s", address(lenderDeployer.juniorTranche()));
-        console.log("JUNIOR_TOKEN=%s", address(lenderDeployer.juniorToken()));
-        console.log("JUNIOR_OPERATOR=%s", address(lenderDeployer.juniorOperator()));
-        console.log("JUNIOR_MEMBERLIST=%s", address(lenderDeployer.juniorMemberlist()));
-
-        console.log("SENIOR_TRANCHE=%s", address(lenderDeployer.seniorTranche()));
-        console.log("SENIOR_TOKEN=%s", address(lenderDeployer.seniorToken()));
-        console.log("SENIOR_OPERATOR=%s", address(lenderDeployer.seniorOperator()));
-        console.log("SENIOR_MEMBERLIST=%s", address(lenderDeployer.seniorMemberlist()));
-
-        console.log("RESERVE=%s", address(lenderDeployer.reserve()));
-        console.log("ASSESSOR=%s", address(lenderDeployer.assessor()));
-        console.log("POOL_ADMIN=%s", address(lenderDeployer.poolAdmin()));
-        console.log("COORDINATOR=%s", address(lenderDeployer.coordinator()));
-
-        if (vm.envBool("IS_MKR")) {
-            AdapterDeployer adapterDeployer = AdapterDeployer(address(root.adapterDeployer()));
-            console.log("CLERK=%s", address(adapterDeployer.clerk()));
-            console.log("MAKER_MGR=%s", address(adapterDeployer.mgr()));
-            console.log("MKR_VAT=%s", vm.envAddress("MKR_VAT"));
-            console.log("MKR_JUG=%s", vm.envAddress("MKR_JUG"));
         }
     }
 }
