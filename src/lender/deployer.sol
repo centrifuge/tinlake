@@ -36,6 +36,7 @@ interface PoolAdminLike {
     function rely(address) external;
 }
 
+/// @notice contract fo deploying a Tinlake lender contracts
 contract LenderDeployer is FixedPoint {
     address public immutable root;
     address public immutable currency;
@@ -114,6 +115,17 @@ contract LenderDeployer is FixedPoint {
         operatorFab = OperatorFabLike(operatorFab_);
     }
 
+    /// @notice init function for the lender deployer can only be called once
+    /// @param minSeniorRatio_ min senior ratio for the pool
+    /// @param maxSeniorRatio_ max senior ratio for the pool
+    /// @param maxReserve_ max reserve for the pool
+    /// @param challengeTime_ challenge time for the pool, time to challenge a valid epoch
+    /// coordinator submission. After the challenge time, the epoch can be executed
+    /// @param seniorInterestRate_ interest rate per second for the senior tranche (in RAY)
+    /// @param seniorName_ name of the senior token
+    /// @param seniorSymbol_ symbol of the senior token
+    /// @param juniorName_ name of the junior token
+    /// @param juniorSymbol_ symbol of the junior token
     function init(
         uint256 minSeniorRatio_,
         uint256 maxSeniorRatio_,
@@ -140,7 +152,7 @@ contract LenderDeployer is FixedPoint {
 
         deployer = address(1);
     }
-
+    /// @notice deploys the junior tranche related contracts
     function deployJunior() public {
         require(juniorTranche == address(0) && deployer == address(1));
         juniorToken = restrictedTokenFab.newRestrictedToken(juniorSymbol, juniorName);
@@ -154,6 +166,7 @@ contract LenderDeployer is FixedPoint {
         AuthLike(juniorTranche).rely(root);
     }
 
+    /// @notice deploys the senior tranche related contracts
     function deploySenior() public {
         require(seniorTranche == address(0) && deployer == address(1));
         seniorToken = restrictedTokenFab.newRestrictedToken(seniorSymbol, seniorName);
@@ -172,6 +185,7 @@ contract LenderDeployer is FixedPoint {
         }
     }
 
+    /// @notice deploys the reserve contract
     function deployReserve() public {
         require(reserve == address(0) && deployer == address(1));
         reserve = reserveFab.newReserve(currency);
@@ -179,6 +193,7 @@ contract LenderDeployer is FixedPoint {
         if (adapterDeployer != address(0)) AuthLike(reserve).rely(adapterDeployer);
     }
 
+    /// @notice deploys the assessor contract
     function deployAssessor() public {
         require(assessor == address(0) && deployer == address(1));
         assessor = assessorFab.newAssessor();
@@ -186,6 +201,7 @@ contract LenderDeployer is FixedPoint {
         if (adapterDeployer != address(0)) AuthLike(assessor).rely(adapterDeployer);
     }
 
+    /// @notice deploys the pool admin contract
     function deployPoolAdmin() public {
         require(poolAdmin == address(0) && deployer == address(1));
         poolAdmin = poolAdminFab.newPoolAdmin();
@@ -193,12 +209,14 @@ contract LenderDeployer is FixedPoint {
         if (adapterDeployer != address(0)) PoolAdminLike(poolAdmin).rely(adapterDeployer);
     }
 
+    /// @notice deploys the coordinator contract
     function deployCoordinator() public {
         require(coordinator == address(0) && deployer == address(1));
         coordinator = coordinatorFab.newCoordinator(challengeTime);
         AuthLike(coordinator).rely(root);
     }
 
+    /// @notice wires the the deployed lender contracts together
     function deploy() public virtual {
         require(
             coordinator != address(0) && assessor != address(0) && reserve != address(0) && seniorTranche != address(0)

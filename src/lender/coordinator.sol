@@ -184,7 +184,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
     }
 
     /// @notice sets parameters for the epoch coordinator by wards
-    /// @param name
+    /// @param name name of the parameter
     /// @param value boolean value
     function file(bytes32 name, bool value) public auth {
         if (name == "poolClosing") {
@@ -619,7 +619,15 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
             })
         );
     }
-
+    /// @notice validates if a solution satisfies core and pool constraints and allows to pass different state variables
+    /// @param reserve_ total amount in the reserve
+    /// @param nav_ net asset value
+    /// @param seniorAsset_ senior asset value (seniorDebt + seniorBalance)
+    /// @param seniorRedeem senior redeem amount
+    /// @param juniorRedeem junior redeem amount
+    /// @param seniorSupply senior supply amount
+    /// @param juniorSupply junior supply amount
+    /// @param err error code for the first constraint which is not satisfied or success
     function validate(
         uint256 reserve_,
         uint256 nav_,
@@ -628,7 +636,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         uint256 juniorRedeem,
         uint256 seniorSupply,
         uint256 juniorSupply
-    ) public view returns (int256) {
+    ) public view returns (int256 err) {
         return _validate(
             reserve_,
             nav_,
@@ -642,10 +650,16 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         );
     }
 
+    /// @notice internal method to validate a solution
+    /// @param reserve_ total amount in the reserve
+    /// @param nav_ net asset value
+    /// @param seniorAsset_ senior asset value (seniorDebt + seniorBalance)
+    /// @param trans the order summary of supplies and redeems
+    /// @return err_ error code for the first constraint which is not satisfied or success
     function _validate(uint256 reserve_, uint256 nav_, uint256 seniorAsset_, OrderSummary memory trans)
         internal
         view
-        returns (int256)
+        returns (int256 err_)
     {
         uint256 currencyAvailable = safeAdd(safeAdd(reserve_, trans.seniorSupply), trans.juniorSupply);
         uint256 currencyOut = safeAdd(trans.seniorRedeem, trans.juniorRedeem);
@@ -677,7 +691,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         );
     }
 
-    // public method to execute an epoch which required a submission period and the challenge period is over
+    /// @notice public method to execute an epoch which required a submission period and the challenge period is over
     function executeEpoch() public {
         require(block.timestamp >= minChallengePeriodEnd && minChallengePeriodEnd != 0);
 
@@ -689,7 +703,10 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         );
     }
 
-    // calculates the percentage of an order type which can be fulfilled for an epoch
+    /// @notice helper function to calculate the percentage of an order type which can be fulfilled for an epoch
+    /// @param amount which can be fullFilled
+    /// @param totalOrder the total order amount
+    /// @return percent percentage of the order which can be fulfilled (RAY 10^27)
     function calcFulfillment(uint256 amount, uint256 totalOrder) public pure returns (uint256 percent) {
         if (amount == 0 || totalOrder == 0) {
             return 0;
@@ -697,16 +714,25 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return rdiv(amount, totalOrder);
     }
 
-    // calculates the new reserve after a solution would be executed
+    /// @notice calculates the new reserve after a solution would be executed
+    /// @param seniorRedeem senior redeem amount
+    /// @param juniorRedeem junior redeem amount
+    /// @param seniorSupply senior supply amount
+    /// @param juniorSupply junior supply amount
+    /// @return newReserve the new reserve after the solution would be executed
     function calcNewReserve(uint256 seniorRedeem, uint256 juniorRedeem, uint256 seniorSupply, uint256 juniorSupply)
         public
         view
-        returns (uint256)
+        returns (uint256 newReserve)
     {
         return safeSub(safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply), safeAdd(seniorRedeem, juniorRedeem));
     }
 
-    // internal execute epoch communicates the order fulfillment of the best solution to the tranches
+    /// @notice internal execute epoch communicates the order fulfillment of the best solution to the tranches
+    /// @param seniorRedeem senior redeem amount
+    /// @param juniorRedeem junior redeem amount
+    /// @param seniorSupply senior supply amount
+    /// @param juniorSupply junior supply amount
     function _executeEpoch(uint256 seniorRedeem, uint256 juniorRedeem, uint256 seniorSupply, uint256 juniorSupply)
         internal
     {
