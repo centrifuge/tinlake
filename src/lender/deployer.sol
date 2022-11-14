@@ -153,6 +153,7 @@ contract LenderDeployer is FixedPoint {
         deployer = address(1);
     }
     /// @notice deploys the junior tranche related contracts
+
     function deployJunior() public {
         require(juniorTranche == address(0) && deployer == address(1));
         juniorToken = restrictedTokenFab.newRestrictedToken(juniorSymbol, juniorName);

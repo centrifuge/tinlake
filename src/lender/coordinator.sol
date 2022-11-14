@@ -628,6 +628,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
     /// @param seniorSupply senior supply amount
     /// @param juniorSupply junior supply amount
     /// @param err error code for the first constraint which is not satisfied or success
+
     function validate(
         uint256 reserve_,
         uint256 nav_,

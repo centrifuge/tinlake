@@ -6,11 +6,15 @@ import "./../fixed_point.sol";
 
 /// @notice contract without a state which defines the relevant formulars for the assessor
 abstract contract Definitions is FixedPoint, Math {
-    /// @notice calculates the the expected Senior asset value 
+    /// @notice calculates the the expected Senior asset value
     /// @param _seniorDebt the current senior debt
     /// @param _seniorBalance the current senior balance
     /// @return _seniorAsset returns the senior asset value
-    function calcExpectedSeniorAsset(uint256 _seniorDebt, uint256 _seniorBalance) public pure returns (uint256 _seniorAsset) {
+    function calcExpectedSeniorAsset(uint256 _seniorDebt, uint256 _seniorBalance)
+        public
+        pure
+        returns (uint256 _seniorAsset)
+    {
         return safeAdd(_seniorDebt, _seniorBalance);
     }
 
@@ -19,7 +23,11 @@ abstract contract Definitions is FixedPoint, Math {
     /// @param nav the current NAV
     /// @param reserve the current reserve
     /// @return seniorRatio the senior ratio
-    function calcSeniorRatio(uint256 seniorAsset, uint256 nav, uint256 reserve) public pure returns (uint256 seniorRatio) {
+    function calcSeniorRatio(uint256 seniorAsset, uint256 nav, uint256 reserve)
+        public
+        pure
+        returns (uint256 seniorRatio)
+    {
         // note: NAV + reserve == seniorAsset + juniorAsset (invariant: always true)
         // if expectedSeniorAsset is passed ratio can be greater than ONE
         uint256 assets = calcAssets(nav, reserve);

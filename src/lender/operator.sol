@@ -146,6 +146,7 @@ contract Operator is Auth {
     /// @param v value of the signature
     /// @param r value of the signature
     /// @param s value of the signature
+
     function supplyOrderWithPermit(uint256 amount, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
         public
     {
