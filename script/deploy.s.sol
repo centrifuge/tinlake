@@ -47,10 +47,10 @@ contract DeployScript is Script {
     }
 
     function deployBorrower(TinlakeRoot root) internal returns (address) {
-        FabLike feedFab = address(0);
-        if (vm.envString("NAV_IMPLEMENTATION") == "PV") {
+        address feedFab = address(0);
+        if (keccak256(abi.encodePacked(vm.envString("NAV_IMPLEMENTATION"))) == keccak256("PV")) {
             feedFab = getOrDeployFab("navfeedPV.sol:NAVFeedPVFab");
-        } else if (vm.envString("NAV_IMPLEMENTATION") == "creditline") {
+        } else if (keccak256(abi.encodePacked(vm.envString("NAV_IMPLEMENTATION"))) == keccak256("creditline")) {
             feedFab = getOrDeployFab("navfeed.creditline.sol:CreditlineNAVFeedFab");
         } else {
             feedFab = getOrDeployFab("navfeed.principal.sol:PrincipalNAVFeedFab");
