@@ -47,6 +47,15 @@ contract DeployScript is Script {
     }
 
     function deployBorrower(TinlakeRoot root) internal returns (address) {
+        FabLike feedFab = address(0);
+        if (vm.envString("NAV_IMPLEMENTATION") == "PV") {
+            feedFab = getOrDeployFab("navfeedPV.sol:NAVFeedPVFab");
+        } else if (vm.envString("NAV_IMPLEMENTATION") == "creditline") {
+            feedFab = getOrDeployFab("navfeed.creditline.sol:CreditlineNAVFeedFab");
+        } else {
+            feedFab = getOrDeployFab("navfeed.principal.sol:PrincipalNAVFeedFab");
+        }
+
         BorrowerDeployer borrowerDeployer =
         new BorrowerDeployer(address(root), getOrDeployFab("title.sol:TitleFab"), getOrDeployFab("shelf.sol:ShelfFab"), getOrDeployFab("pile.sol:PileFab"), getOrDeployFab("navfeed.principal.sol:PrincipalNAVFeedFab"), vm.envAddress("TINLAKE_CURRENCY"), "Tinlake Loan Token", "TLNFT", vm.envUint("DISCOUNT_RATE"));
 
