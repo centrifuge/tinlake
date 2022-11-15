@@ -321,7 +321,7 @@ contract Tranche is Math, Auth, FixedPoint {
     /// @param redeemFulfillment_ percentage (in RAY) of redeem orders which have been fullfilled in the excuted epoch
     /// @param tokenPrice_ tokenPrice of the executed epoch
     /// @param epochSupplyOrderCurrency total order of currency in the executed epoch
-    /// @param epochRedeemOrderCurrency total order of redeems expressed in the currency value for the executed epoch 
+    /// @param epochRedeemOrderCurrency total order of redeems expressed in the currency value for the executed epoch
     function epochUpdate(
         uint256 epochID,
         uint256 supplyFulfillment_,
