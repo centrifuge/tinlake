@@ -35,6 +35,7 @@ contract Memberlist is Math, Auth {
     }
     /// @notice checks if an address is a member otherwise reverts
     /// @param usr the address of the user which should be a member
+
     function member(address usr) public view {
         require((members[usr] >= block.timestamp), "not-allowed-to-hold-token");
     }
