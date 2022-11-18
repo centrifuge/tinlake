@@ -98,6 +98,7 @@ contract SimpleClerk {
   // --- Investor Actions ---
   function borrow(uint256 amountDROP) public onlyInvestor {
     collateral.transferFrom(msg.sender, address(this), amountDROP);
+    collateral.approve(address(mgr), amountDROP);
     mgr.join(amountDROP);
 
     uint amountDAI = mul(amountDROP, assessor.calcSeniorTokenPrice());
