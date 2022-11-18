@@ -324,8 +324,7 @@ contract Clerk is Auth, Interest {
         _harvest(dropPrice);
     }
 
-    /// @notice harvest the junior profit
-    /// increased collateral value over time allows to reduce the needed amount of collateral
+    /// @notice harvest the junior profit. Increased collateral value over time allows to reduce the needed amount of collateral
     function harvest() public active {
         _harvest(assessor.calcSeniorTokenPrice());
     }
