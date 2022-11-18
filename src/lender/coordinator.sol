@@ -356,7 +356,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return ERR_NOT_NEW_BEST;
     }
 
-    /// returns the difference between two values as absolute value
+    /// @notice returns the difference between two values as absolute value
     /// for gas optimization if both values are equal 1 is returned to avoid a special zero case in other methods
     /// @param x first value
     /// @param y second value
