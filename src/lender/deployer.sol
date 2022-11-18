@@ -115,7 +115,7 @@ contract LenderDeployer is FixedPoint {
         operatorFab = OperatorFabLike(operatorFab_);
     }
 
-    /// @notice init function for the lender deployer can only be called once
+    /// @dev init function for the lender deployer can only be called once
     /// @param minSeniorRatio_ min senior ratio for the pool
     /// @param maxSeniorRatio_ max senior ratio for the pool
     /// @param maxReserve_ max reserve for the pool
