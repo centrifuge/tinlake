@@ -256,7 +256,7 @@ contract Tranche is Math, Auth, FixedPoint {
     }
 
     /// @notice internal helper function to transfer tokens
-    /// if the amount is higher than the balance of the contract, there is no revert
+    /// @dev if the amount is higher than the balance of the contract, there is no revert
     /// instead the the maximum amount possible is transferred
     /// @param erc20 token address
     /// @param usr user address for which the tokens should be transferred
