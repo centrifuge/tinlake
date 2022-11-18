@@ -36,7 +36,7 @@ interface PoolAdminLike {
     function rely(address) external;
 }
 
-/// @notice contract fo deploying a Tinlake lender contracts
+/// @notice contract for deploying a Tinlake lender contracts
 contract LenderDeployer is FixedPoint {
     address public immutable root;
     address public immutable currency;
