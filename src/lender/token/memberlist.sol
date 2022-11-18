@@ -19,7 +19,7 @@ contract Memberlist is Math, Auth {
     /// @notice adds a user as a member for a certain period of time
     /// @param usr the address of the user
     /// @param validUntil the timestamp until the user is a member
-    /// minimum 7 day since block.timestamp
+    /// minimum 7 days since block.timestamp
     function updateMember(address usr, uint256 validUntil) public auth {
         require((safeAdd(block.timestamp, minimumDelay)) < validUntil);
         members[usr] = validUntil;
