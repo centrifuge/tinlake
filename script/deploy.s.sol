@@ -63,7 +63,10 @@ contract DeployScript is Script {
         borrowerDeployer.deployPile();
         borrowerDeployer.deployFeed();
         borrowerDeployer.deployShelf();
-        borrowerDeployer.deploy();
+
+        bool fileDiscountRateAndInitNAVFeed =
+            keccak256(abi.encodePacked(vm.envString("NAV_IMPLEMENTATION"))) != keccak256("PV");
+        borrowerDeployer.deploy(fileDiscountRateAndInitNAVFeed, fileDiscountRateAndInitNAVFeed);
 
         return address(borrowerDeployer);
     }
