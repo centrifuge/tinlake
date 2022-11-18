@@ -4,7 +4,7 @@ pragma solidity >=0.7.6;
 import "tinlake-math/math.sol";
 import "./../fixed_point.sol";
 
-/// @notice contract without a state which defines the relevant formulars for the assessor
+/// @notice contract without a state which defines the relevant formulas for the assessor
 abstract contract Definitions is FixedPoint, Math {
     /// @notice calculates the the expected Senior asset value
     /// @param _seniorDebt the current senior debt
