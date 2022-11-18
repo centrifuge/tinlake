@@ -58,7 +58,7 @@ abstract contract AssessorLike is FixedPoint {
     function changeSeniorAsset(uint256 seniorRatio, uint256 seniorSupply, uint256 seniorRedeem) public virtual;
 }
 
-/// @notice The EpochCoordinator keeps track of the epochs and execute epochs them.
+/// @notice The EpochCoordinator keeps track of the epochs and executes them.
 /// An epoch execution happens with the maximum amount of redeem and supply which still satisfies
 /// all constraints or at least improve certain pool constraints.
 /// In most cases all orders can be fulfilled with order maximum without violating any constraints.
