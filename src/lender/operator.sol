@@ -47,7 +47,7 @@ interface DaiPermitLike {
     ) external;
 }
 
-/// @notice the operator contract is the entry point for a tranche contracts
+/// @notice the operator contract is the entry point for a tranche contract
 contract Operator is Auth {
     TrancheLike public tranche;
     RestrictedTokenLike public token;
