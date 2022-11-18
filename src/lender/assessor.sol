@@ -126,7 +126,7 @@ contract Assessor is Definitions, Auth, Interest {
         reBalance(calcExpectedSeniorAsset(seniorBalance_, dripSeniorDebt()));
     }
 
-    /// @notice internal function for the re balance of senior debt and balance
+    /// @notice internal function for the rebalance of senior debt and balance
     /// @param seniorAsset_ the expected senior asset value (senior debt + senior balance)
     function reBalance(uint256 seniorAsset_) internal {
         // re-balancing according to new ratio
