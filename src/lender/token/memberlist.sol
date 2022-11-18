@@ -27,7 +27,7 @@ contract Memberlist is Math, Auth {
 
     /// @notice adds multiple addresses as a member for a certain period of time
     /// @param users the addresses of the users
-    /// @param validUntil the timestamp until the user is a member
+    /// @param validUntil the timestamp for when the user's member status ends
     function updateMembers(address[] memory users, uint256 validUntil) public auth {
         for (uint256 i = 0; i < users.length; i++) {
             updateMember(users[i], validUntil);
