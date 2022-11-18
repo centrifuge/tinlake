@@ -154,7 +154,7 @@ contract Tranche is Math, Auth, FixedPoint {
         }
     }
 
-    /// @notice view function to calculat the current disburse amount for a user
+    /// @notice view function to calculate the current disburse amount for a user
     /// a disburse is the fulfillment of a supply or redeem order
     /// a order can be fulfilled fully or partially
     /// @param usr user address for which the disburse amount should be calculated
