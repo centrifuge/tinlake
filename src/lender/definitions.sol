@@ -6,7 +6,7 @@ import "./../fixed_point.sol";
 
 /// @notice contract without a state which defines the relevant formulas for the assessor
 abstract contract Definitions is FixedPoint, Math {
-    /// @notice calculates the the expected Senior asset value
+    /// @notice calculates the expected Senior asset value
     /// @param _seniorDebt the current senior debt
     /// @param _seniorBalance the current senior balance
     /// @return _seniorAsset returns the senior asset value
