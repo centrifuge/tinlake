@@ -4,7 +4,7 @@ pragma solidity >=0.7.6;
 import "tinlake-math/math.sol";
 import "tinlake-auth/auth.sol";
 
-/// @notice mantains a authorized list of members
+/// @notice maintains an authorized list of members
 contract Memberlist is Math, Auth {
     uint256 constant minimumDelay = 7 days;
 
