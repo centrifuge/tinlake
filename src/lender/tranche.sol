@@ -401,7 +401,7 @@ contract Tranche is Math, Auth, FixedPoint {
     /// @notice takes requestedCurrency from the reserve
     /// this can happen if another tranche will supply currency which will be used for
     /// redeem orders in this tranche
-    /// In such a case the currency is not immediatly available in the reserve and needs to be first
+    /// In such a case the currency is not immediately available in the reserve and needs to be first
     /// transfered from the other tranche
     function payoutRequestedCurrency() public {
         if (requestedCurrency > 0) {
