@@ -107,7 +107,7 @@ contract Tranche is Math, Auth, FixedPoint {
         return token.totalSupply();
     }
 
-    /// @notice supplyOrder function can be used to place or revoke an supply
+    /// @notice supplyOrder function can be used to place or revoke a supply
     /// @param usr user address for which the currency should be taken or sent
     /// @param newSupplyAmount new amount of currency to be supplied
     function supplyOrder(address usr, uint256 newSupplyAmount) public auth orderAllowed(usr) {
