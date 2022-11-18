@@ -8,7 +8,7 @@ interface MemberlistLike {
     function member(address) external;
 }
 
-/// @notice RestictedERC20 token only mebmber with a valid (not expired) membership should be allowed to receive tokens
+/// @notice RestrictedERC20 token only member with a valid (not expired) membership should be allowed to receive tokens
 contract RestrictedToken is ERC20 {
     MemberlistLike public memberlist;
 
