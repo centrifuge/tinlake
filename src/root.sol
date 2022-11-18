@@ -82,7 +82,7 @@ contract TinlakeRoot is Auth {
         deployUsr = address(0); // disallow the deploy user to call this more than once.
     }
 
-    /// @notice sets two deployer dependcies with no admins.
+    /// @notice sets two deployer dependencies with no admins.
     /// @param lender_ the address of the lender deployer
     /// @param borrower_ the address of the borrower deployer
     /// @param adapter_ the address of the adapter deployer
