@@ -90,7 +90,7 @@ contract TinlakeRoot is Auth {
         prepare(lender_, borrower_, adapter_, address(0), new address[](0), address(0));
     }
 
-    /// @notice sets two deployer dependcies with no admins and no adapter
+    /// @notice sets two deployer dependencies with no admins and no adapter
     /// @param lender_ the address of the lender deployer
     /// @param borrower_ the address of the borrower deployer
     function prepare(address lender_, address borrower_) public {
