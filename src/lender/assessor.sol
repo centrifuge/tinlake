@@ -318,7 +318,7 @@ contract Assessor is Definitions, Auth, Interest {
         return safeAdd(reserve.totalBalance(), remainingCredit());
     }
 
-    /// @notice returns the latest stored NAV or forces an update if a stale period has passed\
+    /// @notice returns the latest stored NAV or forces an update if a stale period has passed
     /// @return _nav the NAV
     function getNAV() public view returns (uint256 _nav) {
         if (block.timestamp >= navFeed.lastNAVUpdate() + maxStaleNAV) {
