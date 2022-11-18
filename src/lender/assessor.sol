@@ -312,7 +312,7 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     /// @notice returns the total balance including unused creditline from adapters
-    /// which means the if the creditline would be fully used how much would be the total balance
+    /// which means the total balance if the creditline were fully used
     /// @return _totalBalance total balance
     function totalBalance() public view returns (uint256 _totalBalance) {
         return safeAdd(reserve.totalBalance(), remainingCredit());
