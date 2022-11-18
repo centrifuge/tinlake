@@ -374,7 +374,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
     /// @notice helper function to burn tokens
     /// @param tokenAmount the amount of tokens to burn
-    /// if the the amount is higher than the maxium the maximum is burned
+    /// @dev if the the amount is higher than the maximum, the maximum is burned
     function _safeBurn(uint256 tokenAmount) internal {
         uint256 max = token.balanceOf(address(this));
         if (tokenAmount > max) {
