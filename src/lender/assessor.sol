@@ -330,7 +330,7 @@ contract Assessor is Definitions, Auth, Interest {
 
     /// @notice ward call to communicate the amount of currency available for new loan originations
     /// in the next epoch
-    /// @param currencyAmount the amount of currency available for new loan orginations in the next epoch
+    /// @param currencyAmount the amount of currency available for new loan originations in the next epoch
     function changeBorrowAmountEpoch(uint256 currencyAmount) public auth {
         reserve.file("currencyAvailable", currencyAmount);
     }
