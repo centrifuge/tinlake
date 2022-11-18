@@ -271,7 +271,7 @@ contract Clerk is Auth, Interest {
         assessor.changeBorrowAmountEpoch(safeAdd(assessor.borrowAmountEpoch(), amountDAI));
     }
 
-    /// @notice draw performs the following steps mint DROP, join DROP into cdp, draw DAI and send to reserve
+    /// @notice draw performs the following steps: mint DROP, join DROP into cdp, draw DAI and send to reserve
     /// @param amountDAI amount of DAI to draw
     function draw(uint256 amountDAI) public auth active {
         // make sure to heal CDP before drawing new DAI
