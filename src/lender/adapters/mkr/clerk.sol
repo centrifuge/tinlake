@@ -145,7 +145,7 @@ contract Clerk is Auth, Interest {
     }
 
     /// @notice returns true if the clerk is active
-    /// @return active_ if the clerk is active
+    /// @return active_ true if the clerk is active
     function activated() public view returns (bool active_) {
         return coordinator.submissionPeriod() == false && mkrActive();
     }
