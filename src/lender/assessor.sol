@@ -120,7 +120,7 @@ contract Assessor is Definitions, Auth, Interest {
         emit File(name, value);
     }
 
-    /// @notice re balance the debt and balance of the senior tranche acoording to
+    /// @notice rebalance the debt and balance of the senior tranche according to
     /// the current ratio between senior and junior
     function reBalance() public {
         reBalance(calcExpectedSeniorAsset(seniorBalance_, dripSeniorDebt()));
