@@ -175,7 +175,7 @@ contract Tranche is Math, Auth, FixedPoint {
         return calcDisburse(usr, coordinator.lastEpochExecuted());
     }
 
-    /// @notice  calculates the current disburse of a user starting from the ordered epoch until endEpoch
+    /// @notice calculates the current disburse of a user starting from the ordered epoch until endEpoch
     /// @param usr user address for which the disburse amount should be calculated
     /// @param endEpoch epoch until which the disburse should be calculated
     /// @return payoutCurrencyAmount amount of currency tokens which has been paid out
