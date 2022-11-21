@@ -58,14 +58,14 @@ abstract contract AssessorLike is FixedPoint {
     function changeSeniorAsset(uint256 seniorRatio, uint256 seniorSupply, uint256 seniorRedeem) public virtual;
 }
 
-// The EpochCoordinator keeps track of the epochs and execute epochs them.
-// An epoch execution happens with the maximum amount of redeem and supply which still satisfies
-// all constraints or at least improve certain pool constraints.
-// In most cases all orders can be fulfilled with order maximum without violating any constraints.
-// If it is not possible to satisfy all orders at maximum the coordinators opens a submission period.
-// The problem of finding the maximum amount of supply and redeem orders which still satisfies all constraints
-// can be seen as a linear programming (linear optimization problem).
-// The optimal solution can be calculated off-chain
+/// @notice The EpochCoordinator keeps track of the epochs and executes them.
+/// An epoch execution happens with the maximum amount of redeem and supply which still satisfies
+/// all constraints or at least improve certain pool constraints.
+/// In most cases all orders can be fulfilled with order maximum without violating any constraints.
+/// If it is not possible to satisfy all orders at maximum the coordinators opens a submission period.
+/// The problem of finding the maximum amount of supply and redeem orders which still satisfies all constraints
+/// can be seen as a linear programming (linear optimization problem).
+/// The optimal solution can be calculated off-chain
 contract EpochCoordinator is Auth, Math, FixedPoint {
     struct OrderSummary {
         // all variables are stored in currency
@@ -161,6 +161,9 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         emit Rely(msg.sender);
     }
 
+    /// @notice sets parameters for the epoch coordinator by wards
+    /// @param name name of the parameter
+    /// @param value value of the parameter
     function file(bytes32 name, uint256 value) public auth {
         if (name == "challengeTime") {
             challengeTime = value;
@@ -180,6 +183,9 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         emit File(name, value);
     }
 
+    /// @notice sets parameters for the epoch coordinator by wards
+    /// @param name name of the parameter
+    /// @param value boolean value
     function file(bytes32 name, bool value) public auth {
         if (name == "poolClosing") {
             poolClosing = value;
@@ -189,7 +195,9 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         emit File(name, value);
     }
 
-    // sets the dependency to another contract
+    /// @notice sets the dependency to another contract
+    /// @param contractName name of the contract
+    /// @param addr contract address
     function depend(bytes32 contractName, address addr) public auth {
         if (contractName == "juniorTranche") juniorTranche = TrancheLike(addr);
         else if (contractName == "seniorTranche") seniorTranche = TrancheLike(addr);
@@ -198,10 +206,11 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         emit Depend(contractName, addr);
     }
 
-    // an epoch can be closed after a minimum epoch time has passed
-    // closeEpoch creates a snapshot of the current lender state
-    // if all orders can be fulfilled epoch is executed otherwise
-    // submission period starts
+    /// @notice an epoch can be closed after a minimum epoch time has passed
+    /// closeEpoch creates a snapshot of the current lender state
+    /// if all orders can be fulfilled epoch is executed otherwise
+    /// submission period starts
+    /// @return epochExecuted returns true if epoch is executed
     function closeEpoch() external minimumEpochTimePassed returns (bool epochExecuted) {
         require(submissionPeriod == false);
         lastEpochClosed = block.timestamp;
@@ -213,7 +222,6 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         epochSeniorAsset = safeAdd(assessor.seniorDebt(), assessor.seniorBalance());
 
         // create a snapshot of the current lender state
-
         epochNAV = assessor.calcUpdateNAV();
         epochReserve = assessor.totalBalance();
         //  if no orders exist epoch can be executed without validation
@@ -254,9 +262,14 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return false;
     }
 
-    /// internal method to save new optimum
+    /// @notice internal method to save new optimum for a solution
     /// orders are expressed as currency
     /// all parameter are 10^18
+    /// @param seniorRedeem senior redeem amount
+    /// @param juniorRedeem junior redeem amount
+    /// @param juniorSupply junior supply amount
+    /// @param seniorSupply senior supply amount
+    /// @param score score of the new optimum
     function _saveNewOptimum(
         uint256 seniorRedeem,
         uint256 juniorRedeem,
@@ -272,13 +285,18 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         bestSubScore = score;
     }
 
-    // method to submit a solution for submission period
-    // anybody can submit a solution for the current execution epoch
-    // if solution satisfies all constraints (or at least improves an unhealthy state)
-    // and has the highest score
+    /// @notice method to submit a solution for submission period
+    /// anybody can submit a solution for the current execution epoch
+    /// if solution satisfies all constraints (or at least improves an unhealthy state)
+    /// and has the highest score
+    /// @param seniorRedeem senior redeem amount
+    /// @param juniorRedeem junior redeem amount
+    /// @param juniorSupply junior supply amount
+    /// @param seniorSupply senior supply amount
+    /// @return accepted returns 0 if a solution has been accepted otherwise an error code
     function submitSolution(uint256 seniorRedeem, uint256 juniorRedeem, uint256 juniorSupply, uint256 seniorSupply)
         public
-        returns (int256)
+        returns (int256 accepted)
     {
         require(submissionPeriod == true, "submission-period-not-active");
 
@@ -338,6 +356,11 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return ERR_NOT_NEW_BEST;
     }
 
+    /// @notice returns the difference between two values as absolute value
+    /// for gas optimization if both values are equal, 1 is returned to avoid a special zero case in other methods
+    /// @param x first value
+    /// @param y second value
+    /// @return delta absolute value of the difference
     function absDistance(uint256 x, uint256 y) public pure returns (uint256 delta) {
         if (x == y) {
             // gas optimization: for avoiding an additional edge case of 0 distance
@@ -350,6 +373,11 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return safeSub(y, x);
     }
 
+    /// @notice method to check if a ratio is within a range
+    /// @param ratio ratio to check
+    /// @param minRatio minimum ratio
+    /// @param maxRatio maximum ratio
+    /// @return true if ratio is within range
     function checkRatioInRange(uint256 ratio, uint256 minRatio, uint256 maxRatio) public pure returns (bool) {
         if (ratio >= minRatio && ratio <= maxRatio) {
             return true;
@@ -357,10 +385,15 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return false;
     }
 
-    // calculates the improvement score of a solution
+    /// @notice calculates the improvement score of a solution
+    /// @param seniorRedeem senior redeem amount
+    /// @param juniorRedeem junior redeem amount
+    /// @param juniorSupply junior supply amount
+    /// @param seniorSupply senior supply amount
+    /// @param err_ zero if solution is an improvement otherwise an error code
     function _improveScore(uint256 seniorRedeem, uint256 juniorRedeem, uint256 juniorSupply, uint256 seniorSupply)
         internal
-        returns (int256)
+        returns (int256 err_)
     {
         Fixed27 memory currSeniorRatio = Fixed27(assessor.calcSeniorRatio(epochSeniorAsset, epochNAV, epochReserve));
 
@@ -372,7 +405,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
             // define no orders (current status) score as benchmark if no previous submission exists
             // if the current state satisfies all pool constraints it has the highest score
             (err, impScoreRatio, impScoreReserve) = scoreImprovement(currSeniorRatio.value, epochReserve);
-            saveNewImprovement(impScoreRatio, impScoreReserve);
+            _saveNewImprovement(impScoreRatio, impScoreReserve);
         }
 
         uint256 newReserve = calcNewReserve(seniorRedeem, juniorRedeem, seniorSupply, juniorSupply);
@@ -387,7 +420,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
             return err;
         }
 
-        saveNewImprovement(impScoreRatio, impScoreReserve);
+        _saveNewImprovement(impScoreRatio, impScoreReserve);
 
         // solution doesn't satisfy all pool constraints but improves the current violation
         // improvement only gets 0 points only solutions in the feasible region receive more
@@ -395,9 +428,11 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return NEW_BEST;
     }
 
-    // the score improvement reserve uses the normalized distance to maxReserve/2 as score
-    // as smaller the distance as higher is the score
-    // highest possible score if solution is not violating the reserve
+    /// @notice the score improvement reserve uses the normalized distance to maxReserve/2 as score
+    /// as smaller the distance as higher is the score
+    /// highest possible score if solution is not violating the reserve
+    /// @param newReserve_ new reserve value
+    /// @return score improvement score for reserve
     function scoreReserveImprovement(uint256 newReserve_) public view returns (uint256 score) {
         if (newReserve_ <= assessor.maxReserve()) {
             // highest possible score
@@ -407,10 +442,12 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return rdiv(ONE, safeSub(newReserve_, assessor.maxReserve()));
     }
 
-    // the score improvement ratio uses the normalized distance to (minRatio+maxRatio)/2 as score
-    // as smaller the distance as higher is the score
-    // highest possible score if solution is not violating the ratio
-    function scoreRatioImprovement(uint256 newSeniorRatio) public view returns (uint256) {
+    /// @notice the score improvement ratio uses the normalized distance to (minRatio+maxRatio)/2 as score
+    /// as smaller the distance as higher is the score
+    /// highest possible score if solution is not violating the ratio
+    /// @param newSeniorRatio new ratio value
+    /// @return score improvement score for ratio
+    function scoreRatioImprovement(uint256 newSeniorRatio) public view returns (uint256 score) {
         (uint256 minSeniorRatio, uint256 maxSeniorRatio) = assessor.seniorRatioBounds();
         if (checkRatioInRange(newSeniorRatio, minSeniorRatio, maxSeniorRatio) == true) {
             // highest possible score
@@ -420,20 +457,27 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return rdiv(ONE, absDistance(newSeniorRatio, safeDiv(safeAdd(minSeniorRatio, maxSeniorRatio), 2)));
     }
 
-    // internal method to save new improvement score
-    function saveNewImprovement(uint256 impScoreRatio, uint256 impScoreReserve) internal {
+    /// @notice internal method to save new improvement score
+    /// @param impScoreRatio improvement score for ratio
+    /// @param impScoreReserve improvement score for reserve
+    function _saveNewImprovement(uint256 impScoreRatio, uint256 impScoreReserve) internal {
         bestRatioImprovement = impScoreRatio;
         bestReserveImprovement = impScoreReserve;
     }
 
-    // calculates improvement score for reserve and ratio pool constraints
+    /// @notice calculates improvement score for reserve and ratio pool constraints
+    /// @param newSeniorRatio_ new senior ratio
+    /// @param newReserve_ new reserve
+    /// @return err error code, zero if no error
+    /// @return impScoreRatio improvement score for ratio
+    /// @return impScoreReserve improvement score for reserve
     function scoreImprovement(uint256 newSeniorRatio_, uint256 newReserve_)
         public
         view
-        returns (int256, uint256, uint256)
+        returns (int256 err, uint256 impScoreRatio, uint256 impScoreReserve)
     {
-        uint256 impScoreRatio = scoreRatioImprovement(newSeniorRatio_);
-        uint256 impScoreReserve = scoreReserveImprovement(newReserve_);
+        impScoreRatio = scoreRatioImprovement(newSeniorRatio_);
+        impScoreReserve = scoreReserveImprovement(newReserve_);
 
         // the highest priority has fixing the currentSeniorRatio
         // if the ratio is improved, we can ignore reserve
@@ -452,13 +496,18 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return (ERR_NOT_NEW_BEST, impScoreRatio, impScoreReserve);
     }
 
-    // scores a solution in the submission period
-    // the scoring function is a linear function with high weights as coefficient to determine
-    // the priorities. (non-preemptive goal programming)
+    /// @notice scores a solution in the submission period
+    /// the scoring function is a linear function with high weights as coefficient to determine
+    /// the priorities. (non-preemptive goal programming)
+    /// @param seniorRedeem senior redeem amount
+    /// @param juniorRedeem junior redeem amount
+    /// @param juniorSupply junior supply amount
+    /// @param seniorSupply senior supply amount
+    /// @return score of a valid solution
     function scoreSolution(uint256 seniorRedeem, uint256 juniorRedeem, uint256 juniorSupply, uint256 seniorSupply)
         public
         view
-        returns (uint256)
+        returns (uint256 score)
     {
         // the default priority order
         // 1. senior redeem
@@ -471,8 +520,14 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         );
     }
 
-    // validates if a solution satisfy the core constraints
-    // returns: first constraint which is not satisfied or success
+    /// @notice validates if a solution satisfy the core constraints
+    /// @param currencyAvailable currency available in the pool including the supplies
+    /// @param currencyOut currency which would be reedemed
+    /// @param seniorSupply senior supply amount
+    /// @param juniorSupply junior supply amount
+    /// @param seniorRedeem senior redeem amount
+    /// @param juniorRedeem junior redeem amount
+    /// @return err code for the first constraint which is not satisfied or success
     function validateCoreConstraints(
         uint256 currencyAvailable,
         uint256 currencyOut,
@@ -500,9 +555,11 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return SUCCESS;
     }
 
-    // validates if a solution satisfies the ratio constraints
-    // returns: first constraint which is not satisfied or success
-    function validateRatioConstraints(uint256 assets, uint256 seniorAsset) public view returns (int256) {
+    /// @notice validates if a solution satisfies the ratio constraints
+    /// @param assets total asset value of the pool (NAV + reserve)
+    /// @param seniorAsset senior asset value (seniorDebt + seniorBalance)
+    /// @return err code for the first constraint which is not satisfied or success
+    function validateRatioConstraints(uint256 assets, uint256 seniorAsset) public view returns (int256 err) {
         (uint256 minSeniorRatio, uint256 maxSeniorRatio) = assessor.seniorRatioBounds();
 
         // constraint 4: min senior ratio constraint
@@ -519,8 +576,11 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return SUCCESS;
     }
 
-    // validates if a solution satisfies the pool constraints
-    // returns: first constraint which is not satisfied or success
+    /// @notice validates if a solution satisfies the pool constraints
+    /// @param reserve_ total amount in the reserve
+    /// @param seniorAsset senior asset value (seniorDebt + seniorBalance)
+    /// @param nav_ net asset value
+    /// @return err code for the first constraint which is not satisfied or success
     function validatePoolConstraints(uint256 reserve_, uint256 seniorAsset, uint256 nav_)
         public
         view
@@ -536,14 +596,18 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return validateRatioConstraints(assets, seniorAsset);
     }
 
-    // validates if a solution satisfies core and pool constraints
-    // returns: first constraint which is not satisfied or success
+    /// @notice validates if a solution satisfies core and pool constraints
+    /// @param seniorRedeem senior redeem amount
+    /// @param juniorRedeem junior redeem amount
+    /// @param seniorSupply senior supply amount
+    /// @param juniorSupply junior supply amount
+    /// @return err code for the first constraint which is not satisfied or success
     function validate(uint256 seniorRedeem, uint256 juniorRedeem, uint256 seniorSupply, uint256 juniorSupply)
         public
         view
-        returns (int256)
+        returns (int256 err)
     {
-        return validate(
+        return _validate(
             epochReserve,
             epochNAV,
             epochSeniorAsset,
@@ -555,6 +619,15 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
             })
         );
     }
+    /// @notice validates if a solution satisfies core and pool constraints and allows to pass different state variables
+    /// @param reserve_ total amount in the reserve
+    /// @param nav_ net asset value
+    /// @param seniorAsset_ senior asset value (seniorDebt + seniorBalance)
+    /// @param seniorRedeem senior redeem amount
+    /// @param juniorRedeem junior redeem amount
+    /// @param seniorSupply senior supply amount
+    /// @param juniorSupply junior supply amount
+    /// @param err error code for the first constraint which is not satisfied or success
 
     function validate(
         uint256 reserve_,
@@ -564,8 +637,8 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         uint256 juniorRedeem,
         uint256 seniorSupply,
         uint256 juniorSupply
-    ) public view returns (int256) {
-        return validate(
+    ) public view returns (int256 err) {
+        return _validate(
             reserve_,
             nav_,
             seniorAsset_,
@@ -578,10 +651,16 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         );
     }
 
-    function validate(uint256 reserve_, uint256 nav_, uint256 seniorAsset_, OrderSummary memory trans)
+    /// @notice internal method to validate a solution
+    /// @param reserve_ total amount in the reserve
+    /// @param nav_ net asset value
+    /// @param seniorAsset_ senior asset value (seniorDebt + seniorBalance)
+    /// @param trans the order summary of supplies and redeems
+    /// @return err_ error code for the first constraint which is not satisfied or success
+    function _validate(uint256 reserve_, uint256 nav_, uint256 seniorAsset_, OrderSummary memory trans)
         internal
         view
-        returns (int256)
+        returns (int256 err_)
     {
         uint256 currencyAvailable = safeAdd(safeAdd(reserve_, trans.seniorSupply), trans.juniorSupply);
         uint256 currencyOut = safeAdd(trans.seniorRedeem, trans.juniorRedeem);
@@ -613,7 +692,7 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         );
     }
 
-    // public method to execute an epoch which required a submission period and the challenge period is over
+    /// @notice public method to execute an epoch which required a submission period and the challenge period is over
     function executeEpoch() public {
         require(block.timestamp >= minChallengePeriodEnd && minChallengePeriodEnd != 0);
 
@@ -625,7 +704,10 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         );
     }
 
-    // calculates the percentage of an order type which can be fulfilled for an epoch
+    /// @notice helper function to calculate the percentage of an order type which can be fulfilled for an epoch
+    /// @param amount which can be fullFilled
+    /// @param totalOrder the total order amount
+    /// @return percent percentage of the order which can be fulfilled (RAY 10^27)
     function calcFulfillment(uint256 amount, uint256 totalOrder) public pure returns (uint256 percent) {
         if (amount == 0 || totalOrder == 0) {
             return 0;
@@ -633,16 +715,25 @@ contract EpochCoordinator is Auth, Math, FixedPoint {
         return rdiv(amount, totalOrder);
     }
 
-    // calculates the new reserve after a solution would be executed
+    /// @notice calculates the new reserve after a solution would be executed
+    /// @param seniorRedeem senior redeem amount
+    /// @param juniorRedeem junior redeem amount
+    /// @param seniorSupply senior supply amount
+    /// @param juniorSupply junior supply amount
+    /// @return newReserve the new reserve after the solution would be executed
     function calcNewReserve(uint256 seniorRedeem, uint256 juniorRedeem, uint256 seniorSupply, uint256 juniorSupply)
         public
         view
-        returns (uint256)
+        returns (uint256 newReserve)
     {
         return safeSub(safeAdd(safeAdd(epochReserve, seniorSupply), juniorSupply), safeAdd(seniorRedeem, juniorRedeem));
     }
 
-    // internal execute epoch communicates the order fulfillment of the best solution to the tranches
+    /// @notice internal execute epoch communicates the order fulfillment of the best solution to the tranches
+    /// @param seniorRedeem senior redeem amount
+    /// @param juniorRedeem junior redeem amount
+    /// @param seniorSupply senior supply amount
+    /// @param juniorSupply junior supply amount
     function _executeEpoch(uint256 seniorRedeem, uint256 juniorRedeem, uint256 seniorSupply, uint256 juniorSupply)
         internal
     {

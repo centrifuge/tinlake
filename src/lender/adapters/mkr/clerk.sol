@@ -102,6 +102,7 @@ interface ERC20Like {
     function approve(address usr, uint256 amount) external;
 }
 
+/// @notice operator contract for MKR interactions
 contract Clerk is Auth, Interest {
     // max amount of DAI that can be brawn from MKR
     uint256 public creditline;
@@ -143,11 +144,15 @@ contract Clerk is Auth, Interest {
         _;
     }
 
-    function activated() public view returns (bool) {
+    /// @notice returns true if the clerk is active
+    /// @return active_ true if the clerk is active
+    function activated() public view returns (bool active_) {
         return coordinator.submissionPeriod() == false && mkrActive();
     }
 
-    function mkrActive() public view returns (bool) {
+    /// @notice returns true if the MKR cdp is active
+    /// @return active_ true if the MKR cdp is active
+    function mkrActive() public view returns (bool active_) {
         return mgr.safe() && mgr.glad() && mgr.live();
     }
 
@@ -161,6 +166,9 @@ contract Clerk is Auth, Interest {
         emit Rely(msg.sender);
     }
 
+    /// @notice sets the dependency to another contract
+    /// @param contractName name of the contract
+    /// @param addr contract address
     function depend(bytes32 contractName, address addr) public auth {
         if (contractName == "mgr") {
             mgr = ManagerLike(addr);
@@ -186,6 +194,9 @@ contract Clerk is Auth, Interest {
         emit Depend(contractName, addr);
     }
 
+    /// @notice changes the parameter of the clerk by wards
+    /// @param what name of the parameter
+    /// @param value new value of the parameter
     function file(bytes32 what, uint256 value) public auth {
         if (what == "buffer") {
             matBuffer = value;
@@ -201,7 +212,9 @@ contract Clerk is Auth, Interest {
         emit File(what, value);
     }
 
-    function remainingCredit() public view returns (uint256) {
+    /// @notice returns the remaining creditline from MKR
+    /// @return creditline_ remaining creditline
+    function remainingCredit() public view returns (uint256 creditline_) {
         uint256 debt_ = debt();
         if (creditline <= debt_ || mkrActive() == false) {
             return 0;
@@ -209,7 +222,9 @@ contract Clerk is Auth, Interest {
         return safeSub(creditline, debt_);
     }
 
-    function collatDeficit() public view returns (uint256) {
+    /// @notice returns a collateral deficit if existing
+    /// @return deficit collateral deficit
+    function collatDeficit() public view returns (uint256 deficit) {
         uint256 lockedCollateralDAI = rmul(cdpink(), assessor.calcSeniorTokenPrice());
         uint256 requiredCollateralDAI = calcOvercollAmount(debt());
 
@@ -223,12 +238,15 @@ contract Clerk is Auth, Interest {
         return 0;
     }
 
-    function remainingOvercollCredit() public view returns (uint256) {
+    /// @notice returns the remaining creditline including a potential overcollateralization
+    /// @return remaining_ remaining creditline
+    function remainingOvercollCredit() public view returns (uint256 remaining_) {
         return calcOvercollAmount(remainingCredit());
     }
 
-    // junior stake in the cdpink -> value of drop used for debt protection
-    function juniorStake() public view returns (uint256) {
+    /// @notice junior stake in the cdpink -> value of drop used for debt protection
+    /// @return juniorStake_ of junior value at stake for overcollateralization
+    function juniorStake() public view returns (uint256 juniorStake_) {
         // junior looses stake in case vault is in soft/hard liquidation mode
         uint256 collateralValue = rmul(cdpink(), assessor.calcSeniorTokenPrice());
         uint256 mkrDebt = debt();
@@ -238,7 +256,8 @@ contract Clerk is Auth, Interest {
         return safeSub(collateralValue, mkrDebt);
     }
 
-    // increase MKR credit line
+    /// @notice increases MKR credit line
+    /// @param amountDAI amount to increase creditline
     function raise(uint256 amountDAI) public auth active {
         // creditline amount including required overcollateralization => amount by that the seniorAssetValue should be increased
         uint256 overcollAmountDAI = calcOvercollAmount(amountDAI);
@@ -252,7 +271,8 @@ contract Clerk is Auth, Interest {
         assessor.changeBorrowAmountEpoch(safeAdd(assessor.borrowAmountEpoch(), amountDAI));
     }
 
-    // mint DROP, join DROP into cdp, draw DAI and send to reserve
+    /// @notice draw performs the following steps: mint DROP, join DROP into cdp, draw DAI and send to reserve
+    /// @param amountDAI amount of DAI to draw
     function draw(uint256 amountDAI) public auth active {
         // make sure to heal CDP before drawing new DAI
         uint256 healAmountDAI = collatDeficit();
@@ -277,7 +297,8 @@ contract Clerk is Auth, Interest {
         updateSeniorAsset(0, collateralDAI);
     }
 
-    // transfer DAI from reserve, wipe cdp debt, exit DROP from cdp, burn DROP, harvest junior profit
+    /// @notice transfer DAI from reserve, wipe cdp debt, exit DROP from cdp, burn DROP, harvest junior profit
+    /// @param amountDAI amount of DAI to wipe
     function wipe(uint256 amountDAI) public auth active {
         // if amountDAI is too low, required transaction fees of wipe would be higher
         // only continue with wipe if amountDAI is higher than wipeThreshold;
@@ -303,11 +324,13 @@ contract Clerk is Auth, Interest {
         _harvest(dropPrice);
     }
 
-    // harvest junior profit
+    /// @notice harvest the junior profit. Increased collateral value over time allows to reduce the needed amount of collateral
     function harvest() public active {
         _harvest(assessor.calcSeniorTokenPrice());
     }
 
+    /// @notice internal helper function for harvest
+    /// @param dropPrice price of DROP (seniorToken)
     function _harvest(uint256 dropPrice) internal {
         require((cdpink() > 0), "no-profit-to-harvest");
 
@@ -328,7 +351,8 @@ contract Clerk is Auth, Interest {
         updateSeniorAsset(profitDAI, 0);
     }
 
-    // decrease MKR creditline
+    /// @notice decrease MKR creditline
+    /// @param amountDAI amount of DAI to decrease creditline
     function sink(uint256 amountDAI) public auth active {
         require(remainingCredit() >= amountDAI, "decrease-amount-too-high");
 
@@ -353,6 +377,8 @@ contract Clerk is Auth, Interest {
         assessor.changeBorrowAmountEpoch(safeSub(borrowAmountEpoch, amountDAI));
     }
 
+    /// @notice increases the amount of collateral by minting new senior token (diluting other holders)
+    /// @param amountDAI amount of DAI to increase collateral
     function heal(uint256 amountDAI) public auth active {
         uint256 collatDeficitDAI = collatDeficit();
         require(collatDeficitDAI > 0, "no-healing-required");
@@ -373,7 +399,7 @@ contract Clerk is Auth, Interest {
         updateSeniorAsset(0, amountDAI);
     }
 
-    // heal the cdp and put in more drop in case the collateral value has fallen below the bufferedmat ratio
+    /// @notice heal the cdp and put in more drop in case the collateral value has fallen below the bufferedmat ratio
     function heal() public auth active {
         uint256 collatDeficitDAI = collatDeficit();
         if (collatDeficitDAI > 0) {
@@ -381,13 +407,18 @@ contract Clerk is Auth, Interest {
         }
     }
 
-    // checks if the Maker credit line increase could violate the pool constraints // -> make function pure and call with current pool values approxNav
+    /// @notice checks if the Maker credit line increase could violate the pool constraints // -> make function pure and call with current pool values approxNav
+    /// @param juniorSupplyDAI  amount of new junior supply
+    /// @param juniorRedeemDAI  amount of junior redeem
+    /// @param seniorSupplyDAI  amount of new senior supply
+    /// @param seniorRedeemDAI  amount of senior redeem
+    /// @param err 0 if no error, otherwise error code
     function validate(
         uint256 juniorSupplyDAI,
         uint256 juniorRedeemDAI,
         uint256 seniorSupplyDAI,
         uint256 seniorRedeemDAI
-    ) public view returns (int256) {
+    ) public view returns (int256 err) {
         uint256 newAssets = safeSub(
             safeSub(
                 safeAdd(safeAdd(safeAdd(assessor.totalBalance(), assessor.getNAV()), seniorSupplyDAI), juniorSupplyDAI),
@@ -405,36 +436,42 @@ contract Clerk is Auth, Interest {
         assessor.changeSeniorAsset(increaseDAI, decreaseDAI);
     }
 
-    // returns the collateral amount in the cdp
-    function cdpink() public view returns (uint256) {
+    /// @notice returns the collateral amount in the cdp
+    /// @return ink_ amount in the cdp (in senior tokens)
+    function cdpink() public view returns (uint256 ink_) {
         uint256 ink = collateral.balanceOf(address(mgr));
         return ink;
     }
 
-    // returns the required security margin for the DROP tokens
-    function mat() public view returns (uint256) {
+    /// @notice returns the required security margin for the DROP tokens
+    /// @return totalMat required security margin
+    function mat() public view returns (uint256 totalMat) {
         (, uint256 mat_) = spotter.ilks(ilk());
         return safeAdd(mat_, matBuffer); //  e.g 150% denominated in RAY
     }
 
-    // helper function that returns the overcollateralized DAI amount considering the current mat value
+    /// @notice helper function that returns the overcollateralized DAI amount considering the current mat value
+    /// @param amountDAI amount of DAI
     function calcOvercollAmount(uint256 amountDAI) public view returns (uint256) {
         return rmul(amountDAI, mat());
     }
 
-    // In case contract received DAI as a leftover from the cdp liquidation return back to reserve
+    /// @notice in case contract received DAI as a leftover from the cdp liquidation return back to reserve
     function returnDAI() public auth {
         uint256 amountDAI = dai.balanceOf(address(this));
         dai.approve(address(reserve), amountDAI);
         reserve.hardDeposit(amountDAI);
     }
 
+    /// @notice change the owner in the mgr contract
+    /// @param usr new owner address
     function changeOwnerMgr(address usr) public auth {
         mgr.file("owner", usr);
     }
 
-    // returns the current debt from the Maker vault
-    function debt() public view returns (uint256) {
+    /// @notice returns the current debt from the Maker vault
+    /// @return debt_ current debt
+    function debt() public view returns (uint256 debt_) {
         bytes32 ilk_ = ilk();
         // get debt index
         (, uint256 art) = vat.urns(ilk_, mgr.urn());
@@ -454,18 +491,24 @@ contract Clerk is Auth, Interest {
         return rmul(art, rmul(rpow(safeAdd(jug.base(), duty), safeSub(block.timestamp, rho), ONE), rateIdx));
     }
 
-    function stabilityFeeIndex() public view returns (uint256) {
+    /// @notice returns the stabliity fee index from Maker
+    /// @return stabilityFeeIndex_ stability fee index
+    function stabilityFeeIndex() public view returns (uint256 stabilityFeeIndex_) {
         (, uint256 rate,,,) = vat.ilks(ilk());
         return rate;
     }
 
-    function stabilityFee() public view returns (uint256) {
+    /// @notice returns the stability fee from Maker
+    /// @return stabilityFee_ stability fee
+    function stabilityFee() public view returns (uint256 stabilityFee_) {
         // mkr.duty is the stability fee in the mkr system
         (uint256 duty,) = jug.ilks(ilk());
         return safeAdd(jug.base(), duty);
     }
 
-    function ilk() public view returns (bytes32) {
+    /// @notice returns the ilk (collateral type/name) from Maker
+    /// @return ilk_ ilk
+    function ilk() public view returns (bytes32 ilk_) {
         return GemJoinLike(UrnLike(mgr.urn()).gemJoin()).ilk();
     }
 }
