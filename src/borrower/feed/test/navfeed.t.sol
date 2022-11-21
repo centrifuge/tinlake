@@ -61,7 +61,7 @@ contract NAVTest is DSTest, Math {
         bytes32 nftID = feed.nftID(mockNFTRegistry, tokenId);
         feed.update(nftID, nftValue, risk);
         shelf.setReturn("shelf",mockNFTRegistry, tokenId);
-        pile.setReturn("debt_loan", 0);
+        pile.incDebt(tokenId, 0);
         pile.setReturn("rates_ratePerSecond", defaultRate);
         return nftID;
     }
@@ -310,7 +310,7 @@ contract NAVTest is DSTest, Math {
         // due date + 5 days for loan 2
         uint tokenId = 2;
         uint loan = 2;
-        pile.setReturn("debt_loan", amount);
+        pile.incDebt(loan, amount);
         shelf.setReturn("shelf", mockNFTRegistry, tokenId);
         uint maturityDate = feed.maturityDate(feed.nftID(loan));
 
@@ -328,7 +328,7 @@ contract NAVTest is DSTest, Math {
         assertEq(feed.buckets(maturityDate), newFV);
 
         uint secondAmount = 20 ether;
-        pile.setReturn("debt_loan", secondAmount);
+        pile.incDebt(loan, secondAmount);
         feed.repay(loan, secondAmount);
         assertEq(feed.buckets(maturityDate), 0);
 
@@ -408,8 +408,7 @@ contract NAVTest is DSTest, Math {
         // make repayment for overdue loan
         uint preNAV = feed.currentNAV();
 
-
-        pile.setReturn("debt_loan", repaymentAmount);
+        pile.incDebt(loan, repaymentAmount);
         feed.repay(loan, repaymentAmount);
 
         // overdue but not written-off case
@@ -427,7 +426,7 @@ contract NAVTest is DSTest, Math {
         hevm.warp(safeAdd(maturityDate, 1 days));
 
         // make partial repayment for overdue loan
-        pile.setReturn("debt_loan", amount);
+        pile.incDebt(loan, amount);
 
         uint preNAV = feed.currentNAV();
         feed.repay(loan, 15 ether); // repay 50%
@@ -446,7 +445,7 @@ contract NAVTest is DSTest, Math {
         hevm.warp(safeAdd(maturityDate, 1 days));
 
         // make partial repayment for overdue loan
-        pile.setReturn("debt_loan", debt);
+        pile.incDebt(loan, debt);
     
         uint preNAV = feed.currentNAV();
         feed.repay(loan, repaymentAmount);
@@ -464,7 +463,7 @@ contract NAVTest is DSTest, Math {
 
         hevm.warp(block.timestamp + 3 days);
 
-        pile.setReturn("debt_loan", 55.125 ether); // 50 * 1.05^2 = 55.125
+        pile.incDebt(loan, 55.125 ether); // 50 * 1.05^2 = 55.125
 
         uint pre = feed.currentWriteOffs();
         feed.overrideWriteOff(loan, 1); // 50% writeoff
@@ -508,7 +507,7 @@ contract NAVTest is DSTest, Math {
         borrow(tokenId, loan, nftValue, amount, dueDate);
 
         shelf.setReturn("nftlookup" ,loan);
-        pile.setReturn("debt_loan", amount);
+        pile.incDebt(loan, amount);
 
         // check FV
         uint normalizedDueDate = feed.uniqueDayTimestamp(dueDate);
@@ -544,7 +543,7 @@ contract NAVTest is DSTest, Math {
         uint amount = 50 ether;
         setupLinkedListBuckets();
 
-        pile.setReturn("debt_loan", amount);
+        pile.incDebt(loan, amount);
         shelf.setReturn("nftlookup", loan);
         shelf.setReturn("shelf", mockNFTRegistry, tokenId);
 
@@ -610,8 +609,8 @@ contract NAVTest is DSTest, Math {
         borrow(tokenID, loan, nftValue, amount, dueDate);
 
         // loan overdue after 5 days
-        hevm.warp(block.timestamp + 35 days); // -> group 1000
-        pile.setReturn("debt_loan", 60 ether);
+        hevm.warp(block.timestamp + 35 days); // -> group 1000]
+        pile.incDebt(loan, 60 ether);
         feed.writeOff(loan);
         assertEq(feed.latestNAV(), 45 ether); // NAV includes debt * writeoff factor
         // check pile calls with correct writeOff rate

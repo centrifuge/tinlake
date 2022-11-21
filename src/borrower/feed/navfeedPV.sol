@@ -17,9 +17,7 @@ interface PileLike {
     function changeRate(uint loan, uint newRate) external;
     function loanRates(uint loan) external view returns (uint);
     function file(bytes32, uint, uint) external;
-    function rates(uint rate) external view returns (uint, uint, uint ,uint48, uint);
     function rateDebt(uint rate) external view returns (uint);
-    function accrue(uint loan) external;
 }
 
 
@@ -30,10 +28,6 @@ contract NAVFeedPV is Auth, Math  {
     struct NFTDetails {
         uint128 nftValues;
         uint128 risk;
-    }
-
-    struct LoanDetails {
-        uint128 borrowed;
     }
 
     struct RiskGroup {
@@ -47,8 +41,6 @@ contract NAVFeedPV is Auth, Math  {
 
     // nft => details
     mapping (bytes32 => NFTDetails) public details;
-    // loan => details
-    mapping(uint => LoanDetails) public loanDetails;
     // risk => riskGroup
     mapping (uint => RiskGroup) public riskGroup;
 
@@ -69,11 +61,10 @@ contract NAVFeedPV is Auth, Math  {
     function nftValues(bytes32 nft_)        public view returns(uint){ return uint(details[nft_].nftValues);}
     function ceilingRatio(uint riskID)      public view returns(uint){ return uint(riskGroup[riskID].ceilingRatio);}
     function thresholdRatio(uint riskID)    public view returns(uint){ return uint(riskGroup[riskID].thresholdRatio);}
-    function borrowed(uint loan)            public view returns(uint) {return uint(loanDetails[loan].borrowed);}
 
     constructor () {
         wards[msg.sender] = 1;
-        lastNAVUpdate = uniqueDayTimestamp(block.timestamp);
+        lastNAVUpdate = block.timestamp;
         emit Rely(msg.sender);
     }
 
@@ -84,10 +75,15 @@ contract NAVFeedPV is Auth, Math  {
     
     // returns the ceiling of a loan
     // the ceiling defines the maximum amount which can be borrowed
+    // ceiling is calculated using the credit line method
     function ceiling(uint loan) public virtual view returns (uint) {
         bytes32 nftID_ = nftID(loan);
         uint initialCeiling = rmul(nftValues(nftID_), ceilingRatio(risk(nftID_)));
-        return safeSub(initialCeiling, pile.debt(loan));
+        if (initialCeiling <= pile.debt(loan)) {
+            return 0;
+        } else {
+            return safeSub(initialCeiling, pile.debt(loan));
+        }    
     }
 
     // --- Administration ---
@@ -146,7 +142,7 @@ contract NAVFeedPV is Auth, Math  {
     function currentNAV() public view returns(uint) {
         uint totalDebt;
         // calculate total debt
-        for (uint loanId = 1; loanId <= shelf.loanCount(); loanId++) {
+        for (uint loanId = 1; loanId < shelf.loanCount(); loanId++) {
             totalDebt = safeAdd(totalDebt, pile.debt(loanId));
         }
 
@@ -157,18 +153,17 @@ contract NAVFeedPV is Auth, Math  {
 
     function calcUpdateNAV() public returns(uint) {
         latestNAV = currentNAV();
-        lastNAVUpdate = uniqueDayTimestamp(block.timestamp);
+        lastNAVUpdate = block.timestamp;
         return latestNAV;
     }
 
-    function update(bytes32 nftID_,  uint value) public auth {
+    function update(bytes32 nftID_, uint value) public auth {
         // switch of collateral risk group results in new: ceiling, threshold for existing loan
         details[nftID_].nftValues = toUint128(value);
         emit Update(nftID_, value);
     }
 
     function update(bytes32 nftID_, uint value, uint risk_) public auth {
-        uint nnow = uniqueDayTimestamp(block.timestamp);
         details[nftID_].nftValues  = toUint128(value);
 
         // no change in risk group
@@ -213,10 +208,5 @@ contract NAVFeedPV is Auth, Math  {
     // true if all debt is repaid or debt is 100% written-off
     function zeroPV(uint loan) public view returns (bool) {
         return ((pile.debt(loan) == 0) || (pile.loanRates(loan) == WRITEOFF_RATE_GROUP));
-    }
-
-    // normalizes a timestamp to round down to the nearest midnight (UTC)
-    function uniqueDayTimestamp(uint timestamp) public pure returns (uint) {
-        return (1 days) * (timestamp/(1 days));
     }
 }

@@ -51,7 +51,6 @@ contract ShelfMock is Mock {
         values_address["file_registry"] = registry;
         values_uint["file_nft"] = nft;
         calls["file"]++;
-
     }
 
     function balanceRequest() public returns (bool, uint) {

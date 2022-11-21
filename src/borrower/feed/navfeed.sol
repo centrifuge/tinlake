@@ -136,7 +136,6 @@ contract NAVFeed is Auth, Discounting {
         if (borrowed(loan) > initialCeiling) {
             return 0;
         }
-
         return safeSub(initialCeiling, borrowed(loan));
     }
 
@@ -490,7 +489,6 @@ contract NAVFeed is Auth, Discounting {
         if (futureValue(nftID_) == 0) {
             return;
         }
-
 
         uint maturityDate_ = maturityDate(nftID_);
 
