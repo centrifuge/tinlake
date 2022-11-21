@@ -161,7 +161,7 @@ contract Pile is Auth, Interest {
         emit ChangeRate(loan, newRate);
     }
 
-    /// @notice accrue needs to be called before any debt amounts are modified by an external component
+    /// @notice calls drip on the given loan
     /// @param loan the id of the loan
     function accrue(uint256 loan) external {
         drip(loanRates[loan]);

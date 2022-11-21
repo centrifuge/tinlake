@@ -192,7 +192,7 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Borrow(loan, currencyAmount);
     }
 
-    /// @notice withdraw transfers the acutal currency to the borrower account
+    /// @notice withdraw transfers the actual currency to the borrower account
     /// @param loan the id of the loan
     /// @param currencyAmount the amount which should be withdrawn
     /// @param usr the address of the receiver
@@ -258,7 +258,7 @@ contract Shelf is Auth, TitleOwned, Math {
     }
 
     /// @notice locks an nft in the shelf
-    /// requires an issued loan
+    /// @dev requires an issued loan
     /// @param loan the id of the loan
     function lock(uint256 loan) external owner(loan) {
         if (address(subscriber) != address(0)) {
@@ -269,7 +269,7 @@ contract Shelf is Auth, TitleOwned, Math {
     }
 
     /// @notice unlocks an nft in the shelf
-    /// requires zero debt or 100% write off
+    /// @dev requires zero debt or 100% write off
     /// @param loan the id of the loan
     function unlock(uint256 loan) external owner(loan) {
         // loans can be unlocked and closed when the debt is 0, or the loan is written off 100%

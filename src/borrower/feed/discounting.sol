@@ -3,7 +3,7 @@ pragma solidity >=0.7.6;
 
 import "tinlake-math/math.sol";
 
-/// @notice Discounting contract without a state which defines the relevant formulars for the navfeed
+/// @notice Discounting contract without a state which defines the relevant formulas for the navfeed
 contract Discounting is Math {
     /// @notice calculates the discount for a given loan
     /// @param discountRate the discount rate
@@ -52,8 +52,8 @@ contract Discounting is Math {
 
     /// @notice normalizes a timestamp to round down to the nearest midnight (UTC)
     /// @param timestamp the timestamp which should be normalized
-    /// @return nTimstamp normalized timestamp
-    function uniqueDayTimestamp(uint256 timestamp) public pure returns (uint256 nTimstamp) {
+    /// @return nTimestamp normalized timestamp
+    function uniqueDayTimestamp(uint256 timestamp) public pure returns (uint256 nTimestamp) {
         return (1 days) * (timestamp / (1 days));
     }
     /// @notice rpow peforms a math pow operation with fixed point number

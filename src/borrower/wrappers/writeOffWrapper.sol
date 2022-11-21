@@ -50,7 +50,7 @@ contract WriteOffWrapper is Auth, Discounting {
         writeOffRates[address(0x4b0f712Aa9F91359f48D8628De8483B04530751a)] = 1001; // Peoples 1
     }
 
-    /// @notice writes of an overdue loan
+    /// @notice writes off an overdue loan
     /// @param loan the loan id
     /// @param nftFeed address of the feed
     function writeOff(uint256 loan, address nftFeed) public auth {

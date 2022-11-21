@@ -121,7 +121,7 @@ contract NAVFeed is Auth, Discounting {
     function maturityDate(bytes32 nft_) public view returns (uint256 maturityDate_) {
         return uint256(details[nft_].maturityDate);
     }
-    /// @notice getter functiion for the risk group
+    /// @notice getter function for the risk group
     /// @param nft_ the id of the nft based on the hash of registry and tokenId
     /// @return risk_ the risk group of the nft
 
