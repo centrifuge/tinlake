@@ -284,19 +284,6 @@ contract NFTFeedTest is DSTest, Math {
         feed.writeOff(loan);
     }
 
-
-    // function currentNAV() public view returns(uint) {
-    //     uint totalDebt;
-    //     // calculate total debt
-    //     for (uint loanId = 1; loanId < shelf.loanCount(); loanId++) {
-    //         totalDebt = safeAdd(totalDebt, pile.debt(loanId));
-    //     }
-
-    //     // substract writtenoff loans -> all writtenOff loans are moved to writeOffRateGroup
-    //     totalDebt = safeSub(totalDebt, pile.rateDebt(WRITEOFF_RATE_GROUP));
-    //     return totalDebt;
-    // }
-
     function testCalcNav() public {
         bytes32 tokenId1 = feed.nftID(address(1), 1);
         bytes32 tokenId2 = feed.nftID(address(1), 2);
