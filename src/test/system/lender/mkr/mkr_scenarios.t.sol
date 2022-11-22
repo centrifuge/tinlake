@@ -327,8 +327,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         // write 50% of debt off / second loan 100% loss
         root.relyContract(address(pile), address(this));
         root.relyContract(address(nftFeed), address(this));
-        nftFeed.overrideWriteOff(1, 1);
-        nftFeed.overrideWriteOff(2, 3);
+
 
         nftFeed.calcUpdateNAV();
         assertTrue(mkrAssessor.calcSeniorTokenPrice() > 0);

@@ -48,10 +48,7 @@ contract LenderSystemTest is TestSuite, Interest {
 
         (uint loan, ) = supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate, submission);
         uint nav = nftFeed.calcUpdateNAV();
-        uint fv = nftFeed.futureValue(nftFeed.nftID(loan));
 
-        // FV = 100 * 1.05^5 = 127.62815625
-        assertEq(fv, 127.62815625 ether);
 
         // (FV/1.03^5) = 110.093;
         assertEq(nav, 110.093921369062927876 ether);
@@ -287,7 +284,6 @@ contract LenderSystemTest is TestSuite, Interest {
 
         // 50% write off
         // increase loan rate from 5% to 6%
-        nftFeed.overrideWriteOff(loan, 1);
         emit log_named_uint("loan debt",pile.debt(loan));
         assertEq(nftFeed.currentNAV(), rmul(pile.debt(loan), 50 * 10**25), 10);
 
@@ -370,7 +366,7 @@ contract LenderSystemTest is TestSuite, Interest {
         uint borrowAmount = 100 ether;
         uint nftPrice = 200 ether;
         uint maturityDate = 5 days;
-        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(block.timestamp) +maturityDate);
+        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, false, block.timestamp + maturityDate);
         uint highRate = uint(1000001103100000000000000000);
         root.relyContract(address(assessor), address(this));
         assessor.file("seniorInterestRate", highRate);
@@ -378,7 +374,6 @@ contract LenderSystemTest is TestSuite, Interest {
         // loan not repaid and written off by 75%
         hevm.warp(block.timestamp + 10 days);
         root.relyContract(address(nftFeed), address(this));
-        nftFeed.overrideWriteOff(loan, 2);
 
         // junior should lost everything
         assertTrue(assessor.seniorDebt() > nftFeed.currentNAV());
@@ -417,7 +412,7 @@ contract LenderSystemTest is TestSuite, Interest {
         uint borrowAmount = 100 ether;
         uint nftPrice = 200 ether;
         uint maturityDate = 5 days;
-        setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(block.timestamp) +maturityDate);
+        setupOngoingLoan(nftPrice, borrowAmount, false, block.timestamp + maturityDate);
 
         hevm.warp(block.timestamp + 1 days);
 
@@ -440,7 +435,7 @@ contract LenderSystemTest is TestSuite, Interest {
         uint borrowAmount = 100 ether;
         uint nftPrice = 200 ether;
         uint maturityDate = 5 days;
-        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(block.timestamp) + maturityDate);
+        (uint loan, ) = setupOngoingLoan(nftPrice, borrowAmount, false, block.timestamp + maturityDate);
 
         hevm.warp(block.timestamp + 1 days);
 

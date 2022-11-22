@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import "../../base_system.sol";
 
-contract PrincipalRepayTest is BaseSystemTest {
+contract CreditlineRepayTest is BaseSystemTest {
 
     function setUp() public {
         baseSetup();
@@ -26,8 +26,10 @@ contract PrincipalRepayTest is BaseSystemTest {
         uint initialBorrowerBalance = currency.balanceOf(borrower_);
         uint initialTrancheBalance = currency.balanceOf(address(reserve));
         uint initialCeiling = nftFeed.ceiling(loanId);
+        uint initialNAV = nftFeed.currentNAV();
+        
         borrower.repay(loanId, amount);
-        assertPostCondition(loanId, tokenId, amount, initialBorrowerBalance, initialTrancheBalance, expectedDebt, initialCeiling);
+        assertPostCondition(loanId, tokenId, amount, initialBorrowerBalance, initialTrancheBalance, expectedDebt, initialCeiling, initialNAV);
     }
 
     function assertPreCondition(uint loanId, uint tokenId, uint repayAmount, uint expectedDebt) public {
@@ -45,7 +47,7 @@ contract PrincipalRepayTest is BaseSystemTest {
         assert(currency.balanceOf(borrower_) >= repayAmount);
     }
 
-    function assertPostCondition(uint loanId, uint tokenId, uint repaidAmount, uint initialBorrowerBalance, uint initialTrancheBalance, uint expectedDebt, uint initialCeiling) public {
+    function assertPostCondition(uint loanId, uint tokenId, uint repaidAmount, uint initialBorrowerBalance, uint initialTrancheBalance, uint expectedDebt, uint initialCeiling, uint initialNAV) public {
         // assert: borrower still loanOwner
         assertEq(title.ownerOf(loanId), borrower_);
         // assert: shelf still nftOwner
@@ -54,19 +56,32 @@ contract PrincipalRepayTest is BaseSystemTest {
         if (repaidAmount > expectedDebt) {
             // make sure borrower did not pay more then hs debt
             repaidAmount = expectedDebt;
-
         }
-        uint newBorrowerBalance = safeSub(initialBorrowerBalance, repaidAmount);
-        assert(safeSub(newBorrowerBalance, currency.balanceOf(borrower_)) <= 1); // (tolerance +/- 1)
+        assert(safeSub(safeSub(initialBorrowerBalance, repaidAmount), currency.balanceOf(borrower_)) <= 1); // (tolerance +/- 1)
+        
         // assert: shelf/tranche received funds
         // since we are calling balance inside repay, money is directly transferred to the tranche through shelf
         uint newTrancheBalance = safeAdd(initialTrancheBalance, repaidAmount);
         assertEq(currency.balanceOf(address(reserve)), newTrancheBalance, 10); // (tolerance +/- 1)
+
         // assert: debt amounts reduced by repayAmount (tolerance +/- 1)
-        uint newDebt = safeSub(expectedDebt, repaidAmount);
-        assert(safeSub(pile.debt(loanId), newDebt) <= 1);
-        // aseert: initialCeiling did not increase
-        assertEq(initialCeiling, nftFeed.ceiling(loanId));
+        if (pile.debt(loanId) > safeSub(expectedDebt, repaidAmount)){
+            assert(safeSub(pile.debt(loanId), safeSub(expectedDebt, repaidAmount)) <= 1);
+        } else {
+            assert(safeSub(safeSub(expectedDebt, repaidAmount), pile.debt(loanId)) <= 1);
+        }
+        // aseert: creditline
+        bytes32 nftID = nftFeed.nftID(loanId);
+        uint maxCeiling = rmul(nftFeed.ceilingRatio(nftFeed.risk(nftID)), nftFeed.nftValues(nftID));
+        uint newCeiling;
+        if (maxCeiling < pile.debt(loanId)) {
+            newCeiling = 0;
+        } else {
+             newCeiling = safeSub(maxCeiling, pile.debt(loanId));
+        }
+        assertEq(newCeiling, nftFeed.ceiling(loanId));
+        // assert: NAV 
+        assert(safeSub( safeSub(initialNAV, repaidAmount), nftFeed.currentNAV()) <= 1);
     }
 
     function borrowAndRepay(address usr, uint nftPrice, uint riskGroup, uint expectedDebt, uint repayAmount) public {
@@ -78,15 +93,40 @@ contract PrincipalRepayTest is BaseSystemTest {
         //repay after 1 year
         hevm.warp(block.timestamp + 365 days);
         assertPreCondition(loanId, tokenId, repayAmount, expectedDebt);
-      //  repay(loanId, tokenId, repayAmount, expectedDebt);
+        repay(loanId, tokenId, repayAmount, expectedDebt);
     }
+
+    function testCreditLineCycle() public {
+        uint nftPrice = 200 ether; // -> ceiling 100 ether
+        uint riskGroup = 1; // -> 12% per year
+        uint maxCeiling = 100 ether;
+
+        // expected debt after 1 year of compounding
+        (uint loanId, uint tokenId) = createLoanAndWithdraw(borrower_, nftPrice, riskGroup); // borrow max amount
+      
+        // supply borrower with additional funds to pay for accrued interest
+        topUp(borrower_);
+        // borrower allows shelf full control over borrower tokens
+        Borrower(borrower_).doApproveCurrency(address(shelf), type(uint256).max);
+        //repay after 1 year
+        assertEq(nftFeed.ceiling(loanId), 0); // ceiling = 0 after borrow
+        hevm.warp(block.timestamp + 365 days);
+        assertEq(nftFeed.ceiling(loanId), 0); // ceiling = 0 after interest accrued
+        uint repaymentAmount = 50 ether;
+        
+        repay(loanId, tokenId, repaymentAmount, pile.debt(loanId)); // repay half debt
+        assertEq(nftFeed.ceiling(loanId), 37999999999999999999); // ceiling 100 - 62 ether
+
+        repay(loanId, tokenId,  pile.debt(loanId), pile.debt(loanId)); // repay rest of debt
+        assertEq(nftFeed.ceiling(loanId), 100 ether);
+    } 
 
     function testRepayFullDebt() public {
         uint nftPrice = 200 ether; // -> ceiling 100 ether
         uint riskGroup = 1; // -> 12% per year
 
         // expected debt after 1 year of compounding
-        uint expectedDebt = 112 ether;
+        uint expectedDebt = 112000000000000000001; // 112 ETH
         uint repayAmount = expectedDebt;
         borrowAndRepay(borrower_, nftPrice, riskGroup, expectedDebt, repayAmount);
     }
@@ -95,9 +135,8 @@ contract PrincipalRepayTest is BaseSystemTest {
         uint nftPrice = 200 ether; // -> ceiling 100 ether
         uint riskGroup = 1; // -> 12% per year
 
-
         // expected debt after 1 year of compounding
-        uint expectedDebt = 112 ether;
+        uint expectedDebt = 112000000000000000001; // 112 ETH
         // borrower tries to repay twice his debt amount
         uint repayAmount = safeMul(expectedDebt, 2);
         borrowAndRepay(borrower_, nftPrice, riskGroup, expectedDebt, repayAmount);
@@ -108,7 +147,7 @@ contract PrincipalRepayTest is BaseSystemTest {
         uint riskGroup = 1; // -> 12% per year
 
         // expected debt after 1 year of compounding
-        uint expectedDebt = 112 ether;
+        uint expectedDebt = 112 ether; // 112 ETH
         uint repayAmount = safeDiv(expectedDebt, 2);
         borrowAndRepay(borrower_, nftPrice, riskGroup, expectedDebt, repayAmount);
     }

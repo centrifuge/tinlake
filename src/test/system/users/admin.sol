@@ -30,8 +30,6 @@ contract AdminUser {
 
     function priceNFTAndSetRiskGroup(bytes32 lookupId, uint nftPrice, uint riskGroup, uint maturityDate) public {
         nftFeed.update(lookupId, nftPrice, riskGroup);
-        // add default maturity date
-        nftFeed.file("maturityDate", lookupId , maturityDate);
     }
 
     function makeJuniorTokenMember(address usr, uint validitUntil) public {
@@ -44,5 +42,14 @@ contract AdminUser {
 
     function fileFixedRate(uint rateGroup, uint rate) public {
         pile.file("fixedRate", rateGroup, rate);
+    }
+
+    function fileRisk(uint riskGroup, uint thresholdRatio, uint ceilingRatio, uint interestRate) public {
+        nftFeed.file("riskGroup",
+            riskGroup,                                     
+            thresholdRatio,       
+            ceilingRatio,                        
+            interestRate
+        );
     }
 }

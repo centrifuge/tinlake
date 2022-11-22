@@ -51,6 +51,45 @@ contract BaseSystemTest is TestSetup, BaseTypes, Math, Assertions {
         root.relyBorrowerAdmin(admin_);
         root.relyLenderAdmin(admin_);
         createInvestorUser();
+        initNAV();
+    }
+
+    function initNAV() public {
+         // The following score cards just examples that are mostly optimized for the system test cases
+        admin.fileRisk(
+            0,                                      // riskGroup:       0
+            8*10**26,                               // thresholdRatio   80%
+            6*10**26,                               // ceilingRatio     60%
+            ONE                                     // interestRate     1.0
+        );
+
+        admin.fileRisk(
+            1,                                      // riskGroup:       1
+            7*10**26,                               // thresholdRatio   70%
+            5*10**26,                               // ceilingRatio     50%
+            uint(1000000003593629043335673583)      // interestRate     12% per year
+        );
+
+        admin.fileRisk(
+            2,                                      // riskGroup:       2
+            7*10**26,                               // thresholdRatio   70%
+            5*10**26,                               // ceilingRatio     50%
+            uint(1000000564701133626865910626)      // interestRate     5% per day
+        );
+
+         admin.fileRisk(
+            3,                                      // riskGroup:       3
+            7*10**26,                               // thresholdRatio   70%
+            ONE,                                    // ceilingRatio     100%
+            uint(1000000564701133626865910626)      // interestRate     5% per day
+        );
+
+         admin.fileRisk(
+            4,                                      // riskGroup:       4
+            5*10**26,                               // thresholdRatio   50%
+            6*10**26,                               // ceilingRatio     60%
+            uint(1000000564701133626865910626)      // interestRate     5% per day
+        );
     }
 
     function createInvestorUser() public {

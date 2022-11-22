@@ -20,7 +20,6 @@ interface PileLike {
     function rateDebt(uint rate) external view returns (uint);
 }
 
-
 contract NAVFeedPV is Auth, Math  {
     PileLike    public pile;
     ShelfLike   public shelf;

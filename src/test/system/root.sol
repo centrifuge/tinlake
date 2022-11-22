@@ -5,7 +5,6 @@ import { TinlakeRoot } from "../../root.sol";
 import { BorrowerDeployer } from "../../borrower/deployer.sol";
 import { LenderDeployer } from "../../lender/deployer.sol";
 
-import "ds-test/test.sol";
 contract TestRoot is TinlakeRoot {
     constructor (address deployUsr, address governance) TinlakeRoot(deployUsr, governance) {
     }
