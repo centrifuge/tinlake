@@ -63,8 +63,8 @@ contract LenderSystemTest is TestSuite, Interest {
         uint seniorSupplyAmount = 500 ether;
         uint juniorSupplyAmount = 20 ether;
         uint nftPrice = 200 ether;
-        // interest rate default => 5% per day
         uint borrowAmount = 100 ether;
+        // interest rate default => 5% per day
         uint maturityDate = 5 days;
 
 
@@ -93,14 +93,11 @@ contract LenderSystemTest is TestSuite, Interest {
         // additional senior debt increase for one day
         assertEq(assessor.seniorDebt(), calcInterest(rmul(preNAV, assessor.seniorRatio()), 24 hours, assessor.seniorInterestRate()));
 
-
-        //(FV/1.03^4) = 127.62815625 /(1.03^4) = 113.395963777
-        assertEq(nav, 113.39 ether, TWO_DECIMAL_PRECISION);
+        assertEq(nav, 105 ether, TWO_DECIMAL_PRECISION);
 
         // should be 83.64/82 = 83.64/82= 1.02
         uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, 0);
         assertEq(seniorTokenPrice, fixed18To27(1.02 ether), FIXED27_TWO_DECIMAL_PRECISION);
-
 
         // new orders
         // first investors need to disburse

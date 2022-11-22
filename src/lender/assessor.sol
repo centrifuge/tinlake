@@ -152,7 +152,7 @@ contract Assessor is Definitions, Auth, Interest {
         return navFeed.calcUpdateNAV();
     }
 
-    function calcSeniorTokenPrice() external view returns(uint) {
+    function calcSeniorTokenPrice() external returns(uint) {
         return calcSeniorTokenPrice(getNAV(), reserve.totalBalance());
     }
 
@@ -160,7 +160,7 @@ contract Assessor is Definitions, Auth, Interest {
         return _calcSeniorTokenPrice(nav_, reserve.totalBalance());
     }
 
-    function calcJuniorTokenPrice() external view returns(uint) {
+    function calcJuniorTokenPrice() external returns(uint) {
         return _calcJuniorTokenPrice(getNAV(), reserve.totalBalance());
     }
 
@@ -168,7 +168,7 @@ contract Assessor is Definitions, Auth, Interest {
         return _calcJuniorTokenPrice(nav_, reserve.totalBalance());
     }
 
-    function calcTokenPrices() external view returns (uint, uint) {
+    function calcTokenPrices() external returns (uint, uint) {
         uint epochNAV = getNAV();
         uint epochReserve = reserve.totalBalance();
         return calcTokenPrices(epochNAV, epochReserve);
@@ -251,11 +251,10 @@ contract Assessor is Definitions, Auth, Interest {
     }
 
     // returns the current NAV
-    function getNAV() public view returns(uint) {
+    function getNAV() public  returns(uint) {
         if (block.timestamp >= navFeed.lastNAVUpdate() + maxStaleNAV) {
             return navFeed.currentNAV();
         }
-
         return navFeed.latestNAV();
     }
 
@@ -270,7 +269,7 @@ contract Assessor is Definitions, Auth, Interest {
 
     // returns the current junior ratio protection in the Tinlake
     // juniorRatio is denominated in RAY (10^27)
-    function calcJuniorRatio() public view returns(uint) {
+    function calcJuniorRatio() public returns(uint) {
         uint seniorAsset = safeAdd(seniorDebt(), seniorBalance_);
         uint assets = safeAdd(getNAV(), reserve.totalBalance());
 
@@ -304,7 +303,6 @@ contract Assessor is Definitions, Auth, Interest {
         if(remainingCredit_ > stabilityBuffer) {
             return safeSub(remainingCredit_, stabilityBuffer);
         }
-
         return 0;
     }
 

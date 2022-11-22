@@ -69,6 +69,7 @@ contract TestSuite is BaseSystemTest {
         hevm.warp(block.timestamp + 1 days);
 
         closeEpoch(false);
+        
         assertTrue(coordinator.submissionPeriod() == true);
 
         int valid = submitSolution(address(coordinator), submission);
@@ -77,6 +78,7 @@ contract TestSuite is BaseSystemTest {
         hevm.warp(block.timestamp + 2 hours);
 
         coordinator.executeEpoch();
+
         assertEqTol(reserve.totalBalance(), submission.seniorSupply + submission.juniorSupply, " firstLoan#1");
 
         // senior
@@ -93,10 +95,9 @@ contract TestSuite is BaseSystemTest {
         assertEqTol(seniorToken.balanceOf(seniorInvestor_), submission.seniorSupply, " firstLoan#6");
         assertEqTol(juniorToken.balanceOf(juniorInvestor_), submission.juniorSupply, " firstLoan#7");
 
-
         // borrow loans maturity date 5 days from now
         (loan, tokenId) = setupOngoingLoan(nftPrice, borrowAmount, false, block.timestamp + maturityDate);
-
+        
         assertEqTol(currency.balanceOf(address(borrower)), borrowAmount, " firstLoan#8");
         uint nav = nftFeed.calcUpdateNAV();
 

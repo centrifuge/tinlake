@@ -20,7 +20,7 @@ interface PileLike {
     function rateDebt(uint rate) external view returns (uint);
 }
 
-contract NAVFeedPV is Auth, Math  {
+contract NAVFeedPV is Auth, Math {
     PileLike    public pile;
     ShelfLike   public shelf;
 
@@ -109,10 +109,14 @@ contract NAVFeedPV is Auth, Math  {
     // --- Actions ---
     function borrow(uint loan, uint amount) external virtual auth returns(uint navIncrease) {
         require(ceiling(loan) >= amount, "borrow-amount-too-high");
+        latestNAV = safeAdd(currentNAV(), amount);
+        lastNAVUpdate = block.timestamp;
         return amount;
     }
 
     function repay(uint loan, uint amount) external virtual auth {
+        latestNAV = safeSub(currentNAV(), amount);
+        lastNAVUpdate = block.timestamp;
     }
 
     function borrowEvent(uint loan, uint) public virtual auth {
@@ -131,6 +135,7 @@ contract NAVFeedPV is Auth, Math  {
 
     function writeOff(uint loan) public auth {
        pile.changeRate(loan, WRITEOFF_RATE_GROUP);
+       calcUpdateNAV();
     }
 
     function isLoanWrittenOff(uint loan) public view returns(bool) {
@@ -144,7 +149,6 @@ contract NAVFeedPV is Auth, Math  {
         for (uint loanId = 1; loanId < shelf.loanCount(); loanId++) {
             totalDebt = safeAdd(totalDebt, pile.debt(loanId));
         }
-
         // substract writtenoff loans -> all writtenOff loans are moved to writeOffRateGroup
         totalDebt = safeSub(totalDebt, pile.rateDebt(WRITEOFF_RATE_GROUP));
         return totalDebt;
@@ -164,7 +168,6 @@ contract NAVFeedPV is Auth, Math  {
 
     function update(bytes32 nftID_, uint value, uint risk_) public auth {
         details[nftID_].nftValues  = toUint128(value);
-
         // no change in risk group
         if (risk_ == risk(nftID_)) {
             return;
