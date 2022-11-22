@@ -26,6 +26,8 @@ interface FeedLike {
     function maturityDate(bytes32 nft_) external view returns (uint256);
 }
 
+/// @notice WriteOff contract can move overdue loans into a write off group
+/// The wrapper contract manages multiple different pools
 contract WriteOffWrapper is Auth, Discounting {
     mapping(address => uint256) public writeOffRates;
 
@@ -48,19 +50,22 @@ contract WriteOffWrapper is Auth, Discounting {
         writeOffRates[address(0x4b0f712Aa9F91359f48D8628De8483B04530751a)] = 1001; // Peoples 1
     }
 
-    function writeOff(uint256 _loanID, address _feed) public auth {
-        FeedLike feed = FeedLike(_feed);
+    /// @notice writes off an overdue loan
+    /// @param loan the loan id
+    /// @param nftFeed address of the feed
+    function writeOff(uint256 loan, address nftFeed) public auth {
+        FeedLike feed = FeedLike(nftFeed);
         PileLike pile = PileLike(feed.pile());
         require(writeOffRates[address(pile)] != 0, "WriteOffWrapper/pile-has-no-write-off-group");
         ShelfLike shelf = ShelfLike(feed.shelf());
-        require(shelf.shelf(_loanID).tokenId != 0, "WriteOffWrapper/loan-does-not-exist");
+        require(shelf.shelf(loan).tokenId != 0, "WriteOffWrapper/loan-does-not-exist");
         uint256 nnow = uniqueDayTimestamp(block.timestamp);
-        bytes32 nftID = feed.nftID(_loanID);
+        bytes32 nftID = feed.nftID(loan);
         uint256 maturityDate = feed.maturityDate(nftID);
 
         require(maturityDate < nnow, "WriteOffWrapper/loan-not-overdue");
 
-        pile.changeRate(_loanID, writeOffRates[address(pile)]);
+        pile.changeRate(loan, writeOffRates[address(pile)]);
     }
 
     function file(bytes32 what, address addr, uint256 data) public auth {
