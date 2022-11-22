@@ -4,7 +4,10 @@ pragma solidity >=0.7.6;
 import "../../../test/mock/mock.sol";
 
 contract PileMock is Mock {
-    function total() public view returns (uint256) {
+
+    mapping (uint => uint) public loansDebt;
+
+    function total() public view returns(uint) {
         return values_return["total"];
     }
 
@@ -28,8 +31,9 @@ contract PileMock is Mock {
         calls["changeRate"]++;
     }
 
-    function debt(uint256) public view returns (uint256) {
-        return values_return["debt_loan"];
+    function debt(uint loan) public view returns(uint) {
+        // return values_return["debt_loan"];
+        return loansDebt[loan];
     }
 
     function debt() public returns (uint256) {
@@ -43,6 +47,7 @@ contract PileMock is Mock {
     function incDebt(uint256 loan, uint256 currencyAmount) public {
         values_uint["incDebt_loan"] = loan;
         values_uint["incDebt_currencyAmount"] = currencyAmount;
+        loansDebt[loan] = currencyAmount;
         calls["incDebt"]++;
     }
 
@@ -59,6 +64,8 @@ contract PileMock is Mock {
 
     function file(bytes32, uint256 rate, uint256 ratePerSecond) public {
         values_uint["file_rate"] = rate;
+        values_uint["rates_chi"] = ratePerSecond;
+        values_return["rates_ratePerSecond"] = ratePerSecond;
         values_uint["file_ratePerSecond"] = ratePerSecond;
         calls["file"]++;
     }

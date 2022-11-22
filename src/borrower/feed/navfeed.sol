@@ -164,7 +164,6 @@ contract NAVFeed is Auth, Discounting {
         if (borrowed(loan) > initialCeiling) {
             return 0;
         }
-
         return safeSub(initialCeiling, borrowed(loan));
     }
 
@@ -539,7 +538,7 @@ contract NAVFeed is Auth, Discounting {
             return;
         }
 
-        uint256 maturityDate_ = maturityDate(nftID_);
+        uint maturityDate_ = maturityDate(nftID_);
 
         // Changing the risk group of an nft, might lead to a new interest rate for the dependant loan.
         // New interest rate leads to a future value.
