@@ -30,6 +30,7 @@ interface LendingAdapter {
     function debt() external view returns (uint256);
 }
 
+/// @notice Assessor contract manages two tranches of a pool and calculates the token prices.
 contract Assessor is Definitions, Auth, Interest {
     // senior ratio from the last epoch executed
     Fixed27 public seniorRatio;
@@ -74,6 +75,9 @@ contract Assessor is Definitions, Auth, Interest {
         emit Rely(msg.sender);
     }
 
+    /// @notice manages dependencies to other pool contracts
+    /// @param contractName name of the contract
+    /// @param addr address of the contract
     function depend(bytes32 contractName, address addr) public auth {
         if (contractName == "navFeed") {
             navFeed = NAVFeedLike(addr);
@@ -91,6 +95,9 @@ contract Assessor is Definitions, Auth, Interest {
         emit Depend(contractName, addr);
     }
 
+    /// @notice allows wards to set parameters of the contract
+    /// @param name name of the parameter
+    /// @param value value of the parameter
     function file(bytes32 name, uint256 value) public auth {
         if (name == "seniorInterestRate") {
             dripSeniorDebt();
@@ -113,14 +120,19 @@ contract Assessor is Definitions, Auth, Interest {
         emit File(name, value);
     }
 
+    /// @notice rebalance the debt and balance of the senior tranche according to
+    /// the current ratio between senior and junior
     function reBalance() public {
         reBalance(calcExpectedSeniorAsset(seniorBalance_, dripSeniorDebt()));
     }
 
+    /// @notice internal function for the rebalance of senior debt and balance
+    /// @param seniorAsset_ the expected senior asset value (senior debt + senior balance)
     function reBalance(uint256 seniorAsset_) internal {
         // re-balancing according to new ratio
         // we use the approximated NAV here because because during the submission period
-        // new loans might have been repaid in the meanwhile which are not considered in the epochNAV
+        // new loans might have been repaid in the meanwhile
+        // which are not considered in the epochNAV
         uint256 nav_ = getNAV();
         uint256 reserve_ = reserve.totalBalance();
 
@@ -142,45 +154,81 @@ contract Assessor is Definitions, Auth, Interest {
         seniorRatio = Fixed27(seniorRatio_);
     }
 
+    /// @notice changes the senior asset value based on new supply or redeems
+    /// @param seniorSupply senior supply amount
+    /// @param seniorRedeem senior redeem amount
     function changeSeniorAsset(uint256 seniorSupply, uint256 seniorRedeem) external auth {
         reBalance(calcExpectedSeniorAsset(seniorRedeem, seniorSupply, seniorBalance_, dripSeniorDebt()));
     }
 
+    /// @notice returns the minimum and maximum senior ratio
+    /// @return minSeniorRatio_ minimum senior ratio (in RAY 10^27)
+    /// @return maxSeniorRatio_ maximum senior ratio (in RAY 10^27)
     function seniorRatioBounds() public view returns (uint256 minSeniorRatio_, uint256 maxSeniorRatio_) {
         return (minSeniorRatio.value, maxSeniorRatio.value);
     }
 
-    function calcUpdateNAV() external returns (uint256) {
+    /// @notice calls the NAV feed to update and store the current NAV
+    /// @return nav_ the current NAV
+    function calcUpdateNAV() external returns (uint256 nav_) {
         return navFeed.calcUpdateNAV();
     }
 
-    function calcSeniorTokenPrice() external view returns (uint256) {
+    /// @notice calculates the senior token price
+    /// @return seniorTokenPrice_ the senior token price
+    function calcSeniorTokenPrice() external view returns (uint256 seniorTokenPrice_) {
         return calcSeniorTokenPrice(getNAV(), reserve.totalBalance());
     }
 
-    function calcSeniorTokenPrice(uint256 nav_, uint256) public view returns (uint256) {
+    /// @notice calculates the senior token price for a given NAV
+    /// interface doesn't use the provided total balance
+    /// @param nav_ the NAV
+    /// @return seniorTokenPrice_ the senior token price
+    function calcSeniorTokenPrice(uint256 nav_, uint256) public view returns (uint256 seniorTokenPrice_) {
         return _calcSeniorTokenPrice(nav_, reserve.totalBalance());
     }
 
-    function calcJuniorTokenPrice() external view returns (uint256) {
+    /// @notice calculates the junior token price
+    /// @return juniorTokenPrice_ the junior token price
+    function calcJuniorTokenPrice() external view returns (uint256 juniorTokenPrice_) {
         return _calcJuniorTokenPrice(getNAV(), reserve.totalBalance());
     }
 
-    function calcJuniorTokenPrice(uint256 nav_, uint256) public view returns (uint256) {
+    /// @notice calculates the junior token price for a given NAV
+    /// interface doesn't use the provided total balance
+    /// @param nav_ the NAV
+    /// @return juniorTokenPrice_ the junior token price
+    function calcJuniorTokenPrice(uint256 nav_, uint256) public view returns (uint256 juniorTokenPrice_) {
         return _calcJuniorTokenPrice(nav_, reserve.totalBalance());
     }
 
-    function calcTokenPrices() external view returns (uint256, uint256) {
+    /// @notice calculates the senior and junior token price based on current NAV and reserve
+    /// @return juniorTokenPrice_ the junior token price
+    /// @return seniorTokenPrice_ the senior token price
+    function calcTokenPrices() external view returns (uint256 juniorTokenPrice_, uint256 seniorTokenPrice_) {
         uint256 epochNAV = getNAV();
         uint256 epochReserve = reserve.totalBalance();
         return calcTokenPrices(epochNAV, epochReserve);
     }
 
-    function calcTokenPrices(uint256 epochNAV, uint256 epochReserve) public view returns (uint256, uint256) {
+    /// @notice calculates the senior and junior token price based on NAV and reserve as params
+    /// @param epochNAV the NAV of an epoch
+    /// @param epochReserve the reserve of an epoch
+    /// @return juniorTokenPrice_ the junior token price
+    /// @return seniorTokenPrice_ the senior token price
+    function calcTokenPrices(uint256 epochNAV, uint256 epochReserve)
+        public
+        view
+        returns (uint256 juniorTokenPrice_, uint256 seniorTokenPrice_)
+    {
         return (_calcJuniorTokenPrice(epochNAV, epochReserve), _calcSeniorTokenPrice(epochNAV, epochReserve));
     }
 
-    function _calcSeniorTokenPrice(uint256 nav_, uint256 reserve_) internal view returns (uint256) {
+    /// @notice internal function to calculate the senior token price
+    /// @param nav_ the NAV
+    /// @param reserve_ the reserve
+    /// @return seniorTokenPrice_ the senior token price
+    function _calcSeniorTokenPrice(uint256 nav_, uint256 reserve_) internal view returns (uint256 seniorTokenPrice_) {
         // the coordinator interface will pass the reserveAvailable
 
         if ((nav_ == 0 && reserve_ == 0) || seniorTranche.tokenSupply() <= supplyTolerance) {
@@ -198,7 +246,11 @@ contract Assessor is Definitions, Auth, Interest {
         return rdiv(seniorAssetValue, seniorTranche.tokenSupply());
     }
 
-    function _calcJuniorTokenPrice(uint256 nav_, uint256 reserve_) internal view returns (uint256) {
+    /// @notice internal function to calculate the junior token price
+    /// @param nav_ the NAV
+    /// @param reserve_ the reserve
+    /// @return juniorTokenPrice_ the junior token price
+    function _calcJuniorTokenPrice(uint256 nav_, uint256 reserve_) internal view returns (uint256 juniorTokenPrice_) {
         if ((nav_ == 0 && reserve_ == 0) || juniorTranche.tokenSupply() <= supplyTolerance) {
             // we are using a tolerance of 2 here, as there can be minimal supply leftovers after all redemptions due to rounding
             // initial token price at start 1.00
@@ -224,37 +276,51 @@ contract Assessor is Definitions, Auth, Interest {
         return rdiv(safeAdd(safeSub(totalAssets, seniorAssetValue), juniorStake), juniorTranche.tokenSupply());
     }
 
-    function dripSeniorDebt() public returns (uint256) {
+    /// @notice accumulates the senior interest
+    /// @return _seniorDebt the senior debt
+    function dripSeniorDebt() public returns (uint256 _seniorDebt) {
         seniorDebt_ = seniorDebt();
         lastUpdateSeniorInterest = block.timestamp;
         return seniorDebt_;
     }
 
-    function seniorDebt() public view returns (uint256) {
+    /// @notice returns the senior debt with up to date interest
+    /// @return _seniorDebt senior debt
+    function seniorDebt() public view returns (uint256 _seniorDebt) {
         if (block.timestamp >= lastUpdateSeniorInterest) {
             return chargeInterest(seniorDebt_, seniorInterestRate.value, lastUpdateSeniorInterest);
         }
         return seniorDebt_;
     }
 
-    function seniorBalance() public view returns (uint256) {
+    /// @notice returns the senior balance including unused creditline from adapters
+    /// @return _seniorBalance senior balance
+    function seniorBalance() public view returns (uint256 _seniorBalance) {
         return safeAdd(seniorBalance_, remainingOvercollCredit());
     }
 
-    function effectiveSeniorBalance() public view returns (uint256) {
+    /// @notice returns the effective senior balance without unused creditline from adapters
+    /// @return _seniorBalance senior balance
+    function effectiveSeniorBalance() public view returns (uint256 _seniorBalance) {
         return seniorBalance_;
     }
 
-    function effectiveTotalBalance() public view returns (uint256) {
+    /// @notice returns the effective total balance
+    /// @return _effectiveTotalBalance total balance
+    function effectiveTotalBalance() public view returns (uint256 _effectiveTotalBalance) {
         return reserve.totalBalance();
     }
 
-    function totalBalance() public view returns (uint256) {
+    /// @notice returns the total balance including unused creditline from adapters
+    /// which means the total balance if the creditline were fully used
+    /// @return _totalBalance total balance
+    function totalBalance() public view returns (uint256 _totalBalance) {
         return safeAdd(reserve.totalBalance(), remainingCredit());
     }
 
-    // returns the current NAV
-    function getNAV() public view returns (uint256) {
+    /// @notice returns the latest stored NAV or forces an update if a stale period has passed
+    /// @return _nav the NAV
+    function getNAV() public view returns (uint256 _nav) {
         if (block.timestamp >= navFeed.lastNAVUpdate() + maxStaleNAV) {
             return navFeed.currentNAV();
         }
@@ -262,18 +328,21 @@ contract Assessor is Definitions, Auth, Interest {
         return navFeed.latestNAV();
     }
 
-    // changes the total amount available for borrowing loans
+    /// @notice ward call to communicate the amount of currency available for new loan originations
+    /// in the next epoch
+    /// @param currencyAmount the amount of currency available for new loan originations in the next epoch
     function changeBorrowAmountEpoch(uint256 currencyAmount) public auth {
         reserve.file("currencyAvailable", currencyAmount);
     }
 
-    function borrowAmountEpoch() public view returns (uint256) {
+    /// @notice returns the amount left for new loan originations in the current epoch
+    function borrowAmountEpoch() public view returns (uint256 currencyAvailable_) {
         return reserve.currencyAvailable();
     }
 
-    // returns the current junior ratio protection in the Tinlake
-    // juniorRatio is denominated in RAY (10^27)
-    function calcJuniorRatio() public view returns (uint256) {
+    /// @notice returns the current junior ratio protection in the Tinlake
+    /// @return juniorRatio_ is denominated in RAY (10^27)
+    function calcJuniorRatio() public view returns (uint256 juniorRatio_) {
         uint256 seniorAsset = safeAdd(seniorDebt(), seniorBalance_);
         uint256 assets = safeAdd(getNAV(), reserve.totalBalance());
 
@@ -292,8 +361,9 @@ contract Assessor is Definitions, Auth, Interest {
         return safeSub(ONE, rdiv(seniorAsset, assets));
     }
 
-    // returns the remainingCredit plus a buffer for the interest increase
-    function remainingCredit() public view returns (uint256) {
+    /// @notice returns the remainingCredit plus a buffer for the interest increase
+    /// @return _remainingCredit remaining credit
+    function remainingCredit() public view returns (uint256 _remainingCredit) {
         if (address(lending) == address(0)) {
             return 0;
         }
@@ -310,7 +380,9 @@ contract Assessor is Definitions, Auth, Interest {
         return 0;
     }
 
-    function remainingOvercollCredit() public view returns (uint256) {
+    /// @notice returns the remainingCredit considering a potential required overcollataralization
+    /// @return remainingOvercollCredit_ remaining credit
+    function remainingOvercollCredit() public view returns (uint256 remainingOvercollCredit_) {
         if (address(lending) == address(0)) {
             return 0;
         }

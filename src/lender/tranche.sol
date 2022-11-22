@@ -26,6 +26,7 @@ interface CoordinatorLike {
     function lastEpochExecuted() external view returns (uint256);
 }
 
+/// @notice Tranche contract which manages investments into a tranche of a pool
 contract Tranche is Math, Auth, FixedPoint {
     mapping(uint256 => Epoch) public epochs;
 
@@ -82,14 +83,9 @@ contract Tranche is Math, Auth, FixedPoint {
         emit Rely(msg.sender);
     }
 
-    function balance() external view returns (uint256) {
-        return currency.balanceOf(address(this));
-    }
-
-    function tokenSupply() external view returns (uint256) {
-        return token.totalSupply();
-    }
-
+    /// @notice sets the dependencies of the contract
+    /// @param contractName which contract to set
+    /// @param addr contract address
     function depend(bytes32 contractName, address addr) public auth {
         if (contractName == "token") token = ERC20Like(addr);
         else if (contractName == "currency") currency = ERC20Like(addr);
@@ -99,7 +95,21 @@ contract Tranche is Math, Auth, FixedPoint {
         emit Depend(contractName, addr);
     }
 
-    // supplyOrder function can be used to place or revoke an supply
+    /// @notice returns the currency balance of the tranche
+    /// @return balance_ currency balance of the tranche
+    function balance() external view returns (uint256 balance_) {
+        return currency.balanceOf(address(this));
+    }
+
+    /// @notice returns total supply of tokens issued by the tranche
+    /// @return totalSupply_ total supply of tokens
+    function tokenSupply() external view returns (uint256 totalSupply_) {
+        return token.totalSupply();
+    }
+
+    /// @notice supplyOrder function can be used to place or revoke a supply
+    /// @param usr user address for which the currency should be taken or sent
+    /// @param newSupplyAmount new amount of currency to be supplied
     function supplyOrder(address usr, uint256 newSupplyAmount) public auth orderAllowed(usr) {
         users[usr].orderedInEpoch = coordinator.currentEpoch();
 
@@ -107,7 +117,7 @@ contract Tranche is Math, Auth, FixedPoint {
 
         users[usr].supplyCurrencyAmount = newSupplyAmount;
 
-        totalSupply = safeAdd(safeTotalSub(totalSupply, currentSupplyAmount), newSupplyAmount);
+        totalSupply = safeAdd(_safeTotalSub(totalSupply, currentSupplyAmount), newSupplyAmount);
 
         uint256 delta;
         if (newSupplyAmount > currentSupplyAmount) {
@@ -121,13 +131,15 @@ contract Tranche is Math, Auth, FixedPoint {
         }
     }
 
-    // redeemOrder function can be used to place or revoke a redeem
+    /// @notice redeemOrder function can be used to place or revoke a redeem
+    /// @param usr user address for which the tokens should be taken or sent
+    /// @param newRedeemAmount new amount of tokens to be redeemed
     function redeemOrder(address usr, uint256 newRedeemAmount) public auth orderAllowed(usr) {
         users[usr].orderedInEpoch = coordinator.currentEpoch();
 
         uint256 currentRedeemAmount = users[usr].redeemTokenAmount;
         users[usr].redeemTokenAmount = newRedeemAmount;
-        totalRedeem = safeAdd(safeTotalSub(totalRedeem, currentRedeemAmount), newRedeemAmount);
+        totalRedeem = safeAdd(_safeTotalSub(totalRedeem, currentRedeemAmount), newRedeemAmount);
 
         uint256 delta;
         if (newRedeemAmount > currentRedeemAmount) {
@@ -142,6 +154,14 @@ contract Tranche is Math, Auth, FixedPoint {
         }
     }
 
+    /// @notice view function to calculate the current disburse amount for a user
+    /// a disburse is the fulfillment of a supply or redeem order
+    /// a order can be fulfilled fully or partially
+    /// @param usr user address for which the disburse amount should be calculated
+    /// @return payoutCurrencyAmount amount of currency tokens which has been paid out
+    /// @return payoutTokenAmount amount of token which has been paid out
+    /// @return remainingSupplyCurrency amount of currency which has been left in the pool
+    /// @return remainingRedeemToken amount of token which has been left in the pool
     function calcDisburse(address usr)
         public
         view
@@ -155,7 +175,13 @@ contract Tranche is Math, Auth, FixedPoint {
         return calcDisburse(usr, coordinator.lastEpochExecuted());
     }
 
-    //  calculates the current disburse of a user starting from the ordered epoch until endEpoch
+    /// @notice calculates the current disburse of a user starting from the ordered epoch until endEpoch
+    /// @param usr user address for which the disburse amount should be calculated
+    /// @param endEpoch epoch until which the disburse should be calculated
+    /// @return payoutCurrencyAmount amount of currency tokens which has been paid out
+    /// @return payoutTokenAmount amount of token which has been paid out
+    /// @return remainingSupplyCurrency amount of currency which has been left in the pool
+    /// @return remainingRedeemToken amount of token which has been left in the pool
     function calcDisburse(address usr, uint256 endEpoch)
         public
         view
@@ -210,7 +236,12 @@ contract Tranche is Math, Auth, FixedPoint {
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
     }
 
-    // the disburse function can be used after an epoch is over to receive currency and tokens
+    /// @notice the disburse function can be used after an epoch is over to receive currency and tokens
+    /// @param usr user address for which the disburse amount should be calculated
+    /// @return payoutCurrencyAmount amount of currency tokens which has been paid out
+    /// @return payoutTokenAmount amount of token which has been paid out
+    /// @return remainingSupplyCurrency amount of currency which has been left in the pool
+    /// @return remainingRedeemToken amount of token which has been left in the pool
     function disburse(address usr)
         public
         auth
@@ -224,7 +255,14 @@ contract Tranche is Math, Auth, FixedPoint {
         return disburse(usr, coordinator.lastEpochExecuted());
     }
 
-    function _safeTransfer(ERC20Like erc20, address usr, uint256 amount) internal returns (uint256) {
+    /// @notice internal helper function to transfer tokens
+    /// @dev if the amount is higher than the balance of the contract, there is no revert
+    /// instead the the maximum amount possible is transferred
+    /// @param erc20 token address
+    /// @param usr user address for which the tokens should be transferred
+    /// @param amount amount of tokens which should be transferred
+    /// @return amountTransfered acutual amount transferred
+    function _safeTransfer(ERC20Like erc20, address usr, uint256 amount) internal returns (uint256 amountTransfered) {
         uint256 max = erc20.balanceOf(address(this));
         if (amount > max) {
             amount = max;
@@ -233,7 +271,13 @@ contract Tranche is Math, Auth, FixedPoint {
         return amount;
     }
 
-    // the disburse function can be used after an epoch is over to receive currency and tokens
+    /// @notice the disburse function can be used after an epoch is over to receive currency and tokens
+    /// @param usr user address for which the disburse amount should be calculated
+    /// @param endEpoch epoch until which the disburse should be calculated
+    /// @return payoutCurrencyAmount amount of currency tokens which has been paid out
+    /// @return payoutTokenAmount amount of token which has been paid out
+    /// @return remainingSupplyCurrency amount of currency which has been left in the pool
+    /// @return remainingRedeemToken amount of token which has been left in the pool
     function disburse(address usr, uint256 endEpoch)
         public
         auth
@@ -271,7 +315,13 @@ contract Tranche is Math, Auth, FixedPoint {
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
     }
 
-    // called by epoch coordinator in epoch execute method
+    /// @notice called by epoch coordinator in epoch execute method
+    /// @param epochID id of the epoch which is executed
+    /// @param supplyFulfillment_ percentage (in RAY) of supply orders which have been fullfilled in the excuted epoch
+    /// @param redeemFulfillment_ percentage (in RAY) of redeem orders which have been fullfilled in the excuted epoch
+    /// @param tokenPrice_ tokenPrice of the executed epoch
+    /// @param epochSupplyOrderCurrency total order of currency in the executed epoch
+    /// @param epochRedeemOrderCurrency total order of redeems expressed in the currency value for the executed epoch
     function epochUpdate(
         uint256 epochID,
         uint256 supplyFulfillment_,
@@ -296,28 +346,36 @@ contract Tranche is Math, Auth, FixedPoint {
         }
 
         // calculates the delta between supply and redeem for currency and deposit or get them from the reserve
-        adjustCurrencyBalance(epochID, epochSupplyOrderCurrency, epochRedeemOrderCurrency);
+        _adjustCurrencyBalance(epochID, epochSupplyOrderCurrency, epochRedeemOrderCurrency);
         // calculates the delta between supply and redeem for tokens and burn or mint them
-        adjustTokenBalance(epochID, supplyInToken, redeemInToken);
+        _adjustTokenBalance(epochID, supplyInToken, redeemInToken);
 
         // the unfulfilled orders (1-fulfillment) is automatically ordered
         totalSupply = safeAdd(
-            safeTotalSub(totalSupply, epochSupplyOrderCurrency),
+            _safeTotalSub(totalSupply, epochSupplyOrderCurrency),
             rmul(epochSupplyOrderCurrency, safeSub(ONE, epochs[epochID].supplyFulfillment))
         );
         totalRedeem = safeAdd(
-            safeTotalSub(totalRedeem, redeemInToken),
+            _safeTotalSub(totalRedeem, redeemInToken),
             rmul(redeemInToken, safeSub(ONE, epochs[epochID].redeemFulfillment))
         );
     }
 
+    /// @notice closes an epoch by changes the state of the contract to waitingForUpdate
+    /// and returns the totalSupply and totalRedeem for this epoch
+    /// new supplies or redeems will be accounted for the next epoch
+    /// @return totalSupplyCurrency_ total amount of supply orders
+    /// @return totalRedeemToken_ total amount of redeem orders in token
     function closeEpoch() public auth returns (uint256 totalSupplyCurrency_, uint256 totalRedeemToken_) {
         require(waitingForUpdate == false);
         waitingForUpdate = true;
         return (totalSupply, totalRedeem);
     }
 
-    function safeBurn(uint256 tokenAmount) internal {
+    /// @notice helper function to burn tokens
+    /// @param tokenAmount the amount of tokens to burn
+    /// @dev if the the amount is higher than the maximum, the maximum is burned
+    function _safeBurn(uint256 tokenAmount) internal {
         uint256 max = token.balanceOf(address(this));
         if (tokenAmount > max) {
             tokenAmount = max;
@@ -326,7 +384,10 @@ contract Tranche is Math, Auth, FixedPoint {
         emit Burn(address(this), tokenAmount);
     }
 
-    function safePayout(uint256 currencyAmount) internal returns (uint256 payoutAmount) {
+    /// @notice helper function to take currency from the reserve
+    /// @param currencyAmount the amount of currency
+    /// @return payoutAmount the actual paid out amount
+    function _safePayout(uint256 currencyAmount) internal returns (uint256 payoutAmount) {
         uint256 max = reserve.totalBalanceAvailable();
 
         if (currencyAmount > max) {
@@ -337,15 +398,23 @@ contract Tranche is Math, Auth, FixedPoint {
         return currencyAmount;
     }
 
+    /// @notice takes requestedCurrency from the reserve
+    /// this can happen if another tranche will supply currency which will be used for
+    /// redeem orders in this tranche
+    /// In such a case the currency is not immediately available in the reserve and needs to be first
+    /// transfered from the other tranche
     function payoutRequestedCurrency() public {
         if (requestedCurrency > 0) {
-            uint256 payoutAmount = safePayout(requestedCurrency);
+            uint256 payoutAmount = _safePayout(requestedCurrency);
             requestedCurrency = safeSub(requestedCurrency, payoutAmount);
         }
     }
-    // adjust token balance after epoch execution -> min/burn tokens
+    /// @notice adjust token balance after epoch execution -> min/burn tokens
+    /// @param epochID id of the epoch
+    /// @param epochSupplyToken amount of tokens to supply
+    /// @param epochRedeemToken amount of tokens to redeem
 
-    function adjustTokenBalance(uint256 epochID, uint256 epochSupplyToken, uint256 epochRedeemToken) internal {
+    function _adjustTokenBalance(uint256 epochID, uint256 epochSupplyToken, uint256 epochRedeemToken) internal {
         // mint token amount for supply
 
         uint256 mintAmount = 0;
@@ -359,7 +428,7 @@ contract Tranche is Math, Auth, FixedPoint {
         uint256 diff;
         if (burnAmount > mintAmount) {
             diff = safeSub(burnAmount, mintAmount);
-            safeBurn(diff);
+            _safeBurn(diff);
             return;
         }
         // mint tokens that are required for disbursement
@@ -369,15 +438,20 @@ contract Tranche is Math, Auth, FixedPoint {
         }
     }
 
-    // additional minting of tokens produces a dilution of all token holders
-    // interface is required for adapters
+    /// @notice additional minting of tokens produces a dilution of all token holders
+    /// interface is required for adapters
+    /// @param usr the user which receives the tokens
+    /// @param amount the amount of tokens to mint
     function mint(address usr, uint256 amount) public auth {
         token.mint(usr, amount);
         emit Mint(usr, amount);
     }
 
-    // adjust currency balance after epoch execution -> receive/send currency from/to reserve
-    function adjustCurrencyBalance(uint256 epochID, uint256 epochSupply, uint256 epochRedeem) internal {
+    /// @notice adjust currency balance after epoch execution -> receive/send currency from/to reserve
+    /// @param epochID id of the epoch
+    /// @param epochSupply amount of currency to supply
+    /// @param epochRedeem amount of currency to redeem
+    function _adjustCurrencyBalance(uint256 epochID, uint256 epochSupply, uint256 epochRedeem) internal {
         // currency that was supplied in this epoch
         uint256 currencySupplied = rmul(epochSupply, epochs[epochID].supplyFulfillment);
         // currency required for redemption
@@ -394,7 +468,7 @@ contract Tranche is Math, Auth, FixedPoint {
         diff = safeSub(currencyRequired, currencySupplied);
         if (diff > 0) {
             // get missing currency from reserve
-            uint256 payoutAmount = safePayout(diff);
+            uint256 payoutAmount = _safePayout(diff);
             if (payoutAmount < diff) {
                 // reserve couldn't fulfill the entire request
                 requestedCurrency = safeAdd(requestedCurrency, safeSub(diff, payoutAmount));
@@ -402,15 +476,21 @@ contract Tranche is Math, Auth, FixedPoint {
         }
     }
 
-    // recovery transfer can be used by governance to recover funds if tokens are stuck
+    /// @notice recovery transfer can be used by governance to recover funds if tokens are stuck
+    /// @param erc20 the address of the token to recover
+    /// @param usr the user which receives the tokens
+    /// @param amount the amount of tokens to recover
     function authTransfer(address erc20, address usr, uint256 amount) public auth {
         ERC20Like(erc20).transfer(usr, amount);
         emit AuthTransfer(erc20, usr, amount);
     }
 
-    // due to rounding in token & currency conversions currency & token balances might be off by 1 wei with the totalSupply/totalRedeem amounts.
-    // in order to prevent an underflow error, 0 is returned when amount to be subtracted is bigger then the total value.
-    function safeTotalSub(uint256 total, uint256 amount) internal pure returns (uint256) {
+    /// @notice due to rounding in token & currency conversions currency & token balances might be off by 1 wei with the totalSupply/totalRedeem amounts.
+    /// in order to prevent an underflow error, 0 is returned when amount to be subtracted is bigger then the total value.
+    /// @param total the total value
+    /// @param amount the amount to be subtracted
+    /// @return result result of the subtraction
+    function _safeTotalSub(uint256 total, uint256 amount) internal pure returns (uint256 result) {
         if (total < amount) {
             return 0;
         }

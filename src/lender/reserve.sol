@@ -21,8 +21,8 @@ interface LendingAdapter {
     function activated() external view returns (bool);
 }
 
-// The reserve keeps track of the currency and the bookkeeping
-// of the total balance
+/// @notice the reserve keeps track of the currency and the bookkeeping
+/// of the total balance
 contract Reserve is Math, Auth {
     ERC20Like public currency;
 
@@ -51,6 +51,9 @@ contract Reserve is Math, Auth {
         emit Rely(msg.sender);
     }
 
+    /// @notice file allows wards to change parameters of the reserve
+    /// @param what what parameter to change
+    /// @param amount the new value of a param
     function file(bytes32 what, uint256 amount) public auth {
         if (what == "currencyAvailable") {
             currencyAvailable = amount;
@@ -60,6 +63,9 @@ contract Reserve is Math, Auth {
         emit File(what, amount);
     }
 
+    /// @notice depend allows wards to change dependencies of the reserve
+    /// @param contractName the name of the contract to change
+    /// @param addr the new address of the contract
     function depend(bytes32 contractName, address addr) public auth {
         if (contractName == "currency") {
             currency = ERC20Like(addr);
@@ -76,13 +82,15 @@ contract Reserve is Math, Auth {
         emit Depend(contractName, addr);
     }
 
-    // returns the amount of currency currently in the reserve
-    function totalBalance() public view returns (uint256) {
+    /// @notice returns the amount of currency currently in the reserve
+    /// @return totalBalance_ amount of currency in the reserve
+    function totalBalance() public view returns (uint256 totalBalance_) {
         return balance_;
     }
 
-    // return the amount of currency and the available currency from the lending adapter
-    function totalBalanceAvailable() public view returns (uint256) {
+    /// @notice return the amount of currency and the available currency from the lending adapter
+    /// @return totalBalanceAvailable_ amount of currency in the reserve and from the lending adapter
+    function totalBalanceAvailable() public view returns (uint256 totalBalanceAvailable_) {
         if (address(lending) == address(0)) {
             return balance_;
         }
@@ -90,22 +98,31 @@ contract Reserve is Math, Auth {
         return safeAdd(balance_, lending.remainingCredit());
     }
 
-    // deposits currency in the the reserve
+    /// @notice deposits currency in the the reserve
+    /// @param currencyAmount amount of currency to deposit in the reserve
     function deposit(uint256 currencyAmount) public auth {
         if (currencyAmount == 0) return;
         _deposit(msg.sender, currencyAmount);
     }
 
-    // hard deposit guarantees that the currency stays in the reserve
+    /// @notice hard deposit guarantees that the currency stays in the reserve
+    /// and is not used to repay a lending adapter
+    /// @param currencyAmount amount of currency to deposit in the reserve
     function hardDeposit(uint256 currencyAmount) public auth {
         _depositAction(msg.sender, currencyAmount);
     }
 
+    /// @notice deposits currency in the the reserve
+    /// @param usr the address from which to transfer the currency
+    /// @param currencyAmount amount of currency to deposit in the reserve
     function _depositAction(address usr, uint256 currencyAmount) internal {
         require(currency.transferFrom(usr, pot, currencyAmount), "reserve-deposit-failed");
         balance_ = safeAdd(balance_, currencyAmount);
     }
 
+    /// @notice interal deposit function
+    /// @param usr the address from which to transfer the currency
+    /// @param currencyAmount amount of currency to deposit in the reserve
     function _deposit(address usr, uint256 currencyAmount) internal {
         _depositAction(usr, currencyAmount);
         if (address(lending) != address(0) && lending.debt() > 0 && lending.activated()) {
@@ -118,22 +135,30 @@ contract Reserve is Math, Auth {
         }
     }
 
-    // remove currency from the reserve
+    /// @notice withdraws currency from the reserve to msg.sender
+    /// @param currencyAmount amount of currency to payout from the reserve
     function payout(uint256 currencyAmount) public auth {
         if (currencyAmount == 0) return;
         _payout(msg.sender, currencyAmount);
     }
 
+    /// @notice interal payout function to transfer currency to an address
+    /// @param usr the address to which to transfer the currency
+    /// @param currencyAmount amount of currency to payout from the reserve
     function _payoutAction(address usr, uint256 currencyAmount) internal {
         require(currency.transferFrom(pot, usr, currencyAmount), "reserve-payout-failed");
         balance_ = safeSub(balance_, currencyAmount);
     }
 
-    // hard payout guarantees that the currency stays in the reserve
+    /// @notice hard payout guarantees that only currency which is already in the reserve is taken
+    /// @param currencyAmount amount of currency to payout from the reserve
     function hardPayout(uint256 currencyAmount) public auth {
         _payoutAction(msg.sender, currencyAmount);
     }
 
+    /// @notice interal payout function
+    /// @param usr the address to which to transfer the currency
+    /// @param currencyAmount amount of currency to payout from the reserve
     function _payout(address usr, uint256 currencyAmount) internal {
         uint256 reserveBalance = balance_;
         if (currencyAmount > reserveBalance && address(lending) != address(0) && lending.activated()) {
@@ -149,8 +174,9 @@ contract Reserve is Math, Auth {
         _payoutAction(usr, currencyAmount);
     }
 
-    // payout currency for loans not all funds
-    // in the reserve are compulsory available for loans in the current epoch
+    /// @notice payout currency for loans not all funds
+    /// in the reserve are compulsory available for loans in the current epoch
+    /// @param currencyAmount amount of currency to payout for loan borrowings
     function payoutForLoans(uint256 currencyAmount) public auth {
         require(currencyAvailable >= currencyAmount, "not-enough-currency-reserve");
 
