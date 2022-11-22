@@ -59,7 +59,7 @@ contract NAVTest is Test, Math {
     function prepareDefaultNFT(uint256 tokenId, uint256 nftValue, uint256 risk) public returns (bytes32) {
         bytes32 nftID = feed.nftID(mockNFTRegistry, tokenId);
         feed.update(nftID, nftValue, risk);
-        shelf.setReturn("shelf",mockNFTRegistry, tokenId);
+        shelf.setReturn("shelf", mockNFTRegistry, tokenId);
         pile.incDebt(tokenId, 0);
         pile.setReturn("rates_ratePerSecond", defaultRate);
         return nftID;
@@ -312,8 +312,8 @@ contract NAVTest is Test, Math {
         setupLinkedListBuckets();
 
         // due date + 5 days for loan 2
-        uint tokenId = 2;
-        uint loan = 2;
+        uint256 tokenId = 2;
+        uint256 loan = 2;
         pile.incDebt(loan, amount);
         shelf.setReturn("shelf", mockNFTRegistry, tokenId);
         uint256 maturityDate = feed.maturityDate(feed.nftID(loan));
@@ -331,7 +331,7 @@ contract NAVTest is Test, Math {
         uint256 newFV = 25.52563125 ether;
         assertEq(feed.buckets(maturityDate), newFV);
 
-        uint secondAmount = 20 ether;
+        uint256 secondAmount = 20 ether;
         pile.incDebt(loan, secondAmount);
         feed.repay(loan, secondAmount);
         assertEq(feed.buckets(maturityDate), 0);
@@ -410,7 +410,7 @@ contract NAVTest is Test, Math {
         hevm.warp(safeAdd(maturityDate, 1 days));
 
         // make repayment for overdue loan
-        uint preNAV = feed.currentNAV();
+        uint256 preNAV = feed.currentNAV();
 
         pile.incDebt(loan, repaymentAmount);
         feed.repay(loan, repaymentAmount);
@@ -450,8 +450,8 @@ contract NAVTest is Test, Math {
 
         // make partial repayment for overdue loan
         pile.incDebt(loan, debt);
-    
-        uint preNAV = feed.currentNAV();
+
+        uint256 preNAV = feed.currentNAV();
         feed.repay(loan, repaymentAmount);
         assertTrue(feed.currentNAV() == preNAV);
     }
@@ -510,7 +510,7 @@ contract NAVTest is Test, Math {
 
         borrow(tokenId, loan, nftValue, amount, dueDate);
 
-        shelf.setReturn("nftlookup" ,loan);
+        shelf.setReturn("nftlookup", loan);
         pile.incDebt(loan, amount);
 
         // check FV

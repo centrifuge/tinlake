@@ -538,7 +538,7 @@ contract NAVFeed is Auth, Discounting {
             return;
         }
 
-        uint maturityDate_ = maturityDate(nftID_);
+        uint256 maturityDate_ = maturityDate(nftID_);
 
         // Changing the risk group of an nft, might lead to a new interest rate for the dependant loan.
         // New interest rate leads to a future value.
