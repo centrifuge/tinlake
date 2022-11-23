@@ -53,6 +53,11 @@ When the deployment is complete, you can print the list of deployed contracts:
 ROOT_CONTRACT=0x0 forge script script/print_contracts.s.sol:PrintContractsScript --rpc-url $RPC_URL -vvvv
 ```
 
+And you can also run the set of RPC tests against the newly deployed pool:
+```bash
+ROOT_CONTRACT=0x0 forge script script/run_rpc_tests.s.sol:RunRPCTests --rpc-url $RPC_URL
+```
+
 ## Community
 
 Join our public Discord: [Centrifuge Discord](https://centrifuge.io/discord/).
