@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import { ClerkFabLike, TinlakeManagerFabLike } from "../fabs/interfaces.sol";
+import {ClerkFabLike, TinlakeManagerFabLike} from "../fabs/interfaces.sol";
 
 interface LenderDeployerLike {
     function coordinator() external returns (address);
@@ -21,17 +21,17 @@ interface PoolAdminLike {
 }
 
 interface FileLike {
-    function file(bytes32 name, uint value) external;
+    function file(bytes32 name, uint256 value) external;
 }
 
 interface MemberlistLike {
-    function updateMember(address, uint) external;
+    function updateMember(address, uint256) external;
 }
 
 interface MgrLike {
     function rely(address) external;
     function file(bytes32 name, address value) external;
-    function lock(uint) external;
+    function lock(uint256) external;
 }
 
 interface AuthLike {
@@ -51,7 +51,7 @@ contract AdapterDeployer {
 
     address public root;
     LenderDeployerLike public lenderDeployer;
-    
+
     address deployUsr;
 
     constructor(address root_, address clerkFabLike_, address mgrFabLike_) {
@@ -62,7 +62,10 @@ contract AdapterDeployer {
     }
 
     function deployClerk(address lenderDeployer_, bool wireReserveAssessor) public {
-        require(deployUsr == msg.sender && address(clerk) == address(0) && LenderDeployerLike(lenderDeployer_).seniorToken() != address(0));
+        require(
+            deployUsr == msg.sender && address(clerk) == address(0)
+                && LenderDeployerLike(lenderDeployer_).seniorToken() != address(0)
+        );
 
         lenderDeployer = LenderDeployerLike(lenderDeployer_);
         clerk = clerkFab.newClerk(lenderDeployer.currency(), lenderDeployer.seniorToken());
@@ -103,11 +106,33 @@ contract AdapterDeployer {
         deployClerk(lenderDeployer_, true);
     }
 
-    function deployMgr(address dai, address daiJoin, address end, address vat, address vow, address liq, address spotter, address jug, uint matBuffer) public {
-        require(deployUsr == msg.sender && address(clerk) != address(0) && address(mgr) == address(0) && lenderDeployer.seniorToken() != address(0));
+    function deployMgr(
+        address dai,
+        address daiJoin,
+        address end,
+        address vat,
+        address vow,
+        address liq,
+        address spotter,
+        address jug,
+        uint256 matBuffer
+    ) public {
+        require(
+            deployUsr == msg.sender && address(clerk) != address(0) && address(mgr) == address(0)
+                && lenderDeployer.seniorToken() != address(0)
+        );
 
         // deploy mgr
-        mgr = mgrFab.newTinlakeManager(dai, daiJoin, lenderDeployer.seniorToken(), lenderDeployer.seniorOperator(), lenderDeployer.seniorTranche(), end, vat, vow);
+        mgr = mgrFab.newTinlakeManager(
+            dai,
+            daiJoin,
+            lenderDeployer.seniorToken(),
+            lenderDeployer.seniorOperator(),
+            lenderDeployer.seniorTranche(),
+            end,
+            vat,
+            vow
+        );
         wireClerk(mgr, vat, spotter, jug, matBuffer);
 
         // setup mgr
@@ -123,7 +148,7 @@ contract AdapterDeployer {
     }
 
     // This is separated as the system tests don't use deployMgr, but do need the clerk wiring
-    function wireClerk(address mgr_, address vat, address spotter, address jug, uint matBuffer) public {
+    function wireClerk(address mgr_, address vat, address spotter, address jug, uint256 matBuffer) public {
         require(deployUsr == msg.sender && address(clerk) != address(0));
 
         // wire clerk
@@ -131,7 +156,7 @@ contract AdapterDeployer {
         DependLike(clerk).depend("spotter", spotter);
         DependLike(clerk).depend("vat", vat);
         DependLike(clerk).depend("jug", jug);
-        
+
         // set the mat buffer
         FileLike(clerk).file("buffer", matBuffer);
 
@@ -141,4 +166,3 @@ contract AdapterDeployer {
         MemberlistLike(lenderDeployer.seniorMemberlist()).updateMember(mgr_, type(uint256).max);
     }
 }
-

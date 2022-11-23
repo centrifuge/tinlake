@@ -2,13 +2,12 @@
 pragma solidity >=0.7.6;
 
 import "forge-std/Test.sol";
-import { TinlakeRoot } from "src/root.sol";
-import { BorrowerDeployer } from "src/borrower/deployer.sol";
-import { LenderDeployer } from "src/lender/deployer.sol";
+import {TinlakeRoot} from "src/root.sol";
+import {BorrowerDeployer} from "src/borrower/deployer.sol";
+import {LenderDeployer} from "src/lender/deployer.sol";
 
 contract TestRoot is TinlakeRoot {
-    constructor (address deployUsr, address governance) TinlakeRoot(deployUsr, governance) {
-    }
+    constructor(address deployUsr, address governance) TinlakeRoot(deployUsr, governance) {}
     // Permissions
     // To simplify testing, we add helpers to authorize contracts on any component.
 

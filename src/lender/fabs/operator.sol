@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
-import { Operator } from "./../operator.sol";
+
+import {Operator} from "./../operator.sol";
 
 interface OperatorFabLike {
     function newOperator(address) external returns (address);

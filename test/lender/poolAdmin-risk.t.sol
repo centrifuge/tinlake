@@ -11,8 +11,7 @@ import "./mock/memberlist.sol";
 import "./mock/clerk.sol";
 
 contract RiskManagementPoolAdminTest is Test {
-
-    uint constant ONE = 10e27;
+    uint256 constant ONE = 10e27;
 
     Assessor assessor;
     ClerkMock lending;
@@ -47,8 +46,8 @@ contract RiskManagementPoolAdminTest is Test {
     }
 
     function callOverrideWriteOff() public {
-        uint loan = 1;
-        uint index = 0;
+        uint256 loan = 1;
+        uint256 index = 0;
         poolAdmin.overrideWriteOff(loan, index);
         assertEq(navFeed.values_uint("overrideWriteOff_loan"), loan);
         assertEq(navFeed.values_uint("overrideWriteOff_index"), index);
@@ -60,12 +59,12 @@ contract RiskManagementPoolAdminTest is Test {
 
     function testFailOverrideWriteOffNotOperator() public {
         poolAdmin.deny(address(this));
-        callOverrideWriteOff(); 
+        callOverrideWriteOff();
     }
 
     function callAddRiskGroup() public {
-        poolAdmin.addRiskGroup(0, 8*10**26, 6*10**26, ONE, ONE);
-        assertEq(navFeed.values_uint("file_thresholdRatio_"), 8*10**26);
+        poolAdmin.addRiskGroup(0, 8 * 10 ** 26, 6 * 10 ** 26, ONE, ONE);
+        assertEq(navFeed.values_uint("file_thresholdRatio_"), 8 * 10 ** 26);
     }
 
     function testAddRiskGroup() public {
@@ -74,14 +73,14 @@ contract RiskManagementPoolAdminTest is Test {
 
     function testFailAddRiskGroupNotOperator() public {
         poolAdmin.deny(address(this));
-        callAddRiskGroup(); 
+        callAddRiskGroup();
     }
 
     // TODO: testAddRiskGroups
 
     function callAddWriteOffGroup() public {
-        poolAdmin.addWriteOffGroup(uint(1000000674400000000000000000), 75 * 10**25, 30);
-        assertEq(navFeed.values_uint("file_writeOffPercentage"), 75 * 10**25);
+        poolAdmin.addWriteOffGroup(uint256(1000000674400000000000000000), 75 * 10 ** 25, 30);
+        assertEq(navFeed.values_uint("file_writeOffPercentage"), 75 * 10 ** 25);
     }
 
     function testAddWriteOffGroup() public {
@@ -90,23 +89,24 @@ contract RiskManagementPoolAdminTest is Test {
 
     function testFailAddWriteOffGroupNotOperator() public {
         poolAdmin.deny(address(this));
-        callAddWriteOffGroup(); 
+        callAddWriteOffGroup();
     }
 
     // TODO: testAddWriteOffGroups
 
     function setMatBuffer() public {
-        uint matBuffer = 0.02 * 10**27;
+        uint256 matBuffer = 0.02 * 10 ** 27;
         poolAdmin.setMatBuffer(matBuffer);
         assertEq(lending.values_uint("file_value"), matBuffer);
     }
 
     function testSetMatBuffer() public {
-        setMatBuffer(); 
+        setMatBuffer();
     }
+
     function callUpdateNFTValue() public {
         bytes32 nftID_ = "1";
-        uint value = 100;
+        uint256 value = 100;
         poolAdmin.updateNFTValue(nftID_, value);
         assertEq(navFeed.values_bytes32("update_nftID"), nftID_);
         assertEq(navFeed.values_uint("update_value"), value);
@@ -118,13 +118,13 @@ contract RiskManagementPoolAdminTest is Test {
 
     function testFailUpdateNFTValueNotOperator() public {
         poolAdmin.deny(address(this));
-        callUpdateNFTValue(); 
+        callUpdateNFTValue();
     }
 
     function callUpdateNFTValueRisk() public {
         bytes32 nftID_ = "1";
-        uint value = 100;
-        uint risk = 0;
+        uint256 value = 100;
+        uint256 risk = 0;
         poolAdmin.updateNFTValueRisk(nftID_, value, risk);
         assertEq(navFeed.values_bytes32("update_nftID"), nftID_);
         assertEq(navFeed.values_uint("update_value"), value);
@@ -137,12 +137,12 @@ contract RiskManagementPoolAdminTest is Test {
 
     function testFailUpdateNFTValueRiskNotOperator() public {
         poolAdmin.deny(address(this));
-        callUpdateNFTValueRisk(); 
+        callUpdateNFTValueRisk();
     }
 
     function callUpdateNFTMaturityDate() public {
         bytes32 nftID_ = "1";
-        uint maturityDate = block.timestamp + 4 weeks;
+        uint256 maturityDate = block.timestamp + 4 weeks;
         poolAdmin.updateNFTMaturityDate(nftID_, maturityDate);
         assertEq(navFeed.values_bytes32("file_nftID"), nftID_);
         assertEq(navFeed.values_uint("file_maturityDate"), maturityDate);
@@ -154,8 +154,6 @@ contract RiskManagementPoolAdminTest is Test {
 
     function testFailUpdateNFTMaturityDateNotOperator() public {
         poolAdmin.deny(address(this));
-        callUpdateNFTMaturityDate(); 
+        callUpdateNFTMaturityDate();
     }
-
 }
-

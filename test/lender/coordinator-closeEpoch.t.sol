@@ -21,20 +21,20 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
         assertEq(coordinator.lastEpochExecuted(), 1);
     }
 
-   // close epoch unit tests
+    // close epoch unit tests
     function testFailCloseEpochTooEarly() public {
         hevm.warp(block.timestamp + 25 seconds);
-        uint secsForNextDay = calcNextEpochIn();
+        uint256 secsForNextDay = calcNextEpochIn();
         assertEq(coordinator.currentEpoch(), 1);
         assertEq(coordinator.lastEpochExecuted(), 0);
 
         // should fail one sec too early
-        hevm.warp(block.timestamp + secsForNextDay-1);
+        hevm.warp(block.timestamp + secsForNextDay - 1);
         coordinator.closeEpoch();
     }
 
     function testCloseEpochEdgeCase() public {
-        uint secsForNextDay = calcNextEpochIn();
+        uint256 secsForNextDay = calcNextEpochIn();
         assertEq(coordinator.currentEpoch(), 1);
         // exact 00:00 time
         hevm.warp(block.timestamp + secsForNextDay);
@@ -67,10 +67,10 @@ contract CoordinatorCloseEpochTest is CoordinatorTest {
 
         assertEq(coordinator.currentEpoch(), 2);
 
-        for (uint i =1; i<=400; i++) {
+        for (uint256 i = 1; i <= 400; i++) {
             coordinator.closeEpoch();
             hevm.warp(block.timestamp + 1 days);
-            assertEq(coordinator.lastEpochExecuted(), i+1);
+            assertEq(coordinator.lastEpochExecuted(), i + 1);
         }
     }
 

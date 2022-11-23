@@ -4,8 +4,8 @@ pragma solidity >=0.7.6;
 import "tinlake-auth/auth.sol";
 
 interface MemberlistLike {
-    function updateMember(address usr, uint validUntil) external;
-    function updateMembers(address[] calldata users, uint validUntil) external;
+    function updateMember(address usr, uint256 validUntil) external;
+    function updateMembers(address[] calldata users, uint256 validUntil) external;
 }
 
 // Wrapper contract for permission restriction on the memberlists.
@@ -16,12 +16,15 @@ contract MemberAdmin is Auth {
     }
 
     // Admins can manipulate memberlists, but have to be added and can be removed by any ward on the MemberAdmin contract
-    mapping (address => uint) public admins;
+    mapping(address => uint256) public admins;
 
     event RelyAdmin(address indexed usr);
     event DenyAdmin(address indexed usr);
 
-    modifier admin { require(admins[msg.sender] == 1); _; }
+    modifier admin() {
+        require(admins[msg.sender] == 1);
+        _;
+    }
 
     function relyAdmin(address usr) public auth {
         admins[usr] = 1;
@@ -33,12 +36,11 @@ contract MemberAdmin is Auth {
         emit DenyAdmin(usr);
     }
 
-    function updateMember(address list, address usr, uint validUntil) public admin {
+    function updateMember(address list, address usr, uint256 validUntil) public admin {
         MemberlistLike(list).updateMember(usr, validUntil);
     }
 
-    function updateMembers(address list, address[] memory users, uint validUntil) public admin {
+    function updateMembers(address list, address[] memory users, uint256 validUntil) public admin {
         MemberlistLike(list).updateMembers(users, validUntil);
     }
 }
-

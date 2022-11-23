@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import { Pile } from "./../pile.sol";
+import {Pile} from "./../pile.sol";
 
+/// @notice factory contract for the pile contract
 contract PileFab {
     function newPile() public returns (address) {
         Pile pile = new Pile();

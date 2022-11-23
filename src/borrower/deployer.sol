@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import { ShelfFabLike, PileFabLike, TitleFabLike } from "./fabs/interfaces.sol";
-import { FixedPoint } from "./../fixed_point.sol";
+import {ShelfFabLike, PileFabLike, TitleFabLike} from "./fabs/interfaces.sol";
+import {FixedPoint} from "./../fixed_point.sol";
 
 interface DependLike {
     function depend(bytes32, address) external;
@@ -18,20 +18,21 @@ interface NAVFeedLike {
 }
 
 interface FeedFabLike {
-    function newFeed() external returns(address);
+    function newFeed() external returns (address);
 }
 
 interface FileLike {
-    function file(bytes32 name, uint value) external;
+    function file(bytes32 name, uint256 value) external;
 }
 
+/// @notice Borrower Deployer contract
 contract BorrowerDeployer is FixedPoint {
-    address      public immutable root;
+    address public immutable root;
 
-    TitleFabLike     public immutable titlefab;
-    ShelfFabLike     public immutable shelffab;
-    PileFabLike      public immutable pilefab;
-    FeedFabLike      public immutable feedFab;
+    TitleFabLike public immutable titlefab;
+    ShelfFabLike public immutable shelffab;
+    PileFabLike public immutable pilefab;
+    FeedFabLike public immutable feedFab;
 
     address public title;
     address public shelf;
@@ -39,23 +40,23 @@ contract BorrowerDeployer is FixedPoint {
     address public immutable currency;
     address public feed;
 
-    string  public titleName;
-    string  public titleSymbol;
+    string public titleName;
+    string public titleSymbol;
     Fixed27 public discountRate;
 
     address constant ZERO = address(0);
     bool public wired;
 
-    constructor (
-      address root_,
-      address titlefab_,
-      address shelffab_,
-      address pilefab_,
-      address feedFab_,
-      address currency_,
-      string memory titleName_,
-      string memory titleSymbol_,
-      uint discountRate_
+    constructor(
+        address root_,
+        address titlefab_,
+        address shelffab_,
+        address pilefab_,
+        address feedFab_,
+        address currency_,
+        string memory titleName_,
+        string memory titleSymbol_,
+        uint256 discountRate_
     ) {
         root = root_;
 
@@ -72,17 +73,20 @@ contract BorrowerDeployer is FixedPoint {
         discountRate = Fixed27(discountRate_);
     }
 
+    /// @notice deploys the pile contract
     function deployPile() public {
         require(pile == ZERO);
         pile = pilefab.newPile();
         AuthLike(pile).rely(root);
     }
+    /// @notice deploys the title contract
 
     function deployTitle() public {
         require(title == ZERO);
         title = titlefab.newTitle(titleName, titleSymbol);
         AuthLike(title).rely(root);
     }
+    /// @notice deploys the shelf contract
 
     function deployShelf() public {
         require(shelf == ZERO && title != ZERO && pile != ZERO && feed != ZERO);
@@ -90,12 +94,15 @@ contract BorrowerDeployer is FixedPoint {
         AuthLike(shelf).rely(root);
     }
 
+    /// @notice deploys the feed contract
     function deployFeed() public {
         require(feed == ZERO);
         feed = feedFab.newFeed();
         AuthLike(feed).rely(root);
     }
 
+    /// @notice deploys the borrower contracts and wires them together
+    /// @param initNAVFeed boolean flag if a NAV feed should be deployed
     function deploy(bool initNAVFeed) public {
         // ensures all required deploy methods were called
         require(shelf != ZERO);
@@ -115,17 +122,17 @@ contract BorrowerDeployer is FixedPoint {
 
         AuthLike(feed).rely(shelf);
         AuthLike(title).rely(shelf);
-        
+
         FileLike(feed).file("discountRate", discountRate.value);
 
         if (initNAVFeed) {
             NAVFeedLike(feed).init();
         }
     }
-
+    /// @notice deploys the borrower contracts and wires them together without a NAVFeed
 
     function deploy() public {
+        // doesn't deploy the NAV feed
         deploy(false);
     }
 }
-

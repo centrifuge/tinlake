@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import { Reserve } from "./../reserve.sol";
+import {Reserve} from "./../reserve.sol";
 
 interface ReserveFabLike {
     function newReserve(address) external returns (address);

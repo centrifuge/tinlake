@@ -30,32 +30,46 @@ interface AdapterDeployerLike {
 }
 
 interface PoolAdminLike {
-    function setAdminLevel(address, uint) external;
+    function setAdminLevel(address, uint256) external;
 }
 
+/// @notice main governance contract for a Tinlake pool
+/// responsible for deploying all other contracts
 contract TinlakeRoot is Auth {
     BorrowerDeployerLike public borrowerDeployer;
-    LenderDeployerLike public  lenderDeployer;
-    AdapterDeployerLike public  adapterDeployer;
+    LenderDeployerLike public lenderDeployer;
+    AdapterDeployerLike public adapterDeployer;
 
-    bool public             deployed;
-    address public          deployUsr;
+    bool public deployed;
+    address public deployUsr;
     address public immutable governance;
 
-    address public          oracle;
-    address[] public        level1Admins;
-    address public          level3Admin;
+    address public oracle;
+    address[] public level1Admins;
+    address public level3Admin;
 
-    constructor (address deployUsr_, address governance_) {
+    constructor(address deployUsr_, address governance_) {
         deployUsr = deployUsr_;
         governance = governance_;
         wards[governance_] = 1;
         emit Rely(governance_);
     }
 
-    // --- Prepare ---
-    // Sets the two deployer dependencies. This needs to be called by the deployUsr
-    function prepare(address lender_, address borrower_, address adapter_, address oracle_, address[] memory level1Admins_, address level3Admin_) public {
+    /// @notice Sets the two deployer dependencies. This needs to be called by the deployUsr
+    /// @param lender_ the address of the lender deployer
+    /// @param borrower_ the address of the borrower deployer
+    /// @param adapter_ the address of the adapter deployer
+    /// @param oracle_ the address of the oracle for the NFT feed
+    /// @param level1Admins_ addressses of level 1 admins
+    /// @param level3Admin_ address of level 3 admin
+    function prepare(
+        address lender_,
+        address borrower_,
+        address adapter_,
+        address oracle_,
+        address[] memory level1Admins_,
+        address level3Admin_
+    ) public {
         require(deployUsr == msg.sender);
 
         borrowerDeployer = BorrowerDeployerLike(borrower_);
@@ -68,17 +82,23 @@ contract TinlakeRoot is Auth {
         deployUsr = address(0); // disallow the deploy user to call this more than once.
     }
 
+    /// @notice sets two deployer dependencies with no admins.
+    /// @param lender_ the address of the lender deployer
+    /// @param borrower_ the address of the borrower deployer
+    /// @param adapter_ the address of the adapter deployer
     function prepare(address lender_, address borrower_, address adapter_) public {
         prepare(lender_, borrower_, adapter_, address(0), new address[](0), address(0));
     }
 
+    /// @notice sets two deployer dependencies with no admins and no adapter
+    /// @param lender_ the address of the lender deployer
+    /// @param borrower_ the address of the borrower deployer
     function prepare(address lender_, address borrower_) public {
         prepare(lender_, borrower_, address(0), address(0), new address[](0), address(0));
     }
 
-    // --- Deploy ---
-    // After going through the deploy process on the lender and borrower method, this method is called to connect
-    // lender and borrower contracts.
+    /// @notice after going through the deploy process on the lender and borrower method, this method is called to connect
+    /// lender and borrower contracts.
     function deploy() public {
         require(address(borrowerDeployer) != address(0) && address(lenderDeployer) != address(0) && deployed == false);
         deployed = true;
@@ -97,7 +117,6 @@ contract TinlakeRoot is Auth {
         AuthLike(reserve_).rely(shelf_);
         DependLike(assessor_).depend("navFeed", navFeed);
 
-
         // Lender wards
         if (oracle != address(0)) AuthLike(navFeed).rely(oracle);
 
@@ -108,21 +127,24 @@ contract TinlakeRoot is Auth {
         poolAdmin.setAdminLevel(governance, 3);
         poolAdmin.setAdminLevel(level3Admin, 3);
 
-        for (uint i = 0; i < level1Admins.length; i++) {
+        for (uint256 i = 0; i < level1Admins.length; i++) {
             poolAdmin.setAdminLevel(level1Admins[i], 1);
         }
     }
 
-    // --- Governance Functions ---
-    // `relyContract` & `denyContract` can be called by any ward on the TinlakeRoot
-    // contract to make an arbitrary address a ward on any contract the TinlakeRoot
-    // is a ward on.
+    /// --- Governance Functions ---
+    /// @notice  can be called by any ward on the TinlakeRoot contract
+    /// to make an arbitrary address a ward on any contract(requires the root contract to be a ward)
+    /// @param target the address of the contract
+    /// @param usr the address which should get ward permissions
     function relyContract(address target, address usr) public auth {
         AuthLike(target).rely(usr);
     }
 
+    /// @notice removes the ward permissions from an address on a contract
+    /// @param target the address of the contract
+    /// @param usr the address which persmissions should be removed
     function denyContract(address target, address usr) public auth {
         AuthLike(target).deny(usr);
     }
-
 }

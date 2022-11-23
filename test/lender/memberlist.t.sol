@@ -10,7 +10,7 @@ interface Hevm {
 }
 
 contract MemberlistTest is Math, Test {
-    uint memberlistValidity;
+    uint256 memberlistValidity;
     Memberlist memberlist;
     Memberlist testMemberlist;
     Memberlist testMemberlist1;
@@ -47,13 +47,13 @@ contract MemberlistTest is Math, Test {
     }
 
     function testFailAddMemberPeriodTooShort() public {
-        uint memberlistValidity_ = safeAdd(block.timestamp, 7 days);
+        uint256 memberlistValidity_ = safeAdd(block.timestamp, 7 days);
         memberlist.updateMember(self, memberlistValidity_);
     }
 
     function testUpdateMember() public {
         memberlist.updateMember(self, memberlistValidity);
-        uint newMemberlistValidity_ = safeAdd(block.timestamp, 9 days);
+        uint256 newMemberlistValidity_ = safeAdd(block.timestamp, 9 days);
         memberlist.updateMember(self, newMemberlistValidity_);
         assertEq(memberlist.members(self), newMemberlistValidity_);
     }
@@ -69,6 +69,6 @@ contract MemberlistTest is Math, Test {
     }
 
     function testFailHasMemberNotAdded() public view {
-         assert(memberlist.hasMember(self));
+        assert(memberlist.hasMember(self));
     }
 }

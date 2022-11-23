@@ -1,10 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import { ReserveFabLike, AssessorFabLike, TrancheFabLike, CoordinatorFabLike, OperatorFabLike, MemberlistFabLike, RestrictedTokenFabLike, PoolAdminFabLike, ClerkFabLike } from "./fabs/interfaces.sol";
+import {
+    ReserveFabLike,
+    AssessorFabLike,
+    TrancheFabLike,
+    CoordinatorFabLike,
+    OperatorFabLike,
+    MemberlistFabLike,
+    RestrictedTokenFabLike,
+    PoolAdminFabLike,
+    ClerkFabLike
+} from "./fabs/interfaces.sol";
 
-import {FixedPoint}      from "./../fixed_point.sol";
-
+import {FixedPoint} from "./../fixed_point.sol";
 
 interface DependLike {
     function depend(bytes32, address) external;
@@ -16,67 +25,80 @@ interface AuthLike {
 }
 
 interface MemberlistLike {
-    function updateMember(address, uint) external;
+    function updateMember(address, uint256) external;
 }
 
 interface FileLike {
-    function file(bytes32 name, uint value) external;
+    function file(bytes32 name, uint256 value) external;
 }
 
 interface PoolAdminLike {
     function rely(address) external;
 }
 
+/// @notice contract for deploying a Tinlake lender contracts
 contract LenderDeployer is FixedPoint {
     address public immutable root;
     address public immutable currency;
     address public immutable memberAdmin;
 
     // factory contracts
-    TrancheFabLike          public immutable trancheFab;
-    ReserveFabLike          public immutable reserveFab;
-    AssessorFabLike         public immutable assessorFab;
-    CoordinatorFabLike      public immutable coordinatorFab;
-    OperatorFabLike         public immutable operatorFab;
-    MemberlistFabLike       public immutable memberlistFab;
-    RestrictedTokenFabLike  public immutable restrictedTokenFab;
-    PoolAdminFabLike        public immutable poolAdminFab;
+    TrancheFabLike public immutable trancheFab;
+    ReserveFabLike public immutable reserveFab;
+    AssessorFabLike public immutable assessorFab;
+    CoordinatorFabLike public immutable coordinatorFab;
+    OperatorFabLike public immutable operatorFab;
+    MemberlistFabLike public immutable memberlistFab;
+    RestrictedTokenFabLike public immutable restrictedTokenFab;
+    PoolAdminFabLike public immutable poolAdminFab;
 
     // lender state variables
-    Fixed27             public minSeniorRatio;
-    Fixed27             public maxSeniorRatio;
-    uint                public maxReserve;
-    uint                public challengeTime;
-    Fixed27             public seniorInterestRate;
-
+    Fixed27 public minSeniorRatio;
+    Fixed27 public maxSeniorRatio;
+    uint256 public maxReserve;
+    uint256 public challengeTime;
+    Fixed27 public seniorInterestRate;
 
     // contract addresses
-    address             public adapterDeployer;
-    address             public assessor;
-    address             public poolAdmin;
-    address             public seniorTranche;
-    address             public juniorTranche;
-    address             public seniorOperator;
-    address             public juniorOperator;
-    address             public reserve;
-    address             public coordinator;
+    address public adapterDeployer;
+    address public assessor;
+    address public poolAdmin;
+    address public seniorTranche;
+    address public juniorTranche;
+    address public seniorOperator;
+    address public juniorOperator;
+    address public reserve;
+    address public coordinator;
 
-    address             public seniorToken;
-    address             public juniorToken;
+    address public seniorToken;
+    address public juniorToken;
 
     // token names
-    string              public seniorName;
-    string              public seniorSymbol;
-    string              public juniorName;
-    string              public juniorSymbol;
+    string public seniorName;
+    string public seniorSymbol;
+    string public juniorName;
+    string public juniorSymbol;
     // restricted token member list
-    address             public seniorMemberlist;
-    address             public juniorMemberlist;
+    address public seniorMemberlist;
+    address public juniorMemberlist;
 
-    address             public deployer;
+    address public deployer;
     bool public wired;
 
-    constructor(address root_, address currency_, address trancheFab_, address memberlistFab_, address restrictedtokenFab_, address reserveFab_, address assessorFab_, address coordinatorFab_, address operatorFab_, address poolAdminFab_, address memberAdmin_, address adapterDeployer_) {
+    constructor(
+        address root_,
+        address currency_,
+        address trancheFab_,
+        address memberlistFab_,
+        address restrictedtokenFab_,
+        address reserveFab_,
+        address assessorFab_,
+        address coordinatorFab_,
+        address operatorFab_,
+        address poolAdminFab_,
+        address memberAdmin_,
+        address adapterDeployer_
+    ) {
         deployer = msg.sender;
         root = root_;
         currency = currency_;
@@ -93,7 +115,28 @@ contract LenderDeployer is FixedPoint {
         operatorFab = OperatorFabLike(operatorFab_);
     }
 
-    function init(uint minSeniorRatio_, uint maxSeniorRatio_, uint maxReserve_, uint challengeTime_, uint seniorInterestRate_, string memory seniorName_, string memory seniorSymbol_, string memory juniorName_, string memory juniorSymbol_) public {
+    /// @dev init function for the lender deployer can only be called once
+    /// @param minSeniorRatio_ min senior ratio for the pool
+    /// @param maxSeniorRatio_ max senior ratio for the pool
+    /// @param maxReserve_ max reserve for the pool
+    /// @param challengeTime_ challenge time for the pool, time to challenge a valid epoch
+    /// coordinator submission. After the challenge time, the epoch can be executed
+    /// @param seniorInterestRate_ interest rate per second for the senior tranche (in RAY)
+    /// @param seniorName_ name of the senior token
+    /// @param seniorSymbol_ symbol of the senior token
+    /// @param juniorName_ name of the junior token
+    /// @param juniorSymbol_ symbol of the junior token
+    function init(
+        uint256 minSeniorRatio_,
+        uint256 maxSeniorRatio_,
+        uint256 maxReserve_,
+        uint256 challengeTime_,
+        uint256 seniorInterestRate_,
+        string memory seniorName_,
+        string memory seniorSymbol_,
+        string memory juniorName_,
+        string memory juniorSymbol_
+    ) public {
         require(msg.sender == deployer);
         challengeTime = challengeTime_;
         minSeniorRatio = Fixed27(minSeniorRatio_);
@@ -109,6 +152,7 @@ contract LenderDeployer is FixedPoint {
 
         deployer = address(1);
     }
+    /// @notice deploys the junior tranche related contracts
 
     function deployJunior() public {
         require(juniorTranche == address(0) && deployer == address(1));
@@ -123,6 +167,7 @@ contract LenderDeployer is FixedPoint {
         AuthLike(juniorTranche).rely(root);
     }
 
+    /// @notice deploys the senior tranche related contracts
     function deploySenior() public {
         require(seniorTranche == address(0) && deployer == address(1));
         seniorToken = restrictedTokenFab.newRestrictedToken(seniorSymbol, seniorName);
@@ -141,6 +186,7 @@ contract LenderDeployer is FixedPoint {
         }
     }
 
+    /// @notice deploys the reserve contract
     function deployReserve() public {
         require(reserve == address(0) && deployer == address(1));
         reserve = reserveFab.newReserve(currency);
@@ -148,6 +194,7 @@ contract LenderDeployer is FixedPoint {
         if (adapterDeployer != address(0)) AuthLike(reserve).rely(adapterDeployer);
     }
 
+    /// @notice deploys the assessor contract
     function deployAssessor() public {
         require(assessor == address(0) && deployer == address(1));
         assessor = assessorFab.newAssessor();
@@ -155,6 +202,7 @@ contract LenderDeployer is FixedPoint {
         if (adapterDeployer != address(0)) AuthLike(assessor).rely(adapterDeployer);
     }
 
+    /// @notice deploys the pool admin contract
     function deployPoolAdmin() public {
         require(poolAdmin == address(0) && deployer == address(1));
         poolAdmin = poolAdminFab.newPoolAdmin();
@@ -162,15 +210,18 @@ contract LenderDeployer is FixedPoint {
         if (adapterDeployer != address(0)) PoolAdminLike(poolAdmin).rely(adapterDeployer);
     }
 
+    /// @notice deploys the coordinator contract
     function deployCoordinator() public {
         require(coordinator == address(0) && deployer == address(1));
         coordinator = coordinatorFab.newCoordinator(challengeTime);
         AuthLike(coordinator).rely(root);
     }
 
+    /// @notice wires the deployed lender contracts together
     function deploy() public virtual {
-        require(coordinator != address(0) && assessor != address(0) &&
-                reserve != address(0) && seniorTranche != address(0));
+        require(
+            coordinator != address(0) && assessor != address(0) && reserve != address(0) && seniorTranche != address(0)
+        );
 
         require(!wired, "lender contracts already wired"); // make sure lender contracts only wired once
         wired = true;
@@ -183,8 +234,8 @@ contract LenderDeployer is FixedPoint {
         AuthLike(reserve).rely(assessor);
 
         // tranches
-        DependLike(seniorTranche).depend("reserve",reserve);
-        DependLike(juniorTranche).depend("reserve",reserve);
+        DependLike(seniorTranche).depend("reserve", reserve);
+        DependLike(juniorTranche).depend("reserve", reserve);
         AuthLike(seniorTranche).rely(coordinator);
         AuthLike(juniorTranche).rely(coordinator);
         AuthLike(seniorTranche).rely(seniorOperator);

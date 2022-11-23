@@ -36,7 +36,22 @@ forge test -m ':ContractName\.'
 
 ## Deployment
 
-For deploying the Tinlake contracts to mainnet or a testnet, view our deploy scripts in [Tinlake Deploy](https://github.com/centrifuge/tinlake-deploy).
+To deploy Tinlake, you need to set up a `.env` file with the deployment parameters. A sample file can be found in `.env.example`.
+
+To confirm that the `.env` file is set up correctly, run:
+```bash
+./bin/env-check.sh
+```
+
+Once you've double checked all the environment variables, the deployment can be started:
+```bash
+forge script script/deploy.s.sol:DeployScript --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast --verify --etherscan-api-key $ETHERSCAN_KEY -vvvv
+```
+
+When the deployment is complete, you can print the list of deployed contracts:
+```bash
+ROOT_CONTRACT=0x0 forge script script/print_contracts.s.sol:PrintContractsScript --rpc-url $RPC_URL -vvvv
+```
 
 ## Community
 

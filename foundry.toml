@@ -15,10 +15,13 @@ remappings = [
     'tinlake-title/=lib/tinlake-title/src/',
 ]
 
+# Required for the deployment script
+fs_permissions = [{ access = "read", path = "./out"}]
+
 [profile.pull_request]
 fuzz_runs = 1000
 
-[profile.push_to_develop]
+[profile.push_to_main]
 fuzz_runs = 50000
 fuzz_max_global_rejects = 262144
 fuzz_max_local_rejects = 4096
