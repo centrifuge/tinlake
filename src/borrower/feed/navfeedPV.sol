@@ -14,6 +14,7 @@ interface PileLike {
     function setRate(uint loan, uint rate) external;
     function debt(uint loan) external view returns (uint);
     function pie(uint loan) external returns (uint);
+    function rates(uint256 rate) external view returns (uint256, uint256, uint256, uint48, uint256);
     function changeRate(uint loan, uint newRate) external;
     function loanRates(uint loan) external view returns (uint);
     function file(bytes32, uint, uint) external;
@@ -87,7 +88,9 @@ contract NAVFeedPV is Auth, Math {
 
     // --- Administration ---
     function depend(bytes32 contractName, address addr) external auth {
-        if (contractName == "pile") {pile = PileLike(addr);}
+        if (contractName == "pile") {
+            pile = PileLike(addr);
+        }
         else if (contractName == "shelf") { shelf = ShelfLike(addr); }
         else revert();
         emit Depend(contractName, addr);
@@ -134,8 +137,18 @@ contract NAVFeedPV is Auth, Math {
     function unlockEvent(uint loan) public virtual auth {}
 
     function writeOff(uint loan) public auth {
+        uint nav = currentNAV(); // retrieve latest nav
+        uint outstandingDebt = pile.debt(loan);
+
+       (,uint256 chi,,,) = pile.rates(WRITEOFF_RATE_GROUP);
+       if (chi == 0) { // file writeoff group if not exists
+            pile.file("rate", WRITEOFF_RATE_GROUP, ONE);
+       }
        pile.changeRate(loan, WRITEOFF_RATE_GROUP);
-       calcUpdateNAV();
+
+       // calculate NAV change
+       latestNAV = safeSub(nav, outstandingDebt);
+       lastNAVUpdate = block.timestamp;
     }
 
     function isLoanWrittenOff(uint loan) public view returns(bool) {
@@ -144,6 +157,9 @@ contract NAVFeedPV is Auth, Math {
 
     // --- NAV calculation ---
     function currentNAV() public view returns(uint) {
+        if (lastNAVUpdate == block.timestamp) {
+            return latestNAV;
+        }
         uint totalDebt;
         // calculate total debt
         for (uint loanId = 1; loanId < shelf.loanCount(); loanId++) {
@@ -155,6 +171,9 @@ contract NAVFeedPV is Auth, Math {
     }
 
     function calcUpdateNAV() public returns(uint) {
+        if (lastNAVUpdate == block.timestamp) {
+            return latestNAV;
+        }
         latestNAV = currentNAV();
         lastNAVUpdate = block.timestamp;
         return latestNAV;

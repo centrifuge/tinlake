@@ -91,19 +91,15 @@ contract TestSuite is BaseSystemTest {
         (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken) = juniorInvestor.disburse();
         assertEqTol(payoutTokenAmount, submission.juniorSupply," firstLoan#4");
         assertEqTol(remainingSupplyCurrency, juniorSupplyAmount- submission.juniorSupply, " firstLoan#5");
-
         assertEqTol(seniorToken.balanceOf(seniorInvestor_), submission.seniorSupply, " firstLoan#6");
         assertEqTol(juniorToken.balanceOf(juniorInvestor_), submission.juniorSupply, " firstLoan#7");
-
         // borrow loans maturity date 5 days from now
         (loan, tokenId) = setupOngoingLoan(nftPrice, borrowAmount, false, block.timestamp + maturityDate);
         
         assertEqTol(currency.balanceOf(address(borrower)), borrowAmount, " firstLoan#8");
         uint nav = nftFeed.calcUpdateNAV();
-
         // seniorDebt is equal to the nav multiplied with the seniorRatio for the first loan
         assertEqTol(assessor.seniorDebt(), rmul(nav, assessor.seniorRatio()), " firstLoan#9");
-
         uint seniorTokenPrice = assessor.calcSeniorTokenPrice(nav, reserve.totalBalance());
         assertEqTol(seniorTokenPrice, rdiv(safeAdd(assessor.seniorDebt(), assessor.seniorBalance_()),  seniorToken.totalSupply()), " firstLoan#10");
 

@@ -60,6 +60,10 @@ contract CreditLineBorrowTest is BaseSystemTest {
         // assert: available borrow amount decreased
         assertEq(nftFeed.ceiling(loanId), safeSub(initialCeiling, amount));
         // assert: NAV
+        emit log_named_uint("initial", initialNAV);
+        emit log_named_uint("amount", amount);
+        emit log_named_uint("fixedFee", fixedFee);
+
         assertEq(nftFeed.currentNAV(), safeAdd(initialNAV, safeAdd(amount, fixedFee)));
     }
 
@@ -101,49 +105,49 @@ contract CreditLineBorrowTest is BaseSystemTest {
         borrow(loanId, tokenId, ceiling, 0);
     }
 
-    function testBorrowWithFixedFee() public {
-        uint nftPrice = 500 ether;
-        uint riskGroup = 0;
-        uint fixedFeeRate = 10**26; // 10 %
+    // function testBorrowWithFixedFee() public {
+    //     uint nftPrice = 500 ether;
+    //     uint riskGroup = 0;
+    //     uint fixedFeeRate = 10**26; // 10 %
 
-        (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
-        uint borrowAmount = computeCeiling(riskGroup, nftPrice); // borrowAmount equals ceiling
-        uint fixedFee = rmul(borrowAmount, fixedFeeRate); // fixed fee that has to be applied on the borrowAmount
+    //     (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
+    //     uint borrowAmount = computeCeiling(riskGroup, nftPrice); // borrowAmount equals ceiling
+    //     uint fixedFee = rmul(borrowAmount, fixedFeeRate); // fixed fee that has to be applied on the borrowAmount
 
-        // price nft
-        priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
-        // set fixed fee for rateGroup
-        admin.fileFixedRate(riskGroup, fixedFeeRate);
-        // lock nft for borrower
-        lockNFT(loanId, borrower_);
+    //     // price nft
+    //     priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
+    //     // set fixed fee for rateGroup
+    //     admin.fileFixedRate(riskGroup, fixedFeeRate);
+    //     // lock nft for borrower
+    //     lockNFT(loanId, borrower_);
 
-        assertPreCondition(loanId, tokenId, borrowAmount);
-        borrow(loanId, tokenId, borrowAmount, fixedFee);
-    }
+    //     assertPreCondition(loanId, tokenId, borrowAmount);
+    //     borrow(loanId, tokenId, borrowAmount, fixedFee);
+    // }
 
-    function testInterestAccruedOnFixedFee() public {
-        uint nftPrice = 200 ether;
-        uint riskGroup = 1;
-        uint fixedFeeRate = 10**26; // 10 %
+    // function testInterestAccruedOnFixedFee() public {
+    //     uint nftPrice = 200 ether;
+    //     uint riskGroup = 1;
+    //     uint fixedFeeRate = 10**26; // 10 %
 
-        (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
-        uint borrowAmount = computeCeiling(riskGroup, nftPrice); // ceiling => 50 % => 100 ether
-        uint fixedFee = rmul(borrowAmount, fixedFeeRate); // fixed fee = 10 % => 10 ether
+    //     (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
+    //     uint borrowAmount = computeCeiling(riskGroup, nftPrice); // ceiling => 50 % => 100 ether
+    //     uint fixedFee = rmul(borrowAmount, fixedFeeRate); // fixed fee = 10 % => 10 ether
 
-        // price nft
-        priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
-        // set fixed fee for rateGroup
-        admin.fileFixedRate(riskGroup, fixedFeeRate);
-        // lock nft for borrower
-        lockNFT(loanId, borrower_);
+    //     // price nft
+    //     priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
+    //     // set fixed fee for rateGroup
+    //     admin.fileFixedRate(riskGroup, fixedFeeRate);
+    //     // lock nft for borrower
+    //     lockNFT(loanId, borrower_);
 
-        assertPreCondition(loanId, tokenId, borrowAmount);
-        borrow(loanId, tokenId, borrowAmount, fixedFee);
+    //     assertPreCondition(loanId, tokenId, borrowAmount);
+    //     borrow(loanId, tokenId, borrowAmount, fixedFee);
 
-        hevm.warp(block.timestamp + 365 days); // expected debt after 1 year ~ 123.2 ether
-        // assert interest also accrued on fixed fees 110
-        assertEq(pile.debt(loanId)/10, 123200000000000000000/10);
-    }
+    //     hevm.warp(block.timestamp + 365 days); // expected debt after 1 year ~ 123.2 ether
+    //     // assert interest also accrued on fixed fees 110
+    //     assertEq(pile.debt(loanId)/10, 123200000000000000000/10);
+    // }
 
     function testPartialBorrow() public {
         uint nftPrice = 200 ether;

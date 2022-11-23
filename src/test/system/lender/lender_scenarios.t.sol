@@ -49,10 +49,7 @@ contract LenderSystemTest is TestSuite, Interest {
         (uint loan, ) = supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, maturityDate, submission);
         uint nav = nftFeed.calcUpdateNAV();
 
-
-        // (FV/1.03^5) = 110.093;
-        assertEq(nav, 110.093921369062927876 ether);
-
+        assertEq(nav, 100 ether);
     }
 
     function calcInterest(uint amount, uint time, uint ratePerSecond)   public pure returns(uint) {
@@ -232,9 +229,9 @@ contract LenderSystemTest is TestSuite, Interest {
     function juniorWithLosses() public returns (uint loan, uint tokenId) {
         uint seniorSupplyAmount = 1000 ether;
         uint juniorSupplyAmount = 20 ether;
-        uint nftPrice = 200 ether;
+        uint nftPrice = 100 ether;
         // interest rate default => 5% per day
-        uint borrowAmount = 100 ether;
+        uint borrowAmount = 50 ether;
 
         ModelInput memory submission = ModelInput({
             seniorSupply : 80 ether,
@@ -243,8 +240,8 @@ contract LenderSystemTest is TestSuite, Interest {
             juniorRedeem : 0 ether
             });
 
-        // maturity date 5 days
         (loan, tokenId) = supplyAndBorrowFirstLoan(seniorSupplyAmount, juniorSupplyAmount, nftPrice, borrowAmount, 5 days, submission);
+        (uint loan2, uint tokenId) =  setupOngoingLoan(nftPrice, borrowAmount, false, block.timestamp);
         //        // change senior interest rate
         root.relyContract(address(assessor), address(this));
         // change interest rate to 10% a day
@@ -256,7 +253,6 @@ contract LenderSystemTest is TestSuite, Interest {
 
         hevm.warp(block.timestamp + 3 days);
         
-        emit log_named_uint("loan debt", pile.debt(loan));
         assessor.calcSeniorTokenPrice();
 
         // senior interest is to high, the ongoing loans have too low returns
@@ -266,24 +262,16 @@ contract LenderSystemTest is TestSuite, Interest {
         // token price should be below ONE
         assertTrue(juniorTokenPrice < ONE);
 
-        hevm.warp(block.timestamp + 3 days);
-
-        uint nav = nftFeed.currentNAV();
-
         // now ongoing loan is not repaid before maturity date: moved to write-off by admin
         root.relyContract(address(pile), address(this));
         root.relyContract(address(nftFeed), address(this));
-
-        // 50% write off
-        // increase loan rate from 5% to 6%
-        emit log_named_uint("loan debt", pile.debt(loan));
-        emit log_named_uint("nav",nftFeed.currentNAV());
-        assertEq(nftFeed.currentNAV(), rmul(pile.debt(loan), 50 * 10**25), 10);
+        assertEq(nftFeed.currentNAV(), safeAdd(pile.debt(loan), pile.debt(loan2)));
+        nftFeed.writeOff(loan); // writeOff loan -> exclude from nav
+        assertEq(nftFeed.currentNAV(), pile.debt(loan));
 
         assessor.calcUpdateNAV();
         juniorTokenPrice = assessor.calcJuniorTokenPrice();
 
-        // senior debt ~141 ether and nav ~134 ether
         assertTrue(assessor.seniorDebt() > nftFeed.currentNAV());
 
         // junior lost everything
@@ -309,6 +297,7 @@ contract LenderSystemTest is TestSuite, Interest {
         repayLoan(address(borrower), loan, loanDebt);
 
         assertEq(reserve.totalBalance(), loanDebt);
+        emit log_named_uint("nftFeed.currentNAV()", nftFeed.currentNAV());
         assertEq(nftFeed.currentNAV(), 0, 10);
 
         uint oneWeiLeft = 1;

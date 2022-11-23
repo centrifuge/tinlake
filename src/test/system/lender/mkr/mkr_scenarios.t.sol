@@ -307,30 +307,31 @@ contract MKRLenderSystemTest is MKRTestBasis {
     }
 
     function testJuniorLostAllRepayToMKR() public {
-        uint fee = 1000000564701133626865910626; // 5% per day
+        uint fee = ONE; // 5% per day
         setStabilityFee(fee);
         uint juniorAmount = 200 ether;
         uint mkrAmount = 300 ether;
         uint borrowAmount = 250 ether;
 
-        uint firstLoan = 1;
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
 
         // second loan same ammount
-        setupOngoingDefaultLoan(borrowAmount);
+        uint loan2 = setupOngoingDefaultLoan(borrowAmount);
         warp(1 days);
         // repay small amount of loan debt
         uint repayAmount = 5 ether;
         repayDefaultLoan(repayAmount);
-
-        warp(5 days);
+        
+       
+       
         // write 50% of debt off / second loan 100% loss
         root.relyContract(address(pile), address(this));
         root.relyContract(address(nftFeed), address(this));
+        
+        nftFeed.writeOff(loan2);
 
-
-        nftFeed.calcUpdateNAV();
         assertTrue(mkrAssessor.calcSeniorTokenPrice() > 0);
+      
         assertEq(mkrAssessor.calcJuniorTokenPrice(), 0);
         assertTrue(clerk.debt() > clerk.cdpink());
 
