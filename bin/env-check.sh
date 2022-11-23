@@ -30,6 +30,11 @@ if [[ -z "$MAIN_DEPLOYER" ]]; then
 fi
 echo "MAIN_DEPLOYER = $MAIN_DEPLOYER"
 
+if [[ -z "$MAIN_DEPLOYER" ]]; then
+    error_exit "MAIN_DEPLOYER is not defined"
+fi
+echo "MAIN_DEPLOYER = $MAIN_DEPLOYER"
+
 if [[ -z "$MEMBER_ADMIN" ]]; then
     error_exit "MEMBER_ADMIN is not defined"
 fi
@@ -86,6 +91,12 @@ if [[ -z "$SENIOR_TOKEN_SYMBOL" ]]; then
     error_exit "SENIOR_TOKEN_SYMBOL is not defined"
 fi
 echo "SENIOR_TOKEN_SYMBOL = $SENIOR_TOKEN_SYMBOL"
+
+if [[ -z "$NAV_IMPLEMENTATION" ]]; then
+    error_exit "NAV_IMPLEMENTATION is not defined"
+fi
+echo "NAV_IMPLEMENTATION = $NAV_IMPLEMENTATION"
+
 
 # Admin Setup
 message Admin Setup
