@@ -11,7 +11,6 @@ contract RunRPCTests is Script, TinlakeRPCTests {
 
     function run() public {
         initRPC(vm.envAddress("ROOT_CONTRACT"));
-        console.log("2");
 
         if (vm.envBool("MAKER_RPC_TESTS") == true) {
             runLoanCycleWithMaker();

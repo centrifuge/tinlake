@@ -82,7 +82,16 @@ contract TinlakeRPCTests is Test, Assertions {
         // storage slot for permissions => keccak256(key, mapslot) (mapslot = 0)
         vm.store(address(root), keccak256(abi.encode(address(this), uint256(0))), bytes32(uint256(1)));
         vm.warp(block.timestamp + 2 days);
-        console.log("1");
+
+        vm.startPrank(address(root));
+        navFeed.file(
+            "riskGroup",
+            0, // riskGroup:       0
+            8 * 10 ** 26, // thresholdRatio   70%
+            6 * 10 ** 26, // ceilingRatio     60%
+            uint256(1000000564701133626865910626) // interestRate     5% per year
+        );
+        vm.stopPrank();
     }
 
     function disburse(uint256 preMakerDebt, uint256, uint256 seniorInvest, uint256 juniorInvest, bool withMaker)
@@ -204,7 +213,6 @@ contract TinlakeRPCTests is Test, Assertions {
         vm.startPrank(address(root));
         assessor.rely(address(this));
         vm.stopPrank();
-        // root.relyContract(address(assessor), address(this));
         assessor.file("maxReserve", 1000000000000 * 1 ether);
 
         investTranches(true);
@@ -231,8 +239,10 @@ contract TinlakeRPCTests is Test, Assertions {
         // borrow loan with half of the creditline
         uint256 borrowAmount = reserve.totalBalance() + clerk.creditline() / 2;
         uint256 preMakerDebt = clerk.debt();
+        assertEq(navFeed.currentNAV(), 0);
 
         borrowLoan(loanId, borrowAmount);
+        assertEq(navFeed.currentNAV(), 50 ether);
 
         // check debt increase in maker
         assertEqTol(clerk.debt(), preMakerDebt + (clerk.creditline() / 2), "clerk debt");
@@ -246,42 +256,36 @@ contract TinlakeRPCTests is Test, Assertions {
         preMakerDebt = clerk.debt();
         repayLoan(loanId, debt);
         assertTrue(clerk.debt() < preMakerDebt);
+        assertEq(navFeed.currentNAV(), 0);
     }
 
     function runLoanCycleWithoutMaker() public {
         vm.startPrank(address(root));
         assessor.rely(address(this));
         vm.stopPrank();
-        // root.relyContract(address(assessor), address(this));
         assessor.file("maxReserve", 1000000000000 * 1 ether);
-        console.log("4");
 
         investTranches(false);
-        console.log("5");
 
         // issue nft
         uint256 tokenId = registry.issue(address(this));
         // issue loan
         uint256 loanId = shelf.issue(address(registry), tokenId);
-        console.log("6");
 
         // appraise nft
         uint256 totalAvailable = assessor.totalBalance();
         uint256 nftPrice = totalAvailable * 2;
         uint256 maturityDate = block.timestamp + 2 weeks;
         appraiseNFT(tokenId, nftPrice, maturityDate);
-        console.log("7");
 
         // lock asset nft
         registry.setApprovalForAll(address(shelf), true);
         shelf.lock(loanId);
-        console.log("8");
 
         // borrow loan with half of the creditline
         uint256 borrowAmount = reserve.totalBalance();
 
         borrowLoan(loanId, borrowAmount);
-        console.log("9");
 
         // jump 5 days into the future
         vm.warp(block.timestamp + 5 days);
@@ -289,7 +293,6 @@ contract TinlakeRPCTests is Test, Assertions {
         // repay entire loan debt
         uint256 debt = pile.debt(loanId);
         repayLoan(loanId, debt);
-        console.log("10");
     }
 
     // helper
