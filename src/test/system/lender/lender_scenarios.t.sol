@@ -114,22 +114,17 @@ contract LenderSystemTest is TestSuite, Interest {
         // seniorSupply and juniorSupply should be now in reserve
         assertEq(reserve.totalBalance(), 100 ether);
 
-        // nav should be still the same
-         preNAV = nftFeed.calcUpdateNAV();
+         // nav should be still the same
          nav = nftFeed.calcUpdateNAV();
-
-        // nav= 113.39 ether
-        assertEq(nav, preNAV);
-
         // seniorAsset: seniorDebt + seniorBalance =  83.64 + 80 ~ 163.64
-        // NAV + reserve ~ 213.39
-        // seniorRatio: 163.64/213.139 ~ 0.76
+        // NAV + reserve ~ 205
+        // seniorRatio: 163.64/205 ~ 0.79
         uint shouldSeniorRatio = rdiv(assessor.seniorDebt() + assessor.seniorBalance(), nav + reserve.totalBalance());
 
         assertEq(coordinator.epochNAV(), nav, TWO_DECIMAL_PRECISION);
         assertEq(coordinator.epochSeniorAsset(), 83.64 ether, TWO_DECIMAL_PRECISION);
         assertEq(assessor.seniorRatio(), shouldSeniorRatio);
-        assertEq(assessor.seniorRatio(), fixed18To27(0.76 ether), FIXED27_TWO_DECIMAL_PRECISION);
+        assertEq(assessor.seniorRatio(), fixed18To27(0.79 ether), FIXED27_TWO_DECIMAL_PRECISION);
 
         // check reBalancing
         assertEq(assessor.seniorDebt(), rmul(nav, shouldSeniorRatio));
@@ -208,8 +203,7 @@ contract LenderSystemTest is TestSuite, Interest {
 
         uint nav = nftFeed.calcUpdateNAV();
 
-        //(FV/1.03^4) = 127.62815625 /(1.03^4) = 113.395963777
-        assertEq(nav, 113.39 ether, TWO_DECIMAL_PRECISION);
+        assertEq(nav, 105 ether, TWO_DECIMAL_PRECISION);
 
         assertEq(reserve.totalBalance(), 0);
 
@@ -261,7 +255,8 @@ contract LenderSystemTest is TestSuite, Interest {
         seniorSupply(0);
 
         hevm.warp(block.timestamp + 3 days);
-
+        
+        emit log_named_uint("loan debt", pile.debt(loan));
         assessor.calcSeniorTokenPrice();
 
         // senior interest is to high, the ongoing loans have too low returns
@@ -281,7 +276,8 @@ contract LenderSystemTest is TestSuite, Interest {
 
         // 50% write off
         // increase loan rate from 5% to 6%
-        emit log_named_uint("loan debt",pile.debt(loan));
+        emit log_named_uint("loan debt", pile.debt(loan));
+        emit log_named_uint("nav",nftFeed.currentNAV());
         assertEq(nftFeed.currentNAV(), rmul(pile.debt(loan), 50 * 10**25), 10);
 
         assessor.calcUpdateNAV();

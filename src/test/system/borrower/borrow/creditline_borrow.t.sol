@@ -65,7 +65,6 @@ contract CreditLineBorrowTest is BaseSystemTest {
 
     function testMultipleBorrow() public {
         fundTranches(1000000000 ether);
-        uint nav;
         for (uint i = 1; i <= 10; i++) {
             uint nftPrice = 2000 ether;
             uint riskGroup = 1; // creditline 1000 eth
@@ -79,13 +78,11 @@ contract CreditLineBorrowTest is BaseSystemTest {
             // set ceiling based tokenPrice & riskgroup
             assertPreCondition(loanId, tokenId, ceiling);
             borrower.borrow(loanId, ceiling);
-            nav = nav + ceiling;
         }
 
-        assertEq(nftFeed.currentNAV(), nav);
-        hevm.warp(block.timestamp + 365 days); // debt 1120 ether per loan 
-        uint loanDebt = 1120 ether * 10 + 140;
-        assertEq(nftFeed.currentNAV(), loanDebt);
+        assertEq(nftFeed.currentNAV(), pile.debt(1) * 10);
+        hevm.warp(block.timestamp + 365 days); // ~ debt 1120 ether per loan 
+        assertEq(nftFeed.currentNAV(), pile.debt(1) * 10);
     }
 
     function testBorrow() public {
