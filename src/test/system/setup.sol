@@ -5,7 +5,7 @@ pragma experimental ABIEncoderV2;
 import { TitleFab } from "../../borrower/fabs/title.sol";
 import { ShelfFab } from "../../borrower/fabs/shelf.sol";
 import { PileFab } from "../../borrower/fabs/pile.sol";
-import { PoolValueNAVFeedFab } from "../../borrower/fabs/navfeed.poolValue.sol";
+import { PoolValueNAVFeedFab } from "../../borrower/fabs/navfeed.poolvalue.sol";
 import { BorrowerDeployer } from "../../borrower/deployer.sol";
 
 
