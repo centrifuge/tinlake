@@ -32,6 +32,7 @@ interface NAVFeedLike {
     function borrow(uint256 loan, uint256 currencyAmount) external;
     function repay(uint256 loan, uint256 currencyAmount) external;
     function file(bytes32 what, bytes32 nftID_, uint256 maturityDate_) external;
+    function file(bytes32 name, uint risk_, uint thresholdRatio_, uint ceilingRatio_, uint rate_) external;
     function latestNAV() external returns (uint256);
     function currentNAV() external returns (uint256);
     function calcUpdateNAV() external returns (uint256);

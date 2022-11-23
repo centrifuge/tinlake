@@ -123,8 +123,6 @@ contract BorrowerDeployer is FixedPoint {
         AuthLike(feed).rely(shelf);
         AuthLike(title).rely(shelf);
 
-        FileLike(feed).file("discountRate", discountRate.value);
-
         if (initNAVFeed) {
             NAVFeedLike(feed).init();
         }

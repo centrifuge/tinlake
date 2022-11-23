@@ -330,25 +330,24 @@ contract MKRLenderSystemTest is MKRTestBasis {
         uint256 mkrAmount = 300 ether;
         uint256 borrowAmount = 250 ether;
 
-        uint256 firstLoan = 1;
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
 
         // second loan same ammount
-        setupOngoingDefaultLoan(borrowAmount);
+        uint loan2 = setupOngoingDefaultLoan(borrowAmount);
         warp(1 days);
         // repay small amount of loan debt
         uint256 repayAmount = 5 ether;
         repayDefaultLoan(repayAmount);
 
-        warp(5 days);
         // write 50% of debt off / second loan 100% loss
         root.relyContract(address(pile), address(this));
         root.relyContract(address(nftFeed), address(this));
-        nftFeed.overrideWriteOff(1, 1);
-        nftFeed.overrideWriteOff(2, 3);
 
-        nftFeed.calcUpdateNAV();
-        assertTrue(mkrAssessor.calcSeniorTokenPrice() > 0);
+        warp(5 days);
+
+        nftFeed.writeOff(loan2);
+
+        assertTrue(mkrAssessor.calcSeniorTokenPrice() > 0 && mkrAssessor.calcSeniorTokenPrice() < ONE);
         assertEq(mkrAssessor.calcJuniorTokenPrice(), 0);
         assertTrue(clerk.debt() > clerk.cdpink());
 

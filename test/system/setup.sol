@@ -5,7 +5,7 @@ pragma experimental ABIEncoderV2;
 import {TitleFab} from "src/borrower/fabs/title.sol";
 import {ShelfFab} from "src/borrower/fabs/shelf.sol";
 import {PileFab} from "src/borrower/fabs/pile.sol";
-import {TestNAVFeedFab} from "src/borrower/fabs/navfeed.tests.sol";
+import {PoolValueNAVFeedFab} from "src/borrower/fabs/navfeed.poolvalue.sol";
 import {BorrowerDeployer} from "src/borrower/deployer.sol";
 
 import {EpochCoordinator} from "src/lender/coordinator.sol";
@@ -35,7 +35,7 @@ import {ClerkFab} from "src/lender/adapters/mkr/fabs/clerk.sol";
 import {Title} from "tinlake-title/title.sol";
 import {Pile} from "src/borrower/pile.sol";
 import {Shelf} from "src/borrower/shelf.sol";
-import {NAVFeed} from "test/borrower/feed/navfeed.tests.sol";
+import {NAVFeedPV} from "src/borrower/feed/navfeedPV.sol";
 
 import {TestRoot} from "./root.sol";
 
@@ -96,7 +96,7 @@ interface AdapterDeployerLike {
     function deploy(bool) external;
 }
 
-abstract contract TestSetup is Config {
+abstract contract TestSetup is Config, Test {
     Title public collateralNFT;
     address public collateralNFT_;
     SimpleToken public currency;
@@ -106,7 +106,7 @@ abstract contract TestSetup is Config {
     Shelf shelf;
     Pile pile;
     Title title;
-    NAVFeed nftFeed;
+    NAVFeedPV nftFeed;
 
     // Lender contracts
     Reserve reserve;
@@ -184,7 +184,7 @@ abstract contract TestSetup is Config {
         ShelfFab shelffab = new ShelfFab();
         PileFab pileFab = new PileFab();
         address navFeedFab_;
-        navFeedFab_ = address(new TestNAVFeedFab());
+        navFeedFab_ = address(new PoolValueNAVFeedFab());
 
         borrowerDeployer = new BorrowerDeployer(root_, address(titlefab), address(shelffab), address(pileFab),
             navFeedFab_, currency_, config.titleName, config.titleSymbol, config.discountRate);
@@ -193,12 +193,12 @@ abstract contract TestSetup is Config {
         borrowerDeployer.deployPile();
         borrowerDeployer.deployFeed();
         borrowerDeployer.deployShelf();
-        borrowerDeployer.deploy(true);
+        borrowerDeployer.deploy(false);
 
         shelf = Shelf(borrowerDeployer.shelf());
         pile = Pile(borrowerDeployer.pile());
         title = Title(borrowerDeployer.title());
-        nftFeed = NAVFeed(borrowerDeployer.feed());
+        nftFeed = NAVFeedPV(borrowerDeployer.feed());
     }
 
     function deployLenderMockBorrower(address rootAddr) public virtual {
