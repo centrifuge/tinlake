@@ -7,6 +7,10 @@ import "tinlake-math/interest.sol";
 import {BaseTypes} from "test/lender/coordinator-base.t.sol";
 import {MKRTestBasis} from "./mkr_basic.t.sol";
 
+interface MockLike {
+    function setReturn(bytes32 name, uint256 returnValue) external;
+}
+
 contract MKRLoanFuzzTest is MKRTestBasis {
     uint256 MAX_CURRENCY_NUMBER = 10 ** 30;
 
@@ -17,7 +21,7 @@ contract MKRLoanFuzzTest is MKRTestBasis {
     }
 
     function warp(uint256 plusTime) public {
-        hevm.warp(block.timestamp + plusTime);
+        vm.warp(block.timestamp + plusTime);
     }
 
     function checkRange(uint256 val, uint256 min, uint256 max) public returns (bool) {
@@ -53,7 +57,7 @@ contract MKRLoanFuzzTest is MKRTestBasis {
         setupOngoingDefaultLoan(borrowAmount);
         assertEq(currency.balanceOf(address(borrower)), borrowAmount, " borrow#1");
 
-        emit log_named_uint("seniorRatio", assessor.seniorRatio());
+        console.log("seniorRatio", assessor.seniorRatio());
         // seniorDebt should equal to seniorRatio from the current NAV
         // todo figure out why rounding differences
         // assertEq(assessor.seniorDebt(), rmul(nftFeed.currentNAV(), assessor.seniorRatio()), "seniorDebtCheck");
@@ -91,11 +95,11 @@ contract MKRLoanFuzzTest is MKRTestBasis {
         uint256 seniorAmount = rmul(totalSenior, split * 10 ** 25);
         uint256 makerAmount = totalSenior - seniorAmount;
 
-        emit log_named_uint("juniorAmount", juniorAmount / 1 ether);
-        emit log_named_uint("makerCreditLine", makerAmount / 1 ether);
-        emit log_named_uint("seniorAmount", seniorAmount / 1 ether);
-        emit log_named_uint("borrowAmount", borrowAmount / 1 ether);
-        emit log_named_uint("seniorAmount percentage", split);
+        console.log("juniorAmount", juniorAmount / 1 ether);
+        console.log("makerCreditLine", makerAmount / 1 ether);
+        console.log("seniorAmount", seniorAmount / 1 ether);
+        console.log("borrowAmount", borrowAmount / 1 ether);
+        console.log("seniorAmount percentage", split);
 
         invest(juniorAmount, seniorAmount, makerAmount);
         borrow(borrowAmount);
@@ -104,7 +108,7 @@ contract MKRLoanFuzzTest is MKRTestBasis {
 
         // different repayment time
         uint256 passTime = totalAvailable % DEFAULT_MATURITY_DATE;
-        emit log_named_uint("pass in seconds", passTime);
+        console.log("pass in seconds", passTime);
         warp(passTime);
 
         uint256 expectedDebt = chargeInterest(borrowAmount, fee, drawTimestamp);
@@ -115,7 +119,7 @@ contract MKRLoanFuzzTest is MKRTestBasis {
         uint256 preMakerDebt = clerk.debt();
         uint256 preReserve = reserve.totalBalance();
         // check prices
-        emit log_named_uint("makerDebt", preMakerDebt);
+        console.log("makerDebt", preMakerDebt);
 
         repayDefaultLoan(repayAmount);
 
@@ -128,11 +132,79 @@ contract MKRLoanFuzzTest is MKRTestBasis {
         }
 
         // check prices
-        emit log_named_uint("juniorTokenPrice", assessor.calcJuniorTokenPrice());
-        emit log_named_uint("seniorTokenPrice", assessor.calcSeniorTokenPrice());
+        console.log("juniorTokenPrice", assessor.calcJuniorTokenPrice());
+        console.log("seniorTokenPrice", assessor.calcSeniorTokenPrice());
 
         assertTrue(assessor.calcJuniorTokenPrice() > ONE);
         assertTrue(assessor.calcSeniorTokenPrice() >= ONE);
-        //        assertTrue(assessor.calcJuniorTokenPrice() > assessor.calcSeniorTokenPrice());
+    }
+
+    function testBorrowRepayFuzzWithoutOvercollateralization(uint256 totalAvailable, uint256 borrowAmount) public {
+        if (borrowAmount > totalAvailable) {
+            return;
+        }
+
+        if (
+            !checkRange(borrowAmount, 1 ether, MAX_CURRENCY_NUMBER)
+                || !checkRange(totalAvailable, 1 ether, MAX_CURRENCY_NUMBER)
+        ) {
+            return;
+        }
+
+        MockLike(address(clerk.spotter())).setReturn("mat", 10 ** 27);
+        clerk.file("buffer", 0);
+
+        uint256 fee = uint256(1000000229200000000000000000); // 2% per day
+        setStabilityFee(fee);
+        uint256 juniorAmount = rmul(totalAvailable, 0.3 * 10 ** 27);
+        uint256 totalSenior = rmul(totalAvailable, 0.7 * 10 ** 27);
+
+        // DROP split randomly between senior investors and MKR
+        uint256 split = totalSenior % 100;
+        uint256 seniorAmount = rmul(totalSenior, split * 10 ** 25);
+        uint256 makerAmount = totalSenior - seniorAmount;
+
+        console.log("juniorAmount", juniorAmount / 1 ether);
+        console.log("makerCreditLine", makerAmount / 1 ether);
+        console.log("seniorAmount", seniorAmount / 1 ether);
+        console.log("borrowAmount", borrowAmount / 1 ether);
+        console.log("seniorAmount percentage", split);
+
+        invest(juniorAmount, seniorAmount, makerAmount);
+        borrow(borrowAmount);
+
+        uint256 drawTimestamp = block.timestamp;
+
+        // different repayment time
+        uint256 passTime = totalAvailable % DEFAULT_MATURITY_DATE;
+        console.log("pass in seconds", passTime);
+        warp(passTime);
+
+        uint256 expectedDebt = chargeInterest(borrowAmount, fee, drawTimestamp);
+
+        // repay loan and entire maker debt
+        uint256 repayAmount = expectedDebt;
+
+        uint256 preMakerDebt = clerk.debt();
+        uint256 preReserve = reserve.totalBalance();
+        // check prices
+        console.log("makerDebt", preMakerDebt);
+
+        repayDefaultLoan(repayAmount);
+
+        // check post state
+        if (repayAmount > preMakerDebt) {
+            assertEqTol(clerk.debt(), 0, "testDrawWipeDrawAgain#2");
+            assertEq(reserve.totalBalance(), preReserve + repayAmount - preMakerDebt, "testDrawWipeDrawAgain#3");
+        } else {
+            assertEq(clerk.debt(), preReserve + preMakerDebt - repayAmount, "testDrawWipeDrawAgain#3");
+        }
+
+        // check prices
+        console.log("juniorTokenPrice", assessor.calcJuniorTokenPrice());
+        console.log("seniorTokenPrice", assessor.calcSeniorTokenPrice());
+
+        assertTrue(assessor.calcJuniorTokenPrice() > ONE);
+        assertTrue(assessor.calcSeniorTokenPrice() >= ONE);
     }
 }
