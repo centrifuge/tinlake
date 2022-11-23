@@ -3,6 +3,7 @@ pragma solidity >=0.7.6;
 
 import {CreditlineNAVFeed} from "./../feed/creditline.sol";
 
+/// @notice factory contract for creditline nav feed
 contract CreditlineNAVFeedFab {
     function newFeed() public returns (address) {
         CreditlineNAVFeed feed = new CreditlineNAVFeed();

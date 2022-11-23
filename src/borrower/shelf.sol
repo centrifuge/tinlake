@@ -52,7 +52,7 @@ interface AssessorLike {
 }
 
 contract Shelf is Auth, TitleOwned, Math {
-    // --- Data ---
+    /// Contract Interfaces
     NAVFeedLike public ceiling;
     PileLike public pile;
     TokenLike public currency;
@@ -71,7 +71,7 @@ contract Shelf is Auth, TitleOwned, Math {
     mapping(uint256 => Loan) public shelf;
     mapping(bytes32 => uint256) public nftlookup;
 
-    // Events
+    /// Events
     event Close(uint256 indexed loan);
     event Issue(address indexed registry_, uint256 indexed token_);
     event Borrow(uint256 indexed loan, uint256 currencyAmount);
@@ -92,7 +92,9 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Rely(msg.sender);
     }
 
-    // sets the dependency to another contract
+    /// @notice sets the dependency to another contract
+    /// @param contractName name of the contract
+    /// @param addr contract address
     function depend(bytes32 contractName, address addr) external auth {
         if (contractName == "token") {
             currency = TokenLike(addr);
@@ -115,26 +117,35 @@ contract Shelf is Auth, TitleOwned, Math {
         }
         emit Depend(contractName, addr);
     }
+    /// @notice returns the registry address and tokenId for a loan
+    /// @param loan the id of a loan
+    /// @return registry the address of the registry
+    /// @return tokenId the tokenId of the nft
 
-    function token(uint256 loan) public view returns (address registry, uint256 nft) {
+    function token(uint256 loan) public view returns (address registry, uint256 tokenId) {
         return (shelf[loan].registry, shelf[loan].tokenId);
     }
 
-    // issues a new loan in Tinlake - it requires the ownership of an nft
-    // first step in the loan process - everyone could add an nft
-    function issue(address registry_, uint256 token_) external returns (uint256) {
-        require(NFTLike(registry_).ownerOf(token_) == msg.sender, "nft-not-owned");
-        bytes32 nft = keccak256(abi.encodePacked(registry_, token_));
+    /// @notice issues a new loan in Tinlake - it requires the ownership of an nft
+    /// first step in the loan process - everyone could add an nft
+    /// @param registry the address of the registry
+    /// @param tokenId the tokenId of the nft
+    /// @return loan the id of the loan
+    function issue(address registry, uint256 tokenId) external returns (uint256 loan) {
+        require(NFTLike(registry).ownerOf(tokenId) == msg.sender, "nft-not-owned");
+        bytes32 nft = keccak256(abi.encodePacked(registry, tokenId));
         require(nftlookup[nft] == 0, "nft-in-use");
-        uint256 loan = title.issue(msg.sender);
+        loan = title.issue(msg.sender);
         nftlookup[nft] = loan;
-        shelf[loan].registry = registry_;
-        shelf[loan].tokenId = token_;
+        shelf[loan].registry = registry;
+        shelf[loan].tokenId = tokenId;
 
-        emit Issue(registry_, token_);
+        emit Issue(registry, tokenId);
         return loan;
     }
 
+    /// @notice closes a loan after the nft has been returned
+    /// @param loan the id of the loan
     function close(uint256 loan) external {
         require(!nftLocked(loan), "nft-locked");
         (address registry, uint256 tokenId) = token(loan);
@@ -149,11 +160,13 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Close(loan);
     }
 
-    // starts the borrow process of a loan
-    // informs the system of the requested currencyAmount
-    // interest accumulation starts with this method
-    // the method can only be called if the nft is locked
-    // a max ceiling needs to be defined by an oracle
+    /// @notice starts the borrow process of a loan
+    /// informs the system of the requested currencyAmount
+    /// interest accumulation starts with this method
+    /// the method can only be called if the nft is locked
+    /// a max ceiling needs to be defined by an oracle
+    /// @param loan the id of the loan
+    /// @param currencyAmount the amount which should be borrowed
     function borrow(uint256 loan, uint256 currencyAmount) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
 
@@ -179,7 +192,10 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Borrow(loan, currencyAmount);
     }
 
-    // withdraw transfers the currency to the borrower account
+    /// @notice withdraw transfers the actual currency to the borrower account
+    /// @param loan the id of the loan
+    /// @param currencyAmount the amount which should be withdrawn
+    /// @param usr the address of the receiver
     function withdraw(uint256 loan, uint256 currencyAmount, address usr) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
         require(currencyAmount <= balances[loan], "withdraw-amount-too-high");
@@ -190,7 +206,9 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Withdraw(loan, currencyAmount, usr);
     }
 
-    // repays the entire or partial debt of a loan
+    ///  @notice repays the entire or partial debt of a loan
+    ///  @param loan the id of the loan
+    ///  @param currencyAmount the amount which should be repaid
     function repay(uint256 loan, uint256 currencyAmount) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
         require(balances[loan] == 0, "withdraw-required-before-repay");
@@ -217,8 +235,11 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Repay(loan, currencyAmount);
     }
 
-    // a collector can recover defaulted loans
-    // it is not required to recover the entire loan debt
+    /// @notice a collector can recover defaulted loans
+    /// it is not required to recover the entire loan debt
+    /// @param loan the id of the loan
+    /// @param usr the address of the collector which pays the debt
+    /// @param currencyAmount the amount which should be recovered
     function recover(uint256 loan, address usr, uint256 currencyAmount) external auth {
         pile.accrue(loan);
 
@@ -236,8 +257,9 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Recover(loan, usr, currencyAmount);
     }
 
-    // locks an nft in the shelf
-    // requires an issued loan
+    /// @notice locks an nft in the shelf
+    /// @dev requires an issued loan
+    /// @param loan the id of the loan
     function lock(uint256 loan) external owner(loan) {
         if (address(subscriber) != address(0)) {
             subscriber.lockEvent(loan);
@@ -246,8 +268,9 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Lock(loan);
     }
 
-    // unlocks an nft in the shelf
-    // requires zero debt or 100% write off
+    /// @notice unlocks an nft in the shelf
+    /// @dev requires zero debt or 100% write off
+    /// @param loan the id of the loan
     function unlock(uint256 loan) external owner(loan) {
         // loans can be unlocked and closed when the debt is 0, or the loan is written off 100%
         uint256 debt_ = pile.debt(loan);
@@ -262,18 +285,24 @@ contract Shelf is Auth, TitleOwned, Math {
 
         emit Unlock(loan);
     }
+    /// @notice returns the information if an nft has been locked
+    /// @param loan the id of the loan
 
     function nftLocked(uint256 loan) public view returns (bool) {
         return NFTLike(shelf[loan].registry).ownerOf(shelf[loan].tokenId) == address(this);
     }
 
-    // a loan can be claimed by a collector if the loan debt is above the loan threshold
-    // transfers the nft to the collector
+    /// @notice a loan can be claimed by a collector if the loan debt is above the loan threshold
+    /// transfers the nft to the collector
+    /// @param loan the id of the loan
+    /// @param usr the address of the collector
     function claim(uint256 loan, address usr) public auth {
         NFTLike(shelf[loan].registry).transferFrom(address(this), usr, shelf[loan].tokenId);
         emit Claim(loan, usr);
     }
 
+    /// @notice resets the balance of a loan
+    /// @param loan the id of the loan
     function _resetLoanBalance(uint256 loan) internal {
         uint256 loanBalance = balances[loan];
         if (loanBalance > 0) {
@@ -282,8 +311,9 @@ contract Shelf is Auth, TitleOwned, Math {
         }
     }
 
-    // returns the total number of loans including closed loans
-    function loanCount() public view returns (uint256) {
+    /// @notice returns the total number of loans including closed loans
+    /// @return totalNumber total number of loans
+    function loanCount() public view returns (uint256 totalNumber) {
         return title.count();
     }
 }
