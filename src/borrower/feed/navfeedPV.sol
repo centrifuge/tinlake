@@ -163,9 +163,8 @@ contract NAVFeedPV is Auth, Math {
 
     function writeOff(uint256 loan) public auth {
         require(pile.loanRates(loan) != WRITEOFF_RATE_GROUP, "loan already written off");
-        uint256 nav = currentNAV();
-        uint256 outstandingDebt = pile.debt(loan);
 
+        uint256 outstandingDebt = pile.debt(loan);
         (, uint256 chi,,,) = pile.rates(WRITEOFF_RATE_GROUP);
         if (chi == 0) {
             // file writeoff group if not exists
@@ -173,12 +172,7 @@ contract NAVFeedPV is Auth, Math {
         }
 
         pile.changeRate(loan, WRITEOFF_RATE_GROUP);
-        // calculate & update NAV change
-        if (nav >= outstandingDebt) {
-            latestNAV = safeSub(nav, outstandingDebt);
-        } else {
-            latestNAV = 0;
-        }
+        latestNAV = poolValue();
         lastNAVUpdate = block.timestamp;
     }
 
@@ -191,14 +185,18 @@ contract NAVFeedPV is Auth, Math {
         if (lastNAVUpdate == block.timestamp) {
             return latestNAV;
         }
-        uint256 totalDebt;
+        return poolValue();
+    }
+
+    function poolValue() internal view returns (uint256) {
+        uint256 poolValue;
         // calculate total debt
         for (uint256 loanId = 1; loanId < shelf.loanCount(); loanId++) {
-            totalDebt = safeAdd(totalDebt, pile.debt(loanId));
+            poolValue = safeAdd(poolValue, pile.debt(loanId));
         }
         // substract writtenoff loans -> all writtenOff loans are moved to writeOffRateGroup
-        totalDebt = safeSub(totalDebt, pile.rateDebt(WRITEOFF_RATE_GROUP));
-        return totalDebt;
+        poolValue = safeSub(poolValue, pile.rateDebt(WRITEOFF_RATE_GROUP));
+        return poolValue;
     }
 
     function calcUpdateNAV() public returns (uint256) {
