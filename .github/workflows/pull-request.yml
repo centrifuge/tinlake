@@ -2,11 +2,8 @@ name: pull-request
 
 on: [pull_request]
 
-env:
-  FOUNDRY_PROFILE: ci
-
 jobs:
-  check:
+  test:
     strategy:
       fail-fast: true
 
@@ -33,6 +30,7 @@ jobs:
           forge test
         id: test
 
+  lint:
     name: fmt
     runs-on: ubuntu-latest
     steps:
@@ -54,4 +52,4 @@ jobs:
       - name: Check formatting
         run: forge fmt --check
         env:
-          FOUNDRY_PROFILE: push_to_main
+          FOUNDRY_PROFILE: pull_request
