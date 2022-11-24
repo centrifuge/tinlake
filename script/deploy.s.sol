@@ -47,14 +47,26 @@ contract DeployScript is Script {
     }
 
     function deployBorrower(TinlakeRoot root) internal returns (address) {
+        address feedFab = address(0);
+        if (keccak256(abi.encodePacked(vm.envString("NAV_IMPLEMENTATION"))) == keccak256("PV")) {
+            feedFab = getOrDeployFab("navfeedPV.sol:NAVFeedPVFab");
+        } else if (keccak256(abi.encodePacked(vm.envString("NAV_IMPLEMENTATION"))) == keccak256("creditline")) {
+            feedFab = getOrDeployFab("navfeed.creditline.sol:CreditlineNAVFeedFab");
+        } else {
+            feedFab = getOrDeployFab("navfeed.principal.sol:PrincipalNAVFeedFab");
+        }
+
         BorrowerDeployer borrowerDeployer =
-        new BorrowerDeployer(address(root), getOrDeployFab("title.sol:TitleFab"), getOrDeployFab("shelf.sol:ShelfFab"), getOrDeployFab("pile.sol:PileFab"), getOrDeployFab("navfeed.principal.sol:PrincipalNAVFeedFab"), vm.envAddress("TINLAKE_CURRENCY"), "Tinlake Loan Token", "TLNFT", vm.envUint("DISCOUNT_RATE"));
+        new BorrowerDeployer(address(root), getOrDeployFab("title.sol:TitleFab"), getOrDeployFab("shelf.sol:ShelfFab"), getOrDeployFab("pile.sol:PileFab"), feedFab, vm.envAddress("TINLAKE_CURRENCY"), "Tinlake Loan Token", "TLNFT", vm.envUint("DISCOUNT_RATE"));
 
         borrowerDeployer.deployTitle();
         borrowerDeployer.deployPile();
         borrowerDeployer.deployFeed();
         borrowerDeployer.deployShelf();
-        borrowerDeployer.deploy();
+
+        bool fileDiscountRateAndInitNAVFeed =
+            keccak256(abi.encodePacked(vm.envString("NAV_IMPLEMENTATION"))) != keccak256("PV");
+        borrowerDeployer.deploy(fileDiscountRateAndInitNAVFeed, fileDiscountRateAndInitNAVFeed);
 
         return address(borrowerDeployer);
     }
