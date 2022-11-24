@@ -20,7 +20,9 @@ interface ImmutableCreate2Factory {
 
 contract DeployScript is Script {
     ImmutableCreate2Factory immutable factory = ImmutableCreate2Factory(0x0000000000FFe8B47B3e2130213B802212439497);
-    bytes32 salt = 0x00000000000000000000000000000000000000008b99e5a778edb02572010000;
+
+    // address(0)[0:20] + heccak("Tinlake")[21:32]
+    bytes32 salt = 0x00000000000000000000000000000000000000008e14991107bc43e122db24d6;
 
     function setUp() public {}
 
@@ -47,14 +49,26 @@ contract DeployScript is Script {
     }
 
     function deployBorrower(TinlakeRoot root) internal returns (address) {
+        address feedFab = address(0);
+        if (keccak256(abi.encodePacked(vm.envString("NAV_IMPLEMENTATION"))) == keccak256("PV")) {
+            feedFab = getOrDeployFab("navfeed.poolvalue.sol:PoolValueNAVFeedFab");
+        } else if (keccak256(abi.encodePacked(vm.envString("NAV_IMPLEMENTATION"))) == keccak256("creditline")) {
+            feedFab = getOrDeployFab("navfeed.creditline.sol:CreditlineNAVFeedFab");
+        } else {
+            feedFab = getOrDeployFab("navfeed.principal.sol:PrincipalNAVFeedFab");
+        }
+
         BorrowerDeployer borrowerDeployer =
-        new BorrowerDeployer(address(root), getOrDeployFab("title.sol:TitleFab"), getOrDeployFab("shelf.sol:ShelfFab"), getOrDeployFab("pile.sol:PileFab"), getOrDeployFab("navfeed.principal.sol:PrincipalNAVFeedFab"), vm.envAddress("TINLAKE_CURRENCY"), "Tinlake Loan Token", "TLNFT", vm.envUint("DISCOUNT_RATE"));
+        new BorrowerDeployer(address(root), getOrDeployFab("title.sol:TitleFab"), getOrDeployFab("shelf.sol:ShelfFab"), getOrDeployFab("pile.sol:PileFab"), feedFab, vm.envAddress("TINLAKE_CURRENCY"), "Tinlake Loan Token", "TLNFT", vm.envUint("DISCOUNT_RATE"));
 
         borrowerDeployer.deployTitle();
         borrowerDeployer.deployPile();
         borrowerDeployer.deployFeed();
         borrowerDeployer.deployShelf();
-        borrowerDeployer.deploy();
+
+        bool fileDiscountRateAndInitNAVFeed =
+            keccak256(abi.encodePacked(vm.envString("NAV_IMPLEMENTATION"))) != keccak256("PV");
+        borrowerDeployer.deploy(fileDiscountRateAndInitNAVFeed, fileDiscountRateAndInitNAVFeed);
 
         return address(borrowerDeployer);
     }
