@@ -30,8 +30,9 @@ contract ScenarioTest is BaseSystemTest {
 
         borrower.approveNFT(collateralNFT, address(shelf));
         fundLender(ceiling);
+        uint256 preBalance = currency.balanceOf(borrower_);
         borrower.borrowAction(loan, ceiling);
-        checkAfterBorrow(tokenId, ceiling);
+        checkAfterBorrow(tokenId, ceiling, preBalance);
     }
 
     function testBorrowAndRepay() public {
@@ -101,10 +102,10 @@ contract ScenarioTest is BaseSystemTest {
             uint256 ceiling = navFeed_.ceiling(i);
 
             borrower.approveNFT(collateralNFT, address(shelf));
-
+            uint256 preBalance = currency.balanceOf(borrower_);
             borrower.borrowAction(loan, ceiling);
             tBorrower += ceiling;
-            checkAfterBorrow(i, tBorrower);
+            checkAfterBorrow(i, ceiling, preBalance);
         }
 
         // repay
@@ -137,8 +138,9 @@ contract ScenarioTest is BaseSystemTest {
         uint256 ceiling = navFeed_.ceiling(loan);
 
         borrower.approveNFT(collateralNFT, address(shelf));
+        uint256 preBalance = currency.balanceOf(borrower_);
         borrower.borrowAction(loan, ceiling);
-        checkAfterBorrow(tokenId, ceiling);
+        checkAfterBorrow(tokenId, ceiling, preBalance);
 
         // should fail
         borrower.borrowAction(loan, ceiling);

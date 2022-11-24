@@ -260,7 +260,7 @@ contract ShelfTest is Test {
         assertEq(sub.values_uint("borrowEvent"), loan);
 
         _withdraw(loan, currencyAmount);
-        pile.setReturn("debt_loan", 0);
+        pile.incDebt(loan, 0);
         shelf.unlock(loan);
         assertEq(sub.calls("unlockEvent"), 1);
         assertEq(sub.values_uint("unlockEvent"), loan);

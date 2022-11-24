@@ -45,8 +45,7 @@ contract TestSuite is BaseSystemTest {
         // borrow loans with default maturity date 5 days from now
         uint256 maturityFromNow = DEFAULT_MATURITY_DATE;
         uint256 nftPrice = borrowAmount * 3;
-        (uint256 loan,) =
-            setupOngoingLoan(nftPrice, borrowAmount, nftFeed.uniqueDayTimestamp(block.timestamp) + maturityFromNow);
+        (uint256 loan,) = setupOngoingLoan(nftPrice, borrowAmount, block.timestamp + maturityFromNow);
         return loan;
     }
 
@@ -105,8 +104,7 @@ contract TestSuite is BaseSystemTest {
         assertEqTol(juniorToken.balanceOf(juniorInvestor_), submission.juniorSupply, " firstLoan#7");
 
         // borrow loans maturity date 5 days from now
-        (loan, tokenId) =
-            setupOngoingLoan(nftPrice, borrowAmount, false, nftFeed.uniqueDayTimestamp(block.timestamp) + maturityDate);
+        (loan, tokenId) = setupOngoingLoan(nftPrice, borrowAmount, false, block.timestamp + maturityDate);
 
         assertEqTol(currency.balanceOf(address(borrower)), borrowAmount, " firstLoan#8");
         uint256 nav = nftFeed.calcUpdateNAV();

@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import "../../base_system.sol";
 
-contract PrincipalBorrowTest is BaseSystemTest {
+contract CreditLineBorrowTest is BaseSystemTest {
     function setUp() public {
         baseSetup();
         createTestUsers();
@@ -23,11 +23,20 @@ contract PrincipalBorrowTest is BaseSystemTest {
         uint256 initialLoanBalance = shelf.balances(loanId);
         uint256 initialLoanDebt = pile.debt(loanId);
         uint256 initialCeiling = nftFeed.ceiling(loanId);
+        uint256 initialNAV = nftFeed.currentNAV();
 
         fundTranches(amount);
         borrower.borrow(loanId, amount);
         assertPostCondition(
-            loanId, tokenId, amount, fixedFee, initialTotalBalance, initialLoanBalance, initialLoanDebt, initialCeiling
+            loanId,
+            tokenId,
+            amount,
+            fixedFee,
+            initialTotalBalance,
+            initialLoanBalance,
+            initialLoanDebt,
+            initialCeiling,
+            initialNAV
         );
     }
 
@@ -48,7 +57,8 @@ contract PrincipalBorrowTest is BaseSystemTest {
         uint256 initialTotalBalance,
         uint256 initialLoanBalance,
         uint256 initialLoanDebt,
-        uint256 initialCeiling
+        uint256 initialCeiling,
+        uint256 initialNAV
     ) public {
         // assert: borrower loanOwner
         assertEq(title.ownerOf(loanId), borrower_);
@@ -68,6 +78,35 @@ contract PrincipalBorrowTest is BaseSystemTest {
 
         // assert: available borrow amount decreased
         assertEq(nftFeed.ceiling(loanId), safeSub(initialCeiling, amount));
+
+        // assert: NAV
+        emit log_named_uint("initial", initialNAV);
+        emit log_named_uint("amount", amount);
+        emit log_named_uint("fixedFee", fixedFee);
+
+        assertEq(nftFeed.currentNAV(), safeAdd(initialNAV, safeAdd(amount, fixedFee)));
+    }
+
+    function testMultipleBorrow() public {
+        fundTranches(1000000000 ether);
+        for (uint256 i = 1; i <= 10; i++) {
+            uint256 nftPrice = 2000 ether;
+            uint256 riskGroup = 1; // creditline 1000 eth
+
+            (uint256 tokenId, uint256 loanId) = issueNFTAndCreateLoan(borrower_);
+            // price nft
+            priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
+            uint256 ceiling = computeCeiling(riskGroup, nftPrice);
+            // lock nft for borrower
+            lockNFT(loanId, borrower_);
+            // set ceiling based tokenPrice & riskgroup
+            assertPreCondition(loanId, tokenId, ceiling);
+            borrower.borrow(loanId, ceiling);
+        }
+
+        assertEq(nftFeed.currentNAV(), pile.debt(1) * 10);
+        hevm.warp(block.timestamp + 365 days); // ~ debt 1120 ether per loan
+        assertEq(nftFeed.currentNAV(), pile.debt(1) * 10);
     }
 
     function testBorrow() public {
@@ -84,50 +123,6 @@ contract PrincipalBorrowTest is BaseSystemTest {
 
         assertPreCondition(loanId, tokenId, ceiling);
         borrow(loanId, tokenId, ceiling, 0);
-    }
-
-    function testBorrowWithFixedFee() public {
-        uint256 nftPrice = 500 ether;
-        uint256 riskGroup = 0;
-        uint256 fixedFeeRate = 10 ** 26; // 10 %
-
-        (uint256 tokenId, uint256 loanId) = issueNFTAndCreateLoan(borrower_);
-        uint256 borrowAmount = computeCeiling(riskGroup, nftPrice); // borrowAmount equals ceiling
-        uint256 fixedFee = rmul(borrowAmount, fixedFeeRate); // fixed fee that has to be applied on the borrowAmount
-
-        // price nft
-        priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
-        // set fixed fee for rateGroup
-        admin.fileFixedRate(riskGroup, fixedFeeRate);
-        // lock nft for borrower
-        lockNFT(loanId, borrower_);
-
-        assertPreCondition(loanId, tokenId, borrowAmount);
-        borrow(loanId, tokenId, borrowAmount, fixedFee);
-    }
-
-    function testInterestAccruedOnFixedFee() public {
-        uint256 nftPrice = 200 ether;
-        uint256 riskGroup = 1;
-        uint256 fixedFeeRate = 10 ** 26; // 10 %
-
-        (uint256 tokenId, uint256 loanId) = issueNFTAndCreateLoan(borrower_);
-        uint256 borrowAmount = computeCeiling(riskGroup, nftPrice); // ceiling => 50 % => 100 ether
-        uint256 fixedFee = rmul(borrowAmount, fixedFeeRate); // fixed fee = 10 % => 10 ether
-
-        // price nft
-        priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
-        // set fixed fee for rateGroup
-        admin.fileFixedRate(riskGroup, fixedFeeRate);
-        // lock nft for borrower
-        lockNFT(loanId, borrower_);
-
-        assertPreCondition(loanId, tokenId, borrowAmount);
-        borrow(loanId, tokenId, borrowAmount, fixedFee);
-
-        hevm.warp(block.timestamp + 365 days); // expected debt after 1 year ~ 123.2 ether
-        // assert interest also accrued on fixed fees 110
-        assertEq(pile.debt(loanId) / 10, 123200000000000000000 / 10);
     }
 
     function testPartialBorrow() public {

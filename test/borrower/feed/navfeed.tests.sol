@@ -22,7 +22,7 @@ contract TestNAVFeed is NAVFeed {
             1, // riskGroup:       1
             7 * 10 ** 26, // thresholdRatio   70%
             5 * 10 ** 26, // ceilingRatio     50%
-            uint256(1000000003593629043335673583), // interestRate     12% per year
+            uint256(1000000003805175038051750380), // interestRate     12% per year
             90 * 10 ** 25 // recoveryRatePD:  0.9
         );
 
