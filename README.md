@@ -55,7 +55,7 @@ ROOT_CONTRACT=0x0 forge script script/print_contracts.s.sol:PrintContractsScript
 
 And you can also run the set of RPC tests against the newly deployed pool:
 ```bash
-ROOT_CONTRACT=0x0 MAKER_RPC_TESTS=false forge script script/run_rpc_tests.s.sol:RunRPCTests --rpc-url $RPC_URL
+ROOT_CONTRACT=0x0 MAKER_RPC_TESTS=false forge script script/run-rpc-tests.s.sol:RunRPCTests --rpc-url $RPC_URL
 ```
 
 ## Community
