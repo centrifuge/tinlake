@@ -138,7 +138,7 @@ contract NAVFeedPV is Auth, Math {
         if (pile.loanRates(loan) != WRITEOFF_RATE_GROUP) {
             // only reduce NAV, if loan is not written off
             uint256 nav = currentNAV();
-            if (nav >= amount) {
+            if (nav > amount) {
                 latestNAV = safeSub(nav, amount);
             } else {
                 latestNAV = 0;
@@ -172,7 +172,7 @@ contract NAVFeedPV is Auth, Math {
         }
 
         pile.changeRate(loan, WRITEOFF_RATE_GROUP);
-        latestNAV = poolValue();
+        latestNAV = _poolValue();
         lastNAVUpdate = block.timestamp;
     }
 
@@ -185,10 +185,10 @@ contract NAVFeedPV is Auth, Math {
         if (lastNAVUpdate == block.timestamp) {
             return latestNAV;
         }
-        return poolValue();
+        return _poolValue();
     }
 
-    function poolValue() internal view returns (uint256) {
+    function _poolValue() internal view returns (uint256) {
         uint256 poolValue;
         // calculate total debt
         for (uint256 loanId = 1; loanId < shelf.loanCount(); loanId++) {
