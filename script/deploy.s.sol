@@ -20,6 +20,8 @@ interface ImmutableCreate2Factory {
 
 contract DeployScript is Script {
     ImmutableCreate2Factory immutable factory = ImmutableCreate2Factory(0x0000000000FFe8B47B3e2130213B802212439497);
+
+    // address(0)[0:20] + heccak("Tinlake")[21:32]
     bytes32 salt = 0x00000000000000000000000000000000000000008e14991107bc43e122db24d6;
 
     function setUp() public {}
