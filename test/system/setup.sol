@@ -193,7 +193,7 @@ abstract contract TestSetup is Config, Test {
         borrowerDeployer.deployPile();
         borrowerDeployer.deployFeed();
         borrowerDeployer.deployShelf();
-        borrowerDeployer.deploy(false);
+        borrowerDeployer.deploy(false, false);
 
         shelf = Shelf(borrowerDeployer.shelf());
         pile = Pile(borrowerDeployer.pile());
