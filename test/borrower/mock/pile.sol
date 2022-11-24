@@ -17,8 +17,6 @@ contract PileMock is Mock {
     }
 
     function setRate(uint256 loan, uint256 rate) public {
-        emit log_named_uint("setRate_loan", loan);
-        emit log_named_uint("setRate_rate", rate);
         values_uint["setRate_loan"] = loan;
         values_uint["setRate_rate"] = rate;
         calls["setRate"]++;
