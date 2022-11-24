@@ -30,7 +30,7 @@ contract ScenarioTest is BaseSystemTest {
 
         borrower.approveNFT(collateralNFT, address(shelf));
         fundLender(ceiling);
-        uint preBalance = currency.balanceOf(borrower_);
+        uint256 preBalance = currency.balanceOf(borrower_);
         borrower.borrowAction(loan, ceiling);
         checkAfterBorrow(tokenId, ceiling, preBalance);
     }
@@ -102,7 +102,7 @@ contract ScenarioTest is BaseSystemTest {
             uint256 ceiling = navFeed_.ceiling(i);
 
             borrower.approveNFT(collateralNFT, address(shelf));
-            uint preBalance = currency.balanceOf(borrower_);
+            uint256 preBalance = currency.balanceOf(borrower_);
             borrower.borrowAction(loan, ceiling);
             tBorrower += ceiling;
             checkAfterBorrow(i, ceiling, preBalance);
@@ -138,7 +138,7 @@ contract ScenarioTest is BaseSystemTest {
         uint256 ceiling = navFeed_.ceiling(loan);
 
         borrower.approveNFT(collateralNFT, address(shelf));
-        uint preBalance = currency.balanceOf(borrower_);
+        uint256 preBalance = currency.balanceOf(borrower_);
         borrower.borrowAction(loan, ceiling);
         checkAfterBorrow(tokenId, ceiling, preBalance);
 

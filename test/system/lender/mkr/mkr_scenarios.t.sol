@@ -333,7 +333,7 @@ contract MKRLenderSystemTest is MKRTestBasis {
         _setUpDraw(mkrAmount, juniorAmount, borrowAmount);
 
         // second loan same ammount
-        uint loan2 = setupOngoingDefaultLoan(borrowAmount);
+        uint256 loan2 = setupOngoingDefaultLoan(borrowAmount);
         warp(1 days);
         // repay small amount of loan debt
         uint256 repayAmount = 5 ether;

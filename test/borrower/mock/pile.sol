@@ -4,8 +4,7 @@ pragma solidity >=0.7.6;
 import "../../../test/mock/mock.sol";
 
 contract PileMock is Mock {
-
-    mapping (uint => uint) public loansDebt;
+    mapping(uint256 => uint256) public loansDebt;
 
     function total() public view returns (uint256) {
         return values_return["total"];
@@ -29,7 +28,7 @@ contract PileMock is Mock {
         calls["changeRate"]++;
     }
 
-    function debt(uint loan) public view returns(uint) {
+    function debt(uint256 loan) public view returns (uint256) {
         return loansDebt[loan];
     }
 
