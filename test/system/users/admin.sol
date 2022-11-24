@@ -54,12 +54,7 @@ contract AdminUser {
         pile.file("fixedRate", rateGroup, rate);
     }
 
-    function fileRisk(uint riskGroup, uint thresholdRatio, uint ceilingRatio, uint interestRate) public {
-        nftFeed.file("riskGroup",
-            riskGroup,                                     
-            thresholdRatio,       
-            ceilingRatio,                        
-            interestRate
-        );
+    function fileRisk(uint256 riskGroup, uint256 thresholdRatio, uint256 ceilingRatio, uint256 interestRate) public {
+        nftFeed.file("riskGroup", riskGroup, thresholdRatio, ceilingRatio, interestRate);
     }
 }

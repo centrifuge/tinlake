@@ -23,11 +23,21 @@ contract CreditLineBorrowTest is BaseSystemTest {
         uint256 initialLoanBalance = shelf.balances(loanId);
         uint256 initialLoanDebt = pile.debt(loanId);
         uint256 initialCeiling = nftFeed.ceiling(loanId);
-        uint initialNAV = nftFeed.currentNAV();
+        uint256 initialNAV = nftFeed.currentNAV();
 
         fundTranches(amount);
         borrower.borrow(loanId, amount);
-        assertPostCondition(loanId, tokenId, amount, fixedFee, initialTotalBalance, initialLoanBalance, initialLoanDebt, initialCeiling, initialNAV);
+        assertPostCondition(
+            loanId,
+            tokenId,
+            amount,
+            fixedFee,
+            initialTotalBalance,
+            initialLoanBalance,
+            initialLoanDebt,
+            initialCeiling,
+            initialNAV
+        );
     }
 
     function assertPreCondition(uint256 loanId, uint256 tokenId, uint256 amount) public {
@@ -39,7 +49,17 @@ contract CreditLineBorrowTest is BaseSystemTest {
         assert(amount <= nftFeed.ceiling(loanId));
     }
 
-    function assertPostCondition(uint loanId, uint tokenId, uint amount, uint fixedFee, uint initialTotalBalance, uint initialLoanBalance, uint initialLoanDebt, uint initialCeiling, uint initialNAV) public {
+    function assertPostCondition(
+        uint256 loanId,
+        uint256 tokenId,
+        uint256 amount,
+        uint256 fixedFee,
+        uint256 initialTotalBalance,
+        uint256 initialLoanBalance,
+        uint256 initialLoanDebt,
+        uint256 initialCeiling,
+        uint256 initialNAV
+    ) public {
         // assert: borrower loanOwner
         assertEq(title.ownerOf(loanId), borrower_);
         // assert: borrower nftOwner
@@ -69,14 +89,14 @@ contract CreditLineBorrowTest is BaseSystemTest {
 
     function testMultipleBorrow() public {
         fundTranches(1000000000 ether);
-        for (uint i = 1; i <= 10; i++) {
-            uint nftPrice = 2000 ether;
-            uint riskGroup = 1; // creditline 1000 eth
+        for (uint256 i = 1; i <= 10; i++) {
+            uint256 nftPrice = 2000 ether;
+            uint256 riskGroup = 1; // creditline 1000 eth
 
-            (uint tokenId, uint loanId) = issueNFTAndCreateLoan(borrower_);
+            (uint256 tokenId, uint256 loanId) = issueNFTAndCreateLoan(borrower_);
             // price nft
             priceNFTandSetRisk(tokenId, nftPrice, riskGroup);
-            uint ceiling = computeCeiling(riskGroup, nftPrice);
+            uint256 ceiling = computeCeiling(riskGroup, nftPrice);
             // lock nft for borrower
             lockNFT(loanId, borrower_);
             // set ceiling based tokenPrice & riskgroup
@@ -85,7 +105,7 @@ contract CreditLineBorrowTest is BaseSystemTest {
         }
 
         assertEq(nftFeed.currentNAV(), pile.debt(1) * 10);
-        hevm.warp(block.timestamp + 365 days); // ~ debt 1120 ether per loan 
+        hevm.warp(block.timestamp + 365 days); // ~ debt 1120 ether per loan
         assertEq(nftFeed.currentNAV(), pile.debt(1) * 10);
     }
 
