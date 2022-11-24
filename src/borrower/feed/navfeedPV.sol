@@ -128,14 +128,23 @@ contract NAVFeedPV is Auth, Math {
     // --- Actions ---
     function borrow(uint256 loan, uint256 amount) external virtual auth returns (uint256 navIncrease) {
         require(ceiling(loan) >= amount, "borrow-amount-too-high");
+        require((pile.loanRates(loan) != WRITEOFF_RATE_GROUP), "loan-already-written-off"); // don't allow borrowing if loan is written off
         latestNAV = safeAdd(currentNAV(), amount);
         lastNAVUpdate = block.timestamp;
         return amount;
     }
 
     function repay(uint256 loan, uint256 amount) external virtual auth {
-        latestNAV = safeSub(currentNAV(), amount);
-        lastNAVUpdate = block.timestamp;
+        if (pile.loanRates(loan) != WRITEOFF_RATE_GROUP) {
+            // only reduce NAV, if loan is not written off
+            uint256 nav = currentNAV();
+            if (nav > amount) {
+                latestNAV = safeSub(nav, amount);
+            } else {
+                latestNAV = 0;
+            }
+            lastNAVUpdate = block.timestamp;
+        }
     }
 
     function borrowEvent(uint256 loan, uint256) public virtual auth {
@@ -153,18 +162,17 @@ contract NAVFeedPV is Auth, Math {
     function unlockEvent(uint256 loan) public virtual auth {}
 
     function writeOff(uint256 loan) public auth {
-        uint256 nav = currentNAV(); // retrieve latest nav
-        uint256 outstandingDebt = pile.debt(loan);
+        require(pile.loanRates(loan) != WRITEOFF_RATE_GROUP, "loan already written off");
 
+        uint256 outstandingDebt = pile.debt(loan);
         (, uint256 chi,,,) = pile.rates(WRITEOFF_RATE_GROUP);
         if (chi == 0) {
             // file writeoff group if not exists
             pile.file("rate", WRITEOFF_RATE_GROUP, ONE);
         }
-        pile.changeRate(loan, WRITEOFF_RATE_GROUP);
 
-        // calculate NAV change
-        latestNAV = safeSub(nav, outstandingDebt);
+        pile.changeRate(loan, WRITEOFF_RATE_GROUP);
+        latestNAV = _poolValue();
         lastNAVUpdate = block.timestamp;
     }
 
@@ -177,14 +185,18 @@ contract NAVFeedPV is Auth, Math {
         if (lastNAVUpdate == block.timestamp) {
             return latestNAV;
         }
-        uint256 totalDebt;
+        return _poolValue();
+    }
+
+    function _poolValue() internal view returns (uint256) {
+        uint256 poolValue;
         // calculate total debt
         for (uint256 loanId = 1; loanId < shelf.loanCount(); loanId++) {
-            totalDebt = safeAdd(totalDebt, pile.debt(loanId));
+            poolValue = safeAdd(poolValue, pile.debt(loanId));
         }
         // substract writtenoff loans -> all writtenOff loans are moved to writeOffRateGroup
-        totalDebt = safeSub(totalDebt, pile.rateDebt(WRITEOFF_RATE_GROUP));
-        return totalDebt;
+        poolValue = safeSub(poolValue, pile.rateDebt(WRITEOFF_RATE_GROUP));
+        return poolValue;
     }
 
     function calcUpdateNAV() public returns (uint256) {
