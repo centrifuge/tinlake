@@ -50,7 +50,7 @@ contract NFTFeedTest is DSTest, Math {
         );
     }
 
-    function testNFTValues() public {
+    function testUpdateNFTValues() public {
         bytes32 nftID = feed.nftID(address(1), 1);
         uint value = 100 ether;
         feed.update(nftID, value);
@@ -61,6 +61,14 @@ contract NFTFeedTest is DSTest, Math {
         assertEq(feed.nftValues(nftID), 100 ether);
         assertEq(feed.threshold(loan), 80 ether);
         assertEq(feed.ceiling(loan), 60 ether);
+    }
+
+
+    function testFailUpdateNFTValuesNoPermissions() public {
+        bytes32 nftID = feed.nftID(address(1), 1);
+        uint value = 100 ether;
+        feed.deny(address(this));
+        feed.update(nftID, value);
     }
 
     function testCreditLineCeilingOutstandingDebt() public {
@@ -202,15 +210,42 @@ contract NFTFeedTest is DSTest, Math {
         uint riskGroup = 1;
         uint value = 100 ether;
         uint loan = 1;
-        uint debt = 40 ether;
         uint maxCeiling = 70 ether;
 
         feed.update(nftID, value, riskGroup);
 
         shelf.setReturn("shelf", address(1), 1);
         assertEq(feed.ceiling(loan), maxCeiling);
-
         feed.borrow(loan, maxCeiling);
+        assertEq(feed.currentNAV(), maxCeiling);
+        assertEq(feed.latestNAV(), maxCeiling);
+    }
+
+    function testFailBorrowAfterWriteOff() public {
+        bytes32 nftID = feed.nftID(address(1), 1);
+        uint riskGroup = 1;
+        uint value = 100 ether;
+        uint loan = 1;
+        uint maxCeiling = 70 ether;
+        uint borrowAmount = 20 ether;
+
+        feed.update(nftID, value, riskGroup);
+
+        shelf.setReturn("shelf", address(1), 1);
+        assertEq(feed.ceiling(loan), maxCeiling);
+        feed.borrow(loan, borrowAmount);
+        pile.incDebt(loan, borrowAmount); 
+        assertEq(feed.currentNAV(), borrowAmount);
+        assertEq(feed.latestNAV(), borrowAmount);
+
+ 
+        feed.writeOff(loan);
+        assertEq(pile.values_uint("changeRate_loan"), loan);
+        assertEq(pile.values_uint("changeRate_rate"), feed.WRITEOFF_RATE_GROUP());
+        assertEq(feed.currentNAV(), 0);
+        assertEq(feed.latestNAV(), 0);
+        assert(feed.zeroPV(loan));
+        feed.borrow(loan, borrowAmount); // try to borrow again 
     }
 
     function testFailBorrowAmountTooHigh() public {
@@ -230,6 +265,76 @@ contract NFTFeedTest is DSTest, Math {
         feed.borrow(loan, maxCeiling);
     }
 
+    function testRepay() public {
+        bytes32 nftID = feed.nftID(address(1), 1);
+        uint riskGroup = 1;
+        uint value = 100 ether;
+        uint loan = 1;
+        uint maxCeiling = 70 ether;
+
+        feed.update(nftID, value, riskGroup);
+
+        shelf.setReturn("shelf", address(1), 1);
+        assertEq(feed.ceiling(loan), maxCeiling);
+        feed.borrow(loan, maxCeiling);
+        assertEq(feed.currentNAV(), maxCeiling);
+        assertEq(feed.latestNAV(), maxCeiling);
+
+        feed.repay(loan, 50 ether);
+        assertEq(feed.currentNAV(), 20 ether);
+        assertEq(feed.latestNAV(),  20 ether);
+    }
+
+    function testRepayAfterWriteOff() public {
+        bytes32 nftID = feed.nftID(address(1), 1);
+        uint riskGroup = 1;
+        uint value = 100 ether;
+        uint loan = 1;
+        uint maxCeiling = 70 ether;
+
+        feed.update(nftID, value, riskGroup);
+
+        shelf.setReturn("shelf", address(1), 1);
+        assertEq(feed.ceiling(loan), maxCeiling);
+        feed.borrow(loan, maxCeiling);
+        pile.incDebt(loan, feed.ceiling(loan)); 
+        assertEq(feed.currentNAV(), maxCeiling);
+        assertEq(feed.latestNAV(), maxCeiling);
+
+        feed.writeOff(loan);
+        assertEq(pile.values_uint("changeRate_loan"), loan);
+        assertEq(pile.values_uint("changeRate_rate"), feed.WRITEOFF_RATE_GROUP());
+        assertEq(feed.currentNAV(), 0);
+        assertEq(feed.latestNAV(), 0);
+        assert(feed.zeroPV(loan));
+
+        feed.repay(loan, 50 ether);
+        assertEq(feed.currentNAV(), 0);
+        assertEq(feed.latestNAV(), 0);
+    }
+
+    function testRepayMaxNav() public {
+        bytes32 nftID = feed.nftID(address(1), 1);
+        uint riskGroup = 1;
+        uint value = 100 ether;
+        uint loan = 1;
+        uint maxCeiling = 70 ether;
+
+        feed.update(nftID, value, riskGroup);
+
+        shelf.setReturn("shelf", address(1), 1);
+        assertEq(feed.ceiling(loan), maxCeiling);
+        feed.borrow(loan, maxCeiling);
+        pile.incDebt(loan, feed.ceiling(loan)); 
+        assertEq(feed.currentNAV(), maxCeiling);
+        assertEq(feed.latestNAV(), maxCeiling);
+
+        
+        feed.repay(loan, 100 ether);
+        assertEq(feed.currentNAV(), 0);
+        assertEq(feed.latestNAV(), 0);
+    }
+
     function testFailBorrowNoPermission() public {
         bytes32 nftID = feed.nftID(address(1), 1);
         uint riskGroup = 1;
@@ -247,23 +352,79 @@ contract NFTFeedTest is DSTest, Math {
         feed.borrow(loan, maxCeiling);
     }
 
+    // add repay tests 
      function testWriteOff() public {
-        uint risk = 1;
         bytes32 nftID = feed.nftID(address(1), 1);
-        uint loan = 1;
+        uint riskGroup = 1;
         uint value = 100 ether;
+        uint loan = 1;
+        uint maxCeiling = 70 ether;
+
+        feed.update(nftID, value, riskGroup);
+
         shelf.setReturn("shelf", address(1), 1);
-        shelf.setReturn("nftlookup", loan);
-        pile.setReturn("pie", 100);
+        assertEq(feed.ceiling(loan), maxCeiling);
+        feed.borrow(loan, maxCeiling);
+        pile.incDebt(loan, feed.ceiling(loan)); 
+        assertEq(feed.currentNAV(), maxCeiling);
+        assertEq(feed.latestNAV(), maxCeiling);
 
-        // set value and risk group of nft
-        feed.update(nftID, value, risk);
-        // assert all values were set correctly
-        assertLoanValuesSetCorrectly(nftID, value, loan, risk, true);
-
+ 
         feed.writeOff(loan);
         assertEq(pile.values_uint("changeRate_loan"), loan);
         assertEq(pile.values_uint("changeRate_rate"), feed.WRITEOFF_RATE_GROUP());
+        assertEq(feed.currentNAV(), 0);
+        assertEq(feed.latestNAV(), 0);
+        assert(feed.zeroPV(loan));
+    }
+
+     function testWriteOffMaxNav() public {
+        bytes32 nftID = feed.nftID(address(1), 1);
+        uint riskGroup = 1;
+        uint value = 100 ether;
+        uint loan = 1;
+        uint maxCeiling = 70 ether;
+
+        feed.update(nftID, value, riskGroup);
+
+        shelf.setReturn("shelf", address(1), 1);
+        assertEq(feed.ceiling(loan), maxCeiling);
+        feed.borrow(loan, maxCeiling);
+        assertEq(feed.currentNAV(), maxCeiling);
+        assertEq(feed.latestNAV(), maxCeiling);
+
+        pile.incDebt(loan, 100 ether); // writeOff more then NAV value
+        feed.writeOff(loan);
+        assertEq(pile.values_uint("changeRate_loan"), loan);
+        assertEq(pile.values_uint("changeRate_rate"), feed.WRITEOFF_RATE_GROUP());
+        assertEq(feed.currentNAV(), 0);
+        assertEq(feed.latestNAV(), 0);
+        assert(feed.zeroPV(loan));
+    }
+
+    function testFailDoubleWriteOff() public {
+        bytes32 nftID = feed.nftID(address(1), 1);
+        uint riskGroup = 1;
+        uint value = 100 ether;
+        uint loan = 1;
+        uint maxCeiling = 70 ether;
+
+        feed.update(nftID, value, riskGroup);
+
+        shelf.setReturn("shelf", address(1), 1);
+        assertEq(feed.ceiling(loan), maxCeiling);
+        feed.borrow(loan, maxCeiling);
+        pile.incDebt(loan, feed.ceiling(loan)); 
+        assertEq(feed.currentNAV(), maxCeiling);
+        assertEq(feed.latestNAV(), maxCeiling);
+
+ 
+        feed.writeOff(loan);
+        assertEq(pile.values_uint("changeRate_loan"), loan);
+        assertEq(pile.values_uint("changeRate_rate"), feed.WRITEOFF_RATE_GROUP());
+        assertEq(feed.currentNAV(), 0);
+        assertEq(feed.latestNAV(), 0);
+        feed.writeOff(loan); // fail double writeOff
     }
 
     function testFailWriteOffNoPermissions() public {

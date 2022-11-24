@@ -112,14 +112,22 @@ contract NAVFeedPV is Auth, Math {
     // --- Actions ---
     function borrow(uint loan, uint amount) external virtual auth returns(uint navIncrease) {
         require(ceiling(loan) >= amount, "borrow-amount-too-high");
+        require((pile.loanRates(loan) != WRITEOFF_RATE_GROUP), "loan-already-written-off"); // don't allow borrowing if loan is written off
         latestNAV = safeAdd(currentNAV(), amount);
         lastNAVUpdate = block.timestamp;
         return amount;
     }
 
     function repay(uint loan, uint amount) external virtual auth {
-        latestNAV = safeSub(currentNAV(), amount);
-        lastNAVUpdate = block.timestamp;
+        if (pile.loanRates(loan) != WRITEOFF_RATE_GROUP) { // only reduce NAV, if loan is not written off
+            uint nav = currentNAV();
+            if(nav >= amount) {
+              latestNAV = safeSub(nav, amount);
+            } else {
+               latestNAV = 0;
+            }
+            lastNAVUpdate = block.timestamp;    
+        }  
     }
 
     function borrowEvent(uint loan, uint) public virtual auth {
@@ -137,17 +145,22 @@ contract NAVFeedPV is Auth, Math {
     function unlockEvent(uint loan) public virtual auth {}
 
     function writeOff(uint loan) public auth {
-        uint nav = currentNAV(); // retrieve latest nav
+        require(pile.loanRates(loan) != WRITEOFF_RATE_GROUP, "loan already written off");
+        uint nav = currentNAV();
         uint outstandingDebt = pile.debt(loan);
 
        (,uint256 chi,,,) = pile.rates(WRITEOFF_RATE_GROUP);
        if (chi == 0) { // file writeoff group if not exists
             pile.file("rate", WRITEOFF_RATE_GROUP, ONE);
        }
-       pile.changeRate(loan, WRITEOFF_RATE_GROUP);
 
-       // calculate NAV change
-       latestNAV = safeSub(nav, outstandingDebt);
+       pile.changeRate(loan, WRITEOFF_RATE_GROUP);
+       // calculate & update NAV change
+       if (nav >= outstandingDebt) {
+            latestNAV = safeSub(nav, outstandingDebt);
+       } else {
+            latestNAV = 0;
+       }
        lastNAVUpdate = block.timestamp;
     }
 

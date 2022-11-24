@@ -277,7 +277,7 @@ contract LenderSystemTest is TestSuite, Interest {
         root.relyContract(address(pile), address(this));
         root.relyContract(address(nftFeed), address(this));
         assertEq(nftFeed.currentNAV(), safeAdd(pile.debt(loan), pile.debt(loan2)));
-        nftFeed.writeOff(loan); // writeOff loan -> exclude from nav
+        nftFeed.writeOff(loan2); // writeOff loan -> exclude from nav
         assertEq(nftFeed.currentNAV(), pile.debt(loan));
 
         assessor.calcUpdateNAV();
@@ -299,12 +299,14 @@ contract LenderSystemTest is TestSuite, Interest {
     function testDisburseAfterJuniorLost() public {
         // test setup junior lost everything
         (uint256 loan,) = juniorWithLosses();
-
+   
+        emit log_named_uint("price",assessor.calcJuniorTokenPrice());
         // junior lost everything
         assertEq(assessor.calcJuniorTokenPrice(), 0);
 
         uint256 loanDebt = pile.debt(loan);
 
+        nftFeed.writeOff(loan);
         repayLoan(address(borrower), loan, loanDebt);
 
         assertEq(reserve.totalBalance(), loanDebt);
