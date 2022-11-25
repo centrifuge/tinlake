@@ -36,6 +36,10 @@ interface TAuth {
     function wards(address) external returns (uint256);
 }
 
+interface MgrLike {
+    function urn() external returns (address);
+}
+
 contract TinlakeRPCTests is Test, Assertions {
     TinlakeRoot root;
     PoolAdmin poolAdmin;
@@ -54,6 +58,7 @@ contract TinlakeRPCTests is Test, Assertions {
     T_ERC20 seniorToken;
     Tranche seniorTranche;
     Tranche juniorTranche;
+    MgrLike mgr;
 
     function initRPC(address _root) public {
         root = TinlakeRoot(_root);
@@ -77,6 +82,7 @@ contract TinlakeRPCTests is Test, Assertions {
         seniorToken = T_ERC20(address(lenderDeployer.seniorToken()));
         currency = T_ERC20(address(Reserve(address(lenderDeployer.reserve())).currency()));
         registry = new Title("TEST", "TEST");
+        mgr = MgrLike(address(clerk.mgr()));
 
         // cheat: give testContract permissions on root contract by overriding storage
         // storage slot for permissions => keccak256(key, mapslot) (mapslot = 0)
