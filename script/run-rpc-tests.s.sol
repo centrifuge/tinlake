@@ -6,10 +6,6 @@ import "forge-std/Script.sol";
 
 import {TinlakeRPCTests} from "./rpc-tests/rpc-tests.sol";
 
-interface DependLike {
-    function depend(bytes32, address) external;
-}
-
 contract RunRPCTests is Script, TinlakeRPCTests {
     function setUp() public {}
 
