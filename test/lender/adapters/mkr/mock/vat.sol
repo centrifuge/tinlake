@@ -7,7 +7,7 @@ import "test/mock/mock.sol";
 
 contract VatMock is Mock {
     function urns(bytes32, address) external view returns (uint256, uint256) {
-        return (values_return["ink"], values_uint["tab"]);
+        return (values_return["ink"], values_return["tab"]);
     }
 
     function setInk(uint256 amountDROP) external {
@@ -15,11 +15,11 @@ contract VatMock is Mock {
     }
 
     function increaseTab(uint256 amountDAI) external {
-        values_uint["tab"] = safeAdd(values_uint["tab"], amountDAI);
+        values_return["tab"] = safeAdd(values_return["tab"], amountDAI);
     }
 
     function decreaseTab(uint256 amountDAI) external {
-        values_uint["tab"] = safeSub(values_uint["tab"], amountDAI);
+        values_return["tab"] = safeSub(values_return["tab"], amountDAI);
     }
 
     function ilks(bytes32) external view returns (uint256, uint256, uint256, uint256, uint256) {

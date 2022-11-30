@@ -88,7 +88,7 @@ contract ClerkTest is Assertions, Interest {
         jug.setInterestUpToDate(true);
     }
 
-    function testBorrowSuccess(uint256 amountDROP, address user, uint256 seniorTokenPrice) public {
+    function testBorrowSuccess(uint128 amountDROP, address user, uint16 seniorTokenPrice) public {
         vm.assume(user != address(clerk));
         vm.assume(amountDROP != 0);
         assessor.setReturn("calcSeniorTokenPrice", seniorTokenPrice);
@@ -109,7 +109,7 @@ contract ClerkTest is Assertions, Interest {
         assertEq(collateral.balanceOf(user), 0);
     }
 
-    function testBorrowAsNonInvestor(uint256 amountDROP, address user) public {
+    function testBorrowAsNonInvestorFails(uint256 amountDROP, address user) public {
         vm.assume(user != address(clerk));
         vm.assume(amountDROP != 0);
         // Set user as investor and mint them DROP
@@ -126,7 +126,7 @@ contract ClerkTest is Assertions, Interest {
         clerk.borrow(amountDROP);
     }
 
-    function testBorrowWithoutSufficientFunds(uint256 amountDROP, address user) public {
+    function testBorrowWithInsufficientFundsFails(uint256 amountDROP, address user) public {
         vm.assume(user != address(clerk));
         vm.assume(amountDROP != 0);
         // Set user as investor
@@ -142,7 +142,7 @@ contract ClerkTest is Assertions, Interest {
         clerk.borrow(amountDROP);
     }
 
-    function testBorrowWithoutClerkApproval(uint256 amountDROP, address user) public {
+    function testBorrowWithoutClerkApprovalFails(uint256 amountDROP, address user) public {
         vm.assume(user != address(clerk));
         vm.assume(amountDROP != 0);
         // Set user as investor and mint them DROP
@@ -156,29 +156,125 @@ contract ClerkTest is Assertions, Interest {
     }
 
 
-    // function testRepay(uint256 amountDAI, address user) public {
-    //     vm.assume(user != address(clerk));
-    //     vm.assume(amountDAI != 0);
+    function testRepay(uint128 amountDAI, address user, uint16 seniorTokenPrice) public {
+        vm.assume(user != address(clerk));
+        vm.assume(amountDAI != 0);
+        vm.assume(seniorTokenPrice != 0);
+        assessor.setReturn("calcSeniorTokenPrice", seniorTokenPrice);
+        uint amountDROP = divup(mul(amountDAI, RAY), assessor.calcSeniorTokenPrice());
+        vat.setReturn("tab", amountDAI);
 
-    //     // Set user as investor and mint them DROP
-    //     clerk.relyInvestor(user);
-    //     currency.mint(user, amountDAI);
+        // fund mgr with collateral
+        collateral.mint(address(mgr), amountDROP);
 
-    //     // approve clerk to take currency from user
-    //     vm.prank(user);
-    //     currency.approve(address(clerk), amountDAI);
+        // Set user as investor and mint them DROP
+        clerk.relyInvestor(user);
+        currency.mint(user, amountDAI);
 
-    //     // repay currency via clerk
-    //     vm.prank(user);
-    //     clerk.repay(amountDAI);
-    //     assertEq(currency.balanceOf(user), 0);
-    //     assertEq(currency.balanceOf(address(clerk)), 0);
-    //     uint amountDROP = divup(mul(amountDAI, RAY), assessor.calcSeniorTokenPrice());
-    //     assertEq(collateral.balanceOf(address(clerk)), 0);
-    //     assertEq(collateral.balanceOf(user), amountDROP);
-    
-    // }
+        // approve clerk to take currency from user
+        vm.prank(user);
+        currency.approve(address(clerk), amountDAI);
 
+        // repay currency via clerk
+        vm.prank(user);
+        clerk.repay(amountDAI);
+        assertEq(currency.balanceOf(user), 0);
+        assertEq(currency.balanceOf(address(clerk)), 0);
+        assertEq(collateral.balanceOf(address(clerk)), 0);
+        assertEq(collateral.balanceOf(address(mgr)), 0);
+        assertEq(collateral.balanceOf(user), amountDROP);
+    }
+
+    function testRepayAsNonInvestorFails(uint128 amountDAI, address user, uint16 seniorTokenPrice) public {
+        vm.assume(user != address(clerk));
+        vm.assume(amountDAI != 0);
+        vm.assume(seniorTokenPrice != 0);
+        assessor.setReturn("calcSeniorTokenPrice", seniorTokenPrice);
+        uint amountDROP = divup(mul(amountDAI, RAY), assessor.calcSeniorTokenPrice());
+        vat.setReturn("tab", amountDAI);
+
+        // fund mgr with collateral
+        collateral.mint(address(mgr), amountDROP);
+
+        // mint user DROP without setting them as investor
+        currency.mint(user, amountDAI);
+
+        // approve clerk to take currency from user
+        vm.prank(user);
+        currency.approve(address(clerk), amountDAI);
+
+        // repay currency via clerk
+        vm.prank(user);
+        vm.expectRevert("SimpleClerk/not-an-investor");
+        clerk.repay(amountDAI);
+    }
+
+    function testRepayWithInsufficientFundsFails(uint128 amountDAI, address user, uint16 seniorTokenPrice) public {
+        vm.assume(user != address(clerk));
+        vm.assume(amountDAI != 0);
+        vm.assume(seniorTokenPrice != 0);
+        assessor.setReturn("calcSeniorTokenPrice", seniorTokenPrice);
+        uint amountDROP = divup(mul(amountDAI, RAY), assessor.calcSeniorTokenPrice());
+        vat.setReturn("tab", amountDAI);
+
+        // fund mgr with collateral
+        collateral.mint(address(mgr), amountDROP);
+
+        // Set user as investor
+        clerk.relyInvestor(user);
+
+        // approve clerk to take currency from user
+        vm.prank(user);
+        currency.approve(address(clerk), amountDAI);
+
+        // repay currency via clerk
+        vm.prank(user);
+        vm.expectRevert("cent/insufficient-balance");
+        clerk.repay(amountDAI);
+    }
+
+    function testRepayWithoutClerkApprovalFails(uint128 amountDAI, address user, uint16 seniorTokenPrice) public {
+        vm.assume(user != address(clerk));
+        vm.assume(amountDAI != 0);
+        vm.assume(seniorTokenPrice != 0);
+        assessor.setReturn("calcSeniorTokenPrice", seniorTokenPrice);
+        uint amountDROP = divup(mul(amountDAI, RAY), assessor.calcSeniorTokenPrice());
+        vat.setReturn("tab", amountDAI);
+
+        // fund mgr with collateral
+        collateral.mint(address(mgr), amountDROP);
+
+        // Set user as investor and mint them DROP
+        clerk.relyInvestor(user);
+        currency.mint(user, amountDAI);
+
+        // repay currency via clerk
+        vm.prank(user);
+        vm.expectRevert("cent/insufficient-allowance");
+        clerk.repay(amountDAI);
+    }
+
+     function testRepayWithoutSufficientCollateralInMgrFails(uint128 amountDAI, address user, uint16 seniorTokenPrice) public {
+        vm.assume(user != address(clerk));
+        vm.assume(amountDAI != 0);
+        vm.assume(seniorTokenPrice != 0);
+        assessor.setReturn("calcSeniorTokenPrice", seniorTokenPrice);
+        uint amountDROP = divup(mul(amountDAI, RAY), assessor.calcSeniorTokenPrice());
+        vat.setReturn("tab", amountDAI);
+
+        // Set user as investor and mint them DROP
+        clerk.relyInvestor(user);
+        currency.mint(user, amountDAI);
+
+        // approve clerk to take currency from user
+        vm.prank(user);
+        currency.approve(address(clerk), amountDAI);
+
+        // repay currency via clerk
+        vm.prank(user);
+        vm.expectRevert("cent/insufficient-balance");
+        clerk.repay(amountDAI);
+    }
 
     // --- Math ---
     uint256 constant RAY = 10 ** 27;
