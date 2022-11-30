@@ -54,7 +54,7 @@ contract ClerkTest is Assertions, Interest {
 
         // Set user as investor and mint them DROP
         clerk.relyInvestor(user);
-        collateral.mint(user,amountDROP);
+        collateral.mint(user, amountDROP);
 
         // approve clerk to take DROP from user
         vm.prank(user);
@@ -63,7 +63,7 @@ contract ClerkTest is Assertions, Interest {
         // borrow currency via clerk
         vm.prank(user);
         clerk.borrow(amountDROP);
-        uint amountDAI = mul(amountDROP, assessor.calcSeniorTokenPrice());
+        uint256 amountDAI = mul(amountDROP, assessor.calcSeniorTokenPrice());
         assertEq(currency.balanceOf(user), amountDAI);
         assertEq(collateral.balanceOf(user), 0);
     }
@@ -72,7 +72,7 @@ contract ClerkTest is Assertions, Interest {
         vm.assume(user != address(clerk));
         vm.assume(amountDROP != 0);
         // Set user as investor and mint them DROP
-        collateral.mint(user,amountDROP);
+        collateral.mint(user, amountDROP);
 
         // approve clerk to take DROP from user
         vm.prank(user);
@@ -105,7 +105,7 @@ contract ClerkTest is Assertions, Interest {
         vm.assume(amountDROP != 0);
         // Set user as investor and mint them DROP
         clerk.relyInvestor(user);
-        collateral.mint(user,amountDROP);
+        collateral.mint(user, amountDROP);
 
         // borrow currency via clerk
         vm.prank(user);
@@ -113,13 +113,12 @@ contract ClerkTest is Assertions, Interest {
         clerk.borrow(amountDROP);
     }
 
-
     function testRepay(uint128 amountDAI, address user, uint16 seniorTokenPrice) public {
         vm.assume(user != address(clerk));
         vm.assume(amountDAI != 0);
         vm.assume(seniorTokenPrice != 0);
         assessor.setReturn("calcSeniorTokenPrice", seniorTokenPrice);
-        uint amountDROP = divup(mul(amountDAI, RAY), assessor.calcSeniorTokenPrice());
+        uint256 amountDROP = divup(mul(amountDAI, RAY), assessor.calcSeniorTokenPrice());
         vat.setReturn("tab", amountDAI);
 
         // fund mgr with collateral
@@ -148,7 +147,7 @@ contract ClerkTest is Assertions, Interest {
         vm.assume(amountDAI != 0);
         vm.assume(seniorTokenPrice != 0);
         assessor.setReturn("calcSeniorTokenPrice", seniorTokenPrice);
-        uint amountDROP = divup(mul(amountDAI, RAY), assessor.calcSeniorTokenPrice());
+        uint256 amountDROP = divup(mul(amountDAI, RAY), assessor.calcSeniorTokenPrice());
         vat.setReturn("tab", amountDAI);
 
         // fund mgr with collateral
@@ -172,7 +171,7 @@ contract ClerkTest is Assertions, Interest {
         vm.assume(amountDAI != 0);
         vm.assume(seniorTokenPrice != 0);
         assessor.setReturn("calcSeniorTokenPrice", seniorTokenPrice);
-        uint amountDROP = divup(mul(amountDAI, RAY), assessor.calcSeniorTokenPrice());
+        uint256 amountDROP = divup(mul(amountDAI, RAY), assessor.calcSeniorTokenPrice());
         vat.setReturn("tab", amountDAI);
 
         // fund mgr with collateral
@@ -196,7 +195,7 @@ contract ClerkTest is Assertions, Interest {
         vm.assume(amountDAI != 0);
         vm.assume(seniorTokenPrice != 0);
         assessor.setReturn("calcSeniorTokenPrice", seniorTokenPrice);
-        uint amountDROP = divup(mul(amountDAI, RAY), assessor.calcSeniorTokenPrice());
+        uint256 amountDROP = divup(mul(amountDAI, RAY), assessor.calcSeniorTokenPrice());
         vat.setReturn("tab", amountDAI);
 
         // fund mgr with collateral
@@ -212,12 +211,14 @@ contract ClerkTest is Assertions, Interest {
         clerk.repay(amountDAI);
     }
 
-     function testRepayWithoutSufficientCollateralInMgrFails(uint128 amountDAI, address user, uint16 seniorTokenPrice) public {
+    function testRepayWithoutSufficientCollateralInMgrFails(uint128 amountDAI, address user, uint16 seniorTokenPrice)
+        public
+    {
         vm.assume(user != address(clerk));
         vm.assume(amountDAI != 0);
         vm.assume(seniorTokenPrice != 0);
         assessor.setReturn("calcSeniorTokenPrice", seniorTokenPrice);
-        uint amountDROP = divup(mul(amountDAI, RAY), assessor.calcSeniorTokenPrice());
+        uint256 amountDROP = divup(mul(amountDAI, RAY), assessor.calcSeniorTokenPrice());
         vat.setReturn("tab", amountDAI);
 
         // Set user as investor and mint them DROP
@@ -236,17 +237,20 @@ contract ClerkTest is Assertions, Interest {
 
     // --- Math ---
     uint256 constant RAY = 10 ** 27;
+
     function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
-      require((z = x + y) >= x);
+        require((z = x + y) >= x);
     }
+
     function sub(uint256 x, uint256 y) internal pure returns (uint256 z) {
         require((z = x - y) <= x);
     }
+
     function mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-      require(y == 0 || (z = x * y) / y == x);
+        require(y == 0 || (z = x * y) / y == x);
     }
 
     function divup(uint256 x, uint256 y) internal pure returns (uint256 z) {
-      z = add(x, sub(y, 1)) / y;
-  }
+        z = add(x, sub(y, 1)) / y;
+    }
 }
