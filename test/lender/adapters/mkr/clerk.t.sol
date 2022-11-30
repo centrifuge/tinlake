@@ -5,72 +5,34 @@ import "forge-std/Test.sol";
 import "tinlake-math/interest.sol";
 
 import "src/lender/adapters/mkr/simpleClerk.sol";
-import "../../../simple/token.sol";
-import "../../mock/reserve.sol";
-import "../../mock/coordinator.sol";
-import "../../mock/navFeed.sol";
-import "../../mock/assessor.sol";
-import "../../mock/tranche.sol";
+import "test/simple/token.sol";
+import "test/lender/mock/assessor.sol";
 import "./mock/mgr.sol";
-import "./mock/spotter.sol";
 import "./mock/vat.sol";
-import "./mock/jug.sol";
 import "src/lender/definitions.sol";
-import "../../../system/assertions.sol";
-
-interface Hevm {
-    function warp(uint256) external;
-}
+import "test/system/assertions.sol";
 
 contract AssessorMockWithDef is AssessorMock, Definitions {}
 
 contract ClerkTest is Assertions, Interest {
-    Hevm hevm;
-
     SimpleToken currency;
     SimpleToken collateral;
-    ReserveMock reserve;
     AssessorMockWithDef assessor;
-    CoordinatorMock coordinator;
-    TrancheMock tranche;
 
     ManagerMock mgr;
     VatMock vat;
-    SpotterMock spotter;
-    JugMock jug;
 
     SimpleClerk clerk;
-    address self;
 
     function setUp() public {
         currency = new SimpleToken("DAI", "DAI");
         collateral = new SimpleToken("DROP", "DROP");
-
-        reserve = new ReserveMock(address(currency));
         assessor = new AssessorMockWithDef();
-        coordinator = new CoordinatorMock();
-        tranche = new TrancheMock();
         mgr = new ManagerMock(address(currency), address(collateral));
         mgr.setIlk("DROP");
         vat = new VatMock();
-        spotter = new SpotterMock();
-        jug = new JugMock();
-
         clerk = new SimpleClerk(address(mgr), address(assessor), address(collateral), address(currency), address(0));
 
-        tranche.rely(address(clerk));
-
-        self = address(this);
-
-        hevm = Hevm(HEVM_ADDRESS);
-        hevm.warp(block.timestamp);
-
-        // set values for the MKR contracts
-        // mat = 110% -> 10% extra security margin required for mkr
-        uint256 mat = 1.1 * 10 ** 27;
-        spotter.setReturn("mat", mat);
-        spotter.setReturn("pip", address(0));
-        // set stability fee to 0
         vat.setReturn("stabilityFeeIdx", ONE);
         mgr.setVat(address(vat));
         mgr.setBytes32Return("ilk", "DROP");
@@ -83,9 +45,6 @@ contract ClerkTest is Assertions, Interest {
         // make clerk ward on mgr
         mgr.setOperator(address(clerk));
         assertEq(mgr.operator(), address(clerk));
-
-        // by default interest index is up to date
-        jug.setInterestUpToDate(true);
     }
 
     function testBorrowSuccess(uint128 amountDROP, address user, uint16 seniorTokenPrice) public {
@@ -119,7 +78,6 @@ contract ClerkTest is Assertions, Interest {
         vm.prank(user);
         collateral.approve(address(clerk), amountDROP);
 
-        // borrow currency via clerk
         // borrow currency via clerk
         vm.prank(user);
         vm.expectRevert("SimpleClerk/not-an-investor");
