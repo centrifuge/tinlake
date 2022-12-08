@@ -13,17 +13,17 @@ contract RunRPCTests is Script, TinlakeRPCTests {
         return mgr.urn() != address(0) && clerk.activated();
     }
 
-    function _deactivateClerk() internal {
-        if (address(assessor.lending()) != address(0)) {
-            console.log("PreRPC Test: remove clerk dependency from assessor");
-            root.relyContract(address(assessor), address(this));
-            assessor.depend("lending", address(0));
-        }
+    function _setClerk(address clerkAddr) internal {
+        root.relyContract(address(assessor), address(this));
+        root.relyContract(address(reserve), address(this));
+        console.log("depend clerk in reserve and assssor:", clerkAddr);
+        assessor.depend("lending", address(clerkAddr));
+        reserve.depend("lending", address(clerk));
+    }
 
-        if (address(reserve.lending()) != address(0)) {
-            console.log("PreRPC Test: remove clerk dependency from reserve");
-            root.relyContract(address(reserve), address(this));
-            reserve.depend("lending", address(0));
+    function _deactivateClerk() internal {
+        if (address(assessor.lending()) != address(0) || address(reserve.lending()) != address(0)) {
+            _setClerk(address(0));
         }
     }
 
@@ -32,6 +32,7 @@ contract RunRPCTests is Script, TinlakeRPCTests {
         if (vm.envBool("MAKER_RPC_TESTS") == true) {
             console.log("Running: Maker RPC tests");
             if (_isMakerLive()) {
+                _setClerk(address(clerk));
                 runLoanCycleWithMaker();
             } else {
                 revert("Maker is not live");
