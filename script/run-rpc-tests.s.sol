@@ -16,7 +16,7 @@ contract RunRPCTests is Script, TinlakeRPCTests {
     function _setClerk(address clerkAddr) internal {
         root.relyContract(address(assessor), address(this));
         root.relyContract(address(reserve), address(this));
-        console.log("depend clerk in reserve and assssor:", clerkAddr);
+        console.log("depend clerk in reserve and assessor:", clerkAddr);
         assessor.depend("lending", address(clerkAddr));
         reserve.depend("lending", address(clerk));
     }
