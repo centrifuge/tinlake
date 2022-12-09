@@ -220,7 +220,6 @@ contract TinlakeRPCTests is Test, Assertions {
         assessor.rely(address(this));
         vm.stopPrank();
         assessor.file("maxReserve", 1000000000000 * 1 ether);
-
         investTranches(true);
 
         // issue nft
@@ -248,7 +247,9 @@ contract TinlakeRPCTests is Test, Assertions {
         assertEq(navFeed.currentNAV(), 0);
 
         borrowLoan(loanId, borrowAmount);
-        assertEq(navFeed.currentNAV(), 50 ether);
+
+        // nav equals loan debt which the borrowAmount at this point
+        assertEq(navFeed.currentNAV(), borrowAmount);
 
         // check debt increase in maker
         assertEqTol(clerk.debt(), preMakerDebt + (clerk.creditline() / 2), "clerk debt");
@@ -262,7 +263,7 @@ contract TinlakeRPCTests is Test, Assertions {
         preMakerDebt = clerk.debt();
         repayLoan(loanId, debt);
         assertTrue(clerk.debt() < preMakerDebt);
-        assertEq(navFeed.currentNAV(), 0);
+        assertEq(navFeed.currentNAV(), 0, "post nav after repay");
     }
 
     function runLoanCycleWithoutMaker() public {
