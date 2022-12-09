@@ -53,9 +53,22 @@ When the deployment is complete, you can print the list of deployed contracts:
 ROOT_CONTRACT=0x0 forge script script/print_contracts.s.sol:PrintContractsScript --rpc-url $RPC_URL -vvvv
 ```
 
+### RPC Tests
+
 And you can also run the set of RPC tests against the newly deployed pool:
 ```bash
 ROOT_CONTRACT=0x0 MAKER_RPC_TESTS=false forge script script/run-rpc-tests.s.sol:RunRPCTests --rpc-url $RPC_URL
+```
+
+#### RPC Tests against Maker
+It is possible to execute a Maker Spell as part of the RPC test. The spell needs onboard the specific pool on MakerDAO. The test will simulate the execution of spell.
+
+Required additional enviroment variables:
+```
+# Maker Spell Contract
+SPELL=
+# Maker DS Pause Proxy Contract
+DS_PAUSE_PROXY=
 ```
 
 ## Community
