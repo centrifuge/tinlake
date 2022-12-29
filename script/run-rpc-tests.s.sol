@@ -6,6 +6,15 @@ import "forge-std/Script.sol";
 
 import {TinlakeRPCTests} from "./rpc-tests/rpc-tests.sol";
 
+interface DSPauseProxy {
+    function exec(address spell, bytes memory sig) external;
+    function owner() external returns (address);
+}
+
+interface Spell {
+    function action() external returns (address);
+}
+
 contract RunRPCTests is Script, TinlakeRPCTests {
     function setUp() public {}
 
@@ -27,10 +36,28 @@ contract RunRPCTests is Script, TinlakeRPCTests {
         }
     }
 
+    function _executeMKRSpell() internal {
+        // Maker has a concept called office hours
+        // the spell can only be executed between 14:00 and 21:00 UTC during the week
+        // fake office hours to Tue Dec 13 2022 14:39:41 GMT+0000
+        vm.warp(1670942381);
+        // DS Pause Proxy on Mainnet: 0xBE8E3e3618f7474F8cB1d074A26afFef007E98FB
+        // executes the action contract of the spell
+        DSPauseProxy dsPauseProxy = DSPauseProxy(vm.envAddress("MKR_PAUSE_PROXY"));
+
+        // prank to be able to execute the spell
+        vm.startPrank(dsPauseProxy.owner());
+        dsPauseProxy.exec(Spell(vm.envAddress("SPELL")).action(), abi.encodeWithSignature("execute()"));
+        vm.stopPrank();
+    }
+
     function run() public {
         initRPC(vm.envAddress("ROOT_CONTRACT"));
         if (vm.envBool("MAKER_RPC_TESTS") == true) {
             console.log("Running: Maker RPC tests");
+            if (vm.envAddress("SPELL") != address(0)) {
+                _executeMKRSpell();
+            }
             if (_isMakerLive()) {
                 _setClerk(address(clerk));
                 runLoanCycleWithMaker();
