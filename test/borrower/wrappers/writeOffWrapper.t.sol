@@ -4,6 +4,8 @@ pragma solidity >=0.7.6;
 import "forge-std/Test.sol";
 import "src/borrower/wrappers/writeOffWrapper.sol";
 import {Discounting} from "src/borrower/feed/discounting.sol";
+import "../../mock/root.sol";
+import "../mock/deployer.sol";
 import "../mock/pile.sol";
 import "../mock/feed.sol";
 import "../mock/shelf.sol";
@@ -13,12 +15,20 @@ contract WriteOffTest is Test, Discounting {
     PileMock pile;
     NAVFeedMock navFeed;
     ShelfMock shelf;
+    BorrowerDeployerMock deployer;
+    RootMock root;
 
     function setUp() public {
         writeOffWrapper = new WriteOffWrapper();
         pile = new PileMock();
         navFeed = new NAVFeedMock();
         shelf = new ShelfMock();
+        deployer = new BorrowerDeployerMock();
+        deployer.setReturn("pile", address(pile));
+        deployer.setReturn("feed", address(navFeed));
+        deployer.setReturn("shelf", address(shelf));
+        root = new RootMock();
+        root.setReturn("borrowerDeployer", address(deployer));
     }
 
     function testFile() public {
@@ -42,7 +52,7 @@ contract WriteOffTest is Test, Discounting {
         shelf.setReturn("shelf", address(1));
         shelf.setReturn("shelf", 1);
 
-        writeOffWrapper.writeOff(1, address(navFeed), address(pile), address(shelf));
+        writeOffWrapper.writeOff(1, address(root));
         assertEq(pile.calls("changeRate"), 1);
     }
 
@@ -53,7 +63,7 @@ contract WriteOffTest is Test, Discounting {
         shelf.setReturn("shelf", address(1));
         shelf.setReturn("shelf", 1);
 
-        writeOffWrapper.writeOff(1, address(navFeed), address(pile), address(shelf));
+        writeOffWrapper.writeOff(1, address(root));
         assertEq(pile.calls("changeRate"), 1);
     }
 
@@ -62,13 +72,13 @@ contract WriteOffTest is Test, Discounting {
         navFeed.setReturn("maturityDate", block.timestamp - 60 * 60 * 24);
         navFeed.setBytes32Return("nftID", "1");
 
-        writeOffWrapper.writeOff(1, address(navFeed), address(pile), address(shelf));
+        writeOffWrapper.writeOff(1, address(root));
         assertEq(pile.calls("changeRate"), 1);
     }
 
     function testFailWriteOffLoanNotOverDue() public {
         navFeed.setReturn("maturityDate", block.timestamp + 60 * 60 * 24);
         navFeed.setBytes32Return("nftID", "1");
-        writeOffWrapper.writeOff(1, address(navFeed), address(pile), address(shelf));
+        writeOffWrapper.writeOff(1, address(root));
     }
 }
