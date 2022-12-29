@@ -4,7 +4,6 @@ pragma solidity >=0.7.6;
 import "../../mock/mock.sol";
 
 contract BorrowerDeployerMock is Mock {
-
     function shelf() public view returns (address) {
         return values_address_return["shelf"];
     }
