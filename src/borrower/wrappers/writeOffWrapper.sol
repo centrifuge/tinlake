@@ -63,7 +63,7 @@ contract WriteOffWrapper is Auth, Discounting {
 
     /// @notice writes off an overdue loan
     /// @param root the address of the root contract
-    function writeOff(uint256 loan, address root) public {
+    function writeOff(uint256 loan, address root) public auth {
         BorrowerDeployerLike deployer = BorrowerDeployerLike(RootLike(root).borrowerDeployer());
         FeedLike feed = FeedLike(deployer.feed());
         PileLike pile = PileLike(deployer.pile());
