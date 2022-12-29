@@ -41,10 +41,8 @@ contract WriteOffTest is Test, Discounting {
         navFeed.setBytes32Return("nftID", "1");
         shelf.setReturn("shelf", address(1));
         shelf.setReturn("shelf", 1);
-        navFeed.setReturn("pile", address(pile));
-        navFeed.setReturn("shelf", address(shelf));
 
-        writeOffWrapper.writeOff(1, address(navFeed));
+        writeOffWrapper.writeOff(1, address(navFeed), address(pile), address(shelf));
         assertEq(pile.calls("changeRate"), 1);
     }
 
@@ -54,10 +52,8 @@ contract WriteOffTest is Test, Discounting {
         navFeed.setBytes32Return("nftID", "1");
         shelf.setReturn("shelf", address(1));
         shelf.setReturn("shelf", 1);
-        navFeed.setReturn("pile", address(pile));
-        navFeed.setReturn("shelf", address(shelf));
 
-        writeOffWrapper.writeOff(1, address(navFeed));
+        writeOffWrapper.writeOff(1, address(navFeed), address(pile), address(shelf));
         assertEq(pile.calls("changeRate"), 1);
     }
 
@@ -65,16 +61,14 @@ contract WriteOffTest is Test, Discounting {
         // set mock data
         navFeed.setReturn("maturityDate", block.timestamp - 60 * 60 * 24);
         navFeed.setBytes32Return("nftID", "1");
-        navFeed.setReturn("pile", address(pile));
-        navFeed.setReturn("shelf", address(shelf));
 
-        writeOffWrapper.writeOff(1, address(navFeed));
+        writeOffWrapper.writeOff(1, address(navFeed), address(pile), address(shelf));
         assertEq(pile.calls("changeRate"), 1);
     }
 
     function testFailWriteOffLoanNotOverDue() public {
         navFeed.setReturn("maturityDate", block.timestamp + 60 * 60 * 24);
         navFeed.setBytes32Return("nftID", "1");
-        writeOffWrapper.writeOff(1, address(navFeed));
+        writeOffWrapper.writeOff(1, address(navFeed), address(pile), address(shelf));
     }
 }
