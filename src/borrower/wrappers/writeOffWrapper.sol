@@ -26,6 +26,16 @@ interface FeedLike {
     function maturityDate(bytes32 nft_) external view returns (uint256);
 }
 
+interface RootLike {
+    function borrowerDeployer() external view returns (address);
+}
+
+interface BorrowerDeployerLike {
+    function pile() external view returns (address);
+    function shelf() external view returns (address);
+    function feed() external view returns (address);
+}
+
 /// @notice WriteOff contract can move overdue loans into a write off group
 /// The wrapper contract manages multiple different pools
 contract WriteOffWrapper is Auth, Discounting {
@@ -41,7 +51,7 @@ contract WriteOffWrapper is Auth, Discounting {
         writeOffRates[address(0x11C14AAa42e361Cf3500C9C46f34171856e3f657)] = 1000; // Fortunafi 1
         writeOffRates[address(0xE7876f282bdF0f62e5fdb2C63b8b89c10538dF32)] = 1000; // Harbor Trade 2
         writeOffRates[address(0x3eC5c16E7f2C6A80E31997C68D8Fa6ACe089807f)] = 1000; // New Silver 2
-        writeOffRates[address(0xe17F3c35C18b2Af84ceE2eDed673c6A08A671695)] = 1001; // Branch Series 3
+        writeOffRates[address(0xe17F3c35C18b2Af84ceE2eDed673c6A08A671695)] = 1000; // Branch Series 3
         writeOffRates[address(0x99D0333f97432fdEfA25B7634520d505e58B131B)] = 1000; // FactorChain 1
         writeOffRates[address(0x37c8B836eA1b89b7cC4cFdDed4C4fbC454CcC679)] = 1000; // Paperchain 3
         writeOffRates[address(0xB7d1DE24c0243e6A3eC4De9fAB2B19AB46Fa941F)] = 1001; // UP Series 1
@@ -51,13 +61,13 @@ contract WriteOffWrapper is Auth, Discounting {
     }
 
     /// @notice writes off an overdue loan
-    /// @param loan the loan id
-    /// @param nftFeed address of the feed
-    function writeOff(uint256 loan, address nftFeed) public auth {
-        FeedLike feed = FeedLike(nftFeed);
-        PileLike pile = PileLike(feed.pile());
+    /// @param root the address of the root contract
+    function writeOff(address root, uint256 loan) public auth {
+        BorrowerDeployerLike deployer = BorrowerDeployerLike(RootLike(root).borrowerDeployer());
+        FeedLike feed = FeedLike(deployer.feed());
+        PileLike pile = PileLike(deployer.pile());
         require(writeOffRates[address(pile)] != 0, "WriteOffWrapper/pile-has-no-write-off-group");
-        ShelfLike shelf = ShelfLike(feed.shelf());
+        ShelfLike shelf = ShelfLike(deployer.shelf());
         require(shelf.shelf(loan).tokenId != 0, "WriteOffWrapper/loan-does-not-exist");
         uint256 nnow = uniqueDayTimestamp(block.timestamp);
         bytes32 nftID = feed.nftID(loan);
