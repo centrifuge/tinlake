@@ -52,7 +52,7 @@ contract WriteOffTest is Test, Discounting {
         shelf.setReturn("shelf", address(1));
         shelf.setReturn("shelf", 1);
 
-        writeOffWrapper.writeOff(1, address(root));
+        writeOffWrapper.writeOff(address(root), 1);
         assertEq(pile.calls("changeRate"), 1);
     }
 
@@ -63,7 +63,7 @@ contract WriteOffTest is Test, Discounting {
         shelf.setReturn("shelf", address(1));
         shelf.setReturn("shelf", 1);
 
-        writeOffWrapper.writeOff(1, address(root));
+        writeOffWrapper.writeOff(address(root), 1);
         assertEq(pile.calls("changeRate"), 1);
     }
 
@@ -72,13 +72,13 @@ contract WriteOffTest is Test, Discounting {
         navFeed.setReturn("maturityDate", block.timestamp - 60 * 60 * 24);
         navFeed.setBytes32Return("nftID", "1");
 
-        writeOffWrapper.writeOff(1, address(root));
+        writeOffWrapper.writeOff(address(root), 1);
         assertEq(pile.calls("changeRate"), 1);
     }
 
     function testFailWriteOffLoanNotOverDue() public {
         navFeed.setReturn("maturityDate", block.timestamp + 60 * 60 * 24);
         navFeed.setBytes32Return("nftID", "1");
-        writeOffWrapper.writeOff(1, address(root));
+        writeOffWrapper.writeOff(address(root), 1);
     }
 }

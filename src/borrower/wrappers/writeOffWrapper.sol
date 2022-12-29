@@ -27,7 +27,6 @@ interface FeedLike {
 }
 
 interface RootLike {
-    function relyContract(address, address) external;
     function borrowerDeployer() external view returns (address);
 }
 
@@ -63,7 +62,7 @@ contract WriteOffWrapper is Auth, Discounting {
 
     /// @notice writes off an overdue loan
     /// @param root the address of the root contract
-    function writeOff(uint256 loan, address root) public auth {
+    function writeOff(address root, uint256 loan) public auth {
         BorrowerDeployerLike deployer = BorrowerDeployerLike(RootLike(root).borrowerDeployer());
         FeedLike feed = FeedLike(deployer.feed());
         PileLike pile = PileLike(deployer.pile());
