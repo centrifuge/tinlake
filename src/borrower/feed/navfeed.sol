@@ -159,7 +159,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     // In case of successful borrow the approximatedNAV is increased by the borrowed amount
-    function borrow(uint loan, uint amount) external auth returns(uint navIncrease) {
+    function borrow(uint loan, uint amount) external override auth returns(uint navIncrease) {
         navIncrease = _borrow(loan, amount);
         approximatedNAV = safeAdd(approximatedNAV, navIncrease);
         return navIncrease;
@@ -200,11 +200,11 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     function calcFutureValue(uint loan, uint amount, uint maturityDate_, uint recoveryRatePD_) public returns(uint) {
         // retrieve interest rate from the pile
         (, ,uint loanInterestRate, ,) = pile.rates(pile.loanRates(loan));
-        return rmul(rmul(rpow(loanInterestRate, safeSub(maturityDate_, uniqueDayTimestamp(now)), ONE), amount), recoveryRatePD_);
+        return rmul(rmul(rpow(loanInterestRate, safeSub(maturityDate_, uniqueDayTimestamp(block.timestamp)), ONE), amount), recoveryRatePD_);
     }
 
     /// update the nft value and change the risk group
-    function update(bytes32 nftID_, uint value, uint risk_) public auth {
+    function update(bytes32 nftID_, uint value, uint risk_) public override auth {
         nftValues[nftID_] = value;
 
         // no change in risk group
@@ -234,7 +234,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     // In case of successful repayment the approximatedNAV is decreased by the repaid amount
-    function repay(uint loan, uint amount) external auth returns (uint navDecrease) {
+    function repay(uint loan, uint amount) external override auth returns (uint navDecrease) {
         navDecrease = _repay(loan, amount);
         if (navDecrease > approximatedNAV) {
             approximatedNAV = 0;
@@ -339,7 +339,7 @@ contract NAVFeed is BaseNFTFeed, Interest, Buckets, FixedPoint {
     }
 
     /// workaround for transition phase between V2 & V3
-    function totalValue() public view returns(uint) {
+    function totalValue() public override view returns(uint) {
         return currentNAV();
     }
 

@@ -19,21 +19,21 @@ import "ds-note/note.sol";
 import "tinlake-auth/auth.sol";
 import "tinlake-math/math.sol";
 
-contract ShelfLike {
-    function shelf(uint loan) public view returns (address registry, uint tokenId);
-    function nftlookup(bytes32 nftID) public returns (uint loan);
+interface ShelfLike {
+    function shelf(uint loan) external view returns (address registry, uint tokenId);
+    function nftlookup(bytes32 nftID) external returns (uint loan);
 }
 
-contract PileLike {
-    function setRate(uint loan, uint rate) public;
-    function debt(uint loan) public returns (uint);
-    function pie(uint loan) public returns (uint);
-    function changeRate(uint loan, uint newRate) public;
-    function loanRates(uint loan) public returns (uint);
-    function file(bytes32, uint, uint) public;
-    function rates(uint rate) public view returns (uint, uint, uint ,uint48, uint);
-    function total() public view returns (uint);
-    function rateDebt(uint rate) public view returns (uint);
+interface PileLike {
+    function setRate(uint loan, uint rate) external;
+    function debt(uint loan) external returns (uint);
+    function pie(uint loan) external returns (uint);
+    function changeRate(uint loan, uint newRate) external;
+    function loanRates(uint loan) external returns (uint);
+    function file(bytes32, uint, uint) external;
+    function rates(uint rate) external view returns (uint, uint, uint ,uint48, uint);
+    function total() external view returns (uint);
+    function rateDebt(uint rate) external view returns (uint);
 }
 
 // The NFTFeed stores values and risk group of nfts that are used as collateral in tinlake. A risk group contains: thresholdRatio, ceilingRatio & interstRate.
@@ -67,9 +67,6 @@ contract BaseNFTFeed is DSNote, Auth, Math {
     constructor () public {
         wards[msg.sender] = 1;
     }
-
-     // part of Feed interface
-    function file(bytes32 name, uint value) public auth {}
 
     /// sets the dependency to another contract
     function depend(bytes32 contractName, address addr) external auth {
@@ -109,7 +106,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
     }
 
      // The nft value & risk group is to be updated by authenticated oracles
-    function update(bytes32 nftID_, uint value, uint risk_) public auth {
+    function update(bytes32 nftID_, uint value, uint risk_) public virtual auth {
         // the risk group has to exist
         require(thresholdRatio[risk_] != 0, "threshold for risk group not defined");
 
@@ -124,7 +121,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
     }
 
     // function checks if the borrow amount does not exceed the max allowed borrow amount (=ceiling)
-    function borrow(uint loan, uint amount) external auth returns (uint) {
+    function borrow(uint loan, uint amount) external virtual auth returns (uint) {
         // increase borrowed amount -> note: max allowed borrow amount does not include accrued interest
         borrowed[loan] = safeAdd(borrowed[loan], amount);
 
@@ -133,7 +130,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
     }
 
     // part of Feed interface
-    function repay(uint, uint amount) external auth returns (uint) {
+    function repay(uint, uint amount) external virtual auth returns (uint) {
         // note: borrowed amount is not decreased as the feed implements the principal and not credit line method
         return amount;
     }
@@ -176,7 +173,7 @@ contract BaseNFTFeed is DSNote, Auth, Math {
     }
 
     /// implements feed interface and returns poolValue as the total debt of all loans
-    function totalValue() public view returns (uint) {
+    function totalValue() public virtual view returns (uint) {
         return pile.total();
     }
 }
