@@ -15,6 +15,7 @@ contract WriteOffWrapperPV is Auth {
 
     constructor(address navFeed_) {
         navFeed = NAVFeedPVLike(navFeed_);
+
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
     }
@@ -22,6 +23,6 @@ contract WriteOffWrapperPV is Auth {
     /// @notice writes off an overdue loan
     /// @param loan the id of the loan
     function writeOff(uint256 loan) public auth {
-        navFeed.writeOff(loan)
+        navFeed.writeOff(loan);
     }
 }
